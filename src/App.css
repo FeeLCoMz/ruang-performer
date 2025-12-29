@@ -417,6 +417,66 @@ body {
   gap: 0.625rem;
   align-items: center;
   border: 1px solid var(--border);
+  position: relative;
+}
+
+.notation-controls {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.melody-controls {
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+  padding: 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+  border: 1px solid var(--border);
+}
+
+.btn-notation-toggle {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-notation-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.notation-type-selector {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+
+.notation-type-selector label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.notation-type-selector input[type="radio"] {
+  cursor: pointer;
 }
 
 .chord-badge {
@@ -992,5 +1052,338 @@ body {
   .btn-sm {
     padding: 0.375rem 0.625rem;
     font-size: 0.8rem;
+  }
+}
+
+/* ================================
+   SHEET MUSIC NOTATION STYLES
+   ================================ */
+
+/* Numeric Notation (Not Angka) */
+.numeric-notation {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.1) 0%, rgba(52, 211, 153, 0.1) 100%);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+  border: 2px solid var(--success);
+  box-shadow: var(--shadow-md);
+}
+
+.notation-header {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--success);
+  margin-bottom: 1rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.staff-notation .notation-header {
+  color: var(--primary);
+}
+
+/* Melody display for numeric notation */
+.melody-bars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: flex-start;
+  padding: 1rem;
+}
+
+.melody-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.melody-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 50px;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%);
+  border-radius: var(--radius);
+  transition: transform 0.2s;
+}
+
+.melody-note:hover {
+  transform: translateY(-3px);
+}
+
+.melody-note.rest {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.2) 0%, rgba(100, 116, 139, 0.2) 100%);
+}
+
+.note-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--success);
+  font-family: 'Courier New', monospace;
+  line-height: 1;
+}
+
+.melody-note.rest .note-value {
+  color: var(--text-muted);
+}
+
+.solfege-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: lowercase;
+  font-style: italic;
+}
+
+.bar-separator {
+  font-size: 2rem;
+  color: var(--border-light);
+  font-weight: 300;
+  align-self: center;
+  margin: 0 0.25rem;
+}
+
+.no-melody-message {
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  border: 2px dashed var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.no-melody-message p {
+  color: var(--text-muted);
+  margin: 0.5rem 0;
+}
+
+.no-melody-message .example {
+  font-family: 'Courier New', monospace;
+  color: var(--primary);
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.numeric-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.numeric-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--card);
+  border-radius: var(--radius);
+  min-width: 80px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s;
+}
+
+.numeric-note:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.numeric-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--success);
+  font-family: 'Courier New', monospace;
+}
+
+.original-chord {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0.25rem 0.5rem;
+  background: var(--bg);
+  border-radius: 4px;
+}
+
+/* Staff Notation (Not Balok) */
+.staff-notation {
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+  border: 2px solid var(--primary);
+  box-shadow: var(--shadow-md);
+  overflow-x: auto;
+}
+
+.staff-container {
+  position: relative;
+  min-height: 200px;
+  padding: 2rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.clef {
+  font-size: 4rem;
+  color: var(--primary);
+  margin-right: 1rem;
+  line-height: 1;
+}
+
+.staff-lines {
+  position: relative;
+  flex: 1;
+  height: 120px;
+  min-width: 600px;
+}
+
+.staff-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: var(--border-light);
+  left: 0;
+}
+
+.staff-line:nth-child(1) { top: 0; }
+.staff-line:nth-child(2) { top: 25%; }
+.staff-line:nth-child(3) { top: 50%; }
+.staff-line:nth-child(4) { top: 75%; }
+.staff-line:nth-child(5) { top: 100%; }
+
+.notes-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  gap: 3rem;
+  padding-left: 1rem;
+  align-items: center;
+}
+
+.note-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+
+.note {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 1.5rem;
+  color: var(--primary);
+  font-weight: bold;
+}
+
+.note-head {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.accidental {
+  font-size: 1.5rem;
+  margin-right: 0.25rem;
+}
+
+.chord-quality {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+
+.note-label {
+  margin-top: 150px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.note-label-small {
+  margin-top: 140px;
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  background: var(--bg);
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+}
+
+.rest-symbol {
+  position: absolute;
+  font-size: 2rem;
+  color: var(--text-muted);
+  transform: translateY(-50%);
+}
+
+.stem {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  height: 30px;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--primary);
+}
+
+.note-unknown {
+  font-size: 2rem;
+  color: var(--accent);
+  margin-top: 60px;
+}
+
+/* Both Notations */
+.both-notations {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Responsive for Sheet Music */
+@media (max-width: 768px) {
+  .numeric-notes {
+    gap: 1rem;
+  }
+  
+  .numeric-note {
+    min-width: 60px;
+    padding: 0.75rem;
+  }
+  
+  .numeric-value {
+    font-size: 2rem;
+  }
+  
+  .staff-container {
+    min-height: 180px;
+    padding: 1rem 0.5rem;
+  }
+  
+  .clef {
+    font-size: 3rem;
+  }
+  
+  .staff-lines {
+    min-width: 400px;
+  }
+  
+  .notation-type-selector {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }

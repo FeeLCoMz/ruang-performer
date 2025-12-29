@@ -10,6 +10,7 @@ export const initialSongs = [
     artist: "Glenn Fredly",
     youtubeId: "K8jVKqz0fYw",
     createdAt: "2025-12-28T00:00:00.000Z",
+    melody: "5 5 5 3 5 | 6 5 3 2 1 | 5 5 5 3 5 | 6 5 3 2 |",
     lyrics: `{title: Kasih Putih}
 {artist: Glenn Fredly}
 {key: C}
@@ -48,6 +49,7 @@ export const initialSongs = [
     artist: "Andra and The Backbone",
     youtubeId: "tTJjZi9f6AQ",
     createdAt: "2025-12-28T00:00:00.000Z",
+    melody: "2 2 3 5 | 6 5 3 2 | 1 1 2 3 | 2 1 - - |",
     lyrics: `{title: Sempurna}
 {artist: Andra and The Backbone}
 {key: D}

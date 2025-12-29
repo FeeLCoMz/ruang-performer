@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { parseChordPro, transposeChord, getAllChords } from '../utils/chordUtils';
+import SheetMusicDisplay from './SheetMusicDisplay';
 
 const ChordDisplay = ({ song, transpose = 0 }) => {
   const [parsedSong, setParsedSong] = useState(null);
   const [allChords, setAllChords] = useState([]);
+  const [showNotation, setShowNotation] = useState(false);
+  const [notationType, setNotationType] = useState('both'); // 'numeric', 'staff', 'both'
   
   useEffect(() => {
     if (song && song.lyrics) {
@@ -188,6 +191,59 @@ const ChordDisplay = ({ song, transpose = 0 }) => {
             </span>
           ))}
         </div>
+      )}
+      
+      <div className="melody-controls">
+        <button 
+          onClick={() => setShowNotation(!showNotation)}
+          className="btn-notation-toggle"
+          title={showNotation ? 'Sembunyikan Partitur' : 'Tampilkan Partitur'}
+        >
+          {showNotation ? '🎵 Sembunyikan Partitur' : '🎼 Tampilkan Partitur'}
+        </button>
+        
+        {showNotation && (
+          <div className="notation-type-selector">
+            <label>
+              <input 
+                type="radio" 
+                name="notationType"
+                value="numeric"
+                checked={notationType === 'numeric'}
+                onChange={(e) => setNotationType(e.target.value)}
+              />
+              Not Angka
+            </label>
+            <label>
+              <input 
+                type="radio" 
+                name="notationType"
+                value="staff"
+                checked={notationType === 'staff'}
+                onChange={(e) => setNotationType(e.target.value)}
+              />
+              Not Balok
+            </label>
+            <label>
+              <input 
+                type="radio" 
+                name="notationType"
+                value="both"
+                checked={notationType === 'both'}
+                onChange={(e) => setNotationType(e.target.value)}
+              />
+              Keduanya
+            </label>
+          </div>
+        )}
+      </div>
+      
+      {showNotation && (
+        <SheetMusicDisplay 
+          melody={song.melody || ''}
+          notationType={notationType}
+          transpose={transpose}
+        />
       )}
       
       <div className="lyrics-content">
