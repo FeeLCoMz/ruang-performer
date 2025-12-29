@@ -11,5 +11,15 @@ CREATE TABLE IF NOT EXISTS songs (
   updatedAt TEXT
 );
 
--- Example index for faster title searches
+-- Set lists (playlists of songs)
+CREATE TABLE IF NOT EXISTS setlists (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  songs TEXT DEFAULT '[]',
+  createdAt TEXT DEFAULT (datetime('now')),
+  updatedAt TEXT
+);
+
+-- Example indexes for faster searches
 CREATE INDEX IF NOT EXISTS idx_songs_title ON songs(title);
+CREATE INDEX IF NOT EXISTS idx_setlists_name ON setlists(name);

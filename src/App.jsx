@@ -24,15 +24,16 @@ function App() {
   
   const scrollRef = useRef(null);
   
-  // Fetch songs from Turso on mount (if enabled)
+  // Fetch songs and setlists from Turso on mount (if enabled)
   useEffect(() => {
     if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-      fetch('/api/songs')
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data) && data.length > 0) {
-            // Transform DB rows to app song format
-            const remoteSongs = data.map(row => ({
+      Promise.all([
+        fetch('/api/songs').then(res => res.json()),
+        fetch('/api/setlists').then(res => res.json())
+      ])
+        .then(([songsData, setlistsData]) => {
+          if (Array.isArray(songsData) && songsData.length > 0) {
+            const remoteSongs = songsData.map(row => ({
               id: row.id,
               title: row.title || '',
               artist: row.artist || '',
@@ -43,6 +44,10 @@ function App() {
             }));
             setSongs(remoteSongs);
             setSelectedSong(remoteSongs[0]);
+          }
+
+          if (Array.isArray(setlistsData) && setlistsData.length > 0) {
+            setSetLists(setlistsData);
           }
         })
         .catch(err => console.warn('Failed to fetch from Turso:', err));
@@ -136,12 +141,24 @@ function App() {
       createdAt: new Date().toISOString()
     };
     setSetLists(prev => [...prev, newSetList]);
+    // Sync create to Turso (optional)
+    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
+      fetch('/api/setlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSetList)
+      }).catch(() => {});
+    }
   };
   
   const handleDeleteSetList = (id) => {
     setSetLists(prev => prev.filter(sl => sl.id !== id));
     if (currentSetList === id) {
       setCurrentSetList(null);
+    }
+    // Sync delete to Turso (optional)
+    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
+      fetch(`/api/setlists/${id}`, { method: 'DELETE' }).catch(() => {});
     }
   };
   
@@ -152,6 +169,17 @@ function App() {
       }
       return sl;
     }));
+    // Sync update to Turso (optional)
+    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
+      const setList = setLists.find(sl => sl.id === setListId);
+      if (setList) {
+        fetch(`/api/setlists/${setListId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...setList, songs: [...setList.songs, songId] })
+        }).catch(() => {});
+      }
+    }
   };
   
   const handleRemoveSongFromSetList = (setListId, songId) => {
@@ -161,6 +189,17 @@ function App() {
       }
       return sl;
     }));
+    // Sync update to Turso (optional)
+    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
+      const setList = setLists.find(sl => sl.id === setListId);
+      if (setList) {
+        fetch(`/api/setlists/${setListId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...setList, songs: setList.songs.filter(id => id !== songId) })
+        }).catch(() => {});
+      }
+    }
   };
   
   // Import/Export
