@@ -20,6 +20,7 @@ function App() {
   const [showSongForm, setShowSongForm] = useState(false);
   const [editingSong, setEditingSong] = useState(null);
   const [showSetListManager, setShowSetListManager] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const scrollRef = useRef(null);
   
@@ -47,12 +48,28 @@ function App() {
         song.id === editingSong.id ? { ...songData, id: editingSong.id } : song
       ));
       setSelectedSong({ ...songData, id: editingSong.id });
+      // Sync update to Turso (optional)
+      if (import.meta.env.VITE_TURSO_SYNC === 'true') {
+        fetch(`/api/songs/${editingSong.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...songData, id: editingSong.id })
+        }).catch(() => {});
+      }
       setEditingSong(null);
     } else {
       // Add new song
       const newSong = { ...songData, id: Date.now() };
       setSongs(prev => [...prev, newSong]);
       setSelectedSong(newSong);
+      // Sync create to Turso (optional)
+      if (import.meta.env.VITE_TURSO_SYNC === 'true') {
+        fetch('/api/songs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newSong)
+        }).catch(() => {});
+      }
     }
     setShowSongForm(false);
     setTranspose(0);
@@ -67,6 +84,10 @@ function App() {
     if (!confirm('Hapus lagu ini?')) return;
     
     setSongs(prev => prev.filter(song => song.id !== songId));
+    // Sync delete to Turso (optional)
+    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
+      fetch(`/api/songs/${songId}`, { method: 'DELETE' }).catch(() => {});
+    }
     
     // Remove from all setlists
     setSetLists(prev => prev.map(sl => ({
@@ -169,13 +190,20 @@ function App() {
   
   // Get display songs
   const getDisplaySongs = () => {
+    let base = songs;
     if (currentSetList) {
       const setList = setLists.find(sl => sl.id === currentSetList);
       if (setList) {
-        return setList.songs.map(id => songs.find(s => s.id === id)).filter(Boolean);
+        base = setList.songs.map(id => songs.find(s => s.id === id)).filter(Boolean);
       }
     }
-    return songs;
+    if (!searchQuery.trim()) return base;
+    const q = searchQuery.toLowerCase();
+    return base.filter(s =>
+      s.title?.toLowerCase().includes(q) ||
+      s.artist?.toLowerCase().includes(q) ||
+      s.lyrics?.toLowerCase().includes(q)
+    );
   };
   
   const displaySongs = getDisplaySongs();
@@ -204,6 +232,14 @@ function App() {
                 ⚙️
               </button>
             </div>
+          </div>
+          <div className="sidebar-search">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari judul, artis, atau lirik..."
+            />
           </div>
           
           <div className="song-list">

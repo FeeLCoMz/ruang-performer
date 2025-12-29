@@ -91,6 +91,26 @@ body {
   align-items: center;
 }
 
+.sidebar-search {
+  padding: 0 1.25rem 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-search input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+
+.sidebar-search input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+}
+
 .sidebar-header h3 {
   font-size: 1.15rem;
   font-weight: 700;
