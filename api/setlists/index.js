@@ -1,6 +1,19 @@
 import { getTursoClient } from '../_turso.js';
 import { randomUUID } from 'crypto';
 
+async function readJson(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      try { resolve(data ? JSON.parse(data) : {}); }
+      catch (e) { reject(e); }
+    });
+    req.on('error', reject);
+  });
+}
+
 export default async function handler(req, res) {
   const client = getTursoClient();
 
@@ -20,7 +33,8 @@ export default async function handler(req, res) {
       // Fetch all setlists
       const rows = await client.execute(
         `SELECT id, name, songs, createdAt, updatedAt
-         FROM setlists ORDER BY datetime(updatedAt) DESC NULLS LAST, datetime(createdAt) DESC`
+         FROM setlists
+         ORDER BY (updatedAt IS NULL) ASC, datetime(updatedAt) DESC, datetime(createdAt) DESC`
       );
 
       // Parse songs JSON
@@ -37,7 +51,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const body = req.body || {};
+      const body = await readJson(req);
       const id = body.id?.toString() || randomUUID();
       const now = new Date().toISOString();
       const songsJson = JSON.stringify(body.songs || []);

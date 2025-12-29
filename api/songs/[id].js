@@ -1,5 +1,18 @@
 import { getTursoClient } from '../_turso.js';
 
+async function readJson(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      try { resolve(data ? JSON.parse(data) : {}); }
+      catch (e) { reject(e); }
+    });
+    req.on('error', reject);
+  });
+}
+
 export default async function handler(req, res) {
   const client = getTursoClient();
   const { id } = req.query || {};
@@ -26,7 +39,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT' || req.method === 'PATCH') {
-      const body = req.body || {};
+      const body = await readJson(req);
       const now = new Date().toISOString();
 
       await client.execute(
