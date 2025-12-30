@@ -4,6 +4,7 @@ import YouTubeViewer from './components/YouTubeViewer';
 import AutoScroll from './components/AutoScroll';
 import SongForm from './components/SongForm';
 import SetListManager from './components/SetListManager';
+import DatabaseStatus from './components/DatabaseStatus';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { initialSongs, initialSetLists } from './data/songs';
 import './App.css';
@@ -94,37 +95,49 @@ function App() {
     setAutoScrollActive(false);
   };
   
-  const handleSaveSong = (songData) => {
-    if (editingSong) {
-      // Update existing song
+  const handleSaveSong = async (songData) => {
+    const isEditMode = !!editingSong;
+    const songId = isEditMode ? editingSong.id : Date.now().toString();
+    const updatedSong = { ...songData, id: songId };
+
+    // Update UI immediately
+    if (isEditMode) {
       setSongs(prev => prev.map(song => 
-        song.id === editingSong.id ? { ...songData, id: editingSong.id } : song
+        song.id === songId ? updatedSong : song
       ));
-      setSelectedSong({ ...songData, id: editingSong.id });
-      // Sync update to Turso (optional)
-      if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-        fetch(`/api/songs/${editingSong.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...songData, id: editingSong.id })
-        }).catch(() => {});
-      }
-      setEditingSong(null);
     } else {
-      // Add new song
-      const newSong = { ...songData, id: Date.now() };
-      setSongs(prev => [...prev, newSong]);
-      setSelectedSong(newSong);
-      // Sync create to Turso (optional)
-      if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-        fetch('/api/songs', {
-          method: 'POST',
+      setSongs(prev => [...prev, updatedSong]);
+    }
+    setSelectedSong(updatedSong);
+    
+    // Sync to database if enabled
+    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
+      try {
+        const method = isEditMode ? 'PUT' : 'POST';
+        const endpoint = isEditMode ? `/api/songs/${songId}` : '/api/songs';
+        
+        const response = await fetch(endpoint, {
+          method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newSong)
-        }).catch(() => {});
+          body: JSON.stringify(updatedSong)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error(`Failed to ${isEditMode ? 'update' : 'add'} song to database:`, errorData);
+          alert(`⚠️ Lagu disimpan secara lokal, tapi gagal sync ke database. Coba lagi dengan tombol "☁️ Sync ke DB"`);
+        } else {
+          // Successfully saved to database
+          console.log(`Song ${isEditMode ? 'updated' : 'created'} in database:`, songId);
+        }
+      } catch (error) {
+        console.error('Database sync error:', error);
+        alert(`⚠️ Lagu disimpan secara lokal, tapi gagal sync ke database: ${error.message}`);
       }
     }
+
     setShowSongForm(false);
+    if (isEditMode) setEditingSong(null);
     setTranspose(0);
   };
 
@@ -432,22 +445,13 @@ function App() {
                 </button>
               )}
             </div>
+            {dbStatus.enabled && (
+              <DatabaseStatus dbStatus={dbStatus} onRefresh={refreshDbStatus} />
+            )}
             <div className="db-info">
               <small>
                 {songs.length} lagu • {setLists.length} set list
-                {dbStatus.enabled && (
-                  <> • DB: {dbStatus.loading ? 'Checking…' : dbStatus.ok ? 'Online' : 'Offline'}
-                    {!dbStatus.loading && !dbStatus.ok && dbStatus.missingEnv && (
-                      <> (missing env)</>
-                    )}
-                  </>
-                )}
               </small>
-              {dbStatus.enabled && (
-                <button onClick={refreshDbStatus} className="btn btn-sm" style={{ marginTop: 8 }}>
-                  ↻ Refresh DB Status
-                </button>
-              )}
             </div>
           </div>
         </aside>

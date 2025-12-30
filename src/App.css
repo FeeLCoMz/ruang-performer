@@ -246,6 +246,62 @@ body {
   margin-bottom: 0.75rem;
 }
 
+.db-status {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-left: 4px solid #ffa500;
+  padding: 0.75rem;
+  margin: 0.75rem 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.db-status.disabled {
+  opacity: 0.6;
+}
+
+.db-status .status-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  padding: 0.25rem -0.25rem;
+  border-radius: 4px;
+}
+
+.db-status .status-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.db-status .status-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.db-status .status-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.db-status .status-text {
+  display: block;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.db-status .status-error {
+  display: block;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  word-break: break-word;
+}
+
+.db-status .status-details {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
 .db-info {
   text-align: center;
   padding: 0.5rem;
