@@ -6,8 +6,6 @@ import setlistsRouter from './setlists/index.js';
 import statusRouter from './status.js';
 
 const app = express();
-const PORT = 3000;
-
 app.use(cors());
 app.use(express.json());
 
@@ -19,6 +17,12 @@ app.get('/', (req, res) => {
   res.send('Turso ChordPro API is running');
 });
 
-app.listen(PORT, () => {
-  console.log(`API server listening on http://localhost:${PORT}`);
-});
+// Only listen in local dev
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`API server listening on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
