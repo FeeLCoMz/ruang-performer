@@ -125,7 +125,7 @@ export const initialSetLists = [
   {
     id: 1,
     name: "Favorit Saya",
-    songs: [1, 2, 3],
+    songs: [1, 2, 3, 4, 5, 6],
     createdAt: "2025-12-28T00:00:00.000Z"
   },
   {
@@ -135,3 +135,87 @@ export const initialSetLists = [
     createdAt: "2025-12-28T00:00:00.000Z"
   }
 ];
+
+// Additional sample songs (original examples)
+initialSongs.push(
+  {
+    id: 4,
+    title: "Mentari Senja",
+    artist: "Contoh Band",
+    youtubeId: "",
+    createdAt: "2026-01-02T00:00:00.000Z",
+    melody: "5 5 6 5 | 3 3 2 1 |",
+    lyrics: `{title: Mentari Senja}
+{artist: Contoh Band}
+{key: G}
+
+{start_of_verse}
+[G]Mentari [Em]senja turun perlahan
+[C]Menyentuh hati yang [D]rindu
+[G]Kau dan aku [Em]di bawah langit
+[C]Berjanji tuk [D]tak berpaling
+{end_of_verse}
+
+{start_of_chorus}
+[G]Bersamamu [Em]sampai pagi
+[C]Sampai hati tak [D]lagi resah
+[G]Pegang tanganku [Em]jangan lepas
+[C]Mari kita [D]jalani
+{end_of_chorus}`
+  }
+);
+
+initialSongs.push(
+  {
+    id: 5,
+    title: "Jalan Pulang",
+    artist: "Solo Artist",
+    youtubeId: "",
+    createdAt: "2026-01-02T00:00:00.000Z",
+    melody: "1 2 3 - | 3 2 1 - |",
+    lyrics: `{title: Jalan Pulang}
+{artist: Solo Artist}
+{key: Am}
+
+{start_of_verse}
+[Am]Di ujung jalan ku [F]melangkah pelan
+[C]Mencari arah yang [G]tetap
+[Am]Setiap langkah [F]ingatkan kamu
+[C]Suara hatiku [G]yang rindu
+{end_of_verse}
+
+{start_of_chorus}
+[F]Akhirnya ku [C]temukan jalan
+[G]Yang membawaku [Am]kembali
+[F]Kau tempat ku [C]berlabuh
+[G]Rumah di hatiku [Am]
+{end_of_chorus}`
+  }
+);
+
+initialSongs.push(
+  {
+    id: 6,
+    title: "Pelangi Kecil",
+    artist: "Anak Kota",
+    youtubeId: "",
+    createdAt: "2026-01-02T00:00:00.000Z",
+    melody: "3 3 2 1 | 1 1 - - |",
+    lyrics: `{title: Pelangi Kecil}
+{artist: Anak Kota}
+{key: C}
+
+{start_of_verse}
+[C]Pelangi [Am]kecil di [F]atap rumah
+[C]Warna warni [G]ceritakan harap
+[C]Anak-anak [Am]tertawa [F]riang
+[C]Langit pun [G]bersama
+{end_of_verse}
+
+{start_of_chorus}
+[C]Mari [Am]berbagi [F]cerita
+[C]Di bawah [G]pelangi kecil
+[C]Lutut [Am]basah [F]tanpa [C]takut
+{end_of_chorus}`
+  }
+);

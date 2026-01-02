@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import DatabaseStatsPage from './components/DatabaseStatsPage';
 import ChordDisplay from './components/ChordDisplay';
 import YouTubeViewer from './components/YouTubeViewer';
 import AutoScroll from './components/AutoScroll';
@@ -24,6 +25,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dbStatus, setDbStatus] = useState({ enabled: import.meta.env.VITE_TURSO_SYNC === 'true', ok: null, loading: false, error: null, missingEnv: null });
   const [syncingToDb, setSyncingToDb] = useState(false);
+  const [showStatsPage, setShowStatsPage] = useState(false);
   
   const scrollRef = useRef(null);
   
@@ -374,6 +376,9 @@ function App() {
               <button onClick={() => setShowSetListManager(true)} className="btn-icon" title="Set List">
                 ⚙️
               </button>
+              <button onClick={() => setShowStatsPage(true)} className="btn-icon" title="Statistik Database">
+                📊
+              </button>
             </div>
           </div>
           <div className="sidebar-search">
@@ -457,7 +462,16 @@ function App() {
         </aside>
         
         <main className="main">
-          <div className="controls">
+          {showStatsPage ? (
+            <>
+              <button onClick={() => setShowStatsPage(false)} className="btn" style={{ marginBottom: 16 }}>
+                ← Kembali
+              </button>
+              <DatabaseStatsPage dbStatus={dbStatus} />
+            </>
+          ) : (
+            <>
+              <div className="controls">
             <div className="control-group">
               <label>Transpose:</label>
               <button onClick={() => handleTranspose(-1)} className="btn btn-sm">♭ -1</button>
@@ -507,15 +521,16 @@ function App() {
             </div>
           )}
           
-          <div className="lyrics-section" ref={scrollRef}>
-            <ChordDisplay song={selectedSong} transpose={transpose} />
-          </div>
-          
-          <AutoScroll
-            isActive={autoScrollActive}
-            speed={scrollSpeed}
-            scrollRef={scrollRef}
-          />
+              <div className="lyrics-section" ref={scrollRef}>
+                <ChordDisplay song={selectedSong} transpose={transpose} />
+              </div>
+              <AutoScroll
+                isActive={autoScrollActive}
+                speed={scrollSpeed}
+                scrollRef={scrollRef}
+              />
+            </>
+          )}
         </main>
       </div>
       
