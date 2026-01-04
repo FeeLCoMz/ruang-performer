@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import DatabaseStatsPage from './components/DatabaseStatsPage';
 import ChordDisplay from './components/ChordDisplay';
 import YouTubeViewer from './components/YouTubeViewer';
 import AutoScroll from './components/AutoScroll';
 import SongForm from './components/SongForm';
 import SetListManager from './components/SetListManager';
-import DatabaseStatus from './components/DatabaseStatus';
 // import { useLocalStorage } from './hooks/useLocalStorage';
 import { initialSongs, initialSetLists } from './data/songs';
 import './App.css';
@@ -23,9 +21,7 @@ function App() {
   const [editingSong, setEditingSong] = useState(null);
   const [showSetListManager, setShowSetListManager] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [dbStatus, setDbStatus] = useState({ enabled: import.meta.env.VITE_TURSO_SYNC === 'true', ok: null, loading: false, error: null, missingEnv: null });
   const [syncingToDb, setSyncingToDb] = useState(false);
-  const [showStatsPage, setShowStatsPage] = useState(false);
   
   const scrollRef = useRef(null);
   
@@ -48,26 +44,7 @@ function App() {
       .catch(err => console.warn('Failed to fetch from Turso:', err));
   }, []);
 
-  const refreshDbStatus = () => {
-    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-      setDbStatus(prev => ({ ...prev, enabled: true, loading: true, error: null }));
-      fetch('/api/status')
-        .then(res => res.json())
-        .then(data => setDbStatus({
-          enabled: true,
-          ok: !!data.ok,
-          loading: false,
-          error: data.ok ? null : (data.error || null),
-          missingEnv: data.missingEnv || null,
-        }))
-        .catch(() => setDbStatus({ enabled: true, ok: false, loading: false, error: 'Network error', missingEnv: null }));
-    } else {
-      setDbStatus({ enabled: false, ok: null, loading: false, error: null, missingEnv: null });
-    }
-  };
-
-  // Check DB status on mount
-  useEffect(() => { refreshDbStatus(); }, []);
+  // Database statistics/status UI removed
   
   // Transpose handlers
   const handleTranspose = (value) => {
@@ -222,10 +199,7 @@ function App() {
   
   // Import/Export
   const handleSyncToDatabase = async () => {
-    if (!dbStatus.ok) {
-      alert('Database tidak terhubung. Cek koneksi terlebih dahulu.');
-      return;
-    }
+    // proceed with sync; API will return error if DB not configured
 
     if (!confirm(`Sync ${songs.length} lagu dan ${setLists.length} set list ke database Turso?\n\nData yang sama akan di-update.`)) {
       return;
@@ -349,15 +323,12 @@ function App() {
         <aside className="sidebar">
           <div className="sidebar-header">
             <h3>{currentSetListName}</h3>
-            <div className="header-actions">
+              <div className="header-actions">
               <button onClick={() => setShowSongForm(true)} className="btn-icon" title="Tambah Lagu">
                 ➕
               </button>
               <button onClick={() => setShowSetListManager(true)} className="btn-icon" title="Set List">
                 ⚙️
-              </button>
-              <button onClick={() => setShowStatsPage(true)} className="btn-icon" title="Statistik Database">
-                📊
               </button>
             </div>
           </div>
@@ -407,7 +378,7 @@ function App() {
           </div>
           
           <div className="sidebar-footer">
-            <div className="db-actions">
+              <div className="db-actions">
               <button onClick={handleExportDatabase} className="btn btn-sm btn-block">
                 📥 Export
               </button>
@@ -420,19 +391,15 @@ function App() {
                   style={{ display: 'none' }}
                 />
               </label>
-              {dbStatus.enabled && dbStatus.ok && (
-                <button 
-                  onClick={handleSyncToDatabase} 
-                  className="btn btn-sm btn-block btn-primary"
-                  disabled={syncingToDb}
-                >
-                  {syncingToDb ? '⏳ Syncing...' : '☁️ Sync ke DB'}
-                </button>
-              )}
+              <button 
+                onClick={handleSyncToDatabase} 
+                className="btn btn-sm btn-block btn-primary"
+                disabled={syncingToDb}
+              >
+                {syncingToDb ? '⏳ Syncing...' : '☁️ Sync ke DB'}
+              </button>
             </div>
-            {dbStatus.enabled && (
-              <DatabaseStatus dbStatus={dbStatus} onRefresh={refreshDbStatus} />
-            )}
+            
             <div className="db-info">
               <small>
                 {songs.length} lagu • {setLists.length} set list
@@ -442,14 +409,6 @@ function App() {
         </aside>
         
         <main className="main">
-          {showStatsPage ? (
-            <>
-              <button onClick={() => setShowStatsPage(false)} className="btn" style={{ marginBottom: 16 }}>
-                ← Kembali
-              </button>
-              <DatabaseStatsPage dbStatus={dbStatus} />
-            </>
-          ) : (
             <>
               <div className="controls">
             <div className="control-group">
@@ -510,7 +469,7 @@ function App() {
                 scrollRef={scrollRef}
               />
             </>
-          )}
+            </>
         </main>
       </div>
       
