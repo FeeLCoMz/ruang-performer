@@ -331,6 +331,18 @@ function App() {
                 ⚙️
               </button>
             </div>
+            <div style={{ marginTop: 8 }}>
+              <select
+                className="setlist-select"
+                value={currentSetList || ''}
+                onChange={(e) => setCurrentSetList(e.target.value || null)}
+              >
+                <option value="">Semua Lagu</option>
+                {setLists.map(sl => (
+                  <option key={sl.id} value={sl.id}>{sl.name} ({sl.songs?.length || 0})</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="sidebar-search">
             <input

@@ -72,7 +72,11 @@ const SetListManager = ({
                   >
                     <div 
                       className="setlist-item"
-                      onClick={() => setSelectedSetListId(setList.id)}
+                      onClick={() => {
+                        setSelectedSetListId(setList.id);
+                        // Propagate selection to parent and close modal
+                        if (onSelectSetList) onSelectSetList(setList.id);
+                      }}
                     >
                       <span className="setlist-name">{setList.name}</span>
                       <span className="song-count">({setList.songs.length})</span>

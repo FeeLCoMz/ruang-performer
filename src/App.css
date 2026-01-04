@@ -143,6 +143,17 @@ body {
   gap: 0.5rem;
 }
 
+.setlist-select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.setlist-select:focus { box-shadow: 0 0 0 4px rgba(129,140,248,0.08); outline: none; border-color: var(--primary); }
+
 .btn-icon {
   background: none;
   border: none;
