@@ -469,7 +469,6 @@ function App() {
                 scrollRef={scrollRef}
               />
             </>
-            </>
         </main>
       </div>
       
