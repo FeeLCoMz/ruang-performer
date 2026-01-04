@@ -1,17 +1,24 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import songsRouter from './songs/index.js';
-import setlistsRouter from './setlists/index.js';
-import statusRouter from './status.js';
+import songsHandler from './songs/index.js';
+import setlistsHandler from './setlists/index.js';
+import statusHandler from './status.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/songs', songsRouter);
-app.use('/api/setlists', setlistsRouter);
-app.use('/api/status', statusRouter);
+// Wrap handler functions so this file can be used for local Express dev
+app.use('/api/songs', (req, res, next) => {
+  Promise.resolve(songsHandler(req, res)).catch(next);
+});
+app.use('/api/setlists', (req, res, next) => {
+  Promise.resolve(setlistsHandler(req, res)).catch(next);
+});
+app.use('/api/status', (req, res, next) => {
+  Promise.resolve(statusHandler(req, res)).catch(next);
+});
 
 app.get('/', (req, res) => {
   res.send('Turso ChordPro API is running');

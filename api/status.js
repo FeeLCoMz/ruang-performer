@@ -1,9 +1,6 @@
-import express from 'express';
 import { getTursoClient } from './_turso.js';
 
-const router = express.Router();
-
-router.get('/', async (req, res) => {
+export default async function handler(req, res) {
   try {
     const client = getTursoClient();
     const result = await client.execute("SELECT datetime('now') as now");
@@ -18,6 +15,4 @@ router.get('/', async (req, res) => {
       },
     });
   }
-});
-
-export default router;
+}
