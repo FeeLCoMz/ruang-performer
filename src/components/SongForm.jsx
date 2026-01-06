@@ -173,6 +173,18 @@ Lirik baris | kedua dengan | chord dan | bar |`;
               rows={12}
             />
             {errors.lyrics && <span className="error-message">{errors.lyrics}</span>}
+            <div className="lyrics-help">
+              <strong>Tips pengisian:</strong>
+              <ul>
+                <li>Gunakan format <b>ChordPro</b>: <code>[C]Lirik baris pertama</code></li>
+                <li>Atau format standar: <code>C         G         Am        F</code> (chord di atas lirik)</li>
+                <li>Contoh ChordPro: <br /><code>[C]Ku ingin [G]selalu [Am]bersamamu [F]selamanya</code></li>
+                <li>Contoh standar:<br />
+                  <code>C         G         Am        F<br />Ku ingin selalu bersamamu selamanya</code>
+                </li>
+                <li>Gunakan <code>|</code> untuk bar/ketukan, misal: <code>[C]Lirik | [G]bar berikut</code></li>
+              </ul>
+            </div>
           </div>
 
           <div className="form-group">
