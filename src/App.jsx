@@ -4,6 +4,7 @@ import YouTubeViewer from './components/YouTubeViewer';
 import AutoScroll from './components/AutoScroll';
 
 import SetListManager from './components/SetListManager';
+import SongFormBaru from './components/SongForm';
 import { initialSongs, initialSetLists } from './data/songs';
 import './App.css';
 
@@ -415,7 +416,7 @@ function App() {
       </div>
       
       {showSongForm && (
-        <SongForm
+        <SongFormBaru
           song={editingSong}
           onSave={handleSaveSong}
           onCancel={() => {
