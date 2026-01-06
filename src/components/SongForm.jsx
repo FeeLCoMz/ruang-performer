@@ -212,8 +212,8 @@ Lirik baris | kedua dengan | chord dan | bar |`;
           </div>
           </form>
           {formData.youtubeId && (
-            <div className="youtube-viewer-section" style={{ marginLeft: '2rem', minWidth: 320, maxWidth: 480 }}>
-              <YouTubeViewer videoId={formData.youtubeId} />
+            <div className="youtube-viewer-section" style={{ marginLeft: '2rem', minWidth: 120, maxWidth: 200 }}>
+              <YouTubeViewer videoId={formData.youtubeId} minimalControls={true} />
             </div>
           )}
         </div>

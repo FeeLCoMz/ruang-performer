@@ -1,3 +1,14 @@
+/* ===== YouTube Minimal Controls (Form) ===== */
+.youtube-viewer-minimal {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.5rem 0;
+}
+.youtube-viewer-minimal .video-controls {
+  display: flex;
+  gap: 0.5rem;
+}
 /* ===== Form dan YouTube berdampingan di SongForm ===== */
 .form-youtube-row {
   display: flex;

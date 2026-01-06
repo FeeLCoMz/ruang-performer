@@ -25,7 +25,7 @@ function extractYouTubeId(input) {
   return null;
 }
 
-const YouTubeViewer = ({ videoId }) => {
+const YouTubeViewer = ({ videoId, minimalControls = false }) => {
   const [player, setPlayer] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const containerIdRef = useRef(`youtube-player-${Math.random().toString(36).slice(2,9)}`);
@@ -109,6 +109,21 @@ const YouTubeViewer = ({ videoId }) => {
     return (
       <div className="youtube-viewer">
         <div className="no-video">ID Video YouTube tidak valid</div>
+      </div>
+    );
+  }
+
+  if (minimalControls) {
+    return (
+      <div className="youtube-viewer-minimal">
+        <div className="video-controls">
+          <button onClick={handlePlayPause} className="btn btn-secondary">
+            {isPlaying ? '⏸ Pause' : '▶ Play'}
+          </button>
+          <button onClick={handleStop} className="btn btn-secondary">
+            ⏹ Stop
+          </button>
+        </div>
       </div>
     );
   }
