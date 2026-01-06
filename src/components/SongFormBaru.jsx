@@ -145,7 +145,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
               value={formData.lyrics}
               onChange={handleChange}
               className={errors.lyrics ? 'error' : ''}
-              placeholder="Copy-paste dari situs lain (chord di atas lirik) atau gunakan format ChordPro [C]lirik..."
+              placeholder={"Copy-paste dari situs lain (chord di atas lirik) atau gunakan format ChordPro [C]lirik...".replace(/<\//g, '<\\/')}
               rows={12}
             />
             {errors.lyrics && <span className="error-message">{errors.lyrics}</span>}
@@ -157,7 +157,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
               name="melody"
               value={formData.melody}
               onChange={handleChange}
-              placeholder="Masukkan melodi dalam not angka, contoh: 1 2 3 4 | 5 5 6 5 | 4 3 2 1 |\nGunakan | untuk pemisah bar, spasi untuk pemisah not\nTambahkan . setelah angka untuk not rendah (1.), apostrof untuk not tinggi (1')\nTambahkan - untuk not panjang (1--), m untuk minor (1m)"
+              placeholder={"Masukkan melodi dalam not angka, contoh: 1 2 3 4 | 5 5 6 5 | 4 3 2 1 |\nGunakan | untuk pemisah bar, spasi untuk pemisah not\nTambahkan . setelah angka untuk not rendah (1.), apostrof untuk not tinggi (1')\nTambahkan - untuk not panjang (1--), m untuk minor (1m)".replace(/<\//g, '<\\/')}
               rows={6}
             />
             <small>Format: 1 2 3 4 | 5 5 6 5 (gunakan spasi antar not, | untuk bar, . untuk rendah, ' untuk tinggi)</small>
