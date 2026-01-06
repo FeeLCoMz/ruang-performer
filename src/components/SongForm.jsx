@@ -102,14 +102,8 @@ Lirik baris | kedua dengan | chord dan | bar |`;
           <button onClick={onCancel} className="btn-close">✕</button>
         </div>
 
-        {/* YouTube Viewer Section */}
-        {formData.youtubeId && (
-          <div className="youtube-viewer-section">
-            <YouTubeViewer videoId={formData.youtubeId} />
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
+        <div className="form-youtube-row">
+          <form onSubmit={handleSubmit} style={{ flex: 1 }}>
           <div className="form-group">
             <label htmlFor="title">Judul Lagu *</label>
             <input
@@ -216,7 +210,13 @@ Lirik baris | kedua dengan | chord dan | bar |`;
               Batal
             </button>
           </div>
-        </form>
+          </form>
+          {formData.youtubeId && (
+            <div className="youtube-viewer-section" style={{ marginLeft: '2rem', minWidth: 320, maxWidth: 480 }}>
+              <YouTubeViewer videoId={formData.youtubeId} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
