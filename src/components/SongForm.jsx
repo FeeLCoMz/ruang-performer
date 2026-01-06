@@ -153,7 +153,24 @@ Lirik baris | kedua dengan | chord dan | bar |`;
 
           <div className="form-group">
             <div className="textarea-header">
-              <label htmlFor="lyrics">Lirik & Chord *</label>
+              <label htmlFor="lyrics" style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
+                Lirik & Chord *
+                <span className="help-popover-container">
+                  <span className="help-icon" tabIndex="0">❓</span>
+                  <span className="help-popover">
+                    <strong>Tips pengisian:</strong>
+                    <ul>
+                      <li>Format <b>ChordPro</b>: <code>[C]Lirik baris pertama</code></li>
+                      <li>Atau format standar: <code>C         G         Am        F</code> (chord di atas lirik)</li>
+                      <li>Contoh ChordPro: <br /><code>[C]Ku ingin [G]selalu [Am]bersamamu [F]selamanya</code></li>
+                      <li>Contoh standar:<br />
+                        <code>C         G         Am        F<br />Ku ingin selalu bersamamu selamanya</code>
+                      </li>
+                      <li>Gunakan <code>|</code> untuk bar/ketukan, misal: <code>[C]Lirik | [G]bar berikut</code></li>
+                    </ul>
+                  </span>
+                </span>
+              </label>
               <div className="template-buttons">
                 <button type="button" onClick={insertTemplate} className="btn btn-sm">
                   📋 ChordPro
