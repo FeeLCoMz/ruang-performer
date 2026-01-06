@@ -1,3 +1,14 @@
+/* ===== YouTube Viewer Section in SongForm ===== */
+.youtube-viewer-section {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1rem 0.5rem;
+}
 /* ================================
    RoNz Chord Pro - Professional CSS
    Modern, Clean, Responsive Design

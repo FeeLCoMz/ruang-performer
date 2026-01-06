@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import YouTubeViewer from './YouTubeViewer';
 
 const SongForm = ({ song, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -100,6 +101,13 @@ Lirik baris | kedua dengan | chord dan | bar |`;
           <h2>{song ? '✏️ Edit Lagu' : '✨ Tambah Lagu Baru'}</h2>
           <button onClick={onCancel} className="btn-close">✕</button>
         </div>
+
+        {/* YouTube Viewer Section */}
+        {formData.youtubeId && (
+          <div className="youtube-viewer-section">
+            <YouTubeViewer videoId={formData.youtubeId} />
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
