@@ -64,16 +64,31 @@ const SongForm = ({ song, onSave, onCancel }) => {
 {tempo: 120}
 {capo: 0}
 
+{start_of_intro}
+[C]Intro baris | [G]dengan chord |
+{end_of_intro}
+
 {start_of_verse}
 [C]Lirik baris | [G]pertama dengan | [Am]chord dan | [F]bar |
 [C]Lirik baris | [G]kedua dengan | [Am]chord dan | [F]bar |
 {end_of_verse}
 
+{start_of_pre-chorus}
+[Dm]Pre-chorus | [G]dengan lirik |
+{end_of_pre-chorus}
+
 {start_of_chorus}
 [C]Ini bagian | [G]chorus |
 [Am]Dengan lirik | [F]yang catchy |
-{end_of_chorus}`;
+{end_of_chorus}
 
+{start_of_bridge}
+[Em]Bridge | [F]bagian |
+{end_of_bridge}
+
+{start_of_outro}
+[C]Outro | [G]bagian |
+{end_of_outro}`;
     setFormData(prev => ({ ...prev, lyrics: template }));
   };
 
@@ -85,12 +100,33 @@ Time: 4/4
 Tempo: 120
 Capo: 0
 
+Intro:
+C              G
+Intro baris dengan chord
+
+Verse:
 C              G              Am             F
 Lirik baris | pertama dengan | chord dan | bar |
-
 C              G              Am             F
-Lirik baris | kedua dengan | chord dan | bar |`;
+Lirik baris | kedua dengan | chord dan | bar |
 
+Pre-Chorus:
+Dm             G
+Pre-chorus dengan lirik
+
+Chorus:
+C              G              Am             F
+Ini bagian | chorus |
+Am             F
+Dengan lirik | yang catchy |
+
+Bridge:
+Em             F
+Bridge bagian
+
+Outro:
+C              G
+Outro bagian`;
     setFormData(prev => ({ ...prev, lyrics: template }));
   };
 
@@ -212,8 +248,8 @@ Lirik baris | kedua dengan | chord dan | bar |`;
           </div>
           </form>
           {formData.youtubeId && (
-            <div className="youtube-viewer-section" style={{ marginLeft: '2rem', minWidth: 120, maxWidth: 200 }}>
-              <YouTubeViewer videoId={formData.youtubeId} minimalControls={true} />
+            <div className="youtube-viewer-section" style={{ marginLeft: '2rem', minWidth: 320, maxWidth: 480 }}>
+              <YouTubeViewer videoId={formData.youtubeId} />
             </div>
           )}
         </div>
