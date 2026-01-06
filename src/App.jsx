@@ -509,10 +509,10 @@ function App() {
           }}
         />
       )}
+      <footer className="app-footer">
+        <span>Versi aplikasi: {import.meta.env.VITE_APP_VERSION}</span>
+      </footer>
     </div>
-    <footer className="app-footer">
-      <span>Versi aplikasi: {import.meta.env.VITE_APP_VERSION}</span>
-    </footer>
   );
 }
 
