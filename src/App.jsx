@@ -415,7 +415,7 @@ function App() {
       </div>
       
       {showSongForm && (
-        {/* <SongFormBaru ... dihapus, ganti ke SongForm jika perlu */}
+        <SongForm
           song={editingSong}
           onSave={handleSaveSong}
           onCancel={() => {
