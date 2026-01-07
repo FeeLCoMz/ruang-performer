@@ -22,6 +22,7 @@ function App() {
   const [showSetListManager, setShowSetListManager] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [syncingToDb, setSyncingToDb] = useState(false);
+  const [runtimeErrors, setRuntimeErrors] = useState([]);
   const [sortBy, setSortBy] = useState('title-asc');
   const scrollRef = useRef(null);
   const isInitialLoad = useRef(true);
@@ -42,6 +43,29 @@ function App() {
       })
       .catch(err => console.warn('Failed to fetch from Turso:', err));
   }, []);
+
+  // Collect runtime errors without killing the UI
+  useEffect(() => {
+    const handleError = (event) => {
+      const message = event?.message || event?.reason?.message || 'Unknown error';
+      const detail = event?.error?.stack || event?.reason?.stack || '';
+      setRuntimeErrors(prev => {
+        const next = [{ id: Date.now(), message, detail }, ...prev];
+        return next.slice(0, 4);
+      });
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleError);
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleError);
+    };
+  }, []);
+
+  const dismissError = (id) => {
+    setRuntimeErrors(prev => prev.filter(err => err.id !== id));
+  };
 
   const handleTranspose = (value) => {
     setTranspose(prev => {
@@ -541,6 +565,71 @@ function App() {
             setShowSetListManager(false);
           }}
         />
+      )}
+
+      {runtimeErrors.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '1rem',
+            right: '1rem',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            maxWidth: '420px'
+          }}
+        >
+          {runtimeErrors.map(err => (
+            <div
+              key={err.id}
+              style={{
+                background: 'rgba(31, 41, 55, 0.95)',
+                color: '#f8fafc',
+                border: '1px solid rgba(99, 102, 241, 0.4)',
+                boxShadow: '0 12px 24px -6px rgba(0,0,0,0.6)',
+                borderRadius: '10px',
+                padding: '0.9rem 1rem',
+                backdropFilter: 'blur(8px)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                <strong style={{ color: '#f472b6' }}>Error</strong>
+                <button
+                  onClick={() => dismissError(err.id)}
+                  style={{
+                    background: 'transparent',
+                    color: '#e2e8f0',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              <div style={{ marginTop: '0.25rem', fontSize: '0.95rem', color: '#e2e8f0' }}>
+                {err.message}
+              </div>
+              {err.detail && (
+                <pre
+                  style={{
+                    marginTop: '0.5rem',
+                    maxHeight: '160px',
+                    overflow: 'auto',
+                    fontSize: '0.75rem',
+                    color: '#cbd5e1',
+                    background: 'rgba(15, 23, 42, 0.7)',
+                    padding: '0.5rem',
+                    borderRadius: '6px'
+                  }}
+                >
+                  {err.detail}
+                </pre>
+              )}
+            </div>
+          ))}
+        </div>
       )}
       <footer className="app-footer">
         <span>Versi aplikasi: {import.meta.env.VITE_APP_VERSION}</span>
