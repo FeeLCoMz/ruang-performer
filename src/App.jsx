@@ -22,6 +22,7 @@ function App() {
   const [showSetListManager, setShowSetListManager] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [syncingToDb, setSyncingToDb] = useState(false);
+  const [sortBy, setSortBy] = useState('title-asc');
   const scrollRef = useRef(null);
   const isInitialLoad = useRef(true);
 
@@ -266,13 +267,38 @@ function App() {
         base = setList.songs.map(id => songs.find(s => s.id === id)).filter(Boolean);
       }
     }
-    if (!searchQuery.trim()) return base;
-    const q = searchQuery.toLowerCase();
-    return base.filter(s =>
-      s.title?.toLowerCase().includes(q) ||
-      s.artist?.toLowerCase().includes(q) ||
-      s.lyrics?.toLowerCase().includes(q)
-    );
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      base = base.filter(s =>
+        s.title?.toLowerCase().includes(q) ||
+        s.artist?.toLowerCase().includes(q) ||
+        s.lyrics?.toLowerCase().includes(q)
+      );
+    }
+    
+    // Apply sorting
+    const sorted = [...base];
+    switch (sortBy) {
+      case 'title-asc':
+        sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+        break;
+      case 'title-desc':
+        sorted.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+        break;
+      case 'artist-asc':
+        sorted.sort((a, b) => (a.artist || '').localeCompare(b.artist || ''));
+        break;
+      case 'newest':
+        sorted.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return dateB - dateA;
+        });
+        break;
+      default:
+        break;
+    }
+    return sorted;
   };
   
   const displaySongs = getDisplaySongs();
@@ -321,6 +347,19 @@ function App() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari judul, artis, atau lirik..."
             />
+          </div>
+          <div style={{ padding: '0 0.5rem 0.5rem' }}>
+            <select
+              className="setlist-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{ fontSize: '0.85rem' }}
+            >
+              <option value="title-asc">📋 Judul A-Z</option>
+              <option value="title-desc">📋 Judul Z-A</option>
+              <option value="artist-asc">🎤 Artis A-Z</option>
+              <option value="newest">🕒 Terbaru</option>
+            </select>
           </div>
           
           <div className="song-list">
