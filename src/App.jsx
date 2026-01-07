@@ -30,6 +30,7 @@ function App() {
   const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
   const [showSetListPopup, setShowSetListPopup] = useState(false);
   const [showSidebarNav, setShowSidebarNav] = useState(true);
+  const [activeBottomTab, setActiveBottomTab] = useState('library');
   const scrollRef = useRef(null);
   const isInitialLoad = useRef(true);
 
@@ -738,6 +739,168 @@ function App() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Bottom Navigation Bar */}
+      <nav className="bottom-nav">
+        <button
+          className={`bottom-nav-item ${activeBottomTab === 'library' ? 'active' : ''}`}
+          onClick={() => setActiveBottomTab('library')}
+          title="Perpustakaan Lagu"
+        >
+          <span className="bottom-nav-icon">📚</span>
+          <span className="bottom-nav-label">Perpustakaan</span>
+        </button>
+        <button
+          className={`bottom-nav-item ${activeBottomTab === 'setlist' ? 'active' : ''}`}
+          onClick={() => setActiveBottomTab('setlist')}
+          title="Daftar Putar"
+        >
+          <span className="bottom-nav-icon">📋</span>
+          <span className="bottom-nav-label">Daftar Putar</span>
+        </button>
+        <button
+          className={`bottom-nav-item ${activeBottomTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveBottomTab('settings')}
+          title="Pengaturan"
+        >
+          <span className="bottom-nav-icon">⚙️</span>
+          <span className="bottom-nav-label">Pengaturan</span>
+        </button>
+      </nav>
+
+      {/* Bottom Nav Panels */}
+      {activeBottomTab === 'library' && (
+        <div className="bottom-nav-panel">
+          <div className="panel-header">
+            <h3>📚 Perpustakaan Lagu</h3>
+          </div>
+          <div className="panel-search">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari lagu..."
+            />
+          </div>
+          <div className="panel-sort">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{ width: '100%' }}
+            >
+              <option value="title-asc">📋 Judul A-Z</option>
+              <option value="title-desc">📋 Judul Z-A</option>
+              <option value="artist-asc">🎤 Artis A-Z</option>
+              <option value="newest">🕒 Terbaru</option>
+            </select>
+          </div>
+          <div className="panel-songs">
+            {displaySongs.length === 0 ? (
+              <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                {songs.length === 0 ? 'Tidak ada lagu. Buat yang baru!' : 'Tidak ada hasil pencarian.'}
+              </div>
+            ) : (
+              displaySongs.map(song => (
+                <div
+                  key={song.id}
+                  className={`panel-song-item ${selectedSong?.id === song.id ? 'active' : ''}`}
+                  onClick={() => handleSelectSong(song)}
+                >
+                  <div>
+                    <div className="panel-song-title">{song.title}</div>
+                    <div className="panel-song-artist">{song.artist}</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeBottomTab === 'setlist' && (
+        <div className="bottom-nav-panel">
+          <div className="panel-header">
+            <h3>📋 Daftar Putar</h3>
+            <button
+              className="btn-icon"
+              onClick={() => setShowSetListManager(true)}
+              title="Kelola Daftar Putar"
+            >
+              ⚙️
+            </button>
+          </div>
+          <div className="panel-setlists">
+            {setLists.length === 0 ? (
+              <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                Belum ada daftar putar. Buat yang baru!
+              </div>
+            ) : (
+              setLists.map(sl => (
+                <div
+                  key={sl.id}
+                  className={`panel-setlist-item ${currentSetList === sl.id ? 'active' : ''}`}
+                  onClick={() => setCurrentSetList(sl.id)}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div className="panel-setlist-name">{sl.name}</div>
+                    <div className="panel-setlist-count">{sl.songs?.length || 0} lagu</div>
+                  </div>
+                </div>
+              ))
+            )}
+            <button
+              className="btn btn-block btn-primary"
+              onClick={() => setShowSetListManager(true)}
+              style={{ margin: '1rem' }}
+            >
+              ➕ Buat Daftar Putar Baru
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeBottomTab === 'settings' && (
+        <div className="bottom-nav-panel">
+          <div className="panel-header">
+            <h3>⚙️ Pengaturan</h3>
+          </div>
+          <div className="panel-settings">
+            <div className="settings-section">
+              <h4>Database</h4>
+              <button
+                className="btn btn-sm btn-block"
+                onClick={handleExportDatabase}
+              >
+                📥 Export Database
+              </button>
+              <label className="btn btn-sm btn-block" style={{ margin: '0.5rem 0 0' }}>
+                📤 Import Database
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportDatabase}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+            <div className="settings-section">
+              <h4>Sinkronisasi</h4>
+              <button
+                className="btn btn-sm btn-block btn-primary"
+                onClick={handleSyncToDatabase}
+                disabled={syncingToDb}
+              >
+                {syncingToDb ? '⏳ Syncing...' : '☁️ Sinkronkan ke Database'}
+              </button>
+            </div>
+            <div className="settings-section">
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '1rem' }}>
+                {songs.length} lagu • {setLists.length} daftar putar
+              </div>
+            </div>
+          </div>
         </div>
       )}
       <footer className="app-footer">

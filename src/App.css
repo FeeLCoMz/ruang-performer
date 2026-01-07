@@ -111,6 +111,269 @@
   font-size: 0.95rem;
   border-top: 1px solid var(--border);
   margin-top: 2rem;
+  padding-bottom: 100px;
+}
+
+/* ===== Bottom Navigation Bar ===== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: var(--bg-elevated);
+  border-top: 2px solid var(--border);
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 500;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav-item {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  font-size: 0.85rem;
+}
+
+.bottom-nav-item:hover {
+  color: var(--text);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.bottom-nav-item.active {
+  color: var(--primary);
+}
+
+.bottom-nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: 0 0 2px 2px;
+}
+
+.bottom-nav-icon {
+  font-size: 1.5rem;
+  display: block;
+}
+
+.bottom-nav-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== Bottom Nav Panel ===== */
+.bottom-nav-panel {
+  position: fixed;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  background: var(--bg);
+  border-top: 2px solid var(--border);
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 400;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.panel-search {
+  padding: 0.75rem 1rem;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-search input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-dark);
+  color: var(--text);
+  outline: none;
+  transition: var(--transition);
+}
+
+.panel-search input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.panel-sort {
+  padding: 0.5rem 1rem;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-sort select {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-dark);
+  color: var(--text);
+  outline: none;
+  transition: var(--transition);
+  font-size: 0.9rem;
+}
+
+.panel-sort select:focus {
+  border-color: var(--primary);
+}
+
+.panel-songs {
+  padding: 0.5rem;
+}
+
+.panel-song-item {
+  padding: 1rem;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 2px solid transparent;
+}
+
+.panel-song-item:hover {
+  background: var(--card-hover);
+  transform: translateX(4px);
+}
+
+.panel-song-item.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.panel-song-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.panel-song-artist {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.panel-setlists {
+  padding: 0.5rem;
+}
+
+.panel-setlist-item {
+  padding: 1rem;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 2px solid transparent;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-setlist-item:hover {
+  background: var(--card-hover);
+  transform: translateX(4px);
+}
+
+.panel-setlist-item.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border-color: var(--primary);
+}
+
+.panel-setlist-name {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.panel-setlist-count {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.panel-settings {
+  padding: 1.5rem;
+}
+
+.settings-section {
+  margin-bottom: 1.5rem;
+}
+
+.settings-section h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary);
+}
+
+.settings-section button,
+.settings-section label {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+/* ===== App Footer ===== */
+.app-footer {
+  width: 100%;
+  text-align: center;
+  padding: 1rem 0;
+  background: var(--card);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
 }
 /* ===== YouTube Viewer Section in SongForm ===== */
 .youtube-viewer-section {
