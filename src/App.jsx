@@ -27,6 +27,7 @@ function App() {
   const [lyricsPreview, setLyricsPreview] = useState('');
   const [lyricsLoading, setLyricsLoading] = useState(false);
   const [lyricsError, setLyricsError] = useState('');
+  const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
   const scrollRef = useRef(null);
   const isInitialLoad = useRef(true);
 
@@ -420,6 +421,30 @@ function App() {
             </select>
           </div>
           
+          {setLists.length > 0 && (
+            <div className="setlist-checkbox-panel">
+              <div className="setlist-checkbox-header">Tambah ke:</div>
+              <div className="setlist-checkboxes">
+                {setLists.map(sl => (
+                  <label key={sl.id} className="setlist-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={selectedSetListsForAdd.includes(sl.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedSetListsForAdd(prev => [...prev, sl.id]);
+                        } else {
+                          setSelectedSetListsForAdd(prev => prev.filter(id => id !== sl.id));
+                        }
+                      }}
+                    />
+                    <span>{sl.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="song-list">
             {displaySongs.length === 0 ? (
               <div style={{ padding: '1rem', textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
@@ -456,16 +481,18 @@ function App() {
                   >
                     🗑️
                   </button>
-                  {currentSetList && !setLists.find(sl => String(sl.id) === String(currentSetList))?.songs?.includes(song.id) && (
+                  {selectedSetListsForAdd.length > 0 && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleAddSongToSetList(currentSetList, song.id);
+                        selectedSetListsForAdd.forEach(slId => {
+                          handleAddSongToSetList(slId, song.id);
+                        });
                       }}
                       className="btn-icon-sm btn-success"
-                      title="Tambah ke Setlist"
+                      title="Tambah ke Setlist Terpilih"
                     >
-                      ➕ Setlist
+                      ➕
                     </button>
                   )}
                 </div>
@@ -540,14 +567,12 @@ function App() {
             </div>
             
             <div className="control-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={showYouTube}
-                  onChange={(e) => setShowYouTube(e.target.checked)}
-                />
-                YouTube
-              </label>
+              <button 
+                onClick={() => setShowYouTube(!showYouTube)}
+                className={`btn ${showYouTube ? 'btn-primary' : ''}`}
+              >
+                {showYouTube ? '📺 Sembunyikan YouTube' : '📺 Tampilkan YouTube'}
+              </button>
             </div>
           </div>
           

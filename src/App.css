@@ -384,10 +384,70 @@ body {
   border-color: var(--accent);
 }
 
+.btn-icon-sm.btn-success {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.btn-icon-sm.btn-success:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--success);
+}
+
+.setlist-checkbox-panel {
+  padding: 0.75rem 1rem;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.setlist-checkbox-header {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.setlist-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.setlist-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius);
+  transition: var(--transition);
+}
+
+.setlist-checkbox-label:hover {
+  background: var(--card-hover);
+}
+
+.setlist-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.setlist-checkbox-label span {
+  flex: 1;
+}
+
 .song-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
+  max-height: calc(100vh - 400px);
 }
 
 .song-item {
