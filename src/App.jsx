@@ -385,7 +385,13 @@ function App() {
           )}
           
               <div className="lyrics-section" ref={scrollRef}>
-                {selectedSong && <ChordDisplay song={selectedSong} transpose={transpose} />}
+                {selectedSong ? (
+                  <ChordDisplay song={selectedSong} transpose={transpose} />
+                ) : (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                    <h3>Pilih lagu dari daftar untuk melihat chord dan lirik</h3>
+                  </div>
+                )}
               </div>
               <AutoScroll
                 isActive={autoScrollActive}
