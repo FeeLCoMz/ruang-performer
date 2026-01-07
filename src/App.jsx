@@ -237,6 +237,25 @@ function App() {
     ? setLists.find(sl => sl.id === currentSetList)?.name 
     : 'Semua Lagu';
   
+  if (songs.length === 0 && setLists.length === 0) {
+    return (
+      <div className="app">
+        <header className="header">
+          <div className="header-content">
+            <h1>🎸 RoNz Chord Pro</h1>
+            <p>Professional Chord & Lyrics App</p>
+          </div>
+        </header>
+        <main className="main">
+          <div style={{ textAlign: 'center', marginTop: 40 }}>
+            <h2>Tidak ada data lagu atau setlist</h2>
+            <p>Silakan tambah lagu atau import database.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+  
   return (
     <div className="app">
       <header className="header">
