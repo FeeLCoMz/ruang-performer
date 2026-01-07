@@ -99,6 +99,30 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
             />
             {errors.artist && <span className="error-message">{errors.artist}</span>}
           </div>
+          <div className="form-group" style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => {
+                const q = encodeURIComponent(`${formData.title} ${formData.artist} lirik`);
+                window.open(`https://www.google.com/search?q=${q}`, '_blank');
+              }}
+              disabled={!formData.title && !formData.artist}
+            >
+              🔍 Cari Lirik di Google
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => {
+                const q = encodeURIComponent(`${formData.title} ${formData.artist}`);
+                window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+              }}
+              disabled={!formData.title && !formData.artist}
+            >
+              🎵 Cari Lagu di YouTube
+            </button>
+          </div>
           <div className="form-group">
             <label htmlFor="youtubeId">YouTube Video ID (Opsional)</label>
             <input
