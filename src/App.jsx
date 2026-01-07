@@ -28,6 +28,7 @@ function App() {
   const [lyricsLoading, setLyricsLoading] = useState(false);
   const [lyricsError, setLyricsError] = useState('');
   const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
+  const [showSetListPopup, setShowSetListPopup] = useState(false);
   const scrollRef = useRef(null);
   const isInitialLoad = useRef(true);
 
@@ -407,43 +408,32 @@ function App() {
               placeholder="Cari judul, artis, atau lirik..."
             />
           </div>
-          <div style={{ padding: '0 0.5rem 0.5rem' }}>
+          <div style={{ padding: '0 0.5rem 0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <select
               className="setlist-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              style={{ fontSize: '0.85rem' }}
+              style={{ fontSize: '0.85rem', flex: 1 }}
             >
               <option value="title-asc">📋 Judul A-Z</option>
               <option value="title-desc">📋 Judul Z-A</option>
               <option value="artist-asc">🎤 Artis A-Z</option>
               <option value="newest">🕒 Terbaru</option>
             </select>
+            {setLists.length > 0 && (
+              <button
+                className="btn-icon"
+                onClick={() => setShowSetListPopup(!showSetListPopup)}
+                title="Pilih Setlist untuk Tambah Cepat"
+                style={{ position: 'relative' }}
+              >
+                📌
+                {selectedSetListsForAdd.length > 0 && (
+                  <span className="setlist-badge">{selectedSetListsForAdd.length}</span>
+                )}
+              </button>
+            )}
           </div>
-          
-          {setLists.length > 0 && (
-            <div className="setlist-checkbox-panel">
-              <div className="setlist-checkbox-header">Tambah ke:</div>
-              <div className="setlist-checkboxes">
-                {setLists.map(sl => (
-                  <label key={sl.id} className="setlist-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={selectedSetListsForAdd.includes(sl.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedSetListsForAdd(prev => [...prev, sl.id]);
-                        } else {
-                          setSelectedSetListsForAdd(prev => prev.filter(id => id !== sl.id));
-                        }
-                      }}
-                    />
-                    <span>{sl.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
           
           <div className="song-list">
             {displaySongs.length === 0 ? (
@@ -624,6 +614,51 @@ function App() {
             setShowSetListManager(false);
           }}
         />
+      )}
+
+      {showSetListPopup && (
+        <div className="setlist-popup-overlay" onClick={() => setShowSetListPopup(false)}>
+          <div className="setlist-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="setlist-popup-header">
+              <h3>Pilih Setlist</h3>
+              <button className="btn-close" onClick={() => setShowSetListPopup(false)}>
+                ✕
+              </button>
+            </div>
+            <div className="setlist-popup-body">
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                Pilih setlist, lalu klik tombol ➕ pada lagu untuk menambahkannya.
+              </p>
+              <div className="setlist-checkboxes">
+                {setLists.map(sl => (
+                  <label key={sl.id} className="setlist-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={selectedSetListsForAdd.includes(sl.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedSetListsForAdd(prev => [...prev, sl.id]);
+                        } else {
+                          setSelectedSetListsForAdd(prev => prev.filter(id => id !== sl.id));
+                        }
+                      }}
+                    />
+                    <span>{sl.name}</span>
+                  </label>
+                ))}
+              </div>
+              {selectedSetListsForAdd.length > 0 && (
+                <button
+                  className="btn btn-sm btn-block btn-primary"
+                  onClick={() => setShowSetListPopup(false)}
+                  style={{ marginTop: '1rem' }}
+                >
+                  Selesai ({selectedSetListsForAdd.length} dipilih)
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {runtimeErrors.length > 0 && (
