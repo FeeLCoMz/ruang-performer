@@ -556,48 +556,6 @@ function App() {
               <YouTubeViewer videoId={selectedSong.youtubeId} />
             </div>
           )}
-
-          {selectedSong && (
-            <div className="search-card">
-              <div className="search-card-header">
-                <div>
-                  <div className="search-title">Cari cepat</div>
-                  <div className="search-subtitle">{selectedSong.title} {selectedSong.artist ? `• ${selectedSong.artist}` : ''}</div>
-                </div>
-                <div className="search-links">
-                  <a
-                    className="search-link"
-                    href={`https://www.google.com/search?q=${encodeURIComponent(`${selectedSong.title} ${selectedSong.artist || ''} lirik`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    🔍 Google Lirik
-                  </a>
-                  <a
-                    className="search-link"
-                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${selectedSong.title} ${selectedSong.artist || ''}`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    ▶ YouTube
-                  </a>
-                </div>
-              </div>
-
-              <div className="search-body">
-                {lyricsLoading && <div className="search-status">Mengambil lirik otomatis...</div>}
-                {!lyricsLoading && lyricsError && (
-                  <div className="search-status error">{lyricsError}</div>
-                )}
-                {!lyricsLoading && lyricsPreview && (
-                  <div className="lyrics-preview">
-                    <div className="preview-label">Lirik otomatis (pratinjau)</div>
-                    <pre className="preview-text">{lyricsPreview.slice(0, 800)}</pre>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
           
               <div className="lyrics-section" ref={scrollRef}>
                 {selectedSong ? (
