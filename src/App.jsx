@@ -23,6 +23,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [syncingToDb, setSyncingToDb] = useState(false);
   const scrollRef = useRef(null);
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     Promise.all([
@@ -42,29 +43,36 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
     if (songs.length === 0 && setLists.length === 0) return;
-    const sync = async () => {
-      setSyncingToDb(true);
-      try {
-        await fetch('/api/songs/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ songs })
-        });
-        for (const setList of setLists) {
-          await fetch('/api/setlists', {
+    const timeout = setTimeout(() => {
+      const sync = async () => {
+        setSyncingToDb(true);
+        try {
+          await fetch('/api/songs/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(setList)
+            body: JSON.stringify({ songs })
           });
+          for (const setList of setLists) {
+            await fetch('/api/setlists', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(setList)
+            });
+          }
+        } catch (err) {
+          console.error('Auto-sync gagal:', err);
+        } finally {
+          setSyncingToDb(false);
         }
-      } catch (err) {
-        console.error('Auto-sync gagal:', err);
-      } finally {
-        setSyncingToDb(false);
-      }
-    };
-    sync();
+      };
+      sync();
+    }, 1000);
+    return () => clearTimeout(timeout);
   }, [songs, setLists]);
 
   const handleTranspose = (value) => {
