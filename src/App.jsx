@@ -406,17 +406,25 @@ function App() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <select
-                  className="setlist-select"
-                  value={currentSetList || ''}
-                  onChange={(e) => setCurrentSetList(e.target.value || null)}
-                  style={{ flex: 1 }}
-                >
-                  <option value="">📚 Semua Lagu</option>
+                <div className="tab-nav" style={{ display: 'flex', width: '100%' }}>
+                  <button
+                    className={`tab-btn${currentSetList === null ? ' active' : ''}`}
+                    style={{ flex: 1 }}
+                    onClick={() => setCurrentSetList(null)}
+                  >
+                    📚 Library
+                  </button>
                   {setLists.map(sl => (
-                    <option key={sl.id} value={sl.id}>📋 {sl.name} ({sl.songs?.length || 0})</option>
+                    <button
+                      key={sl.id}
+                      className={`tab-btn${currentSetList === sl.id ? ' active' : ''}`}
+                      style={{ flex: 1 }}
+                      onClick={() => setCurrentSetList(sl.id)}
+                    >
+                      📋 {sl.name}
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { parseChordPro, transposeChord, getAllChords } from '../utils/chordUtils';
 import { parseMelodyString, transposeMelody, formatNoteDisplay, extractMelodyFromLyrics } from '../utils/musicNotationUtils';
-import PianoChordDiagram from './PianoChordDiagram';
+// ...existing code...
 
 const ChordDisplay = ({ song, transpose = 0 }) => {
   const [parsedSong, setParsedSong] = useState(null);
@@ -238,7 +238,7 @@ const ChordDisplay = ({ song, transpose = 0 }) => {
             <span key={idx} className="chord-badge piano-chord-badge">
               {transposeChord(chord, transpose)}
               <div className="piano-chord-popup">
-                <PianoChordDiagram chord={transposeChord(chord, transpose)} />
+                {/* PianoChordDiagram removed as requested */}
               </div>
             </span>
           ))}
