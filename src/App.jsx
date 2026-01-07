@@ -315,6 +315,18 @@ function App() {
                   >
                     🗑️
                   </button>
+                  {currentSetList && !setLists.find(sl => sl.id === currentSetList)?.songs?.includes(song.id) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddSongToSetList(currentSetList, song.id);
+                      }}
+                      className="btn-icon-sm btn-success"
+                      title="Tambah ke Setlist"
+                    >
+                      ➕ Setlist
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
