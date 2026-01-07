@@ -1,7 +1,7 @@
 {
   "name": "ronz-chord-pro",
   "private": true,
-  "version": "2.0.3",
+  "version": "2.0.5",
   "type": "module",
   "description": "Professional chord and lyrics application with transpose, autoscroll, YouTube integration, and set list management",
   "author": "RoNz",
