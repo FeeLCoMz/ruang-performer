@@ -315,7 +315,7 @@ function App() {
                   >
                     🗑️
                   </button>
-                  {currentSetList && !setLists.find(sl => sl.id === currentSetList)?.songs?.includes(song.id) && (
+                  {currentSetList && !setLists.find(sl => String(sl.id) === String(currentSetList))?.songs?.includes(song.id) && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
