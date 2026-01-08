@@ -1,3 +1,7 @@
+import SettingsModal from './components/SettingsModal';
+  // ...existing code...
+
+  // Render SettingsModal di dalam return utama
 import React, { useState, useRef, useEffect } from 'react';
 import ChordDisplay from './components/ChordDisplay';
 import YouTubeViewer from './components/YouTubeViewer';
@@ -6,12 +10,28 @@ import AutoScroll from './components/AutoScroll';
 import SetListManager from './components/SetListManager';
 import HelpModal from './components/HelpModal';
 import SongFormBaru from './components/SongForm';
+import SongListItem from './components/SongListItem';
 import { initialSongs, initialSetLists } from './data/songs';
 import './App.css';
 
 function App() {
-  const [songs, setSongs] = useState([]);
-  const [setLists, setSetLists] = useState([]);
+  // Cek localStorage saat inisialisasi
+  const getInitialSongs = () => {
+    try {
+      const data = localStorage.getItem('ronz_songs');
+      if (data) return JSON.parse(data);
+    } catch {}
+    return [];
+  };
+  const getInitialSetLists = () => {
+    try {
+      const data = localStorage.getItem('ronz_setlists');
+      if (data) return JSON.parse(data);
+    } catch {}
+    return [];
+  };
+  const [songs, setSongs] = useState(getInitialSongs);
+  const [setLists, setSetLists] = useState(getInitialSetLists);
   const [selectedSong, setSelectedSong] = useState(null);
   const [transpose, setTranspose] = useState(0);
   const [autoScrollActive, setAutoScrollActive] = useState(false);
@@ -21,6 +41,8 @@ function App() {
   const [showSongForm, setShowSongForm] = useState(false);
   const [editingSong, setEditingSong] = useState(null);
   const [showSetListManager, setShowSetListManager] = useState(false);
+  const [showSetListMenu, setShowSetListMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [syncingToDb, setSyncingToDb] = useState(false);
   const [runtimeErrors, setRuntimeErrors] = useState([]);
@@ -30,27 +52,82 @@ function App() {
   const [lyricsError, setLyricsError] = useState('');
   const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
   const [showSetListPopup, setShowSetListPopup] = useState(false);
-  const [showSidebarNav, setShowSidebarNav] = useState(true);
+  // const [showSidebarNav, setShowSidebarNav] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const scrollRef = useRef(null);
   const isInitialLoad = useRef(true);
 
+  // Saat online/load, merge data backend dan lokal berdasarkan updatedAt
   useEffect(() => {
-    Promise.all([
-      fetch('/api/songs').then(res => res.json()),
-      fetch('/api/setlists').then(res => res.json())
-    ])
-      .then(([songsData, setlistsData]) => {
-        if (Array.isArray(songsData) && songsData.length > 0) {
-          setSongs(songsData);
-          setSelectedSong(songsData[0]);
-        }
-        if (Array.isArray(setlistsData) && setlistsData.length > 0) {
-          setSetLists(setlistsData);
-        }
-      })
-      .catch(err => console.warn('Failed to fetch from Turso:', err));
+    if (navigator.onLine) {
+      Promise.all([
+        fetch('/api/songs').then(res => res.json()),
+        fetch('/api/setlists').then(res => res.json())
+      ])
+        .then(([songsData, setlistsData]) => {
+          // Merge songs
+          if (Array.isArray(songsData)) {
+            setSongs(prev => {
+              const merged = [...prev];
+              songsData.forEach(remote => {
+                const localIdx = merged.findIndex(s => s.id === remote.id);
+                if (localIdx > -1) {
+                  merged[localIdx] = (remote.updatedAt > (merged[localIdx].updatedAt||0)) ? remote : merged[localIdx];
+                } else {
+                  merged.push(remote);
+                }
+              });
+              return merged;
+            });
+          }
+          // Merge setlists
+          if (Array.isArray(setlistsData)) {
+            setSetLists(prev => {
+              const merged = [...prev];
+              setlistsData.forEach(remote => {
+                const localIdx = merged.findIndex(s => s.id === remote.id);
+                if (localIdx > -1) {
+                  merged[localIdx] = (remote.updatedAt > (merged[localIdx].updatedAt||0)) ? remote : merged[localIdx];
+                } else {
+                  merged.push(remote);
+                }
+              });
+              return merged;
+            });
+          }
+        })
+        .catch(err => console.warn('Failed to fetch from Turso:', err));
+    }
+    // eslint-disable-next-line
   }, []);
+
+  // Simpan otomatis ke localStorage setiap ada perubahan
+  useEffect(() => {
+    try {
+      localStorage.setItem('ronz_songs', JSON.stringify(songs));
+    } catch {}
+    // Push ke backend jika online
+    if (navigator.onLine && songs.length > 0) {
+      fetch('/api/songs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(songs)
+      }).catch(() => {});
+    }
+  }, [songs]);
+  useEffect(() => {
+    try {
+      localStorage.setItem('ronz_setlists', JSON.stringify(setLists));
+    } catch {}
+    // Push ke backend jika online
+    if (navigator.onLine && setLists.length > 0) {
+      fetch('/api/setlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(setLists)
+      }).catch(() => {});
+    }
+  }, [setLists]);
 
   // Fetch quick lyrics preview when song changes (best-effort, non-blocking)
   useEffect(() => {
@@ -123,7 +200,8 @@ function App() {
   const handleSaveSong = (songData) => {
     const isEditMode = !!editingSong;
     const songId = isEditMode ? editingSong.id : Date.now().toString();
-    const updatedSong = { ...songData, id: songId };
+    const now = Date.now();
+    const updatedSong = { ...songData, id: songId, updatedAt: now };
     setSongs(prevSongs => {
       const existingIndex = prevSongs.findIndex(s => s.id === songId);
       if (existingIndex > -1) {
@@ -144,16 +222,17 @@ function App() {
   };
 
   const handleCreateSetList = async (name) => {
+    const now = Date.now();
     const newSetList = {
-      id: Date.now(),
+      id: now,
       name,
       songs: [],
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: now
     };
     setSetLists(prevSetLists => [...prevSetLists, newSetList]);
     setCurrentSetList(newSetList.id);
     setShowSetListManager(false);
-
     try {
       await fetch('/api/setlists', {
         method: 'POST',
@@ -182,20 +261,19 @@ function App() {
     setSetLists(prevSetLists => {
       return prevSetLists.map(setList => {
         if (setList.id === setListId && !setList.songs.includes(songId)) {
-          const next = { ...setList, songs: [...setList.songs, songId] };
+          const next = { ...setList, songs: [...setList.songs, songId], updatedAt: Date.now() };
           updatedSetList = next;
           return next;
         }
         return setList;
       });
     });
-
     if (updatedSetList) {
       try {
         await fetch(`/api/setlists/${setListId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs })
+          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, updatedAt: updatedSetList.updatedAt })
         });
       } catch (err) {
         console.error('Gagal menambah lagu ke setlist:', err);
@@ -208,20 +286,19 @@ function App() {
     setSetLists(prevSetLists => {
       return prevSetLists.map(setList => {
         if (setList.id === setListId) {
-          const next = { ...setList, songs: setList.songs.filter(id => id !== songId) };
+          const next = { ...setList, songs: setList.songs.filter(id => id !== songId), updatedAt: Date.now() };
           updatedSetList = next;
           return next;
         }
         return setList;
       });
     });
-
     if (updatedSetList) {
       try {
         await fetch(`/api/setlists/${setListId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs })
+          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, updatedAt: updatedSetList.updatedAt })
         });
       } catch (err) {
         console.error('Gagal menghapus lagu dari setlist:', err);
@@ -370,7 +447,17 @@ function App() {
     : 'Semua Lagu';
   
   return (
-    <div className="app">
+    <>
+      {showSettingsMenu && (
+        <SettingsModal
+          onClose={() => setShowSettingsMenu(false)}
+          onExport={handleExportDatabase}
+          onImport={handleImportDatabase}
+          onSync={handleSyncToDatabase}
+          syncingToDb={syncingToDb}
+        />
+      )}
+      <div className="app">
       <header className="header">
         <div className="header-content">
           <h1>🎸 RoNz Chord Pro</h1>
@@ -379,81 +466,59 @@ function App() {
       </header>
       
       <div className="container">
-        <div className="nav-toggle-container">
-          <button 
-            className={`nav-toggle-btn ${showSidebarNav ? 'active' : ''}`}
-            onClick={() => setShowSidebarNav(!showSidebarNav)}
-          >
-            {showSidebarNav ? '« Sembunyikan' : '☰ Menu'}
-          </button>
-        </div>
 
-        <aside className={`sidebar ${showSidebarNav ? 'visible' : 'hidden'}`}>
-          <div className="sidebar-header">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>🎵 Navigasi</h3>
-                <div className="header-actions">
-                  <button onClick={() => setShowSongForm(true)} className="btn-icon" title="Tambah Lagu">
-                    ➕
-                  </button>
-                  <button onClick={() => setShowSetListManager(true)} className="btn-icon" title="Kelola Set List">
-                    ⚙️
-                  </button>
-                  <button onClick={() => setShowHelp(true)} className="btn-icon" title="Bantuan">
-                    ❓
-                  </button>
+
+        <aside className="sidebar visible">
+          <>
+            <div className="sidebar-header">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="header-actions">
+                    <button onClick={() => setShowSongForm(true)} className="btn-icon" title="Tambah Lagu">➕</button>
+                    <button onClick={() => setShowSetListMenu(true)} className="btn-icon" title="Set List">📋</button>
+                    <button onClick={() => setShowSettingsMenu(true)} className="btn-icon" title="Pengaturan">⚙️</button>
+                    <button onClick={() => setShowHelp(true)} className="btn-icon" title="Bantuan">❓</button>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <select
+                    className="setlist-select"
+                    value={currentSetList || ''}
+                    onChange={e => setCurrentSetList(e.target.value || null)}
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">Pilih Setlist...</option>
+                    {setLists.map(sl => (
+                      <option key={sl.id} value={sl.id}>📋 {sl.name} ({sl.songs?.length || 0})</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <select
-                  className="setlist-select"
-                  value={currentSetList || ''}
-                  onChange={e => setCurrentSetList(e.target.value || null)}
-                  style={{ flex: 1 }}
-                >
-                  <option value="">Pilih Setlist...</option>
-                  {setLists.map(sl => (
-                    <option key={sl.id} value={sl.id}>📋 {sl.name} ({sl.songs?.length || 0})</option>
-                  ))}
-                </select>
-              </div>
             </div>
-          </div>
-          <div className="sidebar-search">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari judul, artis, atau lirik..."
-            />
-          </div>
-          <div style={{ padding: '0 0.5rem 0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <select
-              className="setlist-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{ fontSize: '0.85rem', flex: 1 }}
-            >
-              <option value="title-asc">📋 Judul A-Z</option>
-              <option value="title-desc">📋 Judul Z-A</option>
-              <option value="artist-asc">🎤 Artis A-Z</option>
-              <option value="newest">🕒 Terbaru</option>
-            </select>
-            {setLists.length > 0 && (
-              <button
-                className="btn-icon"
-                onClick={() => setShowSetListPopup(!showSetListPopup)}
-                title="Pilih Setlist untuk Tambah Cepat"
-                style={{ position: 'relative' }}
+            <div className="sidebar-search">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari judul, artis, atau lirik..."
+              />
+            </div>
+            <div style={{ padding: '0 0.5rem 0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <select
+                className="setlist-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{ fontSize: '0.85rem', flex: 1 }}
               >
-                📌
-                {selectedSetListsForAdd.length > 0 && (
-                  <span className="setlist-badge">{selectedSetListsForAdd.length}</span>
-                )}
-              </button>
-            )}
-          </div>
+                <option value="title-asc">📋 Judul A-Z</option>
+                <option value="title-desc">📋 Judul Z-A</option>
+                <option value="artist-asc">🎤 Artis A-Z</option>
+                <option value="newest">🕒 Terbaru</option>
+              </select>
+              {/* Tombol pilih setlist untuk tambah cepat dihapus */}
+            </div>
+            {/* ...lanjutkan isi sidebar di sini... */}
+          </>
           
           <div className="song-list">
             {displaySongs.length === 0 ? (
@@ -462,129 +527,65 @@ function App() {
               </div>
             ) : (
               displaySongs.map(song => (
-              <div 
-                key={song.id}
-                className={`song-item ${selectedSong?.id === song.id ? 'active' : ''}`}
-              >
-                <div className="song-info" onClick={() => handleSelectSong(song)}>
-                  <div className="song-title">{song.title}</div>
-                  <div className="song-artist">{song.artist}</div>
-                </div>
-                <div className="song-actions">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditSong(song);
-                    }} 
-                    className="btn-icon-sm"
-                    title="Edit"
-                  >
-                    ✏️
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteSong(song.id);
-                    }} 
-                    className="btn-icon-sm btn-danger"
-                    title="Hapus"
-                  >
-                    🗑️
-                  </button>
-                  {selectedSetListsForAdd.length > 0 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        selectedSetListsForAdd.forEach(slId => {
-                          handleAddSongToSetList(slId, song.id);
-                        });
-                      }}
-                      className="btn-icon-sm btn-success"
-                      title="Tambah ke Setlist Terpilih"
-                    >
-                      ➕
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
+                <SongListItem
+                  key={song.id}
+                  song={song}
+                  isActive={selectedSong?.id === song.id}
+                  onSelect={() => handleSelectSong(song)}
+                  onEdit={() => handleEditSong(song)}
+                  onDelete={() => handleDeleteSong(song.id)}
+                  setLists={setLists}
+                  onAddToSetLists={slIds => slIds.forEach(slId => handleAddSongToSetList(slId, song.id))}
+                  onRemoveFromSetList={handleRemoveSongFromSetList}
+                />
+              ))
             )}
           </div>
           
-          <div className="sidebar-footer">
-              <div className="db-actions">
-              <button onClick={handleExportDatabase} className="btn btn-sm btn-block">
-                📥 Export
-              </button>
-              <label className="btn btn-sm btn-block">
-                📤 Import
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportDatabase}
-                  style={{ display: 'none' }}
-                />
-              </label>
-              <button 
-                onClick={handleSyncToDatabase} 
-                className="btn btn-sm btn-block btn-primary"
-                disabled={syncingToDb}
-              >
-                {syncingToDb ? '⏳ Syncing...' : '☁️ Sync ke DB'}
-              </button>
-            </div>
-            
+          {/* <div className="sidebar-footer">
             <div className="db-info">
               <small>
                 {songs.length} lagu • {setLists.length} set list
               </small>
             </div>
-          </div>
+          </div> */}
         </aside>
         
         <main className="main">
             <>
-              <div className="controls">
-            <div className="control-group">
-              <label>Transpose:</label>
-              <button onClick={() => handleTranspose(-1)} className="btn btn-sm">♭ -1</button>
-              <span className="transpose-value">
-                {transpose > 0 ? `+${transpose}` : transpose}
-              </span>
-              <button onClick={() => handleTranspose(1)} className="btn btn-sm">♯ +1</button>
-              <button onClick={() => setTranspose(0)} className="btn btn-sm">Reset</button>
-            </div>
-            
-            <div className="control-group">
-              <button 
-                onClick={() => setAutoScrollActive(!autoScrollActive)}
-                className={`btn ${autoScrollActive ? 'btn-primary' : ''}`}
-              >
-                {autoScrollActive ? '⏸ Stop Scroll' : '▶ Auto Scroll'}
-              </button>
-              
-              {autoScrollActive && (
-                <div className="speed-controls">
-                  <button onClick={() => setScrollSpeed(Math.max(0.5, scrollSpeed - 0.5))} className="btn btn-sm">
-                    −
-                  </button>
-                  <span className="speed-value">{scrollSpeed.toFixed(1)}x</span>
-                  <button onClick={() => setScrollSpeed(Math.min(5, scrollSpeed + 0.5))} className="btn btn-sm">
-                    +
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            <div className="control-group">
-              <button 
-                onClick={() => setShowYouTube(!showYouTube)}
-                className={`btn ${showYouTube ? 'btn-primary' : ''}`}
-              >
-                {showYouTube ? '📺 Sembunyikan YouTube' : '📺 Tampilkan YouTube'}
-              </button>
-            </div>
-          </div>
+
+              <div className="controls controls-compact">
+                {/* Transpose Group */}
+                <button onClick={() => handleTranspose(-1)} className="btn btn-xs" title="Transpose turun (♭)">♭</button>
+                <span className="transpose-value" style={{ minWidth: 32, textAlign: 'center' }} title="Nilai transpose">{transpose > 0 ? `+${transpose}` : transpose}</span>
+                <button onClick={() => handleTranspose(1)} className="btn btn-xs" title="Transpose naik (♯)">♯</button>
+                <button onClick={() => setTranspose(0)} className="btn btn-xs" title="Reset transpose">⟳</button>
+                <span className="divider" />
+                {/* Auto Scroll Group */}
+                <button 
+                  onClick={() => setAutoScrollActive(!autoScrollActive)}
+                  className={`btn btn-xs ${autoScrollActive ? 'btn-primary' : ''}`}
+                  title={autoScrollActive ? 'Matikan Auto Scroll' : 'Aktifkan Auto Scroll'}
+                >
+                  {autoScrollActive ? '⏸' : '▶'}
+                </button>
+                {autoScrollActive && (
+                  <>
+                    <button onClick={() => setScrollSpeed(Math.max(0.5, scrollSpeed - 0.5))} className="btn btn-xs" title="Kurangi kecepatan scroll">−</button>
+                    <span className="speed-value" style={{ minWidth: 28, textAlign: 'center' }} title="Kecepatan scroll">{scrollSpeed.toFixed(1)}x</span>
+                    <button onClick={() => setScrollSpeed(Math.min(5, scrollSpeed + 0.5))} className="btn btn-xs" title="Tambah kecepatan scroll">+</button>
+                  </>
+                )}
+                <span className="divider" />
+                {/* YouTube Toggle */}
+                <button 
+                  onClick={() => setShowYouTube(!showYouTube)}
+                  className={`btn btn-xs ${showYouTube ? 'btn-primary' : ''}`}
+                  title={showYouTube ? 'Sembunyikan YouTube' : 'Tampilkan YouTube'}
+                >
+                  📺
+                </button>
+              </div>
           
           {showYouTube && selectedSong?.youtubeId && (
             <div className="youtube-section">
@@ -621,7 +622,7 @@ function App() {
         />
       )}
       
-      {showSetListManager && (
+      {showSetListMenu && (
         <SetListManager
           setLists={setLists}
           songs={songs}
@@ -631,7 +632,7 @@ function App() {
           onRemoveSongFromSetList={handleRemoveSongFromSetList}
           onSelectSetList={(id) => {
             setCurrentSetList(id);
-            setShowSetListManager(false);
+            setShowSetListMenu(false);
           }}
         />
       )}
@@ -682,7 +683,9 @@ function App() {
       )}
 
       {showHelp && (
-        <HelpModal onClose={() => setShowHelp(false)} />
+        <HelpModal 
+          onClose={() => setShowHelp(false)}
+        />
       )}
 
       {runtimeErrors.length > 0 && (
@@ -753,6 +756,7 @@ function App() {
         <span>Versi aplikasi: {import.meta.env.VITE_APP_VERSION}</span>
       </footer>
     </div>
+    </>
   );
 }
 
