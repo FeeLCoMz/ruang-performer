@@ -96,179 +96,183 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     setFormData(prev => ({ ...prev, lyrics: template }));
   };
 
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content song-form-modal">
-        <div className="modal-header">
-          <h2>{song ? '✏️ Edit Lagu' : '✨ Tambah Lagu Baru'}</h2>
-          <button onClick={onCancel} className="btn-close">✕</button>
-        </div>
-       
-          <form onSubmit={handleSubmit} style={{ flex: 1 }}>
-            <div className="form-group">
-            <label htmlFor="title">Judul Lagu *</label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              className={errors.title ? 'error' : ''}
-              placeholder="Masukkan judul lagu"
-            />
-            {errors.title && <span className="error-message">{errors.title}</span>}
+   return (
+      <div className="modal-overlay">
+        <div className="modal-content song-form-modal" style={{ position: 'relative' }}>
+          <button
+            onClick={onCancel}
+            className="btn-close"
+            style={{ position: 'absolute', top: 18, right: 18, zIndex: 10 }}
+            aria-label="Tutup"
+          >✕</button>
+          <div className="modal-header">
+            <h2 style={{ marginBottom: 0 }}>{song ? '✏️ Edit Lagu' : '✨ Tambah Lagu Baru'}</h2>
           </div>
-          <div className="form-group">
-            <label htmlFor="artist">Nama Artis *</label>
-            <input
-              type="text"
-              id="artist"
-              name="artist"
-              value={formData.artist}
-              onChange={handleChange}
-              className={errors.artist ? 'error' : ''}
-              placeholder="Masukkan nama artis"
-            />
-            {errors.artist && <span className="error-message">{errors.artist}</span>}
-          </div>
-          <div className="form-group" style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <button
-              type="button"
-              className="btn btn-sm btn-secondary"
-              onClick={() => {
-                const q = encodeURIComponent(`${formData.title} ${formData.artist} lirik`);
-                window.open(`https://www.google.com/search?q=${q}`, '_blank');
-              }}
-              disabled={!formData.title && !formData.artist}
-            >
-              🔍 Cari Lirik di Google
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm btn-secondary"
-              onClick={() => {
-                const q = encodeURIComponent(`${formData.title} ${formData.artist}`);
-                window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
-              }}
-              disabled={!formData.title && !formData.artist}
-            >
-              🎵 Cari Lagu di YouTube
-            </button>
-          </div>
-          
-          <div className="form-group">
-            <label>🎵 Tap Tempo (Ketuk Irama)</label>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <form onSubmit={handleSubmit} className="song-form-grid">
+            <div className="form-row">
+              <div className="form-group" style={{ flex: 1 }}>
+                <label htmlFor="title">Judul Lagu *</label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  className={errors.title ? 'error' : ''}
+                  placeholder="Masukkan judul lagu"
+                  autoFocus
+                />
+                {errors.title && <span className="error-message">{errors.title}</span>}
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label htmlFor="artist">Nama Artis *</label>
+                <input
+                  type="text"
+                  id="artist"
+                  name="artist"
+                  value={formData.artist}
+                  onChange={handleChange}
+                  className={errors.artist ? 'error' : ''}
+                  placeholder="Masukkan nama artis"
+                />
+                {errors.artist && <span className="error-message">{errors.artist}</span>}
+              </div>
+            </div>
+            <div className="form-row" style={{ gap: 8, marginBottom: 8 }}>
               <button
                 type="button"
-                className="btn btn-primary"
-                onClick={handleTapTempo}
-                style={{ minWidth: '120px', fontSize: '1.1rem' }}
+                className="btn btn-sm btn-secondary"
+                onClick={() => {
+                  const q = encodeURIComponent(`${formData.title} ${formData.artist} lirik`);
+                  window.open(`https://www.google.com/search?q=${q}`, '_blank');
+                }}
+                disabled={!formData.title && !formData.artist}
               >
-                👆 TAP
+                🔍 Cari Lirik di Google
               </button>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                {bpm && (
-                  <>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>
-                      {bpm} BPM
+              <button
+                type="button"
+                className="btn btn-sm btn-secondary"
+                onClick={() => {
+                  const q = encodeURIComponent(`${formData.title} ${formData.artist}`);
+                  window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+                }}
+                disabled={!formData.title && !formData.artist}
+              >
+                🎵 Cari Lagu di YouTube
+              </button>
+            </div>
+            <div className="form-row">
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>🎵 Tap Tempo (Ketuk Irama)</label>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleTapTempo}
+                    style={{ minWidth: '120px', fontSize: '1.1rem' }}
+                  >
+                    👆 TAP
+                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {bpm && (
+                      <>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                          {bpm} BPM
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-sm"
+                          onClick={resetTapTempo}
+                        >
+                          🔄 Reset
+                        </button>
+                      </>
+                    )}
+                    {!bpm && tapTimes.length > 0 && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        Ketuk {2 - tapTimes.length} kali lagi...
+                      </span>
+                    )}
+                    {!bpm && tapTimes.length === 0 && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        Ketuk tombol TAP mengikuti irama lagu
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label htmlFor="youtubeId">YouTube Video ID (Opsional)</label>
+                <input
+                  type="text"
+                  id="youtubeId"
+                  name="youtubeId"
+                  value={formData.youtubeId}
+                  onChange={handleChange}
+                  placeholder="Contoh: dQw4w9WgXcQ"
+                />
+                <small>ID adalah kode setelah "v=" di URL YouTube</small>
+                <div className="form-youtube-row" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 0 }}>
+                  {formData.youtubeId && (
+                    <div className="youtube-viewer-section" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                      <YouTubeViewer videoId={formData.youtubeId} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="form-group">
+              <div className="textarea-header">
+                <label htmlFor="lyrics" style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
+                  Lirik & Chord *
+                  <span className="help-popover-container">
+                    <span className="help-icon" tabIndex="0">❓</span>
+                    <span className="help-popover">
+                      <strong>Format Pengisian Lirik, Chord, dan Notasi:</strong>
+                      <ul>
+                        <li><b>ChordPro:</b> <code>[C]Lirik baris pertama</code> (chord di dalam tanda [ ] sebelum kata)</li>
+                        <li><b>Standar:</b> <code>C   G   Am   F</code> (chord di atas lirik, baris bawah liriknya)</li>
+                        <li><b>Bar/ketukan:</b> Gunakan <code>|</code> untuk pemisah bar, contoh: <code>[C]Lirik | [G]bar berikut</code></li>
+                        <li><b>Lirik multi-baris:</b> Pisahkan tiap baris dengan enter.</li>
+                        <li><b>Notasi Angka:</b> <code>1 2 3 4 | 5 5 6 5</code> (spasi antar not, | untuk bar, . untuk rendah, ' untuk tinggi, - untuk panjang, m untuk minor)</li>
+                        <li><b>Notasi Balok:</b> <code>C4 D4 E4 F4 | G4 G4 A4 G4</code> (format standar not balok, angka setelah huruf menunjukkan oktaf)</li>
+                        <li><b>Contoh ChordPro:</b> <br /><code>[C]Ku ingin [G]selalu [Am]bersamamu [F]selamanya</code></li>
+                        <li><b>Contoh Standar:</b><br /><code>C   G   Am   F<br />Ku ingin selalu bersamamu selamanya</code></li>
+                        <li><b>Contoh Notasi Angka:</b><br /><code>1 2 3 4 | 5 5 6 5 | 4 3 2 1</code></li>
+                        <li><b>Contoh Notasi Balok:</b><br /><code>C4 D4 E4 F4 | G4 G4 A4 G4</code></li>
+                      </ul>
                     </span>
-                    <button
-                      type="button"
-                      className="btn btn-sm"
-                      onClick={resetTapTempo}
-                    >
-                      🔄 Reset
-                    </button>
-                  </>
-                )}
-                {!bpm && tapTimes.length > 0 && (
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    Ketuk {2 - tapTimes.length} kali lagi...
                   </span>
-                )}
-                {!bpm && tapTimes.length === 0 && (
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    Ketuk tombol TAP mengikuti irama lagu
-                  </span>
-                )}
+                </label>
+                <div className="template-buttons">
+                  <button type="button" onClick={insertTemplate} className="btn btn-sm">
+                    📋 ChordPro
+                  </button>
+                  <button type="button" onClick={insertStandardTemplate} className="btn btn-sm">
+                    📋 Standard
+                  </button>
+                </div>
               </div>
+              <textarea
+                id="lyrics"
+                name="lyrics"
+                value={formData.lyrics}
+                onChange={handleChange}
+                className={errors.lyrics ? 'error' : ''}
+                placeholder="Copy-paste dari situs lain (chord di atas lirik) atau gunakan format ChordPro [C]lirik..."
+                rows={12}
+              />
+              {errors.lyrics && <span className="error-message">{errors.lyrics}</span>}
             </div>
-          </div>
-
-          {/* Piano virtual dihapus sesuai permintaan */}
-
-          <div className="form-group">
-            <label htmlFor="youtubeId">YouTube Video ID (Opsional)</label>
-            <input
-              type="text"
-              id="youtubeId"
-              name="youtubeId"
-              value={formData.youtubeId}
-              onChange={handleChange}
-              placeholder="Contoh: dQw4w9WgXcQ"
-            />
-            <small>ID adalah kode setelah "v=" di URL YouTube</small>
-          </div>
-          <div className="form-youtube-row" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
-          {formData.youtubeId && (
-            <div className="youtube-viewer-section" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-              <YouTubeViewer videoId={formData.youtubeId} />
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">
+                💾 {song ? 'Update Lagu' : 'Simpan Lagu'}
+              </button>
+              <button type="button" onClick={onCancel} className="btn">
+                Batal
+              </button>
             </div>
-          )}
-          </div>          
-          <div className="form-group">
-            <div className="textarea-header">
-              <label htmlFor="lyrics" style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
-                Lirik & Chord *
-                <span className="help-popover-container">
-                  <span className="help-icon" tabIndex="0">❓</span>
-                  <span className="help-popover">
-                    <strong>Format Pengisian Lirik, Chord, dan Notasi:</strong>
-                    <ul>
-                      <li><b>ChordPro:</b> <code>[C]Lirik baris pertama</code> (chord di dalam tanda [ ] sebelum kata)</li>
-                      <li><b>Standar:</b> <code>C   G   Am   F</code> (chord di atas lirik, baris bawah liriknya)</li>
-                      <li><b>Bar/ketukan:</b> Gunakan <code>|</code> untuk pemisah bar, contoh: <code>[C]Lirik | [G]bar berikut</code></li>
-                      <li><b>Lirik multi-baris:</b> Pisahkan tiap baris dengan enter.</li>
-                      <li><b>Notasi Angka:</b> <code>1 2 3 4 | 5 5 6 5</code> (spasi antar not, | untuk bar, . untuk rendah, ' untuk tinggi, - untuk panjang, m untuk minor)</li>
-                      <li><b>Notasi Balok:</b> <code>C4 D4 E4 F4 | G4 G4 A4 G4</code> (format standar not balok, angka setelah huruf menunjukkan oktaf)</li>
-                      <li><b>Contoh ChordPro:</b> <br /><code>[C]Ku ingin [G]selalu [Am]bersamamu [F]selamanya</code></li>
-                      <li><b>Contoh Standar:</b><br /><code>C   G   Am   F<br />Ku ingin selalu bersamamu selamanya</code></li>
-                      <li><b>Contoh Notasi Angka:</b><br /><code>1 2 3 4 | 5 5 6 5 | 4 3 2 1</code></li>
-                      <li><b>Contoh Notasi Balok:</b><br /><code>C4 D4 E4 F4 | G4 G4 A4 G4</code></li>
-                    </ul>
-                  </span>
-                </span>
-              </label>
-              <div className="template-buttons">
-                <button type="button" onClick={insertTemplate} className="btn btn-sm">
-                  📋 ChordPro
-                </button>
-                <button type="button" onClick={insertStandardTemplate} className="btn btn-sm">
-                  📋 Standard
-                </button>
-              </div>
-            </div>
-            <textarea
-              id="lyrics"
-              name="lyrics"
-              value={formData.lyrics}
-              onChange={handleChange}
-              className={errors.lyrics ? 'error' : ''}
-              placeholder="Copy-paste dari situs lain (chord di atas lirik) atau gunakan format ChordPro [C]lirik..."
-              rows={12}
-            />
-            {errors.lyrics && <span className="error-message">{errors.lyrics}</span>}
-          </div>
-
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              💾 {song ? 'Update Lagu' : 'Simpan Lagu'}
-            </button>
-            <button type="button" onClick={onCancel} className="btn">
-              Batal
-            </button>
-          </div>
           </form>
         
       </div>

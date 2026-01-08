@@ -233,12 +233,14 @@
 }
 
 body {
-  background: var(--bg);
+  background: linear-gradient(135deg, #232946 0%, #181c24 100%);
   color: var(--text);
   line-height: 1.6;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.01em;
+  font-size: 16px;
 }
 
 .app {
@@ -311,12 +313,16 @@ body {
 /* ===== Sidebar ===== */
 .sidebar {
   width: 320px;
-  background: #1e293b;
-  border-right: 1px solid #334155;
+  background: rgba(36, 41, 61, 0.98);
+  border-right: 1.5px solid rgba(99, 102, 241, 0.08);
+  padding: 1.5rem 1rem 1rem 1.5rem;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s;
-  transform: translateX(0);
+  box-sizing: border-box;
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 32px 0 rgba(36,41,61,0.10);
+  margin: 0.75rem 0.5rem 0.75rem 0.75rem;
+  transition: box-shadow 0.22s, background 0.22s;
 }
 
 .sidebar.hidden {
@@ -360,20 +366,39 @@ body {
 }
 
 .sidebar-search {
-  padding: 1.25rem 1.5rem;
-  background: rgba(22, 27, 38, 0.5);
-  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+  position: relative;
 }
-
 .sidebar-search input {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  background: rgba(15, 20, 31, 0.7);
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(99, 102, 241, 0.18);
+  background: rgba(15, 20, 31, 0.85);
   color: var(--text);
   outline: none;
-  transition: border 0.2s, background 0.2s;
+  font-size: 0.98rem;
+  box-shadow: 0 2px 12px 0 rgba(99,102,241,0.07);
+  transition: border 0.22s, background 0.22s, box-shadow 0.22s;
+}
+.sidebar-search input::placeholder {
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+.sidebar-search input:focus {
+  border-color: #6366f1;
+  background: rgba(30, 41, 59, 0.98);
+  box-shadow: 0 4px 16px 0 rgba(99,102,241,0.13);
+}
+.sidebar-search .search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 1.15rem;
+  pointer-events: none;
+  z-index: 2;
+}
   font-size: 0.95rem;
 }
 
@@ -585,21 +610,25 @@ body {
 }
 
 .song-list {
-  padding: 1rem;
+  margin-top: 1.5rem;
   overflow-y: auto;
-  overflow-x: hidden;
   max-height: calc(100vh - 400px);
+  border-radius: 1rem;
+  background: rgba(255,255,255,0.02);
+  box-shadow: 0 2px 12px 0 rgba(99,102,241,0.04);
+  padding: 0.5rem 0.25rem;
 }
 
 .song-item {
   padding: 1rem 1.25rem;
-  background: rgba(30, 41, 59, 0.5);
-  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.07);
+  border-radius: 1rem;
   margin-bottom: 0.75rem;
-  transition: all 0.2s;
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  transition: background 0.18s, box-shadow 0.18s;
+  border: 1.5px solid transparent;
   position: relative;
   display: block;
+  box-shadow: 0 1px 6px 0 rgba(99,102,241,0.04);
 }
 
 .song-info {
@@ -609,13 +638,24 @@ body {
 
 .song-actions {
   display: flex;
-  gap: 0.35rem;
-  opacity: 0;
-  transition: opacity 0.2s;
+  gap: 0.25rem;
   position: absolute;
-  top: 8px;
-  right: 12px;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 2;
+  background: rgba(255,255,255,0.10);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px 0 rgba(99,102,241,0.08);
+  padding: 0.1rem 0.2rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s, box-shadow 0.18s, background 0.18s;
+}
+.song-item:hover .song-actions,
+.song-item.active .song-actions {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .song-item:hover {
@@ -628,9 +668,10 @@ body {
 }
 
 .song-item.active {
-  background: rgba(99, 102, 241, 0.2);
+  background: rgba(99, 102, 241, 0.18);
   color: white;
   border-color: #6366f1;
+  box-shadow: 0 2px 12px 0 rgba(99,102,241,0.10);
 }
 
 .song-item.active .song-actions {
@@ -639,10 +680,14 @@ body {
 
 .song-title {
   font-weight: 600;
-  font-size: 0.95rem;
-  margin-bottom: 0.25rem;
-  word-break: break-word;
-  white-space: normal;
+  font-size: 1.08rem;
+  color: var(--text);
+  flex: 1;
+  margin-right: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
 }
 
 .song-artist {
@@ -737,9 +782,14 @@ body {
 /* ===== Main Content ===== */
 .main {
   flex: 1;
+  padding: 2rem 2.5rem 2rem 2rem;
   overflow-y: auto;
-  padding: 2rem 2.5rem;
-  background: linear-gradient(135deg, #0a0e1a 0%, #0f1419 100%);
+  background: rgba(255,255,255,0.03);
+  border-radius: 1.25rem;
+  margin: 0.75rem 0.75rem 0.75rem 0.5rem;
+  box-shadow: 0 4px 32px 0 rgba(36,41,61,0.08);
+  min-width: 0;
+  transition: box-shadow 0.22s, background 0.22s;
 }
 
 .controls {
@@ -1237,15 +1287,17 @@ body {
 
 /* ===== Buttons ===== */
 .btn {
-  padding: 0.75rem 1.5rem;
-  background: rgba(99, 102, 241, 0.1);
-  color: #cbd5e1;
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.95rem;
+  background: linear-gradient(90deg, #6366f1 60%, #818cf8 100%);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.4rem;
+  font-size: 1rem;
   font-weight: 600;
-  transition: all 0.2s;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+  box-shadow: 0 2px 8px 0 rgba(99,102,241,0.10);
+  letter-spacing: 0.01em;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1253,8 +1305,8 @@ body {
 }
 
 .btn:hover {
-  background: rgba(99, 102, 241, 0.2);
-  border-color: rgba(129, 140, 248, 0.5);
+  background: linear-gradient(90deg, #4f46e5 60%, #6366f1 100%);
+  box-shadow: 0 4px 16px 0 rgba(99,102,241,0.18);
 }
 
 .btn-primary {
@@ -1303,14 +1355,15 @@ body {
 }
 
 .modal-content {
-  background: var(--card);
-  border-radius: var(--radius-lg);
-  padding: 0;
-  max-width: 900px;
-  width: 100%;
+  background: linear-gradient(135deg, #232946 0%, #181c24 100%);
+  border-radius: 1.25rem;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 8px 48px 0 rgba(99,102,241,0.18);
+  min-width: 320px;
+  max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: var(--shadow-lg);
+  border: 1.5px solid rgba(99,102,241,0.10);
 }
 
 @media (max-width: 600px) {

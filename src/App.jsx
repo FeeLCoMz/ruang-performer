@@ -15,6 +15,8 @@ import { initialSongs, initialSetLists } from './data/songs';
 import './App.css';
 
 function App() {
+    const [showSidebar, setShowSidebar] = useState(true);
+  const [showLyricsFullscreen, setShowLyricsFullscreen] = useState(false);
   // Cek localStorage saat inisialisasi
   const getInitialSongs = () => {
     try {
@@ -468,8 +470,15 @@ function App() {
       <div className="container">
 
 
-        <aside className="sidebar visible">
-          <>
+        {showSidebar && (
+          <aside className="sidebar visible">
+            <button
+              className="btn btn-secondary"
+              style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, borderRadius: '999px', padding: '0.2rem 0.9rem', fontWeight: 700, fontSize: '1.1rem' }}
+              onClick={() => setShowSidebar(false)}
+              aria-label="Sembunyikan sidebar"
+            >⟨</button>
+            {/* ...existing code... */}
             <div className="sidebar-header">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -496,11 +505,13 @@ function App() {
               </div>
             </div>
             <div className="sidebar-search">
+              <span className="search-icon" aria-hidden="true">🔍</span>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari judul, artis, atau lirik..."
+                aria-label="Cari lagu"
               />
             </div>
             <div style={{ padding: '0 0.5rem 0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -515,42 +526,47 @@ function App() {
                 <option value="artist-asc">🎤 Artis A-Z</option>
                 <option value="newest">🕒 Terbaru</option>
               </select>
-              {/* Tombol pilih setlist untuk tambah cepat dihapus */}
             </div>
-            {/* ...lanjutkan isi sidebar di sini... */}
-          </>
-          
-          <div className="song-list">
-            {displaySongs.length === 0 ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
-                {songs.length === 0 ? 'Tidak ada lagu. Klik ➕ untuk tambah.' : 'Tidak ada hasil pencarian.'}
+            <div className="song-list">
+              {displaySongs.length === 0 ? (
+                <div style={{ padding: '1rem', textAlign: 'center', color: '#666', fontSize: '0.9rem' }}>
+                  {songs.length === 0 ? 'Tidak ada lagu. Klik ➕ untuk tambah.' : 'Tidak ada hasil pencarian.'}
+                </div>
+              ) : (
+                displaySongs.map(song => (
+                  <SongListItem
+                    key={song.id}
+                    song={song}
+                    isActive={selectedSong?.id === song.id}
+                    onSelect={() => handleSelectSong(song)}
+                    onEdit={() => handleEditSong(song)}
+                    onDelete={() => handleDeleteSong(song.id)}
+                    setLists={setLists}
+                    onAddToSetLists={slIds => slIds.forEach(slId => handleAddSongToSetList(slId, song.id))}
+                    onRemoveFromSetList={handleRemoveSongFromSetList}
+                  />
+                ))
+              )}
+            </div>
+            {/* <div className="sidebar-footer">
+              <div className="db-info">
+                <small>
+                  {songs.length} lagu • {setLists.length} set list
+                </small>
               </div>
-            ) : (
-              displaySongs.map(song => (
-                <SongListItem
-                  key={song.id}
-                  song={song}
-                  isActive={selectedSong?.id === song.id}
-                  onSelect={() => handleSelectSong(song)}
-                  onEdit={() => handleEditSong(song)}
-                  onDelete={() => handleDeleteSong(song.id)}
-                  setLists={setLists}
-                  onAddToSetLists={slIds => slIds.forEach(slId => handleAddSongToSetList(slId, song.id))}
-                  onRemoveFromSetList={handleRemoveSongFromSetList}
-                />
-              ))
-            )}
-          </div>
-          
-          {/* <div className="sidebar-footer">
-            <div className="db-info">
-              <small>
-                {songs.length} lagu • {setLists.length} set list
-              </small>
-            </div>
-          </div> */}
-        </aside>
+            </div> */}
+          </aside>
+
         
+        )}
+        {!showSidebar && (
+          <button
+            className="btn btn-secondary"
+            style={{ position: 'absolute', top: 18, left: 18, zIndex: 1001, borderRadius: '999px', padding: '0.5rem 1.1rem', fontWeight: 700 }}
+            onClick={() => setShowSidebar(true)}
+            aria-label="Tampilkan sidebar"
+          >☰</button>
+        )}
         <main className="main">
             <>
 
@@ -593,15 +609,16 @@ function App() {
             </div>
           )}
           
-              <div className="lyrics-section" ref={scrollRef}>
-                {selectedSong ? (
-                  <ChordDisplay song={selectedSong} transpose={transpose} />
-                ) : (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
-                    <h3>Pilih lagu dari daftar untuk melihat chord dan lirik</h3>
-                  </div>
-                )}
-              </div>
+              {/* Tombol fullscreen dan lirik fullscreen */}
+                <div className="lyrics-section" ref={scrollRef}>
+                  {selectedSong ? (
+                    <ChordDisplay song={selectedSong} transpose={transpose} />
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                      <h3>Pilih lagu dari daftar untuk melihat chord dan lirik</h3>
+                    </div>
+                  )}
+                </div>
               <AutoScroll
                 isActive={autoScrollActive}
                 speed={scrollSpeed}
