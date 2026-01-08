@@ -7,7 +7,7 @@ const SetListManager = ({
   onDeleteSetList, 
   onAddSongToSetList, 
   onRemoveSongFromSetList,
-  onSelectSetList 
+  onSelectSetList
 }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newSetListName, setNewSetListName] = useState('');
@@ -162,6 +162,7 @@ const SetListManager = ({
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

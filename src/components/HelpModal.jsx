@@ -54,7 +54,7 @@ const ListItem = ({ children }) => (
   </li>
 );
 
-export default function HelpModal({ onClose }) {
+export default function HelpModal({ onClose, onExport, onImport, onSync, syncingToDb }) {
   return (
     <div
       style={{

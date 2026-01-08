@@ -30,7 +30,7 @@ function App() {
   const [lyricsError, setLyricsError] = useState('');
   const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
   const [showSetListPopup, setShowSetListPopup] = useState(false);
-  // const [showSidebarNav, setShowSidebarNav] = useState(true);
+  const [showSidebarNav, setShowSidebarNav] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const scrollRef = useRef(null);
   const isInitialLoad = useRef(true);
@@ -379,9 +379,16 @@ function App() {
       </header>
       
       <div className="container">
+        <div className="nav-toggle-container">
+          <button 
+            className={`nav-toggle-btn ${showSidebarNav ? 'active' : ''}`}
+            onClick={() => setShowSidebarNav(!showSidebarNav)}
+          >
+            {showSidebarNav ? '« Sembunyikan' : '☰ Menu'}
+          </button>
+        </div>
 
-
-        <aside className="sidebar visible">
+        <aside className={`sidebar ${showSidebarNav ? 'visible' : 'hidden'}`}>
           <div className="sidebar-header">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
