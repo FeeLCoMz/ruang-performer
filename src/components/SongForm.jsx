@@ -261,8 +261,8 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
 
   const openChordSearchModal = () => {
     const query = `${formData.title} ${formData.artist} chord`.trim();
-    // Pre-fill with chordtela URL pattern
-    const searchUrl = `https://chordtela.com/search.php?q=${encodeURIComponent(formData.title || 'chord')}`;
+    // Pre-fill with Google search URL
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
     setChordSearchUrl(searchUrl);
     setShowChordSearch(true);
     setChordSearchResults(null);
