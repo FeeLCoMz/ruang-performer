@@ -48,3 +48,17 @@ export async function updateSetList(setList) {
   if (!res.ok) throw new Error('Failed to update setlist');
   return await res.json();
 }
+
+export async function askAI({ prompt, context, system, model } = {}) {
+  const res = await fetch(`${API_BASE}/ai`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, context, system, model })
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Failed to call AI');
+  }
+  return await res.json();
+}

@@ -56,48 +56,58 @@ npm run build
 ```bash
 npm run preview
 ```
+
 Preview berjalan di `http://localhost:4173` (default Vite)
 
 ## 📖 Cara Menggunakan
 
 ### 1. Memilih Lagu
+
 - Klik pada judul lagu di sidebar kiri
 - Lagu akan ditampilkan dengan chord dan lirik
 
 ### 1.1. Pencarian Lagu
+
 - Gunakan kotak pencarian di sidebar untuk memfilter daftar
 - Pencarian mencocokkan judul, artis, dan isi lirik
 
 ### 2. Transpose Chord
+
 - Gunakan tombol `-1` dan `+1` untuk transpose
 - Tombol `Reset` untuk kembali ke kunci asli
 
 ### 3. Highlight Chord
+
 - Toggle checkbox "Highlight Chords" untuk menyorot chord
 - Memudahkan membaca chord saat bermain musik
 
 ### 4. Auto Scroll
+
 - Klik "Auto Scroll" untuk mengaktifkan scroll otomatis
 - Atur kecepatan dengan tombol `-` dan `+`
 - Berguna saat bermain musik
 
 ### 5. YouTube Viewer
+
 - Video YouTube otomatis dimuat jika tersedia
 - Gunakan kontrol play/pause/stop
 - Toggle checkbox untuk menampilkan/menyembunyikan video
 
 ### 6. Set List Management
+
 - Klik ikon ⚙ untuk membuka Set List Manager
 - Buat set list baru untuk latihan atau performa
 - Tambah/hapus lagu dari set list
 - Pilih set list untuk filter lagu
 
 ### 7. Import Lagu (URL / Paste)
+
 - Buka menu Import, pilih mode: URL atau Paste Text
 - Mode URL memakai proxy publik (CORS); jika gagal, gunakan Paste Text
 - Setelah parse, periksa hasil dan klik Simpan Lagu
 
 ### 8. Partitur Melodi (Not Angka / Not Balok)
+
 - Di tampilan lagu, klik tombol untuk menampilkan partitur
 - Pilih tampilan: Not Angka, Not Balok, atau Keduanya
 - Partitur ikut ter-transpose mengikuti kunci lagu
@@ -123,6 +133,7 @@ Mendukung dua gaya input utama: ChordPro dan format standar (chord di atas lirik
 ```
 
 ### Tag yang Didukung:
+
 - `{title:...}` - Judul lagu
 - `{artist:...}` - Nama artis
 - `{key:...}` - Kunci asli lagu
@@ -134,20 +145,22 @@ Mendukung dua gaya input utama: ChordPro dan format standar (chord di atas lirik
 - `[chord]` - Chord di atas lirik
 
 ### Format Standar (Chord di atas Lirik)
+
 Anda bisa copy-paste langsung dari situs chord. Aplikasi akan mencoba mendeteksi dan menyelaraskan chord dengan lirik secara otomatis. Lihat contoh di [EXAMPLE_FORMATS.md](EXAMPLE_FORMATS.md).
 
 ## 🎯 Menambah Lagu Baru
 
 Ada dua cara:
 
-1) Via UI (disarankan)
+1. Via UI (disarankan)
+
 - Klik tombol Tambah Lagu atau Edit Lagu
 - Isi judul, artis, YouTube ID (opsional), lirik/chord, dan melodi (opsional)
 - Gunakan tombol template untuk ChordPro/Standar
 - Simpan; lagu kustom disimpan di Local Storage
 
-2) Edit berkas sumber
-Edit file `src/data/songs.js`:
+2. Edit berkas sumber
+   Edit file `src/data/songs.js`:
 
 ```javascript
 {
@@ -200,6 +213,7 @@ Edit file `src/data/songs.js`:
 ## 📱 Responsive Design
 
 Aplikasi fully responsive dan dapat digunakan di:
+
 - Desktop
 - Tablet
 - Mobile
@@ -209,6 +223,7 @@ Aplikasi fully responsive dan dapat digunakan di:
 Aplikasi mendukung input melodi dalam format not angka dan menampilkannya sebagai Not Angka dan Not Balok. Panduan lengkap tersedia di [MELODY_NOTATION_GUIDE.md](MELODY_NOTATION_GUIDE.md).
 
 Ringkasan cepat:
+
 - Angka 1–7 mewakili do–si, gunakan `|` untuk bar
 - Titik `.` untuk oktaf bawah, apostrof `'` untuk oktaf atas
 - Tanda `-` memperpanjang durasi; dukung aksidental `#`/`b`
@@ -232,6 +247,7 @@ Selamat bermain musik! 🎸🎵
 Aplikasi ini dapat terhubung ke database Turso melalui API Serverless Vercel. Backend ringan sudah disiapkan di folder `api/`.
 
 ### 1) Siapkan Turso
+
 - Install CLI Turso (opsional) atau pakai dashboard.
 - Buat database Turso dan token akses (Read-Write).
 - Catat `TURSO_DATABASE_URL` dan `TURSO_AUTH_TOKEN`.
@@ -239,7 +255,9 @@ Aplikasi ini dapat terhubung ke database Turso melalui API Serverless Vercel. Ba
 Contoh inisialisasi schema (opsional, sudah auto-create saat GET `/api/songs` pertama kali): lihat `db/schema.sql`.
 
 ### 2) Set Environment di Vercel
+
 Tambahkan Environment Variables di proyek Vercel:
+
 - `TURSO_DATABASE_URL` = URL database Turso
 - `TURSO_AUTH_TOKEN` = Token RW Turso
 - (opsional) `VITE_TURSO_SYNC` = `true` untuk menyinkronkan create/update/delete dari UI ke DB
@@ -247,6 +265,7 @@ Tambahkan Environment Variables di proyek Vercel:
 Deploy ulang setelah menambahkan env vars.
 
 ### 3) Endpoint yang Tersedia
+
 - `GET /api/songs` → daftar lagu
 - `POST /api/songs` → buat lagu baru (fields: `id?`, `title`, `artist?`, `youtubeId?`, `melody?`, `lyrics?`)
 - `GET /api/songs/:id` → detail lagu
@@ -256,6 +275,7 @@ Deploy ulang setelah menambahkan env vars.
 Semua endpoint menggunakan JSON.
 
 ### 4) Development Lokal
+
 Untuk mencoba fungsi API secara lokal, gunakan Vercel CLI:
 
 ```bash
@@ -278,3 +298,52 @@ Akses frontend di `http://localhost:5173` dan backend di `http://localhost:3000/
 
 Catatan: Sinkronisasi otomatis create/update/delete dari UI hanya aktif jika `VITE_TURSO_SYNC=true` (lihat `.env` atau Vercel Project Env). Fetch awal dari DB tidak diaktifkan agar tidak mengubah alur lokal; Anda dapat menambahkan fetch awal sesuai kebutuhan.
 
+---
+
+## 🤖 AI Assistant (Gemini)
+
+Fitur AI berbasis Google Gemini untuk membantu:
+
+- Menyarankan progresi chord yang cocok
+- Memperbaiki/merapikan format ChordPro
+- Memberi saran transposisi dan ringkas lirik
+
+### Cara Pakai
+
+- Klik tombol "🤖 AI" di panel navigasi.
+- Pilih model (Gemini 2.5 Flash/Pro), tulis prompt, dan (opsional) sertakan konteks lagu terpilih.
+
+### Konfigurasi
+
+Tambahkan environment variable berikut di lokal/hosting:
+
+```
+GEMINI_API_KEY=your-google-ai-studio-key
+```
+
+Kunci ini digunakan oleh backend route `/api/ai` (proxy aman), sehingga tidak diekspos ke frontend.
+
+### Menjalankan Backend API (Lokal)
+
+Untuk menggunakan fitur AI, backend API harus berjalan di port 3000. Ada beberapa cara:
+
+1. **Otomatis (dengan concurrently):**
+
+```bash
+npm run dev:full
+```
+
+2. **Manual (dua terminal terpisah):**
+   Terminal 1 (Backend):
+
+```bash
+npm run dev:api
+```
+
+Terminal 2 (Frontend):
+
+```bash
+npm run dev
+```
+
+Backend API akan tersedia di `http://localhost:3000/api/*` dan Vite dev server akan proxy request `/api/*` ke backend.

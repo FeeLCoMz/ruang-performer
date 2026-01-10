@@ -8,6 +8,7 @@ import { getTransposeSteps } from './utils/chordUtils';
 import YouTubeViewer from './components/YouTubeViewer';
 import AutoScroll from './components/AutoScroll';
 import HelpModal from './components/HelpModal';
+import AiAssistant from './components/AiAssistant';
 import SongFormBaru from './components/SongForm';
 import SetListForm from './components/SetListForm';
 import SongListItem from './components/SongListItem';
@@ -85,6 +86,7 @@ function App() {
   const [showSetListPopup, setShowSetListPopup] = useState(false);
   // const [showSidebarNav, setShowSidebarNav] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
+  const [showAI, setShowAI] = useState(false);
   const scrollRef = useRef(null);
   const isInitialLoad = useRef(true);
 
@@ -602,6 +604,13 @@ function App() {
             >
               ⚙️
             </button>
+            <button
+              className="nav-btn"
+              onClick={() => setShowAI(true)}
+              title="AI Assistant (Gemini)"
+            >
+              🤖 AI
+            </button>
           </nav>
 
           <div className="content-wrapper">
@@ -873,6 +882,13 @@ function App() {
               setShowSongForm(false);
               setEditingSong(null);
             }}
+          />
+        )}
+
+        {showAI && (
+          <AiAssistant
+            song={selectedSong || null}
+            onClose={() => setShowAI(false)}
           />
         )}
 

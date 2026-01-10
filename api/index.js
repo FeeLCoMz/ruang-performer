@@ -6,6 +6,7 @@ import http from 'http';
 import songsHandler from './songs/index.js';
 import setlistsHandler from './setlists/index.js';
 import statusHandler from './status.js';
+import aiHandler from './ai.js';
 
 const app = express();
 app.use(cors());
@@ -20,6 +21,9 @@ app.use('/api/setlists', (req, res, next) => {
 });
 app.use('/api/status', (req, res, next) => {
   Promise.resolve(statusHandler(req, res)).catch(next);
+});
+app.use('/api/ai', (req, res, next) => {
+  Promise.resolve(aiHandler(req, res)).catch(next);
 });
 
 // Extract chord from URL (CORS bypass)

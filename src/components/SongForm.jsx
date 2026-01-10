@@ -15,10 +15,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [tapTimes, setTapTimes] = useState([]);
   const [bpm, setBpm] = useState(null);
   const [minimizeYouTube, setMinimizeYouTube] = useState(false);
-  const [showImportUrl, setShowImportUrl] = useState(false);
-  const [importUrl, setImportUrl] = useState('');
-  const [isImporting, setIsImporting] = useState(false);
-  const [importError, setImportError] = useState('');
   const [showYouTubeSearch, setShowYouTubeSearch] = useState(false);
   const [youtubeSearchQuery, setYoutubeSearchQuery] = useState('');
   const [youtubeResults, setYoutubeResults] = useState([]);
@@ -109,48 +105,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     setTapTimes([]);
     setBpm(null);
     setFormData(prev => ({ ...prev, tempo: '' }));
-  };
-  const extractFromChordtela = async () => {
-    if (!importUrl.trim()) {
-      setImportError('URL tidak boleh kosong');
-      return;
-    }
-
-    setIsImporting(true);
-    setImportError('');
-
-    try {
-      // Use backend API to fetch and bypass CORS
-      const response = await fetch('/api/extract-chord', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: importUrl })
-      });
-
-      if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}: Gagal mengambil data dari URL`;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          // Response is not JSON, use default message
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      if (!data.html) {
-        throw new Error('Tidak ada konten HTML ditemukan dalam respons');
-      }
-
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(data.html, 'text/html');
-      parseChordtelaContent(doc);
-    } catch (error) {
-      setImportError(`Error: ${error.message}`);
-    } finally {
-      setIsImporting(false);
-    }
   };
 
   const searchYouTube = async () => {
@@ -283,50 +237,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     setSearchError('');
   };
 
-  const parseChordtelaContent = (doc) => {
-    try {
-      // Extract title and artist from meta tags or page content
-      const titleElem = doc.querySelector('h1') || doc.querySelector('title');
-      const title = titleElem?.textContent?.trim() || '';
 
-      // Try to find artist info
-      const artistElem = doc.querySelector('[class*="artist"], [data-artist]');
-      const artist = artistElem?.textContent?.trim() || '';
-
-      // Extract chord and lyrics from pre tag or div.chord-content
-      const chordContent = 
-        doc.querySelector('pre.chord') ||
-        doc.querySelector('div.chord-content') ||
-        doc.querySelector('div.content') ||
-        doc.querySelector('article');
-
-      if (!chordContent) {
-        setImportError('Tidak dapat menemukan chord atau lirik di halaman ini');
-        return;
-      }
-
-      const lyrics = chordContent.textContent?.trim() || '';
-
-      if (!lyrics) {
-        setImportError('Lirik tidak ditemukan di halaman');
-        return;
-      }
-
-      // Update form data
-      setFormData(prev => ({
-        ...prev,
-        title: title || prev.title,
-        artist: artist || prev.artist,
-        lyrics: lyrics
-      }));
-
-      setShowImportUrl(false);
-      setImportUrl('');
-      setImportError('');
-    } catch (error) {
-      setImportError(`Gagal memproses konten: ${error.message}`);
-    }
-  };
 
   // ...existing code...
 
@@ -702,9 +613,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   <button type="button" onClick={convertStandardToChordPro} className="btn btn-sm btn-primary">
                     🔄 Convert ke ChordPro
                   </button>
-                  <button type="button" onClick={() => setShowImportUrl(true)} className="btn btn-sm btn-secondary">
-                    🔗 Impor dari URL
-                  </button>
                 </div>
               </div>
               <textarea
@@ -732,75 +640,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
         </div>
       </div>
 
-      {/* Import from URL Modal */}
-      {showImportUrl && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '500px' }}>
-            <button
-              onClick={() => {
-                setShowImportUrl(false);
-                setImportUrl('');
-                setImportError('');
-              }}
-              className="btn-close"
-              style={{ position: 'absolute', top: 18, right: 18, zIndex: 10 }}
-              aria-label="Tutup"
-            >
-              ✕
-            </button>
-            <div className="modal-header">
-              <h2 style={{ marginBottom: 0 }}>🔗 Impor dari URL</h2>
-            </div>
-            <div style={{ padding: '1.5rem' }}>
-              <div className="form-group">
-                <label htmlFor="importUrl">URL Chordtela atau Situs Chord Lainnya</label>
-                <input
-                  type="url"
-                  id="importUrl"
-                  value={importUrl}
-                  onChange={(e) => {
-                    setImportUrl(e.target.value);
-                    setImportError('');
-                  }}
-                  placeholder="https://chordtela.com/..."
-                  autoFocus
-                />
-                <small style={{ display: 'block', marginTop: '0.35rem', color: 'var(--text-muted)' }}>
-                  Masukkan URL lengkap dari halaman chord lagu yang ingin diimpor
-                </small>
-              </div>
-              {importError && (
-                <div style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '1rem', padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px' }}>
-                  {importError}
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={extractFromChordtela}
-                  disabled={isImporting}
-                  className="btn btn-primary"
-                  style={{ flex: 1 }}
-                >
-                  {isImporting ? '⏳ Mengambil...' : '🔍 Impor'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowImportUrl(false);
-                    setImportUrl('');
-                    setImportError('');
-                  }}
-                  className="btn"
-                  style={{ flex: 1 }}
-                >
-                  Batal
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* YouTube Search Modal */}
       {showYouTubeSearch && (

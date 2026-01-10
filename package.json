@@ -9,6 +9,8 @@
   "scripts": {
     "prebuild": "node bump-version.js && node set-version-env.js",
     "dev": "vite",
+    "dev:api": "node api/index.js",
+    "dev:full": "concurrently \"npm run dev:api\" \"npm run dev\"",
     "build": "vite build",
     "preview": "vite preview",
     "update": "npm update",
@@ -29,6 +31,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.2.1",
     "vite": "^5.1.0"
   }
 }
