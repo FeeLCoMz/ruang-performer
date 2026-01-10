@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     const client = getTursoClient();
     if (req.method === 'GET') {
       const result = await client.execute(
-        `SELECT id, title, artist, youtubeId, melody, lyrics, createdAt, updatedAt
+        `SELECT id, title, artist, youtubeId, melody, lyrics, key, tempo, style, timestamps, createdAt, updatedAt
          FROM songs WHERE id = ? LIMIT 1`,
         [id.toString()]
       );
@@ -34,7 +34,10 @@ export default async function handler(req, res) {
         res.status(404).json({ error: 'Not found' });
         return;
       }
-      res.status(200).json(row);
+      res.status(200).json({
+        ...row,
+        timestamps: row.timestamps ? JSON.parse(row.timestamps) : []
+      });
       return;
     }
 
@@ -49,6 +52,10 @@ export default async function handler(req, res) {
            youtubeId = COALESCE(?, youtubeId),
            melody = COALESCE(?, melody),
            lyrics = COALESCE(?, lyrics),
+           key = COALESCE(?, key),
+           tempo = COALESCE(?, tempo),
+           style = COALESCE(?, style),
+           timestamps = COALESCE(?, timestamps),
            updatedAt = ?
          WHERE id = ?`,
         [
@@ -57,6 +64,10 @@ export default async function handler(req, res) {
           body.youtubeId ?? null,
           body.melody ?? null,
           body.lyrics ?? null,
+          body.key ?? null,
+          body.tempo ?? null,
+          body.style ?? null,
+          (Array.isArray(body.timestamps) ? JSON.stringify(body.timestamps) : (body.timestamps ?? null)),
           now,
           id.toString(),
         ]

@@ -25,9 +25,11 @@ function extractYouTubeId(input) {
   return null;
 }
 
-const YouTubeViewer = ({ videoId, minimalControls = false }) => {
+const YouTubeViewer = ({ videoId, minimalControls = false, onTimeUpdate, seekToTime }) => {
   const [player, setPlayer] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const containerIdRef = useRef(`youtube-player-${Math.random().toString(36).slice(2,9)}`);
   const mountedRef = useRef(false);
 
@@ -86,6 +88,10 @@ const YouTubeViewer = ({ videoId, minimalControls = false }) => {
       events: {
         onReady: (event) => {
           setPlayer(event.target);
+          try {
+            const d = event.target.getDuration?.() || 0;
+            setDuration(Number.isFinite(d) ? d : 0);
+          } catch {}
         },
         onStateChange: (event) => {
           setIsPlaying(event.data === window.YT.PlayerState.PLAYING);
@@ -104,6 +110,14 @@ const YouTubeViewer = ({ videoId, minimalControls = false }) => {
     if (player) player.stopVideo();
   };
 
+  const handleSeek = (value) => {
+    const t = Math.max(0, Math.floor(Number(value) || 0));
+    setCurrentTime(t);
+    if (player && typeof player.seekTo === 'function') {
+      try { player.seekTo(t, true); } catch {}
+    }
+  };
+
   const id = extractYouTubeId(videoId);
   if (!id) {
     return (
@@ -113,10 +127,63 @@ const YouTubeViewer = ({ videoId, minimalControls = false }) => {
     );
   }
 
+  // Poll current time every 500ms when player is available
+  useEffect(() => {
+    if (!player) return;
+    const interval = setInterval(() => {
+      try {
+        const t = player.getCurrentTime?.() || 0;
+        const d = player.getDuration?.() || duration;
+        setCurrentTime(Number.isFinite(t) ? t : 0);
+        setDuration(Number.isFinite(d) ? d : 0);
+        if (typeof onTimeUpdate === 'function') {
+          try { onTimeUpdate(Number.isFinite(t) ? t : 0, Number.isFinite(d) ? d : 0); } catch {}
+        }
+      } catch {}
+    }, 500);
+    return () => clearInterval(interval);
+  }, [player]);
+
+  // External seek control
+  useEffect(() => {
+    if (player && typeof seekToTime === 'number' && Number.isFinite(seekToTime)) {
+      try { player.seekTo(Math.max(0, seekToTime), true); } catch {}
+      setCurrentTime(Math.max(0, Math.floor(seekToTime)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seekToTime]);
+
+  const fmt = (s) => {
+    const sec = Math.max(0, Math.floor(s || 0));
+    const m = Math.floor(sec / 60);
+    const r = sec % 60;
+    return `${m}:${r.toString().padStart(2, '0')}`;
+  };
+
   if (minimalControls) {
     return (
-      <div className="youtube-viewer-minimal">
-        <div className="video-controls">
+      <div className="youtube-viewer-minimal" style={{ position: 'relative' }}>
+        {/* Hidden player container to enable audio playback without showing video */}
+        <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0 }}>
+          <div id={containerIdRef.current}></div>
+        </div>
+        {/* Scrubber above controls */}
+        <div className="video-scrubber" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <input
+            type="range"
+            min={0}
+            max={Math.max(1, Math.floor(duration))}
+            step={1}
+            value={Math.floor(currentTime)}
+            onChange={(e) => handleSeek(e.target.value)}
+            onInput={(e) => handleSeek(e.target.value)}
+            disabled={!player || !duration}
+            style={{ width: 260 }}
+            aria-label="Scrub waktu video"
+          />
+          <span style={{ color: 'var(--text-muted)' }}>{fmt(currentTime)} / {fmt(duration)}</span>
+        </div>
+        <div className="video-controls" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <button type="button" onClick={handlePlayPause} className="btn btn-secondary">
             {isPlaying ? '⏸ Pause' : '▶ Play'}
           </button>
@@ -133,7 +200,23 @@ const YouTubeViewer = ({ videoId, minimalControls = false }) => {
       <div className="video-container">
         <div id={containerIdRef.current}></div>
       </div>
-      <div className="video-controls">
+      {/* Scrubber above controls */}
+      <div className="video-scrubber" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+        <input
+          type="range"
+          min={0}
+          max={Math.max(1, Math.floor(duration))}
+          step={1}
+          value={Math.floor(currentTime)}
+          onChange={(e) => handleSeek(e.target.value)}
+          onInput={(e) => handleSeek(e.target.value)}
+          disabled={!player || !duration}
+          style={{ width: '100%' }}
+          aria-label="Scrub waktu video"
+        />
+        <span style={{ color: 'var(--text-muted)' }}>{fmt(currentTime)} / {fmt(duration)}</span>
+      </div>
+      <div className="video-controls" style={{ marginTop: '0.25rem' }}>
         <button type="button" onClick={handlePlayPause} className="btn btn-secondary">
           {isPlaying ? '⏸ Pause' : '▶ Play'}
         </button>

@@ -24,12 +24,13 @@ export default async function handler(req, res) {
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           songs TEXT DEFAULT '[]',
+          songKeys TEXT DEFAULT '{}',
           createdAt TEXT DEFAULT (datetime('now')),
           updatedAt TEXT
         )`
       );
       const rows = await client.execute(
-        `SELECT id, name, songs, createdAt, updatedAt
+        `SELECT id, name, songs, songKeys, createdAt, updatedAt
          FROM setlists
          ORDER BY (updatedAt IS NULL) ASC, datetime(updatedAt) DESC, datetime(createdAt) DESC`
       );
@@ -37,6 +38,7 @@ export default async function handler(req, res) {
         id: row.id,
         name: row.name,
         songs: row.songs ? JSON.parse(row.songs) : [],
+        songKeys: row.songKeys ? JSON.parse(row.songKeys) : {},
         createdAt: row.createdAt,
         updatedAt: row.updatedAt
       }));
@@ -49,13 +51,15 @@ export default async function handler(req, res) {
       const id = body.id?.toString() || randomUUID();
       const now = new Date().toISOString();
       const songsJson = JSON.stringify(body.songs || []);
+      const songKeysJson = JSON.stringify(body.songKeys || {});
       await client.execute(
-        `INSERT INTO setlists (id, name, songs, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO setlists (id, name, songs, songKeys, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
           id,
           body.name || 'Untitled Set List',
           songsJson,
+          songKeysJson,
           body.createdAt || now,
           now,
         ]

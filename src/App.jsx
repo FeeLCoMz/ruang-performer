@@ -71,6 +71,9 @@ function App() {
   const [autoScrollActive, setAutoScrollActive] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(1);
   const [showYouTube, setShowYouTube] = useState(false);
+  const [currentVideoTime, setCurrentVideoTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [viewerSeekTo, setViewerSeekTo] = useState(null);
   const [currentSetList, setCurrentSetList] = useState(null);
   const [showSongForm, setShowSongForm] = useState(false);
   const [editingSong, setEditingSong] = useState(null);
@@ -839,13 +842,40 @@ function App() {
                   )}
                   {showYouTube && selectedSong?.youtubeId && (
                     <div className="youtube-section">
-                      <YouTubeViewer videoId={selectedSong.youtubeId} />
+                      <YouTubeViewer
+                        videoId={selectedSong.youtubeId}
+                        onTimeUpdate={(t, d) => { setCurrentVideoTime(t); setVideoDuration(d); }}
+                        seekToTime={viewerSeekTo}
+                      />
                     </div>
                   )}
                   {/* Tombol fullscreen dan lirik fullscreen */}
                   <div className="lyrics-section" ref={scrollRef}>
                     {selectedSong ? (
                       <>
+                        {(Array.isArray(selectedSong.timestamps) && selectedSong.timestamps.length > 0) && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '0.5rem' }}>
+                            <strong style={{ color: 'var(--text)' }}>⏱️ Struktur Lagu</strong>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                              {selectedSong.timestamps.map((ts, idx) => (
+                                <button
+                                  key={idx}
+                                  className="btn btn-xs"
+                                  title={`Loncat ke ${ts.label}: ${Math.floor(ts.time/60)}:${(ts.time%60).toString().padStart(2,'0')}`}
+                                  onClick={() => {
+                                    if (selectedSong?.youtubeId) {
+                                      setShowYouTube(true);
+                                      setViewerSeekTo(Math.max(0, Number(ts.time) || 0));
+                                      setTimeout(() => setViewerSeekTo(null), 0);
+                                    }
+                                  }}
+                                >
+                                  {ts.label} ({Math.floor(ts.time/60)}:{(ts.time%60).toString().padStart(2,'0')})
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', justifyContent: 'flex-end' }}>
                           <button
                             onClick={() => handleEditSong(selectedSong)}

@@ -4,7 +4,10 @@ import cors from 'cors';
 import https from 'https';
 import http from 'http';
 import songsHandler from './songs/index.js';
+import songsIdHandler from './songs/[id].js';
+import songsSyncHandler from './songs/sync.js';
 import setlistsHandler from './setlists/index.js';
+import setlistsIdHandler from './setlists/[id].js';
 import statusHandler from './status.js';
 import aiHandler from './ai.js';
 
@@ -13,8 +16,17 @@ app.use(cors());
 app.use(express.json());
 
 // Wrap handler functions so this file can be used for local Express dev
+app.use('/api/songs/sync', (req, res, next) => {
+  Promise.resolve(songsSyncHandler(req, res)).catch(next);
+});
+app.use('/api/songs/:id', (req, res, next) => {
+  Promise.resolve(songsIdHandler(req, res)).catch(next);
+});
 app.use('/api/songs', (req, res, next) => {
   Promise.resolve(songsHandler(req, res)).catch(next);
+});
+app.use('/api/setlists/:id', (req, res, next) => {
+  Promise.resolve(setlistsIdHandler(req, res)).catch(next);
 });
 app.use('/api/setlists', (req, res, next) => {
   Promise.resolve(setlistsHandler(req, res)).catch(next);

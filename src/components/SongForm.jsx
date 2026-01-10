@@ -9,12 +9,13 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     key: '',
     tempo: '',
     style: '',
-    lyrics: ''
+    lyrics: '',
+    timestamps: []
   });
   const [errors, setErrors] = useState({});
   const [tapTimes, setTapTimes] = useState([]);
   const [bpm, setBpm] = useState(null);
-  const [minimizeYouTube, setMinimizeYouTube] = useState(false);
+  const [minimizeYouTube, setMinimizeYouTube] = useState(true);
   const [showYouTubeSearch, setShowYouTubeSearch] = useState(false);
   const [youtubeSearchQuery, setYoutubeSearchQuery] = useState('');
   const [youtubeResults, setYoutubeResults] = useState([]);
@@ -37,7 +38,8 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
         key: song.key || '',
         tempo: song.tempo || '',
         style: song.style || '',
-        lyrics: song.lyrics || ''
+        lyrics: song.lyrics || '',
+        timestamps: Array.isArray(song.timestamps) ? song.timestamps : []
       });
     }
   }, [song]);
@@ -70,6 +72,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
       tempo: formData.tempo.trim(),
       style: formData.style.trim(),
       lyrics: formData.lyrics.trim(),
+      timestamps: Array.isArray(formData.timestamps) ? formData.timestamps : [],
       createdAt: song?.createdAt || new Date().toISOString()
     };
     onSave(songData);
@@ -105,6 +108,41 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     setTapTimes([]);
     setBpm(null);
     setFormData(prev => ({ ...prev, tempo: '' }));
+  };
+
+  // ===== Timestamp (Struktur Lagu) helpers =====
+  const [currentVideoTime, setCurrentVideoTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [viewerSeekTo, setViewerSeekTo] = useState(null);
+
+  const fmtTime = (s) => {
+    const sec = Math.max(0, Math.floor(s || 0));
+    const m = Math.floor(sec / 60);
+    const r = sec % 60;
+    return `${m}:${r.toString().padStart(2, '0')}`;
+  };
+
+  const addTimestamp = (label) => {
+    const time = Math.floor(currentVideoTime || 0);
+    if (!formData.youtubeId) return;
+    if (!label || !label.trim()) return;
+    setFormData(prev => ({
+      ...prev,
+      timestamps: [...(prev.timestamps || []), { label: label.trim(), time }]
+    }));
+  };
+
+  const removeTimestamp = (idx) => {
+    setFormData(prev => ({
+      ...prev,
+      timestamps: (prev.timestamps || []).filter((_, i) => i !== idx)
+    }));
+  };
+
+  const seekToTimestamp = (time) => {
+    setViewerSeekTo(Math.max(0, Number(time) || 0));
+    // reset after trigger to avoid repeated seeks on same value
+    setTimeout(() => setViewerSeekTo(null), 0);
   };
 
   const searchYouTube = async () => {
@@ -576,13 +614,63 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   placeholder="Contoh: dQw4w9WgXcQ"
                 />
                 <small style={{ display: 'block', marginTop: '0.35rem' }}>ID adalah kode setelah "v=" di URL YouTube</small>
-                {formData.youtubeId && !minimizeYouTube && (
+                {formData.youtubeId && (
                   <div className="youtube-viewer-section">
-                    <YouTubeViewer videoId={formData.youtubeId} />
+                    <YouTubeViewer
+                      videoId={formData.youtubeId}
+                      minimalControls={minimizeYouTube}
+                      onTimeUpdate={(t, d) => { setCurrentVideoTime(t); setVideoDuration(d); }}
+                      seekToTime={viewerSeekTo}
+                    />
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Section 4b: Struktur Lagu (Timestamp) */}
+            {formData.youtubeId && (
+              <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                <div className="textarea-header" style={{ alignItems: 'center' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    ⏱️ Struktur Lagu (Timestamp)
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                      Waktu saat ini: {fmtTime(currentVideoTime)} / {fmtTime(videoDuration)}
+                    </span>
+                  </label>
+                  <div className="template-buttons" style={{ gap: '0.5rem' }}>
+                    <select id="tsLabel" className="btn" style={{ minWidth: 140 }} defaultValue="Verse">
+                      {['Intro','Verse','Pre-Chorus','Chorus','Bridge','Solo','Outro'].map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => {
+                      const sel = document.getElementById('tsLabel');
+                      addTimestamp(sel?.value || 'Verse');
+                    }} title="Tambah timestamp pada waktu saat ini">
+                      ➕ Tambah Timestamp
+                    </button>
+                  </div>
+                </div>
+                {(formData.timestamps || []).length > 0 ? (
+                  <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.5rem' }}>
+                    {formData.timestamps.map((ts, idx) => (
+                      <li key={idx} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <strong style={{ color: 'var(--text)' }}>{ts.label}</strong>
+                          <small style={{ color: 'var(--text-muted)' }}>{fmtTime(ts.time)}</small>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.25rem' }}>
+                          <button type="button" className="btn btn-xs" onClick={() => seekToTimestamp(ts.time)} title="Putar dari timestamp">▶</button>
+                          <button type="button" className="btn btn-xs btn-danger" onClick={() => removeTimestamp(idx)} title="Hapus">🗑</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <small style={{ color: 'var(--text-muted)' }}>Belum ada timestamp. Pilih label lalu klik ➕ Tambah Timestamp.</small>
+                )}
+              </div>
+            )}
 
             {/* Section 5: Lyrics & Chord */}
             <div className="form-group">

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS songs (
   style TEXT,
   melody TEXT,
   lyrics TEXT,
+  timestamps TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   updatedAt TEXT
 );
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS setlists (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   songs TEXT DEFAULT '[]',
+  songKeys TEXT DEFAULT '{}',
   createdAt TEXT DEFAULT (datetime('now')),
   updatedAt TEXT
 );
