@@ -303,7 +303,7 @@ function App() {
         await fetch(`/api/setlists/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, songs: updatedSetList.songs, updatedAt: updatedSetList.updatedAt })
+          body: JSON.stringify({ name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, updatedAt: updatedSetList.updatedAt })
         });
       } catch (err) {
         console.error('Gagal update setlist:', err);
@@ -342,7 +342,7 @@ function App() {
         await fetch(`/api/setlists/${setListId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, updatedAt: updatedSetList.updatedAt })
+          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, updatedAt: updatedSetList.updatedAt })
         });
       } catch (err) {
         console.error('Gagal menambah lagu ke setlist:', err);
@@ -402,7 +402,7 @@ function App() {
         await fetch(`/api/setlists/${setListId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, updatedAt: updatedSetList.updatedAt })
+          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, updatedAt: updatedSetList.updatedAt })
         });
       } catch (err) {
         console.error('Gagal menghapus lagu dari setlist:', err);
