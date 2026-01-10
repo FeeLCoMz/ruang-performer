@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 
-export default function SongListItem({ song, isActive, onSelect, onEdit, onDelete, setLists, onAddToSetLists, onRemoveFromSetList }) {
+export default function SongListItem({ song, isActive, onSelect, onEdit, onDelete, setLists, onAddToSetLists, onRemoveFromSetList, currentSetList, overrideKey, onSetListKeyChange }) {
   const [showSetListPopup, setShowSetListPopup] = useState(false);
   const [selectedSetLists, setSelectedSetLists] = useState([]);
+  const [tempKey, setTempKey] = useState(overrideKey || '');
+
+  React.useEffect(() => {
+    setTempKey(overrideKey || '');
+  }, [overrideKey]);
 
   const handleAddClick = (e) => {
     e.stopPropagation();
@@ -46,6 +51,30 @@ export default function SongListItem({ song, isActive, onSelect, onEdit, onDelet
         <div className="song-artist">{song.artist}</div>
         <div className="song-meta" style={{ fontSize: '0.85em', color: '#a5b4fc', marginTop: 2 }}>
           {song.key && <span style={{ marginRight: 8 }}>Key: <b>{song.key}</b></span>}
+          {currentSetList && (
+            <span
+              style={{ marginRight: 8 }}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              Override:
+              <select
+                value={tempKey}
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onChange={(e) => { e.stopPropagation(); setTempKey(e.target.value); }}
+                onBlur={() => onSetListKeyChange && onSetListKeyChange(tempKey)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onSetListKeyChange && onSetListKeyChange(tempKey); } }}
+                style={{ marginLeft: 6, padding: '2px 4px', fontSize: '0.85em' }}
+                title="Set key untuk lagu ini di setlist"
+              >
+                <option value="">(default)</option>
+                {['C','C#','D','D#','E','F','F#','G','G#','A','A#','B','Db','Eb','Gb','Ab','Bb'].map(k => (
+                  <option key={k} value={k}>{k}</option>
+                ))}
+              </select>
+            </span>
+          )}
           {song.tempo && <span style={{ marginRight: 8 }}>Tempo: <b>{song.tempo}</b></span>}
           {song.style && <span>Style: <b>{song.style}</b></span>}
         </div>

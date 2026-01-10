@@ -34,6 +34,31 @@ export const transposeChord = (chord, steps) => {
   return noteArray[newIndex] + suffix;
 };
 
+// Get semitone index for a root note using sharp scale, accepting flats
+export const getNoteIndex = (root) => {
+  if (!root) return null;
+  const r = root.trim();
+  let idx = NOTES_SHARP.indexOf(r);
+  if (idx === -1) {
+    // Map flats to sharps
+    const flatToSharp = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#' };
+    const alt = flatToSharp[r] || r;
+    idx = NOTES_SHARP.indexOf(alt);
+  }
+  return idx === -1 ? null : idx;
+};
+
+// Calculate semitone steps needed to transpose fromKey -> toKey
+export const getTransposeSteps = (fromKey, toKey) => {
+  const fromIdx = getNoteIndex(fromKey);
+  const toIdx = getNoteIndex(toKey);
+  if (fromIdx == null || toIdx == null) return 0;
+  let steps = toIdx - fromIdx;
+  if (steps > 6) steps -= 12;
+  if (steps < -6) steps += 12;
+  return steps;
+};
+
 // Fungsi untuk mendeteksi apakah sebuah baris adalah baris chord
 const isChordLine = (line) => {
   if (!line.trim()) return false;

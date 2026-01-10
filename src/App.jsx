@@ -4,6 +4,7 @@ import SettingsModal from './components/SettingsModal';
 // Render SettingsModal di dalam return utama
 import React, { useState, useRef, useEffect } from 'react';
 import ChordDisplay from './components/ChordDisplay';
+import { getTransposeSteps } from './utils/chordUtils';
 import YouTubeViewer from './components/YouTubeViewer';
 import AutoScroll from './components/AutoScroll';
 import HelpModal from './components/HelpModal';
@@ -197,7 +198,21 @@ function App() {
 
   const handleSelectSong = (song) => {
     setSelectedSong(song);
-    setTranspose(0);
+    // Apply setlist-specific key override as transpose if exists
+    if (currentSetList) {
+      const setList = setLists.find(sl => sl.id === currentSetList);
+      const overrideKey = setList?.songKeys?.[song.id];
+      if (overrideKey && (song.key || (song.lyrics && song.lyrics.includes('{key')))) {
+        // Determine original key: prefer song.key; else parsed metadata handled in ChordDisplay
+        const originalKey = song.key;
+        const steps = originalKey ? getTransposeSteps(originalKey, overrideKey) : 0;
+        setTranspose(steps);
+      } else {
+        setTranspose(0);
+      }
+    } else {
+      setTranspose(0);
+    }
   };
 
   const handleSaveSong = async (songData) => {
@@ -310,7 +325,7 @@ function App() {
     setSetLists(prevSetLists => {
       return prevSetLists.map(setList => {
         if (setList.id === setListId && !setList.songs.includes(songId)) {
-          const next = { ...setList, songs: [...setList.songs, songId], updatedAt: Date.now() };
+          const next = { ...setList, songs: [...setList.songs, songId], songKeys: setList.songKeys || {}, updatedAt: Date.now() };
           updatedSetList = next;
           return next;
         }
@@ -335,13 +350,48 @@ function App() {
     setSetLists(prevSetLists => {
       return prevSetLists.map(setList => {
         if (setList.id === setListId) {
-          const next = { ...setList, songs: setList.songs.filter(id => id !== songId), updatedAt: Date.now() };
+          const next = { ...setList, songs: setList.songs.filter(id => id !== songId), songKeys: setList.songKeys || {}, updatedAt: Date.now() };
+          if (next.songKeys && next.songKeys[songId]) {
+            const { [songId]: _, ...rest } = next.songKeys;
+            next.songKeys = rest;
+          }
           updatedSetList = next;
           return next;
         }
         return setList;
       });
     });
+      // Update/setlist-specific key override for a song
+      const handleSetListSongKey = async (setListId, songId, key) => {
+        let updatedSetList = null;
+        setSetLists(prevSetLists => {
+          return prevSetLists.map(setList => {
+            if (setList.id === setListId) {
+              const next = { ...setList, songKeys: { ...(setList.songKeys || {}) }, updatedAt: Date.now() };
+              if (key && key.trim()) {
+                next.songKeys[songId] = key.trim();
+              } else if (next.songKeys[songId]) {
+                const { [songId]: _, ...rest } = next.songKeys;
+                next.songKeys = rest;
+              }
+              updatedSetList = next;
+              return next;
+            }
+            return setList;
+          });
+        });
+        if (updatedSetList) {
+          try {
+            await fetch(`/api/setlists/${setListId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, updatedAt: updatedSetList.updatedAt })
+            });
+          } catch (err) {
+            console.error('Gagal menyimpan key setlist:', err);
+          }
+        }
+      };
     if (updatedSetList) {
       try {
         await fetch(`/api/setlists/${setListId}`, {
@@ -535,13 +585,15 @@ function App() {
             >
               🎵 Setlist
             </button>
-            <button
-              className={`nav-btn ${!selectedSong ? '' : 'active'}`}
-              onClick={() => setSelectedSong(null)}
-              title="Kembali ke daftar"
-            >
-              ← Kembali
-            </button>
+            {selectedSong && (
+              <button
+                className="nav-btn active"
+                onClick={() => setSelectedSong(null)}
+                title="Kembali ke daftar"
+              >
+                ← Kembali
+              </button>
+            )}
             <button
               className="nav-btn"
               onClick={() => setShowSettingsMenu(true)}
@@ -630,6 +682,36 @@ function App() {
                             onEdit={() => handleEditSong(song)}
                             onDelete={() => handleDeleteSong(song.id)}
                             setLists={setLists}
+                            currentSetList={currentSetList}
+                            overrideKey={(currentSetList ? (setLists.find(sl => sl.id === currentSetList)?.songKeys?.[song.id]) : null) || null}
+                            onSetListKeyChange={(key) => {
+                              if (!currentSetList) return;
+                              const setListId = currentSetList;
+                              let updatedSetList = null;
+                              setSetLists(prevSetLists => {
+                                return prevSetLists.map(setList => {
+                                  if (setList.id === setListId) {
+                                    const next = { ...setList, songKeys: { ...(setList.songKeys || {}) }, updatedAt: Date.now() };
+                                    if (key && key.trim()) {
+                                      next.songKeys[song.id] = key.trim();
+                                    } else if (next.songKeys[song.id]) {
+                                      const { [song.id]: _, ...rest } = next.songKeys;
+                                      next.songKeys = rest;
+                                    }
+                                    updatedSetList = next;
+                                    return next;
+                                  }
+                                  return setList;
+                                });
+                              });
+                              if (updatedSetList) {
+                                fetch(`/api/setlists/${setListId}`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, updatedAt: updatedSetList.updatedAt })
+                                }).catch(err => console.error('Gagal menyimpan key setlist:', err));
+                              }
+                            }}
                             onAddToSetLists={slIds => slIds.forEach(slId => handleAddSongToSetList(slId, song.id))}
                             onRemoveFromSetList={handleRemoveSongFromSetList}
                           />
