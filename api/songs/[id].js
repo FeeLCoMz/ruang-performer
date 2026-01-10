@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     const client = getTursoClient();
     if (req.method === 'GET') {
       const result = await client.execute(
-        `SELECT id, title, artist, youtubeId, melody, lyrics, key, tempo, style, timestamps, createdAt, updatedAt
+        `SELECT id, title, artist, youtubeId, lyrics, key, tempo, style, timestamps, createdAt, updatedAt
          FROM songs WHERE id = ? LIMIT 1`,
         [id.toString()]
       );
@@ -50,7 +50,6 @@ export default async function handler(req, res) {
            title = COALESCE(?, title),
            artist = COALESCE(?, artist),
            youtubeId = COALESCE(?, youtubeId),
-           melody = COALESCE(?, melody),
            lyrics = COALESCE(?, lyrics),
            key = COALESCE(?, key),
            tempo = COALESCE(?, tempo),
@@ -62,7 +61,6 @@ export default async function handler(req, res) {
           body.title ?? null,
           body.artist ?? null,
           body.youtubeId ?? null,
-          body.melody ?? null,
           body.lyrics ?? null,
           body.key ?? null,
           body.tempo ?? null,

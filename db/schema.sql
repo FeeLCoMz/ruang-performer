@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS songs (
   key TEXT,
   tempo TEXT,
   style TEXT,
-  melody TEXT,
   lyrics TEXT,
   timestamps TEXT,
   createdAt TEXT DEFAULT (datetime('now')),

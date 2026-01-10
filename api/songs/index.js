@@ -25,7 +25,6 @@ export default async function handler(req, res) {
           title TEXT NOT NULL,
           artist TEXT,
           youtubeId TEXT,
-          melody TEXT,
           lyrics TEXT,
           key TEXT,
           tempo TEXT,
@@ -36,7 +35,7 @@ export default async function handler(req, res) {
         )`
       );
       const rows = await client.execute(
-        `SELECT id, title, artist, youtubeId, melody, lyrics, key, tempo, style, timestamps, createdAt, updatedAt
+        `SELECT id, title, artist, youtubeId, lyrics, key, tempo, style, timestamps, createdAt, updatedAt
          FROM songs
          ORDER BY (updatedAt IS NULL) ASC, datetime(updatedAt) DESC, datetime(createdAt) DESC`
       );
@@ -54,13 +53,12 @@ export default async function handler(req, res) {
       const upsertOne = async (item) => {
         const id = item.id?.toString() || randomUUID();
         await client.execute(
-          `INSERT INTO songs (id, title, artist, youtubeId, melody, lyrics, key, tempo, style, timestamps, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, style, timestamps, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title,
              artist = excluded.artist,
              youtubeId = excluded.youtubeId,
-             melody = excluded.melody,
              lyrics = excluded.lyrics,
              key = excluded.key,
              tempo = excluded.tempo,
@@ -72,7 +70,6 @@ export default async function handler(req, res) {
             item.title || '',
             item.artist || null,
             item.youtubeId || null,
-            item.melody || null,
             item.lyrics || null,
             item.key || null,
             item.tempo || null,

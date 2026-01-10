@@ -36,7 +36,6 @@ export default async function handler(req, res) {
         title TEXT NOT NULL,
         artist TEXT,
         youtubeId TEXT,
-        melody TEXT,
         lyrics TEXT,
         key TEXT,
         tempo TEXT,
@@ -58,13 +57,12 @@ export default async function handler(req, res) {
 
         // Try insert, if exists do update
         const result = await client.execute(
-          `INSERT INTO songs (id, title, artist, youtubeId, melody, lyrics, key, tempo, style, timestamps, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, style, timestamps, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title,
              artist = excluded.artist,
              youtubeId = excluded.youtubeId,
-             melody = excluded.melody,
              lyrics = excluded.lyrics,
              key = excluded.key,
              tempo = excluded.tempo,
@@ -76,7 +74,6 @@ export default async function handler(req, res) {
             song.title || '',
             song.artist || null,
             song.youtubeId || null,
-            song.melody || null,
             song.lyrics || null,
             song.key || null,
             song.tempo || null,
