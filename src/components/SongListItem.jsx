@@ -50,14 +50,14 @@ export default function SongListItem({ song, isActive, onSelect, onEdit, onDelet
         <div className="song-title">{song.title}</div>
         <div className="song-artist">{song.artist}</div>
         <div className="song-meta" style={{ fontSize: '0.85em', color: '#a5b4fc', marginTop: 2 }}>
-          {song.key && <span style={{ marginRight: 8 }}>Key: <b>{song.key}</b></span>}
+          {song.key && <span style={{ marginRight: 8 }}>🎵 <b>{song.key}</b></span>}
           {currentSetList && (
             <span
               style={{ marginRight: 8 }}
               onClick={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
             >
-              Override:
+              🔀
               <select
                 value={tempKey}
                 onClick={(e) => e.stopPropagation()}
@@ -75,8 +75,8 @@ export default function SongListItem({ song, isActive, onSelect, onEdit, onDelet
               </select>
             </span>
           )}
-          {song.tempo && <span style={{ marginRight: 8 }}>Tempo: <b>{song.tempo}</b></span>}
-          {song.style && <span>Style: <b>{song.style}</b></span>}
+          {song.tempo && <span style={{ marginRight: 8 }}>⏱️ <b>{song.tempo}</b></span>}
+          {song.style && <span>🎸 <b>{song.style}</b></span>}
         </div>
       </div>
       <div className="song-actions">
