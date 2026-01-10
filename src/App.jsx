@@ -200,11 +200,12 @@ function App() {
     setTranspose(0);
   };
 
-  const handleSaveSong = (songData) => {
+  const handleSaveSong = async (songData) => {
     const isEditMode = !!editingSong;
     const songId = isEditMode ? editingSong.id : Date.now().toString();
     const now = Date.now();
     const updatedSong = { ...songData, id: songId, updatedAt: now };
+    
     setSongs(prevSongs => {
       const existingIndex = prevSongs.findIndex(s => s.id === songId);
       if (existingIndex > -1) {
@@ -217,6 +218,20 @@ function App() {
         return [...prevSongs, updatedSong];
       }
     });
+    
+    // Sync to database
+    try {
+      const method = isEditMode ? 'PUT' : 'POST';
+      const endpoint = isEditMode ? `/api/songs/${songId}` : '/api/songs';
+      await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedSong)
+      });
+    } catch (err) {
+      console.error('Gagal menyimpan lagu ke database:', err);
+    }
+    
     setSelectedSong(updatedSong);
     setTranspose(0);
     setAutoScrollActive(false);
@@ -224,7 +239,7 @@ function App() {
     setEditingSong(null);
   };
 
-  const handleCreateSetList = (name) => {
+  const handleCreateSetList = async (name) => {
     const now = Date.now();
     const newSetList = {
       id: now.toString(),
@@ -235,6 +250,18 @@ function App() {
     };
     setSetLists(prevSetLists => [...prevSetLists, newSetList]);
     setCurrentSetList(newSetList.id);
+    
+    // Sync to database
+    try {
+      await fetch('/api/setlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSetList)
+      });
+    } catch (err) {
+      console.error('Gagal membuat setlist di database:', err);
+    }
+    
     setShowSetListForm(false);
     setEditingSetList(null);
   };
@@ -333,11 +360,18 @@ function App() {
     setShowSongForm(true);
   };
 
-  const handleDeleteSong = (songId) => {
+  const handleDeleteSong = async (songId) => {
     if (!confirm('Hapus lagu ini?')) return;
     setSongs(prevSongs => prevSongs.filter(s => s.id !== songId));
     if (selectedSong?.id === songId) {
       setSelectedSong(null);
+    }
+    
+    // Sync to database
+    try {
+      await fetch(`/api/songs/${songId}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('Gagal menghapus lagu dari database:', err);
     }
   };
 
