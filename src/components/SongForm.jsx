@@ -24,6 +24,12 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [youtubeResults, setYoutubeResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [showChordSearch, setShowChordSearch] = useState(false);
+  const [chordSearchUrl, setChordSearchUrl] = useState('');
+  const [chordSearchResults, setChordSearchResults] = useState(null);
+  const [isLoadingChord, setIsLoadingChord] = useState(false);
+  const [chordError, setChordError] = useState('');
+  const [copiedChord, setCopiedChord] = useState(false);
   // ...existing code...
 
   useEffect(() => {
@@ -189,6 +195,78 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const searchChordFromUrl = async (url) => {
+    if (!url.trim()) {
+      setChordError('URL tidak boleh kosong');
+      return;
+    }
+
+    // Directly open the URL in a new tab
+    window.open(url.trim(), '_blank');
+    setShowChordSearch(false);
+    setChordSearchUrl('');
+    setChordError('');
+  };
+
+  const copyChordToClipboard = async () => {
+    if (!chordSearchResults) return;
+    
+    // Try to copy text from iframe
+    try {
+      const iframeDoc = document.getElementById('chord-iframe')?.contentDocument || document.getElementById('chord-iframe')?.contentWindow?.document;
+      if (iframeDoc) {
+        const text = iframeDoc.body.innerText;
+        if (text) {
+          await navigator.clipboard.writeText(text);
+          setCopiedChord(true);
+          setTimeout(() => setCopiedChord(false), 2000);
+          return;
+        }
+      }
+    } catch (error) {
+      console.log('Cannot access iframe content, showing manual copy instead');
+    }
+    
+    setChordError('Silakan copy langsung dari website yang ditampilkan');
+  };
+
+  const pasteChordToLyrics = () => {
+    if (!chordSearchResults) return;
+    
+    // Try to get text from iframe
+    try {
+      const iframeDoc = document.getElementById('chord-iframe')?.contentDocument || document.getElementById('chord-iframe')?.contentWindow?.document;
+      if (iframeDoc) {
+        const text = iframeDoc.body.innerText;
+        if (text.trim()) {
+          setFormData(prev => ({ 
+            ...prev, 
+            lyrics: prev.lyrics ? prev.lyrics + '\n\n' + text : text
+          }));
+          setShowChordSearch(false);
+          setChordSearchUrl('');
+          setChordSearchResults(null);
+          setChordError('');
+          return;
+        }
+      }
+    } catch (error) {
+      console.log('Cannot access iframe content');
+    }
+    
+    setChordError('Silakan copy langsung dari website, atau paste URL dan buka di browser baru');
+  };
+
+  const openChordSearchModal = () => {
+    const query = `${formData.title} ${formData.artist} chord`.trim();
+    // Pre-fill with chordtela URL pattern
+    const searchUrl = `https://chordtela.com/search.php?q=${encodeURIComponent(formData.title || 'chord')}`;
+    setChordSearchUrl(searchUrl);
+    setShowChordSearch(true);
+    setChordSearchResults(null);
+    setChordError('');
   };
 
   const selectYouTubeVideo = (videoId) => {
@@ -464,12 +542,9 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                 <button
                   type="button"
                   className="btn btn-sm btn-secondary"
-                  onClick={() => {
-                    const q = encodeURIComponent(`${formData.title} ${formData.artist} chord`);
-                    window.open(`https://www.google.com/search?q=${q}`, '_blank');
-                  }}
+                  onClick={openChordSearchModal}
                   disabled={!formData.title && !formData.artist}
-                  title="Cari chord dari Google"
+                  title="Cari chord dari situs chord"
                 >
                   🔍 Chord
                 </button>
@@ -869,6 +944,193 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
               {!isSearching && youtubeResults.length === 0 && youtubeSearchQuery && !searchError && (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                   Klik tombol 🔍 untuk mencari video
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chord Search Modal */}
+      {showChordSearch && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '750px', maxHeight: '85vh', overflow: 'auto' }}>
+            <button
+              onClick={() => {
+                setShowChordSearch(false);
+                setChordSearchUrl('');
+                setChordSearchResults(null);
+                setChordError('');
+              }}
+              className="btn-close"
+              style={{ position: 'absolute', top: 18, right: 18, zIndex: 10 }}
+              aria-label="Tutup"
+            >
+              ✕
+            </button>
+            <div className="modal-header">
+              <h2 style={{ marginBottom: 0 }}>🔍 Cari Chord dari Situs</h2>
+            </div>
+            <div style={{ padding: '1.5rem' }}>
+              <div className="form-group">
+                <label htmlFor="chordSearchUrl">URL Situs Chord</label>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                  <input
+                    type="url"
+                    id="chordSearchUrl"
+                    value={chordSearchUrl}
+                    onChange={(e) => {
+                      setChordSearchUrl(e.target.value);
+                      setChordError('');
+                      setChordSearchResults(null);
+                    }}
+                    placeholder="https://chordtela.com/... atau situs chord lainnya"
+                    autoFocus
+                    style={{ flex: '1 1 300px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => searchChordFromUrl(chordSearchUrl)}
+                    disabled={isLoadingChord}
+                    className="btn btn-primary"
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    {isLoadingChord ? '⏳ Membuka...' : '🔍 Buka'}
+                  </button>
+                </div>
+                <small style={{ display: 'block', marginTop: '0.35rem', color: 'var(--text-muted)' }}>
+                  Paste URL dari situs chord seperti Chordtela, Chordify, atau Chord.co.id. Misal: https://chordtela.com/lagu/judullagu
+                </small>
+
+                {/* Popular sites quick links */}
+                <div style={{ marginTop: '1rem' }}>
+                  <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>
+                    <strong>Situs Populer:</strong>
+                  </small>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-xs"
+                      onClick={() => {
+                        setChordSearchUrl(`https://www.chordtela.com/chord-kunci-gitar-dasar-hasil-pencarian?q=${encodeURIComponent(formData.title || 'chord')}`);
+                      }}
+                      title="Chordtela"
+                    >
+                      Chordtela
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-xs"
+                      onClick={() => {
+                        const title = formData.title || formData.artist || 'chord';
+                        setChordSearchUrl(`https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(title)}`);
+                      }}
+                      title="Ultimate Guitar"
+                    >
+                      Ultimate Guitar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-xs"
+                      onClick={() => {
+                        setChordSearchUrl(`https://www.songsterr.com/?pattern=${encodeURIComponent(formData.title || 'chord')}`);
+                      }}
+                      title="Songsterr"
+                    >
+                      Songsterr
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-xs"
+                      onClick={() => {
+                        const query = `${formData.title} ${formData.artist} chord`.trim();
+                        setChordSearchUrl(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+                      }}
+                      title="Google"
+                    >
+                      Google
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {chordError && (
+                <div style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '1rem', padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px' }}>
+                  {chordError}
+                </div>
+              )}
+
+              {chordSearchResults && (
+                <div style={{ marginTop: '1.5rem' }}>
+                  <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                    <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>
+                      <strong>URL Situs:</strong>
+                    </small>
+                    <div style={{ 
+                      padding: '0.75rem', 
+                      backgroundColor: 'var(--bg-input)', 
+                      borderRadius: '4px', 
+                      wordBreak: 'break-all',
+                      fontFamily: 'monospace',
+                      fontSize: '0.9rem',
+                      color: 'var(--text)',
+                      marginBottom: '0.75rem'
+                    }}>
+                      {chordSearchResults.url}
+                    </div>
+                    <small style={{ color: 'var(--text-muted)' }}>
+                      💡 Klik tombol "🔗 Buka di Tab Baru" untuk melihat chord secara langsung
+                    </small>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open(chordSearchResults.url, '_blank');
+                      }}
+                      className="btn btn-primary"
+                      style={{ flex: '1 1 150px' }}
+                    >
+                      🔗 Buka di Tab Baru
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          navigator.clipboard.writeText(chordSearchResults.url);
+                          setCopiedChord(true);
+                          setTimeout(() => setCopiedChord(false), 2000);
+                        } catch (error) {
+                          setChordError('Gagal menyalin URL');
+                        }
+                      }}
+                      className="btn btn-secondary"
+                      style={{ flex: '1 1 150px' }}
+                    >
+                      {copiedChord ? '✓ URL Tersalin!' : '📋 Salin URL'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowChordSearch(false);
+                        setChordSearchUrl('');
+                        setChordSearchResults(null);
+                        setChordError('');
+                      }}
+                      className="btn"
+                      style={{ flex: '1 1 150px' }}
+                    >
+                      Tutup
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!chordSearchResults && !chordError && (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                  <p>Paste URL situs chord atau gunakan tombol situs populer di atas</p>
+                  <p style={{ fontSize: '0.85rem' }}>Kemudian klik tombol 🔍 untuk mengambil chord</p>
                 </div>
               )}
             </div>
