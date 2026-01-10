@@ -20,12 +20,20 @@ function sanitizeSongs(list = []) {
   return list
     .filter(Boolean)
     .filter(item => item.title?.trim() && item.artist?.trim() && item.lyrics?.trim())
-    .map(item => ({
-      ...item,
-      title: item.title.trim(),
-      artist: item.artist.trim(),
-      lyrics: item.lyrics.trim()
-    }));
+    .map(item => {
+      // Remove deprecated melody field
+      const { melody, ...rest } = item;
+      return {
+        ...rest,
+        title: item.title.trim(),
+        artist: item.artist.trim(),
+        lyrics: item.lyrics.trim(),
+        key: item.key || '',
+        tempo: item.tempo || '',
+        style: item.style || '',
+        timestamps: Array.isArray(item.timestamps) ? item.timestamps : []
+      };
+    });
 }
 
 function sanitizeSetLists(list = []) {
@@ -34,7 +42,8 @@ function sanitizeSetLists(list = []) {
     .filter(Boolean)
     .map(sl => ({
       ...sl,
-      songs: Array.isArray(sl.songs) ? sl.songs.filter(Boolean) : []
+      songs: Array.isArray(sl.songs) ? sl.songs.filter(Boolean) : [],
+      songKeys: typeof sl.songKeys === 'object' && sl.songKeys !== null ? sl.songKeys : {}
     }));
 }
 
@@ -460,10 +469,23 @@ function App() {
 
   const handleExportDatabase = () => {
     const data = {
-      songs,
-      setLists,
+      version: '3.0',
       exportDate: new Date().toISOString(),
-      version: '2.0'
+      songs: songs.map(song => {
+        // Ensure all new fields are included and melody is removed
+        const { melody, ...rest } = song;
+        return {
+          ...rest,
+          key: song.key || '',
+          tempo: song.tempo || '',
+          style: song.style || '',
+          timestamps: Array.isArray(song.timestamps) ? song.timestamps : []
+        };
+      }),
+      setLists: setLists.map(sl => ({
+        ...sl,
+        songKeys: sl.songKeys || {}
+      }))
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -493,15 +515,25 @@ function App() {
           return;
         }
 
-        if (confirm(`Import ${data.songs.length} lagu dan ${data.setLists?.length || 0} set list?\\n\\nSemua data akan digantikan.`)) {
-          setSongs(data.songs);
-          if (data.setLists) setSetLists(data.setLists);
-          if (data.songs.length > 0) setSelectedSong(data.songs[0]);
+        // Migrate and sanitize songs (remove melody, ensure new fields)
+        const migratedSongs = sanitizeSongs(data.songs);
+        
+        // Migrate and sanitize setlists (ensure songKeys exists)
+        const migratedSetLists = data.setLists ? sanitizeSetLists(data.setLists) : [];
+
+        const version = data.version || '1.0';
+        const message = `Import ${migratedSongs.length} lagu dan ${migratedSetLists.length} set list?\n\nVersi: ${version}\nSemua data akan digantikan.`;
+        
+        if (confirm(message)) {
+          setSongs(migratedSongs);
+          setSetLists(migratedSetLists);
+          if (migratedSongs.length > 0) setSelectedSong(migratedSongs[0]);
           setCurrentSetList(null);
           setTranspose(0);
-          alert('Import berhasil!');
+          alert(`Import berhasil!\n\nLagu: ${migratedSongs.length}\nSet list: ${migratedSetLists.length}`);
         }
       } catch (error) {
+        console.error('Import error:', error);
         alert('Gagal membaca file. Pastikan file JSON valid.');
       }
     };
