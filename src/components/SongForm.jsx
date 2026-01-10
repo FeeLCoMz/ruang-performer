@@ -122,7 +122,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
           <form onSubmit={handleSubmit} className="song-form-grid">
             {/* Section 1: Basic Information */}
             <div className="form-row">
-              <div className="form-group" style={{ flex: 1 }}>
+              <div className="form-group" style={{ flex: 2 }}>
                 <label htmlFor="title">Judul Lagu *</label>
                 <input
                   type="text"
@@ -136,6 +136,35 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                 />
                 {errors.title && <span className="error-message">{errors.title}</span>}
               </div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', flex: 1 }}>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => {
+                    const q = encodeURIComponent(`${formData.title} ${formData.artist} chord`);
+                    window.open(`https://www.google.com/search?q=${q}`, '_blank');
+                  }}
+                  disabled={!formData.title && !formData.artist}
+                  title="Cari chord dari Google"
+                >
+                  🔍 Chord
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => {
+                    const q = encodeURIComponent(`${formData.title} ${formData.artist}`);
+                    window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+                  }}
+                  disabled={!formData.title && !formData.artist}
+                  title="Cari video dari YouTube"
+                >
+                  🎵 Video
+                </button>
+              </div>
+            </div>
+
+            <div className="form-row">
               <div className="form-group" style={{ flex: 1 }}>
                 <label htmlFor="artist">Nama Artis *</label>
                 <input
@@ -215,31 +244,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
               </div>
             </div>
 
-            {/* Section 3: Search Helpers */}
-            <div className="form-row">
-              <button
-                type="button"
-                className="btn btn-sm btn-secondary"
-                onClick={() => {
-                  const q = encodeURIComponent(`${formData.title} ${formData.artist} lirik`);
-                  window.open(`https://www.google.com/search?q=${q}`, '_blank');
-                }}
-                disabled={!formData.title && !formData.artist}
-              >
-                🔍 Cari Lirik
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm btn-secondary"
-                onClick={() => {
-                  const q = encodeURIComponent(`${formData.title} ${formData.artist}`);
-                  window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
-                }}
-                disabled={!formData.title && !formData.artist}
-              >
-                🎵 Cari YouTube
-              </button>
-            </div>
 
             {/* Section 4: YouTube Video */}
             <div className="form-row">
