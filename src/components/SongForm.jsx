@@ -14,6 +14,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [errors, setErrors] = useState({});
   const [tapTimes, setTapTimes] = useState([]);
   const [bpm, setBpm] = useState(null);
+  const [minimizeYouTube, setMinimizeYouTube] = useState(false);
   // ...existing code...
 
   useEffect(() => {
@@ -248,7 +249,19 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
             {/* Section 4: YouTube Video */}
             <div className="form-row">
               <div className="form-group" style={{ flex: 1 }}>
-                <label htmlFor="youtubeId">🎬 YouTube Video ID</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <label htmlFor="youtubeId">🎬 YouTube Video ID</label>
+                  {formData.youtubeId && (
+                    <button
+                      type="button"
+                      className="btn btn-xs"
+                      onClick={() => setMinimizeYouTube(!minimizeYouTube)}
+                      title={minimizeYouTube ? 'Tampilkan video' : 'Sembunyikan video'}
+                    >
+                      {minimizeYouTube ? '🔍' : '➤'}
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   id="youtubeId"
@@ -258,7 +271,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   placeholder="Contoh: dQw4w9WgXcQ"
                 />
                 <small style={{ display: 'block', marginTop: '0.35rem' }}>ID adalah kode setelah "v=" di URL YouTube</small>
-                {formData.youtubeId && (
+                {formData.youtubeId && !minimizeYouTube && (
                   <div className="youtube-viewer-section">
                     <YouTubeViewer videoId={formData.youtubeId} />
                   </div>
