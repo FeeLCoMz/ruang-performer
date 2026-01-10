@@ -275,9 +275,174 @@ body {
 /* ===== Container ===== */
 .container {
   display: flex;
+  flex-direction: column;
   flex: 1;
   overflow: hidden;
   position: relative;
+}
+
+/* ===== Navigation Panel ===== */
+.nav-panel {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.nav-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  background: var(--card-hover);
+}
+
+.nav-btn.active {
+  background: #6366f1;
+  color: white;
+  border-color: #4f46e5;
+}
+
+/* ===== Content Wrapper ===== */
+.content-wrapper {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 0;
+}
+
+/* ===== Left Panel ===== */
+.left-panel {
+  width: 300px;
+  border-right: 1px solid var(--border-color);
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.songs-panel,
+.setlists-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.search-box,
+.sort-box {
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-icon {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.search-box input {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  background: var(--card-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.search-box input::placeholder {
+  color: var(--text-muted);
+}
+
+.sort-box select {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  background: var(--card-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.songs-list,
+.setlists-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.setlist-item {
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.setlist-item:hover {
+  background: var(--card-hover);
+}
+
+.setlist-item.active {
+  background: rgba(99, 102, 241, 0.15);
+  border-left: 3px solid #6366f1;
+  padding-left: calc(0.75rem - 3px);
+}
+
+.setlist-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.setlist-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.setlist-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ===== Left Panel Footer ===== */
+.left-panel-footer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--card-hover);
+}
+
+.left-panel-footer .btn {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ===== Navigation Toggle ===== */

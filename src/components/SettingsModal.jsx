@@ -51,25 +51,34 @@ export default function SettingsModal({ onClose, onExport, onImport, onSync, syn
           >✕</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-          <button onClick={onExport} className="btn btn-sm btn-block">
-            📥 Export Database
-          </button>
-          <label className="btn btn-sm btn-block">
-            📤 Import Database
-            <input
-              type="file"
-              accept=".json"
-              onChange={onImport}
-              style={{ display: 'none' }}
-            />
-          </label>
-          <button 
-            onClick={onSync}
-            className="btn btn-sm btn-block btn-primary"
-            disabled={syncingToDb}
-          >
-            {syncingToDb ? '⏳ Syncing...' : '☁️ Sync ke DB'}
-          </button>
+          <div style={{ borderTop: '1px solid rgba(99, 102, 241, 0.2)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+            <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 600, color: '#cbd5e1' }}>💾 Backup & Restore</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button onClick={onExport} className="btn btn-sm btn-block">
+                📥 Backup Database
+              </button>
+              <label className="btn btn-sm btn-block" style={{ cursor: 'pointer', margin: 0 }}>
+                📂 Restore Database
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={onImport}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+          </div>
+          
+          <div style={{ borderTop: '1px solid rgba(99, 102, 241, 0.2)', paddingTop: '1rem' }}>
+            <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 600, color: '#cbd5e1' }}>☁️ Sinkronisasi</h3>
+            <button 
+              onClick={onSync}
+              className="btn btn-sm btn-block btn-primary"
+              disabled={syncingToDb}
+            >
+              {syncingToDb ? '⏳ Syncing...' : '☁️ Sync ke DB'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
