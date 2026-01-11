@@ -162,13 +162,13 @@ const YouTubeViewer = ({ videoId, minimalControls = false, onTimeUpdate, seekToT
 
   if (minimalControls) {
     return (
-      <div className="youtube-viewer-minimal" style={{ position: 'relative' }}>
+      <div className="youtube-viewer-minimal" style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%', maxWidth: '100%' }}>
         {/* Hidden player container to enable audio playback without showing video */}
         <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0 }}>
           <div id={containerIdRef.current}></div>
         </div>
         {/* Scrubber above controls */}
-        <div className="video-scrubber" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <div className="video-scrubber" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', maxWidth: '100%', flexWrap: 'wrap' }}>
           <input
             type="range"
             min={0}
@@ -178,10 +178,10 @@ const YouTubeViewer = ({ videoId, minimalControls = false, onTimeUpdate, seekToT
             onChange={(e) => handleSeek(e.target.value)}
             onInput={(e) => handleSeek(e.target.value)}
             disabled={!player || !duration}
-            style={{ width: 260 }}
+            style={{ flex: '1 1 200px', minWidth: '150px', maxWidth: '100%' }}
             aria-label="Scrub waktu video"
           />
-          <span style={{ color: 'var(--text-muted)' }}>{fmt(currentTime)} / {fmt(duration)}</span>
+          <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap', fontSize: '0.85rem', flex: '0 0 auto' }}>{fmt(currentTime)} / {fmt(duration)}</span>
         </div>
         <div className="video-controls" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <button type="button" onClick={handlePlayPause} className="btn btn-secondary">
@@ -201,7 +201,7 @@ const YouTubeViewer = ({ videoId, minimalControls = false, onTimeUpdate, seekToT
         <div id={containerIdRef.current}></div>
       </div>
       {/* Scrubber above controls */}
-      <div className="video-scrubber" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+      <div className="video-scrubber" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', marginBottom: '0.2rem', width: '100%', maxWidth: '100%', flexWrap: 'wrap' }}>
         <input
           type="range"
           min={0}
@@ -211,12 +211,12 @@ const YouTubeViewer = ({ videoId, minimalControls = false, onTimeUpdate, seekToT
           onChange={(e) => handleSeek(e.target.value)}
           onInput={(e) => handleSeek(e.target.value)}
           disabled={!player || !duration}
-          style={{ width: '100%' }}
+          style={{ flex: '1 1 200px', minWidth: '150px', maxWidth: '100%' }}
           aria-label="Scrub waktu video"
         />
-        <span style={{ color: 'var(--text-muted)' }}>{fmt(currentTime)} / {fmt(duration)}</span>
+        <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap', fontSize: '0.85rem', flex: '0 0 auto' }}>{fmt(currentTime)} / {fmt(duration)}</span>
       </div>
-      <div className="video-controls" style={{ marginTop: '0.25rem' }}>
+      <div className="video-controls" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <button type="button" onClick={handlePlayPause} className="btn btn-secondary">
           {isPlaying ? '⏸ Pause' : '▶ Play'}
         </button>

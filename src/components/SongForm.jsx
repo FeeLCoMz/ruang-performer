@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import YouTubeViewer from './YouTubeViewer';
 import AiAssistant from './AiAssistant';
-import { transposeChord } from '../utils/chordUtils';
 import { transcribeAudio } from '../apiClient';
 
 const SongFormBaru = ({ song, onSave, onCancel }) => {
@@ -31,7 +30,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [chordError, setChordError] = useState('');
   const [copiedChord, setCopiedChord] = useState(false);
   const [showAi, setShowAi] = useState(false);
-  const [transposeValue, setTransposeValue] = useState(0);
   const [showTranscribe, setShowTranscribe] = useState(false);
   const [transcribeFile, setTranscribeFile] = useState(null);
   const [transcribeLoading, setTranscribeLoading] = useState(false);
@@ -673,35 +671,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   };
 
   // Convert inline ChordPro ([C]Lyric) to chord-above-lyrics format
-  // Transpose all chords in lyrics
-  const applyTranspose = () => {
-    if (transposeValue === 0) return;
-    const text = formData.lyrics || '';
-    if (!text.trim()) return;
-
-    // Find all chords in bracket format [C], [G#], [Am], etc
-    const transposed = text.replace(/\[([A-G][#b]?[^\]]*?)\]/g, (match, chord) => {
-      const result = transposeChord(chord.trim(), transposeValue);
-      return `[${result}]`;
-    });
-
-    // Also update the key field if it exists
-    if (formData.key.trim()) {
-      const newKey = transposeChord(formData.key.trim(), transposeValue);
-      setFormData(prev => ({ ...prev, lyrics: transposed, key: newKey }));
-    } else {
-      setFormData(prev => ({ ...prev, lyrics: transposed }));
-    }
-
-    // Reset transpose value after applying
-    setTransposeValue(0);
-    alert(`✓ Transpose ${transposeValue > 0 ? '+' : ''}${transposeValue} semitone berhasil diterapkan!`);
-  };
-
-  const resetTranspose = () => {
-    setTransposeValue(0);
-  };
-
   const handleTranscribeFile = async () => {
     if (!transcribeFile) {
       setTranscribeError('Pilih file audio terlebih dahulu');
@@ -875,52 +844,10 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
               </div>
             </div>
 
-            {/* Section 2b: Transpose Chord */}
-            <div className="form-row">
-              <div className="form-group" style={{ flex: 1 }}>
-                <label>🎹 Transpose Chord</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <input
-                    type="range"
-                    min="-12"
-                    max="12"
-                    value={transposeValue}
-                    onChange={(e) => setTransposeValue(Number(e.target.value))}
-                    style={{ flex: 1, minWidth: 100 }}
-                  />
-                  <span style={{ minWidth: '60px', textAlign: 'center', fontWeight: 600 }}>
-                    {transposeValue > 0 ? '+' : ''}{transposeValue}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-primary"
-                    onClick={applyTranspose}
-                    disabled={transposeValue === 0}
-                    title="Terapkan transpose ke semua chord"
-                  >
-                    ✓ Terapkan
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    onClick={resetTranspose}
-                    disabled={transposeValue === 0}
-                    title="Reset ke 0"
-                  >
-                    🔄
-                  </button>
-                </div>
-                <small style={{ display: 'block', marginTop: '0.35rem', color: 'var(--text-muted)' }}>
-                  Naik/turun semitone untuk mengubah kunci seluruh lagu
-                </small>
-              </div>
-            </div>
-
-
             {/* Section 4: YouTube Video */}
             <div className="form-row">
               <div className="form-group" style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                   <label htmlFor="youtubeId">🎬 YouTube Video ID</label>
                   {formData.youtubeId && (
                     <button
@@ -941,7 +868,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   onChange={handleChange}
                   placeholder="Contoh: dQw4w9WgXcQ"
                 />
-                <small style={{ display: 'block', marginTop: '0.35rem' }}>ID adalah kode setelah "v=" di URL YouTube</small>
+                <small style={{ display: 'block', marginTop: '0.5rem', color: 'var(--text-muted)' }}>ID adalah kode setelah "v=" di URL YouTube</small>
                 {formData.youtubeId && (
                   <div className="youtube-viewer-section">
                     <YouTubeViewer
@@ -957,7 +884,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
 
             {/* Section 4b: Struktur Lagu (Timestamp) */}
             {formData.youtubeId && (
-              <div className="form-group" style={{ marginTop: '0.5rem' }}>
+              <div className="form-group">
                 <div className="textarea-header" style={{ alignItems: 'center' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     ⏱️ Struktur Lagu (Timestamp)
@@ -980,9 +907,9 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   </div>
                 </div>
                 {(formData.timestamps || []).length > 0 ? (
-                  <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.5rem' }}>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: '0.75rem 0 0 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
                     {formData.timestamps.map((ts, idx) => (
-                      <li key={idx} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                      <li key={idx} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <strong style={{ color: 'var(--text)' }}>{ts.label}</strong>
                           <small style={{ color: 'var(--text-muted)' }}>{fmtTime(ts.time)}</small>
