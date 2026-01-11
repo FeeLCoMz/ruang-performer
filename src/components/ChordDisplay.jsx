@@ -252,8 +252,27 @@ const ChordDisplay = ({ song, transpose = 0 }) => {
   return (
     <div className="chord-display">
       <div className="song-header">
-        <h2>{parsedSong.metadata.title || song.title}</h2>
-        <p className="artist">{parsedSong.metadata.artist || song.artist}</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1 }}>
+            <h2>{parsedSong.metadata.title || song.title}</h2>
+            <p className="artist">{parsedSong.metadata.artist || song.artist}</p>
+          </div>
+          {parsedSong.format && (
+            <span style={{
+              background: 'var(--primary)',
+              color: 'white',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+              marginLeft: '1rem'
+            }}>
+              {parsedSong.format === 'chordpro' ? 'ChordPro' : parsedSong.format === 'standard' ? 'Standard' : 'Unknown'}
+            </span>
+          )}
+        </div>
         <div className="song-metadata">
           {(parsedSong.metadata.key || song.key) && (
             <span className="metadata-item">

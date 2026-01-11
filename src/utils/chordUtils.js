@@ -284,7 +284,7 @@ const parseStandardFormat = (lines) => {
 };
 
 export const parseChordPro = (text) => {
-  if (!text) return { metadata: {}, lines: [] };
+  if (!text) return { metadata: {}, lines: [], format: 'unknown' };
   
   const lines = text.split('\n');
   
@@ -308,7 +308,7 @@ export const parseChordPro = (text) => {
       return true;
     });
     
-    return { metadata, lines: contentLines };
+    return { metadata, lines: contentLines, format: 'standard' };
   }
   
   // Parse ChordPro format
@@ -387,7 +387,7 @@ export const parseChordPro = (text) => {
     }
   }
   
-  return { metadata, lines: parsed };
+  return { metadata, lines: parsed, format: 'chordpro' };
 };
 
 export const getAllChords = (parsedSong) => {
