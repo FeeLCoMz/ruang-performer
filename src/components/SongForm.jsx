@@ -617,6 +617,46 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     setFormData(prev => ({ ...prev, lyrics: result.join('\n') }));
   };
 
+  const formatChords = () => {
+    const text = formData.lyrics || '';
+    const chordToken = /^-?[A-G][#b]?(?:maj|min|m|M)?[0-9]?(?:sus|dim|aug)?[0-9]*(?:add[0-9]+)?\.*$/i;
+
+    const isChordHeavy = (line) => {
+      const tokens = line.trim().split(/\s+/).filter(Boolean);
+      if (tokens.length === 0) return false;
+      const chordish = tokens.filter(t => t === '.' || chordToken.test(t)).length;
+      return chordish / tokens.length >= 0.6;
+    };
+
+    const formatLine = (line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return '';
+
+      if (trimmed.includes('|')) {
+        const parts = trimmed
+          .split('|')
+          .map(p => p.trim())
+          .filter((p, idx, arr) => p || idx === 0 || idx === arr.length - 1);
+        return parts.join(' | ');
+      }
+
+      if (isChordHeavy(trimmed)) {
+        return trimmed.replace(/\s+/g, ' ');
+      }
+
+      return trimmed.replace(/\s+/g, ' ');
+    };
+
+    const formatted = [];
+    for (const line of text.split('\n')) {
+      const next = formatLine(line);
+      if (next === '' && formatted.at(-1) === '') continue;
+      formatted.push(next);
+    }
+
+    setFormData(prev => ({ ...prev, lyrics: formatted.join('\n') }));
+  };
+
   // Convert inline ChordPro ([C]Lyric) to chord-above-lyrics format
   // Transpose all chords in lyrics
   const applyTranspose = () => {
@@ -970,6 +1010,9 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   </button>
                   <button type="button" onClick={insertStandardTemplate} className="btn btn-sm">
                     📋 Standard
+                  </button>
+                  <button type="button" onClick={formatChords} className="btn btn-sm btn-secondary">
+                    ✨ Format Chord
                   </button>
                   <button type="button" onClick={convertStandardToChordPro} className="btn btn-sm btn-primary">
                     🔄 Convert ke ChordPro
