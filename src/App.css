@@ -1528,6 +1528,16 @@ body {
   display: inline-block;
 }
 
+.instrument-highlight {
+  background: linear-gradient(120deg, rgba(251, 146, 60, 0.2), rgba(251, 191, 36, 0.2));
+  color: #fb923c;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+  font-weight: 600;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  display: inline-block;
+}
+
 /* ===== Structure Markers ===== */
 .structure-marker {
   margin: 1.25rem 0 0.5rem 0;

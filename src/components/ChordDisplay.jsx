@@ -40,36 +40,64 @@ const ChordDisplay = ({ song, transpose = 0 }) => {
   
   let melodyBarCursor = 0;
 
-  // Function to render text with curly bracket highlighting
+  // Function to render text with curly bracket and instrument highlighting
   const renderTextWithBrackets = (text) => {
     const parts = [];
     const bracketRegex = /(\{[^}]*\})/g;
+    const instrumentRegex = /\b(Guitar|Bass|Piano|Drums|Violin|Saxophone|Sax|Trumpet|Flute|Clarinet|Cello|Organ|Synth|Keyboard|Vocals|Gitar|Bas|Drum|Biola|Vokal|Suling|Seruling|Strings|Brass)\b/gi;
+    
     let lastIndex = 0;
     let match;
 
+    // First handle brackets
+    const segments = [];
     while ((match = bracketRegex.exec(text)) !== null) {
       if (match.index > lastIndex) {
-        parts.push(
-          <span key={`text-${lastIndex}`}>
-            {text.substring(lastIndex, match.index)}
-          </span>
-        );
+        segments.push({ type: 'text', value: text.substring(lastIndex, match.index) });
       }
-      parts.push(
-        <span key={`bracket-${match.index}`} className="bracket-highlight">
-           {match[0].slice(1, -1)}
-        </span>
-      );
+      segments.push({ type: 'bracket', value: match[0] });
       lastIndex = match.index + match[0].length;
     }
-
     if (lastIndex < text.length) {
-      parts.push(
-        <span key={`text-${lastIndex}`}>
-          {text.substring(lastIndex)}
-        </span>
-      );
+      segments.push({ type: 'text', value: text.substring(lastIndex) });
     }
+
+    // Then highlight instruments in text segments
+    segments.forEach((segment, segIdx) => {
+      if (segment.type === 'bracket') {
+        parts.push(
+          <span key={`bracket-${segIdx}`} className="bracket-highlight">
+            {segment.value.slice(1, -1)}
+          </span>
+        );
+      } else {
+        // Highlight instruments in this text segment
+        let instrLastIndex = 0;
+        let instrMatch;
+        const textParts = [];
+        
+        while ((instrMatch = instrumentRegex.exec(segment.value)) !== null) {
+          if (instrMatch.index > instrLastIndex) {
+            textParts.push(segment.value.substring(instrLastIndex, instrMatch.index));
+          }
+          textParts.push(
+            <span key={`instr-${segIdx}-${instrMatch.index}`} className="instrument-highlight">
+              {instrMatch[0]}
+            </span>
+          );
+          instrLastIndex = instrMatch.index + instrMatch[0].length;
+        }
+        if (instrLastIndex < segment.value.length) {
+          textParts.push(segment.value.substring(instrLastIndex));
+        }
+        
+        if (textParts.length > 0) {
+          parts.push(<span key={`text-${segIdx}`}>{textParts}</span>);
+        } else {
+          parts.push(segment.value);
+        }
+      }
+    });
 
     return parts.length > 0 ? parts : text;
   };
