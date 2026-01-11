@@ -360,7 +360,13 @@ export const getAllChords = (parsedSong) => {
   
   parsedSong.lines.forEach(line => {
     if (line.type === 'line_with_chords' && line.chords) {
-      line.chords.forEach(({ chord }) => chordSet.add(chord));
+      line.chords.forEach(({ chord }) => {
+        // Clean chord: remove prefix dash (passing chord) and suffix dots (duration)
+        const cleanChord = chord.replace(/^-/, '').replace(/\.+$/, '');
+        if (cleanChord) {
+          chordSet.add(cleanChord);
+        }
+      });
     }
   });
   
