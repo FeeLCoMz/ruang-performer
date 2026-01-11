@@ -34,6 +34,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [transcribeError, setTranscribeError] = useState('');
   const [transcribeResult, setTranscribeResult] = useState('');
   const [showFormatHelp, setShowFormatHelp] = useState(false);
+  const [detectedFormat, setDetectedFormat] = useState(null);
   // ...existing code...
 
   useEffect(() => {
@@ -56,6 +57,14 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    
+    // Detect format when lyrics change
+    if (name === 'lyrics' && value.trim()) {
+      const hasChordProMarkup = value.includes('[') && value.includes(']') || value.match(/^\{[^}]+\}/m);
+      setDetectedFormat(hasChordProMarkup ? 'ChordPro' : 'Standard');
+    } else if (name === 'lyrics' && !value.trim()) {
+      setDetectedFormat(null);
     }
   };
 
@@ -953,6 +962,11 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                 rows={14}
               />
               {errors.lyrics && <span className="error-message">{errors.lyrics}</span>}
+              {detectedFormat && (
+                <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                  <strong style={{ color: 'var(--primary)' }}>Format terdeteksi:</strong> {detectedFormat}
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
