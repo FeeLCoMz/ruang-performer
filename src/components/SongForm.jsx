@@ -306,17 +306,26 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     const lines = text.split('\n');
     const result = [];
     let i = 0;
-
-    // Regex untuk mendeteksi chord (dengan atau tanpa dash/modifier dan dots untuk durasi)
-    const chordRegex = /-?[A-G][#b]?[mM]?[0-9]?[sus]?[dim]?[aug]?[add]?[0-9]*\.*/g;
+    // Regex untuk mendeteksi chord (termasuk extension/alteration/duration dots)
+    const chordBase = '[A-G][#b]?';
+    const chordQuality = '(?:maj7?|maj9?|maj11?|maj13?|mM7|mM9|mM11|mM13|m7b5|maj|min|m|dim7?|aug|sus[24]?|add[0-9]+)?';
+    const chordExtension = '(?:6|7|9|11|13)?';
+    const chordAlteration = '(?:[#b](?:5|9|11|13))?';
+    const chordSlash = '(?:\\/-?[A-G][#b]?)?';
+    const chordDots = '\\.*';
+    const chordTokenPattern = `-?${chordBase}${chordQuality}${chordExtension}${chordAlteration}${chordSlash}${chordDots}`;
+    const chordRegex = new RegExp(chordTokenPattern, 'g');
+    const chordRegexWithDots = new RegExp(chordTokenPattern, 'i');
+    const chordCaptureRegex = new RegExp(`^(-?)(${chordBase}${chordQuality}${chordExtension}${chordAlteration}${chordSlash})(\\.*)$`, 'i');
     
     // Function to check if line is chord chart format (with bars |)
     const isChordChartLine = (line) => {
       const trimmed = line.trim();
       // Must have multiple pipes and contain chords or dots
-      return trimmed.includes('|') && 
-             (trimmed.match(/\|/g) || []).length >= 2 &&
-             /[A-G][#b]?[mM]?|\./.test(trimmed);
+      if (!trimmed.includes('|')) return false;
+      if ((trimmed.match(/\|/g) || []).length < 2) return false;
+      const tokens = trimmed.split(/\s+|\|/).filter(Boolean);
+      return tokens.some(tok => tok === '.' || chordRegexWithDots.test(tok));
     };
 
     // Function to convert chord chart line (Gm | . | F | Cm)
@@ -329,10 +338,10 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
         if (part === '.') {
           // Dot means repeat last chord
           if (lastChord) chords.push(lastChord);
-        } else if (/^[A-G][#b]?[mM]?[0-9]?[sus]?[dim]?[aug]?[add]?[0-9]*$/.test(part)) {
+        } else if (chordRegexWithDots.test(part)) {
           // This is a chord
-          chords.push(part);
-          lastChord = part;
+          chords.push(part.replace(/\.+$/, ''));
+          lastChord = part.replace(/\.+$/, '');
         }
       }
 
@@ -353,7 +362,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
         let chordCount = 0;
         for (const token of tokens) {
           // Match chords with optional - prefix and .. suffix, or single dot for repeat
-          if (/^-?[A-G][#b]?[mM]?[0-9]?[sus]?[dim]?[aug]?[add]?[0-9]*\.*/i.test(token) || token === '.') chordCount++;
+          if (chordRegexWithDots.test(token) || token === '.') chordCount++;
         }
         // If majority are chords, treat this line as having chords
         return chordCount > 0 && (chordCount / tokens.length) >= 0.5;
@@ -374,7 +383,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
       const tokens = trimmed.split(/\s+/);
       let chordOrDotCount = 0;
       for (const token of tokens) {
-        if (/^-?[A-G][#b]?[mM]?[0-9]?[sus]?[dim]?[aug]?[add]?[0-9]*\.*/i.test(token) || token === '.') {
+        if (chordRegexWithDots.test(token) || token === '.') {
           chordOrDotCount++;
         }
       }
@@ -383,7 +392,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
       }
       
       // Remove all valid chords (including - prefix and .. suffix) and check what's left
-      const withoutChords = trimmed.replace(/-?[A-G][#b]?[mM]?[0-9]?[sus]?[dim]?[aug]?[add]?[0-9]*\.\.?/gi, '').replace(/[\s\.\-]+/g, '');
+      const withoutChords = trimmed.replace(new RegExp(chordTokenPattern, 'gi'), '').replace(/[\s\.\-]+/g, '');
       
       // If almost nothing left, it's a chord line
       return withoutChords.length < 3;
@@ -416,7 +425,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
           let chordProLine = '';
           for (const token of chordTokens) {
             // Check if token is a chord (with optional - prefix and .. suffix)
-            const chordMatch = token.match(/^(-?)([A-G][#b]?[mM]?[0-9]?[sus]?[dim]?[aug]?[add]?[0-9]*)(\.*)/i);
+            const chordMatch = token.match(chordCaptureRegex);
             if (chordMatch) {
               const syncope = chordMatch[1]; // "-" if present
               const chord = chordMatch[2];
@@ -465,7 +474,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
           const chordTokens = chordsAfterLabel.split(/\s+/);
           let chordProLine = '';
           for (const token of chordTokens) {
-            if (chordRegex.test(token)) {
+            if (chordRegexWithDots.test(token)) {
               chordProLine += `[${token}] `;
             }
           }
@@ -477,7 +486,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
             const continuationChords = lines[j].trim().split(/\s+/);
             let continuationLine = '';
             for (const token of continuationChords) {
-              if (chordRegex.test(token)) {
+              if (chordRegexWithDots.test(token)) {
                 continuationLine += `[${token}] `;
               }
             }
@@ -498,7 +507,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
           // Find all chords with their positions
           const chords = [];
           let match;
-          const chordPattern = /-?[A-G][#b]?[mM]?[0-9]?[sus]?[dim]?[aug]?[add]?[0-9]*/g;
+          const chordPattern = new RegExp(chordTokenPattern, 'g');
           
           while ((match = chordPattern.exec(chordLine)) !== null) {
             if (match[0].trim()) {
@@ -558,7 +567,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   if (lastChord) {
                     chordProLine += `[${lastChord}] `;
                   }
-                } else if (/^-?[A-G][#b]?[mM]?[0-9]?[sus]?[dim]?[aug]?[add]?[0-9]*\.*/i.test(barToken)) {
+                } else if (chordRegexWithDots.test(barToken)) {
                   const cleanChord = barToken.replace(/\.+$/, '');
                   lastChord = cleanChord;
                   chordProLine += `[${cleanChord}] `;
@@ -576,7 +585,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                 if (lastChord) {
                   chordProLine += `[${lastChord}] `;
                 }
-              } else if (/^-?[A-G][#b]?[mM]?[0-9]?[sus]?[dim]?[aug]?[add]?[0-9]*\.*/i.test(token)) {
+              } else if (chordRegexWithDots.test(token)) {
                 const cleanChord = token.replace(/\.+$/, '');
                 lastChord = cleanChord;
                 chordProLine += `[${cleanChord}] `;
@@ -591,7 +600,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
             // Fallback to original pattern matching
             const chords = [];
             let match;
-            const chordPattern = /-?[A-G][#b]?[mM]?[0-9]?[sus]?[dim]?[aug]?[add]?[0-9]*/g;
+            const chordPattern = new RegExp(chordTokenPattern, 'g');
             
             while ((match = chordPattern.exec(currentLine)) !== null) {
               if (match[0].trim()) {
@@ -619,7 +628,13 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
 
   const formatChords = () => {
     const text = formData.lyrics || '';
-    const chordToken = /^-?[A-G][#b]?(?:maj|min|m|M)?[0-9]?(?:sus|dim|aug)?[0-9]*(?:add[0-9]+)?\.*$/i;
+    const chordBase = '[A-G][#b]?';
+    const chordQuality = '(?:maj7?|maj9?|maj11?|maj13?|mM7|mM9|mM11|mM13|m7b5|maj|min|m|dim7?|aug|sus[24]?|add[0-9]+)?';
+    const chordExtension = '(?:6|7|9|11|13)?';
+    const chordAlteration = '(?:[#b](?:5|9|11|13))?';
+    const chordSlash = '(?:\/-?[A-G][#b]?)?';
+    const chordDots = '\\.*';
+    const chordToken = new RegExp(`^-?${chordBase}${chordQuality}${chordExtension}${chordAlteration}${chordSlash}${chordDots}$`, 'i');
 
     const isChordHeavy = (line) => {
       const tokens = line.trim().split(/\s+/).filter(Boolean);
