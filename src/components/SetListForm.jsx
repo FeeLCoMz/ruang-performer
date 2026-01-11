@@ -15,11 +15,16 @@ const SetListForm = ({ setList, onSave, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!name.trim()) {
+    const trimmed = name.trim();
+    if (!trimmed) {
       setError('Nama setlist harus diisi');
       return;
     }
-    onSave(name.trim());
+    if (trimmed.toLowerCase().includes('untitled')) {
+      setError('Nama setlist tidak boleh mengandung "untitled"');
+      return;
+    }
+    onSave(trimmed);
   };
 
   return (

@@ -40,8 +40,14 @@ function sanitizeSetLists(list = []) {
   if (!Array.isArray(list)) return [];
   return list
     .filter(Boolean)
+    .filter(sl => {
+      const name = sl.name?.trim();
+      if (!name) return false;
+      return !name.toLowerCase().includes('untitled');
+    })
     .map(sl => ({
       ...sl,
+      name: sl.name.trim(),
       songs: Array.isArray(sl.songs) ? sl.songs.filter(Boolean) : [],
       songKeys: typeof sl.songKeys === 'object' && sl.songKeys !== null ? sl.songKeys : {}
     }));
@@ -110,6 +116,11 @@ function App() {
   const scrollRef = useRef(null);
   const isInitialLoad = useRef(true);
 
+  // Pastikan state setlist selalu bersih (tanpa untitled) setelah mount
+  useEffect(() => {
+    setSetLists(prev => sanitizeSetLists(prev));
+  }, []);
+
   // Saat online/load, merge data backend dan lokal berdasarkan updatedAt
   useEffect(() => {
     if (navigator.onLine) {
@@ -172,7 +183,8 @@ function App() {
   }, [songs]);
   useEffect(() => {
     try {
-      localStorage.setItem('ronz_setlists', JSON.stringify(setLists));
+      const sanitized = sanitizeSetLists(setLists);
+      localStorage.setItem('ronz_setlists', JSON.stringify(sanitized));
     } catch { }
   }, [setLists]);
 
