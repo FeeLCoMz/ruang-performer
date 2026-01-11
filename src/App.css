@@ -357,11 +357,49 @@ body {
   align-items: center;
 }
 
+@media (max-width: 640px) {
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .filters-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .filters-bar .search-box {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  .filters-bar .search-box input {
+    width: 100%;
+  }
+  .setlist-select {
+    width: 100%;
+    min-width: 0;
+  }
+  .filters-bar .btn-icon {
+    justify-self: start;
+  }
+}
+
 /* ===== Songs Cards Grid ===== */
 .songs-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
+}
+
+@media (max-width: 540px) {
+  .songs-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.9rem;
+  }
+  .view-header h2 {
+    font-size: 1.25rem;
+  }
 }
 
 /* View Mode: Compact */
@@ -434,6 +472,19 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
+}
+
+@media (max-width: 540px) {
+  .setlists-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.9rem;
+  }
+  .setlist-card {
+    padding: 1rem;
+  }
+  .setlist-card-header h3 {
+    font-size: 1rem;
+  }
 }
 
 .setlist-card {
