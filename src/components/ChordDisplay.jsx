@@ -37,8 +37,6 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
   }, [song, transpose]);
   
   if (!parsedSong) return null;
-  
-  let melodyBarCursor = 0;
 
   // Function to render text with curly bracket, instrument, repeat sign, and inline chord highlighting
   const renderTextWithBrackets = (text) => {
@@ -324,32 +322,6 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
           <div className="text-line">
             {textParts.length > 0 ? textParts : renderTextWithBrackets(lineData.text)}
           </div>
-          {/* Inline numeric notation (not angka) mapped by bars */}
-          {melodyBars.length > 0 && (
-            (() => {
-              // Count groups of '|' in this line (treat consecutive | as one)
-              const barMatches = (lineData.text.match(/\|+/g) || []);
-              const barGroupsInLine = barMatches.length;
-              if (barGroupsInLine === 0) return null;
-              const slice = melodyBars.slice(melodyBarCursor, melodyBarCursor + barGroupsInLine);
-              melodyBarCursor += slice.length;
-              if (slice.length === 0) return null;
-              return (
-                <div className="numeric-notation-inline">
-                  {slice.map((bar, bi) => (
-                    <span key={bi} className="melody-bar-inline">
-                      {bar.map((n, ni) => (
-                        <span key={ni} className={`melody-note-inline${n.type === 'rest' ? ' rest' : ''}`}>
-                          {formatNoteDisplay(n)}{ni < bar.length - 1 ? ' ' : ''}
-                        </span>
-                      ))}
-                      <span className="bar-separator">|</span>
-                    </span>
-                  ))}
-                </div>
-              );
-            })()
-          )}
         </div>
       );
     }
