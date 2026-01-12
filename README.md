@@ -148,6 +148,11 @@ Mendukung dua gaya input utama: ChordPro dan format standar (chord di atas lirik
 
 Anda bisa copy-paste langsung dari situs chord. Aplikasi akan mencoba mendeteksi dan menyelaraskan chord dengan lirik secara otomatis. Lihat contoh di [EXAMPLE_FORMATS.md](EXAMPLE_FORMATS.md).
 
+Catatan tambahan:
+
+- Baris akor saja dengan tanda birama (mis. `| Am | F | Bdim | Am |`) akan ditampilkan sebagai satu baris inline dengan bar-line dan chord highlight, tanpa muncul baris akor terpisah di atasnya.
+- Tanda pengulangan `|:` dan `:|` serta repeat cues (D.S., D.C., Fine, Coda, To Coda, Repeat, %) akan otomatis di-highlight.
+
 ## 🎯 Menambah Lagu Baru
 
 Ada dua cara:

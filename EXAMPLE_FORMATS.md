@@ -48,6 +48,19 @@ C              Am
 Hingga tak tahu diri
 ```
 
+### Baris akor dengan birama & repeat
+
+Baris akor saja yang memakai simbol birama akan dirender sebagai satu baris inline (tanpa baris akor terpisah):
+
+```
+| Am | F | Bdim | Am |
+```
+
+Tanda pengulangan dan navigasi yang ikut di-highlight:
+
+- `|:` dan `:|`
+- `D.S.`, `D.C.`, `Fine`, `Coda`, `To Coda`, `Repeat`, `%`
+
 ## Kelebihan Format Standard:
 
 ✅ **Copy-paste langsung dari website chord**
