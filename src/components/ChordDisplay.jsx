@@ -364,7 +364,7 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
   return (
     <div 
       className={`chord-display ${performanceMode ? `performance-mode theme-${performanceTheme}` : ''}`}
-      style={performanceMode ? { fontSize: `${performanceFontSize}%` } : {}}
+      style={performanceMode ? { '--perf-font-scale': performanceFontSize / 100 } : {}}
     >
       <div className="song-header">
         <h2>{parsedSong.metadata.title || song.title}</h2>

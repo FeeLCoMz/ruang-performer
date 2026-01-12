@@ -3008,7 +3008,8 @@ body {
 }
 
 .performance-mode {
-  font-size: 1.5rem !important;
+  --perf-font-scale: 1;
+  font-size: calc(1.5rem * var(--perf-font-scale)) !important;
   line-height: 2 !important;
   background: #000 !important;
   color: #fff !important;
@@ -3016,25 +3017,25 @@ body {
 }
 
 .performance-mode .song-title {
-  font-size: 3rem !important;
+  font-size: calc(3rem * var(--perf-font-scale)) !important;
   color: #fbbf24 !important;
   margin-bottom: 0.5rem !important;
 }
 
 .performance-mode .song-artist {
-  font-size: 2rem !important;
+  font-size: calc(2rem * var(--perf-font-scale)) !important;
   color: #60a5fa !important;
   margin-bottom: 2rem !important;
 }
 
 .performance-mode .song-metadata {
-  font-size: 1.4rem !important;
+  font-size: calc(1.4rem * var(--perf-font-scale)) !important;
   color: #9ca3af !important;
   margin-bottom: 2rem !important;
 }
 
 .performance-mode .chord-line {
-  font-size: 1.8rem !important;
+  font-size: calc(1.8rem * var(--perf-font-scale)) !important;
   font-weight: 700 !important;
   color: #fbbf24 !important;
   letter-spacing: 0.1em !important;
@@ -3042,14 +3043,14 @@ body {
 }
 
 .performance-mode .text-line {
-  font-size: 1.6rem !important;
+  font-size: calc(1.6rem * var(--perf-font-scale)) !important;
   color: #f3f4f6 !important;
   line-height: 2.2 !important;
   font-weight: 500 !important;
 }
 
 .performance-mode .structure-label {
-  font-size: 1.8rem !important;
+  font-size: calc(1.8rem * var(--perf-font-scale)) !important;
   padding: 0.5rem 1.5rem !important;
   background: #1e40af !important;
   color: #fff !important;
@@ -3058,7 +3059,7 @@ body {
 .performance-mode .bracket-highlight {
   background: rgba(251, 191, 36, 0.3) !important;
   color: #fbbf24 !important;
-  font-size: 1.4rem !important;
+  font-size: calc(1.4rem * var(--perf-font-scale)) !important;
   padding: 0.25rem 0.5rem !important;
   border: 2px solid #fbbf24 !important;
 }

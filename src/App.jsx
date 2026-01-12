@@ -154,10 +154,6 @@ function App() {
       const wasSetlistsEmpty = !localStorage.getItem('ronz_setlists') || 
                                 localStorage.getItem('ronz_setlists') === '[]';
       
-      console.log('[FETCH] Starting data fetch from backend...');
-      console.log('[FETCH] Songs localStorage empty:', wasSongsEmpty);
-      console.log('[FETCH] Setlists localStorage empty:', wasSetlistsEmpty);
-      
       let recoveredSongs = 0;
       let recoveredSetlists = 0;
       
@@ -172,9 +168,6 @@ function App() {
         })
       ])
         .then(([songsData, setlistsData]) => {
-          console.log('[FETCH] Songs from backend:', songsData?.length || 0);
-          console.log('[FETCH] Setlists from backend:', setlistsData?.length || 0);
-          
           const localSongs = sanitizeSongs(songs);
           const localSetLists = sanitizeSetLists(setLists);
           
@@ -201,7 +194,6 @@ function App() {
                 recoveredSongs = merged.length;
               }
               
-              console.log('[MERGE] Songs merged:', merged.length, '(recovered:', recoveredSongs, ')');
               return merged;
             });
           }
@@ -209,12 +201,10 @@ function App() {
           // Merge setlists
           if (Array.isArray(setlistsData)) {
             const remoteSetlists = sanitizeSetLists(setlistsData);
-            console.log('[MERGE] Remote setlists cleaned:', remoteSetlists.length);
             
             setSetLists(prev => {
               const merged = [...sanitizeSetLists(prev)];
               const beforeCount = merged.length;
-              console.log('[MERGE] Local setlists before merge:', beforeCount);
               
               remoteSetlists.forEach(remote => {
                 const localIdx = merged.findIndex(s => s.id === remote.id);
@@ -232,12 +222,9 @@ function App() {
                 recoveredSetlists = merged.length;
               }
               
-              console.log('[MERGE] Setlists after merge:', merged.length, '(recovered:', recoveredSetlists, ')');
-              
               // Show notification if any data was recovered from cloud
               const totalRecovered = recoveredSongs + recoveredSetlists;
               if (totalRecovered > 0) {
-                console.log('[RECOVERY] Total recovered:', recoveredSongs, 'songs,', recoveredSetlists, 'setlists');
                 const parts = [];
                 if (recoveredSongs > 0) parts.push(`${recoveredSongs} lagu`);
                 if (recoveredSetlists > 0) parts.push(`${recoveredSetlists} setlist`);
@@ -258,7 +245,6 @@ function App() {
         .finally(() => {
           // Allow subsequent changes to sync after initial remote merge
           isInitialLoad.current = false;
-          console.log('[FETCH] Data fetch completed');
         })
         .catch(err => {
           console.error('[FETCH] Failed to fetch from backend:', err);
@@ -274,7 +260,6 @@ function App() {
           }
         });
     } else {
-      console.log('[FETCH] Offline - skipping backend fetch');
       // If offline and local storage empty, show offline warning
       const wasSongsEmpty = !localStorage.getItem('ronz_songs') || 
                              localStorage.getItem('ronz_songs') === '[]';
@@ -758,8 +743,7 @@ function App() {
       // Request wake lock to prevent screen from sleeping
       if ('wakeLock' in navigator) {
         try {
-          const wakeLock = await navigator.wakeLock.request('screen');
-          console.log('Wake Lock active - screen will stay on');
+          wakeLockRef.current = await navigator.wakeLock.request('screen');
         } catch (err) {
           console.warn('Wake Lock failed:', err);
         }
@@ -813,11 +797,13 @@ function App() {
     const delta = distance - touchStartDistance.current;
     
     if (Math.abs(delta) > 10) {
+      let newSize;
       if (delta > 0) {
-        setPerformanceFontSize(Math.min(150, performanceFontSize + 5));
+        newSize = Math.min(150, performanceFontSize + 5);
       } else {
-        setPerformanceFontSize(Math.max(80, performanceFontSize - 5));
+        newSize = Math.max(80, performanceFontSize - 5);
       }
+      setPerformanceFontSize(newSize);
       touchStartDistance.current = distance;
     }
   };
@@ -1582,10 +1568,19 @@ function App() {
                           🎨
                         </button>
                         
-                        <button onClick={() => setPerformanceFontSize(Math.max(80, performanceFontSize - 10))} className="perf-btn">
+                        <button onClick={() => {
+                          const newSize = Math.max(80, performanceFontSize - 10);
+                          setPerformanceFontSize(newSize);
+                        }} className="perf-btn">
                           A−
                         </button>
-                        <button onClick={() => setPerformanceFontSize(Math.min(150, performanceFontSize + 10))} className="perf-btn">
+                        <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)', fontWeight: 'bold', minWidth: '45px', textAlign: 'center' }}>
+                          {performanceFontSize}%
+                        </span>
+                        <button onClick={() => {
+                          const newSize = Math.min(150, performanceFontSize + 10);
+                          setPerformanceFontSize(newSize);
+                        }} className="perf-btn">
                           A+
                         </button>
                         
