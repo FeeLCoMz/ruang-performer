@@ -48,7 +48,8 @@ const ChordDisplay = ({ song, transpose = 0 }) => {
     const repeatSignRegex = /(\|:|:\||\b(?:D\.S\.|D\.C\.|Da Capo|Dal Segno|Fine|Coda|To Coda|Repeat|%)\b)/gi;
     // Inline chord detection inside bars/repeat symbols
     // Updated to support compact format: D..Gm..Bb
-    const chordRegex = /(^|[\s|:])(-?[A-G][#b]?(?:maj|min|dim|aug|sus|add|m)?[0-9]*(?:\/[A-G][#b]?)?(?:\.\.|-?[A-G][#b]?(?:maj|min|dim|aug|sus|add|m)?[0-9]*(?:\/[A-G][#b]?)?)*)(?=$|[\s|:])/gi;
+    // Case-sensitive to avoid matching lowercase words like "ade" or "gaga"
+    const chordRegex = /(^|[\s|:])(-?[A-G][#b]?(?:maj|min|dim|aug|sus|add|m)?[0-9]*(?:\/[A-G][#b]?)?(?:\.\.|-?[A-G][#b]?(?:maj|min|dim|aug|sus|add|m)?[0-9]*(?:\/[A-G][#b]?)?)*)(?=$|[\s|:])/g;
     
     let lastIndex = 0;
     let match;
