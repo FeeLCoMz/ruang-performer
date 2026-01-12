@@ -801,7 +801,7 @@ function App() {
       if (delta > 0) {
         newSize = Math.min(150, performanceFontSize + 5);
       } else {
-        newSize = Math.max(80, performanceFontSize - 5);
+        newSize = Math.max(50, performanceFontSize - 5);
       }
       setPerformanceFontSize(newSize);
       touchStartDistance.current = distance;
@@ -1569,7 +1569,7 @@ function App() {
                         </button>
                         
                         <button onClick={() => {
-                          const newSize = Math.max(80, performanceFontSize - 10);
+                          const newSize = Math.max(50, performanceFontSize - 10);
                           setPerformanceFontSize(newSize);
                         }} className="perf-btn">
                           A−
