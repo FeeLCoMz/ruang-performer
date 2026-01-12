@@ -98,6 +98,7 @@ function App() {
   const [editingSetList, setEditingSetList] = useState(null);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [performanceMode, setPerformanceMode] = useState(false);
   const [syncingToDb, setSyncingToDb] = useState(false);
   const [runtimeErrors, setRuntimeErrors] = useState([]);
   const [sortBy, setSortBy] = useState('title-asc');
@@ -609,6 +610,61 @@ function App() {
     }
   };
 
+  // Performance Mode helpers
+  const getSetListSongs = () => {
+    if (!currentSetList) return [];
+    const setList = setLists.find(sl => sl.id === currentSetList);
+    if (!setList) return [];
+    return setList.songs.map(id => songs.find(s => s.id === id)).filter(Boolean);
+  };
+
+  const getCurrentSongIndexInSetList = () => {
+    if (!currentSetList || !selectedSong) return -1;
+    const setListSongs = getSetListSongs();
+    return setListSongs.findIndex(s => s.id === selectedSong.id);
+  };
+
+  const navigateToNextSongInSetList = () => {
+    const setListSongs = getSetListSongs();
+    if (setListSongs.length === 0) return;
+    const currentIndex = getCurrentSongIndexInSetList();
+    const nextIndex = (currentIndex + 1) % setListSongs.length;
+    setSelectedSong(setListSongs[nextIndex]);
+    setTranspose(0);
+    setAutoScrollActive(false);
+  };
+
+  const navigateToPrevSongInSetList = () => {
+    const setListSongs = getSetListSongs();
+    if (setListSongs.length === 0) return;
+    const currentIndex = getCurrentSongIndexInSetList();
+    const prevIndex = currentIndex <= 0 ? setListSongs.length - 1 : currentIndex - 1;
+    setSelectedSong(setListSongs[prevIndex]);
+    setTranspose(0);
+    setAutoScrollActive(false);
+  };
+
+  const togglePerformanceMode = async () => {
+    const newMode = !performanceMode;
+    setPerformanceMode(newMode);
+    
+    if (newMode) {
+      // Entering performance mode
+      setShowSidebar(false);
+      setShowYouTube(false);
+      
+      // Request wake lock to prevent screen from sleeping
+      if ('wakeLock' in navigator) {
+        try {
+          const wakeLock = await navigator.wakeLock.request('screen');
+          console.log('Wake Lock active - screen will stay on');
+        } catch (err) {
+          console.warn('Wake Lock failed:', err);
+        }
+      }
+    }
+  };
+
   const handleSyncToDatabase = async () => {
     if (songs.length === 0 && setLists.length === 0) {
       alert('Tidak ada lagu atau setlist untuk disinkronkan.');
@@ -799,7 +855,7 @@ function App() {
 
   return (
     <>
-      {showSettingsMenu && (
+      {!performanceMode && showSettingsMenu && (
         <SettingsModal
           onClose={() => setShowSettingsMenu(false)}
           onExport={handleExportDatabase}
@@ -808,16 +864,19 @@ function App() {
           syncingToDb={syncingToDb}
         />
       )}
-      <div className="app">
-        <header className="header">
-          <div className="header-content">
-            <h1>🎸 RoNz Chord Pro</h1>
-            <p>Professional Chord & Lyrics App</p>
-          </div>
-        </header>
+      <div className={`app ${performanceMode ? 'performance-mode-active' : ''}`}>
+        {!performanceMode && (
+          <header className="header">
+            <div className="header-content">
+              <h1>🎸 RoNz Chord Pro</h1>
+              <p>Professional Chord & Lyrics App</p>
+            </div>
+          </header>
+        )}
 
         <div className="container">
-          <nav className="nav-panel">
+          {!performanceMode && (
+            <nav className="nav-panel">
             <button
               className={`nav-btn ${activeNav === 'songs' ? 'active' : ''}`}
               onClick={() => setActiveNav('songs')}
@@ -862,6 +921,7 @@ function App() {
               ❓ Bantuan
             </button>
           </nav>
+          )}
 
           <div className="content-wrapper">
             {/* Main Content Area */}
@@ -1093,7 +1153,7 @@ function App() {
               // Song Detail View
               <main className="main">
                 <>
-                  {selectedSong && (
+                  {selectedSong && !performanceMode && (
                     <div className="controls controls-compact">
                       {/* Transpose Group */}
                       <button onClick={() => handleTranspose(-1)} className="btn btn-xs" title="Transpose turun (♭)">♭</button>
@@ -1134,9 +1194,18 @@ function App() {
                       >
                         🖨️
                       </button>
+                      <span className="divider" />
+                      {/* Performance Mode Toggle */}
+                      <button
+                        onClick={togglePerformanceMode}
+                        className={`btn btn-xs ${performanceMode ? 'btn-primary' : ''}`}
+                        title={performanceMode ? 'Exit Performance Mode' : 'Enter Performance Mode'}
+                      >
+                        🎭
+                      </button>
                     </div>
                   )}
-                  {showYouTube && selectedSong?.youtubeId && (
+                  {!performanceMode && showYouTube && selectedSong?.youtubeId && (
                     <div className="youtube-section">
                       <YouTubeViewer
                         videoId={selectedSong.youtubeId}
@@ -1149,7 +1218,7 @@ function App() {
                   <div className="lyrics-section" ref={scrollRef}>
                     {selectedSong ? (
                       <>
-                        {(Array.isArray(selectedSong.timestamps) && selectedSong.timestamps.length > 0) && (
+                        {!performanceMode && (Array.isArray(selectedSong.timestamps) && selectedSong.timestamps.length > 0) && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '0.5rem' }}>
                             <strong style={{ color: 'var(--text)' }}>⏱️ Struktur Lagu</strong>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
@@ -1172,16 +1241,18 @@ function App() {
                             </div>
                           </div>
                         )}
-                        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', justifyContent: 'flex-end' }}>
-                          <button
-                            onClick={() => handleEditSong(selectedSong)}
-                            className="btn btn-sm btn-primary"
-                            title="Edit lagu ini"
-                          >
-                            ✏️ Edit Lagu
-                          </button>
-                        </div>
-                        <ChordDisplay song={selectedSong} transpose={transpose} />
+                        {!performanceMode && (
+                          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => handleEditSong(selectedSong)}
+                              className="btn btn-sm btn-primary"
+                              title="Edit lagu ini"
+                            >
+                              ✏️ Edit Lagu
+                            </button>
+                          </div>
+                        )}
+                        <ChordDisplay song={selectedSong} transpose={transpose} performanceMode={performanceMode} />
                       </>
                     ) : (
                       <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
@@ -1194,13 +1265,83 @@ function App() {
                     speed={scrollSpeed}
                     scrollRef={scrollRef}
                   />
+                  
+                  {/* Performance Mode Footer Controls */}
+                  {performanceMode && selectedSong && (
+                    <div className="performance-footer">
+                      <div className="performance-info">
+                        <div className="performance-song-title">{selectedSong.title}</div>
+                        <div>{selectedSong.artist}</div>
+                        {currentSetList && (
+                          <div>
+                            Song {getCurrentSongIndexInSetList() + 1} of {getSetListSongs().length}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="performance-controls">
+                        {currentSetList && (
+                          <>
+                            <button onClick={navigateToPrevSongInSetList} className="perf-btn">
+                              ⏮ Prev
+                            </button>
+                            <button onClick={navigateToNextSongInSetList} className="perf-btn">
+                              Next ⏭
+                            </button>
+                            <span style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.2)' }} />
+                          </>
+                        )}
+                        
+                        <button onClick={() => handleTranspose(-1)} className="perf-btn">
+                          ♭
+                        </button>
+                        <span style={{ color: '#fbbf24', fontWeight: '600', minWidth: '40px', textAlign: 'center' }}>
+                          {transpose > 0 ? `+${transpose}` : transpose}
+                        </span>
+                        <button onClick={() => handleTranspose(1)} className="perf-btn">
+                          ♯
+                        </button>
+                        <button onClick={() => setTranspose(0)} className="perf-btn">
+                          ⟳
+                        </button>
+                        
+                        <span style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.2)' }} />
+                        
+                        <button
+                          onClick={() => setAutoScrollActive(!autoScrollActive)}
+                          className={`perf-btn ${autoScrollActive ? 'perf-btn-success' : ''}`}
+                        >
+                          {autoScrollActive ? '⏸ Pause' : '▶ Scroll'}
+                        </button>
+                        {autoScrollActive && (
+                          <>
+                            <button onClick={() => setScrollSpeed(Math.max(0.5, scrollSpeed - 0.5))} className="perf-btn">
+                              −
+                            </button>
+                            <span style={{ color: '#60a5fa', fontWeight: '600', minWidth: '45px', textAlign: 'center' }}>
+                              {scrollSpeed.toFixed(1)}x
+                            </span>
+                            <button onClick={() => setScrollSpeed(Math.min(5, scrollSpeed + 0.5))} className="perf-btn">
+                              +
+                            </button>
+                          </>
+                        )}
+                        
+                        <span style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.2)' }} />
+                        
+                        <button onClick={togglePerformanceMode} className="perf-btn perf-btn-danger perf-btn-large">
+                          ✕ Exit
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               </main>
             )}
           </div>
         </div>
 
-        {showSongForm && (
+        {!performanceMode && showSongForm && (
           <SongFormBaru
             song={editingSong}
             onSave={handleSaveSong}
@@ -1211,7 +1352,7 @@ function App() {
           />
         )}
 
-        {showSetListForm && (
+        {!performanceMode && showSetListForm && (
           <SetListForm
             setList={editingSetList}
             onSave={(name) => {
@@ -1273,7 +1414,7 @@ function App() {
           </div>
         )}
 
-        {showHelp && (
+        {!performanceMode && showHelp && (
           <HelpModal
             onClose={() => setShowHelp(false)}
           />

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { parseChordPro, transposeChord, getAllChords } from '../utils/chordUtils';
 import { parseMelodyString, transposeMelody, formatNoteDisplay, extractMelodyFromLyrics } from '../utils/musicNotationUtils';
 
-const ChordDisplay = ({ song, transpose = 0 }) => {
+const ChordDisplay = ({ song, transpose = 0, performanceMode = false }) => {
   const [parsedSong, setParsedSong] = useState(null);
   const [allChords, setAllChords] = useState([]);
   // Precompute melody bars for inline numeric notation
@@ -351,7 +351,7 @@ const ChordDisplay = ({ song, transpose = 0 }) => {
   };
   
   return (
-    <div className="chord-display">
+    <div className={`chord-display ${performanceMode ? 'performance-mode' : ''}`}>
       <div className="song-header">
         <h2>{parsedSong.metadata.title || song.title}</h2>
         <p className="artist">{parsedSong.metadata.artist || song.artist}</p>
@@ -390,7 +390,7 @@ const ChordDisplay = ({ song, transpose = 0 }) => {
         </div>
       </div>
       
-      {allChords.length > 0 && (
+      {!performanceMode && allChords.length > 0 && (
         <div className="all-chords">
           <strong>Chords: </strong>
           {allChords.map((chord, idx) => (
