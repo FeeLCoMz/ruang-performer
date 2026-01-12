@@ -213,13 +213,32 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
         `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=${encodeURIComponent(youtubeSearchQuery)}&key=${API_KEY}`
       );
 
+      // Check for forbidden error (403) or other errors
       if (!response.ok) {
+        if (response.status === 403) {
+          // Open YouTube search in external browser
+          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeSearchQuery)}`;
+          window.open(searchUrl, '_blank');
+          setShowYouTubeSearch(false);
+          setYoutubeSearchQuery('');
+          setSearchError('');
+          return;
+        }
         throw new Error('Gagal mencari video YouTube');
       }
 
       const data = await response.json();
       
       if (data.error) {
+        // Check for forbidden error in response
+        if (data.error.code === 403 || data.error.status === 'PERMISSION_DENIED') {
+          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeSearchQuery)}`;
+          window.open(searchUrl, '_blank');
+          setShowYouTubeSearch(false);
+          setYoutubeSearchQuery('');
+          setSearchError('');
+          return;
+        }
         throw new Error(data.error.message || 'YouTube API error');
       }
 
@@ -1066,9 +1085,22 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   >
                     {isSearching ? '⏳' : '🔍'}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (youtubeSearchQuery.trim()) {
+                        const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeSearchQuery)}`;
+                        window.open(searchUrl, '_blank');
+                      }
+                    }}
+                    className="btn"
+                    title="Buka pencarian di YouTube (eksternal)"
+                  >
+                    🌐
+                  </button>
                 </div>
                 <small style={{ display: 'block', marginTop: '0.35rem', color: 'var(--text-muted)' }}>
-                  Masukkan judul lagu dan artis untuk mencari video
+                  Masukkan judul lagu dan artis untuk mencari video. Klik 🌐 untuk membuka YouTube secara eksternal.
                 </small>
               </div>
 
