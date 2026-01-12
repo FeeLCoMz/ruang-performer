@@ -102,6 +102,7 @@ function App() {
   const [performanceTheme, setPerformanceTheme] = useState('dark-stage'); // dark-stage, bright, amber, high-contrast
   const [showSetlistView, setShowSetlistView] = useState(true);
   const [performanceFontSize, setPerformanceFontSize] = useState(100); // percentage
+  const [recoveryNotification, setRecoveryNotification] = useState(null); // For showing recovered data
   const [syncingToDb, setSyncingToDb] = useState(false);
   const [runtimeErrors, setRuntimeErrors] = useState([]);
   const [sortBy, setSortBy] = useState('title-asc');
@@ -152,6 +153,9 @@ function App() {
         fetch('/api/setlists').then(res => res.json())
       ])
         .then(([songsData, setlistsData]) => {
+          const localSongs = sanitizeSongs(songs);
+          const localSetLists = sanitizeSetLists(setLists);
+          
           // Merge songs
           if (Array.isArray(songsData)) {
             const remoteSongs = sanitizeSongs(songsData);
@@ -175,6 +179,8 @@ function App() {
             const remoteSetlists = sanitizeSetLists(setlistsData);
             setSetLists(prev => {
               const merged = [...sanitizeSetLists(prev)];
+              let hasRecoveredData = false;
+              
               remoteSetlists.forEach(remote => {
                 const localIdx = merged.findIndex(s => s.id === remote.id);
                 if (localIdx > -1) {
@@ -183,8 +189,21 @@ function App() {
                   merged[localIdx] = (remoteTs > localTs) ? remote : merged[localIdx];
                 } else {
                   merged.push(remote);
+                  hasRecoveredData = true; // New data from cloud
                 }
               });
+              
+              // Show notification if local was empty but cloud has data
+              if (localSetLists.length === 0 && merged.length > 0 && hasRecoveredData) {
+                setRecoveryNotification({
+                  type: 'setlists',
+                  count: merged.length,
+                  message: `Recovered ${merged.length} setlist(s) from cloud backup`
+                });
+                // Auto-dismiss notification after 5 seconds
+                setTimeout(() => setRecoveryNotification(null), 5000);
+              }
+              
               return merged;
             });
           }
@@ -256,7 +275,7 @@ function App() {
           console.error(`Failed to sync setlist ${setList.id}:`, err);
         }
       }
-    }, 1000); // Debounce 1 second
+    }, 500); // Reduced debounce from 1000 to 500ms for faster sync
 
     return () => clearTimeout(syncTimeout);
   }, [setLists]);
@@ -913,6 +932,26 @@ function App() {
 
   return (
     <>
+      {/* Recovery Notification */}
+      {recoveryNotification && (
+        <div className="recovery-notification">
+          <div className="recovery-content">
+            <span className="recovery-icon">☁️</span>
+            <div className="recovery-text">
+              <strong>Data Recovered!</strong>
+              <p>{recoveryNotification.message}</p>
+            </div>
+            <button 
+              className="btn-dismiss-recovery"
+              onClick={() => setRecoveryNotification(null)}
+              title="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+      
       {!performanceMode && showSettingsMenu && (
         <SettingsModal
           onClose={() => setShowSettingsMenu(false)}

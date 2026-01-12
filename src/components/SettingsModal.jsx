@@ -78,6 +78,18 @@ export default function SettingsModal({ onClose, onExport, onImport, onSync, syn
             >
               {syncingToDb ? '⏳ Syncing...' : '☁️ Sync ke DB'}
             </button>
+            <div style={{ 
+              marginTop: '0.75rem', 
+              padding: '0.75rem', 
+              background: 'rgba(59, 130, 246, 0.1)', 
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              color: '#94a3b8',
+              lineHeight: '1.5'
+            }}>
+              <strong style={{ color: '#60a5fa' }}>💡 Tips:</strong> Sync otomatis saat ada perubahan jika online. Jika clear site data, data akan di-recover dari cloud saat reload.
+            </div>
           </div>
         </div>
       </div>
