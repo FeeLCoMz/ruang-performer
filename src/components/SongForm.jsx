@@ -2,6 +2,31 @@ import React, { useState, useEffect } from 'react';
 import YouTubeViewer from './YouTubeViewer';
 import { transcribeAudio } from '../apiClient';
 
+function extractYouTubeId(input) {
+  if (!input) return null;
+  // If already looks like an ID (11 chars, letters/numbers/-/_)
+  const maybeId = input.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(maybeId)) return maybeId;
+
+  // Try to extract from URL
+  try {
+    const url = new URL(maybeId.includes('http') ? maybeId : `https://${maybeId}`);
+    // v= query param
+    if (url.searchParams && url.searchParams.get('v')) return url.searchParams.get('v');
+    // youtu.be short link
+    if (url.hostname && url.pathname) {
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (parts.length > 0) return parts[parts.length - 1];
+    }
+  } catch (e) {
+    // not a full url, try regex fallback
+    const m = maybeId.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
+    if (m) return m[1];
+  }
+
+  return null;
+}
+
 const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -54,16 +79,26 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let newValue = value;
+
+    // Extract YouTube ID from URL if it's a YouTube field
+    if (name === 'youtubeId' && value.trim()) {
+      const extractedId = extractYouTubeId(value);
+      if (extractedId) {
+        newValue = extractedId;
+      }
+    }
+
+    setFormData(prev => ({ ...prev, [name]: newValue }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
     
     // Detect format when lyrics change
-    if (name === 'lyrics' && value.trim()) {
-      const hasChordProMarkup = value.includes('[') && value.includes(']') || value.match(/^\{[^}]+\}/m);
+    if (name === 'lyrics' && newValue.trim()) {
+      const hasChordProMarkup = newValue.includes('[') && newValue.includes(']') || newValue.match(/^\{[^}]+\}/m);
       setDetectedFormat(hasChordProMarkup ? 'ChordPro' : 'Standard');
-    } else if (name === 'lyrics' && !value.trim()) {
+    } else if (name === 'lyrics' && !newValue.trim()) {
       setDetectedFormat(null);
     }
   };
@@ -830,9 +865,9 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   name="youtubeId"
                   value={formData.youtubeId}
                   onChange={handleChange}
-                  placeholder="Contoh: dQw4w9WgXcQ"
+                  placeholder="ID atau URL YouTube (otomatis ekstrak ID dari URL)"
                 />
-                <small style={{ display: 'block', marginTop: '0.5rem', color: 'var(--text-muted)' }}>ID adalah kode setelah "v=" di URL YouTube</small>
+                <small style={{ display: 'block', marginTop: '0.5rem', color: 'var(--text-muted)' }}>ID adalah kode setelah "v=" di URL YouTube, atau paste URL lengkapnya untuk ekstrak otomatis</small>
                 {formData.youtubeId && (
                   <div className="youtube-viewer-section">
                     <YouTubeViewer

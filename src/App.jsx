@@ -736,6 +736,8 @@ function App() {
           if (migratedSongs.length > 0) setSelectedSong(migratedSongs[0]);
           setCurrentSetList(null);
           setTranspose(0);
+          setActiveNav('songs');
+          setShowSettingsMenu(false);
           alert(`Import berhasil!\n\nLagu: ${migratedSongs.length}\nSet list: ${migratedSetLists.length}`);
         }
       } catch (error) {
