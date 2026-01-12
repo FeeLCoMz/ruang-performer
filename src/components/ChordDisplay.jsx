@@ -105,7 +105,11 @@ const ChordDisplay = ({ song, transpose = 0 }) => {
         while ((chordMatch = chordRegex.exec(segment.value)) !== null) {
           const chordText = chordMatch[2];
           const chordIndex = chordMatch.index + chordMatch[1].length;
-          allMatches.push({ index: chordIndex, length: chordText.length, type: 'chord', text: chordText });
+          // Transpose inline chord if compact format (D..Gm) or single chord
+          const transposedChordText = chordText.includes('..')
+            ? chordText.split('..').map(c => transposeChord(c.trim(), transpose)).join('..')
+            : transposeChord(chordText, transpose);
+          allMatches.push({ index: chordIndex, length: chordText.length, type: 'chord', text: transposedChordText });
         }
 
         // Reset regex global state
