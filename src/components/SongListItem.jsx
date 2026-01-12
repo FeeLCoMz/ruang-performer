@@ -109,6 +109,54 @@ export default function SongListItem({ song, isActive, onSelect, onEdit, onDelet
           {song.tempo && <span style={{ marginRight: 8 }}>⏱️ <b>{song.tempo}</b></span>}
           {song.style && <span>🎸 <b>{song.style}</b></span>}
         </div>
+        
+        {/* Detailed View Mode */}
+        {viewMode === 'detailed' && (
+          <div className="song-details" style={{ fontSize: '0.8em', color: '#94a3b8', marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
+            {song.youtubeId && (
+              <div style={{ marginBottom: 4 }}>
+                <span>📺 YouTube: </span>
+                <a 
+                  href={`https://youtube.com/watch?v=${song.youtubeId}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ color: '#60a5fa', textDecoration: 'none' }}
+                >
+                  {song.youtubeId}
+                </a>
+              </div>
+            )}
+            {song.timestamps && (
+              <div style={{ marginBottom: 4 }}>
+                <span>⏰ Timestamps: {
+                  typeof song.timestamps === 'string' 
+                    ? song.timestamps 
+                    : Array.isArray(song.timestamps)
+                      ? `${song.timestamps.length} timestamps`
+                      : typeof song.timestamps === 'object'
+                        ? JSON.stringify(song.timestamps)
+                        : song.timestamps
+                }</span>
+              </div>
+            )}
+            {song.lyrics && (
+              <div style={{ marginBottom: 4 }}>
+                <span>📝 {song.lyrics.split('\n').length} baris lirik</span>
+              </div>
+            )}
+            {song.createdAt && (
+              <div style={{ marginBottom: 4 }}>
+                <span>📅 Dibuat: {new Date(song.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              </div>
+            )}
+            {song.updatedAt && (
+              <div>
+                <span>🔄 Diubah: {new Date(song.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="song-actions">
         <button 
