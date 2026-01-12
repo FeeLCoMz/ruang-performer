@@ -44,7 +44,8 @@ function sanitizeSetLists(list = []) {
       ...sl,
       name: sl.name.trim(),
       songs: Array.isArray(sl.songs) ? sl.songs.filter(Boolean) : [],
-      songKeys: typeof sl.songKeys === 'object' && sl.songKeys !== null ? sl.songKeys : {}
+      songKeys: typeof sl.songKeys === 'object' && sl.songKeys !== null ? sl.songKeys : {},
+      completedSongs: typeof sl.completedSongs === 'object' && sl.completedSongs !== null ? sl.completedSongs : {}
     }));
 }
 
@@ -349,6 +350,8 @@ function App() {
       id: generateUniqueId(),
       name,
       songs: [],
+      songKeys: {},
+      completedSongs: {},
       createdAt: new Date().toISOString(),
       updatedAt: now
     };
@@ -419,6 +422,7 @@ function App() {
       name: `${originalSetList.name} (Copy)`,
       songs: [...originalSetList.songs],
       songKeys: { ...(originalSetList.songKeys || {}) },
+      completedSongs: {},
       createdAt: new Date().toISOString(),
       updatedAt: now
     };
@@ -454,7 +458,7 @@ function App() {
         await fetch(`/api/setlists/${setListId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, updatedAt: updatedSetList.updatedAt })
+          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, completedSongs: updatedSetList.completedSongs, updatedAt: updatedSetList.updatedAt })
         });
       } catch (err) {
         console.error('Gagal menambah lagu ke setlist:', err);
@@ -467,8 +471,53 @@ function App() {
     setSetLists(prevSetLists => {
       return prevSetLists.map(setList => {
         if (setList.id === setListId) {
-          const next = { ...setList, songs: setList.songs.filter(id => id !== songId), songKeys: setList.songKeys || {}, updatedAt: Date.now() };
+          const next = { 
+            ...setList, 
+            songs: setList.songs.filter(id => id !== songId), 
+            songKeys: setList.songKeys || {}, 
+            completedSongs: setList.completedSongs || {},
+            updatedAt: Date.now() 
+          };
+          // Clean up songKeys
           if (next.songKeys && next.songKeys[songId]) {
+            const { [songId]: _, ...rest } = next.songKeys;
+            next.songKeys = rest;
+          }
+          // Clean up completedSongs
+          if (next.completedSongs && next.completedSongs[songId]) {
+            const { [songId]: _, ...rest } = next.completedSongs;
+            next.completedSongs = rest;
+          }
+          updatedSetList = next;
+          return next;
+        }
+        return setList;
+      });
+    });
+    
+    if (updatedSetList) {
+      try {
+        await fetch(`/api/setlists/${setListId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, completedSongs: updatedSetList.completedSongs, updatedAt: updatedSetList.updatedAt })
+        });
+      } catch (err) {
+        console.error('Gagal menghapus lagu dari setlist:', err);
+      }
+    }
+  };
+
+  // Update/setlist-specific key override for a song
+  const handleSetListSongKey = async (setListId, songId, key) => {
+    let updatedSetList = null;
+    setSetLists(prevSetLists => {
+      return prevSetLists.map(setList => {
+        if (setList.id === setListId) {
+          const next = { ...setList, songKeys: { ...(setList.songKeys || {}) }, updatedAt: Date.now() };
+          if (key && key.trim()) {
+            next.songKeys[songId] = key.trim();
+          } else if (next.songKeys[songId]) {
             const { [songId]: _, ...rest } = next.songKeys;
             next.songKeys = rest;
           }
@@ -478,47 +527,62 @@ function App() {
         return setList;
       });
     });
-      // Update/setlist-specific key override for a song
-      const handleSetListSongKey = async (setListId, songId, key) => {
-        let updatedSetList = null;
-        setSetLists(prevSetLists => {
-          return prevSetLists.map(setList => {
-            if (setList.id === setListId) {
-              const next = { ...setList, songKeys: { ...(setList.songKeys || {}) }, updatedAt: Date.now() };
-              if (key && key.trim()) {
-                next.songKeys[songId] = key.trim();
-              } else if (next.songKeys[songId]) {
-                const { [songId]: _, ...rest } = next.songKeys;
-                next.songKeys = rest;
-              }
-              updatedSetList = next;
-              return next;
-            }
-            return setList;
-          });
-        });
-        if (updatedSetList) {
-          try {
-            await fetch(`/api/setlists/${setListId}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, updatedAt: updatedSetList.updatedAt })
-            });
-          } catch (err) {
-            console.error('Gagal menyimpan key setlist:', err);
-          }
-        }
-      };
     if (updatedSetList) {
       try {
         await fetch(`/api/setlists/${setListId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, updatedAt: updatedSetList.updatedAt })
+          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, completedSongs: updatedSetList.completedSongs, updatedAt: updatedSetList.updatedAt })
         });
       } catch (err) {
-        console.error('Gagal menghapus lagu dari setlist:', err);
+        console.error('Gagal update key lagu di setlist:', err);
       }
+    }
+  };
+
+  // Toggle completed status untuk lagu dalam setlist
+  const handleToggleCompletedSong = async (setListId, songId) => {
+    let updatedSetList = null;
+    setSetLists(prevSetLists => {
+      return prevSetLists.map(setList => {
+        if (setList.id === setListId) {
+          const next = { ...setList, completedSongs: { ...(setList.completedSongs || {}) }, updatedAt: Date.now() };
+          if (next.completedSongs[songId]) {
+            delete next.completedSongs[songId];
+          } else {
+            next.completedSongs[songId] = Date.now();
+          }
+          updatedSetList = next;
+          return next;
+        }
+        return setList;
+      });
+    });
+    if (updatedSetList) {
+      try {
+        await fetch(`/api/setlists/${setListId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: updatedSetList.name, songs: updatedSetList.songs, songKeys: updatedSetList.songKeys, completedSongs: updatedSetList.completedSongs, updatedAt: updatedSetList.updatedAt })
+        });
+      } catch (err) {
+        console.error('Gagal update status completed lagu:', err);
+      }
+    }
+  };
+
+  const handleDeleteSong = async (songId) => {
+    if (!confirm('Hapus lagu ini?')) return;
+    setSongs(prevSongs => prevSongs.filter(s => s.id !== songId));
+    if (selectedSong?.id === songId) {
+      setSelectedSong(null);
+    }
+    
+    // Sync to database
+    try {
+      await fetch(`/api/songs/${songId}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('Gagal menghapus lagu dari database:', err);
     }
   };
 
@@ -536,21 +600,6 @@ function App() {
       localStorage.setItem('ronz_view_mode', nextMode);
     } catch (e) {
       console.error('Failed to save view mode:', e);
-    }
-  };
-
-  const handleDeleteSong = async (songId) => {
-    if (!confirm('Hapus lagu ini?')) return;
-    setSongs(prevSongs => prevSongs.filter(s => s.id !== songId));
-    if (selectedSong?.id === songId) {
-      setSelectedSong(null);
-    }
-    
-    // Sync to database
-    try {
-      await fetch(`/api/songs/${songId}`, { method: 'DELETE' });
-    } catch (err) {
-      console.error('Gagal menghapus lagu dari database:', err);
     }
   };
 
@@ -893,6 +942,8 @@ function App() {
                             onDelete={() => handleDeleteSong(song.id)}
                             setLists={setLists}
                             currentSetList={currentSetList}
+                            isCompleted={currentSetList ? (setLists.find(sl => sl.id === currentSetList)?.completedSongs?.[song.id]) : false}
+                            onToggleCompleted={currentSetList ? () => handleToggleCompletedSong(currentSetList, song.id) : null}
                             overrideKey={(currentSetList ? (setLists.find(sl => sl.id === currentSetList)?.songKeys?.[song.id]) : null) || null}
                             onSetListKeyChange={(key) => {
                               if (!currentSetList) return;
@@ -992,7 +1043,18 @@ function App() {
                               </div>
                             </div>
                             <div className="setlist-card-body">
-                              <p className="song-count">{setList.songs?.length || 0} lagu</p>
+                              <p className="song-count">
+                                {setList.songs?.length || 0} lagu
+                                {setList.songs?.length > 0 && (
+                                  <>
+                                    {' • '}
+                                    <span style={{ color: 'var(--success)', fontWeight: 600 }}>
+                                      ✓ {Object.keys(setList.completedSongs || {}).length}
+                                    </span>
+                                    {' selesai'}
+                                  </>
+                                )}
+                              </p>
                             </div>
                           </div>
                         ))

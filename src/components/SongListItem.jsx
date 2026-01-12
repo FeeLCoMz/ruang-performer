@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function SongListItem({ song, isActive, onSelect, onEdit, onDelete, setLists, onAddToSetLists, onRemoveFromSetList, currentSetList, overrideKey, onSetListKeyChange, viewMode }) {
+export default function SongListItem({ song, isActive, onSelect, onEdit, onDelete, setLists, onAddToSetLists, onRemoveFromSetList, currentSetList, overrideKey, onSetListKeyChange, viewMode, isCompleted, onToggleCompleted }) {
   const [showSetListPopup, setShowSetListPopup] = useState(false);
   const [selectedSetLists, setSelectedSetLists] = useState([]);
   const [tempKey, setTempKey] = useState(overrideKey || '');
@@ -45,9 +45,40 @@ export default function SongListItem({ song, isActive, onSelect, onEdit, onDelet
   };
 
   return (
-    <div className={`song-item${isActive ? ' active' : ''}`} style={{ position: 'relative' }}>
+    <div className={`song-item${isActive ? ' active' : ''}${isCompleted ? ' completed' : ''}`} style={{ position: 'relative' }}>
       <div className="song-info" onClick={onSelect}>
-        <div className="song-title">{song.title}</div>
+        {currentSetList && onToggleCompleted && (
+          <div 
+            style={{ 
+              position: 'absolute', 
+              left: '0.5rem', 
+              top: '0.5rem', 
+              zIndex: 3,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              type="checkbox"
+              checked={!!isCompleted}
+              onChange={(e) => {
+                e.stopPropagation();
+                onToggleCompleted();
+              }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ 
+                width: '18px', 
+                height: '18px', 
+                cursor: 'pointer',
+                accentColor: '#10b981'
+              }}
+              title={isCompleted ? "Tandai belum selesai dilatih" : "Tandai sudah selesai dilatih"}
+            />
+          </div>
+        )}
+        <div className="song-title" style={{ paddingLeft: currentSetList && onToggleCompleted ? '1.75rem' : 0 }}>{song.title}</div>
         <div className="song-artist">{song.artist}</div>
         <div className="song-meta" style={{ fontSize: '0.85em', color: '#a5b4fc', marginTop: 2 }}>
           {song.key && <span style={{ marginRight: 8 }}>🎵 <b>{song.key}</b></span>}
