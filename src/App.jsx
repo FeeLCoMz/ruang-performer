@@ -149,11 +149,17 @@ function App() {
   useEffect(() => {
     if (navigator.onLine) {
       // Check if localStorage was empty before fetch
-      const wasLocalStorageEmpty = !localStorage.getItem('ronz_setlists') || 
-                                     localStorage.getItem('ronz_setlists') === '[]';
+      const wasSongsEmpty = !localStorage.getItem('ronz_songs') || 
+                             localStorage.getItem('ronz_songs') === '[]';
+      const wasSetlistsEmpty = !localStorage.getItem('ronz_setlists') || 
+                                localStorage.getItem('ronz_setlists') === '[]';
       
       console.log('[FETCH] Starting data fetch from backend...');
-      console.log('[FETCH] LocalStorage empty:', wasLocalStorageEmpty);
+      console.log('[FETCH] Songs localStorage empty:', wasSongsEmpty);
+      console.log('[FETCH] Setlists localStorage empty:', wasSetlistsEmpty);
+      
+      let recoveredSongs = 0;
+      let recoveredSetlists = 0;
       
       Promise.all([
         fetch('/api/songs').then(res => {
@@ -177,6 +183,8 @@ function App() {
             const remoteSongs = sanitizeSongs(songsData);
             setSongs(prev => {
               const merged = [...sanitizeSongs(prev)];
+              const beforeCount = merged.length;
+              
               remoteSongs.forEach(remote => {
                 const localIdx = merged.findIndex(s => s.id === remote.id);
                 if (localIdx > -1) {
@@ -187,10 +195,17 @@ function App() {
                   merged.push(remote);
                 }
               });
-              console.log('[MERGE] Songs merged:', merged.length);
+              
+              // Count recovered songs if localStorage was empty
+              if (wasSongsEmpty && beforeCount === 0) {
+                recoveredSongs = merged.length;
+              }
+              
+              console.log('[MERGE] Songs merged:', merged.length, '(recovered:', recoveredSongs, ')');
               return merged;
             });
           }
+          
           // Merge setlists
           if (Array.isArray(setlistsData)) {
             const remoteSetlists = sanitizeSetLists(setlistsData);
@@ -198,7 +213,8 @@ function App() {
             
             setSetLists(prev => {
               const merged = [...sanitizeSetLists(prev)];
-              console.log('[MERGE] Local setlists before merge:', merged.length);
+              const beforeCount = merged.length;
+              console.log('[MERGE] Local setlists before merge:', beforeCount);
               
               remoteSetlists.forEach(remote => {
                 const localIdx = merged.findIndex(s => s.id === remote.id);
@@ -211,15 +227,25 @@ function App() {
                 }
               });
               
-              console.log('[MERGE] Setlists after merge:', merged.length);
+              // Count recovered setlists if localStorage was empty
+              if (wasSetlistsEmpty && beforeCount === 0) {
+                recoveredSetlists = merged.length;
+              }
               
-              // Show notification if local was empty but cloud has data
-              if (wasLocalStorageEmpty && merged.length > 0) {
-                console.log('[RECOVERY] Showing recovery notification');
+              console.log('[MERGE] Setlists after merge:', merged.length, '(recovered:', recoveredSetlists, ')');
+              
+              // Show notification if any data was recovered from cloud
+              const totalRecovered = recoveredSongs + recoveredSetlists;
+              if (totalRecovered > 0) {
+                console.log('[RECOVERY] Total recovered:', recoveredSongs, 'songs,', recoveredSetlists, 'setlists');
+                const parts = [];
+                if (recoveredSongs > 0) parts.push(`${recoveredSongs} lagu`);
+                if (recoveredSetlists > 0) parts.push(`${recoveredSetlists} setlist`);
+                
                 setRecoveryNotification({
-                  type: 'setlists',
-                  count: merged.length,
-                  message: `Recovered ${merged.length} setlist(s) from cloud backup`
+                  type: 'success',
+                  count: totalRecovered,
+                  message: `Dipulihkan: ${parts.join(' & ')} dari cloud backup`
                 });
                 // Auto-dismiss notification after 5 seconds
                 setTimeout(() => setRecoveryNotification(null), 5000);
@@ -236,12 +262,13 @@ function App() {
         })
         .catch(err => {
           console.error('[FETCH] Failed to fetch from backend:', err);
-          // Show error notification
-          if (wasLocalStorageEmpty) {
+          // Show error notification if localStorage was empty
+          const wasAnyEmpty = wasSongsEmpty || wasSetlistsEmpty;
+          if (wasAnyEmpty) {
             setRecoveryNotification({
               type: 'error',
               count: 0,
-              message: 'Failed to connect to cloud. Data will sync when online.'
+              message: 'Gagal terhubung ke cloud. Data akan disinkronkan saat online.'
             });
             setTimeout(() => setRecoveryNotification(null), 5000);
           }
@@ -249,13 +276,17 @@ function App() {
     } else {
       console.log('[FETCH] Offline - skipping backend fetch');
       // If offline and local storage empty, show offline warning
-      const wasLocalStorageEmpty = !localStorage.getItem('ronz_setlists') || 
-                                     localStorage.getItem('ronz_setlists') === '[]';
-      if (wasLocalStorageEmpty) {
+      const wasSongsEmpty = !localStorage.getItem('ronz_songs') || 
+                             localStorage.getItem('ronz_songs') === '[]';
+      const wasSetlistsEmpty = !localStorage.getItem('ronz_setlists') || 
+                                localStorage.getItem('ronz_setlists') === '[]';
+      const wasAnyEmpty = wasSongsEmpty || wasSetlistsEmpty;
+      
+      if (wasAnyEmpty) {
         setRecoveryNotification({
           type: 'warning',
           count: 0,
-          message: 'Offline: Data will be recovered when you go online.'
+          message: 'Offline: Data akan dipulihkan saat terhubung ke internet.'
         });
         setTimeout(() => setRecoveryNotification(null), 5000);
       }
@@ -772,6 +803,9 @@ function App() {
   const handleTouchMove = (e) => {
     if (!performanceMode || e.touches.length !== 2) return;
     
+    // Prevent default pinch-to-zoom behavior on touch devices
+    e.preventDefault();
+    
     // Pinch zoom untuk font size
     const dx = e.touches[0].clientX - e.touches[1].clientX;
     const dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -988,8 +1022,8 @@ function App() {
             </span>
             <div className="recovery-text">
               <strong>
-                {recoveryNotification.type === 'error' ? 'Connection Error' :
-                 recoveryNotification.type === 'warning' ? 'Offline Mode' : 'Data Recovered!'}
+                {recoveryNotification.type === 'error' ? 'Koneksi Error' :
+                 recoveryNotification.type === 'warning' ? 'Mode Offline' : 'Data Dipulihkan!'}
               </strong>
               <p>{recoveryNotification.message}</p>
             </div>
@@ -1363,8 +1397,14 @@ function App() {
                       />
                     </div>
                   )}
-                  {/* Tombol fullscreen dan lirik fullscreen */}
-                  <div className="lyrics-section" ref={scrollRef}>
+                  {/* Main content area with touch handlers for performance mode */}
+                  <div 
+                    className="lyrics-section" 
+                    ref={scrollRef}
+                    onTouchStart={performanceMode ? handleTouchStart : undefined}
+                    onTouchMove={performanceMode ? handleTouchMove : undefined}
+                    onTouchEnd={performanceMode ? handleTouchEnd : undefined}
+                  >
                     {selectedSong ? (
                       <>
                         {!performanceMode && (Array.isArray(selectedSong.timestamps) && selectedSong.timestamps.length > 0) && (
@@ -1407,9 +1447,6 @@ function App() {
                           performanceMode={performanceMode}
                           performanceFontSize={performanceFontSize}
                           performanceTheme={performanceTheme}
-                          onTouchStart={handleTouchStart}
-                          onTouchMove={handleTouchMove}
-                          onTouchEnd={handleTouchEnd}
                         />
                       </>
                     ) : (
