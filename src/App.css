@@ -972,23 +972,23 @@ body {
 .sidebar-search input {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border-radius: 999px;
-  border: 1.5px solid var(--border);
-  background: var(--bg);
+  border-radius: 10px;
+  border: 1.5px solid rgba(99, 102, 241, 0.15);
+  background: rgba(99, 102, 241, 0.05);
   color: var(--text);
   outline: none;
-  font-size: 0.98rem;
-  box-shadow: var(--shadow-sm);
-  transition: border 0.22s, background 0.22s, box-shadow 0.22s;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .sidebar-search input::placeholder {
   color: var(--text-muted);
   letter-spacing: 0.01em;
 }
 .sidebar-search input:focus {
-  border-color: var(--primary);
-  background: var(--card);
-  box-shadow: var(--shadow-md);
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
 }
 .sidebar-search .search-icon {
   position: absolute;
