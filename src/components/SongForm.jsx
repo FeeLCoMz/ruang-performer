@@ -60,11 +60,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [transcribeResult, setTranscribeResult] = useState('');
   const [showFormatHelp, setShowFormatHelp] = useState(false);
   const [detectedFormat, setDetectedFormat] = useState(null);
-  const [showScrapChord, setShowScrapChord] = useState(false);
-  const [scrapUrl, setScrapUrl] = useState('');
-  const [scrapLoading, setScrapLoading] = useState(false);
-  const [scrapError, setScrapError] = useState('');
-  const [scrapResult, setScrapResult] = useState({ lyrics: '', lyrics_only: '' });
   // ...existing code...
 
   useEffect(() => {
@@ -323,65 +318,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     }
     
     setChordError('Silakan copy langsung dari website, atau paste URL dan buka di browser baru');
-  };
-
-  const scrapChordFromUrl = async () => {
-    if (!scrapUrl.trim()) {
-      setScrapError('URL tidak boleh kosong');
-      return;
-    }
-
-    setScrapLoading(true);
-    setScrapError('');
-    setScrapResult({ lyrics: '', lyrics_only: '' });
-
-    try {
-      // Call backend API to scrape chord/lyrics from URL
-      const response = await fetch('/api/scrap-chord', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: scrapUrl.trim() })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      if (data.error) {
-        setScrapError(data.error);
-        return;
-      }
-
-      setScrapResult({
-        lyrics: data.lyrics || '',
-        lyrics_only: data.lyrics_only || data.lyrics || ''
-      });
-
-      if (!data.lyrics) {
-        setScrapError('Tidak ada lirik/chord yang ditemukan di halaman tersebut');
-      }
-    } catch (error) {
-      setScrapError(`Gagal scrape: ${error.message}. Silakan paste URL dari Ultimate Guitar, Chordify, atau situs chord lainnya.`);
-    } finally {
-      setScrapLoading(false);
-    }
-  };
-
-  const pasteScrapedToLyrics = (content) => {
-    if (!content.trim()) {
-      setScrapError('Tidak ada konten yang bisa dipaste');
-      return;
-    }
-    setFormData(prev => ({
-      ...prev,
-      lyrics: prev.lyrics ? prev.lyrics + '\n\n' + content : content
-    }));
-    setShowScrapChord(false);
-    setScrapUrl('');
-    setScrapResult({ lyrics: '', lyrics_only: '' });
-    setScrapError('');
   };
 
   const openChordSearchModal = () => {
@@ -1068,9 +1004,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   <button type="button" onClick={() => setShowTranscribe(true)} className="btn btn-sm">
                     🎤 Transkripsi
                   </button>
-                  <button type="button" onClick={() => { setShowScrapChord(true); setScrapUrl(''); setScrapError(''); setScrapResult({ lyrics: '', lyrics_only: '' }); }} className="btn btn-sm">
-                    🌐 Scrape
-                  </button>
                 </div>
               </div>
               <textarea
@@ -1579,169 +1512,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Scrape Chord Modal */}
-      {showScrapChord && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '700px', maxHeight: '85vh', overflow: 'auto' }}>
-            <button
-              onClick={() => {
-                setShowScrapChord(false);
-                setScrapUrl('');
-                setScrapError('');
-                setScrapResult({ lyrics: '', lyrics_only: '' });
-              }}
-              className="btn-close"
-              style={{ position: 'absolute', top: 18, right: 18, zIndex: 10 }}
-              aria-label="Tutup"
-            >
-              ✕
-            </button>
-            <div className="modal-header">
-              <h2 style={{ marginBottom: 0 }}>🌐 Scrape Chord & Lirik</h2>
-            </div>
-            <div style={{ padding: '1.5rem' }}>
-              <div className="form-group">
-                <label htmlFor="scrapUrl">URL Situs Chord</label>
-                <small style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
-                  Paste URL dari halaman lirik (bukan home page). Contoh:
-                  <ul style={{ margin: '0.25rem 0 0 1.5rem', padding: 0 }}>
-                    <li>ultimate-guitar.com/tab/... (langsung ke lagu, bukan search)</li>
-                    <li>chordtela.com/chord/... (halaman lirik + chord)</li>
-                    <li>chordify.net/chords/... (situs chord lainnya)</li>
-                  </ul>
-                </small>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                  <input
-                    type="url"
-                    id="scrapUrl"
-                    value={scrapUrl}
-                    onChange={(e) => {
-                      setScrapUrl(e.target.value);
-                      setScrapError('');
-                    }}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        scrapChordFromUrl();
-                      }
-                    }}
-                    placeholder="https://ultimate-guitar.com/tab/... atau situs chord lainnya"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={scrapChordFromUrl}
-                    disabled={scrapLoading}
-                    className="btn btn-primary"
-                    title="Scrape dari URL"
-                  >
-                    {scrapLoading ? '⏳' : '🌐'}
-                  </button>
-                  {scrapUrl && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        window.open(scrapUrl.trim(), '_blank');
-                      }}
-                      className="btn"
-                      title="Buka URL di browser baru (untuk manual copy-paste)"
-                    >
-                      🔗
-                    </button>
-                  )}
-                </div>
-
-                {scrapError && (
-                  <div style={{ 
-                    padding: '0.75rem', 
-                    background: 'rgba(239, 68, 68, 0.1)', 
-                    border: '1px solid #ef4444',
-                    borderRadius: '6px',
-                    color: '#ef4444',
-                    marginBottom: '1rem',
-                    fontSize: '0.9rem',
-                    lineHeight: 1.5
-                  }}>
-                    <strong>⚠️ {scrapError}</strong>
-                    <div style={{ marginTop: '0.75rem', fontSize: '0.85rem' }}>
-                      <strong style={{ display: 'block', marginBottom: '0.25rem' }}>💡 Fallback: Copy-Paste Manual</strong>
-                      <ol style={{ margin: '0.25rem 0 0 1.2rem', paddingLeft: 0 }}>
-                        <li>Buka URL di browser baru</li>
-                        <li>Select semua text (Ctrl+A / Cmd+A)</li>
-                        <li>Copy text (Ctrl+C / Cmd+C)</li>
-                        <li>Kembali ke form, paste di textarea (Ctrl+V / Cmd+V)</li>
-                        <li>Gunakan tombol "🔄 Convert ke ChordPro" jika format berbeda</li>
-                      </ol>
-                    </div>
-                    {scrapError.includes('404') && (
-                      <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                        <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Atau coba:</strong>
-                        <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
-                          <li>Cek URL - pastikan benar dan halaman masih ada</li>
-                          <li>Gunakan URL langsung ke lagu (bukan search page)</li>
-                          <li>Coba situs lain: Ultimate Guitar, Chordtela, Chordify</li>
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {scrapResult.lyrics && (
-                  <div>
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                      <button
-                        type="button"
-                        onClick={() => pasteScrapedToLyrics(scrapResult.lyrics)}
-                        className="btn btn-primary"
-                        title="Paste dengan chord"
-                      >
-                        ✓ Paste (Dengan Chord)
-                      </button>
-                      {scrapResult.lyrics_only && (
-                        <button
-                          type="button"
-                          onClick={() => pasteScrapedToLyrics(scrapResult.lyrics_only)}
-                          className="btn"
-                          title="Paste hanya lirik tanpa chord"
-                        >
-                          ✓ Paste (Lirik Saja)
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(scrapResult.lyrics);
-                          alert('✓ Copied to clipboard');
-                        }}
-                        className="btn btn-sm"
-                      >
-                        📋 Copy
-                      </button>
-                    </div>
-                    <div style={{
-                      background: 'var(--bg)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '6px',
-                      padding: '1rem',
-                      maxHeight: '400px',
-                      overflow: 'auto',
-                      whiteSpace: 'pre-wrap',
-                      wordWrap: 'break-word',
-                      fontSize: '0.85rem',
-                      color: 'var(--text-muted)',
-                      fontFamily: 'monospace',
-                      lineHeight: 1.5
-                    }}>
-                      {scrapResult.lyrics}
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </div>
