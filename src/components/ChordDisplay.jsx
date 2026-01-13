@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { parseChordPro, transposeChord, getAllChords } from '../utils/chordUtils';
 import { parseMelodyString, transposeMelody, formatNoteDisplay, extractMelodyFromLyrics } from '../utils/musicNotationUtils';
 
-const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanceFontSize = 100, performanceTheme = 'dark-stage' }) => {
+const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanceFontSize = 100, performanceTheme = 'dark-stage', lyricsMode = false }) => {
   const [parsedSong, setParsedSong] = useState(null);
   const [allChords, setAllChords] = useState([]);
   // Precompute melody bars for inline numeric notation
@@ -318,7 +318,7 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
       
       return (
         <div key={index} className="lyrics-line">
-          <div className="chord-line">{chordLine}</div>
+          {!lyricsMode && <div className="chord-line">{chordLine}</div>}
           <div className="text-line">
             {textParts.length > 0 ? textParts : renderTextWithBrackets(lineData.text)}
           </div>
@@ -335,7 +335,7 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
   
   return (
     <div 
-      className={`chord-display ${performanceMode ? `performance-mode theme-${performanceTheme}` : ''}`}
+      className={`chord-display ${performanceMode ? `performance-mode theme-${performanceTheme}` : ''} ${lyricsMode ? 'lyrics-mode' : ''}`}
       style={performanceMode ? { '--perf-font-scale': performanceFontSize / 100 } : {}}
     >
       <div className="song-header">
@@ -376,7 +376,7 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
         </div>
       </div>
       
-      {!performanceMode && allChords.length > 0 && (
+      {!performanceMode && !lyricsMode && allChords.length > 0 && (
         <div className="all-chords">
           <strong>Chords: </strong>
           {allChords.map((chord, idx) => (

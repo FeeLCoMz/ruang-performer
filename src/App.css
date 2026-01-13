@@ -1634,8 +1634,7 @@ body {
 }
 
 .song-header h2 {
-  font-size: 2rem;
-  color: var(--text);
+  font-size: 2rem;  
   margin-bottom: 0.5rem;
   font-weight: 800;
   letter-spacing: -0.5px;
@@ -1796,6 +1795,29 @@ body {
   min-height: 1.4em;
   transition: var(--transition);
   letter-spacing: 0.5px;
+}
+
+/* ===== Lyrics Mode Style ===== */
+.chord-display.lyrics-mode .lyrics-line {
+  margin-bottom: 0.8rem;
+  line-height: 1.9;
+}
+
+.chord-display.lyrics-mode .text-line {
+  font-size: 1.1em;
+  line-height: 2;
+}
+
+.chord-display.lyrics-mode .structure-marker {
+  margin: 1rem 0;
+}
+
+.chord-display.lyrics-mode .inline-chord-highlight {
+  background: none;
+  color: var(--text);
+  padding: 0;
+  border: none;
+  font-weight: normal;
 }
 
 .chord {

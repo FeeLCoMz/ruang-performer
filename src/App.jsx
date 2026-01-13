@@ -92,6 +92,7 @@ function App() {
   const [videoDuration, setVideoDuration] = useState(0);
   const [viewerSeekTo, setViewerSeekTo] = useState(null);
   const [currentSetList, setCurrentSetList] = useState(null);
+  const [lyricsMode, setLyricsMode] = useState(false);
   const [showSongForm, setShowSongForm] = useState(false);
   const [editingSong, setEditingSong] = useState(null);
   const [showSetListForm, setShowSetListForm] = useState(false);
@@ -376,6 +377,7 @@ function App() {
 
   const handleSelectSong = (song) => {
     setSelectedSong(song);
+    setLyricsMode(false); // Reset lyrics mode when selecting a new song
     // Apply setlist-specific key override as transpose if exists
     if (currentSetList) {
       const setList = setLists.find(sl => sl.id === currentSetList);
@@ -1034,7 +1036,7 @@ function App() {
         />
       )}
       <div className={`app ${performanceMode ? 'performance-mode-active' : ''}`}>
-        {!performanceMode && (
+        {!performanceMode && !selectedSong && (
           <header className="header">
             <div className="header-content">
               <h1>🎸 RoNz Chord Pro</h1>
@@ -1364,6 +1366,15 @@ function App() {
                         🖨️
                       </button>
                       <span className="divider" />
+                      {/* Lyrics Mode Toggle */}
+                      <button
+                        onClick={() => setLyricsMode(!lyricsMode)}
+                        className={`btn btn-xs ${lyricsMode ? 'btn-primary' : ''}`}
+                        title={lyricsMode ? 'Tampilkan Chord' : 'Mode Lirik Saja'}
+                      >
+                        📝
+                      </button>
+                      <span className="divider" />
                       {/* Performance Mode Toggle */}
                       <button
                         onClick={togglePerformanceMode}
@@ -1427,12 +1438,13 @@ function App() {
                             </button>
                           </div>
                         )}
-                        <ChordDisplay 
-                          song={selectedSong} 
-                          transpose={transpose} 
+                        <ChordDisplay
+                          song={selectedSong}
+                          transpose={transpose}
                           performanceMode={performanceMode}
                           performanceFontSize={performanceFontSize}
                           performanceTheme={performanceTheme}
+                          lyricsMode={lyricsMode}
                         />
                       </>
                     ) : (
