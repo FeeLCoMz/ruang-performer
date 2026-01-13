@@ -146,6 +146,19 @@ function App() {
     setSetLists(prev => sanitizeSetLists(prev));
   }, []);
 
+  // Check for setlist ID in URL parameter on load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const setlistId = urlParams.get('setlist');
+    if (setlistId && setLists.length > 0) {
+      const foundSetlist = setLists.find(sl => sl.id === setlistId);
+      if (foundSetlist) {
+        setCurrentSetList(setlistId);
+        setActiveNav('songs');
+      }
+    }
+  }, [setLists]);
+
   // Saat online/load, merge data backend dan lokal berdasarkan updatedAt
   useEffect(() => {
     if (navigator.onLine) {
@@ -752,6 +765,78 @@ function App() {
     setAutoScrollActive(false);
   };
 
+  // Share setlist function
+  const handleShareSetList = () => {
+    if (!currentSetList) return;
+    const setList = setLists.find(sl => sl.id === currentSetList);
+    if (!setList) return;
+
+    const songList = setList.songs
+      .map((songId, index) => {
+        const song = songs.find(s => s.id === songId);
+        return song ? `${index + 1}. ${song.title} - ${song.artist}` : null;
+      })
+      .filter(Boolean)
+      .join('\n');
+    
+    const shareText = `🎵 Set List: ${setList.name}\n\n${songList}\n\n📱 Dibuat dengan RoNz Chord Pro`;
+    
+    // Try Web Share API first (for mobile)
+    if (navigator.share) {
+      navigator.share({
+        title: `Set List: ${setList.name}`,
+        text: shareText
+      }).catch(() => {
+        // Fallback to clipboard if share is cancelled
+        copyToClipboard(shareText);
+      });
+    } else {
+      // Fallback to clipboard for desktop
+      copyToClipboard(shareText);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Daftar lagu disalin ke clipboard!');
+    }).catch(() => {
+      alert('Gagal menyalin ke clipboard');
+    });
+  };
+
+  // Share setlist link
+  const handleShareSetListLink = () => {
+    if (!currentSetList) return;
+    const setList = setLists.find(sl => sl.id === currentSetList);
+    if (!setList) return;
+
+    const url = `${window.location.origin}${window.location.pathname}?setlist=${currentSetList}`;
+    const shareText = `🎵 Set List: ${setList.name}\n\n${url}`;
+    
+    // Try Web Share API first (for mobile)
+    if (navigator.share) {
+      navigator.share({
+        title: `Set List: ${setList.name}`,
+        text: shareText,
+        url: url
+      }).catch(() => {
+        // Fallback to clipboard if share is cancelled
+        navigator.clipboard.writeText(url).then(() => {
+          alert('Link setlist disalin ke clipboard!');
+        }).catch(() => {
+          alert('Gagal menyalin link');
+        });
+      });
+    } else {
+      // Fallback to clipboard for desktop
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link setlist disalin ke clipboard!');
+      }).catch(() => {
+        alert('Gagal menyalin link');
+      });
+    }
+  };
+
   const togglePerformanceMode = async () => {
     const newMode = !performanceMode;
     setPerformanceMode(newMode);
@@ -1131,6 +1216,20 @@ function App() {
                               style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
                             >
                               ✕ Lihat Semua
+                            </button>
+                            <button 
+                              onClick={handleShareSetList}
+                              style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
+                              title="Bagikan daftar lagu"
+                            >
+                              📤 Bagikan
+                            </button>
+                            <button 
+                              onClick={handleShareSetListLink}
+                              style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
+                              title="Bagikan link setlist"
+                            >
+                              🔗 Link
                             </button>
                           </p>
                         )}
