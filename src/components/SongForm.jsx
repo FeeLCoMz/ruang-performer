@@ -62,6 +62,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [detectedFormat, setDetectedFormat] = useState(null);
   const [showConvertMenu, setShowConvertMenu] = useState(false);
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  const [showTextCleanMenu, setShowTextCleanMenu] = useState(false);
 
   useEffect(() => {
     if (song) {
@@ -817,6 +818,60 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     setFormData(prev => ({ ...prev, lyrics: result.join('\n') }));
   };
 
+  // Text cleaning functions
+  const applyTextCleaning = (action) => {
+    const textarea = document.getElementById('lyrics');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const fullText = formData.lyrics;
+    const selectedText = fullText.substring(start, end);
+    const beforeText = fullText.substring(0, start);
+    const afterText = fullText.substring(end);
+    
+    let cleanedText = selectedText || fullText;
+    
+    switch(action) {
+      case 'trim':
+        cleanedText = (selectedText || fullText).split('\n').map(line => line.trim()).join('\n');
+        break;
+      case 'remove-extra-spaces':
+        cleanedText = (selectedText || fullText).split('\n').map(line => line.replace(/  +/g, ' ')).join('\n');
+        break;
+      case 'uppercase':
+        cleanedText = (selectedText || fullText).toUpperCase();
+        break;
+      case 'lowercase':
+        cleanedText = (selectedText || fullText).toLowerCase();
+        break;
+      case 'capitalize':
+        cleanedText = (selectedText || fullText).split('\n').map(line => 
+          line.charAt(0).toUpperCase() + line.slice(1)
+        ).join('\n');
+        break;
+      case 'remove-empty-lines':
+        cleanedText = (selectedText || fullText).split('\n').filter(line => line.trim()).join('\n');
+        break;
+      case 'normalize-spacing':
+        cleanedText = (selectedText || fullText).split('\n').map(line => line.trim()).filter(line => line).join('\n');
+        break;
+      case 'sentence-case':
+        cleanedText = (selectedText || fullText).split('\n').map(line => {
+          return line.charAt(0).toUpperCase() + line.slice(1).toLowerCase();
+        }).join('\n');
+        break;
+      default:
+        break;
+    }
+    
+    if (selectedText) {
+      setFormData(prev => ({ ...prev, lyrics: beforeText + cleanedText + afterText }));
+    } else {
+      setFormData(prev => ({ ...prev, lyrics: cleanedText }));
+    }
+    
+    setShowTextCleanMenu(false);
+  };
+
   // Convert inline ChordPro ([C]Lyric) to chord-above-lyrics format
   const handleTranscribeFile = async () => {
     if (!transcribeFile) {
@@ -1256,6 +1311,186 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   <button type="button" onClick={() => setShowTranscribe(true)} className="btn btn-sm">
                     🎤 Transkripsi
                   </button>
+                  <div style={{ position: 'relative' }}>
+                    <button type="button" onClick={() => setShowTextCleanMenu(!showTextCleanMenu)} className="btn btn-sm">
+                      ✨ Rapikan ▼
+                    </button>
+                    {showTextCleanMenu && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        marginTop: '0.5rem',
+                        minWidth: '200px',
+                        zIndex: 20,
+                        background: 'var(--card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        boxShadow: '0 12px 28px rgba(0,0,0,0.18)'
+                      }}>
+                        <button
+                          type="button"
+                          onClick={() => applyTextCleaning('trim')}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text)',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid var(--border)',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={e => e.target.style.background = 'var(--card-hover)'}
+                          onMouseLeave={e => e.target.style.background = 'transparent'}
+                          title="Hapus spasi di awal & akhir"
+                        >
+                          ✂️ Potong Spasi
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextCleaning('remove-extra-spaces')}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text)',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid var(--border)',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={e => e.target.style.background = 'var(--card-hover)'}
+                          onMouseLeave={e => e.target.style.background = 'transparent'}
+                          title="Hapus spasi ganda"
+                        >
+                          📏 Hapus Spasi Ganda
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextCleaning('remove-empty-lines')}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text)',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid var(--border)',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={e => e.target.style.background = 'var(--card-hover)'}
+                          onMouseLeave={e => e.target.style.background = 'transparent'}
+                          title="Hapus baris kosong"
+                        >
+                          🗑️ Hapus Baris Kosong
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextCleaning('uppercase')}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text)',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid var(--border)',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={e => e.target.style.background = 'var(--card-hover)'}
+                          onMouseLeave={e => e.target.style.background = 'transparent'}
+                          title="Ubah ke HURUF BESAR"
+                        >
+                          🔤 HURUF BESAR
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextCleaning('lowercase')}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text)',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid var(--border)',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={e => e.target.style.background = 'var(--card-hover)'}
+                          onMouseLeave={e => e.target.style.background = 'transparent'}
+                          title="Ubah ke huruf kecil"
+                        >
+                          🔤 huruf kecil
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextCleaning('capitalize')}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text)',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid var(--border)',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={e => e.target.style.background = 'var(--card-hover)'}
+                          onMouseLeave={e => e.target.style.background = 'transparent'}
+                          title="Huruf pertama besar"
+                        >
+                          🔤 Kapitalisasi
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextCleaning('sentence-case')}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text)',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid var(--border)',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={e => e.target.style.background = 'var(--card-hover)'}
+                          onMouseLeave={e => e.target.style.background = 'transparent'}
+                          title="Kalimat normal"
+                        >
+                          🔤 Title Case
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextCleaning('normalize-spacing')}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text)',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={e => e.target.style.background = 'var(--card-hover)'}
+                          onMouseLeave={e => e.target.style.background = 'transparent'}
+                          title="Normalkan spasi & baris"
+                        >
+                          🎯 Normalisasi Lengkap
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <textarea
