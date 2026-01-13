@@ -42,7 +42,7 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
   const renderTextWithBrackets = (text) => {
     const parts = [];
     const bracketRegex = /(\{[^}]*\})/g;
-    const instrumentRegex = /\b(Guitar|Bass|Piano|Drums|Violin|Saxophone|Sax|Trumpet|Flute|Clarinet|Cello|Organ|Synth|Keyboard|Vocals|Gitar|Bas|Drum|Biola|Vokal|Suling|Seruling|Strings|Brass)\b/gi;
+    const instrumentRegex = /\b(Guitar|Bass|Piano|Drums|Violin|Saxophone|Sax|Trumpet|Flute|Clarinet|Cello|Organ|Synth|Keyboard|Vocals|Mandolin|Gitar|Bas|Drum|Biola|Vokal|Suling|Seruling|Strings|Brass)\b/gi;
     const repeatSignRegex = /(\|:|:\||\b(?:D\.S\.|D\.C\.|Da Capo|Dal Segno|Fine|Coda|To Coda|Repeat|%)\b)/gi;
     // Inline chord detection inside bars/repeat symbols
     // Updated to support compact format: D..Gm..Bb
