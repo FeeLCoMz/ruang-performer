@@ -32,6 +32,10 @@ const sanitizeSetLists = (setlists) => {
   return (Array.isArray(setlists) ? setlists : []);
 };
 
+const generateUniqueId = () => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
 function App() {
   // Toast notifications
   const { toasts, closeToast, success, error, warning } = useToast();
