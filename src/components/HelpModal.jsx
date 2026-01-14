@@ -4,16 +4,16 @@ const Section = ({ title, icon = '📌', children }) => (
   <div style={{
     marginBottom: '1.5rem',
     padding: '0.75rem 1rem',
-    background: 'rgba(99, 102, 241, 0.08)',
-    border: '1px solid rgba(99, 102, 241, 0.2)',
+    background: 'rgba(var(--primary-rgb, 99, 102, 241), 0.08)',
+    border: '1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.2)',
     borderRadius: '10px',
-    borderLeft: '4px solid #6366f1',
+    borderLeft: '4px solid var(--primary)',
   }}>
     <h3 style={{
       margin: '0 0 0.75rem',
       fontSize: '1.05rem',
       fontWeight: '600',
-      color: '#f8fafc',
+      color: 'var(--text)',
       display: 'flex',
       alignItems: 'center',
       gap: '0.5rem',
@@ -23,7 +23,7 @@ const Section = ({ title, icon = '📌', children }) => (
     <div style={{
       fontSize: '0.95rem',
       lineHeight: 1.7,
-      color: '#cbd5e1',
+      color: 'var(--text-secondary)',
     }}>
       {children}
     </div>
@@ -32,11 +32,11 @@ const Section = ({ title, icon = '📌', children }) => (
 
 const CodeBlock = ({ children, lang = 'text' }) => (
   <pre style={{
-    background: 'var(--bg-dark, #0f1419)',
-    color: '#818cf8',
+    background: 'var(--bg-dark)',
+    color: 'var(--primary-light)',
     padding: '0.75rem 1rem',
     borderRadius: '8px',
-    border: '1px solid rgba(99,102,241,0.3)',
+    border: '1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.3)',
     overflowX: 'auto',
     fontSize: '0.85rem',
     lineHeight: '1.5',
@@ -48,7 +48,7 @@ const CodeBlock = ({ children, lang = 'text' }) => (
 const ListItem = ({ children }) => (
   <li style={{
     marginBottom: '0.5rem',
-    color: '#cbd5e1',
+    color: 'var(--text-secondary)',
   }}>
     {children}
   </li>
@@ -75,10 +75,10 @@ export default function HelpModal({ onClose, onExport, onImport, onSync, syncing
           width: 'min(920px, 94vw)',
           maxHeight: '85vh',
           overflow: 'auto',
-          background: 'linear-gradient(135deg, #161b26 0%, #1a1f2e 100%)',
-          color: '#f8fafc',
-          border: '1px solid rgba(99, 102, 241, 0.3)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
+          background: 'linear-gradient(135deg, var(--card) 0%, var(--bg-elevated) 100%)',
+          color: 'var(--text)',
+          border: '1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.3)',
+          boxShadow: 'var(--shadow-xl)',
           borderRadius: '16px',
           padding: '2rem',
         }}
@@ -89,20 +89,20 @@ export default function HelpModal({ onClose, onExport, onImport, onSync, syncing
           alignItems: 'flex-start',
           marginBottom: '1.5rem',
           paddingBottom: '1.5rem',
-          borderBottom: '2px solid rgba(99, 102, 241, 0.2)',
+          borderBottom: '2px solid rgba(var(--primary-rgb, 99, 102, 241), 0.2)',
         }}>
           <div>
             <h1 style={{
               margin: 0,
               fontSize: '1.75rem',
               fontWeight: '700',
-              color: '#f8fafc',
+              color: 'var(--text)',
             }}>
               ❓ Pusat Bantuan
             </h1>
             <p style={{
               margin: '0.5rem 0 0',
-              color: '#94a3b8',
+              color: 'var(--text-muted)',
               fontSize: '0.95rem',
             }}>
               Panduan lengkap menggunakan RoNz Chord Pro
@@ -111,8 +111,8 @@ export default function HelpModal({ onClose, onExport, onImport, onSync, syncing
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(99, 102, 241, 0.1)',
-              color: '#cbd5e1',
+              background: 'rgba(var(--primary-rgb, 99, 102, 241), 0.1)',
+              color: 'var(--text-secondary)',
               border: 'none',
               width: '32px',
               height: '32px',
@@ -125,12 +125,12 @@ export default function HelpModal({ onClose, onExport, onImport, onSync, syncing
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(99, 102, 241, 0.2)';
-              e.target.style.color = '#f8fafc';
+              e.target.style.background = 'rgba(var(--primary-rgb, 99, 102, 241), 0.2)';
+              e.target.style.color = 'var(--text)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(99, 102, 241, 0.1)';
-              e.target.style.color = '#cbd5e1';
+              e.target.style.background = 'rgba(var(--primary-rgb, 99, 102, 241), 0.1)';
+              e.target.style.color = 'var(--text-secondary)';
             }}
             title="Tutup"
           >
@@ -150,7 +150,7 @@ export default function HelpModal({ onClose, onExport, onImport, onSync, syncing
 
         <Section title="Format Chord" icon="🎸">
           <p>Dukungan dua format utama:</p>
-          <strong style={{ color: '#818cf8' }}>1) ChordPro (bracket format)</strong>
+          <strong style={{ color: 'var(--primary-light)' }}>1) ChordPro (bracket format)</strong>
           <CodeBlock>{`{title: Contoh}
 {artist: Penyanyi}
 {key: C}
@@ -158,12 +158,12 @@ export default function HelpModal({ onClose, onExport, onImport, onSync, syncing
 {start_of_verse}
 [C]Ku tak sangka [Em]berjumpa denganmu
 {end_of_verse}`}</CodeBlock>
-          <strong style={{ color: '#818cf8' }}>2) Standard (chord di atas lirik)</strong>
+          <strong style={{ color: 'var(--primary-light)' }}>2) Standard (chord di atas lirik)</strong>
           <CodeBlock>{`C              Em
 Ku tak sangka bila berjumpa denganmu
 Am             F         G
 Hatiku berbunga mekar seribu`}</CodeBlock>
-          <p style={{ color: '#94a3b8' }}>💡 Copy-paste dari situs chord (ultimate-guitar, dll), aplikasi akan mendeteksi dan merender dengan benar. Transpose dan fitur lain tetap bekerja.</p>
+          <p style={{ color: 'var(--text-muted)' }}>💡 Copy-paste dari situs chord (ultimate-guitar, dll), aplikasi akan mendeteksi dan merender dengan benar. Transpose dan fitur lain tetap bekerja.</p>
         </Section>
 
         <Section title="Tombol Bantu Format Chord" icon="✨">
@@ -178,9 +178,9 @@ Hatiku berbunga mekar seribu`}</CodeBlock>
         <Section title="Format Not Angka (Lengkap)" icon="🎵">
           <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
             <ListItem><strong>Angka 1–7:</strong> do–si. Pisahkan dengan spasi.</ListItem>
-            <ListItem><strong>Oktaf:</strong> titik (.) ke bawah, apostrof (') ke atas. Contoh: <code style={{ background: '#0f1419', color: '#818cf8', padding: '0.2em 0.4em', borderRadius: '4px' }}>1.</code>, <code style={{ background: '#0f1419', color: '#818cf8', padding: '0.2em 0.4em', borderRadius: '4px' }}>1'</code>.</ListItem>
-            <ListItem><strong>Durasi:</strong> tambah "-" untuk perpanjang. Contoh: <code style={{ background: '#0f1419', color: '#818cf8', padding: '0.2em 0.4em', borderRadius: '4px' }}>1-</code>, <code style={{ background: '#0f1419', color: '#818cf8', padding: '0.2em 0.4em', borderRadius: '4px' }}>1--</code>, <code style={{ background: '#0f1419', color: '#818cf8', padding: '0.2em 0.4em', borderRadius: '4px' }}>1---</code></ListItem>
-            <ListItem><strong>Aksidental:</strong> "#" (kres), "b" (mol): <code style={{ background: '#0f1419', color: '#818cf8', padding: '0.2em 0.4em', borderRadius: '4px' }}>3#</code>, <code style={{ background: '#0f1419', color: '#818cf8', padding: '0.2em 0.4em', borderRadius: '4px' }}>4b</code>.</ListItem>
+            <ListItem><strong>Oktaf:</strong> titik (.) ke bawah, apostrof (') ke atas. Contoh: <code style={{ background: 'var(--bg-dark)', color: 'var(--primary-light)', padding: '0.2em 0.4em', borderRadius: '4px' }}>1.</code>, <code style={{ background: 'var(--bg-dark)', color: 'var(--primary-light)', padding: '0.2em 0.4em', borderRadius: '4px' }}>1'</code>.</ListItem>
+            <ListItem><strong>Durasi:</strong> tambah "-" untuk perpanjang. Contoh: <code style={{ background: 'var(--bg-dark)', color: 'var(--primary-light)', padding: '0.2em 0.4em', borderRadius: '4px' }}>1-</code>, <code style={{ background: 'var(--bg-dark)', color: 'var(--primary-light)', padding: '0.2em 0.4em', borderRadius: '4px' }}>1--</code>, <code style={{ background: 'var(--bg-dark)', color: 'var(--primary-light)', padding: '0.2em 0.4em', borderRadius: '4px' }}>1---</code></ListItem>
+            <ListItem><strong>Aksidental:</strong> "#" (kres), "b" (mol): <code style={{ background: 'var(--bg-dark)', color: 'var(--primary-light)', padding: '0.2em 0.4em', borderRadius: '4px' }}>3#</code>, <code style={{ background: 'var(--bg-dark)', color: 'var(--primary-light)', padding: '0.2em 0.4em', borderRadius: '4px' }}>4b</code>.</ListItem>
             <ListItem><strong>Istirahat:</strong> "-" atau "_" sebagai rest.</ListItem>
             <ListItem><strong>Birama:</strong> pisahkan dengan "|". Contoh bar:</ListItem>
           </ul>
@@ -202,7 +202,7 @@ Ku tak sangka | berjumpa de- nganmu |
 
 Hatiku ber- bunga mekar | seribu |
 4 3 2 1 |`}</CodeBlock>
-          <p style={{ color: '#94a3b8' }}>✅ Pastikan jumlah birama di lirik konsisten dengan melodi. Transpose menggeser not angka secara diatonis.</p>
+          <p style={{ color: 'var(--text-muted)' }}>✅ Pastikan jumlah birama di lirik konsisten dengan melodi. Transpose menggeser not angka secara diatonis.</p>
         </Section>
 
         <Section title="Kontrol & Fitur" icon="⚙️">
@@ -211,15 +211,15 @@ Hatiku ber- bunga mekar | seribu |
             <ListItem><strong>Auto Scroll:</strong> aktifkan lalu atur kecepatan (0.5x–5x).</ListItem>
             <ListItem><strong>YouTube Viewer:</strong> tampilkan player jika lagu punya YouTube ID.</ListItem>
             <ListItem><strong>Setlist:</strong> buat/hapus, tambah/kurangi lagu, pilih setlist aktif.</ListItem>
-            <ListItem><strong>Export/Import:</strong> ekspor seluruh database ke JSON; impor untuk memulihkan.</ListItem>
-            <ListItem><strong>Sync ke DB:</strong> kirim data ke backend (Turso) untuk backup cloud.</ListItem>
+            <ListItem><strong>Export/Import:</strong> ekspor/impor seluruh database ke JSON untuk backup lokal.</ListItem>
+            <ListItem><strong>Cloud Sync:</strong> data otomatis disinkronkan ke cloud saat ada perubahan (jika online).</ListItem>
           </ul>
         </Section>
 
         <div style={{
           marginTop: '2rem',
           paddingTop: '1.5rem',
-          borderTop: '1px solid rgba(99, 102, 241, 0.2)',
+          borderTop: '1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.2)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -227,14 +227,14 @@ Hatiku ber- bunga mekar | seribu |
           <p style={{
             margin: 0,
             fontSize: '0.85rem',
-            color: '#94a3b8',
+            color: 'var(--text-muted)',
           }}>
             RoNz Chord Pro v{import.meta.env.VITE_APP_VERSION || '2.0.3'}
           </p>
           <button
             onClick={onClose}
             style={{
-              background: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
+              background: `linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)`,
               color: '#fff',
               border: 'none',
               padding: '0.6rem 1.5rem',
@@ -243,14 +243,14 @@ Hatiku ber- bunga mekar | seribu |
               fontSize: '0.95rem',
               fontWeight: '500',
               transition: 'all 0.2s',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+              boxShadow: `0 4px 12px rgba(var(--primary-rgb, 99, 102, 241), 0.4)`,
             }}
             onMouseEnter={(e) => {
-              e.target.style.boxShadow = '0 6px 16px rgba(99, 102, 241, 0.6)';
+              e.target.style.boxShadow = `0 6px 16px rgba(var(--primary-rgb, 99, 102, 241), 0.6)`;
               e.target.style.transform = 'translateY(-2px)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.4)';
+              e.target.style.boxShadow = `0 4px 12px rgba(var(--primary-rgb, 99, 102, 241), 0.4)`;
               e.target.style.transform = 'translateY(0)';
             }}
           >

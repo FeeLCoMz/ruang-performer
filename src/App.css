@@ -227,6 +227,7 @@
 :root {
   /* Professional Color Palette */
   --primary: #6366f1;
+  --primary-rgb: 99, 102, 241;
   --primary-dark: #4f46e5;
   --primary-light: #818cf8;
   --secondary: #8b5cf6;
@@ -265,6 +266,7 @@
 /* ===== Dark Mode Theme ===== */
 html.dark-mode {
   --primary: #818cf8;
+  --primary-rgb: 129, 140, 248;
   --primary-dark: #6366f1;
   --primary-light: #a5b4fc;
   --secondary: #a78bfa;
@@ -290,6 +292,7 @@ html.dark-mode {
 /* ===== Light Mode Theme ===== */
 html:not(.dark-mode) {
   --primary: #4f46e5;
+  --primary-rgb: 79, 70, 229;
   --primary-dark: #4338ca;
   --primary-light: #6366f1;
   --secondary: #7c3aed;

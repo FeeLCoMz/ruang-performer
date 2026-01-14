@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function SettingsModal({ onClose, onExport, onImport, onSync, syncingToDb }) {
+export default function SettingsModal({ onClose, onExport, onImport }) {
   return (
     <div
       style={{
@@ -21,21 +21,21 @@ export default function SettingsModal({ onClose, onExport, onImport, onSync, syn
           width: 'min(420px, 94vw)',
           maxHeight: '85vh',
           overflow: 'auto',
-          background: 'linear-gradient(135deg, #161b26 0%, #1a1f2e 100%)',
-          color: '#f8fafc',
-          border: '1px solid rgba(99, 102, 241, 0.3)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
+          background: 'linear-gradient(135deg, var(--card) 0%, var(--bg-elevated) 100%)',
+          color: 'var(--text)',
+          border: '1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.3)',
+          boxShadow: 'var(--shadow-xl)',
           borderRadius: '16px',
           padding: '2rem',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700 }}>⚙️ Pengaturan</h2>
+          <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--text)' }}>⚙️ Pengaturan</h2>
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(99, 102, 241, 0.1)',
-              color: '#cbd5e1',
+              background: 'rgba(var(--primary-rgb, 99, 102, 241), 0.1)',
+              color: 'var(--text-secondary)',
               border: 'none',
               width: '32px',
               height: '32px',
@@ -51,8 +51,8 @@ export default function SettingsModal({ onClose, onExport, onImport, onSync, syn
           >✕</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-          <div style={{ borderTop: '1px solid rgba(99, 102, 241, 0.2)', paddingTop: '1rem', marginTop: '0.5rem' }}>
-            <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 600, color: '#cbd5e1' }}>💾 Backup & Restore</h3>
+          <div style={{ borderTop: '1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.2)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+            <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-secondary)' }}>💾 Backup & Restore</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <button onClick={onExport} className="btn btn-sm btn-block">
                 📥 Backup Database
@@ -69,26 +69,24 @@ export default function SettingsModal({ onClose, onExport, onImport, onSync, syn
             </div>
           </div>
           
-          <div style={{ borderTop: '1px solid rgba(99, 102, 241, 0.2)', paddingTop: '1rem' }}>
-            <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 600, color: '#cbd5e1' }}>☁️ Sinkronisasi</h3>
-            <button 
-              onClick={onSync}
-              className="btn btn-sm btn-block btn-primary"
-              disabled={syncingToDb}
-            >
-              {syncingToDb ? '⏳ Syncing...' : '☁️ Sync ke DB'}
-            </button>
+          <div style={{ borderTop: '1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.2)', paddingTop: '1rem' }}>
+            <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-secondary)' }}>☁️ Sinkronisasi Cloud</h3>
             <div style={{ 
-              marginTop: '0.75rem', 
-              padding: '0.75rem', 
-              background: 'rgba(59, 130, 246, 0.1)', 
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '6px',
-              fontSize: '0.8rem',
-              color: '#94a3b8',
-              lineHeight: '1.5'
+              padding: '1rem', 
+              background: 'rgba(16, 185, 129, 0.08)', 
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              color: 'var(--text-secondary)',
+              lineHeight: '1.6'
             }}>
-              <strong style={{ color: '#60a5fa' }}>💡 Tips:</strong> Sync otomatis saat ada perubahan jika online. Jika clear site data, data akan di-recover dari cloud saat reload.
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '1.2rem' }}>✓</span>
+                <strong style={{ color: 'var(--success)', fontSize: '0.95rem' }}>Sync Otomatis Aktif</strong>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Data Anda secara otomatis disinkronkan ke cloud saat ada perubahan. Jika Anda clear site data, data akan dipulihkan dari cloud saat aplikasi dibuka kembali.
+              </p>
             </div>
           </div>
         </div>
