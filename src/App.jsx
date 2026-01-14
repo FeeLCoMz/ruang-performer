@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ChordDisplay from './components/ChordDisplay';
-import { getTransposeSteps } from './utils/chordUtils';
 import YouTubeViewer from './components/YouTubeViewer';
 import AutoScroll from './components/AutoScroll';
 import HelpModal from './components/HelpModal';
@@ -10,81 +9,64 @@ import SetListForm from './components/SetListForm';
 import SongListItem from './components/SongListItem';
 import SettingsModal from './components/SettingsModal';
 import ToastContainer from './components/ToastContainer';
-import { useKeyboardShortcuts, useToast } from './hooks';
+import { 
+  useKeyboardShortcuts, 
+  useToast, 
+  useSongs, 
+  useSetLists, 
+  usePerformanceMode,
+  useDatabase,
+  useServiceWorker
+} from './hooks';
 import './App.css';
 
-function sanitizeSongs(list = []) {
-  if (!Array.isArray(list)) return [];
-  return list
-    .filter(Boolean)
-    .filter(item => item.title?.trim() && item.artist?.trim() && item.lyrics?.trim())
-    .map(item => {
-      // Remove deprecated melody field
-      const { melody, ...rest } = item;
-      return {
-        ...rest,
-        title: item.title.trim(),
-        artist: item.artist.trim(),
-        lyrics: item.lyrics.trim(),
-        key: item.key || '',
-        tempo: item.tempo || '',
-        style: item.style || '',
-        timestamps: Array.isArray(item.timestamps) ? item.timestamps : []
-      };
-    });
-}
+// Helper functions for data sanitization
+const sanitizeSongs = (songs) => {
+  return (Array.isArray(songs) ? songs : []).map(song => {
+    const { melody, ...rest } = song;
+    return rest;
+  });
+};
 
-function sanitizeSetLists(list = []) {
-  if (!Array.isArray(list)) return [];
-  return list
-    .filter(Boolean)
-    .filter(sl => {
-      const name = sl.name?.trim();
-      if (!name) return false;
-      return !name.toLowerCase().includes('untitled');
-    })
-    .map(sl => ({
-      ...sl,
-      name: sl.name.trim(),
-      songs: Array.isArray(sl.songs) ? sl.songs.filter(Boolean) : [],
-      songKeys: typeof sl.songKeys === 'object' && sl.songKeys !== null ? sl.songKeys : {},
-      completedSongs: typeof sl.completedSongs === 'object' && sl.completedSongs !== null ? sl.completedSongs : {}
-    }));
-}
-
-// Generate unique ID dengan timestamp + random
-const generateUniqueId = () => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const sanitizeSetLists = (setlists) => {
+  return (Array.isArray(setlists) ? setlists : []);
 };
 
 function App() {
-  const { toasts, closeToast, showToast, success, error, warning } = useToast();
+  // Toast notifications
+  const { toasts, closeToast, success, error, warning } = useToast();
+
+  // UI state
   const [showSidebar, setShowSidebar] = useState(true);
   const [showLyricsFullscreen, setShowLyricsFullscreen] = useState(false);
-  const [activeNav, setActiveNav] = useState('songs'); // 'songs' atau 'setlists'
+  const [activeNav, setActiveNav] = useState('songs');
+  
   // Cek localStorage saat inisialisasi
   const getInitialSongs = () => {
     try {
       const data = localStorage.getItem('ronz_songs');
       if (data) {
-        const parsed = sanitizeSongs(JSON.parse(data));
-        if (parsed.length > 0) return parsed;
+        const parsed = JSON.parse(data).filter(Boolean).filter(item => 
+          item.title?.trim() && item.artist?.trim() && item.lyrics?.trim()
+        );
+        return parsed.length > 0 ? parsed : [];
       }
     } catch { }
-    // Return empty array - no sample songs
     return [];
   };
   const getInitialSetLists = () => {
     try {
       const data = localStorage.getItem('ronz_setlists');
       if (data) {
-        const parsed = sanitizeSetLists(JSON.parse(data));
-        if (parsed.length > 0) return parsed;
+        const parsed = JSON.parse(data).filter(Boolean).filter(sl => 
+          sl.name?.trim() && !sl.name.toLowerCase().includes('untitled')
+        );
+        return parsed.length > 0 ? parsed : [];
       }
     } catch { }
-    // Return empty array - no sample setlists
     return [];
   };
+
   const [songs, setSongs] = useState(getInitialSongs);
   const [setLists, setSetLists] = useState(getInitialSetLists);
   const [selectedSong, setSelectedSong] = useState(null);
@@ -104,10 +86,10 @@ function App() {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [performanceMode, setPerformanceMode] = useState(false);
-  const [performanceTheme, setPerformanceTheme] = useState('dark-stage'); // dark-stage, bright, amber, high-contrast
+  const [performanceTheme, setPerformanceTheme] = useState('dark-stage');
   const [showSetlistView, setShowSetlistView] = useState(true);
-  const [performanceFontSize, setPerformanceFontSize] = useState(100); // percentage
-  const [recoveryNotification, setRecoveryNotification] = useState(null); // For showing recovered data
+  const [performanceFontSize, setPerformanceFontSize] = useState(100);
+  const [recoveryNotification, setRecoveryNotification] = useState(null);
   const [runtimeErrors, setRuntimeErrors] = useState([]);
   const [sortBy, setSortBy] = useState('title-asc');
   const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
@@ -123,7 +105,6 @@ function App() {
     try {
       const saved = localStorage.getItem('ronz_dark_mode');
       if (saved !== null) return saved === 'true';
-      // Auto-detect system preference
       return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     } catch {
       return false;
