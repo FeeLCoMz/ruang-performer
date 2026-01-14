@@ -20,6 +20,7 @@ Aplikasi Chord dan Lirik berbasis React (Vite) dengan fitur lengkap untuk musisi
 - **⚡ Virtual Scrolling**: Performa optimal dengan 1000+ lagu tanpa lag - [Dokumentasi teknis](VIRTUAL_SCROLLING.md)
 - **🔔 Toast Notifications**: Modern notification system menggantikan alert() - [Dokumentasi](TOAST_NOTIFICATIONS.md)
 - **📝 Bulk Add Songs**: Tambahkan banyak lagu ke setlist sekaligus dengan pencarian otomatis - [Dokumentasi lengkap](BULK_ADD_SONGS.md)
+- **🤖 AI Assistant**: Auto-fill song metadata (Key, Tempo, Style, Video) dengan pencarian AI - [Dokumentasi lengkap](AI_ASSISTANT.md) | [Setup Environment](ENV_SETUP.md)
 
 ## 🚀 Cara Menjalankan
 

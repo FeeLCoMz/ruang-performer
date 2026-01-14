@@ -1,4 +1,5 @@
 import transcribeHandler from './transcribe.js';
+import songSearchHandler from './song-search.js';
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -67,6 +68,11 @@ async function aiChatHandler(req, res) {
 }
 
 export default async function handler(req, res) {
+  // Route /song-search POST requests (path is relative to /api/ai)
+  if (req.url.includes('/song-search') && req.method === 'POST') {
+    return songSearchHandler(req, res);
+  }
+
   // Route /transcribe POST requests (path is relative to /api/ai)
   if (req.url.includes('/transcribe') && req.method === 'POST') {
     return transcribeHandler(req, res);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import YouTubeViewer from './YouTubeViewer';
+import AIAssistantModal from './AIAssistantModal';
 import { transcribeAudio } from '../apiClient';
 
 function extractYouTubeId(input) {
@@ -63,6 +64,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [showConvertMenu, setShowConvertMenu] = useState(false);
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
   const [showTextCleanMenu, setShowTextCleanMenu] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   useEffect(() => {
     if (song) {
@@ -129,6 +131,19 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
       createdAt: song?.createdAt || new Date().toISOString()
     };
     onSave(songData);
+  };
+
+  const handleApplyAISuggestions = (suggestions) => {
+    // Apply selected AI suggestions to form
+    setFormData(prev => {
+      const updated = { ...prev };
+      if (suggestions.key) updated.key = suggestions.key;
+      if (suggestions.tempo) updated.tempo = suggestions.tempo;
+      if (suggestions.style) updated.style = suggestions.style;
+      if (suggestions.youtubeId) updated.youtubeId = suggestions.youtubeId;
+      return updated;
+    });
+    setShowAIAssistant(false);
   };
 
   const handleTapTempo = () => {
@@ -945,6 +960,15 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                 {errors.title && <span className="error-message">{errors.title}</span>}
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', flex: 1 }}>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={() => setShowAIAssistant(true)}
+                  disabled={!formData.title && !formData.artist}
+                  title="Cari informasi lagu dengan AI"
+                >
+                  🤖 AI
+                </button>
                 <button
                   type="button"
                   className="btn btn-sm btn-secondary"
@@ -2002,6 +2026,15 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI Assistant Modal */}
+      {showAIAssistant && (
+        <AIAssistantModal
+          formData={formData}
+          onClose={() => setShowAIAssistant(false)}
+          onApplySuggestions={handleApplyAISuggestions}
+        />
       )}
 
     </>
