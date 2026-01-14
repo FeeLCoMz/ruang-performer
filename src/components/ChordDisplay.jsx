@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { parseChordPro, transposeChord, getAllChords } from '../utils/chordUtils';
 import { parseMelodyString, transposeMelody, formatNoteDisplay, extractMelodyFromLyrics } from '../utils/musicNotationUtils';
+import KeyboardVoicingModal from './KeyboardVoicingModal';
 
-const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanceFontSize = 100, performanceTheme = 'dark-stage', lyricsMode = false }) => {
+const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanceFontSize = 100, performanceTheme = 'dark-stage', lyricsMode = false, keyboardMode = false }) => {
+  const [selectedChord, setSelectedChord] = useState(null);
   const [parsedSong, setParsedSong] = useState(null);
   const [allChords, setAllChords] = useState([]);
   // Precompute melody bars for inline numeric notation
@@ -270,14 +272,31 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
         }
         
         const transposedChord = transposeChord(chord, transpose);
-        chordLine.push(
-          <span
-            key={`chord-${idx}`}
-            className="chord"
-          >
-            {transposedChord}
-          </span>
-        );
+        
+        if (keyboardMode) {
+          // Keyboard mode: clickable chord with voicing modal
+          chordLine.push(
+            <span
+              key={`chord-${idx}`}
+              className="keyboard-chord"
+              onClick={() => setSelectedChord(transposedChord)}
+              style={{ cursor: 'pointer', fontWeight: 'bold', color: '#4da6ff', padding: '0 2px', borderRadius: '3px', transition: 'all 0.2s' }}
+              title="Click to see voicing options"
+            >
+              {transposedChord}
+            </span>
+          );
+        } else {
+          // Normal mode: just display chord
+          chordLine.push(
+            <span
+              key={`chord-${idx}`}
+              className="chord"
+            >
+              {transposedChord}
+            </span>
+          );
+        }
         
         currentPos = position + chord.length;
       });
@@ -391,6 +410,14 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
       <div className="lyrics-content">
         {parsedSong.lines.map((line, index) => renderLine(line, index))}
       </div>
+
+      {keyboardMode && selectedChord && (
+        <KeyboardVoicingModal 
+          chord={selectedChord}
+          onClose={() => setSelectedChord(null)}
+          baseOctave={4}
+        />
+      )}
     </div>
   );
 };

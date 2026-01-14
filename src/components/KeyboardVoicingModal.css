@@ -1,0 +1,450 @@
+.keyboard-voicing-modal {
+  max-width: 900px !important;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  border: 2px solid #4da6ff;
+  position: relative;
+  z-index: 10001;
+  pointer-events: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Ensure close button is clickable */
+.keyboard-voicing-modal .btn-close {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  margin-bottom: 15px;
+  align-self: flex-end;
+}
+
+.keyboard-voicing-modal h2 {
+  color: #4da6ff;
+  margin-bottom: 25px;
+  font-size: 24px;
+  text-align: center;
+}
+
+.keyboard-voicing-modal h3 {
+  color: #66b3ff;
+  margin-top: 20px;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.keyboard-voicing-modal h4 {
+  color: #99ccff;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+/* Voicing Selector */
+.voicing-selector {
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  position: relative;
+  z-index: auto;
+}
+
+.voicing-selector label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: bold;
+  color: #99ccff;
+}
+
+.voicing-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: relative;
+  z-index: auto;
+}
+
+.voicing-btn {
+  padding: 8px 16px;
+  background: #2a5298;
+  border: 2px solid #4da6ff;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.voicing-btn:hover {
+  background: #4da6ff;
+  color: #1e3c72;
+  transform: translateY(-2px);
+}
+
+.voicing-btn.active {
+  background: #4da6ff;
+  color: #1e3c72;
+  font-weight: bold;
+  box-shadow: 0 0 12px rgba(77, 166, 255, 0.6);
+}
+
+.voicing-btn.shell-btn {
+  background: #b30000;
+  border-color: #ff6666;
+}
+
+.voicing-btn.shell-btn.active {
+  background: #ff6666;
+  color: white;
+  box-shadow: 0 0 12px rgba(255, 102, 102, 0.6);
+}
+
+/* Voicing Display */
+.voicing-display {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid #4da6ff;
+}
+
+.voicing-display > h3 {
+  margin-top: 0;
+}
+
+.voicing-description {
+  color: #99ccff;
+  font-style: italic;
+  margin: 10px 0;
+}
+
+.notes-container {
+  margin: 15px 0;
+  display: block;
+  width: 100%;
+  position: relative;
+  z-index: auto;
+  pointer-events: auto;
+}
+
+.notes-display {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.notes-display strong {
+  color: #99ccff;
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.notes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.note-item {
+  background: #2a5298;
+  border: 2px solid #4da6ff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 13px;
+  color: #4da6ff;
+  min-width: 55px;
+  text-align: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.note-item:hover {
+  background: #4da6ff;
+  color: #1e3c72;
+  transform: scale(1.1);
+}
+
+.note-item.out-of-range {
+  background: #b30000;
+  border-color: #ff6666;
+  color: #ffcccc;
+}
+
+/* Hand Guide */
+.hand-guide {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 20px 0;
+  width: 100%;
+}
+
+.hand-left, .hand-right {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  border: 2px solid #4da6ff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hand-left {
+  border-color: #ff9999;
+}
+
+.hand-left h4 {
+  color: #ff9999;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.hand-right h4 {
+  color: #99ff99;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.hand-right {
+  border-color: #99ff99;
+}
+
+.pedal-mark {
+  background: #b30000;
+  color: #ffcccc;
+  padding: 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.bass-note {
+  font-size: 22px;
+  font-weight: bold;
+  color: #ff9999;
+  margin: 12px 0;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  text-align: center;
+  word-break: break-word;
+}
+
+.chord-notes {
+  font-size: 16px;
+  font-weight: bold;
+  color: #99ff99;
+  margin: 12px 0;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  text-align: center;
+  word-break: break-word;
+}
+
+/* Range Indicator */
+.range-indicator {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border-left: 4px solid #4da6ff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.range-indicator strong {
+  color: #99ccff;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.range-indicator.out-of-range {
+  border-left-color: #ff6666;
+  background: rgba(179, 0, 0, 0.1);
+}
+
+.range-indicator p {
+  margin: 8px 0;
+}
+
+.range-indicator .success {
+  color: #99ff99;
+  font-weight: bold;
+}
+
+.range-indicator .warning {
+  color: #ff9999;
+  font-weight: bold;
+}
+
+.range-indicator small {
+  color: #99ccff;
+  display: block;
+  margin-top: 8px;
+}
+
+/* All Voicings Grid */
+.all-voicings {
+  margin: 25px 0;
+  width: 100%;
+}
+
+.voicing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+  margin: 15px 0;
+  width: 100%;
+}
+
+.voicing-card {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #4da6ff;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.voicing-card:hover {
+  background: rgba(77, 166, 255, 0.1);
+  border-color: #99ccff;
+  transform: translateY(-5px);
+}
+
+.voicing-card h4 {
+  margin: 0 0 10px 0;
+  text-align: center;
+}
+
+.voicing-notes {
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px;
+  border-radius: 4px;
+  color: #4da6ff;
+  font-weight: bold;
+  font-size: 12px;
+  word-break: break-all;
+  margin: 10px 0;
+}
+
+.voicing-hint {
+  color: #99ccff;
+  font-size: 12px;
+  margin: 8px 0 0 0;
+  font-style: italic;
+}
+
+/* Rhythm Patterns */
+.rhythm-patterns {
+  margin: 25px 0;
+}
+
+.patterns-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.rhythm-card {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  border: 2px solid #99ff99;
+  text-align: center;
+}
+
+.rhythm-card h4 {
+  margin: 0 0 10px 0;
+  color: #99ff99;
+}
+
+.pattern-visual {
+  font-size: 24px;
+  font-weight: bold;
+  color: #99ff99;
+  margin: 15px 0;
+  font-family: 'Arial', sans-serif;
+  letter-spacing: 2px;
+}
+
+.rhythm-card small {
+  color: #99ccff;
+  display: block;
+}
+
+/* Info Box */
+.keyboard-info {
+  background: linear-gradient(135deg, rgba(153, 255, 153, 0.1) 0%, rgba(77, 166, 255, 0.1) 100%);
+  border: 2px dashed #99ccff;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 25px 0;
+}
+
+.keyboard-info h4 {
+  margin-top: 0;
+  color: #99ff99;
+  border-bottom: 2px solid #99ff99;
+  padding-bottom: 10px;
+}
+
+.keyboard-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0 0 0;
+}
+
+.keyboard-info li {
+  padding: 8px 0;
+  color: #99ccff;
+  border-bottom: 1px solid rgba(153, 204, 255, 0.2);
+}
+
+.keyboard-info li:last-child {
+  border-bottom: none;
+}
+
+.keyboard-info strong {
+  color: #4da6ff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .keyboard-voicing-modal {
+    max-width: 95vw !important;
+  }
+
+  .hand-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .voicing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .patterns-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .voicing-buttons {
+    flex-direction: column;
+  }
+
+  .voicing-btn {
+    width: 100%;
+  }
+}

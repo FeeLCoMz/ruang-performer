@@ -2967,8 +2967,7 @@ html:not(.dark-mode) .header {
 .staff-line:nth-child(4) { top: 75%; }
 .staff-line:nth-child(5) { top: 100%; }
 
-.notes-container {
-  position: absolute;
+.notes-container {  
   top: 0;
   left: 0;
   width: 100%;

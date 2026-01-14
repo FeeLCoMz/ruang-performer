@@ -45,6 +45,7 @@ function App() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showLyricsFullscreen, setShowLyricsFullscreen] = useState(false);
   const [activeNav, setActiveNav] = useState('songs');
+  const [keyboardMode, setKeyboardMode] = useState(() => localStorage.getItem('keyboardMode') === 'true');
   
   // Cek localStorage saat inisialisasi
   const getInitialSongs = () => {
@@ -1243,6 +1244,7 @@ function App() {
           onClose={() => setShowSettingsMenu(false)}
           onExport={handleExportDatabase}
           onImport={handleImportDatabase}
+          onKeyboardModeChange={setKeyboardMode}
         />
       )}
       <div className={`app ${performanceMode ? 'performance-mode-active' : ''}`}>
@@ -1287,6 +1289,26 @@ function App() {
             >
               ⚙️
             </button>
+            {keyboardMode && (
+              <span 
+                className="keyboard-mode-badge" 
+                title="Keyboardist Mode Enabled"
+                style={{
+                  background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                  color: '#4da6ff',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  border: '1px solid #4da6ff'
+                }}
+              >
+                🎹 Keyboardist
+              </span>
+            )}
             <button
               className="nav-btn"
               onClick={() => setDarkMode(!darkMode)}
@@ -1782,6 +1804,7 @@ function App() {
                           performanceFontSize={performanceFontSize}
                           performanceTheme={performanceTheme}
                           lyricsMode={lyricsMode}
+                          keyboardMode={keyboardMode}
                         />
                       </>
                     ) : (
