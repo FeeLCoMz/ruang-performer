@@ -9,9 +9,7 @@ import cors from 'cors';
 import authRouter from './auth.js';
 import https from 'https';
 import http from 'http';
-import songsHandler from './songs/index.js';
-import songsIdHandler from './songs/[id].js';
-import songsSyncHandler from './songs/sync.js';
+import songsHandler from './songs.js';
 import setlistsHandler from './setlists/index.js';
 import setlistsIdHandler from './setlists/[id].js';
 import statusHandler from './status.js';
@@ -30,12 +28,6 @@ app.use((req, res, next) => {
   } else {
     express.json({ limit: '100mb' })(req, res, next);
   }
-});
-app.use('/api/songs/sync', (req, res, next) => {
-  Promise.resolve(songsSyncHandler(req, res)).catch(next);
-});
-app.use('/api/songs/:id', (req, res, next) => {
-  Promise.resolve(songsIdHandler(req, res)).catch(next);
 });
 app.use('/api/songs', (req, res, next) => {
   Promise.resolve(songsHandler(req, res)).catch(next);
