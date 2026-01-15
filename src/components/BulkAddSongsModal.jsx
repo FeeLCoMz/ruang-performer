@@ -7,7 +7,7 @@ const BulkAddSongsModal = ({ songs, currentSetList, onAddSongs, onAddNewSong, on
   const [selectedIds, setSelectedIds] = useState(new Set());
 
   // Parse input and search for songs
-  const handleSearch = () => {
+  const handleSearch = async () => {
     const lines = inputText
       .split(/[\n,;|]/)
       .map(line => line.trim())
@@ -19,27 +19,46 @@ const BulkAddSongsModal = ({ songs, currentSetList, onAddSongs, onAddNewSong, on
       return;
     }
 
-    const searchResults = lines.map(searchName => {
-      const searchNameLower = searchName.toLowerCase();
-      
-      // Find song with better matching
-      const found = songs.find(song => {
-        if (!song || !song.name) return false;
-        const songNameLower = song.name.toLowerCase();
-        // Match if search name is part of song name or vice versa
-        return songNameLower.includes(searchNameLower) || 
-               searchNameLower.includes(songNameLower);
+    // Fetch lagu terbaru dari backend
+    let latestSongs = songs;
+    try {
+      const res = await fetch('/api/songs');
+      if (res.ok) {
+        latestSongs = await res.json();
+      }
+    } catch (e) {
+      // fallback pakai props songs
+    }
+
+    // Helper untuk normalisasi string
+    const normalize = str => (str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+    const searchResults = lines.map(rawInput => {
+      // Cari hanya berdasarkan judul lagu
+      const searchTitle = rawInput.includes(' - ')
+        ? rawInput.split(' - ')[0].trim() // Ambil bagian sebelum strip sebagai judul
+        : rawInput.trim();
+      const searchNorm = normalize(searchTitle);
+      let found = latestSongs.find(song => {
+        if (!song || !song.title) return false;
+        const titleNorm = normalize(song.title);
+        // Match jika judul persis, atau salah satu mengandung yang lain
+        return (
+          titleNorm === searchNorm ||
+          titleNorm.includes(searchNorm) ||
+          searchNorm.includes(titleNorm)
+        );
       });
 
-      // Check if already in setlist
+      // Cek apakah sudah ada di setlist
       let isInSetList = false;
       if (found && currentSetList?.songs) {
         isInSetList = currentSetList.songs.includes(found.id);
       }
 
       return {
-        searchName,
-        displayName: searchName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        searchName: rawInput,
+        displayName: rawInput.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
         found: found || null,
         isInSetList
       };

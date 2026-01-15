@@ -1252,6 +1252,26 @@ function App() {
     ? setLists.find(sl => sl.id === currentSetList)?.name
     : 'Semua Lagu';
 
+  // Handler untuk menghapus semua pending songs dari setlist aktif
+  const handleRemoveAllPendingSongs = () => {
+    if (!currentSetList) return;
+    setSetLists(prev => prev.map(sl => {
+      if (sl.id !== currentSetList) return sl;
+      // Ambil semua ID lagu yang sudah ada
+      const songIds = songs.map(s => s.id);
+      return {
+        ...sl,
+        songs: Array.isArray(sl.songs)
+          ? sl.songs.filter(item => {
+              // Jika item string dan BUKAN ID lagu, artinya pending, maka hapus
+              if (typeof item === 'string' && !songIds.includes(item)) return false;
+              return true;
+            })
+          : sl.songs
+      };
+    }));
+  };
+
   return (
     <>
       {/* ...Google login bar removed... */}
@@ -1389,27 +1409,34 @@ function App() {
                       <div>
                         <h2>📋 Lagu</h2>
                         {currentSetList && (
-                          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                             Setlist: {setLists.find(sl => sl.id === currentSetList)?.name}
                             <button 
                               onClick={() => setCurrentSetList(null)}
-                              style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
+                              style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
                             >
                               ✕ Lihat Semua
                             </button>
                             <button 
                               onClick={handleShareSetList}
-                              style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
+                              style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
                               title="Bagikan daftar lagu"
                             >
                               📤 Bagikan
                             </button>
                             <button 
                               onClick={handleShareSetListLink}
-                              style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
+                              style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
                               title="Bagikan link setlist"
                             >
                               🔗 Link
+                            </button>
+                            <button
+                              onClick={handleRemoveAllPendingSongs}
+                              style={{ background: '#ff922b', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', marginLeft: '0.5rem' }}
+                              title="Hapus semua pending songs dari setlist ini"
+                            >
+                              🗑️ Hapus Semua Pending Songs
                             </button>
                           </p>
                         )}
