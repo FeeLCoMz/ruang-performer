@@ -41,30 +41,7 @@ const generateUniqueId = () => {
 };
 
 function App() {
-  // User auth state
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  // Fetch user info on mount
-  useEffect(() => {
-    fetch('/api/auth/me', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        setUser(data.user || null);
-        setAuthLoading(false);
-      })
-      .catch(() => setAuthLoading(false));
-  }, []);
-
-  // Google login/logout handlers
-  const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/google';
-  };
-  const handleGoogleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    setUser(null);
-    window.location.reload();
-  };
+  // ...existing code...
   // Toast notifications
   const { toasts, closeToast, success, error, warning } = useToast();
 
@@ -1277,23 +1254,7 @@ function App() {
 
   return (
     <>
-      {/* Google Login Bar */}
-      <div style={{ position: 'fixed', top: 0, right: 0, zIndex: 9999, padding: '10px', background: 'rgba(34,34,34,0.95)', borderBottomLeftRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-        {authLoading ? (
-          <span style={{ color: '#fff', fontSize: 14 }}>Checking login...</span>
-        ) : user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src={user.photo} alt="avatar" style={{ width: 32, height: 32, borderRadius: '50%' }} />
-            <span style={{ color: '#fff', fontWeight: 500 }}>{user.displayName || user.email}</span>
-            <button onClick={handleGoogleLogout} style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontWeight: 600 }}>Logout</button>
-          </div>
-        ) : (
-          <button onClick={handleGoogleLogin} style={{ background: '#4285F4', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 18px', fontWeight: 600, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="20" height="20" viewBox="0 0 48 48"><g><path fill="#4285F4" d="M24 9.5c3.54 0 6.7 1.22 9.19 3.23l6.85-6.85C35.64 2.54 30.18 0 24 0 14.82 0 6.71 5.82 2.69 14.09l7.98 6.2C12.13 13.6 17.56 9.5 24 9.5z"/><path fill="#34A853" d="M46.1 24.55c0-1.64-.15-3.22-.42-4.74H24v9.01h12.42c-.54 2.9-2.18 5.36-4.65 7.02l7.18 5.59C43.98 37.13 46.1 31.3 46.1 24.55z"/><path fill="#FBBC05" d="M10.67 28.29A14.5 14.5 0 019.5 24c0-1.5.26-2.95.72-4.29l-7.98-6.2A23.93 23.93 0 000 24c0 3.77.9 7.34 2.49 10.49l8.18-6.2z"/><path fill="#EA4335" d="M24 48c6.18 0 11.36-2.05 15.14-5.57l-7.18-5.59c-2 1.34-4.56 2.13-7.96 2.13-6.44 0-11.87-4.1-13.33-9.6l-8.18 6.2C6.71 42.18 14.82 48 24 48z"/></g></svg>
-            Login dengan Google
-          </button>
-        )}
-      </div>
+      {/* ...Google login bar removed... */}
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onClose={closeToast} />
 
