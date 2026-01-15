@@ -7,11 +7,27 @@ const BatchProcessingModal = ({ songs, currentSetList, onClose, onApplySuggestio
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
 
-  // Get current setlist songs
+  // Get current setlist songs (including pending songs)
   const setlistSongs = useMemo(() => {
     if (!currentSetList?.songs || !Array.isArray(currentSetList.songs)) return [];
     return currentSetList.songs
-      .map(songId => songs.find(s => s.id === songId))
+      .map(item => {
+        if (typeof item === 'string') {
+          // Check if it's an actual song ID (exists in songs)
+          const song = songs.find(s => s.id === item);
+          if (song && song.title) {
+            return song;
+          }
+          // If not found, it's a pending song (just a song name/title)
+          return {
+            id: item,
+            title: item,
+            artist: '',
+            isPending: true
+          };
+        }
+        return null;
+      })
       .filter(song => song && song.title); // Filter out undefined/deleted songs (check title property)
   }, [currentSetList, songs]);
 
@@ -63,7 +79,8 @@ const BatchProcessingModal = ({ songs, currentSetList, onClose, onApplySuggestio
       const requestData = selectedSongs.map(song => ({
         songId: song.id,
         title: song.title || '',
-        artist: song.artist || ''
+        artist: song.artist || '',
+        isPending: song.isPending || false
       }));
 
       // Call batch-search API
@@ -166,7 +183,8 @@ const BatchProcessingModal = ({ songs, currentSetList, onClose, onApplySuggestio
                         key={song.id}
                         style={{
                           ...styles.songItem,
-                          backgroundColor: selectedSongIds.has(song.id) ? '#1e3a2f' : 'transparent'
+                          backgroundColor: selectedSongIds.has(song.id) ? '#1e3a2f' : 'transparent',
+                          borderLeft: song.isPending ? '3px solid #ff922b' : '3px solid #666'
                         }}
                         onClick={() => toggleSongSelection(song.id)}
                       >
@@ -177,9 +195,12 @@ const BatchProcessingModal = ({ songs, currentSetList, onClose, onApplySuggestio
                           style={styles.checkbox}
                         />
                         <div style={styles.songInfo}>
-                          <div style={styles.songName}>{song.title}</div>
+                          <div style={styles.songName}>
+                            {song.isPending && '⏳ '}
+                            {song.title}
+                          </div>
                           <div style={styles.songMeta}>
-                            {song.artist ? `${song.artist}` : 'Unknown Artist'}
+                            {song.artist ? `${song.artist}` : song.isPending ? 'Lagu Pending' : 'Unknown Artist'}
                             {song.key ? ` • Key: ${song.key}` : ''}
                             {song.tempo ? ` • ${song.tempo} BPM` : ''}
                           </div>
@@ -224,7 +245,7 @@ const BatchProcessingModal = ({ songs, currentSetList, onClose, onApplySuggestio
                     style={{
                       ...styles.resultItem,
                       backgroundColor: result.error ? '#3a1e1e' : result.selected ? '#1e3a2f' : '#2a2a2a',
-                      borderLeft: result.error ? '4px solid #ff6b6b' : result.selected ? '4px solid #51cf66' : '4px solid #666'
+                      borderLeft: result.error ? '4px solid #ff6b6b' : result.isPending ? '4px solid #ff922b' : result.selected ? '4px solid #51cf66' : '4px solid #666'
                     }}
                     onClick={() => !result.error && toggleResultSelection(idx)}
                   >
@@ -238,9 +259,12 @@ const BatchProcessingModal = ({ songs, currentSetList, onClose, onApplySuggestio
                     )}
 
                     <div style={styles.resultInfo}>
-                      <div style={styles.resultTitle}>{result.title}</div>
+                      <div style={styles.resultTitle}>
+                        {result.isPending && '⏳ '}
+                        {result.title}
+                      </div>
                       <div style={styles.resultMeta}>
-                        {result.artist && <span>{result.artist}</span>}
+                        {result.artist ? <span>{result.artist}</span> : result.isPending ? <span style={{color: '#ff922b'}}>Lagu Pending</span> : <span>Unknown Artist</span>}
                         {result.key && <span>Key: {result.key}</span>}
                         {result.tempo && <span>{result.tempo} BPM</span>}
                         {result.style && <span>{result.style}</span>}

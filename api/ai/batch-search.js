@@ -164,29 +164,47 @@ export default async function handler(req, res) {
   try {
     const results = [];
 
+
     // Process songs sequentially with small delay to avoid API rate limits
     for (let i = 0; i < songs.length; i++) {
       const song = songs[i];
-      if (!song.title || !song.artist) {
+      const isPending = song.isPending || false;
+      
+      // For pending songs, artist can be empty - title is required
+      if (!song.title) {
         results.push({
           songId: song.songId,
           title: song.title,
           artist: song.artist,
-          error: 'Title and artist required'
+          isPending: isPending,
+          error: 'Title required'
+        });
+        continue;
+      }
+      
+      // For non-pending songs, require both title and artist
+      if (!isPending && !song.artist) {
+        results.push({
+          songId: song.songId,
+          title: song.title,
+          artist: song.artist,
+          isPending: isPending,
+          error: 'Artist required for regular songs'
         });
         continue;
       }
 
       try {
-        const searchResult = await searchSingleSong(song.title, song.artist);
+        const searchResult = await searchSingleSong(song.title, song.artist || '');
         results.push({
           songId: song.songId,
           title: song.title,
-          artist: song.artist,
+          artist: song.artist || '',
+          isPending: isPending,
           ...searchResult
         });
 
-        // Add delay between requests to avoid rate limiting (500ms)
+        // Add delay between requests to avoid API rate limiting (500ms)
         if (i < songs.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
@@ -195,7 +213,8 @@ export default async function handler(req, res) {
         results.push({
           songId: song.songId,
           title: song.title,
-          artist: song.artist,
+          artist: song.artist || '',
+          isPending: isPending,
           error: err.message
         });
       }
