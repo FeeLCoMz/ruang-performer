@@ -1,5 +1,6 @@
 import transcribeHandler from './transcribe.js';
 import songSearchHandler from './song-search.js';
+import batchSearchHandler from './batch-search.js';
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -76,6 +77,11 @@ export default async function handler(req, res) {
   // Route /transcribe POST requests (path is relative to /api/ai)
   if (req.url.includes('/transcribe') && req.method === 'POST') {
     return transcribeHandler(req, res);
+  }
+
+  // Route /batch-search POST requests (path is relative to /api/ai)
+  if (req.url.includes('/batch-search') && req.method === 'POST') {
+    return batchSearchHandler(req, res);
   }
 
   if (req.method !== 'POST') {

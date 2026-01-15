@@ -7,6 +7,7 @@ import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import SongFormBaru from './components/SongForm';
 import SetListForm from './components/SetListForm';
 import BulkAddSongsModal from './components/BulkAddSongsModal';
+import BatchProcessingModal from './components/BatchProcessingModal';
 import SongListItem from './components/SongListItem';
 import SettingsModal from './components/SettingsModal';
 import ToastContainer from './components/ToastContainer';
@@ -102,6 +103,7 @@ function App() {
   const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
   const [showSetListPopup, setShowSetListPopup] = useState(false);
   const [showBulkAddSongs, setShowBulkAddSongs] = useState(false);
+  const [showBatchProcessing, setShowBatchProcessing] = useState(false);
   const [viewMode, setViewMode] = useState(() => {
     try {
       return localStorage.getItem('ronz_view_mode') || 'default';
@@ -541,6 +543,45 @@ function App() {
     setAutoScrollActive(false);
     setShowSongForm(false);
     setEditingSong(null);
+  };
+
+  const handleApplyBatchResults = async (results) => {
+    // Apply batch processing results to songs
+    const updatePromises = [];
+    
+    setSongs(prevSongs => {
+      return prevSongs.map(song => {
+        const suggestion = results.find(r => r.songId === song.id);
+        if (suggestion) {
+          const updated = {
+            ...song,
+            key: suggestion.key || song.key,
+            tempo: suggestion.tempo || song.tempo,
+            style: suggestion.style || song.style,
+            youtubeId: suggestion.youtubeId || song.youtubeId,
+            updatedAt: Date.now()
+          };
+          
+          // Sync to database
+          updatePromises.push(
+            fetch(`/api/songs/${song.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updated)
+            }).catch(err => console.error('Gagal update lagu:', err))
+          );
+          
+          return updated;
+        }
+        return song;
+      });
+    });
+
+    // Wait for all updates to complete
+    await Promise.all(updatePromises);
+    
+    success(`✅ ${results.length} lagu berhasil diupdate`);
+    setShowBatchProcessing(false);
   };
 
   const handleCreateSetList = async (name) => {
@@ -1374,13 +1415,22 @@ function App() {
                         ➕
                       </button>
                       {currentSetList && (
-                        <button 
-                          onClick={() => setShowBulkAddSongs(true)} 
-                          className="btn btn-sm btn-primary" 
-                          title="Tambah Lagu ke Setlist dari Daftar"
-                        >
-                          📝
-                        </button>
+                        <>
+                          <button 
+                            onClick={() => setShowBulkAddSongs(true)} 
+                            className="btn btn-sm btn-primary" 
+                            title="Tambah Lagu ke Setlist dari Daftar"
+                          >
+                            📝
+                          </button>
+                          <button 
+                            onClick={() => setShowBatchProcessing(true)} 
+                            className="btn btn-sm btn-primary" 
+                            title="Update metadata untuk multiple lagu sekaligus"
+                          >
+                            🔄
+                          </button>
+                        </>
                       )}
                     </div>
                     
@@ -2012,6 +2062,15 @@ function App() {
               // For now, user will need to manually enter the name
             }}
             onCancel={() => setShowBulkAddSongs(false)}
+          />
+        )}
+
+        {!performanceMode && showBatchProcessing && currentSetList && (
+          <BatchProcessingModal
+            songs={songs}
+            currentSetList={setLists.find(sl => sl.id === currentSetList)}
+            onClose={() => setShowBatchProcessing(false)}
+            onApplySuggestions={handleApplyBatchResults}
           />
         )}
 
