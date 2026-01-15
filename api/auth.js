@@ -1,63 +1,53 @@
-import express from 'express';
-import session from 'express-session';
+import './env.js';
+import { parse } from 'url';
 import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import '../api/env.js';
+import { initializePassport } from './auth/passport-init.js';
 
-const router = express.Router();
+initializePassport(passport);
 
-router.use(session({
-  secret: process.env.SESSION_SECRET || 'ronz-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: false, httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
-}));
+export default async function handler(req, res) {
+  const { pathname } = parse(req.url, true);
 
-router.use(passport.initialize());
-router.use(passport.session());
-
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
-
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
-}, (accessToken, refreshToken, profile, done) => {
-    // ...existing code...
-    return done(null, {
-    id: profile.id,
-    displayName: profile.displayName,
-    email: profile.emails?.[0]?.value,
-    photo: profile.photos?.[0]?.value
-  });
-}));
-
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-router.get('/google/callback', passport.authenticate('google', {
-  failureRedirect: '/?login=failed',
-  session: true
-}), (req, res) => {
-  res.redirect('/');
-});
-
-router.get('/me', (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json({ user: req.user });
-  } else {
-    res.status(401).json({ user: null });
+  // /api/auth/google
+  if (pathname === '/api/auth/google') {
+    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res);
+    return;
   }
-});
 
-router.post('/logout', (req, res) => {
-  req.logout(() => {
-    res.json({ success: true });
-  });
-});
+  // /api/auth/google/callback
+  if (pathname === '/api/auth/google/callback') {
+    passport.authenticate('google', {
+      failureRedirect: '/?login=failed',
+      session: true
+    })(req, res, () => {
+      res.redirect('/');
+    });
+    return;
+  }
 
-export default router;
+  // /api/auth/me
+  if (pathname === '/api/auth/me') {
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      res.json({ user: req.user });
+    } else {
+      res.status(401).json({ user: null });
+    }
+    return;
+  }
+
+  // /api/auth/logout
+  if (pathname === '/api/auth/logout') {
+    if (req.logout) {
+      req.logout(() => {
+        res.json({ success: true });
+      });
+    } else {
+      res.json({ success: true });
+    }
+    return;
+  }
+
+  // Not found
+  res.statusCode = 404;
+  res.end('Not found');
+}
