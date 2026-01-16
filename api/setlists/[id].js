@@ -49,9 +49,30 @@ export default async function handler(req, res) {
         res.status(200).json({
           id: row.id,
           name: row.name,
-          songs: row.songs ? JSON.parse(row.songs) : [],
-          songKeys: row.songKeys ? JSON.parse(row.songKeys) : {},
-          completedSongs: row.completedSongs ? JSON.parse(row.completedSongs) : {},
+          songs: (() => {
+            try {
+              return row.songs ? JSON.parse(row.songs) : [];
+            } catch (e) {
+              console.warn(`Invalid JSON in setlist.songs for id=${row.id}:`, e.message);
+              return [];
+            }
+          })(),
+          songKeys: (() => {
+            try {
+              return row.songKeys ? JSON.parse(row.songKeys) : {};
+            } catch (e) {
+              console.warn(`Invalid JSON in setlist.songKeys for id=${row.id}:`, e.message);
+              return {};
+            }
+          })(),
+          completedSongs: (() => {
+            try {
+              return row.completedSongs ? JSON.parse(row.completedSongs) : {};
+            } catch (e) {
+              console.warn(`Invalid JSON in setlist.completedSongs for id=${row.id}:`, e.message);
+              return {};
+            }
+          })(),
           createdAt: row.createdAt,
           updatedAt: row.updatedAt
         });
