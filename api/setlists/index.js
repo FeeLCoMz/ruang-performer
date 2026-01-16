@@ -49,30 +49,30 @@ export default async function handler(req, res) {
       const setlists = (rows.rows ?? []).map(row => ({
         id: row.id,
         name: row.name,
-        songs:
-          typeof row.songs === 'string'
-            ? (row.songs.trim() === '[object Object]'
-                ? []
-                : (row.songs.trim().startsWith('[') || row.songs.trim().startsWith('{'))
-                  ? (() => { try { return JSON.parse(row.songs); } catch { return []; } })()
-                  : [])
-            : (Array.isArray(row.songs) ? row.songs : []),
-        songKeys:
-          typeof row.songKeys === 'string'
-            ? (row.songKeys.trim() === '[object Object]'
-                ? {}
-                : (row.songKeys.trim().startsWith('{') || row.songKeys.trim().startsWith('['))
-                  ? (() => { try { return JSON.parse(row.songKeys); } catch { return {}; } })()
-                  : {})
-            : (typeof row.songKeys === 'object' && row.songKeys !== null ? row.songKeys : {}),
-        completedSongs:
-          typeof row.completedSongs === 'string'
-            ? (row.completedSongs.trim() === '[object Object]'
-                ? {}
-                : (row.completedSongs.trim().startsWith('{') || row.completedSongs.trim().startsWith('['))
-                  ? (() => { try { return JSON.parse(row.completedSongs); } catch { return {}; } })()
-                  : {})
-            : (typeof row.completedSongs === 'object' && row.completedSongs !== null ? row.completedSongs : {}),
+        songs: (() => {
+          try {
+            return row.songs ? JSON.parse(row.songs) : [];
+          } catch (e) {
+            console.warn(`Invalid JSON in setlist.songs for id=${row.id}:`, e.message);
+            return [];
+          }
+        })(),
+        songKeys: (() => {
+          try {
+            return row.songKeys ? JSON.parse(row.songKeys) : {};
+          } catch (e) {
+            console.warn(`Invalid JSON in setlist.songKeys for id=${row.id}:`, e.message);
+            return {};
+          }
+        })(),
+        completedSongs: (() => {
+          try {
+            return row.completedSongs ? JSON.parse(row.completedSongs) : {};
+          } catch (e) {
+            console.warn(`Invalid JSON in setlist.completedSongs for id=${row.id}:`, e.message);
+            return {};
+          }
+        })(),
         createdAt: row.createdAt,
         updatedAt: row.updatedAt
       }));
