@@ -1352,11 +1352,48 @@ function App() {
         />
       )}
       <div className={`app ${performanceMode ? 'performance-mode-active' : ''}`}>
+
         {!performanceMode && !selectedSong && (
           <header className="header">
-            <div className="header-content">
-              <h1>🎸 RoNz Chord Pro</h1>
-              <p>Professional Chord & Lyrics App</p>
+            <div className="header-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h1>🎸 RoNz Chord Pro</h1>
+                <p>Professional Chord & Lyrics App</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  className="nav-btn"
+                  onClick={() => setDarkMode(!darkMode)}
+                  title={darkMode ? 'Light Mode' : 'Dark Mode'}
+                  style={{ fontSize: 22 }}
+                >
+                  {darkMode ? '☀️' : '🌙'}
+                </button>
+                <button
+                  className="nav-btn"
+                  onClick={() => setShowSettingsMenu(true)}
+                  title="Pengaturan"
+                  style={{ fontSize: 20 }}
+                >
+                  ⚙️
+                </button>
+                <button
+                  className="nav-btn"
+                  onClick={() => setShowHelp(true)}
+                  title="Bantuan & Panduan"
+                  style={{ fontSize: 20 }}
+                >
+                  ❓
+                </button>
+                <button
+                  className="nav-btn"
+                  onClick={() => setShowKeyboardHelp(true)}
+                  title="Keyboard Shortcuts (? or Shift+?)"
+                  style={{ fontSize: 20 }}
+                >
+                  ⌨️
+                </button>
+              </div>
             </div>
           </header>
         )}
@@ -1385,14 +1422,6 @@ function App() {
                 ← Kembali
               </button>
             )}
-            <button
-              className="nav-btn"
-              onClick={() => setShowSettingsMenu(true)}
-              style={{ marginLeft: 'auto' }}
-              title="Pengaturan"
-            >
-              ⚙️
-            </button>
             {keyboardMode && (
               <span 
                 className="keyboard-mode-badge" 
@@ -1413,27 +1442,7 @@ function App() {
                 🎹 Keyboardist
               </span>
             )}
-            <button
-              className="nav-btn"
-              onClick={() => setDarkMode(!darkMode)}
-              title={darkMode ? 'Light Mode' : 'Dark Mode'}
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
-            <button
-              className="nav-btn"
-              onClick={() => setShowHelp(true)}
-              title="Bantuan & Panduan"
-            >
-              ❓ Bantuan
-            </button>
-            <button
-              className="nav-btn"
-              onClick={() => setShowKeyboardHelp(true)}
-              title="Keyboard Shortcuts (? or Shift+?)"
-            >
-              ⌨️ Shortcuts
-            </button>
+
           </nav>
           )}
 
@@ -1447,38 +1456,49 @@ function App() {
                     <div className="view-header">
                       <div>
                         <h2>📋 Lagu</h2>
-                        {currentSetList && (
-                          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            Setlist: {setLists.find(sl => sl.id === currentSetList)?.name}
-                            <button 
-                              onClick={() => setCurrentSetList(null)}
-                              style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
-                            >
-                              ✕ Lihat Semua
-                            </button>
-                            <button 
-                              onClick={handleShareSetList}
-                              style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
-                              title="Bagikan daftar lagu"
-                            >
-                              📤 Bagikan
-                            </button>
-                            <button 
-                              onClick={handleShareSetListLink}
-                              style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
-                              title="Bagikan link setlist"
-                            >
-                              🔗 Link
-                            </button>
-                            <button
-                              onClick={handleRemoveAllPendingSongs}
-                              style={{ background: '#ff922b', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', marginLeft: '0.5rem' }}
-                              title="Hapus semua pending songs dari setlist ini"
-                            >
-                              🗑️ Hapus Semua Pending Songs
-                            </button>
-                          </p>
-                        )}
+                        {currentSetList && (() => {
+                          const setList = setLists.find(sl => sl.id === currentSetList);
+                          if (!setList) return null;
+                          // Pending songs: string di setList.songs yang bukan id lagu
+                          const songIds = songs.map(s => s.id);
+                          const pendingSongs = Array.isArray(setList.songs)
+                            ? setList.songs.filter(item => typeof item === 'string' && !songIds.includes(item))
+                            : [];
+                          return (
+                            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              Setlist: {setList.name}
+                              <button 
+                                onClick={() => setCurrentSetList(null)}
+                                style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
+                              >
+                                ✕ Lihat Semua
+                              </button>
+                              <button 
+                                onClick={handleShareSetList}
+                                style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
+                                title="Bagikan daftar lagu"
+                              >
+                                📤 Bagikan
+                              </button>
+                              <button 
+                                onClick={handleShareSetListLink}
+                                style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem' }}
+                                title="Bagikan link setlist"
+                              >
+                                🔗 Link
+                              </button>
+                              {pendingSongs.length > 0 && (
+                                <button
+                                  onClick={handleRemoveAllPendingSongs}
+                                  style={{ background: '#ff922b', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', marginLeft: '0.5rem' }}
+                                  title="Hapus semua pending songs dari setlist ini"
+                                >
+                                  🗑️ Hapus Semua Pending Songs
+                                </button>
+                              )}
+                            </p>
+                          );
+                        })()}
                       </div>
                       <button onClick={() => setShowSongForm(true)} className="btn btn-sm btn-primary" title="Tambah Lagu">
                         ➕
