@@ -25,7 +25,8 @@ const sanitizeSongs = (list = []) => {
     });
 };
 
-export const useSongs = (setLists, currentSetList) => {
+// setLists: array setlist, setSetLists: setter, currentSetList: id setlist aktif, pendingSongs: array, setPendingSongs: setter
+export const useSongs = (setLists, setSetLists, currentSetList, pendingSongs, setPendingSongs) => {
   const getInitialSongs = () => {
     try {
       const data = localStorage.getItem('ronz_songs');
@@ -91,7 +92,7 @@ export const useSongs = (setLists, currentSetList) => {
     const songId = isEditMode ? editingSong.id : generateUniqueId();
     const now = Date.now();
     const updatedSong = { ...songData, id: songId, updatedAt: now };
-    
+
     setSongs(prevSongs => {
       const existingIndex = prevSongs.findIndex(s => s.id === songId);
       if (existingIndex > -1) {
@@ -103,6 +104,23 @@ export const useSongs = (setLists, currentSetList) => {
       }
     });
 
+    // Jika song adalah pending (ada di pendingSongs), tambahkan ke setlist aktif dan hapus dari pending
+    if (!isEditMode && pendingSongs && setPendingSongs && setSetLists && currentSetList) {
+      const isPending = pendingSongs.some(p => p.id === songData.id || p.title === songData.title);
+      if (isPending) {
+        // Tambahkan ke setlist aktif
+        setSetLists(prevSetLists => prevSetLists.map(sl => {
+          if (sl.id === currentSetList) {
+            const alreadyIn = (sl.songs || []).includes(songId);
+            return alreadyIn ? sl : { ...sl, songs: [...(sl.songs || []), songId], updatedAt: Date.now() };
+          }
+          return sl;
+        }));
+        // Hapus dari pendingSongs
+        setPendingSongs(prev => prev.filter(p => !(p.id === songData.id || p.title === songData.title)));
+      }
+    }
+
     try {
       const method = isEditMode ? 'PUT' : 'POST';
       const endpoint = isEditMode ? `/api/songs/${songId}` : '/api/songs';
@@ -111,7 +129,6 @@ export const useSongs = (setLists, currentSetList) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedSong)
       });
-
       if (!response.ok) {
         throw new Error(`Failed to save song: ${response.status}`);
       }

@@ -17,7 +17,7 @@ import songsSyncHandler from './songs/sync.js';
 import setlistsHandler from './setlists/index.js';
 import setlistsIdHandler from './setlists/[id].js';
 import statusHandler from './status.js';
-import aiHandler from './ai/index.js';
+import aiHandler from './ai.js';
 
 const app = express();
 app.use(cors());
