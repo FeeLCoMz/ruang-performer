@@ -63,10 +63,10 @@ export async function askAI({ prompt, context, system, model } = {}) {
   return await res.json();
 }
 
+
 export async function transcribeAudio(audioFile) {
   const formData = new FormData();
   formData.append('audio', audioFile);
-
   const res = await fetch(`${API_BASE}/ai/transcribe`, {
     method: 'POST',
     body: formData
@@ -75,6 +75,34 @@ export async function transcribeAudio(audioFile) {
     let err;
     try { err = await res.json(); } catch {}
     throw new Error(err?.error || 'Failed to transcribe audio');
+  }
+  return await res.json();
+}
+
+export async function aiSongSearch({ title, artist }) {
+  const res = await fetch(`${API_BASE}/ai/song-search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, artist })
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Failed to search song');
+  }
+  return await res.json();
+}
+
+export async function aiBatchSongSearch(songs) {
+  const res = await fetch(`${API_BASE}/ai/batch-search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ songs })
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Failed to batch search songs');
   }
   return await res.json();
 }
