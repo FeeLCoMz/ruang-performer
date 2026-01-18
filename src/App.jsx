@@ -62,6 +62,10 @@ const generateUniqueId = () => {
 };
 
 function App() {
+      // State for setlists selected for adding a song
+      const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
+    // State for editing a song (null or song object)
+    const [editingSong, setEditingSong] = useState(null);
   // Google Drive Sync State
   const [gapiLoaded, setGapiLoaded] = useState(false);
   const [googleUser, setGoogleUser] = useState(null);
@@ -2243,24 +2247,7 @@ function App() {
                     </div>
                   )}
                   {/* Export/Import Chord Komunitas & Cloud Sync */}
-                  {!performanceMode && (
-                    <div style={{ display: 'flex', gap: 8, margin: '10px 0', flexWrap: 'wrap' }}>
-                      <button className="btn btn-xs" onClick={handleExportData} title="Export semua lagu & setlist ke file JSON">⬇️ Export Chord</button>
-                      <label className="btn btn-xs" style={{ margin: 0, cursor: 'pointer' }} title="Import lagu & setlist dari file JSON">
-                        ⬆️ Import Chord
-                        <input type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImportData} />
-                      </label>
-                      <span style={{ margin: '0 8px', color: '#aaa' }}>|</span>
-                      <button className="btn btn-xs" onClick={handleGoogleLogin} title="Login Google Drive">🔑 Login Google</button>
-                      <button className="btn btn-xs" onClick={handleDriveUpload} title="Sync Upload ke Google Drive">☁️⬆️ Sync Upload</button>
-                      <button className="btn btn-xs" onClick={handleDriveDownload} title="Restore dari Google Drive">☁️⬇️ Restore</button>
-                      {googleUser && (
-                        <span style={{ marginLeft: 10, color: '#16a34a', fontWeight: 500 }}>
-                          Login: {googleUser.name || googleUser.email}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  {/* Tombol Export/Import Chord dihapus, sudah ada di menu pengaturan */}
                   {!performanceMode && showYouTube && selectedSong?.youtubeId && (
                     <div className="youtube-section">
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
