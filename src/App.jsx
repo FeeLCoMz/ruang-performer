@@ -62,10 +62,10 @@ const generateUniqueId = () => {
 };
 
 function App() {
-      // State for setlists selected for adding a song
-      const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
-    // State for editing a song (null or song object)
-    const [editingSong, setEditingSong] = useState(null);
+  // State for setlists selected for adding a song
+  const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
+  // State for editing a song (null or song object)
+  const [editingSong, setEditingSong] = useState(null);
   // Google Drive Sync State
   const [gapiLoaded, setGapiLoaded] = useState(false);
   const [googleUser, setGoogleUser] = useState(null);
@@ -310,6 +310,8 @@ function App() {
   const [recoveryNotification, setRecoveryNotification] = useState(null);
   // State untuk urutan daftar lagu
   const [sortBy, setSortBy] = useState('title-asc');
+  // State untuk urutan naik/turun
+  const [sortOrder, setSortOrder] = useState('asc');
   // State untuk pencarian lagu
   const [searchQuery, setSearchQuery] = useState('');
   // State untuk setlist aktif
@@ -1561,24 +1563,32 @@ function App() {
     const sorted = [...base];
     switch (sortBy) {
       case 'title-asc':
-        sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-        break;
-      case 'title-desc':
-        sorted.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
         break;
       case 'artist-asc':
         sorted.sort((a, b) => (a.artist || '').localeCompare(b.artist || ''));
         break;
       case 'newest':
-        sorted.sort((a, b) => {
-          const dateA = new Date(a.createdAt || 0).getTime();
-          const dateB = new Date(b.createdAt || 0).getTime();
-          return dateB - dateA;
-        });
+        sorted.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        break;
+      case 'style':
+        sorted.sort((a, b) => (a.style || '').localeCompare(b.style || ''));
+        break;
+      case 'tempo':
+        sorted.sort((a, b) => (a.tempo || 0) - (b.tempo || 0));
+        break;
+      case 'updated':
+        sorted.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         break;
       default:
         break;
     }
+
+    // Apply Asc/Desc toggle for supported sortBy
+    if (['title-asc', 'artist-asc', 'style', 'tempo', 'updated'].includes(sortBy) && sortOrder === 'desc') {
+      sorted.reverse();
+    }
+
     return sorted;
   };
 
@@ -1863,13 +1873,30 @@ function App() {
                       <select
                         className="setlist-select"
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
+                        onChange={e => {
+                          setSortBy(e.target.value);
+                          // Reset sortOrder ke default saat ganti sortBy
+                          if (['title-asc','artist-asc', 'newest', 'style', 'tempo', 'updated'].includes(e.target.value)) {
+                            setSortOrder('asc');
+                          }
+                        }}
                       >
-                        <option value="title-asc">📋 Judul A-Z</option>
-                        <option value="title-desc">📋 Judul Z-A</option>
-                        <option value="artist-asc">🎤 Artis A-Z</option>
+                        <option value="title-asc">📋 Judul</option>
+                        <option value="artist-asc">🎤 Artis</option>
                         <option value="newest">🕒 Terbaru</option>
+                        <option value="style">🎼 Style</option>
+                        <option value="tempo">⏱️ Tempo</option>
+                        <option value="updated">📝 Diupdate</option>
                       </select>
+                      {/* Toggle Asc/Desc */}
+                      <button                        
+                        style={{ marginLeft: 4 }}
+                        onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}
+                        title={sortOrder === 'asc' ? 'Urutkan Z-A/Desc' : 'Urutkan A-Z/Asc'}
+                      >
+                        {sortOrder === 'asc' ? '⬆️' : '⬇️'}
+                      </button>
+                      
                       <button
                         className="btn btn-icon"
                         onClick={handleToggleViewMode}
@@ -2116,7 +2143,7 @@ function App() {
                                   <p className="song-count">
                                     {songArr.length} lagu
                                     {' • '}
-                                    <span style={{ color: 'var(--success)', fontWeight: 600 }}>
+                                    <span style={{ color: 'var(--success)', fontWeight: '600' }}>
                                       ✓ {completed.length}
                                     </span>
                                     {' selesai'}

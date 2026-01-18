@@ -405,7 +405,27 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
           ))}
         </div>
       )}
-      
+
+      {/* Struktur Lagu */}
+      {!performanceMode && !lyricsMode && parsedSong && parsedSong.lines && (
+        <div className="song-structure-flow" style={{ margin: '12px 0 18px 0', fontSize: '0.98em', color: '#888' }}>
+          <strong>Struktur Lagu:</strong>{' '}
+          {(() => {
+            // Ambil urutan struktur dari lines
+            const flow = [];
+            parsedSong.lines.forEach(line => {
+              if (line.type === 'structure_start' && line.structure) {
+                flow.push(line.structure.toUpperCase());
+              }
+            });
+            // Gabungkan dan hilangkan duplikat berurutan
+            const flowDisplay = flow.filter((s, i) => i === 0 || s !== flow[i - 1]);
+            return flowDisplay.length > 0
+              ? flowDisplay.join(' → ')
+              : <span style={{ color: '#bbb' }}>Tidak terdeteksi</span>;
+          })()}
+        </div>
+      )}
       
       <div className="lyrics-content">
         {parsedSong.lines.map((line, index) => renderLine(line, index))}
