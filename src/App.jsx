@@ -1525,7 +1525,6 @@ function App() {
     alert(`Berhasil menghapus ${emptySetlists.length} setlist kosong.`);
   };
 
-
   // Get display songs
   const getDisplaySongs = () => {
     let base = songs;
@@ -2112,15 +2111,11 @@ function App() {
                                 return (
                                   <p className="song-count">
                                     {songArr.length} lagu
-                                    {songArr.length > 0 && completed.length > 0 && (
-                                      <>
-                                        {' • '}
-                                        <span style={{ color: 'var(--success)', fontWeight: 600 }}>
-                                          ✓ {completed.length}
-                                        </span>
-                                        {' selesai'}
-                                      </>
-                                    )}
+                                    {' • '}
+                                    <span style={{ color: 'var(--success)', fontWeight: 600 }}>
+                                      ✓ {completed.length}
+                                    </span>
+                                    {' selesai'}
                                   </p>
                                 );
                               })()}
