@@ -3,7 +3,7 @@ import { parseChordPro, transposeChord, getAllChords } from '../utils/chordUtils
 import { parseMelodyString, transposeMelody, formatNoteDisplay, extractMelodyFromLyrics } from '../utils/musicNotationUtils';
 import KeyboardVoicingModal from './KeyboardVoicingModal';
 
-const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanceFontSize = 100, performanceTheme = 'dark-stage', lyricsMode = false, keyboardMode = false, convertChordNotation, highlightChords = false }) => {
+const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanceFontSize = 100, performanceTheme = 'dark-stage', lyricsMode = false, keyboardMode = false, highlightChords = false }) => {
   const [selectedChord, setSelectedChord] = useState(null);
   const [parsedSong, setParsedSong] = useState(null);
   const [allChords, setAllChords] = useState([]);
@@ -363,8 +363,8 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
         <div className="song-metadata">
           {(parsedSong.metadata.key || song.key) && (
             <span className="metadata-item">
-              <strong>Key:</strong> {convertChordNotation(transposeChord(parsedSong.metadata.key || song.key, transpose))}
-              {transpose !== 0 && ` (Original: ${convertChordNotation(parsedSong.metadata.key || song.key)})`}
+              <strong>Key:</strong> {transposeChord(parsedSong.metadata.key || song.key, transpose)}
+              {transpose !== 0 && ` (Original: ${parsedSong.metadata.key || song.key})`}
             </span>
           )}
           {parsedSong.metadata.original_key && (
@@ -400,7 +400,7 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
           <strong>Chords: </strong>
           {allChords.map((chord, idx) => (
             <span key={idx} className="chord-badge">
-              {convertChordNotation(transposeChord(chord, transpose))}
+              {transposeChord(chord, transpose)}
             </span>
           ))}
         </div>

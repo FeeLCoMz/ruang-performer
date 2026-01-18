@@ -247,16 +247,7 @@ function App() {
       localStorage.setItem('ronz_dark_mode', darkMode ? 'true' : 'false');
     } catch { }
   }, [darkMode]);
-  // State notasi chord
-  const [chordNotation, setChordNotation] = useState('CDEFGAB'); // atau 'DoReMi'
-
-  // Utilitas konversi notasi chord
-  const convertChordNotation = (chord) => {
-    if (chordNotation === 'CDEFGAB') return chord;
-    // Sederhana: hanya root
-    const map = { C: 'Do', D: 'Re', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' };
-    return chord.replace(/[CDEFGAB]/g, m => map[m] || m);
-  };
+  // ...existing code...
   // Fungsi untuk memainkan suara klik metronome
   const playMetronomeClick = () => {
     try {
@@ -1658,52 +1649,13 @@ function App() {
 
       <div className={`app ${performanceMode ? 'performance-mode-active' : ''}`}>
 
-        {!performanceMode && !selectedSong && (
+        {!performanceMode && (
           <header className="header">
             <div className="header-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <h1>🎸 RoNz Chord Pro</h1>
                 <p>Professional Chord & Lyrics App</p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button
-                  className="nav-btn"
-                  onClick={() => setDarkMode(!darkMode)}
-                  title={darkMode ? 'Light Mode' : 'Dark Mode'}
-                  style={{ fontSize: 22 }}
-                >
-                  {darkMode ? '☀️' : '🌙'}
-                </button>
-                <button
-                  className="nav-btn"
-                  onClick={() => setShowSettingsMenu(true)}
-                  title="Pengaturan"
-                  style={{ fontSize: 20 }}
-                >
-                  ⚙️
-                </button>
-                <button
-                  className="nav-btn"
-                  onClick={() => setShowHelp(true)}
-                  title="Bantuan & Panduan"
-                  style={{ fontSize: 20 }}
-                >
-                  ❓
-                </button>
-                <button
-                  className="nav-btn"
-                  onClick={() => setShowKeyboardHelp(true)}
-                  title="Keyboard Shortcuts (? or Shift+?)"
-                  style={{ fontSize: 20 }}
-                >
-                  ⌨️
-                </button>
-              </div>
-            </div>
-          </header>
-        )}
-
-        <div className="container">
           {!performanceMode && (
             <nav className="nav-panel">
               <button
@@ -1749,7 +1701,46 @@ function App() {
               )}
 
             </nav>
-          )}
+          )}              
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  className="nav-btn"
+                  onClick={() => setDarkMode(!darkMode)}
+                  title={darkMode ? 'Light Mode' : 'Dark Mode'}
+                  style={{ fontSize: 22 }}
+                >
+                  {darkMode ? '☀️' : '🌙'}
+                </button>
+                <button
+                  className="nav-btn"
+                  onClick={() => setShowSettingsMenu(true)}
+                  title="Pengaturan"
+                  style={{ fontSize: 20 }}
+                >
+                  ⚙️
+                </button>
+                <button
+                  className="nav-btn"
+                  onClick={() => setShowHelp(true)}
+                  title="Bantuan & Panduan"
+                  style={{ fontSize: 20 }}
+                >
+                  ❓
+                </button>
+                <button
+                  className="nav-btn"
+                  onClick={() => setShowKeyboardHelp(true)}
+                  title="Keyboard Shortcuts (? or Shift+?)"
+                  style={{ fontSize: 20 }}
+                >
+                  ⌨️
+                </button>
+              </div>
+            </div>
+          </header>
+        )}
+
+        <div className="container">
 
           <div className="content-wrapper">
             {/* Main Content Area */}
@@ -2180,17 +2171,7 @@ function App() {
                       >
                         {darkMode ? '🌙 Gelap' : '☀️ Terang'}
                       </button>
-                      {/* Notasi Chord */}
-                      <select
-                        value={chordNotation}
-                        onChange={e => setChordNotation(e.target.value)}
-                        className="btn btn-xs"
-                        style={{ minWidth: 80 }}
-                        title="Pilih notasi chord"
-                      >
-                        <option value="CDEFGAB">C D E F G A B</option>
-                        <option value="DoReMi">Do Re Mi Fa Sol La Si</option>
-                      </select>
+                      {/* ...existing code... */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <button
                           onClick={() => setMetronomeActive(a => !a)}
@@ -2376,7 +2357,7 @@ function App() {
                           performanceTheme={performanceTheme}
                           lyricsMode={lyricsMode}
                           keyboardMode={keyboardMode}
-                          convertChordNotation={convertChordNotation}
+                          // ...existing code...
                           highlightChords={highlightChords}
                         />
                       </>
@@ -2471,17 +2452,7 @@ function App() {
                           <span style={{ minWidth: 36, textAlign: 'center', fontWeight: 600 }} title="Tempo (BPM)">{metronomeBpm} BPM</span>
                           <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: 7, marginLeft: 4, background: metronomeActive ? (metronomeTick ? '#f87171' : '#fbbf24') : '#ddd', transition: 'background 0.1s' }} />
                         </div>
-                        {/* Notasi Chord (Performance Mode) */}
-                        <select
-                          value={chordNotation}
-                          onChange={e => setChordNotation(e.target.value)}
-                          className="perf-btn"
-                          style={{ minWidth: 90, marginRight: 8 }}
-                          title="Pilih notasi chord"
-                        >
-                          <option value="CDEFGAB">C D E F G A B</option>
-                          <option value="DoReMi">Do Re Mi Fa Sol La Si</option>
-                        </select>
+                        {/* ...existing code... */}
                         {currentSetList && (
                           <div>
                             Song {getCurrentSongIndexInSetList() + 1} of {getSetListSongs().length}
