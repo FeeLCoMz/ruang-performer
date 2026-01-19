@@ -2354,8 +2354,7 @@ html.dark-mode .header {
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  position: sticky;
+  align-items: center;  
   top: 0;
   background: var(--card);
   z-index: 10;

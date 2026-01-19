@@ -1990,8 +1990,8 @@ function App() {
                                     if (songName.includes(' - ')) {
                                       const parts = songName.split(' - ');
                                       if (parts.length > 1) {
-                                        artist = parts[0].trim();
-                                        title = parts.slice(1).join(' - ').trim();
+                                        title = parts[0].trim();
+                                        artist = parts.slice(1).join(' - ').trim();
                                       }
                                     }
                                     const newSong = {
