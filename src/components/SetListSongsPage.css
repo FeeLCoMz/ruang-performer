@@ -1,0 +1,99 @@
+.setlist-songs-container {
+  padding: 32px 0;
+  max-width: 900px;
+  margin: 0 auto;
+  border-radius: 12px;
+}
+.setlist-songs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.setlist-songs-header .left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.setlist-songs-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.setlist-songs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+.setlist-songs-table th,
+.setlist-songs-table td {
+  padding: 10px 8px;
+  border-bottom: 2px solid var(--border, #e5e7eb);
+  text-align: center;
+}
+.setlist-songs-table th {
+  font-weight: 700;
+  color: var(--primary, #334155);
+  cursor: pointer;
+  background: var(--th-bg, #f1f5f9);
+}
+.setlist-songs-table td {
+  color: var(--text, #334155);
+}
+.setlist-songs-table tr {
+  transition: background 0.2s, opacity 0.2s;
+}
+.setlist-songs-table tr.dragged {
+  opacity: 0.5;
+}
+.setlist-songs-table tr.pending {
+  background: #f59e0b22;
+}
+.setlist-songs-table tr.even {
+  background: var(--even, #f8fafc);
+}
+.setlist-songs-table tr.odd {
+  background: var(--odd, #fff);
+}
+.setlist-songs-table .song-title-btn {
+  background: none;
+  border: none;
+  color: var(--primary, #0ea5e9);
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: inherit;
+  padding: 0;
+}
+.setlist-songs-table .key-tampil-input {
+  width: 60px;
+  text-align: center;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text, #334155);
+  font-weight: 600;
+  font-size: 15px;
+  outline: none;
+  padding: 2px 4px;
+}
+.setlist-songs-table .aksi-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  margin-right: 8px;
+}
+.setlist-songs-table .aksi-btn.delete {
+  color: #e11d48;
+  margin-right: 0;
+}
+.setlist-songs-table .completed-check {
+  color: #22c55e;
+  font-size: 20px;
+}
+.setlist-songs-table .drag-handle {
+  font-size: 12px;
+  color: #888;
+  display: block;
+}

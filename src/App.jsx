@@ -2352,6 +2352,42 @@ function App() {
                         }
                       }
                     }}
+                    onSetListSongCompleted={async (setListId, songId, checked) => {
+                      // checked: true = mark as completed, false = unmark
+                      let updatedSetList = null;
+                      setSetLists(prevSetLists => {
+                        return prevSetLists.map(setList => {
+                          if (setList.id === setListId) {
+                            const next = { ...setList, completedSongs: { ...(setList.completedSongs || {}) }, updatedAt: Date.now() };
+                            if (checked) {
+                              next.completedSongs[songId] = Date.now();
+                            } else {
+                              delete next.completedSongs[songId];
+                            }
+                            updatedSetList = next;
+                            return next;
+                          }
+                          return setList;
+                        });
+                      });
+                      if (updatedSetList) {
+                        try {
+                          await fetch(`/api/setlists/${setListId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              name: updatedSetList.name,
+                              songs: JSON.stringify(updatedSetList.songs || []),
+                              songKeys: JSON.stringify(updatedSetList.songKeys || {}),
+                              completedSongs: JSON.stringify(updatedSetList.completedSongs || {}),
+                              updatedAt: updatedSetList.updatedAt
+                            })
+                          });
+                        } catch (err) {
+                          console.error('Gagal update status completed lagu:', err);
+                        }
+                      }
+                    }}
                   />
                 )}
               </>
