@@ -27,6 +27,7 @@ function exitFullscreen() {
 }
 // ...existing code...
 import ChordDisplay from './components/ChordDisplay';
+import SetListSongsPage from './components/SetListSongsPage';
 import YouTubeViewer from './components/YouTubeViewer';
 import AutoScroll from './components/AutoScroll';
 import HelpModal from './components/HelpModal';
@@ -62,6 +63,9 @@ const generateUniqueId = () => {
 };
 
 function App() {
+  // State untuk halaman daftar lagu setlist
+  const [showSetListSongsPage, setShowSetListSongsPage] = useState(false);
+  const [setListForSongsPage, setSetListForSongsPage] = useState(null);
   // State for setlists selected for adding a song
   const [selectedSetListsForAdd, setSelectedSetListsForAdd] = useState([]);
   // State for editing a song (null or song object)
@@ -2069,7 +2073,7 @@ useEffect(() => {
                   </div>
                 )}
 
-                {activeNav === 'setlists' && (
+                {activeNav === 'setlists' && !showSetListSongsPage && (
                   <div className="main-content setlists-view">
                     <div className="view-header">
                       <h2>🎵 Setlist</h2>
@@ -2088,10 +2092,6 @@ useEffect(() => {
                           <div
                             key={setList.id}
                             className={`setlist-card ${currentSetList === setList.id ? 'active' : ''}`}
-                            onClick={() => {
-                              setCurrentSetList(setList.id);
-                              setActiveNav('songs');
-                            }}
                           >
                             <div className="setlist-card-header">
                               <h3>📋 {setList.name}</h3>
@@ -2127,6 +2127,17 @@ useEffect(() => {
                                 >
                                   🗑
                                 </button>
+                                <button
+                                  className="btn btn-xs btn-primary"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setSetListForSongsPage(setList);
+                                    setShowSetListSongsPage(true);
+                                  }}
+                                  title="Lihat daftar lagu dalam setlist"
+                                >
+                                  🎼 Daftar Lagu
+                                </button>
                               </div>
                             </div>
                             <div className="setlist-card-body">
@@ -2156,6 +2167,21 @@ useEffect(() => {
                       )}
                     </div>
                   </div>
+                )}
+
+                {activeNav === 'setlists' && showSetListSongsPage && (
+                  <SetListSongsPage
+                    setList={setListForSongsPage}
+                    songs={songs}
+                    onBack={() => setShowSetListSongsPage(false)}
+                    onSongClick={songId => {
+                      const song = songs.find(s => s.id === songId);
+                      if (song) {
+                        setSelectedSong(song);
+                        setShowSetListSongsPage(false);
+                      }
+                    }}
+                  />
                 )}
               </>
             ) : (

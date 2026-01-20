@@ -55,7 +55,7 @@ const SetListForm = ({ setList, onSave, onCancel }) => {
                 setError('');
               }}
               className={error ? 'error' : ''}
-              placeholder="Contoh: Lagu Gereja, Playlist Santai"
+              placeholder="Contoh: Lagu Romantis, Playlist Santai"
               autoFocus
             />
             {error && <span className="error-message">{error}</span>}
