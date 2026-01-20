@@ -7,7 +7,23 @@ import React, { useEffect, useState } from 'react';
  *   - songs: array semua lagu (untuk lookup detail lagu)
  *   - onRemoveSongFromSetList: function(setListId, songId) untuk hapus lagu dari setlist
  */
-export default function SetListSongsPage({ setList, songs, onBack, onSongClick, onRemoveSongFromSetList }) {
+export default function SetListSongsPage({ setList, songs, onBack, onSongClick, onRemoveSongFromSetList, onSetListSongKey, onMoveSong }) {
+      // Drag & drop reorder
+      const [draggedIdx, setDraggedIdx] = useState(null);
+      const handleDragStart = idx => setDraggedIdx(idx);
+      const handleDragOver = e => e.preventDefault();
+      const handleDrop = idx => {
+        if (draggedIdx !== null && draggedIdx !== idx && typeof onMoveSong === 'function') {
+          onMoveSong(setList.id, draggedIdx, idx);
+        }
+        setDraggedIdx(null);
+      };
+    // Handler untuk perubahan key tampil
+    const handleKeyTampilChange = (songId, value) => {
+      if (typeof onSetListSongKey === 'function') {
+        onSetListSongKey(setList.id, songId, value);
+      }
+    };
   // Sorting state
   const [sortBy, setSortBy] = useState('no');
   const [sortOrder, setSortOrder] = useState('asc');
@@ -170,6 +186,7 @@ export default function SetListSongsPage({ setList, songs, onBack, onSongClick, 
                 if (sortBy === 'key') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                 setSortBy('key');
               }}>Key{renderSortIcon('key')}</th>
+              <th style={{ padding: '10px 8px', borderBottom: `2px solid ${theme.border}`, textAlign: 'center', fontWeight: 700, color: theme.thText }}>Key Tampil</th>
               <th style={{ padding: '10px 8px', borderBottom: `2px solid ${theme.border}`, textAlign: 'center', fontWeight: 700, color: theme.thText, cursor: 'pointer' }} onClick={() => {
                 if (sortBy === 'tempo') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                 setSortBy('tempo');
@@ -189,8 +206,18 @@ export default function SetListSongsPage({ setList, songs, onBack, onSongClick, 
             ) : songList.map((song, idx) => {
                 const isCompleted = setList.completedSongs && song.id && setList.completedSongs[song.id];
                 return (
-                  <tr key={song.id || idx} style={{ background: song.isPending ? theme.pending + '22' : idx % 2 === 0 ? theme.even : theme.odd }}>
-                    <td style={{ textAlign: 'center', padding: '8px 0', color: theme.text, fontWeight: 600 }}>{song._idx + 1}</td>
+                  <tr
+                    key={song.id || idx}
+                    style={{ background: song.isPending ? theme.pending + '22' : idx % 2 === 0 ? theme.even : theme.odd, opacity: draggedIdx === idx ? 0.5 : 1, cursor: 'move' }}
+                    draggable
+                    onDragStart={() => handleDragStart(idx)}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDrop(idx)}
+                  >
+                    <td style={{ textAlign: 'center', padding: '8px 0', color: theme.text, fontWeight: 600 }}>
+                      <span style={{fontWeight:700}}>{song._idx + 1}</span>
+                      <span style={{fontSize:12, color:'#888', display:'block'}}>☰</span>
+                    </td>
                     <td style={{ padding: '8px 8px', fontWeight: 600 }}>
                       {song.isPending ? (
                         <span style={{ color: theme.pending }}>{song.title}</span>
@@ -214,6 +241,30 @@ export default function SetListSongsPage({ setList, songs, onBack, onSongClick, 
                     </td>
                     <td style={{ padding: '8px 8px', color: theme.text }}>{song.artist}</td>
                     <td style={{ textAlign: 'center', padding: '8px 0', color: theme.btn, fontWeight: 600 }}>{song.key}</td>
+                    {/* Key Tampil column, editable */}
+                    <td style={{ textAlign: 'center', padding: '8px 0', color: theme.text }}>
+                      {song.id ? (
+                        <input
+                          type="text"
+                          value={setList.songKeys && setList.songKeys[song.id] ? setList.songKeys[song.id] : ''}
+                          onChange={e => handleKeyTampilChange(song.id, e.target.value)}
+                          style={{
+                            width: 60,
+                            textAlign: 'center',
+                            border: `1px solid ${theme.border}`,
+                            borderRadius: 4,
+                            background: isDark ? theme.card : '#fff',
+                            color: theme.text,
+                            fontWeight: 600,
+                            fontSize: 15,
+                            outline: 'none',
+                            padding: '2px 4px',
+                          }}
+                          maxLength={8}
+                          placeholder="Key"
+                        />
+                      ) : '-'}
+                    </td>
                     <td style={{ textAlign: 'center', padding: '8px 0', color: theme.header }}>{song.tempo}</td>
                     <td style={{ textAlign: 'center', padding: '8px 0', color: theme.text }}>{song.style}</td>
                     <td style={{ textAlign: 'center', padding: '8px 0' }}>

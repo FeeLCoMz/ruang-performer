@@ -25,13 +25,22 @@ function extractYouTubeId(input) {
   return null;
 }
 
-const YouTubeViewer = ({ videoId, minimalControls = false, onTimeUpdate, seekToTime }) => {
+const YouTubeViewer = React.forwardRef(({ videoId, minimalControls = false, onTimeUpdate, seekToTime }, ref) => {
   const [player, setPlayer] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const containerIdRef = useRef(`youtube-player-${Math.random().toString(36).slice(2,9)}`);
   const mountedRef = useRef(false);
+
+  // Expose play/pause, stop, seek, and currentTime to parent via ref
+  React.useImperativeHandle(ref, () => ({
+    handlePlayPause,
+    handleStop,
+    handleSeek,
+    isPlaying,
+    currentTime
+  }), [isPlaying, player, currentTime]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -226,6 +235,6 @@ const YouTubeViewer = ({ videoId, minimalControls = false, onTimeUpdate, seekToT
       </div>
     </div>
   );
-};
+});
 
 export default YouTubeViewer;

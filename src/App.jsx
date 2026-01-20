@@ -213,6 +213,8 @@ function App() {
 
   // Ref for lyrics section
   const lyricsSectionRef = useRef(null);
+  // Ref for YouTubeViewer (for play/pause)
+  const youtubePlayerRef = useRef(null);
 
   // Effect: sync auto-scroll with YouTube
   useEffect(() => {
@@ -239,20 +241,6 @@ function App() {
     }, 300);
     return () => clearInterval(interval);
   }, [youtubeSync, showYouTube, selectedSong, currentVideoTime, videoDuration, autoScrollActive]);
-  // State for chord highlight
-  const [highlightChords, setHighlightChords] = useState(() => {
-    try {
-      return localStorage.getItem('ronz_highlight_chords') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('ronz_highlight_chords', highlightChords ? 'true' : 'false');
-    } catch { }
-  }, [highlightChords]);
   // State untuk dark mode
   const [darkMode, setDarkMode] = useState(() => {
     try {
@@ -1596,7 +1584,7 @@ function App() {
     }
 
     // Apply Asc/Desc toggle for supported sortBy
-    if (['title-asc', 'artist-asc', 'style', 'tempo', 'updated'].includes(sortBy) && sortOrder === 'desc') {
+    if (['title-asc', 'artist-asc', 'newest', 'style', 'tempo', 'updated'].includes(sortBy) && sortOrder === 'desc') {
       sorted.reverse();
     }
 
@@ -1780,16 +1768,6 @@ function App() {
                     >
                       {metronomeActive ? '⏹' : '🕒'}
                     </button>
-                    <input
-                      type="range"
-                      min="40"
-                      max="220"
-                      step="1"
-                      value={metronomeBpm}
-                      onChange={e => setMetronomeBpm(Number(e.target.value))}
-                      style={{ width: 60 }}
-                      title="Tempo (BPM)"
-                      disabled={!metronomeActive} />
                     <span style={{ minWidth: 36, textAlign: 'center', fontWeight: 600 }} title="Tempo (BPM)">{metronomeBpm} BPM</span>
                     <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 6, marginLeft: 4, background: metronomeActive ? (metronomeTick ? '#f87171' : '#fbbf24') : '#ddd', transition: 'background 0.1s' }} />
                   </div>
@@ -1803,10 +1781,10 @@ function App() {
                   </button>
                   {autoScrollActive && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <button onClick={() => setScrollSpeed(Math.max(0.5, scrollSpeed - 0.5))} className="btn btn-xs" title="Kurangi kecepatan scroll">−</button>
+                      <button onClick={() => setScrollSpeed(Math.max(0.1, scrollSpeed - 0.1))} className="btn btn-xs" title="Kurangi kecepatan scroll">−</button>
                       <input
                         type="range"
-                        min="0.5"
+                        min="0.1"
                         max="5"
                         step="0.1"
                         value={scrollSpeed}
@@ -2299,11 +2277,80 @@ function App() {
                     }}
                     onRemoveSongFromSetList={(setListId, songId) => {
                       handleRemoveSongFromSetList(setListId, songId);
-                      // Force update setListForSongsPage to latest setList after removal
                       setSetListForSongsPage(prev => {
                         const updated = setLists.find(sl => sl.id === setListId);
                         return updated || prev;
                       });
+                    }}
+                    onSetListSongKey={async (setListId, songId, keyTampil) => {
+                      let updatedSetList = null;
+                      setSetLists(prevSetLists => {
+                        return prevSetLists.map(setList => {
+                          if (setList.id === setListId) {
+                            const next = { ...setList, songKeys: { ...(setList.songKeys || {}) }, updatedAt: Date.now() };
+                            if (keyTampil && keyTampil.trim()) {
+                              next.songKeys[songId] = keyTampil.trim();
+                            } else if (next.songKeys[songId]) {
+                              const { [songId]: _, ...rest } = next.songKeys;
+                              next.songKeys = rest;
+                            }
+                            updatedSetList = next;
+                            return next;
+                          }
+                          return setList;
+                        });
+                      });
+                      if (updatedSetList) {
+                        try {
+                          await fetch(`/api/setlists/${setListId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              name: updatedSetList.name,
+                              songs: JSON.stringify(updatedSetList.songs || []),
+                              songKeys: JSON.stringify(updatedSetList.songKeys || {}),
+                              completedSongs: JSON.stringify(updatedSetList.completedSongs || {}),
+                              updatedAt: updatedSetList.updatedAt
+                            })
+                          });
+                        } catch (err) {
+                          console.error('Gagal update key tampil:', err);
+                        }
+                      }
+                    }}
+                    onMoveSong={async (setListId, fromIdx, toIdx) => {
+                      if (fromIdx === toIdx || toIdx < 0) return;
+                      let updatedSetList = null;
+                      setSetLists(prevSetLists => {
+                        return prevSetLists.map(setList => {
+                          if (setList.id === setListId) {
+                            const songsArr = Array.isArray(setList.songs) ? [...setList.songs] : [];
+                            const [removed] = songsArr.splice(fromIdx, 1);
+                            songsArr.splice(toIdx, 0, removed);
+                            const next = { ...setList, songs: songsArr, updatedAt: Date.now() };
+                            updatedSetList = next;
+                            return next;
+                          }
+                          return setList;
+                        });
+                      });
+                      if (updatedSetList) {
+                        try {
+                          await fetch(`/api/setlists/${setListId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              name: updatedSetList.name,
+                              songs: JSON.stringify(updatedSetList.songs || []),
+                              songKeys: JSON.stringify(updatedSetList.songKeys || {}),
+                              completedSongs: JSON.stringify(updatedSetList.completedSongs || {}),
+                              updatedAt: updatedSetList.updatedAt
+                            })
+                          });
+                        } catch (err) {
+                          console.error('Gagal update urutan lagu:', err);
+                        }
+                      }
                     }}
                   />
                 )}
@@ -2312,8 +2359,12 @@ function App() {
 
               <main className="main">
                 <>
-                  {!performanceMode && showYouTube && selectedSong?.youtubeId && (
-                    <div className="youtube-section">
+                  {/* Render YouTubeViewer di mode normal dan performance (hidden) agar ref tetap aktif */}
+                  {selectedSong?.youtubeId && (
+                    <div
+                      className="youtube-section"
+                      style={{ display: (!performanceMode && showYouTube) ? 'block' : 'none' }}
+                    >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                         <label style={{ fontWeight: 500, cursor: 'pointer', userSelect: 'none' }}>
                           <input
@@ -2325,6 +2376,7 @@ function App() {
                         </label>
                       </div>
                       <YouTubeViewer
+                        ref={youtubePlayerRef}
                         videoId={selectedSong.youtubeId}
                         onTimeUpdate={(t, d) => { setCurrentVideoTime(t); setVideoDuration(d); }}
                         seekToTime={viewerSeekTo} />
@@ -2366,16 +2418,7 @@ function App() {
                             </div>
                           </div>
                         )}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                          <label style={{ fontWeight: 500, cursor: 'pointer', userSelect: 'none' }}>
-                            <input
-                              type="checkbox"
-                              checked={highlightChords}
-                              onChange={e => setHighlightChords(e.target.checked)}
-                              style={{ marginRight: 6 }} />
-                            Highlight Chords
-                          </label>
-                        </div>
+                        {/* highlight chords checkbox removed */}
                         <ChordDisplay
                           song={selectedSong}
                           transpose={transpose}
@@ -2384,8 +2427,7 @@ function App() {
                           performanceTheme={performanceTheme}
                           lyricsMode={lyricsMode}
                           keyboardMode={keyboardMode}
-                          // ...existing code...
-                          highlightChords={highlightChords} />
+                        />
                       </>
                     ) : (
                       <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
@@ -2437,20 +2479,65 @@ function App() {
                   {/* Performance Mode Footer Controls */}
                   {performanceMode && selectedSong && (
                     <div className="performance-footer">
-                      <button
-                        onClick={() => {
-                          if (document.fullscreenElement) {
-                            exitFullscreen();
-                          } else if (perfMainRef.current) {
-                            enterFullscreen(perfMainRef.current);
-                          }
-                        }}
-                        className="perf-btn"
-                        title="Toggle Fullscreen (F11)"
-                        style={{ fontSize: 18, marginRight: 8 }}
-                      >
-                        {document.fullscreenElement ? '🗗' : '🗖'}
-                      </button>
+                      <div className="performance-controls" style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                        <button
+                          onClick={() => {
+                            if (document.fullscreenElement) {
+                              exitFullscreen();
+                            } else if (perfMainRef.current) {
+                              enterFullscreen(perfMainRef.current);
+                            }
+                          }}
+                          className="perf-btn"
+                          title="Toggle Fullscreen (F11)"
+                          style={{ fontSize: 22, minWidth: 44, minHeight: 44 }}
+                        >
+                          {document.fullscreenElement ? '🗗' : '🗖'}
+                        </button>
+                        {/* YouTube Controls: Play/Pause, Stop, Scrubber */}
+                        {selectedSong.youtubeId && youtubePlayerRef.current && (
+                          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <input
+                              type="range"
+                              min={0}
+                              max={Math.max(1, Math.floor(videoDuration))}
+                              step={1}
+                              value={Math.floor(youtubePlayerRef.current.currentTime || 0)}
+                              onChange={e => {
+                                if (youtubePlayerRef.current && youtubePlayerRef.current.handleSeek) {
+                                  youtubePlayerRef.current.handleSeek(e.target.value);
+                                }
+                              }}
+                              style={{ minWidth: 90, maxWidth: 140, marginRight: 4, touchAction: 'none' }}
+                              title="Scrub waktu video"
+                            />
+                            <button
+                              className="perf-btn"
+                              title="Play/Pause YouTube Video"
+                              style={{ fontSize: 22, minWidth: 44, minHeight: 44 }}
+                              onClick={() => {
+                                if (youtubePlayerRef.current) {
+                                  youtubePlayerRef.current.handlePlayPause();
+                                }
+                              }}
+                            >
+                              {youtubePlayerRef.current.isPlaying ? '⏸' : '▶'}
+                            </button>
+                            <button
+                              className="perf-btn"
+                              title="Stop YouTube Video"
+                              style={{ fontSize: 22, minWidth: 44, minHeight: 44 }}
+                              onClick={() => {
+                                if (youtubePlayerRef.current && youtubePlayerRef.current.handleStop) {
+                                  youtubePlayerRef.current.handleStop();
+                                }
+                              }}
+                            >
+                              ⏹
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       <div className="performance-info">
                         <div className="performance-song-title">{selectedSong.title}</div>
                         <div>{selectedSong.artist}</div>
@@ -2463,16 +2550,6 @@ function App() {
                           >
                             {metronomeActive ? '⏹' : '🕒'}
                           </button>
-                          <input
-                            type="range"
-                            min="40"
-                            max="220"
-                            step="1"
-                            value={metronomeBpm}
-                            onChange={e => setMetronomeBpm(Number(e.target.value))}
-                            style={{ width: 70 }}
-                            title="Tempo (BPM)"
-                            disabled={!metronomeActive} />
                           <span style={{ minWidth: 36, textAlign: 'center', fontWeight: 600 }} title="Tempo (BPM)">{metronomeBpm} BPM</span>
                           <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: 7, marginLeft: 4, background: metronomeActive ? (metronomeTick ? '#f87171' : '#fbbf24') : '#ddd', transition: 'background 0.1s' }} />
                         </div>
@@ -2520,10 +2597,10 @@ function App() {
                         </button>
                         {autoScrollActive && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <button onClick={() => setScrollSpeed(Math.max(0.5, scrollSpeed - 0.5))} className="perf-btn">−</button>
+                            <button onClick={() => setScrollSpeed(Math.max(0.1, scrollSpeed - 0.1))} className="perf-btn">−</button>
                             <input
                               type="range"
-                              min="0.5"
+                              min="0.1"
                               max="5"
                               step="0.1"
                               value={scrollSpeed}
@@ -2533,7 +2610,7 @@ function App() {
                             <span style={{ color: '#60a5fa', fontWeight: '600', minWidth: '45px', textAlign: 'center' }}>
                               {scrollSpeed.toFixed(1)}x
                             </span>
-                            <button onClick={() => setScrollSpeed(Math.min(5, scrollSpeed + 0.5))} className="perf-btn">+</button>
+                            <button onClick={() => setScrollSpeed(Math.min(5, scrollSpeed + 0.1))} className="perf-btn">+</button>
                           </div>
                         )}
 
