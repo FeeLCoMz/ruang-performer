@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AiAssistant from './AiAssistant';
 // import SetlistPicker from './SetlistPicker';
 import YouTubeViewer from './YouTubeViewer';
 import AIAssistantModal from './AIAssistantModal';
@@ -68,6 +69,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
   const [showTextCleanMenu, setShowTextCleanMenu] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [showAiChat, setShowAiChat] = useState(false);
 
   useEffect(() => {
     if (song) {
@@ -1022,6 +1024,15 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                   title="Cari video dari YouTube"
                 >
                   🎵 Video
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => setShowAiChat(true)}
+                  disabled={!formData.title && !formData.artist}
+                  title="Chat AI tentang lagu ini"
+                >
+                  💬 Chat AI
                 </button>
               </div>
             </div>
@@ -2087,6 +2098,20 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
           onClose={() => setShowAIAssistant(false)}
           onApplySuggestions={handleApplyAISuggestions}
         />
+      )}
+
+      {/* AI Chat Modal */}
+      {showAiChat && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ maxWidth: 480, margin: '40px auto', position: 'relative' }}>
+            <button
+              onClick={() => setShowAiChat(false)}
+              className="btn btn-sm btn-danger"
+              style={{ position: 'absolute', top: 12, right: 12 }}
+            >✕</button>
+            <AiAssistant song={song} onClose={() => setShowAiChat(false)} />
+          </div>
+        </div>
       )}
 
     </>

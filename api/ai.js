@@ -87,6 +87,7 @@ async function handleSongSearch(req, res) {
       key: null,
       tempo: null,
       style: null,
+      instrument: null,
       youtubeId: null,
       chordLinks: [],
       debug: {}
@@ -127,7 +128,7 @@ async function handleSongSearch(req, res) {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
         const model = genAI.getGenerativeModel({ model: geminiModel });
-        const prompt = `Cari informasi lagu "${title}" oleh "${artist}". Berikan informasi dalam format JSON dengan field:\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- style: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"key": "G", "tempo": 120, "style": "pop"}`;
+        const prompt = `Cari informasi lagu \"${title}\" oleh \"${artist}\". Berikan informasi dalam format JSON dengan field:\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- style: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- instrument: instrumen utama yang digunakan (misal: gitar, piano, drum, biola, dll) atau null jika tidak diketahui\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"key": "G", "tempo": 120, "style": "pop", "instrument": "gitar"}`;
         const response = await model.generateContent(prompt);
         const text = response.response.text();
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -136,6 +137,7 @@ async function handleSongSearch(req, res) {
           if (parsed.key) results.key = parsed.key;
           if (parsed.tempo) results.tempo = parsed.tempo;
           if (parsed.style) results.style = parsed.style;
+          if (parsed.instrument) results.instrument = parsed.instrument;
         }
       } catch (err) {
         console.error('Gemini API error:', err);

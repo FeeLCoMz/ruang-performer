@@ -48,6 +48,7 @@ const AIAssistantModal = ({ formData, onClose, onApplySuggestions }) => {
         }
       }
       
+
       setSuggestions(data);
 
       // Initialize selected suggestions (don't auto-select if no results)
@@ -55,6 +56,7 @@ const AIAssistantModal = ({ formData, onClose, onApplySuggestions }) => {
       if (data.key && formData.key !== data.key) selected.key = data.key;
       if (data.tempo && formData.tempo !== data.tempo) selected.tempo = data.tempo;
       if (data.style && formData.style !== data.style) selected.style = data.style;
+      if (data.instrument && formData.instrument !== data.instrument) selected.instrument = data.instrument;
       if (data.youtubeId && formData.youtubeId !== data.youtubeId) selected.youtubeId = data.youtubeId;
       setSelectedSuggestions(selected);
       
@@ -237,6 +239,32 @@ const AIAssistantModal = ({ formData, onClose, onApplySuggestions }) => {
                     />
                     <label htmlFor="style-suggestion" style={{ cursor: 'pointer', flex: 1, margin: 0 }}>
                       <strong>🎵 Style:</strong> <span style={{ fontSize: '1.1em', fontFamily: 'monospace' }}>{suggestions.style}</span>
+                    </label>
+                  </div>
+                )}
+
+                {/* Instrument Suggestion */}
+                {suggestions.instrument && (
+                  <div
+                    style={{
+                      padding: '0.75rem',
+                      border: '1px solid var(--border)',
+                      borderRadius: '0.375rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      backgroundColor: selectedSuggestions.instrument ? 'rgba(16, 185, 129, 0.1)' : 'var(--card)'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      id="instrument-suggestion"
+                      checked={!!selectedSuggestions.instrument}
+                      onChange={() => handleToggleSuggestion('instrument')}
+                      style={{ cursor: 'pointer', width: '18px', height: '18px' }}
+                    />
+                    <label htmlFor="instrument-suggestion" style={{ cursor: 'pointer', flex: 1, margin: 0 }}>
+                      <strong>🎹 Instrumen:</strong> <span style={{ fontSize: '1.1em', fontFamily: 'monospace' }}>{suggestions.instrument}</span>
                     </label>
                   </div>
                 )}
