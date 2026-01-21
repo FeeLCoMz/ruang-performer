@@ -165,6 +165,48 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
   };
 
   const renderLine = (lineData, index) => {
+    // Dukungan Ref:Chorus atau Ref:Verse dsb
+    if (lineData.type === 'structure_ref') {
+      const structureLines = parsedSong.structures?.[lineData.structure] || [];
+      return (
+        <React.Fragment key={index}>
+          {structureLines.length > 0
+            ? structureLines.map((subLine, subIdx) => renderLine(subLine, `${index}-ref-${subIdx}`))
+            : (
+              <div className="lyrics-line comment-line" key={`${index}-notfound`}>
+                <div className="text-line">
+                  <span className="bracket-highlight">{`Ref:${lineData.structure} (tidak ditemukan)`}</span>
+                </div>
+              </div>
+            )
+          }
+        </React.Fragment>
+      );
+    }
+
+    // Deteksi baris referensi format Ref:Chorus pada format standar
+    if (lineData.line && typeof lineData.line === 'string') {
+      const refMatch = lineData.line.match(/^Ref:([A-Za-z0-9 _-]+)$/i);
+      if (refMatch) {
+        const structure = refMatch[1].trim();
+        const structureLines = parsedSong.structures?.[structure] || [];
+        return (
+          <React.Fragment key={index}>
+            {structureLines.length > 0
+              ? structureLines.map((subLine, subIdx) => renderLine(subLine, `${index}-ref-${subIdx}`))
+              : (
+                <div className="lyrics-line comment-line" key={`${index}-notfound`}>
+                  <div className="text-line">
+                    <span className="bracket-highlight">{`Ref:${structure} (tidak ditemukan)`}</span>
+                  </div>
+                </div>
+              )
+            }
+          </React.Fragment>
+        );
+      }
+    }
+
     if (lineData.type === 'empty') {
       return <div key={index} className="lyrics-line empty"></div>;
     }
