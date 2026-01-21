@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// import SetlistPicker from './SetlistPicker';
 import YouTubeViewer from './YouTubeViewer';
 import AIAssistantModal from './AIAssistantModal';
 import { transcribeAudio } from '../apiClient';
@@ -963,7 +964,8 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
     }
   };
 
-   return (
+
+  return (
     <>
       <div className="modal-overlay">
         <div className="modal-content song-form-modal" style={{ position: 'relative' }}>
@@ -1039,6 +1041,8 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                 {errors.artist && <span className="error-message">{errors.artist}</span>}
               </div>
             </div>
+
+            {/* Setlist Picker removed as requested */}
 
             {/* Section 2: Metadata (Key, Tempo, Style) */}
             <div className="form-row">

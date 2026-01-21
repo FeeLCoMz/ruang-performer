@@ -7,8 +7,7 @@ const NOTES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#',
 const NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
 // Regex untuk mendeteksi chord (termasuk leading dash untuk passing chord dan trailing dots untuk durasi)
-const CHORD_REGEX = /^-?([A-G][#b]?)(m|maj|min|dim|aug|sus|add)?([0-9]*)?(\/[A-G][#b]?)?(\.+)?$/;
-const CHORD_REGEX_GLOBAL = /-?([A-G][#b]?)(m|maj|min|dim|aug|sus|add)?([0-9]*)?(\/[A-G][#b]?)?(\.+)?/g;
+const CHORD_REGEX_GLOBAL = /-?([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?(\.+)?/g;
 
 export const transposeChord = (chord, steps) => {
   if (!chord || steps === 0) return chord;
@@ -269,7 +268,7 @@ const parseStandardFormat = (lines) => {
 };
 
 export const parseChordPro = (text) => {
-  if (!text) return { metadata: {}, lines: [] };
+  if (!text) return { metadata: {}, lines: [], structures: {} };
 
   const lines = text.split('\n');
 
@@ -293,16 +292,45 @@ export const parseChordPro = (text) => {
       return true;
     });
 
-    return { metadata, lines: contentLines };
+    // Kumpulkan struktur dari parsedLines
+    const structures = {};
+    let currentStruct = null;
+    let structLines = [];
+    contentLines.forEach((line) => {
+      if (line.type === 'structure_start') {
+        if (currentStruct && structLines.length > 0) {
+          structures[currentStruct] = [...structLines];
+        }
+        currentStruct = line.structure;
+        structLines = [];
+      } else if (line.type === 'structure_end') {
+        if (currentStruct && structLines.length > 0) {
+          structures[currentStruct] = [...structLines];
+        }
+        currentStruct = null;
+        structLines = [];
+      } else if (currentStruct) {
+        structLines.push(line);
+      }
+    });
+    if (currentStruct && structLines.length > 0) {
+      structures[currentStruct] = [...structLines];
+    }
+
+    return { metadata, lines: contentLines, structures };
   }
 
   // Parse ChordPro format
   const parsed = [];
   const metadata = {};
+  const structures = {};
+  let currentStruct = null;
+  let structLines = [];
 
   for (let line of lines) {
     if (!line.trim()) {
       parsed.push({ type: 'empty', line: '' });
+      if (currentStruct) structLines.push({ type: 'empty', line: '' });
       continue;
     }
 
@@ -313,7 +341,9 @@ export const parseChordPro = (text) => {
       const keyNormalized = key.trim().toLowerCase().replace(/\s+/g, '_');
       metadata[keyNormalized] = value.trim();
       // Also render it as a comment so it appears in the display
-      parsed.push({ type: 'comment', text: `${key}: ${value.trim()}` });
+      const commentObj = { type: 'comment', text: `${key}: ${value.trim()}` };
+      parsed.push(commentObj);
+      if (currentStruct) structLines.push(commentObj);
       continue;
     }
 
@@ -324,7 +354,9 @@ export const parseChordPro = (text) => {
       const val = value.trim();
       // Treat {comment: ...} (and {c: ...}) as renderable comment lines
       if (keyLower === 'comment' || keyLower === 'c') {
-        parsed.push({ type: 'comment', text: val });
+        const commentObj = { type: 'comment', text: val };
+        parsed.push(commentObj);
+        if (currentStruct) structLines.push(commentObj);
       } else {
         metadata[key] = val;
       }
@@ -337,6 +369,11 @@ export const parseChordPro = (text) => {
         type: 'structure_start',
         structure: structureStartMatch[1]
       });
+      if (currentStruct && structLines.length > 0) {
+        structures[currentStruct] = [...structLines];
+      }
+      currentStruct = structureStartMatch[1];
+      structLines = [];
       continue;
     }
 
@@ -346,6 +383,11 @@ export const parseChordPro = (text) => {
         type: 'structure_end',
         structure: structureEndMatch[1]
       });
+      if (currentStruct && structLines.length > 0) {
+        structures[currentStruct] = [...structLines];
+      }
+      currentStruct = null;
+      structLines = [];
       continue;
     }
 
@@ -358,21 +400,28 @@ export const parseChordPro = (text) => {
       }));
 
       const textLine = line.replace(/\[([^\]]+)\]/g, '');
-
-      parsed.push({
+      const chordObj = {
         type: 'line_with_chords',
         chords,
         text: textLine
-      });
+      };
+      parsed.push(chordObj);
+      if (currentStruct) structLines.push(chordObj);
     } else {
-      parsed.push({
+      const textObj = {
         type: 'text',
         line
-      });
+      };
+      parsed.push(textObj);
+      if (currentStruct) structLines.push(textObj);
     }
   }
 
-  return { metadata, lines: parsed };
+  if (currentStruct && structLines.length > 0) {
+    structures[currentStruct] = [...structLines];
+  }
+
+  return { metadata, lines: parsed, structures };
 };
 
 export const getAllChords = (parsedSong) => {

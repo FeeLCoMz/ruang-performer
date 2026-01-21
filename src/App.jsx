@@ -2784,50 +2784,7 @@ function App() {
           />
         )}
 
-        {showSetListPopup && (
-          <div className="setlist-popup-overlay" onClick={() => setShowSetListPopup(false)}>
-            <div className="setlist-popup" onClick={(e) => e.stopPropagation()}>
-              <div className="setlist-popup-header">
-                <h3>Pilih Setlist</h3>
-                <button className="btn-close" onClick={() => setShowSetListPopup(false)}>
-                  ✕
-                </button>
-              </div>
-              <div className="setlist-popup-body">
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                  Pilih setlist, lalu klik tombol ➕ pada lagu untuk menambahkannya.
-                </p>
-                <div className="setlist-checkboxes">
-                  {setLists.map(sl => (
-                    <label key={sl.id} className="setlist-checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={selectedSetListsForAdd.includes(sl.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedSetListsForAdd(prev => [...prev, sl.id]);
-                          } else {
-                            setSelectedSetListsForAdd(prev => prev.filter(id => id !== sl.id));
-                          }
-                        }}
-                      />
-                      <span>{sl.name}</span>
-                    </label>
-                  ))}
-                </div>
-                {selectedSetListsForAdd.length > 0 && (
-                  <button
-                    className="btn btn-sm btn-block btn-primary"
-                    onClick={() => setShowSetListPopup(false)}
-                    style={{ marginTop: '1rem' }}
-                  >
-                    Selesai ({selectedSetListsForAdd.length} dipilih)
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* SetListPickerModal removed as requested */}
 
         {!performanceMode && showHelp && (
           <HelpModal
