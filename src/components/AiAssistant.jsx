@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './AiAssistant.css';
 import { askAI } from '../apiClient';
 
 // Simple AI chat UI for song context
@@ -36,12 +37,11 @@ export default function AiAssistant({ song, onClose }) {
   };
 
   return (
-    <div style={{ padding: 16 }}>
-      <h3 style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className="aia-container">
+      <h3 className="aia-header">
         💬 Chat AI Lagu
         <button
-          className="btn btn-sm btn-secondary"
-          style={{ marginLeft: 8 }}
+          className="btn btn-sm btn-secondary aia-gemini-btn"
           onClick={openGemini}
           title="Buka Gemini di tab baru"
         >
@@ -49,25 +49,35 @@ export default function AiAssistant({ song, onClose }) {
         </button>
       </h3>
       {song && (
-        <div style={{ fontSize: '0.95em', marginBottom: 12, color: '#888' }}>
-          <b>{song.title}</b> <span style={{ color: '#aaa' }}>by {song.artist}</span>
+        <div className="aia-song-meta">
+          <b>{song.title}</b> <span className="aia-song-artist">by {song.artist}</span>
         </div>
       )}
-      <div style={{ maxHeight: 220, overflowY: 'auto', background: '#f8fafc', borderRadius: 8, padding: 8, marginBottom: 8 }}>
+      <div className="aia-messages">
         {messages.map((msg, idx) => (
-          <div key={idx} style={{ marginBottom: 6, color: msg.role === 'assistant' ? '#2563eb' : '#222' }}>
+          <div
+            key={idx}
+            className={
+              'aia-message ' +
+              (msg.role === 'assistant'
+                ? 'aia-message-assistant'
+                : msg.role === 'user'
+                ? 'aia-message-user'
+                : 'aia-message-system')
+            }
+          >
             <b>{msg.role === 'user' ? 'Anda' : msg.role === 'assistant' ? 'AI' : 'Sistem'}:</b> {msg.content}
           </div>
         ))}
-        {loading && <div style={{ color: '#aaa' }}>AI sedang mengetik...</div>}
+        {loading && <div className="aia-loading">AI sedang mengetik...</div>}
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div className="aia-input-row">
         <input
           type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder="Tulis pertanyaan..."
-          style={{ flex: 1, padding: 8, borderRadius: 6, border: '1px solid #ddd' }}
+          className="aia-input"
           disabled={loading}
         />
         <button className="btn btn-primary" onClick={handleSend} disabled={loading || !input.trim()}>

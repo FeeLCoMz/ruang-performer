@@ -53,18 +53,7 @@ export default function SongListItem({
         </button>
 
         {currentSetList && onToggleCompleted && (
-          <div
-            style={{
-              position: 'absolute',
-              left: '0.5rem',
-              top: '0.5rem',
-              zIndex: 3,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
+          <div className="song-checkbox-wrap" onClick={e => e.stopPropagation()}>
             <input
               type="checkbox"
               checked={!!isCompleted}
@@ -73,54 +62,29 @@ export default function SongListItem({
                 onToggleCompleted();
               }}
               onClick={e => e.stopPropagation()}
-              style={{
-                width: '18px',
-                height: '18px',
-                cursor: 'pointer',
-                accentColor: '#10b981'
-              }}
+              className="song-checkbox"
               title={isCompleted ? 'Tandai belum selesai dilatih' : 'Tandai sudah selesai dilatih'}
             />
           </div>
         )}
 
         <div
-          className="song-title"
-          style={{ paddingLeft: currentSetList && onToggleCompleted ? '1.75rem' : 0 }}
+          className={`song-title${currentSetList && onToggleCompleted ? ' has-checkbox' : ''}`}
         >
           {song.title}
         </div>
         {song.id === song.title && !song.lyrics && (
-          <span
-            style={{
-              background: '#ff922b',
-              color: '#fff',
-              borderRadius: '4px',
-              padding: '2px 8px',
-              fontSize: '0.8em',
-              marginLeft: 8,
-              fontWeight: 600
-            }}
-          >
-            ⏳ Pending
-          </span>
+          <span className="pending-badge">⏳ Pending</span>
         )}
         <div className="song-artist">{song.artist}</div>
-        <div
-          className="song-meta"
-          style={{ fontSize: '0.85em', color: '#a5b4fc', marginTop: 2 }}
-        >
+        <div className="song-meta">
           {song.key && (
-            <span style={{ marginRight: 8 }}>
+            <span className="meta-sep">
               🎵 <b>{song.key}</b>
             </span>
           )}
           {currentSetList && (
-            <span
-              style={{ marginRight: 8 }}
-              onClick={e => e.stopPropagation()}
-              onMouseDown={e => e.stopPropagation()}
-            >
+            <span className="meta-sep" onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
               🔀
               <select
                 value={tempKey}
@@ -137,7 +101,7 @@ export default function SongListItem({
                     onSetListKeyChange && onSetListKeyChange(tempKey);
                   }
                 }}
-                style={{ marginLeft: 6, padding: '2px 4px', fontSize: '0.85em' }}
+                className="setlist-key-select"
                 title="Set key untuk lagu ini di setlist"
               >
                 <option value="">(default)</option>
@@ -148,7 +112,7 @@ export default function SongListItem({
             </span>
           )}
           {song.tempo && (
-            <span style={{ marginRight: 8 }}>
+            <span className="meta-sep">
               ⏱️ <b>{song.tempo}</b>
             </span>
           )}

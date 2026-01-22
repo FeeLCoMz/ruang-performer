@@ -1,0 +1,41 @@
+/* YouTubeViewer component styles */
+.youtube-viewer-minimal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 100%;
+}
+.youtube-viewer-minimal .yt-hidden-player {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+.video-scrubber {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  width: 100%;
+  max-width: 100%;
+  flex-wrap: wrap;
+  margin-top: var(--gap-sm);
+  margin-bottom: 4px;
+}
+.video-scrubber input[type="range"] {
+  flex: 1 1 200px;
+  min-width: 150px;
+  max-width: 100%;
+}
+.video-scrubber .scrubber-time {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  font-size: 0.85rem;
+  flex: 0 0 auto;
+}
+.video-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+}

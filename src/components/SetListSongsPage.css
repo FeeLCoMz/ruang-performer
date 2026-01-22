@@ -1,8 +1,8 @@
 .setlist-songs-container {
-  padding: 32px 0;
+  padding: var(--gap-lg) 0;
   max-width: 900px;
   margin: 0 auto;
-  border-radius: 12px;
+  border-radius: var(--border-radius);
 }
 .setlist-songs-header {
   display: flex;
@@ -13,11 +13,11 @@
 .setlist-songs-header .left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--gap-md);
 }
 .setlist-songs-table-container {
   overflow-x: auto;
-  border-radius: 8px;
+  border-radius: var(--border-radius);
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .setlist-songs-table {
@@ -33,12 +33,12 @@
 }
 .setlist-songs-table th {
   font-weight: 700;
-  color: var(--primary, #334155);
+  color: var(--color-primary);
   cursor: pointer;
-  background: var(--th-bg, #f1f5f9);
+  background: var(--color-bg-alt);
 }
 .setlist-songs-table td {
-  color: var(--text, #334155);
+  color: var(--color-text);
 }
 .setlist-songs-table tr {
   transition: background 0.2s, opacity 0.2s;
@@ -47,7 +47,7 @@
   opacity: 0.5;
 }
 .setlist-songs-table tr.pending {
-  background: #f59e0b22;
+  background: rgba(251, 146, 60, 0.13);
 }
 .setlist-songs-table tr.even {
   background: var(--even, #f8fafc);

@@ -11,6 +11,44 @@ body {
   overflow-x: hidden;
 }
 
+/* ===== Global CSS Variables ===== */
+:root {
+  --color-primary: #2563eb;
+  --color-accent: #fbbf24;
+  --color-success: #10b981;
+  --color-warning: #fb923c;
+  --color-danger: #ef4444;
+  --color-bg: #f8fafc;
+  --color-bg-alt: #e0e7ef;
+  --color-text: #222;
+  --color-text-muted: #888;
+  --border-radius: 8px;
+  --gap-sm: 8px;
+  --gap-md: 16px;
+  --gap-lg: 32px;
+}
+
+/* ===== Utility Classes ===== */
+.text-muted {
+  color: var(--color-text-muted) !important;
+}
+.bg-accent {
+  background: var(--color-accent) !important;
+  color: #fff !important;
+}
+.rounded {
+  border-radius: var(--border-radius) !important;
+}
+.gap-sm {
+  gap: var(--gap-sm) !important;
+}
+.gap-md {
+  gap: var(--gap-md) !important;
+}
+.gap-lg {
+  gap: var(--gap-lg) !important;
+}
+
 code {
   font-family: 'JetBrains Mono', 'Courier New', monospace;
 }
