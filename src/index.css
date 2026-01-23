@@ -2,8 +2,7 @@
 @media (max-width: 600px) {
   html, body {
     font-size: 15px;
-    min-width: 0;
-    background: var(--color-bg);
+    min-width: 0;    
     overscroll-behavior-y: contain;
     -webkit-tap-highlight-color: rgba(37,99,235,0.08);
   }

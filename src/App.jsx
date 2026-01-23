@@ -1781,14 +1781,6 @@ function App() {
                   >
                     📺
                   </button>
-                  {/* Print Button */}
-                  <button
-                    onClick={() => window.print()}
-                    className="btn btn-xs"
-                    title="Cetak/Print (PDF)"
-                  >
-                    🖨️
-                  </button>
                   {/* Lyrics Mode Toggle */}
                   <button
                     onClick={() => setLyricsMode(!lyricsMode)}
