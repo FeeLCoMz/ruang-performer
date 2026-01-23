@@ -28,6 +28,7 @@ function extractYouTubeId(input) {
 
 const YouTubeViewer = React.forwardRef(({ videoId, minimalControls = false, onTimeUpdate, seekToTime }, ref) => {
   const [player, setPlayer] = useState(null);
+  const pendingSeekRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -123,9 +124,17 @@ const YouTubeViewer = React.forwardRef(({ videoId, minimalControls = false, onTi
   const handleSeek = (value) => {
     const t = Math.max(0, Math.floor(Number(value) || 0));
     if (player && typeof player.seekTo === 'function') {
-      try { player.seekTo(t, true); } catch {}
+      try {
+        player.seekTo(t, true);
+        setCurrentTime(t); // fallback update
+        pendingSeekRef.current = null;
+      } catch {
+        pendingSeekRef.current = t;
+      }
+    } else {
+      // Player belum siap, simpan target seek
+      pendingSeekRef.current = t;
     }
-    // Do not setCurrentTime here; let polling and external seek handle it for perfect sync
   };
 
   const id = extractYouTubeId(videoId);
@@ -142,6 +151,14 @@ const YouTubeViewer = React.forwardRef(({ videoId, minimalControls = false, onTi
     if (!player) return;
     const interval = setInterval(() => {
       try {
+        // Jika ada pending seek, lakukan sekarang
+        if (pendingSeekRef.current != null && typeof player.seekTo === 'function') {
+          try {
+            player.seekTo(pendingSeekRef.current, true);
+            setCurrentTime(pendingSeekRef.current);
+            pendingSeekRef.current = null;
+          } catch {}
+        }
         const t = player.getCurrentTime?.() || 0;
         const d = player.getDuration?.() || duration;
         setCurrentTime(Number.isFinite(t) ? t : 0);
