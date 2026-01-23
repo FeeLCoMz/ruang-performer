@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import AiAssistant from './AiAssistant';
 // import SetlistPicker from './SetlistPicker';
 import YouTubeViewer from './YouTubeViewer';
-import ProfessionalLyricsChordEditor from './ProfessionalLyricsChordEditor';
 import AIAssistantModal from './AIAssistantModal';
 import { transcribeAudio } from '../apiClient';
 
@@ -71,12 +70,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
   const [showTextCleanMenu, setShowTextCleanMenu] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showAiChat, setShowAiChat] = useState(false);
-  const [showProEditor, setShowProEditor] = useState(false);
-  // Handler untuk menyimpan dari editor profesional
-  const handleProEditorSave = (lyrics, youtubeId) => {
-    setFormData(prev => ({ ...prev, lyrics, youtubeId }));
-    setShowProEditor(false);
-  };
 
   useEffect(() => {
     if (song) {
@@ -1210,32 +1203,6 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
 
             {/* Section 5: Lyrics & Chord */}
             <div className="form-group">
-              <button
-                type="button"
-                className="btn btn-sm btn-primary"
-                style={{ float: 'right', marginBottom: 8 }}
-                onClick={() => setShowProEditor(true)}
-              >
-                🎹 Editor Profesional
-              </button>
-                    {/* Modal Editor Profesional */}
-                    {showProEditor && (
-                      <div className="modal-overlay" style={{ zIndex: 9999 }}>
-                        <div className="modal-content" style={{ maxWidth: 900, margin: '40px auto', position: 'relative' }}>
-                          <button
-                            onClick={() => setShowProEditor(false)}
-                            className="btn btn-sm btn-danger"
-                            style={{ position: 'absolute', top: 12, right: 12 }}
-                          >✕</button>
-                          <ProfessionalLyricsChordEditor
-                            initialLyrics={formData.lyrics}
-                            initialYoutubeId={formData.youtubeId}
-                            onSave={handleProEditorSave}
-                            onCancel={() => setShowProEditor(false)}
-                          />
-                        </div>
-                      </div>
-                    )}
               <div className="textarea-header">
                 <label htmlFor="lyrics" className="songform-flex-label">
                   Lirik & Chord *
