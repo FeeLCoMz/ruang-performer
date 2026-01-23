@@ -45,6 +45,7 @@ import {
 } from './hooks';
 import { getTransposeSteps } from './utils/chordUtils';
 import './App.css';
+import './lirik-dan-chord.css';
 
 // Helper functions for data sanitization
 const sanitizeSongs = (songs) => {

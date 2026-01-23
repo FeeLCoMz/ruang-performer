@@ -1572,17 +1572,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
                 placeholder="Copy-paste dari situs lain atau gunakan format ChordPro [C]lirik..."
                 rows={14}
               />
-              {formData.youtubeId && (
-                <div style={{ margin: '0.5rem 0 0.5rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                  {/* Kontrol video di bawah textarea */}
-                  <YouTubeViewer
-                    videoId={formData.youtubeId}
-                    minimalControls={true}
-                    onTimeUpdate={(t, d) => { setCurrentVideoTime(t); setVideoDuration(d); }}
-                    seekToTime={viewerSeekTo}
-                  />
-                </div>
-              )}
+              {/* YouTubeViewer removed: now only one player in the YouTube section above */}
               {errors.lyrics && <span className="error-message">{errors.lyrics}</span>}
               {detectedFormat && (
                 <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>

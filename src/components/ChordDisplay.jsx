@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { parseChordPro, transposeChord, getAllChords } from '../utils/chordUtils';
 import { parseMelodyString, transposeMelody, formatNoteDisplay, extractMelodyFromLyrics } from '../utils/musicNotationUtils';
 import KeyboardVoicingModal from './KeyboardVoicingModal';
-import './ChordDisplay.css';
 
 const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanceFontSize = 100, performanceTheme = 'dark-stage', lyricsMode = false, keyboardMode = false, highlightChords = false }) => {
   const [selectedChord, setSelectedChord] = useState(null);

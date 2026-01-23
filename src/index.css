@@ -1,3 +1,41 @@
+/* ===== Mobile/Android Touch Optimizations ===== */
+@media (max-width: 600px) {
+  html, body {
+    font-size: 15px;
+    min-width: 0;
+    background: var(--color-bg);
+    overscroll-behavior-y: contain;
+    -webkit-tap-highlight-color: rgba(37,99,235,0.08);
+  }
+  input, button, select, textarea {
+    font-size: 1em;
+    min-height: 40px;
+    border-radius: 8px;
+    touch-action: manipulation;
+  }
+  .btn, button, .btn-primary {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1em;
+    padding: 0.7em 1.1em;
+  }
+  label, .form-group, .form-control {
+    font-size: 1em;
+    min-width: 0;
+  }
+  .modal-content {
+    max-width: 99vw !important;
+    min-width: 0 !important;
+    padding: 0.5rem !important;
+    border-radius: 10px !important;
+  }
+}
+
+@media (max-width: 400px) {
+  html, body {
+    font-size: 13.5px;
+  }
+}
 * {
   margin: 0;
   padding: 0;
