@@ -117,6 +117,7 @@ const parseStandardFormat = (lines) => {
     return null;
   };
 
+
   for (let i = 0; i < lines.length; i++) {
     const currentLine = lines[i];
     const nextLine = lines[i + 1];
@@ -124,6 +125,21 @@ const parseStandardFormat = (lines) => {
     if (!currentLine.trim()) {
       parsed.push({ type: 'empty', line: '' });
       continue;
+    }
+
+    // Tambahan: Deteksi struktur dengan braket [Section]
+    const bracketSectionMatch = currentLine.trim().match(/^\[([A-Za-z0-9 .:-_]+)\]$/);
+    if (bracketSectionMatch) {
+      const possibleSection = bracketSectionMatch[1].trim();
+      const normalizedSectionName = normalizeSection(possibleSection);
+      if (normalizedSectionName) {
+        if (currentSection) {
+          parsed.push({ type: 'structure_end', structure: currentSection });
+        }
+        parsed.push({ type: 'structure_start', structure: normalizedSectionName });
+        currentSection = normalizedSectionName;
+        continue;
+      }
     }
 
     // Check for standalone section header (e.g., "Int.", "Intro", "Intro:", "Intro :" on its own line)
@@ -274,7 +290,7 @@ export const parseChordPro = (text) => {
 
   // Deteksi format: cek apakah ada ChordPro markup
   const hasChordProMarkup = lines.some(line =>
-    line.includes('[') && line.includes(']') ||
+    line.includes('[') && line.includes(']') &&
     line.match(/^\{[^}]+\}/)
   );
 

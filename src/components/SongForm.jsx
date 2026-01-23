@@ -110,7 +110,7 @@ const SongFormBaru = ({ song, onSave, onCancel }) => {
 
     // Detect format when lyrics change
     if (name === 'lyrics' && newValue.trim()) {
-      const hasChordProMarkup = newValue.includes('[') && newValue.includes(']') || newValue.match(/^\{[^}]+\}/m);
+      const hasChordProMarkup = newValue.includes('[') && newValue.includes(']') && newValue.match(/^\{[^}]+\}/m);
       setDetectedFormat(hasChordProMarkup ? 'ChordPro' : 'Standard');
     } else if (name === 'lyrics' && !newValue.trim()) {
       setDetectedFormat(null);
