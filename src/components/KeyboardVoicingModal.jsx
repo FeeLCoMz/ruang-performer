@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getVoicingOptions, checkVoicingRange } from '../utils/keyboardVoicing';
-import './KeyboardVoicingModal.css';
+
 
 const KeyboardVoicingModal = ({ chord, onClose, baseOctave = 4 }) => {
   const [selectedVoicing, setSelectedVoicing] = useState('Root Position');

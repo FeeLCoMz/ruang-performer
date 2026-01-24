@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { getVoicingOptions } from '../utils/keyboardVoicing';
 import KeyboardVoicingModal from './KeyboardVoicingModal';
-import './KeyboardChordDisplay.css';
+
 
 const KeyboardChordDisplay = ({ chord, transpose = 0, sustainMarked = false, onToggleSustain, showVoicing = true }) => {
   const [showVoicingModal, setShowVoicingModal] = useState(false);

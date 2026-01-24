@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import './Toast.css';
+
 
 /**
  * Toast - Individual notification component

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './AiAssistant.css';
+
 import { askAI } from '../apiClient';
 
 // Simple AI chat UI for song context

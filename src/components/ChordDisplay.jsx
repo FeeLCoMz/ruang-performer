@@ -345,52 +345,45 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
     );
   };
   
+  // Tampilan modern, bersih, dan responsif untuk penampil lirik/akor
   return (
-    <div 
-      className={`chord-display ${performanceMode ? `performance-mode theme-${performanceTheme}` : ''} ${lyricsMode ? 'lyrics-mode' : ''}`}
-      style={performanceMode ? { '--perf-font-scale': performanceFontSize / 100 } : {}}
-    >
+    <div className="chord-display modern-viewer">
       <div className="song-header">
-        <h2>{parsedSong.metadata.title || song.title}</h2>
-        <p className="artist">{parsedSong.metadata.artist || song.artist}</p>
-        <div className="song-metadata">
-          {(parsedSong.metadata.key || song.key) && (
-            <span className="metadata-item">
-              <strong>Key:</strong> {transposeChord(parsedSong.metadata.key || song.key, transpose)}
-              {transpose !== 0 && ` (Original: ${parsedSong.metadata.key || song.key})`}
-            </span>
+        <h2 className="song-title-main">{parsedSong.metadata.title || song.title}</h2>
+        {/* Selalu tampilkan nama penyanyi/artist dari database, fallback ke metadata */}
+        {(song.artist || parsedSong.metadata.artist) && (
+          <div className="song-artist-main">{song.artist || parsedSong.metadata.artist}</div>
+        )}
+        {/* Song info section */}
+        <div className="song-info-section">
+          {/* Prioritaskan data dari database (song), fallback ke metadata jika ada */}
+          {(song.key || parsedSong.metadata.key) && (
+            <span className="song-info-item"><strong>Key:</strong> {song.key || parsedSong.metadata.key}</span>
           )}
-          {parsedSong.metadata.original_key && (
-            <span className="metadata-item">
-              <strong>Original Key:</strong> {parsedSong.metadata.original_key}
-            </span>
+          {(song.capo || parsedSong.metadata.capo) && (
+            <span className="song-info-item"><strong>Capo:</strong> {song.capo || parsedSong.metadata.capo}</span>
           )}
           {(song.tempo || parsedSong.metadata.tempo) && (
-            <span className="metadata-item">
-              <strong>Tempo:</strong> {song.tempo || parsedSong.metadata.tempo} BPM
-            </span>
+            <span className="song-info-item"><strong>Tempo:</strong> {song.tempo || parsedSong.metadata.tempo} BPM</span>
           )}
-          {song.style && (
-            <span className="metadata-item">
-              <strong>Style:</strong> {song.style}
-            </span>
+          {(song.style || parsedSong.metadata.style) && (
+            <span className="song-info-item"><strong>Style:</strong> {song.style || parsedSong.metadata.style}</span>
           )}
-          {parsedSong.metadata.time && (
-            <span className="metadata-item">
-              <strong>Time:</strong> {parsedSong.metadata.time}
-            </span>
+          {(song.genre || parsedSong.metadata.genre) && (
+            <span className="song-info-item"><strong>Genre:</strong> {song.genre || parsedSong.metadata.genre}</span>
           )}
-          {parsedSong.metadata.capo && (
-            <span className="metadata-item">
-              <strong>Capo:</strong> {parsedSong.metadata.capo}
-            </span>
+          {(song.album || parsedSong.metadata.album) && (
+            <span className="song-info-item"><strong>Album:</strong> {song.album || parsedSong.metadata.album}</span>
+          )}
+          {(song.year || parsedSong.metadata.year) && (
+            <span className="song-info-item"><strong>Tahun:</strong> {song.year || parsedSong.metadata.year}</span>
           )}
         </div>
       </div>
-      
+
       {!performanceMode && !lyricsMode && allChords.length > 0 && (
         <div className="all-chords">
-          <strong>Chords: </strong>
+          <span className="chord-label">Chord:</span>
           {allChords.map((chord, idx) => (
             <span key={idx} className="chord-badge">
               {transposeChord(chord, transpose)}
@@ -401,8 +394,8 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
 
       {/* Struktur Lagu */}
       {!performanceMode && !lyricsMode && parsedSong && parsedSong.lines && (
-        <div className="song-structure-flow" style={{ margin: '12px 0 18px 0', fontSize: '0.98em', color: '#888' }}>
-          <strong>Struktur Lagu:</strong>{' '}
+        <div className="song-structure-flow">
+          <span className="structure-label">Struktur:</span>{' '}
           {(() => {
             // Ambil urutan struktur dari lines
             const flow = [];
@@ -415,22 +408,14 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
             const flowDisplay = flow.filter((s, i) => i === 0 || s !== flow[i - 1]);
             return flowDisplay.length > 0
               ? flowDisplay.join(' → ')
-              : <span style={{ color: '#bbb' }}>Tidak terdeteksi</span>;
+              : <span className="structure-not-found">Tidak terdeteksi</span>;
           })()}
         </div>
       )}
-      
+
       <div className="lyrics-content">
         {parsedSong.lines.map((line, index) => renderLine(line, index))}
       </div>
-
-      {keyboardMode && selectedChord && (
-        <KeyboardVoicingModal 
-          chord={selectedChord}
-          onClose={() => setSelectedChord(null)}
-          baseOctave={4}
-        />
-      )}
     </div>
   );
 };
