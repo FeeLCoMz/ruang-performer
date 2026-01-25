@@ -19,6 +19,18 @@ function App() {
   const [activeSetlistSongIdx, setActiveSetlistSongIdx] = useState(0);
   const [transpose, setTranspose] = useState(0);
   const [highlightChords, setHighlightChords] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('ronz_theme') || 'dark';
+    }
+    return 'dark';
+  });
+
+  useEffect(() => {
+    document.body.classList.remove('dark-mode', 'light-mode');
+    document.body.classList.add(theme === 'dark' ? 'dark-mode' : 'light-mode');
+    localStorage.setItem('ronz_theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     setLoadingSongs(true);
@@ -50,6 +62,13 @@ function App() {
           <header className="app-header">
             <h1 className="app-title">🎸 RoNz Chord Pro</h1>
             <div className="app-subtitle">Aplikasi Chord & Lirik - Desain Baru</div>
+            <button
+              className={theme === 'dark' ? 'theme-switch-btn dark' : 'theme-switch-btn light'}
+              onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+              title="Ganti mode gelap/terang"
+            >
+              {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+            </button>
             <div className="tab-nav">
               <button onClick={() => setTab('songs')} className={tab === 'songs' ? 'tab-btn active' : 'tab-btn'}>Lagu</button>
               <button onClick={() => setTab('setlists')} className={tab === 'setlists' ? 'tab-btn active' : 'tab-btn'}>Setlist</button>

@@ -644,6 +644,64 @@ body {
   margin: 0 2px;
   box-shadow: 0 1px 3px #0001;
 }
+/* Theme switch button */
+.theme-switch-btn {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  background: var(--primary-accent-light, #23243a);
+  color: var(--primary-accent-dark, #a5b4fc);
+  border: 1.5px solid var(--primary-accent);
+  border-radius: 8px;
+  font-size: 1.15em;
+  font-weight: 700;
+  padding: 8px 18px 8px 14px;
+  cursor: pointer;
+  box-shadow: 0 1px 6px #0002;
+  transition: background 0.16s, color 0.16s, border 0.16s;
+  z-index: 200;
+}
+.theme-switch-btn.dark {
+  background: var(--primary-accent-light, #23243a);
+  color: var(--primary-accent-dark, #a5b4fc);
+}
+.theme-switch-btn.light {
+  background: #fffbe6;
+  color: #f59e42;
+  border: 1.5px solid #f7c873;
+}
+.theme-switch-btn:hover, .theme-switch-btn:focus {
+  background: var(--primary-accent);
+  color: #fff;
+  border: 1.5px solid var(--primary-accent-dark);
+  outline: none;
+}
+
+/* Light mode color variables */
+body.light-mode {
+  --primary-bg: #f7f7fa;
+  --primary-accent: #f7c873;
+  --primary-accent-light: #fffbe6;
+  --primary-accent-dark: #f59e42;
+  --card-bg: #fffbe6;
+  --card-shadow: 0 2px 16px rgba(247,200,115,0.10);
+  --text-main: #23243a;
+  --text-muted: #bfae7c;
+  --border: #f7c873;
+  --error: #e11d48;
+}
+body.dark-mode {
+  --primary-bg: #181a20;
+  --primary-accent: #6366f1;
+  --primary-accent-light: #23243a;
+  --primary-accent-dark: #a5b4fc;
+  --card-bg: #23243a;
+  --card-shadow: 0 2px 16px rgba(99,102,241,0.10);
+  --text-main: #f3f4f8;
+  --text-muted: #a1a6b8;
+  --border: #282a36;
+  --error: #fb7185;
+}
 @media (max-width: 600px) {
   .app-title {
     font-size: 2rem;
