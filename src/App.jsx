@@ -3,6 +3,7 @@ import './App.css';
 import ChordDisplay from './components/ChordDisplay.jsx';
 import SetListSongsPage from './components/SetListSongsPage.jsx';
 import AutoScrollBar from './components/AutoScrollBar.jsx';
+import YouTubeViewer from './components/YouTubeViewer.jsx';
 
 function App() {
   const [tab, setTab] = useState('songs');
@@ -17,6 +18,7 @@ function App() {
   const [activeSetlist, setActiveSetlist] = useState(null);
   const [activeSetlistSongIdx, setActiveSetlistSongIdx] = useState(0);
   const [transpose, setTranspose] = useState(0);
+  const [highlightChords, setHighlightChords] = useState(false);
 
   useEffect(() => {
     setLoadingSongs(true);
@@ -120,9 +122,19 @@ function App() {
             <button className="transpose-btn" onClick={() => setTranspose(t => t - 1)}>-</button>
             <span className="transpose-label">Transpose: {transpose >= 0 ? '+' : ''}{transpose}</span>
             <button className="transpose-btn" onClick={() => setTranspose(t => t + 1)}>+</button>
+            <button
+              className={highlightChords ? 'highlight-btn active' : 'highlight-btn'}
+              onClick={() => setHighlightChords(h => !h)}
+              title="Highlight chord/bar"
+            >{highlightChords ? '🔆 Highlight ON' : '💡 Highlight'}</button>
           </div>
+          {selectedSong.youtubeId && (
+            <div className="youtube-viewer-wrapper">
+              <YouTubeViewer videoId={selectedSong.youtubeId} />
+            </div>
+          )}
           <AutoScrollBar tempo={selectedSong.tempo ? Number(selectedSong.tempo) : 80} />
-          <ChordDisplay song={selectedSong} transpose={transpose} />
+          <ChordDisplay song={selectedSong} transpose={transpose} highlightChords={highlightChords} />
         </div>
       )}
       {activeSetlist && (
@@ -149,12 +161,25 @@ function App() {
             <button className="transpose-btn" onClick={() => setTranspose(t => t - 1)}>-</button>
             <span className="transpose-label">Transpose: {transpose >= 0 ? '+' : ''}{transpose}</span>
             <button className="transpose-btn" onClick={() => setTranspose(t => t + 1)}>+</button>
+            <button
+              className={highlightChords ? 'highlight-btn active' : 'highlight-btn'}
+              onClick={() => setHighlightChords(h => !h)}
+              title="Highlight chord/bar"
+            >{highlightChords ? '🔆 Highlight ON' : '💡 Highlight'}</button>
           </div>
+          {(() => {
+            const song = songs.find(s => s.id === activeSetlist.songs[activeSetlistSongIdx]);
+            return song && song.youtubeId ? (
+              <div className="youtube-viewer-wrapper">
+                <YouTubeViewer videoId={song.youtubeId} />
+              </div>
+            ) : null;
+          })()}
           <AutoScrollBar tempo={(() => {
             const song = songs.find(s => s.id === activeSetlist.songs[activeSetlistSongIdx]);
             return song && song.tempo ? Number(song.tempo) : 80;
           })()} />
-          <ChordDisplay song={songs.find(s => s.id === activeSetlist.songs[activeSetlistSongIdx])} transpose={transpose} />
+          <ChordDisplay song={songs.find(s => s.id === activeSetlist.songs[activeSetlistSongIdx])} transpose={transpose} highlightChords={highlightChords} />
         </div>
       )}
     </>
