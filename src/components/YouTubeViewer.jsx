@@ -17,6 +17,7 @@
  * Untuk videoId, bisa langsung ID ("dQw4w9WgXcQ") atau URL YouTube.
  */
 import React, { useState, useEffect, useRef } from 'react';
+import TimeMarkers from './TimeMarkers.jsx';
 
 
 function extractYouTubeId(input) {
@@ -44,7 +45,15 @@ function extractYouTubeId(input) {
   return null;
 }
 
-const YouTubeViewer = React.forwardRef(({ videoId, minimalControls = false, onTimeUpdate, seekToTime }, ref) => {
+const YouTubeViewer = React.forwardRef(({
+  videoId,
+  minimalControls = false,
+  onTimeUpdate,
+  seekToTime,
+  showTimeMarkers = true,
+  songId,
+  timeMarkersProps = {},
+}, ref) => {
   const [player, setPlayer] = useState(null);
   const pendingSeekRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -167,7 +176,7 @@ const YouTubeViewer = React.forwardRef(({ videoId, minimalControls = false, onTi
     const value = e.target.value;
     setIsScrubbing(false);
     handleSeek(value);
-    scrubberValueRef.current = null;
+    setTimeout(() => { scrubberValueRef.current = null; }, 100); // Reset agar polling aktif lagi
     setCurrentTime(Number(value)); // Update currentTime setelah seek
   };
 
@@ -271,6 +280,15 @@ const YouTubeViewer = React.forwardRef(({ videoId, minimalControls = false, onTi
         </div>
       )}
       {Controls}
+      {/* Gabungkan TimeMarkers di bawah video dan scrubber */}
+      {showTimeMarkers && songId && (
+        <TimeMarkers
+          songId={songId}
+          getCurrentTime={() => isScrubbing && scrubberValueRef.current !== null ? Number(scrubberValueRef.current) : currentTime}
+          seekTo={handleSeek}
+          {...timeMarkersProps}
+        />
+      )}
     </div>
   );
 });

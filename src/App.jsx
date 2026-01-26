@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 import './App.css';
-import SongList from './components/SongList.jsx';
-import SongDetail from './components/SongDetail.jsx';
-import EditSong from './components/EditSong.jsx';
-import EditIcon from './components/EditIcon.jsx';
-import SetlistSection from './components/SetlistSection.jsx';
+import SongListPage from './pages/SongListPage.jsx';
+import SongDetailPage from './pages/SongDetailPage.jsx';
+import EditSongPage from './pages/EditSongPage.jsx';
+import SetlistPage from './pages/SetlistPage.jsx';
+import NotFound from './components/NotFound.jsx';
+import SetlistSongsPage from './pages/SetlistSongsPage.jsx';
+
+function SetlistSongsRoute({ setlists, songs }) {
+  return <SetlistSongsPage setlists={setlists} songs={songs} />;
+}
 
 function App() {
     // State untuk modal create setlist
@@ -24,9 +30,6 @@ function App() {
   const [loadingSetlists, setLoadingSetlists] = useState(false);
   const [errorSongs, setErrorSongs] = useState(null);
   const [errorSetlists, setErrorSetlists] = useState(null);
-  const [selectedSong, setSelectedSong] = useState(null);
-  const [activeSetlist, setActiveSetlist] = useState(null);
-  const [activeSetlistSongIdx, setActiveSetlistSongIdx] = useState(0);
   const [transpose, setTranspose] = useState(0);
   const [highlightChords, setHighlightChords] = useState(false);
   const [theme, setTheme] = useState(() => {
@@ -65,104 +68,95 @@ function App() {
       .catch(err => { setErrorSongs(err.message || 'Gagal mengambil data'); setLoadingSongs(false); });
   }, []);
 
+  // Fetch setlists setiap kali route /setlists diakses
   useEffect(() => {
-    if (tab === 'setlists') {
+    if (window.location.pathname.startsWith('/setlists')) {
       setLoadingSetlists(true);
       fetch('/api/setlists')
         .then(res => { if (!res.ok) throw new Error('Gagal mengambil data setlist'); return res.json(); })
         .then(data => { setSetlists(Array.isArray(data) ? data : []); setLoadingSetlists(false); })
         .catch(err => { setErrorSetlists(err.message || 'Gagal mengambil data setlist'); setLoadingSetlists(false); });
     }
-  }, [tab]);
+  }, [window.location.pathname]);
 
   const filteredSongs = songs.filter(song =>
     (song.title || '').toLowerCase().includes(search.toLowerCase()) ||
     (song.artist || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  // Jika sedang tambah/edit lagu, tampilkan EditSong saja (full screen/modal), sembunyikan elemen lain
-  if (showAddSong) {
-    return (
-      <EditSong
-        mode="add"
-        onBack={() => setShowAddSong(false)}
-        onSongUpdated={() => {
-          setShowAddSong(false);
-          setLoadingSongs(true);
-          fetch('/api/songs')
-            .then(res => res.json())
-            .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); });
-        }}
-      />
-    );
-  }
-  if (showEditSong && editSongId) {
-    return (
-      <EditSong
-        songId={editSongId}
-        onBack={() => {
-          setShowEditSong(false);
-          setEditSongId(null);
-        }}
-        onSongUpdated={() => {
-          setShowEditSong(false);
-          setEditSongId(null);
-          setSelectedSong(null);
-          setLoadingSongs(true);
-          fetch('/api/songs')
-            .then(res => res.json())
-            .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); });
-        }}
-      />
-    );
-  }
+  const navigate = useNavigate();
 
   // ...existing code...
   return (
     <>
-      {!selectedSong && !activeSetlist && (
-        <>
-          <header className="app-header">
-            <h1 className="app-title">🎸 RoNz Chord Pro</h1>
-            <div className="app-subtitle">Manajemen Chord, Lirik, & Setlist Lagu Modern</div>
-            <button
-              className={theme === 'dark' ? 'theme-switch-btn dark' : 'theme-switch-btn light'}
-              onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-              title="Ganti mode gelap/terang"
-            >
-              {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
-            </button>
-            <div className="tab-nav">
-              <button onClick={() => setTab('songs')} className={tab === 'songs' ? 'tab-btn active' : 'tab-btn'}>Lagu</button>
-              <button onClick={() => setTab('setlists')} className={tab === 'setlists' ? 'tab-btn active' : 'tab-btn'}>Setlist</button>
-            </div>
-          </header>
-          <main className="main-content">
-            {tab === 'songs' && (
-              <>
-                <div className="section-title">Lagu</div>
-                <div className="info-text" style={{ marginTop: -12, marginBottom: 16, fontSize: '1.05em' }}>
-                  Jumlah lagu: {filteredSongs.length}
-                </div>
-                <button className="tab-btn" style={{ marginBottom: 18 }} onClick={() => setShowAddSong(true)}>+ Tambah Lagu</button>
-                <input
-                  type="text"
-                  placeholder="Cari judul atau artist..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="search-input"
-                />
-                {loadingSongs && <div className="info-text">Memuat daftar lagu...</div>}
-                {errorSongs && <div className="error-text">{errorSongs}</div>}
-                <SongList
-                  songs={filteredSongs}
-                  onSongClick={setSelectedSong}
-                  emptyText="Tidak ada lagu ditemukan."
-                />
-              </>
-            )}
-            {tab === 'setlists' && (
-              <SetlistSection
+      <header className="app-header">
+        <h1 className="app-title">🎸 RoNz Chord Pro</h1>
+        <div className="app-subtitle">Manajemen Chord, Lirik, & Setlist Lagu Modern</div>
+        <button
+          className={theme === 'dark' ? 'theme-switch-btn dark' : 'theme-switch-btn light'}
+          onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+          title="Ganti mode gelap/terang"
+        >
+          {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+        </button>
+        <div className="tab-nav">
+          <button onClick={() => navigate('/')} className={window.location.pathname === '/' ? 'tab-btn active' : 'tab-btn'}>Lagu</button>
+          <button onClick={() => navigate('/setlists')} className={window.location.pathname.startsWith('/setlists') ? 'tab-btn active' : 'tab-btn'}>Setlist</button>
+        </div>
+      </header>
+      <main className="main-content">
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <SongListPage
+                songs={filteredSongs}
+                loading={loadingSongs}
+                error={errorSongs}
+                search={search}
+                setSearch={setSearch}
+                onSongClick={songOrAction => {
+                  if (songOrAction === 'add') navigate('/songs/add');
+                  else if (songOrAction && songOrAction.id) navigate(`/songs/${songOrAction.id}`);
+                }}
+              />
+            }
+          />
+          <Route
+            path="/songs/add"
+            element={<AddSongRoute onSongUpdated={() => {
+              navigate('/');
+              setLoadingSongs(true);
+              fetch('/api/songs')
+                .then(res => res.json())
+                .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); });
+            }} />}
+          />
+          <Route
+            path="/songs/:id/edit"
+            element={<EditSongRoute onSongUpdated={() => {
+              navigate('/');
+              setLoadingSongs(true);
+              fetch('/api/songs')
+                .then(res => res.json())
+                .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); });
+            }} />}
+          />
+          <Route
+            path="/songs/:id"
+            element={<SongDetailRoute
+              onEdit={id => navigate(`/songs/${id}/edit`)}
+              onBack={() => navigate('/')}
+              transpose={transpose}
+              setTranspose={setTranspose}
+              highlightChords={highlightChords}
+              setHighlightChords={setHighlightChords}
+            />}
+          />
+          <Route
+            path="/setlists"
+            element={
+              <SetlistPage
                 setlists={setlists}
                 viewingSetlist={viewingSetlist}
                 setViewingSetlist={setViewingSetlist}
@@ -187,48 +181,75 @@ function App() {
                 filteredAvailableSongs={filteredAvailableSongs}
                 setSetlists={setSetlists}
               />
-            )}
-          </main>
-        </>
-      )}
-      {selectedSong && !showEditSong && (
-        <SongDetail
-          song={selectedSong}
-          onBack={() => setSelectedSong(null)}
-          transpose={transpose}
-          setTranspose={setTranspose}
-          highlightChords={highlightChords}
-          setHighlightChords={setHighlightChords}
-          onEdit={() => {
-            setEditSongId(selectedSong.id);
-            setShowEditSong(true);
-          }}
-        />
-      )}
-      {activeSetlist && (
-        <SongDetail
-          song={songs.find(s => s.id === activeSetlist.songs[activeSetlistSongIdx])}
-          onBack={() => setActiveSetlist(null)}
-          transpose={transpose}
-          setTranspose={setTranspose}
-          highlightChords={highlightChords}
-          setHighlightChords={setHighlightChords}
-          showNav={true}
-          navIndex={activeSetlistSongIdx}
-          navTotal={activeSetlist.songs?.length || 0}
-          onPrev={() => setActiveSetlistSongIdx(idx => Math.max(0, idx - 1))}
-          onNext={() => setActiveSetlistSongIdx(idx => Math.min((activeSetlist.songs?.length || 1) - 1, idx + 1))}
-          onEdit={() => {
-            const song = songs.find(s => s.id === activeSetlist.songs[activeSetlistSongIdx]);
-            if (song) {
-              setEditSongId(song.id);
-              setShowEditSong(true);
             }
-          }}
-        />
-      )}
+          />
+          <Route
+            path="/setlists/:setlistId/songs"
+            element={<SetlistSongsRoute setlists={setlists} songs={songs} />}
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
     </>
   );
+
+// Route wrapper for adding a song
+function AddSongRoute({ onSongUpdated }) {
+  const navigate = useNavigate();
+  return (
+    <EditSongPage
+      mode="add"
+      onBack={() => navigate('/')}
+      onSongUpdated={onSongUpdated}
+    />
+  );
+}
+
+// Route wrapper for editing a song by id from URL
+function EditSongRoute({ onSongUpdated }) {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  return (
+    <EditSongPage
+      songId={id}
+      mode="edit"
+      onBack={() => navigate(`/songs/${id}`)}
+      onSongUpdated={onSongUpdated}
+    />
+  );
+}
+
+// Route wrapper for showing song detail by id from URL
+function SongDetailRoute({ onEdit, onBack, transpose, setTranspose, highlightChords, setHighlightChords }) {
+  const { id } = useParams();
+  const [song, setSong] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  React.useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    fetch(`/api/songs/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Gagal mengambil data lagu');
+        return res.json();
+      })
+      .then(data => { setSong(data); setLoading(false); })
+      .catch(e => { setError(e.message || 'Gagal mengambil data'); setLoading(false); });
+  }, [id]);
+  return (
+    <SongDetailPage
+      song={song}
+      loading={loading}
+      error={error}
+      onBack={onBack}
+      onEdit={() => onEdit && onEdit(song?.id)}
+      transpose={transpose}
+      setTranspose={setTranspose}
+      highlightChords={highlightChords}
+      setHighlightChords={setHighlightChords}
+    />
+  );
+}
 }
 
 export default App;

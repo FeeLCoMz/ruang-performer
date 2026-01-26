@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import YouTubeViewer from './YouTubeViewer.jsx';
-import TimeMarkers from './TimeMarkers.jsx';
 
-export default function EditSong({ songId, onBack, onSongUpdated, mode = 'edit' }) {
+import React, { useState, useEffect } from 'react';
+import YouTubeViewer from '../components/YouTubeViewer.jsx';
+
+export default function EditSongPage({ songId, mode = 'edit', onBack, onSongUpdated }) {
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [key, setKey] = useState('C');
@@ -16,10 +16,10 @@ export default function EditSong({ songId, onBack, onSongUpdated, mode = 'edit' 
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(mode === 'edit');
   const [aiLoading, setAiLoading] = useState(false);
-  // AI autofill handler with confirmation
   const [aiResult, setAiResult] = useState(null);
   const [showAiConfirm, setShowAiConfirm] = useState(false);
   const [aiConfirmFields, setAiConfirmFields] = useState({});
+
   const handleAIAutofill = async () => {
     if (!title.trim()) {
       setError('Isi judul lagu terlebih dahulu.');
@@ -191,24 +191,23 @@ export default function EditSong({ songId, onBack, onSongUpdated, mode = 'edit' 
         {/* YouTube Viewer di atas field lirik */}
         {youtubeId && (
           <div style={{ margin: '16px 0' }}>
-            <YouTubeViewer videoId={youtubeId} minimalControls={false} />
-            {/* TimeMarkers aktif di mode add & edit */}
-            <div style={{ marginTop: 10 }}>
-              <TimeMarkers
-                songId={songId}
-                getCurrentTime={() => {
-                  // Ambil current time dari YouTubeViewer global ref jika ada
-                  if (window._ytRef && window._ytRef.isScrubbing && window._ytRef.scrubberValueRef) {
-                    return Number(window._ytRef.scrubberValueRef.current) || window._ytCurrentTime || 0;
-                  }
-                  return window._ytCurrentTime || 0;
-                }}
-                seekTo={t => window._ytRef && window._ytRef.handleSeek && window._ytRef.handleSeek(t)}
-                markers={timestamps}
-                setMarkers={setTimestamps}
-                manualMode={mode === 'add'}
-              />
-            </div>
+            <YouTubeViewer
+              videoId={youtubeId}
+              minimalControls={false}
+              ref={ytRef => {
+                window._ytRef = ytRef;
+              }}
+              onTimeUpdate={(t, d) => {
+                window._ytCurrentTime = t;
+              }}
+              songId={songId}
+              showTimeMarkers={true}
+              timeMarkersProps={{
+                markers: timestamps,
+                setMarkers: setTimestamps,
+                manualMode: mode === 'add',
+              }}
+            />
           </div>
         )}
         <label>Lirik/Chord

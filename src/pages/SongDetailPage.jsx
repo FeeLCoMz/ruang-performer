@@ -1,36 +1,20 @@
-import React from 'react';
-import EditIcon from './EditIcon.jsx';
-import TransposeBar from './TransposeBar.jsx';
-import YouTubeViewer from './YouTubeViewer.jsx';
-import TimeMarkers from './TimeMarkers.jsx';
-import AutoScrollBar from './AutoScrollBar.jsx';
-import ChordDisplay from './ChordDisplay.jsx';
 
-function SongDetail({
-  song,
-  onBack,
-  transpose,
-  setTranspose,
-  highlightChords,
-  setHighlightChords,
-  showYouTube = true,
-  showTimeMarkers = true,
-  showAutoScroll = true,
-  showTranspose = true,
-  showNav = false,
-  onPrev,
-  onNext,
-  navIndex = 0,
-  navTotal = 0,
-  onEdit,
-  children,
-}) {
-  if (!song) return null;
+import EditIcon from '../components/EditIcon.jsx';
+import TransposeBar from '../components/TransposeBar.jsx';
+import YouTubeViewer from '../components/YouTubeViewer.jsx';
+import TimeMarkers from '../components/TimeMarkers.jsx';
+import AutoScrollBar from '../components/AutoScrollBar.jsx';
+import ChordDisplay from '../components/ChordDisplay.jsx';
+
+export default function SongDetailPage({ song, loading, error, onBack, onEdit, transpose, setTranspose, highlightChords, setHighlightChords, showYouTube = true, showTimeMarkers = true, showAutoScroll = true, showTranspose = true, showNav = false, onPrev, onNext, navIndex = 0, navTotal = 0, children, ...rest }) {
+  if (loading) return <div className="main-content">Memuat data lagu...</div>;
+  if (error) return <div className="main-content error-text">{error}</div>;
+  if (!song) return <div className="main-content error-text">Lagu tidak ditemukan</div>;
   return (
     <div className="song-detail-fullscreen">
       <button className="back-btn" onClick={onBack}>&larr; Kembali ke daftar</button>
       {onEdit && (
-        <div style={{ position: 'absolute', top: 24, right: 32, zIndex: 2 }}>
+        <div style={{ margin: '24px 0 16px 0', textAlign: 'left' }}>
           <button
             className="tab-btn"
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', fontWeight: 500 }}
@@ -75,6 +59,7 @@ function SongDetail({
           songId={song.id}
           getCurrentTime={() => window._ytCurrentTime || 0}
           seekTo={t => window._ytRef && window._ytRef.handleSeek && window._ytRef.handleSeek(t)}
+          readonly
         />
       )}
       {showTranspose && (
@@ -91,5 +76,3 @@ function SongDetail({
     </div>
   );
 }
-
-export default SongDetail;

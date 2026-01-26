@@ -24,12 +24,22 @@ async function saveSongMarkers(songId, markers) {
   });
 }
 
-export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: propMarkers, setMarkers: propSetMarkers, manualMode }) {
+export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: propMarkers, setMarkers: propSetMarkers, manualMode, readonly }) {
   const [markers, setMarkersState] = useState(propMarkers || []);
   const [input, setInput] = useState('');
   const [editingIdx, setEditingIdx] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [currentVideoTime, setCurrentVideoTime] = useState(0);
   const inputRef = useRef();
+
+  // Update current video time every 200ms
+  useEffect(() => {
+    if (!getCurrentTime) return;
+    const interval = setInterval(() => {
+      setCurrentVideoTime(getCurrentTime() || 0);
+    }, 200);
+    return () => clearInterval(interval);
+  }, [getCurrentTime]);
 
   // Sync with parent (for add mode)
   useEffect(() => {
@@ -57,9 +67,9 @@ export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: p
 
   // Add marker at current time
   const handleAdd = () => {
+    if (readonly) return;
     if (!input.trim() || !getCurrentTime) return;
     let time = getCurrentTime();
-    // Patch: ambil waktu scrubber jika ada (khusus YouTubeViewer)
     if (window._ytRef && window._ytRef.scrubberValueRef && window._ytRef.isScrubbing) {
       const scrubVal = Number(window._ytRef.scrubberValueRef.current);
       if (!isNaN(scrubVal)) time = scrubVal;
@@ -71,15 +81,18 @@ export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: p
 
   // Remove marker
   const handleRemove = idx => {
+    if (readonly) return;
     setMarkersState(markers.filter((_, i) => i !== idx));
   };
 
   // Edit marker
   const handleEdit = idx => {
+    if (readonly) return;
     setEditingIdx(idx);
     setEditValue(markers[idx].label);
   };
   const handleEditSave = idx => {
+    if (readonly) return;
     setMarkersState(markers.map((m, i) => i === idx ? { ...m, label: editValue } : m));
     setEditingIdx(null);
   };
@@ -92,13 +105,16 @@ export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: p
   return (
     <div className="time-markers-container">
       <div className="time-markers-header">Penanda Waktu</div>
+      <div style={{fontSize: '0.98em', color: 'var(--primary-accent-dark)', marginBottom: 6}}>
+        Waktu video saat ini: <b>{formatTime(currentVideoTime)}</b>
+      </div>
       <div className="time-markers-list">
         {markers.length === 0 && <div className="time-markers-empty">Belum ada penanda.</div>}
         {markers.map((m, idx) => (
           <div className="time-marker-item" key={idx}>
             <span className="time-marker-time" onClick={() => handleJump(m.time)} title="Lompat ke waktu">{formatTime(m.time)}</span>
             <button className="time-marker-play-btn" onClick={() => handleJump(m.time)} title="Play ke waktu ini" style={{marginLeft: 6, marginRight: 6}}>▶️</button>
-            {editingIdx === idx ? (
+            {!readonly && (editingIdx === idx ? (
               <>
                 <input
                   className="time-marker-edit-input"
@@ -114,22 +130,24 @@ export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: p
                 <span className="time-marker-label">{m.label}</span>
                 <button className="time-marker-edit-btn" onClick={() => handleEdit(idx)} title="Edit">✎</button>
               </>
-            )}
-            <button className="time-marker-remove-btn" onClick={() => handleRemove(idx)} title="Hapus">🗑</button>
+            ))}
+            {!readonly && <button className="time-marker-remove-btn" onClick={() => handleRemove(idx)} title="Hapus">🗑</button>}
           </div>
         ))}
       </div>
-      <div className="time-markers-add">
-        <input
-          className="time-marker-input"
-          ref={inputRef}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Tulis label penanda..."
-          onKeyDown={e => e.key === 'Enter' && handleAdd()}
-        />
-        <button className="time-marker-add-btn" onClick={handleAdd} disabled={!input.trim() || !getCurrentTime}>+ Tambah (waktu saat ini)</button>
-      </div>
+      {!readonly && (
+        <div className="time-markers-add">
+          <input
+            className="time-marker-input"
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Tulis label penanda..."
+            onKeyDown={e => e.key === 'Enter' && handleAdd()}
+          />
+          <button className="time-marker-add-btn" onClick={handleAdd} disabled={!input.trim() || !getCurrentTime}>+ Tambah (waktu saat ini)</button>
+        </div>
+      )}
     </div>
   );
 }
