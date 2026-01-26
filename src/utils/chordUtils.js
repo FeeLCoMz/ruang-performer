@@ -351,7 +351,7 @@ export const parseChordPro = (text) => {
     }
 
     // Check for plain text metadata format (e.g., "Original Key: G")
-    const plainMetaMatch = line.match(/^(Original Key|Capo|Time Signature|Duration|BPM|Tempo):\s*(.+)$/i);
+    const plainMetaMatch = line.match(/^(Original Key|Capo|Time|Time Signature|Duration|BPM|Tempo):\s*(.+)$/i);
     if (plainMetaMatch) {
       const [, key, value] = plainMetaMatch;
       const keyNormalized = key.trim().toLowerCase().replace(/\s+/g, '_');

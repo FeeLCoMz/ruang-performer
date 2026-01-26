@@ -413,6 +413,16 @@ const ChordDisplay = ({ song, transpose = 0, performanceMode = false, performanc
         </div>
       )}
 
+      {/* Tampilkan metadata lain (selain title/artist) di atas lirik jika ada */}
+      {parsedSong && parsedSong.lines && parsedSong.lines.some(l => l.type === 'metadata') && (
+        <div className="song-metadata-extra" style={{ margin: '10px 0 18px 0', fontSize: '1em', color: 'var(--text-muted)' }}>
+          {parsedSong.lines.filter(l => l.type === 'metadata').map((meta, idx) => (
+            <div key={idx} className="metadata-line">
+              <strong>{meta.key}:</strong> {meta.value}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="lyrics-content">
         {parsedSong.lines.map((line, index) => renderLine(line, index))}
       </div>

@@ -23,7 +23,7 @@ export default function AutoScrollBar({ tempo = 80, onScrollChange }) {
           beatTimeRef.current = now;
           barBeatRef.current += 1;
           if (barBeatRef.current >= 4) {
-            window.scrollBy({ top: 32, behavior: 'smooth' }); // 32px = 1 line/bar, adjust as needed
+            window.scrollBy({ top: 50, behavior: 'smooth' }); // 32px = 1 line/bar, adjust as needed
             barBeatRef.current = 0;
           }
         }
