@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import ChordDisplay from './components/ChordDisplay.jsx';
 import SongList from './components/SongList.jsx';
 import SongDetail from './components/SongDetail.jsx';
-import AddSong from './components/AddSong.jsx';
+import EditSong from './components/EditSong.jsx';
+import EditIcon from './components/EditIcon.jsx';
 
 function App() {
   const [tab, setTab] = useState('songs');
   const [showAddSong, setShowAddSong] = useState(false);
+  const [showEditSong, setShowEditSong] = useState(false);
+  const [editSongId, setEditSongId] = useState(null);
   const [songs, setSongs] = useState([]);
   const [setlists, setSetlists] = useState([]);
   const [search, setSearch] = useState('');
@@ -102,9 +104,10 @@ function App() {
               </>
             )}
             {tab === 'songs' && showAddSong && (
-              <AddSong
+              <EditSong
+                mode="add"
                 onBack={() => setShowAddSong(false)}
-                onSongAdded={() => {
+                onSongUpdated={() => {
                   setShowAddSong(false);
                   setLoadingSongs(true);
                   fetch('/api/songs')
@@ -179,7 +182,7 @@ function App() {
           </main>
         </>
       )}
-      {selectedSong && (
+      {selectedSong && !showEditSong && (
         <SongDetail
           song={selectedSong}
           onBack={() => setSelectedSong(null)}
@@ -187,8 +190,41 @@ function App() {
           setTranspose={setTranspose}
           highlightChords={highlightChords}
           setHighlightChords={setHighlightChords}
+        >
+          <div style={{ position: 'absolute', top: 24, right: 32, zIndex: 2 }}>
+            <button
+              className="tab-btn"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', fontWeight: 500 }}
+              onClick={() => {
+                setEditSongId(selectedSong.id);
+                setShowEditSong(true);
+              }}
+              title="Edit lagu"
+            >
+              <EditIcon size={18} style={{ verticalAlign: 'middle' }} />
+              Edit Lagu
+            </button>
+          </div>
+        </SongDetail>
+      )}
+      {showEditSong && editSongId && (
+        <EditSong
+          songId={editSongId}
+          onBack={() => {
+            setShowEditSong(false);
+            setEditSongId(null);
+          }}
+          onSongUpdated={() => {
+            setShowEditSong(false);
+            setEditSongId(null);
+            setSelectedSong(null);
+            setLoadingSongs(true);
+            fetch('/api/songs')
+              .then(res => res.json())
+              .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); });
+          }}
         />
-      )}   
+      )}
       {activeSetlist && (
         <SongDetail
           song={songs.find(s => s.id === activeSetlist.songs[activeSetlistSongIdx])}

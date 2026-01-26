@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export default function AddSong({ onBack, onSongAdded }) {
+export default function EditSong({ songId, onBack, onSongUpdated, mode = 'edit' }) {
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [key, setKey] = useState('C');
@@ -10,6 +10,41 @@ export default function AddSong({ onBack, onSongAdded }) {
   const [youtubeId, setYoutubeId] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(mode === 'edit');
+
+  useEffect(() => {
+    if (mode === 'edit' && songId) {
+      setLoadingData(true);
+      fetch(`/api/songs/${songId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Gagal mengambil data lagu');
+          return res.json();
+        })
+        .then(data => {
+          setTitle(data.title || '');
+          setArtist(data.artist || '');
+          setKey(data.key || 'C');
+          setTempo(data.tempo || '');
+          setStyle(data.style || '');
+          setLyrics(data.lyrics || '');
+          setYoutubeId(data.youtubeId || '');
+          setLoadingData(false);
+        })
+        .catch(e => {
+          setError(e.message || 'Gagal mengambil data lagu');
+          setLoadingData(false);
+        });
+    } else if (mode === 'add') {
+      setTitle('');
+      setArtist('');
+      setKey('C');
+      setTempo('');
+      setStyle('');
+      setLyrics('');
+      setYoutubeId('');
+      setLoadingData(false);
+    }
+  }, [songId, mode]);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -20,25 +55,36 @@ export default function AddSong({ onBack, onSongAdded }) {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/songs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, artist, key, tempo, style, lyrics, youtubeId })
-      });
-      if (!res.ok) throw new Error('Gagal menambah lagu');
-      setTitle(''); setArtist(''); setKey('C'); setTempo(''); setStyle(''); setLyrics(''); setYoutubeId('');
-      if (onSongAdded) onSongAdded();
+      let res;
+      if (mode === 'edit') {
+        res = await fetch(`/api/songs/${songId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, artist, key, tempo, style, lyrics, youtubeId })
+        });
+        if (!res.ok) throw new Error('Gagal mengupdate lagu');
+      } else {
+        res = await fetch('/api/songs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, artist, key, tempo, style, lyrics, youtubeId })
+        });
+        if (!res.ok) throw new Error('Gagal menambah lagu');
+      }
+      if (onSongUpdated) onSongUpdated();
     } catch (e) {
-      setError(e.message || 'Gagal menambah lagu');
+      setError(e.message || (mode === 'edit' ? 'Gagal mengupdate lagu' : 'Gagal menambah lagu'));
     } finally {
       setLoading(false);
     }
   };
 
+  if (loadingData) return <div className="main-content">Memuat data lagu...</div>;
+
   return (
     <div className="main-content">
       <button className="back-btn" onClick={onBack}>&larr; Kembali</button>
-      <div className="section-title">Tambah Lagu Baru</div>
+      <div className="section-title">{mode === 'edit' ? 'Edit Lagu' : 'Tambah Lagu Baru'}</div>
       <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: '0 auto' }}>
         <label>Judul Lagu
           <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="search-input" required />
@@ -63,7 +109,7 @@ export default function AddSong({ onBack, onSongAdded }) {
         </label>
         {error && <div className="error-text" style={{ marginTop: 10 }}>{error}</div>}
         <button type="submit" className="tab-btn" style={{ marginTop: 18 }} disabled={loading}>
-          {loading ? 'Menyimpan...' : 'Simpan Lagu'}
+          {loading ? 'Menyimpan...' : (mode === 'edit' ? 'Simpan Perubahan' : 'Simpan Lagu')}
         </button>
       </form>
     </div>
