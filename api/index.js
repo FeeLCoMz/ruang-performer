@@ -13,7 +13,6 @@ import https from 'https';
 import http from 'http';
 import songsHandler from './songs/index.js';
 import songsIdHandler from './songs/[id].js';
-import songsSyncHandler from './songs/sync.js';
 import setlistsHandler from './setlists/index.js';
 import setlistsIdHandler from './setlists/[id].js';
 import statusHandler from './status.js';

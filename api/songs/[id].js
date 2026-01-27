@@ -76,7 +76,7 @@ export default async function handler(req, res) {
         now,
         idStr,
       ];
-      console.log('[PUT /api/songs/:id] Update params:', updateParams);
+      //console.log('[PUT /api/songs/:id] Update params:', updateParams);
 
       const result = await client.execute(
         `UPDATE songs SET 
