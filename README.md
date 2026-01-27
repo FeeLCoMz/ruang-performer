@@ -1,4 +1,4 @@
-# Ronz Chord Pro
+# Ronz Chord
 
 Aplikasi web untuk manajemen chord, setlist, dan performa musik.
 

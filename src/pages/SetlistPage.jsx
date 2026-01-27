@@ -1,4 +1,6 @@
+
 import { useNavigate } from 'react-router-dom';
+import PlusIcon from '../components/PlusIcon.jsx';
 
 export default function SetlistPage({
   setlists,
@@ -18,10 +20,11 @@ export default function SetlistPage({
       <div className="section-title">Setlist</div>
       <button
         className="tab-btn"
-        style={{ marginBottom: 18 }}
+        style={{ marginBottom: 18, padding: '0.5rem 0.7rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
         onClick={() => setShowCreateSetlist(true)}
+        title="Buat Setlist Baru"
       >
-        + Buat Setlist Baru
+        <PlusIcon size={22} />
       </button>
       {/* Modal Buat Setlist Baru */}
       {showCreateSetlist && (

@@ -15,12 +15,14 @@
     "preview": "vite preview",
     "update": "npm update",
     "audit": "npm audit",
-    "audit-fix": "npm audit fix"
-    ,
+    "audit-fix": "npm audit fix",
     "lint": "eslint src/",
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/modifiers": "^9.0.0",
+    "@dnd-kit/sortable": "^10.0.0",
     "@google/generative-ai": "^0.24.1",
     "@libsql/client": "^0.15.15",
     "busboy": "^1.6.0",
@@ -31,7 +33,6 @@
     "express-session": "^1.18.2",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
-    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.12.0",
     "react-window": "^2.2.5"

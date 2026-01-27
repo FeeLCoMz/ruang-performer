@@ -15,11 +15,6 @@
   letter-spacing: 0.01em;
   margin: 0;
 }
-.app-subtitle {
-  color: #888;
-  font-size: 1.1rem;
-  margin-top: 8px;
-}
 .tab-nav {
   margin-top: 24px;
   display: flex;
@@ -276,7 +271,7 @@
   font-size: inherit;
   white-space: pre-wrap;
 }
-/* App.css - Dark modern minimalist style for RoNz Chord Pro */
+/* App.css - Dark modern minimalist style for RoNz Chord */
 :root {
   --primary-bg: #181a20;
   --primary-accent: #6366f1;

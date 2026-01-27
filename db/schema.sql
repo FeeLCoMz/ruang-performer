@@ -1,4 +1,4 @@
--- Turso (libsql) schema for RoNz Chord Pro
+-- Turso (libsql) schema for RoNz Chord
 
 CREATE TABLE IF NOT EXISTS songs (
   id TEXT PRIMARY KEY,

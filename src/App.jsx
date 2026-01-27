@@ -89,8 +89,7 @@ function App() {
   return (
     <>
       <header className="app-header">
-        <h1 className="app-title">🎸 RoNz Chord Pro</h1>
-        <div className="app-subtitle">Manajemen Chord, Lirik, & Setlist Lagu Modern</div>
+        <h1 className="app-title" style={{fontSize: '1.5rem'}}>🎸 RoNz Chord</h1>
         <button
           className={theme === 'dark' ? 'theme-switch-btn dark' : 'theme-switch-btn light'}
           onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}

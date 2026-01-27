@@ -1,8 +1,8 @@
-/* Service Worker for RoNz Chord Pro
-   Handles offline caching and data sync
+/* Service Worker for RoNz Chord
+  Handles offline caching and data sync
 */
 
-const CACHE_NAME = 'ronz-chord-pro-v1';
+const CACHE_NAME = 'ronz-chord-v1';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
