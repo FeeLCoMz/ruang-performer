@@ -114,8 +114,9 @@ function App() {
                 search={search}
                 setSearch={setSearch}
                 onSongClick={songOrAction => {
-                  if (songOrAction === 'add') navigate('/songs/add');
-                  else if (songOrAction && songOrAction.id) navigate(`/songs/${songOrAction.id}`);
+                  const from = window.location.pathname;
+                  if (songOrAction === 'add') navigate('/songs/add', { state: { from } });
+                  else if (songOrAction && songOrAction.id) navigate(`/songs/${songOrAction.id}`, { state: { from } });
                 }}
               />
             }

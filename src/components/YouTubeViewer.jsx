@@ -272,6 +272,7 @@ const YouTubeViewer = React.forwardRef(({
   return (
     <div className={minimalControls ? 'youtube-viewer-minimal' : 'youtube-viewer'}>
       <button
+        type="button"
         className={expanded ? 'yt-collapse-btn expanded' : 'yt-collapse-btn'}
         data-align={expanded ? 'expanded' : 'collapsed'}
         onClick={() => setExpanded(e => !e)}

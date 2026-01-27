@@ -4,11 +4,12 @@ import ChordDisplay from '../components/ChordDisplay.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import TransposeBar from '../components/TransposeBar.jsx';
 import AutoScrollBar from '../components/AutoScrollBar.jsx';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { parseChordPro } from '../utils/chordUtils.js';
 
 export default function SongLyricsPage({ song }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [transpose, setTranspose] = React.useState(0);
   const [highlightChords, setHighlightChords] = React.useState(false);
   // Parse metadata dari lirik jika ada
@@ -38,7 +39,7 @@ export default function SongLyricsPage({ song }) {
     <div className="song-detail-container">
       {/* Header: Back, Title, Edit */}
       <div className="song-detail-header">
-        <button className="back-btn" onClick={() => navigate(-1)}>&larr; Kembali</button>
+        <button className="back-btn" onClick={() => navigate(location.state?.from || '/')}>&larr; Kembali</button>
         <div className="song-detail-title">{song.title}</div>
         <button
           className="tab-btn setlist-edit-btn"
@@ -57,6 +58,10 @@ export default function SongLyricsPage({ song }) {
         {infoRows.map(row => (
           <span key={row.label}><b>{row.label}:</b> {row.value}</span>
         ))}
+        {/* Instruments used */}
+        {song.instruments && song.instruments.length > 0 && (
+          <span><b>Instrumen:</b> {Array.isArray(song.instruments) ? song.instruments.join(', ') : song.instruments}</span>
+        )}
         {extraMeta.length > 0 && (
           <div style={{ marginTop: 6, fontSize: '0.97em', color: '#64748b' }}>
             {extraMeta.map(row => (

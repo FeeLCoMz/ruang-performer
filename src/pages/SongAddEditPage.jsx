@@ -1,8 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 
-export default function SongAddEditPage({ songId, mode = 'edit', onBack, onSongUpdated }) {
+function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
+	const location = useLocation();
+	const navigate = useNavigate();
 	const [title, setTitle] = useState('');
 	const [artist, setArtist] = useState('');
 	const [key, setKey] = useState('C');
@@ -111,18 +114,19 @@ export default function SongAddEditPage({ songId, mode = 'edit', onBack, onSongU
 		setError('');
 		try {
 			let res;
+			const payload = { title, artist, key, tempo, style, lyrics, youtubeId, timestamps, instruments };
 			if (mode === 'edit') {
 				res = await fetch(`/api/songs/${songId}`, {
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ title, artist, key, tempo, style, lyrics, youtubeId, timestamps })
+					body: JSON.stringify(payload)
 				});
 				if (!res.ok) throw new Error('Gagal mengupdate lagu');
 			} else {
 				res = await fetch('/api/songs', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ title, artist, key, tempo, style, lyrics, youtubeId, timestamps })
+					body: JSON.stringify(payload)
 				});
 				if (!res.ok) throw new Error('Gagal menambah lagu');
 			}
@@ -137,8 +141,8 @@ export default function SongAddEditPage({ songId, mode = 'edit', onBack, onSongU
 	if (loadingData) return <div className="main-content">Memuat data lagu...</div>;
 
 	 return (
-		 <div>
-			 <button className="back-btn" onClick={() => window.history.back()}>&larr; Kembali</button>
+		<>
+			 <button className="back-btn" onClick={() => navigate(location.state?.from || '/')}>&larr; Kembali</button>
 			<div className="section-title">{mode === 'edit' ? 'Edit Lagu' : 'Tambah Lagu Baru'}</div>
 			<form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: '0 auto' }}>
 				<button type="button" className="tab-btn" style={{ marginBottom: 16, float: 'right' }} onClick={handleAIAutofill} disabled={aiLoading || !title.trim()}>
@@ -277,6 +281,8 @@ export default function SongAddEditPage({ songId, mode = 'edit', onBack, onSongU
 					</div>
 				</div>
 			)}
-		</div>
+		</>
 	);
 }
+
+export default SongAddEditPage;

@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       try {
         const result = await client.execute(
-          `SELECT id, title, artist, youtubeId, lyrics, key, tempo, style, timestamps, createdAt, updatedAt
+          `SELECT id, title, artist, youtubeId, lyrics, key, tempo, style, instruments, timestamps, createdAt, updatedAt
            FROM songs WHERE id = ? LIMIT 1`,
           [idStr]
         );
@@ -47,7 +47,8 @@ export default async function handler(req, res) {
         }
         res.status(200).json({
           ...row,
-          timestamps: row.timestamps ? JSON.parse(row.timestamps) : []
+          timestamps: row.timestamps ? JSON.parse(row.timestamps) : [],
+          instruments: row.instruments ? JSON.parse(row.instruments) : [],
         });
         return;
       } catch (queryErr) {
@@ -59,7 +60,25 @@ export default async function handler(req, res) {
       const body = await readJson(req);
       const now = new Date().toISOString();
 
-      await client.execute(
+      // DEBUG: log payload yang diterima
+      console.log('[PUT /api/songs/:id] Payload:', JSON.stringify(body));
+
+      const updateParams = [
+        body.title ?? null,
+        body.artist ?? null,
+        body.youtubeId ?? null,
+        body.lyrics ?? null,
+        body.key ?? null,
+        body.tempo ?? null,
+        body.style ?? null,
+        (Array.isArray(body.instruments) ? JSON.stringify(body.instruments) : (body.instruments ?? null)),
+        (Array.isArray(body.timestamps) ? JSON.stringify(body.timestamps) : (body.timestamps ?? null)),
+        now,
+        idStr,
+      ];
+      console.log('[PUT /api/songs/:id] Update params:', updateParams);
+
+      const result = await client.execute(
         `UPDATE songs SET 
            title = COALESCE(?, title),
            artist = COALESCE(?, artist),
@@ -68,22 +87,13 @@ export default async function handler(req, res) {
            key = COALESCE(?, key),
            tempo = COALESCE(?, tempo),
            style = COALESCE(?, style),
+           instruments = COALESCE(?, instruments),
            timestamps = COALESCE(?, timestamps),
            updatedAt = ?
          WHERE id = ?`,
-        [
-          body.title ?? null,
-          body.artist ?? null,
-          body.youtubeId ?? null,
-          body.lyrics ?? null,
-          body.key ?? null,
-          body.tempo ?? null,
-          body.style ?? null,
-          (Array.isArray(body.timestamps) ? JSON.stringify(body.timestamps) : (body.timestamps ?? null)),
-          now,
-          idStr,
-        ]
+        updateParams
       );
+      console.log('[PUT /api/songs/:id] Update result:', result);
 
       res.status(200).json({ id });
       return;

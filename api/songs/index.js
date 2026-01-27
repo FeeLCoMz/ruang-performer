@@ -29,19 +29,21 @@ export default async function handler(req, res) {
           key TEXT,
           tempo TEXT,
           style TEXT,
+          instruments TEXT,
           timestamps TEXT,
           createdAt TEXT DEFAULT (datetime('now')),
           updatedAt TEXT
         )`
       );
       const rows = await client.execute(
-        `SELECT id, title, artist, youtubeId, lyrics, key, tempo, style, timestamps, createdAt, updatedAt
+        `SELECT id, title, artist, youtubeId, lyrics, key, tempo, style, instruments, timestamps, createdAt, updatedAt
          FROM songs
          ORDER BY (updatedAt IS NULL) ASC, datetime(updatedAt) DESC, datetime(createdAt) DESC`
       );
       const list = (rows.rows ?? []).map(row => ({
         ...row,
-        timestamps: row.timestamps ? JSON.parse(row.timestamps) : []
+        timestamps: row.timestamps ? JSON.parse(row.timestamps) : [],
+        instruments: row.instruments ? JSON.parse(row.instruments) : [],
       }));
       res.status(200).json(list);
       return;
@@ -53,8 +55,8 @@ export default async function handler(req, res) {
       const upsertOne = async (item) => {
         const id = item.id?.toString() || randomUUID();
         await client.execute(
-          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, style, timestamps, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, style, instruments, timestamps, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title,
              artist = excluded.artist,
@@ -63,6 +65,7 @@ export default async function handler(req, res) {
              key = excluded.key,
              tempo = excluded.tempo,
              style = excluded.style,
+             instruments = excluded.instruments,
              timestamps = excluded.timestamps,
              updatedAt = excluded.updatedAt`,
           [
@@ -74,6 +77,7 @@ export default async function handler(req, res) {
             item.key || null,
             item.tempo || null,
             item.style || null,
+            (Array.isArray(item.instruments) ? JSON.stringify(item.instruments) : (item.instruments || null)),
             (Array.isArray(item.timestamps) ? JSON.stringify(item.timestamps) : (item.timestamps || null)),
             item.createdAt || now,
             now,
