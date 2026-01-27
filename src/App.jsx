@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
-import './App.css';
 import SongListPage from './pages/SongListPage.jsx';
 import SongDetailPage from './pages/SongDetailPage.jsx';
 import EditSongPage from './pages/EditSongPage.jsx';
