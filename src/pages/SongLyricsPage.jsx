@@ -22,7 +22,6 @@ export default function SongLyricsPage({ song }) {
   if (!song) return <div className="main-content error-text">Lagu tidak ditemukan</div>;
   // Gabungkan metadata dari song dan dari lirik
   const infoRows = [
-    { label: 'Artis', value: song.artist },
     { label: 'Album', value: song.album },
     { label: 'Key', value: lyricMeta.key || song.key },
     { label: 'Tempo', value: lyricMeta.tempo || song.tempo },
@@ -40,7 +39,12 @@ export default function SongLyricsPage({ song }) {
       {/* Header: Back, Title, Edit */}
       <div className="song-detail-header">
         <button className="back-btn" onClick={() => navigate(location.state?.from || '/')}>&larr; Kembali</button>
-        <div className="song-detail-title">{song.title}</div>
+        <div style={{flex: 1}}>
+          <div className="song-detail-title">{song.title}</div>
+          {song.artist && (
+            <div className="song-artist" style={{textAlign: 'center', marginTop: 2}}>{song.artist}</div>
+          )}
+        </div>
         <button
           className="tab-btn setlist-edit-btn"
           style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, padding: '4px 10px' }}

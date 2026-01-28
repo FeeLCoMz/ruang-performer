@@ -589,6 +589,7 @@
   flex: 1;
   text-align: center;
   letter-spacing: 0.01em;
+  color: var(--primary-accent-dark);
 }
 
 .song-detail-info {
@@ -785,7 +786,7 @@
 
 .song-artist {
   font-size: 1rem;
-  color: var(--text-muted);
+  color: var(--primary-accent-dark);
   margin-top: 2px;
 }
 
