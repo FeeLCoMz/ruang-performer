@@ -1,3 +1,87 @@
+/* SetlistSongsPage custom classes */
+.info-spacing {
+  margin-top: -12px;
+  margin-bottom: 16px;
+  font-size: 1.05em;
+}
+.add-song-btn {
+  margin-bottom: 18px;
+  padding: 0.5rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-accent-light, #23243a);
+  color: var(--primary-accent-dark, #3730a3);
+  border: 1.5px solid var(--primary-accent, #6366f1);
+  border-radius: 8px;
+  font-size: 1.08em;
+  font-weight: 600;
+  box-shadow: 0 1px 6px #0002;
+  transition: background 0.16s, color 0.16s, border 0.16s;
+}
+.add-song-btn:hover, .add-song-btn:focus {
+  background: var(--primary-accent, #6366f1);
+  color: #fff;
+  border: 1.5px solid var(--primary-accent-dark, #3730a3);
+}
+.add-song-modal {
+  min-width: 320px;
+  max-width: 420px;
+  background: var(--card-bg, #fff);
+  color: var(--text-main, #23243a);
+  padding: 24px;
+  border-radius: 14px;
+  box-shadow: 0 4px 32px #0008;
+  position: relative;
+  border: 1.5px solid var(--border, #e0e7ff);
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+.modal-title {
+  font-weight: 700;
+  font-size: 1.18em;
+  margin-bottom: 12px;
+  color: var(--primary-accent-dark, #3730a3);
+  text-align: center;
+}
+.full-width {
+  width: 100%;
+}
+.mb-12 {
+  margin-bottom: 12px;
+}
+.mb-8 {
+  margin-bottom: 8px;
+}
+.mt-8 {
+  margin-top: 8px;
+}
+.song-list-scroll {
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--card-bg, #fff);
+  border-radius: 8px;
+  box-shadow: 0 1px 6px #0001;
+}
+.pointer {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pointer:hover {
+  background: var(--primary-accent-light, #f3f4fa);
+}
+.fw-700 {
+  font-weight: 700;
+  color: var(--primary-accent-dark, #3730a3);
+}
+.text-muted {
+  color: var(--text-muted, #888);
+}
+.ml-8 {
+  margin-left: 8px;
+}
+.loading {
+  opacity: 0.5;
+}
 .song-detail-controls {
   display: flex;  
   justify-content: center;  
