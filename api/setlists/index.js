@@ -26,7 +26,7 @@ export default async function handler(req, res) {
           name TEXT NOT NULL,
           desc TEXT DEFAULT '',
           songs TEXT DEFAULT '[]',
-          songKeys TEXT DEFAULT '{}',
+          setlistSongMeta TEXT DEFAULT '{}',
           completedSongs TEXT DEFAULT '{}',
           createdAt TEXT DEFAULT (datetime('now')),
           updatedAt TEXT
@@ -40,9 +40,12 @@ export default async function handler(req, res) {
       try {
         await client.execute(`ALTER TABLE setlists ADD COLUMN completedSongs TEXT DEFAULT '{}'`);
       } catch (e) {}
+      try {
+        await client.execute(`ALTER TABLE setlists ADD COLUMN setlistSongMeta TEXT DEFAULT '{}'`);
+      } catch (e) {}
       
       const rows = await client.execute(
-        `SELECT id, name, desc, songs, songKeys, completedSongs, createdAt, updatedAt
+        `SELECT id, name, desc, songs, setlistSongMeta, completedSongs, createdAt, updatedAt
          FROM setlists
          ORDER BY (updatedAt IS NULL) ASC, datetime(updatedAt) DESC, datetime(createdAt) DESC`
       );
@@ -58,11 +61,11 @@ export default async function handler(req, res) {
             return [];
           }
         })(),
-        songKeys: (() => {
+        setlistSongMeta: (() => {
           try {
-            return row.songKeys ? JSON.parse(row.songKeys) : {};
+            return row.setlistSongMeta ? JSON.parse(row.setlistSongMeta) : {};
           } catch (e) {
-            console.warn(`Invalid JSON in setlist.songKeys for id=${row.id}:`, e.message);
+            console.warn(`Invalid JSON in setlist.setlistSongMeta for id=${row.id}:`, e.message);
             return {};
           }
         })(),
@@ -95,17 +98,17 @@ export default async function handler(req, res) {
       
       try {
         const songsJson = JSON.stringify(body.songs || []);
-        const songKeysJson = JSON.stringify(body.songKeys || {});
+        const setlistSongMetaJson = JSON.stringify(body.setlistSongMeta || {});
         const completedSongsJson = JSON.stringify(body.completedSongs || {});
         
         await client.execute(
-          `INSERT INTO setlists (id, name, songs, songKeys, completedSongs, createdAt, updatedAt)
+          `INSERT INTO setlists (id, name, songs, setlistSongMeta, completedSongs, createdAt, updatedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [
             id,
             body.name.trim(),
             songsJson,
-            songKeysJson,
+            setlistSongMetaJson,
             completedSongsJson,
             body.createdAt || now,
             now,
@@ -124,14 +127,14 @@ export default async function handler(req, res) {
             `UPDATE setlists SET 
                name = ?, 
                songs = ?, 
-               songKeys = ?, 
+               setlistSongMeta = ?, 
                completedSongs = ?, 
                updatedAt = ?
              WHERE id = ?`,
             [
               body.name.trim(),
               songsJson,
-              songKeysJson,
+              setlistSongMetaJson,
               completedSongsJson,
               now,
               id,

@@ -6,6 +6,61 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useRef } from 'react';
 
 export default function SetlistSongsPage({ setlists, songs, setSetlists }) {
+      const [editSongIdx, setEditSongIdx] = useState(null);
+      const [editSongKey, setEditSongKey] = useState('');
+      const [editSongTempo, setEditSongTempo] = useState('');
+      const [editSongStyle, setEditSongStyle] = useState('');
+
+      function openEditSong(idx) {
+        setEditSongIdx(idx);
+        const song = setlistSongs[idx];
+        setEditSongKey(song.key || '');
+        setEditSongTempo(song.tempo || '');
+        setEditSongStyle(song.style || '');
+      }
+
+      async function handleEditSongSave() {
+        if (editSongIdx == null) return;
+        const songId = localOrder[editSongIdx];
+        // Update key/tempo/style hanya di setlist (bukan di master song)
+        const newSetlistSongMeta = [...(setlist.setlistSongMeta || [])];
+        newSetlistSongMeta[editSongIdx] = {
+          id: songId,
+          key: editSongKey,
+          tempo: editSongTempo,
+          style: editSongStyle
+        };
+        if (setSetlists) {
+          setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, setlistSongMeta: newSetlistSongMeta } : s));
+        }
+        try {
+          await fetch(`/api/setlists/${setlist.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...setlist, setlistSongMeta: newSetlistSongMeta }),
+          });
+          setEditSongIdx(null);
+        } catch (e) {
+          console.error('Gagal update detail lagu di setlist', e);
+        }
+      }
+    async function handleDeleteSongFromSetlist(songId) {
+      const newOrder = localOrder.filter(id => id !== songId);
+      setLocalOrder(newOrder);
+      if (setSetlists) {
+        setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: newOrder } : s));
+      }
+      try {
+        await fetch(`/api/setlists/${setlist.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...setlist, songs: newOrder }),
+        });
+      } catch (e) {
+        // Optional: tampilkan error ke user
+        console.error('Gagal hapus lagu dari setlist', e);
+      }
+    }
   const { setlistId } = useParams();
   const navigate = useNavigate();
   const setlist = setlists.find(s => String(s.id) === String(setlistId));
@@ -229,12 +284,37 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists }) {
       )}
       <SongList
         songs={setlistSongs}
-        onSongClick={song => song && song.id && navigate(`/songs/${song.id}`)}
+        onSongClick={{
+          onClick: song => song && song.id && navigate(`/songs/${song.id}`),
+          onDeleteSong: handleDeleteSongFromSetlist,
+          onEditSong: idx => openEditSong(idx)
+        }}
+        setlistSongKeys={setlist.setlistSongMeta || []}
         emptyText="Setlist ini belum berisi lagu."
         showNumber={true}
         draggable={true}
         onReorder={handleReorder}
       />
+
+      {/* Modal Edit Lagu di Setlist */}
+      {editSongIdx != null && (
+        <div className="modal-overlay" onClick={e => { if (e.target.classList.contains('modal-overlay')) setEditSongIdx(null); }}>
+          <div className="modal add-song-modal">
+            <div className="modal-title">Edit Detail Lagu di Setlist</div>
+            <label>Key
+              <input type="text" value={editSongKey} onChange={e => setEditSongKey(e.target.value)} className="search-input mb-8" />
+            </label>
+            <label>Tempo
+              <input type="text" value={editSongTempo} onChange={e => setEditSongTempo(e.target.value)} className="search-input mb-8" />
+            </label>
+            <label>Style
+              <input type="text" value={editSongStyle} onChange={e => setEditSongStyle(e.target.value)} className="search-input mb-8" />
+            </label>
+            <button className="tab-btn" style={{ width: '100%', marginBottom: 8 }} onClick={handleEditSongSave}>Simpan</button>
+            <button className="back-btn mt-8" onClick={() => setEditSongIdx(null)}>Batal</button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

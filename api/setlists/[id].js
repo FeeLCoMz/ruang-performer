@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       try {
         const result = await client.execute(
-          `SELECT id, name, desc, songs, songKeys, completedSongs, createdAt, updatedAt
+          `SELECT id, name, desc, songs, setlistSongMeta, completedSongs, createdAt, updatedAt
            FROM setlists WHERE id = ? LIMIT 1`,
           [idStr]
         );
@@ -61,9 +61,9 @@ export default async function handler(req, res) {
           })(),
           songKeys: (() => {
             try {
-              return row.songKeys ? JSON.parse(row.songKeys) : {};
+              return row.setlistSongMeta ? JSON.parse(row.setlistSongMeta) : {};
             } catch (e) {
-              console.warn(`Invalid JSON in setlist.songKeys for id=${row.id}:`, e.message);
+              console.warn(`Invalid JSON in setlist.setlistSongMeta for id=${row.id}:`, e.message);
               return {};
             }
           })(),
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
       const body = await readJson(req);
       const now = new Date().toISOString();
       const songsJson = body.songs ? JSON.stringify(body.songs) : null;
-      const songKeysJson = body.songKeys ? JSON.stringify(body.songKeys) : null;
+      const setlistSongMetaJson = body.setlistSongMeta ? JSON.stringify(body.setlistSongMeta) : null;
       const completedSongsJson = body.completedSongs ? JSON.stringify(body.completedSongs) : null;
 
       await client.execute(
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
            name = COALESCE(?, name),
            desc = COALESCE(?, desc),
            songs = COALESCE(?, songs),
-           songKeys = COALESCE(?, songKeys),
+           setlistSongMeta = COALESCE(?, setlistSongMeta),
            completedSongs = COALESCE(?, completedSongs),
            updatedAt = ?
          WHERE id = ?`,
@@ -104,7 +104,7 @@ export default async function handler(req, res) {
           body.name ?? null,
           body.desc ?? null,
           songsJson,
-          songKeysJson,
+          setlistSongMetaJson,
           completedSongsJson,
           now,
           idStr,

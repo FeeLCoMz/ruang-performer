@@ -1,7 +1,7 @@
 -- Turso (libsql) schema for RoNz Chord
 
 CREATE TABLE IF NOT EXISTS songs (
-  id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   title TEXT NOT NULL,
   artist TEXT,
   youtubeId TEXT,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS setlists (
   name TEXT NOT NULL,
   desc TEXT,
   songs TEXT DEFAULT '[]',
-  songKeys TEXT DEFAULT '{}',
+  setlistSongMeta TEXT DEFAULT '{}',
   completedSongs TEXT DEFAULT '{}',
   createdAt TEXT DEFAULT (datetime('now')),
   updatedAt TEXT

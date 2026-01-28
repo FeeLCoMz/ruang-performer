@@ -16,7 +16,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import DragHandleIcon from './DragHandleIcon.jsx';
 
-function SongList({ songs, onSongClick, emptyText = 'Tidak ada lagu ditemukan.', enableSearch = false, showNumber = false, setlistSongKeys = null, draggable = false, onReorder = null }) {
+function SongList({ songs, onSongClick, emptyText = 'Tidak ada lagu ditemukan.', enableSearch = false, showNumber = false, setlistSongKeys: setlistSongMeta = null, draggable = false, onReorder = null }) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('default');
   const [sortOrder, setSortOrder] = useState('asc');
@@ -119,8 +119,15 @@ function SortableSongItem({ song, idx, renderSongItem }) {
 
   const renderSongItem = (song, idx, dragHandleProps = null, draggableProps = null, ref = null) => {
     let keyOverride = null;
-    if (setlistSongKeys && setlistSongKeys[idx] && setlistSongKeys[idx].id === song.id) {
-      keyOverride = setlistSongKeys[idx].key;
+    if (setlistSongMeta && setlistSongMeta[idx] && setlistSongMeta[idx].id === song.id) {
+      keyOverride = setlistSongMeta[idx].key;
+    }
+    // Handler klik item lagu: support object (onClick) atau langsung function
+    let handleClick = undefined;
+    if (typeof onSongClick === 'object' && onSongClick && onSongClick.onClick) {
+      handleClick = () => onSongClick.onClick(song);
+    } else if (typeof onSongClick === 'function') {
+      handleClick = () => onSongClick(song);
     }
     return (
       <li
@@ -129,7 +136,7 @@ function SortableSongItem({ song, idx, renderSongItem }) {
           'song-list-item' +
           (showNumber ? ' song-list-item--with-number' : '')
         }
-        onClick={() => onSongClick && onSongClick(song)}
+        onClick={handleClick}
         ref={ref}
         {...draggableProps}
       >
@@ -162,6 +169,31 @@ function SortableSongItem({ song, idx, renderSongItem }) {
               <span><strong>Style:</strong> {song.style || '-'}</span>
             </div>
           </div>
+          {/* Tombol edit dan hapus lagu dari setlist */}
+          {typeof onSongClick === 'object' && onSongClick && (
+            <>
+              {onSongClick.onEditSong && (
+                <button
+                  className="tab-btn"
+                  style={{ marginLeft: 12, background: '#e0e7ff', color: '#3730a3', fontWeight: 600, border: 'none', padding: '6px 12px', borderRadius: 8, cursor: 'pointer' }}
+                  title="Edit detail lagu di setlist"
+                  onClick={e => { e.stopPropagation(); onSongClick.onEditSong(idx); }}
+                >
+                  Edit
+                </button>
+              )}
+              {onSongClick.onDeleteSong && (
+                <button
+                  className="tab-btn"
+                  style={{ marginLeft: 8, background: '#ff6b6b', color: '#fff', fontWeight: 600, border: 'none', padding: '6px 12px', borderRadius: 8, cursor: 'pointer' }}
+                  title="Hapus lagu dari setlist"
+                  onClick={e => { e.stopPropagation(); onSongClick.onDeleteSong(song.id); }}
+                >
+                  Hapus
+                </button>
+              )}
+            </>
+          )}
         </div>
       </li>
     );
