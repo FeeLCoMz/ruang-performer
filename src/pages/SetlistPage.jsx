@@ -114,30 +114,27 @@ export default function SetlistPage({
           <li className="info-text">Tidak ada setlist.</li>
         )}
         {setlists.map(setlist => (
-          <li key={setlist.id} className="setlist-list-item" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
+          <li key={setlist.id} className="setlist-list-item setlist-list-flex">
             <span
-              className="setlist-title"
-              style={{ flex: 2, fontWeight: 600, cursor: 'pointer' }}
+              className="setlist-title setlist-title-flex pointer"
               onClick={() => navigate(`/setlists/${setlist.id}/songs`)}
             >
               {setlist.name}
                 {setlist.desc && (
-                  <div className="setlist-desc" style={{ fontWeight: 400, fontSize: '0.95em', color: '#666', marginTop: 2 }}>
+                  <div className="setlist-desc">
                     {setlist.desc}
                   </div>
                 )}
             </span>
             <span
-              className="setlist-count"
-              style={{ flex: 1, textAlign: 'center', color: 'var(--text-muted, #888)' }}
+              className="setlist-count setlist-count-flex"
               onClick={() => navigate(`/setlists/${setlist.id}/songs`)}
             >
               {(setlist.songs?.length || 0)} lagu
             </span>
-            <div style={{ flex: 'none', display: 'flex', gap: 6, marginLeft: 'auto' }}>
+            <div className="setlist-actions-flex">
               <button
-                className="tab-btn setlist-edit-btn"
-                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                className="tab-btn setlist-edit-btn setlist-action-btn"
                 title="Edit Setlist"
                 onClick={e => { e.stopPropagation(); setEditSetlist(setlist); }}
               >
@@ -145,8 +142,7 @@ export default function SetlistPage({
                 <span>Edit</span>
               </button>
               <button
-                className="tab-btn setlist-delete-btn"
-                style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#ff6b6b' }}
+                className="tab-btn setlist-delete-btn setlist-action-btn setlist-delete-color"
                 title="Hapus Setlist"
                 onClick={e => { e.stopPropagation(); setDeleteSetlist(setlist); }}
               >
@@ -158,16 +154,15 @@ export default function SetlistPage({
                 {deleteSetlist && (
                   <div className="modal-overlay" onClick={() => setDeleteSetlist(null)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
-                      <h3 className="setlist-modal-title" style={{ color: '#ff6b6b' }}>Hapus Setlist?</h3>
-                      <div style={{ marginBottom: 18 }}>
+                      <h3 className="setlist-modal-title setlist-delete-color">Hapus Setlist?</h3>
+                      <div className="setlist-modal-desc">
                         Yakin ingin menghapus setlist <b>{deleteSetlist.name}</b>? Tindakan ini tidak dapat dibatalkan.
                       </div>
-                      {deleteError && <div className="error-text" style={{ marginBottom: 10 }}>{deleteError}</div>}
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                      {deleteError && <div className="error-text setlist-modal-error">{deleteError}</div>}
+                      <div className="setlist-modal-actions">
                         <button className="tab-btn" onClick={() => setDeleteSetlist(null)}>Batal</button>
                         <button
-                          className="tab-btn"
-                          style={{ background: '#ff6b6b', color: '#fff', fontWeight: 600 }}
+                          className="tab-btn setlist-modal-delete-btn"
                           disabled={deleteLoading}
                           onClick={async () => {
                             setDeleteError('');

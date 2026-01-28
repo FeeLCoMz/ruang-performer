@@ -1,3 +1,58 @@
+/* SetlistPage Flex and Utility Classes */
+.setlist-list-flex {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.setlist-title-flex {
+  flex: 2;
+  font-weight: 600;
+}
+.setlist-desc {
+  font-weight: 400;
+  font-size: 0.95em;
+  color: #666;
+  margin-top: 2px;
+}
+.setlist-count-flex {
+  flex: 1;
+  text-align: center;
+  color: var(--text-muted, #888);
+}
+.setlist-actions-flex {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.setlist-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.setlist-delete-color {
+  color: #ff6b6b !important;
+}
+.setlist-modal-title.setlist-delete-color {
+  color: #ff6b6b;
+}
+.setlist-modal-desc {
+  margin-bottom: 18px;
+}
+.setlist-modal-error {
+  margin-bottom: 10px;
+}
+.setlist-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.setlist-modal-delete-btn {
+  background: #ff6b6b;
+  color: #fff;
+  font-weight: 600;
+}
 /* Tombol AI Setlist dan Bagikan Setlist */
 .ai-setlist-btn {
   background: linear-gradient(90deg, #ffe066 70%, #ffd700 100%);
