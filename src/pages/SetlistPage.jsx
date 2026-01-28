@@ -46,7 +46,14 @@ export default function SetlistPage({
       </button>
       {/* Modal Buat Setlist Baru */}
       {showCreateSetlist && (
-        <div className="modal-overlay" onClick={() => setShowCreateSetlist(false)}>
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          tabIndex={-1}
+          onClick={() => setShowCreateSetlist(false)}
+          onKeyDown={e => { if (e.key === 'Escape') setShowCreateSetlist(false); }}
+        >
           <SetlistForm
             mode="create"
             title="Buat Setlist Baru"
@@ -79,7 +86,14 @@ export default function SetlistPage({
       )}
       {/* Modal Edit Setlist */}
       {editSetlist && (
-        <div className="modal-overlay" onClick={() => setEditSetlist(null)}>
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          tabIndex={-1}
+          onClick={() => setEditSetlist(null)}
+          onKeyDown={e => { if (e.key === 'Escape') setEditSetlist(null); }}
+        >
           <SetlistForm
             mode="edit"
             title="Edit Setlist"
@@ -151,7 +165,14 @@ export default function SetlistPage({
             </span>
                 {/* Modal Konfirmasi Hapus Setlist */}
                 {deleteSetlist && (
-                  <div className="modal-overlay" onClick={() => setDeleteSetlist(null)}>
+                  <div
+                    className="modal-overlay"
+                    role="dialog"
+                    aria-modal="true"
+                    tabIndex={-1}
+                    onClick={() => setDeleteSetlist(null)}
+                    onKeyDown={e => { if (e.key === 'Escape') setDeleteSetlist(null); }}
+                  >
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                       <h3 className="setlist-modal-title setlist-delete-color">Hapus Setlist?</h3>
                       <div className="setlist-modal-desc">

@@ -1,5 +1,3 @@
-
-
 import SongList from '../components/SongList.jsx';
 import PlusIcon from '../components/PlusIcon.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -229,77 +227,70 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       </div>
       {/* Generate share text and copy handler above return */}
       {showShareModal && (
-        <div className="modal-overlay" onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowShareModal(false); }}>
-          <div className="modal add-song-modal">
-            <div className="modal-title">Bagikan Setlist</div>
-            <textarea
-              className="search-input full-width"
-              style={{ marginBottom: 12 }}
-              rows={7}
-              style={{ fontFamily: 'inherit', fontSize: '1.05em', background: '#f3f4fa', color: '#23243a', maxHeight: '220px', resize: 'vertical' }}
-              value={shareText}
-              readOnly
-            />
-            <button className="tab-btn full-width" style={{ marginBottom: 8 }} onClick={handleCopyShare}>{shareCopied ? '✅ Tersalin!' : 'Salin Teks'}</button>
-            <button className="back-btn" style={{ marginTop: 8 }} onClick={() => setShowShareModal(false)}>Tutup</button>
-          </div>
-        </div>
+        <Modal open={showShareModal} onClose={() => setShowShareModal(false)} className="add-song-modal">
+          <div className="modal-title">Bagikan Setlist</div>
+          <textarea
+            className="search-input full-width"
+            style={{ marginBottom: 12, fontFamily: 'inherit', fontSize: '1.05em', background: '#f3f4fa', color: '#23243a', maxHeight: '220px', resize: 'vertical' }}
+            rows={7}
+            value={shareText}
+            readOnly
+          />
+          <button className="tab-btn full-width" style={{ marginBottom: 8 }} onClick={handleCopyShare}>{shareCopied ? '✅ Tersalin!' : 'Salin Teks'}</button>
+          <button className="back-btn" style={{ marginTop: 8 }} onClick={() => setShowShareModal(false)}>Tutup</button>
+        </Modal>
       )}
       {showAiModal && (
-        <div className="modal-overlay" onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowAiModal(false); }}>
-          <div className="modal add-song-modal">
-                  <div className="modal-title">AI: Susun Setlist Otomatis</div>
-                  <textarea
-                    className="search-input full-width"
-                    style={{ marginBottom: 12 }}
-                    rows={7}
-                    placeholder="Masukkan daftar lagu, satu per baris. Bisa judul saja atau judul - artis.\nContoh:\nBintang Kehidupan\nSeparuh Aku - NOAH\n..."
-                    value={aiInput}
-                    onChange={e => setAiInput(e.target.value)}
-                    autoFocus
-                  />
-                  {aiError && <div className="error-text" style={{ marginBottom: 8 }}>{aiError}</div>}
-                  <button className="tab-btn full-width" style={{ marginBottom: 8 }} onClick={handleAiSubmit} disabled={aiLoading || !aiInput.trim()}>{aiLoading ? 'Memproses...' : 'Susun & Tambah ke Setlist'}</button>
-                  <button className="back-btn" style={{ marginTop: 8 }} onClick={() => setShowAiModal(false)}>Batal</button>
-                </div>
-              </div>
-        )}
+        <Modal open={showAiModal} onClose={() => setShowAiModal(false)} className="add-song-modal">
+          <div className="modal-title">AI: Susun Setlist Otomatis</div>
+          <textarea
+            className="search-input full-width"
+            style={{ marginBottom: 12 }}
+            rows={7}
+            placeholder={"Masukkan daftar lagu, satu per baris. Bisa judul saja atau judul - artis.\nContoh:\nBintang Kehidupan\nSeparuh Aku - NOAH\n..."}
+            value={aiInput}
+            onChange={e => setAiInput(e.target.value)}
+            autoFocus
+          />
+          {aiError && <div className="error-text" style={{ marginBottom: 8 }}>{aiError}</div>}
+          <button className="tab-btn full-width" style={{ marginBottom: 8 }} onClick={handleAiSubmit} disabled={aiLoading || !aiInput.trim()}>{aiLoading ? 'Memproses...' : 'Susun & Tambah ke Setlist'}</button>
+          <button className="back-btn" style={{ marginTop: 8 }} onClick={() => setShowAiModal(false)}>Batal</button>
+        </Modal>
+      )}
 
   {showAddSong && (
-    <div className="modal-overlay" onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowAddSong(false); }}>
-          <div className="modal add-song-modal">
-            <div className="modal-title">Tambah Lagu ke Setlist</div>
-            <input
-              ref={addSongInputRef}
-              type="text"
-              placeholder="Cari judul atau artist..."
-              value={addSongSearch}
-              onChange={e => setAddSongSearch(e.target.value)}
-              className="search-input full-width"
-              style={{ marginBottom: 12 }}
-              autoFocus
-            />
-            <ul className="song-list song-list-scroll" style={{ marginBottom: 8 }}>
-              {filteredAvailableSongs.length === 0 && (
-                <li className="info-text">Tidak ada lagu tersedia.</li>
-              )}
-              {filteredAvailableSongs.map(song => (
-                <li
-                  key={song.id}
-                  className="song-list-item pointer"
-                  style={addingSongId === song.id ? { opacity: 0.5 } : undefined}
-                  onClick={() => handleAddSongToSetlist(song.id)}
-                >
-                  <span style={{ fontWeight: 700, color: 'var(--primary-accent-dark, #3730a3)' }}>{song.title}</span> <span style={{ color: 'var(--text-muted, #888)', marginLeft: 8 }}>{song.artist}</span>
-                  {addingSongId === song.id && <span style={{ marginLeft: 8 }}>⏳</span>}
-                </li>
-              ))}
-            </ul>
-            {addSongError && <div className="error-text" style={{ marginBottom: 8 }}>{addSongError}</div>}
-            <button className="back-btn" style={{ marginTop: 8 }} onClick={() => setShowAddSong(false)}>Batal</button>
-          </div>
-        </div>
-      )}
+    <Modal open={showAddSong} onClose={() => setShowAddSong(false)} className="add-song-modal">
+      <div className="modal-title">Tambah Lagu ke Setlist</div>
+      <input
+        ref={addSongInputRef}
+        type="text"
+        placeholder="Cari judul atau artist..."
+        value={addSongSearch}
+        onChange={e => setAddSongSearch(e.target.value)}
+        className="search-input full-width"
+        style={{ marginBottom: 12 }}
+        autoFocus
+      />
+      <ul className="song-list song-list-scroll" style={{ marginBottom: 8 }}>
+        {filteredAvailableSongs.length === 0 && (
+          <li className="info-text">Tidak ada lagu tersedia.</li>
+        )}
+        {filteredAvailableSongs.map(song => (
+          <li
+            key={song.id}
+            className="song-list-item pointer"
+            style={addingSongId === song.id ? { opacity: 0.5 } : undefined}
+            onClick={() => handleAddSongToSetlist(song.id)}
+          >
+            <span style={{ fontWeight: 700, color: 'var(--primary-accent-dark, #3730a3)' }}>{song.title}</span> <span style={{ color: 'var(--text-muted, #888)', marginLeft: 8 }}>{song.artist}</span>
+            {addingSongId === song.id && <span style={{ marginLeft: 8 }}>⏳</span>}
+          </li>
+        ))}
+      </ul>
+      {addSongError && <div className="error-text" style={{ marginBottom: 8 }}>{addSongError}</div>}
+      <button className="back-btn" style={{ marginTop: 8 }} onClick={() => setShowAddSong(false)}>Batal</button>
+    </Modal>
+  )}
       <SongList
         songs={setlistSongs}
         onSongClick={{
@@ -316,22 +307,20 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
       {/* Modal Edit Lagu di Setlist */}
       {editSongIdx != null && (
-        <div className="modal-overlay" onClick={e => { if (e.target.classList.contains('modal-overlay')) setEditSongIdx(null); }}>
-          <div className="modal add-song-modal">
-            <div className="modal-title">Edit Detail Lagu di Setlist</div>
-            <label>Key
-              <input type="text" value={editSongKey} onChange={e => setEditSongKey(e.target.value)} className="search-input" style={{ marginBottom: 8 }} />
-            </label>
-            <label>Tempo
-              <input type="text" value={editSongTempo} onChange={e => setEditSongTempo(e.target.value)} className="search-input" style={{ marginBottom: 8 }} />
-            </label>
-            <label>Style
-              <input type="text" value={editSongStyle} onChange={e => setEditSongStyle(e.target.value)} className="search-input" style={{ marginBottom: 8 }} />
-            </label>
-            <button className="btn-base tab-btn full-width" style={{ marginBottom: 8 }} onClick={handleEditSongSave}>Simpan</button>
-            <button className="btn-base back-btn" style={{ marginTop: 8 }} onClick={() => setEditSongIdx(null)}>Batal</button>
-          </div>
-        </div>
+        <Modal open={editSongIdx != null} onClose={() => setEditSongIdx(null)} className="add-song-modal">
+          <div className="modal-title">Edit Detail Lagu di Setlist</div>
+          <label>Key
+            <input type="text" value={editSongKey} onChange={e => setEditSongKey(e.target.value)} className="search-input" style={{ marginBottom: 8 }} />
+          </label>
+          <label>Tempo
+            <input type="text" value={editSongTempo} onChange={e => setEditSongTempo(e.target.value)} className="search-input" style={{ marginBottom: 8 }} />
+          </label>
+          <label>Style
+            <input type="text" value={editSongStyle} onChange={e => setEditSongStyle(e.target.value)} className="search-input" style={{ marginBottom: 8 }} />
+          </label>
+          <button className="btn-base tab-btn full-width" style={{ marginBottom: 8 }} onClick={handleEditSongSave}>Simpan</button>
+          <button className="btn-base back-btn" style={{ marginTop: 8 }} onClick={() => setEditSongIdx(null)}>Batal</button>
+        </Modal>
       )}
     </>
   );

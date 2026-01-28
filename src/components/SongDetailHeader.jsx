@@ -1,4 +1,5 @@
 import React from 'react';
+import EditIcon from './EditIcon';
 
 export default function SongDetailHeader({ song, artist, onBack, onEdit }) {
   return (
@@ -9,14 +10,7 @@ export default function SongDetailHeader({ song, artist, onBack, onEdit }) {
         {artist && (
           <div className="song-artist">{artist}</div>
         )}
-      </div>
-      <button
-        className="tab-btn setlist-edit-btn icon-btn"
-        title="Edit Lagu"
-        onClick={onEdit}
-      >
-        {/* Ikon edit diisi dari parent */}
-        {typeof onEdit === 'object' ? onEdit : <span>Edit</span>}
+      </div>     
       <button
         className="btn-base aksi-btn"
         onClick={onEdit}
@@ -25,3 +19,6 @@ export default function SongDetailHeader({ song, artist, onBack, onEdit }) {
       >
         <EditIcon size={18} />
       </button>
+    </div>
+  );
+}

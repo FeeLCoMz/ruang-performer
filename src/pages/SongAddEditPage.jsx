@@ -225,8 +225,20 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 
 			{/* AI Confirm Modal */}
 			{showAiConfirm && aiResult && (
-				<div className="modal-overlay" style={{ position: 'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.35)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center' }}>
-					<div className="modal-content" style={{ background:'#222', color:'#fff', borderRadius:10, padding:28, minWidth:320, maxWidth:400, boxShadow:'0 4px 32px #0008', position:'relative' }}>
+				<div
+				  className="modal-overlay"
+				  style={{ position: 'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.35)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center' }}
+				  tabIndex={-1}
+				  onKeyDown={e => { if (e.key === 'Escape') { setShowAiConfirm(false); setAiResult(null); } }}
+				  onClick={e => { if (e.target.classList.contains('modal-overlay')) { setShowAiConfirm(false); setAiResult(null); } }}
+				>
+					<div
+					  className="modal-content"
+					  style={{ background:'#222', color:'#fff', borderRadius:10, padding:28, minWidth:320, maxWidth:400, boxShadow:'0 4px 32px #0008', position:'relative' }}
+					  role="dialog"
+					  aria-modal="true"
+					  tabIndex={0}
+					>
 						<h3 style={{marginTop:0, marginBottom:16}}>Konfirmasi Isi Otomatis</h3>
 						<div style={{marginBottom:16, fontSize:'0.98em'}}>Pilih field yang ingin diisi otomatis:</div>
 						{/* Chord Links */}
