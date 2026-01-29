@@ -253,13 +253,6 @@
   color: var(--primary-accent-dark);
 }
 
-.auto-scroll-btn,
-.highlight-btn,
-.aksi-btn,
-.theme-switch-btn {
-  /* Only override if needed, else inherit from .btn-base */
-}
-
 .auto-scroll-btn.active,
 .highlight-btn.active {
   background: var(--primary-accent);
