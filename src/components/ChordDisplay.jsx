@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { transposeChord as transposeChordUtil, getNoteIndex } from '../utils/chordUtils.js';
 
@@ -30,8 +29,21 @@ function parseSection(line) {
     const label = match[1].toLowerCase();
     // Daftar kata kunci struktur lagu
     const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'reff', 'pre-chorus'];
-    // Daftar kata kunci instrumen
-    const instrumentKeywords = ['guitar', 'gitar', 'piano', 'bass', 'keyboard', 'drum','suling'];
+    // Daftar kata kunci instrumen umum per kategori
+    const instrumentKeywords = [
+      // Gitar dan keluarga
+      'gitar', 'guitar', 'bass', 'ukulele', 'mandolin',
+      // Keyboard
+      'piano', 'keyboard', 'organ', 'synth',
+      // Tiup
+      'saxophone', 'saksofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet',
+      // Gesek
+      'violin', 'biola', 'cello', 'kontrabas',
+      // Vokal
+      'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
+      // Perkusi/Drum
+      'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana'
+    ];
     if (structureKeywords.some(k => label.includes(k))) {
       return { type: 'structure', label };
     }

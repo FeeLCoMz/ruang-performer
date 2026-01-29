@@ -25,9 +25,8 @@ async function saveSongMarkers(songId, markers) {
 
 export default function TimeMarkers({ markers: initialMarkers = [], onMarkersChange, getCurrentTime, seekTo, readonly }) {
   const [markers, setMarkersState] = useState(initialMarkers);
-  // Debug: log setiap kali markers berubah dan propagate ke parent
+  // Propagate markers ke parent
   useEffect(() => {
-    console.log('[DEBUG] TimeMarkers markers changed:', markers);
     if (typeof onMarkersChange === 'function') onMarkersChange(markers);
   }, [markers, onMarkersChange]);
   // didMountRef tidak diperlukan lagi

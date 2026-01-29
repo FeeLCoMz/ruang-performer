@@ -76,7 +76,6 @@ app.post('/api/extract-chord', async (req, res) => {
       return res.status(400).json({ error: 'Format URL tidak valid' });
     }
 
-    console.log('Fetching URL:', normalizedUrl);
 
     // Use https or http module based on protocol
     const client = urlObj.protocol === 'https:' ? https : http;
@@ -137,7 +136,6 @@ app.get('/', (req, res) => {
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`API server listening on http://localhost:${PORT}`);
   });
 }
 

@@ -18,10 +18,6 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 	const [youtubeId, setYoutubeId] = useState('');
 	const [instruments, setInstruments] = useState([]);
 	const [timestamps, setTimestamps] = useState([]);
-	// Debug: log setiap kali timestamps berubah
-	React.useEffect(() => {
-		console.log('[DEBUG] timestamps state changed:', timestamps);
-	}, [timestamps]);
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [loadingData, setLoadingData] = useState(mode === 'edit');
@@ -122,7 +118,6 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 		try {
 			let res;
 			const payload = { title, artist, key, tempo, style, lyrics, youtubeId, timestamps, instruments };
-			console.log('[DEBUG] handleSubmit payload:', payload);
 			if (mode === 'edit') {
 				res = await fetch(`/api/songs/${songId}`, {
 					method: 'PUT',

@@ -61,7 +61,6 @@ export default async function handler(req, res) {
       const now = new Date().toISOString();
 
       // DEBUG: log payload yang diterima
-      console.log('[PUT /api/songs/:id] Payload:', JSON.stringify(body));
 
       // Only update timestamps if present in body
       let updateSql = `UPDATE songs SET 
@@ -91,10 +90,8 @@ export default async function handler(req, res) {
       }
       updateSql += ' WHERE id = ?';
       updateParams.push(idStr);
-      //console.log('[PUT /api/songs/:id] Update params:', updateParams);
 
       const result = await client.execute(updateSql, updateParams);
-      console.log('[PUT /api/songs/:id] Update result:', result);
 
       res.status(200).json({ id });
       return;
