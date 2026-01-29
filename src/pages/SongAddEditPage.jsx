@@ -1,7 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
+import TimeMarkers from '../components/TimeMarkers.jsx';
 
 function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 	const location = useLocation();
@@ -15,6 +18,10 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 	const [youtubeId, setYoutubeId] = useState('');
 	const [instruments, setInstruments] = useState([]);
 	const [timestamps, setTimestamps] = useState([]);
+	// Debug: log setiap kali timestamps berubah
+	React.useEffect(() => {
+		console.log('[DEBUG] timestamps state changed:', timestamps);
+	}, [timestamps]);
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [loadingData, setLoadingData] = useState(mode === 'edit');
@@ -115,6 +122,7 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 		try {
 			let res;
 			const payload = { title, artist, key, tempo, style, lyrics, youtubeId, timestamps, instruments };
+			console.log('[DEBUG] handleSubmit payload:', payload);
 			if (mode === 'edit') {
 				res = await fetch(`/api/songs/${songId}`, {
 					method: 'PUT',
@@ -200,25 +208,20 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 						placeholder="Contoh: gitar, piano, drum"
 					/>
 				</label>
-				{/* YouTube Viewer di atas field lirik */}
+				{/* YouTube Viewer dan TimeMarkers di atas field lirik */}
 				{youtubeId && (
 					<div style={{ margin: '16px 0' }}>
 						<YouTubeViewer
 							videoId={youtubeId}
 							minimalControls={false}
-							ref={ytRef => {
-								window._ytRef = ytRef;
-							}}
-							onTimeUpdate={(t, d) => {
-								window._ytCurrentTime = t;
-							}}
-							songId={songId}
-							showTimeMarkers={true}
-							timeMarkersProps={{
-								markers: timestamps,
-								setMarkers: setTimestamps,
-								manualMode: mode === 'add',
-							}}
+							ref={ytRef => { window._ytRef = ytRef; }}
+							onTimeUpdate={(t, d) => { window._ytCurrentTime = t; }}
+						/>
+						<TimeMarkers
+							markers={timestamps}
+							onMarkersChange={setTimestamps}
+							getCurrentTime={() => window._ytRef?.currentTime || 0}
+							seekTo={t => window._ytRef?.handleSeek?.(t)}
 						/>
 					</div>
 				)}
@@ -228,7 +231,7 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 						value={lyrics}
 						onChange={e => setLyrics(e.target.value)}
 						rows={8}
-						placeholder="[C] Contoh lirik dan chord..."
+						placeholder="Contoh lirik dan chord..."
 					/>
 				</label>
 				{error && <div className="error-text">{error}</div>}

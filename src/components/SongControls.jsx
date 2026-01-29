@@ -2,24 +2,19 @@ import React from 'react';
 
 export function TransposeControl({ transpose, setTranspose, highlightChords, setHighlightChords, TransposeBar }) {
   return (
-    <div className="song-control-group">
-      <label className="song-control-label">Transpose</label>
       <TransposeBar
         transpose={transpose}
         setTranspose={setTranspose}
         highlightChords={highlightChords}
         setHighlightChords={setHighlightChords}
       />
-    </div>
+
   );
 }
 
 export function AutoScrollControl({ tempo, AutoScrollBar }) {
   return (
-    <div className="song-control-group">
-      <label className="song-control-label">Auto Scroll</label>
       <AutoScrollBar tempo={tempo} />
-    </div>
   );
 }
 

@@ -63,7 +63,18 @@ export default async function handler(req, res) {
       // DEBUG: log payload yang diterima
       console.log('[PUT /api/songs/:id] Payload:', JSON.stringify(body));
 
-      const updateParams = [
+      // Only update timestamps if present in body
+      let updateSql = `UPDATE songs SET 
+        title = COALESCE(?, title),
+        artist = COALESCE(?, artist),
+        youtubeId = COALESCE(?, youtubeId),
+        lyrics = COALESCE(?, lyrics),
+        key = COALESCE(?, key),
+        tempo = COALESCE(?, tempo),
+        style = COALESCE(?, style),
+        instruments = COALESCE(?, instruments),
+        updatedAt = ?`;
+      let updateParams = [
         body.title ?? null,
         body.artist ?? null,
         body.youtubeId ?? null,
@@ -72,27 +83,17 @@ export default async function handler(req, res) {
         body.tempo ?? null,
         body.style ?? null,
         (Array.isArray(body.instruments) ? JSON.stringify(body.instruments) : (body.instruments ?? null)),
-        (Array.isArray(body.timestamps) ? JSON.stringify(body.timestamps) : (body.timestamps ?? null)),
-        now,
-        idStr,
+        now
       ];
+      if (body.hasOwnProperty('timestamps')) {
+        updateSql += ', timestamps = ?';
+        updateParams.push(Array.isArray(body.timestamps) ? JSON.stringify(body.timestamps) : (body.timestamps ?? null));
+      }
+      updateSql += ' WHERE id = ?';
+      updateParams.push(idStr);
       //console.log('[PUT /api/songs/:id] Update params:', updateParams);
 
-      const result = await client.execute(
-        `UPDATE songs SET 
-           title = COALESCE(?, title),
-           artist = COALESCE(?, artist),
-           youtubeId = COALESCE(?, youtubeId),
-           lyrics = COALESCE(?, lyrics),
-           key = COALESCE(?, key),
-           tempo = COALESCE(?, tempo),
-           style = COALESCE(?, style),
-           instruments = COALESCE(?, instruments),
-           timestamps = COALESCE(?, timestamps),
-           updatedAt = ?
-         WHERE id = ?`,
-        updateParams
-      );
+      const result = await client.execute(updateSql, updateParams);
       console.log('[PUT /api/songs/:id] Update result:', result);
 
       res.status(200).json({ id });

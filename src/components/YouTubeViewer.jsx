@@ -17,7 +17,7 @@
  * Untuk videoId, bisa langsung ID ("dQw4w9WgXcQ") atau URL YouTube.
  */
 import React, { useState, useEffect, useRef } from 'react';
-import TimeMarkers from './TimeMarkers.jsx';
+
 
 
 function extractYouTubeId(input) {
@@ -50,9 +50,6 @@ const YouTubeViewer = React.forwardRef(({
   minimalControls = false,
   onTimeUpdate,
   seekToTime,
-  showTimeMarkers = true,
-  songId,
-  timeMarkersProps = {},
 }, ref) => {
   const [player, setPlayer] = useState(null);
   const pendingSeekRef = useRef(null);
@@ -251,7 +248,6 @@ const YouTubeViewer = React.forwardRef(({
           onInput={minimalControls ? (e) => handleSeek(e.target.value) : undefined}
           onMouseUp={minimalControls ? undefined : handleScrubberCommit}
           onTouchEnd={minimalControls ? undefined : handleScrubberCommit}
-          onBlur={minimalControls ? undefined : handleScrubberCommit}
           disabled={!player || !duration}
           aria-label="Scrub waktu video"
         />
@@ -297,15 +293,7 @@ const YouTubeViewer = React.forwardRef(({
             {Controls}
           </>
         )}
-        {/* Gabungkan TimeMarkers di bawah video dan scrubber */}
-        {showTimeMarkers && songId && (
-          <TimeMarkers
-            songId={songId}
-            getCurrentTime={() => isScrubbing && scrubberValueRef.current !== null ? Number(scrubberValueRef.current) : currentTime}
-            seekTo={handleSeek}
-            {...timeMarkersProps}
-          />
-        )}
+        {/* TimeMarkers dihapus dari YouTubeViewer. Render di SongAddEditPage.jsx */}
       </div>
     </div>
   );

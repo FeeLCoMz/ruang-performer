@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import EditIcon from '../components/EditIcon.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
+import TimeMarkers from '../components/TimeMarkers.jsx';
 import TransposeBar from '../components/TransposeBar.jsx';
 import AutoScrollBar from '../components/AutoScrollBar.jsx';
 import SetlistSongNavigator from '../components/SetlistSongNavigator.jsx';
@@ -125,6 +126,12 @@ export default function SongLyricsPage({ song, activeSetlist }) {
             songId={song.id}
             ref={ytRef => { window._ytRef = ytRef; }}
             onTimeUpdate={(t, d) => { window._ytCurrentTime = t; }}
+          />
+          <TimeMarkers
+            markers={Array.isArray(song.timestamps) ? song.timestamps : []}
+            getCurrentTime={() => window._ytRef?.currentTime || 0}
+            seekTo={t => window._ytRef?.handleSeek?.(t)}
+            readonly={true}
           />
         </div>
       )}

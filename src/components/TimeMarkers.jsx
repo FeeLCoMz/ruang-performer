@@ -23,8 +23,14 @@ async function saveSongMarkers(songId, markers) {
   });
 }
 
-export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: propMarkers, setMarkers: propSetMarkers, manualMode, readonly }) {
-  const [markers, setMarkersState] = useState(propMarkers || []);
+export default function TimeMarkers({ markers: initialMarkers = [], onMarkersChange, getCurrentTime, seekTo, readonly }) {
+  const [markers, setMarkersState] = useState(initialMarkers);
+  // Debug: log setiap kali markers berubah dan propagate ke parent
+  useEffect(() => {
+    console.log('[DEBUG] TimeMarkers markers changed:', markers);
+    if (typeof onMarkersChange === 'function') onMarkersChange(markers);
+  }, [markers, onMarkersChange]);
+  // didMountRef tidak diperlukan lagi
   const [input, setInput] = useState('');
   const [editingIdx, setEditingIdx] = useState(null);
   const [editValue, setEditValue] = useState('');
@@ -41,29 +47,12 @@ export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: p
     return () => clearInterval(interval);
   }, [getCurrentTime]);
 
-  // Sync with parent (for add mode)
+  // Sync markers jika initialMarkers berubah
   useEffect(() => {
-    if (manualMode && propMarkers) setMarkersState(propMarkers);
-  }, [propMarkers, manualMode]);
+    setMarkersState(initialMarkers);
+  }, [initialMarkers]);
 
-  // Load markers from DB (edit mode)
-  useEffect(() => {
-    if (!manualMode && songId) {
-      fetchSongMarkers(songId).then(setMarkersState);
-    }
-  }, [songId, manualMode]);
-
-  // Save markers to DB (edit mode)
-  useEffect(() => {
-    if (!manualMode && songId) {
-      saveSongMarkers(songId, markers);
-    }
-  }, [markers, songId, manualMode]);
-
-  // Propagate to parent (add mode)
-  useEffect(() => {
-    if (manualMode && propSetMarkers) propSetMarkers(markers);
-  }, [markers, manualMode, propSetMarkers]);
+  // Semua fetch/save otomatis dihapus. Parent bertanggung jawab simpan ke DB.
 
   // Add marker at current time
   const handleAdd = () => {
@@ -126,7 +115,15 @@ export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: p
             {markers.map((m, idx) => (
               <div className="time-marker-item" key={idx}>
                 <span className="time-marker-time" onClick={() => handleJump(m.time)} title="Lompat ke waktu">{formatTime(m.time)}</span>
-                <button className="btn-base time-marker-play-btn" onClick={() => handleJump(m.time)} title="Play ke waktu ini" style={{marginLeft: 6, marginRight: 6}}>▶️</button>
+                <button
+                  className="btn-base time-marker-play-btn"
+                  type="button"
+                  onClick={e => { e.preventDefault(); handleJump(m.time); }}
+                  title="Play ke waktu ini"
+                  style={{marginLeft: 6, marginRight: 6}}
+                >
+                  ▶️
+                </button>
                 {!readonly && (editingIdx === idx ? (
                   <>
                     <input
