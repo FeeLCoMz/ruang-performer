@@ -82,6 +82,7 @@ const YouTubeViewer = React.forwardRef(({
     if (!id) return;
 
     let canceled = false;
+    let prevOnReady = null;
 
     const ensureApiAndInit = () => {
       if (!window.YT || !window.YT.Player) {
@@ -91,9 +92,9 @@ const YouTubeViewer = React.forwardRef(({
           const firstScriptTag = document.getElementsByTagName('script')[0];
           firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
         }
-        const prev = window.onYouTubeIframeAPIReady;
+        prevOnReady = window.onYouTubeIframeAPIReady;
         window.onYouTubeIframeAPIReady = () => {
-          if (typeof prev === 'function') prev();
+          if (typeof prevOnReady === 'function') prevOnReady();
           if (!canceled) initPlayer(id);
         };
       } else {
@@ -105,10 +106,15 @@ const YouTubeViewer = React.forwardRef(({
 
     return () => {
       canceled = true;
+      // Clean up onYouTubeIframeAPIReady if this component set it
+      if (window.onYouTubeIframeAPIReady && prevOnReady) {
+        window.onYouTubeIframeAPIReady = prevOnReady;
+      }
       if (player && typeof player.destroy === 'function') {
         try { player.destroy(); } catch (e) { /* ignore */ }
       }
-      setPlayer(null);
+      if (mountedRef.current) setPlayer(null);
+      scrubberValueRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId]);

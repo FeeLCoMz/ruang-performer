@@ -36,7 +36,7 @@ function parseSection(line) {
       // Keyboard
       'piano', 'keyboard', 'organ', 'synth',
       // Tiup
-      'saxophone', 'saksofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet',
+      'saxophone', 'saksofon', 'saxofon','trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet',
       // Gesek
       'violin', 'biola', 'cello', 'kontrabas',
       // Vokal
