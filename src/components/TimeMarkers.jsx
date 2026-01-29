@@ -29,6 +29,7 @@ export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: p
   const [editingIdx, setEditingIdx] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [currentVideoTime, setCurrentVideoTime] = useState(0);
+  const [collapsed, setCollapsed] = useState(false);
   const inputRef = useRef();
 
   // Update current video time every 200ms
@@ -103,49 +104,64 @@ export default function TimeMarkers({ songId, getCurrentTime, seekTo, markers: p
 
   return (
     <div className="time-markers-container">
-      <div className="time-markers-header">Penanda Waktu</div>
-      <div style={{fontSize: '0.98em', color: 'var(--primary-accent-dark)', marginBottom: 6}}>
-        Waktu video saat ini: <b>{formatTime(currentVideoTime)}</b>
+      <div className="time-markers-header" style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+        <span>Penanda Waktu</span>
+        <button
+          className="time-markers-toggle-btn"
+          type="button"
+          aria-label={collapsed ? 'Tampilkan penanda waktu' : 'Sembunyikan penanda waktu'}
+          onClick={() => setCollapsed(c => !c)}
+          style={{marginLeft:8, fontSize:'1.1em', background:'none', border:'none', color:'var(--primary-accent, #6366f1)', cursor:'pointer'}}
+        >
+          {collapsed ? '▼' : '▲'}
+        </button>
       </div>
-      <div className="time-markers-list">
-        {markers.length === 0 && <div className="time-markers-empty">Belum ada penanda.</div>}
-        {markers.map((m, idx) => (
-          <div className="time-marker-item" key={idx}>
-            <span className="time-marker-time" onClick={() => handleJump(m.time)} title="Lompat ke waktu">{formatTime(m.time)}</span>
-            <button className="btn-base time-marker-play-btn" onClick={() => handleJump(m.time)} title="Play ke waktu ini" style={{marginLeft: 6, marginRight: 6}}>▶️</button>
-            {!readonly && (editingIdx === idx ? (
-              <>
-                <input
-                  className="time-marker-edit-input"
-                  value={editValue}
-                  onChange={e => setEditValue(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleEditSave(idx)}
-                  autoFocus
-                />
-                <button className="btn-base time-marker-save-btn" onClick={() => handleEditSave(idx)}>Simpan</button>
-              </>
-            ) : (
-              <>
-                <span className="time-marker-label">{m.label}</span>
-                <button className="btn-base time-marker-edit-btn" onClick={() => handleEdit(idx)} title="Edit">✎</button>
-              </>
-            ))}
-            {!readonly && <button className="btn-base time-marker-remove-btn" onClick={() => handleRemove(idx)} title="Hapus">🗑</button>}
+      {!collapsed && (
+        <>
+          <div style={{fontSize: '0.98em', color: 'var(--primary-accent-dark)', marginBottom: 6}}>
+            Waktu video saat ini: <b>{formatTime(currentVideoTime)}</b>
           </div>
-        ))}
-      </div>
-      {!readonly && (
-        <div className="time-markers-add">
-          <input
-            className="time-marker-input"
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="Tulis label penanda..."
-            onKeyDown={e => e.key === 'Enter' && handleAdd()}
-          />
-          <button className="btn-base time-marker-add-btn" onClick={handleAdd} disabled={!input.trim() || !getCurrentTime}>+</button>
-        </div>
+          <div className="time-markers-list">
+            {markers.length === 0 && <div className="time-markers-empty">Belum ada penanda.</div>}
+            {markers.map((m, idx) => (
+              <div className="time-marker-item" key={idx}>
+                <span className="time-marker-time" onClick={() => handleJump(m.time)} title="Lompat ke waktu">{formatTime(m.time)}</span>
+                <button className="btn-base time-marker-play-btn" onClick={() => handleJump(m.time)} title="Play ke waktu ini" style={{marginLeft: 6, marginRight: 6}}>▶️</button>
+                {!readonly && (editingIdx === idx ? (
+                  <>
+                    <input
+                      className="time-marker-edit-input"
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleEditSave(idx)}
+                      autoFocus
+                    />
+                    <button className="btn-base time-marker-save-btn" onClick={() => handleEditSave(idx)}>Simpan</button>
+                  </>
+                ) : (
+                  <>
+                    <span className="time-marker-label">{m.label}</span>
+                    <button className="btn-base time-marker-edit-btn" onClick={() => handleEdit(idx)} title="Edit">✎</button>
+                  </>
+                ))}
+                {!readonly && <button className="btn-base time-marker-remove-btn" onClick={() => handleRemove(idx)} title="Hapus">🗑</button>}
+              </div>
+            ))}
+          </div>
+          {!readonly && (
+            <div className="time-markers-add">
+              <input
+                className="time-marker-input"
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder="Tulis label penanda..."
+                onKeyDown={e => e.key === 'Enter' && handleAdd()}
+              />
+              <button className="btn-base time-marker-add-btn" onClick={handleAdd} disabled={!input.trim() || !getCurrentTime}>+</button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

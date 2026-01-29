@@ -63,8 +63,8 @@ const YouTubeViewer = React.forwardRef(({
   const mountedRef = useRef(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const scrubberValueRef = useRef(null);
-  // Expand/collapse state
-  const [expanded, setExpanded] = useState(false);
+  // Expand/collapse state for video
+  const [videoExpanded, setVideoExpanded] = useState(true);
 
   // Expose play/pause, stop, seek, and currentTime to parent via ref
   React.useImperativeHandle(ref, () => ({
@@ -273,26 +273,29 @@ const YouTubeViewer = React.forwardRef(({
     <div className={minimalControls ? 'youtube-viewer-minimal' : 'youtube-viewer'}>
       <button
         type="button"
-        className={`btn-base yt-collapse-btn${expanded ? ' expanded' : ''}`}
-        data-align={expanded ? 'expanded' : 'collapsed'}
-        onClick={() => setExpanded(e => !e)}
-        aria-label={expanded ? 'Tutup video' : 'Tampilkan video'}
+        className={`btn-base yt-collapse-btn${videoExpanded ? ' expanded' : ''}`}
+        data-align={videoExpanded ? 'expanded' : 'collapsed'}
+        onClick={() => setVideoExpanded(e => !e)}
+        aria-label={videoExpanded ? 'Sembunyikan video' : 'Tampilkan video'}
+        style={{ marginBottom: 8 }}
       >
-        {expanded ? 'Tutup Video ▲' : 'Tampilkan Video ▼'}
+        {videoExpanded ? 'Sembunyikan Video 🎬' : 'Tampilkan Video 🎬'}
       </button>
-      <div
-        className={expanded ? 'yt-expandable expanded' : 'yt-expandable'}
-      >
-        {minimalControls ? (
-          <div className="yt-hidden-player">
-            <div id={containerIdRef.current}></div>
-          </div>
-        ) : (
-          <div className="video-container">
-            <div id={containerIdRef.current}></div>
-          </div>
+      <div className={videoExpanded ? 'yt-expandable expanded' : 'yt-expandable'}>
+        {videoExpanded && (
+          <>
+            {minimalControls ? (
+              <div className="yt-hidden-player">
+                <div id={containerIdRef.current}></div>
+              </div>
+            ) : (
+              <div className="video-container">
+                <div id={containerIdRef.current}></div>
+              </div>
+            )}
+            {Controls}
+          </>
         )}
-        {Controls}
         {/* Gabungkan TimeMarkers di bawah video dan scrubber */}
         {showTimeMarkers && songId && (
           <TimeMarkers
