@@ -133,15 +133,15 @@ export default function TimeMarkers({ markers: initialMarkers = [], onMarkersCha
                       onKeyDown={e => e.key === 'Enter' && handleEditSave(idx)}
                       autoFocus
                     />
-                    <button className="btn-base time-marker-save-btn" onClick={() => handleEditSave(idx)}>Simpan</button>
+                    <button type="button" className="btn-base time-marker-save-btn" onClick={() => handleEditSave(idx)}>Simpan</button>
                   </>
                 ) : (
                   <>
                     <span className="time-marker-label">{m.label}</span>
-                    <button className="btn-base time-marker-edit-btn" onClick={() => handleEdit(idx)} title="Edit">✎</button>
+                    <button type="button" className="btn-base time-marker-edit-btn" onClick={() => handleEdit(idx)} title="Edit">✎</button>
                   </>
                 ))}
-                {!readonly && <button className="btn-base time-marker-remove-btn" onClick={() => handleRemove(idx)} title="Hapus">🗑</button>}
+                {!readonly && <button type="button" className="btn-base time-marker-remove-btn" onClick={() => handleRemove(idx)} title="Hapus">🗑</button>}
               </div>
             ))}
           </div>
@@ -155,7 +155,7 @@ export default function TimeMarkers({ markers: initialMarkers = [], onMarkersCha
                 placeholder="Tulis label penanda..."
                 onKeyDown={e => e.key === 'Enter' && handleAdd()}
               />
-              <button className="btn-base time-marker-add-btn" onClick={handleAdd} disabled={!input.trim() || !getCurrentTime}>+</button>
+              <button type="button" className="btn-base time-marker-add-btn" onClick={handleAdd} disabled={!input.trim() || !getCurrentTime}>+</button>
             </div>
           )}
         </>
