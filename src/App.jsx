@@ -85,24 +85,29 @@ function App() {
   );
 
   const navigate = useNavigate();
-
-  // ...existing code...
+  
+  const showHeader = (
+    location.pathname === '/' ||
+    location.pathname === '/setlists'    
+  );
   return (
     <>
-      <header className="app-header">
-        <h1 className="app-title" style={{fontSize: '1.5rem'}}>🎸 RoNz Chord</h1>
-        <button
-          className={`btn-base theme-switch-btn ${theme === 'dark' ? 'dark' : 'light'}`}
-          onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-          title="Ganti mode gelap/terang"
-        >
-          {theme === 'dark' ? '🌙' : '☀️'}
-        </button>
-        <div className="tab-nav">
-          <button onClick={() => navigate('/')} className={`btn-base tab-btn${location.pathname === '/' ? ' active' : ''}`}>Lagu</button>
-          <button onClick={() => navigate('/setlists')} className={`btn-base tab-btn${location.pathname.startsWith('/setlists') ? ' active' : ''}`}>Setlist</button>
-        </div>
-      </header>
+      {showHeader && (
+        <header className="app-header">
+          <h1 className="app-title" style={{fontSize: '1.5rem'}}>🎸 RoNz Chord</h1>
+          <button
+            className={`btn-base theme-switch-btn ${theme === 'dark' ? 'dark' : 'light'}`}
+            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+            title="Ganti mode gelap/terang"
+          >
+            {theme === 'dark' ? '🌙' : '☀️'}
+          </button>
+          <div className="tab-nav">
+            <button onClick={() => navigate('/')} className={`btn-base tab-btn${location.pathname === '/' ? ' active' : ''}`}>Lagu</button>
+            <button onClick={() => navigate('/setlists')} className={`btn-base tab-btn${location.pathname.startsWith('/setlists') ? ' active' : ''}`}>Setlist</button>
+          </div>
+        </header>
+      )}
       <main className="main-content">
         <Routes>
           <Route
@@ -140,8 +145,8 @@ function App() {
           />
           <Route
             path="/songs/:id/edit"
-            element={<EditSongRoute onSongUpdated={() => {
-              navigate('/');
+            element={<EditSongRoute onSongUpdated={(id) => {
+              navigate(`/songs/${id}`);
               setLoadingSongs(true);
               fetch('/api/songs')
                 .then(res => res.json())
@@ -234,7 +239,7 @@ function EditSongRoute({ onSongUpdated }) {
       songId={id}
       mode="edit"
       onBack={() => navigate(`/songs/${id}`)}
-      onSongUpdated={onSongUpdated}
+      onSongUpdated={() => onSongUpdated(id)}
     />
   );
 }

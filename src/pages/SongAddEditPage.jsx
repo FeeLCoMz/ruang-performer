@@ -130,7 +130,7 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 				});
 				if (!res.ok) throw new Error('Gagal menambah lagu');
 			}
-			if (onSongUpdated) onSongUpdated();
+			if (onSongUpdated) onSongUpdated(songId);
 		} catch (e) {
 			setError(e.message || (mode === 'edit' ? 'Gagal mengupdate lagu' : 'Gagal menambah lagu'));
 		} finally {

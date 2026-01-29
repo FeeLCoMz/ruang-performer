@@ -1276,10 +1276,6 @@ body {
   position: relative;
 }
 
-.song-list-item--with-number {
-  padding-left: 2.7rem;
-}
-
 .song-number-badge {
   position: absolute;
   top: 10px;

@@ -1,4 +1,6 @@
+
 import React from 'react';
+import { transposeChord as transposeChordUtil, getNoteIndex } from '../utils/chordUtils.js';
 
 /**
  * Komponen untuk menampilkan lirik dan chord lagu.
@@ -15,18 +17,9 @@ function parseChordLine(line) {
   return chordCount > 0 && chordCount >= words.length / 2;
 }
 
+// Gunakan transposeChord dari chordUtils agar konsisten
 function transposeChord(chord, amount) {
-  const notes = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-  const flatNotes = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-  let match = chord.match(/^([A-G])([#b]?)(.*)$/);
-  if (!match) return chord;
-  let [_, root, accidental, rest] = match;
-  let idx = notes.indexOf(root + (accidental === '#' ? '#' : ''));
-  if (idx === -1 && accidental === 'b') idx = flatNotes.indexOf(root + 'b');
-  if (idx === -1) return chord;
-  let newIdx = (idx + amount + 12) % 12;
-  let newRoot = notes[newIdx];
-  return newRoot + rest;
+  return transposeChordUtil(chord, amount);
 }
 
 function parseSection(line) {

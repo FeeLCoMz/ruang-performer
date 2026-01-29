@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   DndContext,
@@ -27,9 +26,9 @@ function SongList({ songs, onSongClick, emptyText = 'Tidak ada lagu ditemukan.',
 
   let filteredSongs = enableSearch
     ? (songs || []).filter(song =>
-              (song.title || '').toLowerCase().includes(search.toLowerCase()) ||
-              (song.artist || '').toLowerCase().includes(search.toLowerCase())
-      )
+      (song.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      (song.artist || '').toLowerCase().includes(search.toLowerCase())
+    )
     : songs;
 
   // Sorting logic
@@ -79,12 +78,12 @@ function SongList({ songs, onSongClick, emptyText = 'Tidak ada lagu ditemukan.',
             style={{ marginBottom: 18 }}
           />
         )}
-        <div style={{ display:'flex', gap:10, marginBottom:12 }}>
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="search-input" style={{ width:150 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="search-input" style={{ width: 150 }}>
             {sortOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
           </select>
           {sortBy !== 'default' && (
-            <button className="tab-btn" style={{ padding:'6px 10px' }} onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}>
+            <button className="tab-btn" style={{ padding: '6px 10px' }} onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}>
               {sortOrder === 'asc' ? '⬆️' : '⬇️'}
             </button>
           )}
@@ -94,30 +93,30 @@ function SongList({ songs, onSongClick, emptyText = 'Tidak ada lagu ditemukan.',
     );
   }
 
-// Refactor: SortableSongItem harus di luar komponen agar urutan hook tidak berubah
-function SortableSongItem({ song, idx, renderSongItem }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: String(song.id) });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    background: isDragging ? '#f0f4ff' : undefined
-  };
-  return renderSongItem(
-    song,
-    idx,
-    { ...attributes, ...listeners },
-    { style },
-    setNodeRef
-  );
-}
+  // Refactor: SortableSongItem harus di luar komponen agar urutan hook tidak berubah
+  function SortableSongItem({ song, idx, renderSongItem }) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging
+    } = useSortable({ id: String(song.id) });
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+      background: isDragging ? '#f0f4ff' : undefined
+    };
+    return renderSongItem(
+      song,
+      idx,
+      { ...attributes, ...listeners },
+      { style },
+      setNodeRef
+    );
+  }
 
   const renderSongItem = (song, idx, dragHandleProps = null, draggableProps = null, ref = null) => {
     let keyOverride = null;
@@ -142,66 +141,65 @@ function SortableSongItem({ song, idx, renderSongItem }) {
         ref={ref}
         {...draggableProps}
       >
-        {showNumber && (
-          <span className="song-number-badge">{idx + 1}</span>
-        )}
-        <div style={{ marginLeft: showNumber ? 16 : 0, display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+          {showNumber && (
+            <span className="song-number-badge">{idx + 1}</span>
+          )}
           {draggable && (
-            <span {...dragHandleProps} style={{ cursor: 'grab', marginRight: 8 }} onClick={e => e.stopPropagation()}>
+            <span {...dragHandleProps} style={{ cursor: 'grab', marginRight: 12 }} onClick={e => e.stopPropagation()}>
               <DragHandleIcon size={18} />
             </span>
           )}
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 2 }}>
-              <span className="song-title" style={{ display: 'block', fontSize: '1.13em', fontWeight: 700 }}>{song.title}</span>
-              <span className="song-artist" style={{ display: 'block', fontSize: '0.98em', color: 'var(--text-muted)' }}>{song.artist}</span>
+          <div className="song-info" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <div className="song-list-item-header">
+              <span className="song-title">{song.title}</span>
+              <span className="song-artist">{song.artist}</span>
             </div>
-            <div className="song-info-row" style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 6, fontSize: '0.97em', color: 'var(--primary-accent-dark, #a5b4fc)' }}>
-              <span title="Key" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span role="img" aria-label="Key" style={{ fontSize: '1.1em' }}>🎹</span>
-                {keyOverride ? (
-                  <>
-                    <span style={{ color: 'var(--primary-accent)' }}>{keyOverride}</span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.97em', marginLeft: 4 }}>
-                      ({song.key || '-'})
-                    </span>
-                  </>
-                ) : (song.key || '-')}
-              </span>
-              <span title="Tempo" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span role="img" aria-label="Tempo" style={{ fontSize: '1.1em' }}>⏱️</span>
-                {song.tempo ? song.tempo + ' bpm' : '-'}
-              </span>
-              <span title="Style" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span role="img" aria-label="Style" style={{ fontSize: '1.1em' }}>🎼</span>
-                {song.style || '-'}
-              </span>
-            </div>
-          </div>
-          {/* Tombol edit dan hapus lagu dari setlist */}
-          {typeof onSongClick === 'object' && onSongClick && (
-            <>
-              {onSongClick.onEditSong && (
-                <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <div className="song-info-row">
+                <span title="Key" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span role="img" aria-label="Key" style={{ fontSize: '1.1em' }}>🎹</span>
+                  {keyOverride ? (
+                    <>
+                      <span style={{ color: 'var(--primary-accent)' }}>{keyOverride}</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.97em', marginLeft: 4 }}>
+                        ({song.key || '-'})
+                      </span>
+                    </>
+                  ) : (song.key || '-')}
+                </span>
+                <span title="Tempo" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span role="img" aria-label="Tempo" style={{ fontSize: '1.1em' }}>⏱️</span>
+                  {song.tempo ? song.tempo + ' bpm' : '-'}
+                </span>
+                <span title="Style" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span role="img" aria-label="Style" style={{ fontSize: '1.1em' }}>🎼</span>
+                  {song.style || '-'}
+                </span>
+              </div>
+              <div className="song-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, alignSelf: 'flex-end', marginTop: 8 }}>
+                {typeof onSongClick === 'object' && onSongClick && onSongClick.onEditSong && (
                   <button
-                    className="btn-base tab-btn"
+                    className="btn-base"
                     title="Edit detail lagu di setlist"
                     onClick={e => { e.stopPropagation(); onSongClick.onEditSong(idx); }}
                   >
                     <EditIcon size={18} />
                   </button>
+                )}
+                {typeof onSongClick === 'object' && onSongClick && onSongClick.onDeleteSong && (
                   <button
-                    className="btn-base tab-btn danger-btn"
-                    onClick={() => onRemoveSongMeta(song, idx)}
+                    className="btn-base danger-btn"
+                    onClick={e => { e.stopPropagation(); onSongClick.onDeleteSong(song.id); }}
                     title="Hapus lagu dari setlist"
                     aria-label="Hapus lagu dari setlist"
                   >
                     <DeleteIcon size={18} />
                   </button>
-                </>
-              )}
-            </>
-          )}
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </li>
     );
@@ -220,12 +218,12 @@ function SortableSongItem({ song, idx, renderSongItem }) {
             style={{ marginBottom: 18 }}
           />
         )}
-        <div style={{ display:'flex', gap:10, marginBottom:12 }}>
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="search-input" style={{ width:150 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="search-input" style={{ width: 150 }}>
             {sortOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
           </select>
           {sortBy !== 'default' && (
-            <button className="tab-btn" style={{ padding:'6px 10px' }} onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}>
+            <button className="tab-btn" style={{ padding: '6px 10px' }} onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}>
               {sortOrder === 'asc' ? '⬆️' : '⬇️'}
             </button>
           )}
@@ -255,12 +253,12 @@ function SortableSongItem({ song, idx, renderSongItem }) {
           style={{ marginBottom: 18 }}
         />
       )}
-      <div style={{ display:'flex', gap:10, marginBottom:12 }}>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="search-input" style={{ width:150 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="search-input" style={{ width: 150 }}>
           {sortOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         {sortBy !== 'default' && (
-          <button className="btn-base tab-btn" style={{ padding:'6px 10px' }} onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}>
+          <button className="btn-base tab-btn" style={{ padding: '6px 10px' }} onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')}>
             {sortOrder === 'asc' ? '⬆️' : '⬇️'}
           </button>
         )}

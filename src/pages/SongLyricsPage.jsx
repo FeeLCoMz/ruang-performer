@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import EditIcon from '../components/EditIcon.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
@@ -9,7 +9,7 @@ import SongDetailHeader from '../components/SongDetailHeader.jsx';
 import SongInfo from '../components/SongInfo.jsx';
 import SongControls from '../components/SongControls.jsx';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { parseChordPro } from '../utils/chordUtils.js';
+import { parseChordPro, transposeChord, getTransposeSteps } from '../utils/chordUtils.js';
 
 export default function SongLyricsPage({ song, activeSetlist }) {
   const navigate = useNavigate();
@@ -24,16 +24,47 @@ export default function SongLyricsPage({ song, activeSetlist }) {
     } catch {}
   }
   if (!song) return <div className="main-content error-text">Lagu tidak ditemukan</div>;
-  // Gabungkan metadata dari song dan dari lirik
-  const infoRows = [
+  // Jika setlist aktif, cari meta lagu dari setlist
+  let setlistMeta = null;
+  if (activeSetlist && Array.isArray(activeSetlist.setlistSongMeta) && song) {
+    setlistMeta = activeSetlist.setlistSongMeta.find(meta => meta && meta.id === song.id);
+  }
+  // Gabungkan metadata: prioritas setlist > lirik > master song
+  const metaKey = (setlistMeta && setlistMeta.key) || lyricMeta.key || song.key;
+  const metaTempo = (setlistMeta && setlistMeta.tempo) || lyricMeta.tempo || song.tempo;
+  const metaStyle = (setlistMeta && setlistMeta.style) || song.style;
+  const originalKey = song.key;
+  const originalTempo = song.tempo;
+  const originalStyle = song.style;
+
+  // Hitung steps transpose otomatis dari key database ke metaKey (setlist/lirik)
+  const autoTranspose = useMemo(() => {
+    if (typeof metaKey === 'string' && typeof song.key === 'string' && metaKey !== song.key) {
+      return getTransposeSteps(song.key, metaKey);
+    }
+    return 0;
+  }, [metaKey, song.key]);
+
+  // Reset transpose manual saat song atau metaKey berubah
+  useEffect(() => {
+    setTranspose(0);
+  }, [song.id, metaKey]);
+
+  // Info rows: tampilkan meta, dan jika berbeda tampilkan original
+  const infoRows = useMemo(() => [
     { label: 'Album', value: song.album },
-    { label: 'Key', value: lyricMeta.key || song.key },
-    { label: 'Tempo', value: lyricMeta.tempo || song.tempo },
-    { label: 'Style', value: song.style },
+    (typeof metaKey === 'string' && typeof song.key === 'string' && metaKey !== song.key)
+      ? { label: 'Key', value: `${metaKey} (Original: ${song.key})` }
+      : { label: 'Key', value: metaKey },
+    (typeof metaTempo === 'string' && typeof song.tempo === 'string' && metaTempo !== song.tempo)
+      ? { label: 'Tempo', value: `${metaTempo} (Original: ${song.tempo})` }
+      : { label: 'Tempo', value: metaTempo },
+    (typeof metaStyle === 'string' && typeof song.style === 'string' && metaStyle !== song.style)
+      ? { label: 'Style', value: `${metaStyle} (Original: ${song.style})` }
+      : { label: 'Style', value: metaStyle },
     { label: 'Capo', value: lyricMeta.capo },
     { label: 'Time Signature', value: lyricMeta.time_signature || song.time_signature },
-    { label: 'Original Key', value: lyricMeta.original_key },
-  ].filter(row => row.value);
+  ].filter(row => row.value), [metaKey, metaTempo, metaStyle, lyricMeta, song]);
   // Metadata lain di lirik (selain yang sudah di atas)
   const extraMeta = Object.entries(lyricMeta)
     .filter(([k]) => !['key','tempo','capo','time','original_key'].includes(k))
@@ -98,17 +129,17 @@ export default function SongLyricsPage({ song, activeSetlist }) {
         </div>
       )}
       <SongControls
-        transpose={transpose}
-        setTranspose={setTranspose}
+        transpose={transpose + autoTranspose}
+        setTranspose={delta => setTranspose(prev => typeof delta === 'function' ? delta(prev) : delta - autoTranspose)}
         highlightChords={highlightChords}
         setHighlightChords={setHighlightChords}
-        tempo={song.tempo ? Number(song.tempo) : 80}
+        tempo={metaTempo ? Number(metaTempo) : 80}
         TransposeBar={TransposeBar}
         AutoScrollBar={AutoScrollBar}
       />
       {/* Chord/lyrics */}
       <div className="song-detail-chord">
-        <ChordDisplay song={song} transpose={transpose} highlightChords={highlightChords} />
+        <ChordDisplay song={song} transpose={transpose + autoTranspose} highlightChords={highlightChords} />
       </div>
     </div>
   );
