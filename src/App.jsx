@@ -211,7 +211,7 @@ function SongLyricsRoute({ activeSetlist }) {
         const contentType = res.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) {
           const text = await res.text();
-          throw new Error('Respon server tidak valid: ' + text.slice(0, 100));
+          throw new Error('Respon server tidak valid: ' + text);
         }
         return res.json();
       })
