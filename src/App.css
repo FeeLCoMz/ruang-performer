@@ -1295,12 +1295,9 @@ Catatan:
 
 .chord-display .chord-line {
   color: var(--primary-accent-dark);
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-weight: 700;  
   background: var(--primary-accent-light);
-  border-radius: 6px;
-  padding: 2px 6px;
-  margin-bottom: 1px;
+  border-radius: 6px;    
   transition: background 0.2s;
 }
 
