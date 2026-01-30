@@ -214,7 +214,7 @@ function SongLyricsRoute({ activeSetlist }) {
       .catch(e => { setError(e.message || 'Gagal mengambil data'); setLoading(false); });
   }, [id]);
   if (loading) return <div className="main-content">Memuat data lagu...</div>;
-  //if (error) return <div className="main-content error-text">{error}</div>;
+  
   return <SongLyricsPage song={song} activeSetlist={activeSetlist} />;
 }
 
