@@ -34,6 +34,10 @@ export default function ChordDisplay({ song, transpose = 0, highlightChords = fa
     <div className="chord-display">
       <pre>
         {lines.map((line, i) => {
+          if (line.trim() === '') {
+            // Baris kosong, render span kosong agar tetap terlihat
+            return <span key={i} className="lyrics-line-empty">&nbsp;</span>;
+          }
           const section = parseSection(line);
           if (section) {
             if (section.type === 'structure') {
