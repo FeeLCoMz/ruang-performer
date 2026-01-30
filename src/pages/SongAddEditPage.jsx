@@ -79,13 +79,8 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 		if (mode === 'edit' && songId) {
 			setLoadingData(true);
 			fetch(`/api/songs/${songId}`)
-				.then(async res => {
+				.then(res => {
 					if (!res.ok) throw new Error('Gagal mengambil data lagu');
-					const contentType = res.headers.get('content-type') || '';
-					if (!contentType.includes('application/json')) {
-						const text = await res.text();
-						throw new Error('Respon server tidak valid: ' + text.slice(0, 100));
-					}
 					return res.json();
 				})
 				.then(data => {

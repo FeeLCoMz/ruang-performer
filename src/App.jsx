@@ -188,8 +188,7 @@ function App() {
           <Route
             path="/setlists/:setlistId/songs"
             element={<SetlistSongsPage setlists={setlists} songs={songs} setSetlists={setSetlists} setActiveSetlist={setActiveSetlist} />}
-          />
-          <Route path="*" element={<NotFound />} />
+          />          
         </Routes>
       </main>
     </>
@@ -206,13 +205,8 @@ function SongLyricsRoute({ activeSetlist }) {
     if (!id) return;
     setLoading(true);
     fetch(`/api/songs/${id}`)
-      .then(async res => {
+      .then(res => {
         if (!res.ok) throw new Error('Gagal mengambil data lagu');
-        const contentType = res.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-          const text = await res.text();
-          throw new Error('Respon server tidak valid: ' + text);
-        }
         return res.json();
       })
       .then(data => { setSong(data); setLoading(false); })
