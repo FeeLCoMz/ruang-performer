@@ -5,7 +5,7 @@ import PlusIcon from '../components/PlusIcon.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 
-export default function SetlistSongsPage({ setlists, songs, setSetlists, setActiveSetlist }) {
+export default function SetlistSongsPage({ setlists, songs, setSetlists, setActiveSetlist, loadingSetlists }) {
       const [editSongIdx, setEditSongIdx] = useState(null);
       const [editSongKey, setEditSongKey] = useState('');
       const [editSongTempo, setEditSongTempo] = useState('');
@@ -75,7 +75,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       }
   const { setlistId } = useParams();
   const navigate = useNavigate();
-  const setlist = setlists.find(s => String(s.id) === String(setlistId));
+  // Tambahkan state loadingSetlists (boolean) dari parent, default false jika tidak ada
+  // Jika parent belum support, fallback ke loading jika setlists masih null/undefined
+  const isLoading = typeof loadingSetlists === 'boolean' ? loadingSetlists : !Array.isArray(setlists);
+  const setlist = Array.isArray(setlists) ? setlists.find(s => String(s.id) === String(setlistId)) : null;
   // Set setlist aktif saat halaman dibuka
   useEffect(() => {
     if (setActiveSetlist && setlist) setActiveSetlist(setlist);
@@ -98,6 +101,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [addSongError, setAddSongError] = useState('');
   const [addingSongId, setAddingSongId] = useState(null);
   const addSongInputRef = useRef(null);
+  if (isLoading) return <div className="main-content info-text">Memuat setlist...</div>;
   if (!setlist) return <div className="main-content error-text">Setlist tidak ditemukan</div>;
   const setlistSongs = (localOrder || []).map(id => songs.find(song => song.id === id)).filter(Boolean);
 
