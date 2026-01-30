@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import EditIcon from '../components/EditIcon.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
@@ -17,6 +17,10 @@ export default function SongLyricsPage({ song, activeSetlist }) {
   const location = useLocation();
   const [transpose, setTranspose] = React.useState(0);
   const [highlightChords, setHighlightChords] = React.useState(false);
+  // Ref dan state untuk video scrubber
+  const ytRef = useRef(null);
+  const [ytCurrentTime, setYtCurrentTime] = useState(0);
+  const [ytDuration, setYtDuration] = useState(0);
   // Parse metadata dari lirik jika ada
   let lyricMeta = {};
   if (song && song.lyrics) {
@@ -118,19 +122,27 @@ export default function SongLyricsPage({ song, activeSetlist }) {
         instruments={song.instruments}
         extraMeta={extraMeta}
       />
-      {/* YouTube viewer */}
+      {/* YouTube viewer & scrubber */}
       {song.youtubeId && (
         <div className="song-detail-youtube">
           <YouTubeViewer
             videoId={song.youtubeId}
             songId={song.id}
-            ref={ytRef => { window._ytRef = ytRef; }}
-            onTimeUpdate={(t, d) => { window._ytCurrentTime = t; }}
+            ref={ytRef}
+            onTimeUpdate={(t, d) => {
+              setYtCurrentTime(t);
+              if (typeof d === 'number') setYtDuration(d);
+            }}
           />
           <TimeMarkers
             markers={Array.isArray(song.timestamps) ? song.timestamps : []}
-            getCurrentTime={() => window._ytRef?.currentTime || 0}
-            seekTo={t => window._ytRef?.handleSeek?.(t)}
+            getCurrentTime={() => ytRef.current && typeof ytRef.current.currentTime === 'number' ? ytRef.current.currentTime : ytCurrentTime}
+            seekTo={t => {
+              if (ytRef.current && typeof ytRef.current.handleSeek === 'function') {
+                ytRef.current.handleSeek(t);
+              }
+            }}
+            duration={ytRef.current && typeof ytRef.current.currentTime === 'number' ? ytDuration : undefined}
             readonly={true}
           />
         </div>

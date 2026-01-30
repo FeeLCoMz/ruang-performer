@@ -58,10 +58,7 @@ export default function TimeMarkers({ markers: initialMarkers = [], onMarkersCha
     if (readonly) return;
     if (!input.trim() || !getCurrentTime) return;
     let time = getCurrentTime();
-    if (window._ytRef && window._ytRef.scrubberValueRef && window._ytRef.isScrubbing) {
-      const scrubVal = Number(window._ytRef.scrubberValueRef.current);
-      if (!isNaN(scrubVal)) time = scrubVal;
-    }
+    // Tidak perlu akses window._ytRef, cukup pakai getCurrentTime()
     setMarkersState(prev => [...prev, { label: input.trim(), time }].sort((a, b) => a.time - b.time));
     setInput('');
     inputRef.current?.focus();

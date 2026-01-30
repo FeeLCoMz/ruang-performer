@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 
@@ -26,6 +26,10 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 	const [aiResult, setAiResult] = useState(null);
 	const [showAiConfirm, setShowAiConfirm] = useState(false);
 	const [aiConfirmFields, setAiConfirmFields] = useState({});
+	// Ref dan state untuk sinkronisasi YouTubeViewer dan TimeMarkers
+	const ytRef = useRef(null);
+	const [ytCurrentTime, setYtCurrentTime] = useState(0);
+	const [ytDuration, setYtDuration] = useState(0);
 
 	const handleAIAutofill = async () => {
 		if (!title.trim()) {
@@ -211,14 +215,21 @@ function SongAddEditPage({ mode = 'add', songId, onSongUpdated }) {
 						<YouTubeViewer
 							videoId={youtubeId}
 							minimalControls={false}
-							ref={ytRef => { window._ytRef = ytRef; }}
-							onTimeUpdate={(t, d) => { window._ytCurrentTime = t; }}
+							ref={ytRef}
+							onTimeUpdate={(t, d) => {
+								setYtCurrentTime(t);
+								if (typeof d === 'number') setYtDuration(d);
+							}}
 						/>
 						<TimeMarkers
 							markers={timestamps}
 							onMarkersChange={setTimestamps}
-							getCurrentTime={() => window._ytRef?.currentTime || 0}
-							seekTo={t => window._ytRef?.handleSeek?.(t)}
+							getCurrentTime={() => ytRef.current && typeof ytRef.current.currentTime === 'number' ? ytRef.current.currentTime : ytCurrentTime}
+							seekTo={t => {
+								if (ytRef.current && typeof ytRef.current.handleSeek === 'function') {
+									ytRef.current.handleSeek(t);
+								}
+							}}
 						/>
 					</div>
 				)}

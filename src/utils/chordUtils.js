@@ -1,4 +1,106 @@
 /**
+ * Deteksi apakah sebuah baris adalah baris not angka (misal: 7534, 5317, dst)
+ * Mengabaikan barline (|, ||, |:, :|, dst) dan token kosong.
+ * Contoh baris yang terdeteksi:
+ *   |: 7534 | .... | 5317 | .... :|
+ *   1 2 3 4 5 6 7
+ *   7. 6' 5 4
+ *
+ * Return: true jika mayoritas token adalah not angka (1-7, boleh ada titik/garis/aksen)
+ */
+export function parseNumberLine(line) {
+  // Hilangkan barline di awal/akhir/token
+  const cleaned = line
+    .replace(/\|:|:\||\[\:|\:\]|\|\||\|/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return false;
+  // Tokenisasi per spasi
+  let tokens = cleaned.split(/\s+/);
+  if (!tokens.length) return false;
+  // Hilangkan token pengulangan (2x, 3x, dst) saja
+  tokens = tokens.filter(t => !/^\d+x$/i.test(t));
+  if (!tokens.length) return false;
+  // Regex not angka: 1-7, boleh ada titik, aksen, petik, dsb
+  const numRegex = /^[1-7][.']*$/;
+  const dotRegex = /^\.{2,}$/; // token hanya titik minimal dua (....)
+  // Hitung mayoritas dari not angka dan .... saja
+  const validCount = tokens.filter(t => numRegex.test(t) || dotRegex.test(t)).length;
+  return validCount > 0 && validCount >= tokens.length / 2;
+}
+/**
+ * chordUtils.js
+ *
+ * Utilitas utama untuk manipulasi dan analisis chord pada aplikasi Ronz Chord Pro.
+ *
+ * Fitur utama:
+ * - Transposisi chord (transposeChord)
+ * - Deteksi dan parsing baris chord (parseChordLine, isChordLine)
+ * - Parsing struktur lagu/section (parseSection)
+ * - Analisis dan ekstraksi chord dari lirik (parseChordPro, getAllChords, getChordsByBar)
+ * - Mendukung format barline (|, ||, |:, :|) dan compact chord (D..Gm..Bb)
+ *
+ * Catatan:
+ * - Semua deteksi chord mengabaikan barline di awal/akhir/token.
+ * - Fungsi-fungsi ini digunakan baik di frontend (ChordDisplay) maupun backend (parsing API).
+ *
+ * Ekspor utama:
+ *   - transposeChord(chord, steps): string
+ *   - getNoteIndex(root): number|null
+ *   - getTransposeSteps(fromKey, toKey): number
+ *   - parseChordLine(line): boolean
+ *   - parseSection(line): {type, label}|null
+ *   - parseChordPro(text): {metadata, lines, structures}
+ *   - getAllChords(parsedSong): string[]
+ *   - getChordsByBar(parsedSong): string[][]
+ */
+export function parseChordLine(line) {
+  // Hilangkan barline di awal/akhir/token (|, ||, |:, :|, [:, :])
+  const cleaned = line
+    .replace(/\|:|:\||\[\:|\:\]|\|\||\|/g, ' ') // ganti barline dengan spasi
+    .replace(/\s+/g, ' ') // normalisasi spasi
+    .trim();
+  const chordRegex = /^[A-G][#b]?m?(aj|sus|dim|aug|add)?\d*(\/([A-G][#b]?))?$/i;
+  const words = cleaned.split(/\s+/);
+  if (!words.length) return false;
+  const chordCount = words.filter(w => chordRegex.test(w)).length;
+  return chordCount > 0 && chordCount >= words.length / 2;
+}
+
+// Fungsi untuk mendeteksi section/struktur lagu atau instrumen
+export function parseSection(line) {
+  // Gabungkan deteksi [Section], Section:, [Instrumen], Instrumen: dengan satu regex
+  // Contoh cocok: [Intro], Intro:, [Gitar], Gitar:
+  const match = line.trim().match(/^(?:\[)?([A-Za-z0-9 .:_-]+?)(?:\])?\s*:?\s*$/);
+  if (match) {
+    const label = match[1].toLowerCase();
+    // Daftar kata kunci struktur lagu
+    const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'reff', 'pre-chorus'];
+    // Daftar kata kunci instrumen umum per kategori
+    const instrumentKeywords = [
+      // Gitar dan keluarga
+      'gitar', 'guitar', 'bass', 'ukulele', 'mandolin',
+      // Keyboard
+      'piano', 'keyboard', 'organ', 'synth',
+      // Tiup
+      'saxophone', 'saksofon', 'saxofon','trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet',
+      // Gesek
+      'violin', 'biola', 'cello', 'kontrabas', 'strings',
+      // Vokal
+      'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
+      // Perkusi/Drum
+      'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana'
+    ];
+    if (structureKeywords.some(k => label.includes(k))) {
+      return { type: 'structure', label };
+    }
+    if (instrumentKeywords.some(k => label.includes(k))) {
+      return { type: 'instrument', label };
+    }
+  }
+  return null;
+}
+/**
  * Chord Utilities - Professional Implementation
  * Transposition, ChordPro parsing, and chord analysis
  */
@@ -346,4 +448,27 @@ export const getAllChords = (parsedSong) => {
   });
 
   return Array.from(chordSet).sort();
+};
+
+// Mengelompokkan chord berdasarkan bar (|) pada setiap baris chord
+export const getChordsByBar = (parsedSong) => {
+  if (!parsedSong || !parsedSong.lines) return [];
+
+  const bars = [];
+  parsedSong.lines.forEach(line => {
+    if (line.type === 'line_with_chords' && line.barText) {
+      // Split berdasarkan bar line
+      const barParts = line.barText.split('|').map(part => part.trim()).filter(Boolean);
+      barParts.forEach(bar => {
+        // Ambil semua chord dalam bar ini
+        const chords = [...bar.matchAll(CHORD_REGEX_GLOBAL)].map(match =>
+          match[0].replace(/^-/, '').replace(/\.+$/, '')
+        ).filter(Boolean);
+        if (chords.length > 0) {
+          bars.push(chords);
+        }
+      });
+    }
+  });
+  return bars;
 };
