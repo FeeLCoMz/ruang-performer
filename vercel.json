@@ -1,6 +1,8 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/setlists/(.*)", "destination": "/" },
+    { "source": "/songs/(.*)", "destination": "/" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }
