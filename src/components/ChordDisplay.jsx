@@ -8,12 +8,7 @@ const transposeChord = transposeChordUtil;
 export default function ChordDisplay({ song, transpose = 0, highlightChords = false }) {
   if (!song?.lyrics) {
     return (
-      <div style={{
-        textAlign: 'center',
-        padding: '40px 20px',
-        color: 'var(--text-muted)',
-        fontStyle: 'italic'
-      }}>
+      <div className="cd-empty">
         No lyrics available
       </div>
     );
@@ -24,7 +19,7 @@ export default function ChordDisplay({ song, transpose = 0, highlightChords = fa
   function renderLyricsLine(line, key) {
     const tokens = line.split(/(\s+)/).filter(Boolean);
     return (
-      <div key={key} style={{ minHeight: '1.5em', whiteSpace: 'pre-wrap' }}>
+      <div key={key} className="cd-lyrics">
         {tokens.map((token, idx) => {
           const trimmed = token.trim();
           if (parseChordLine(trimmed)) {
@@ -41,19 +36,12 @@ export default function ChordDisplay({ song, transpose = 0, highlightChords = fa
   }
 
   return (
-    <div style={{
-      fontFamily: 'var(--font-mono, "Courier New", monospace)',
-      fontSize: '1em',
-      lineHeight: '1.8',
-      color: 'var(--text-primary)',
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-word'
-    }}>
+    <div className="cd">
       {lines.map((line, i) => {
         // Empty line
         if (line.trim() === '') {
           return (
-            <div key={i} style={{ minHeight: '1.5em' }}>
+            <div key={i} className="cd-empty-line">
               &nbsp;
             </div>
           );
@@ -64,32 +52,14 @@ export default function ChordDisplay({ song, transpose = 0, highlightChords = fa
         if (section) {
           if (section.type === 'structure') {
             return (
-              <div key={i} style={{
-                margin: '16px 0 8px 0',
-                padding: '8px 12px',
-                background: 'var(--primary-color)',
-                color: 'white',
-                borderRadius: '4px',
-                fontWeight: '700',
-                fontSize: '0.95em',
-                display: 'inline-block'
-              }}>
+              <div key={i} className="cd-section-struct">
                 {section.label}
               </div>
             );
           }
           if (section.type === 'instrument') {
             return (
-              <div key={i} style={{
-                margin: '12px 0 6px 0',
-                padding: '6px 10px',
-                background: 'var(--secondary-bg)',
-                color: 'var(--primary-color)',
-                borderLeft: '3px solid var(--primary-color)',
-                fontWeight: '600',
-                fontSize: '0.9em',
-                fontStyle: 'italic'
-              }}>
+              <div key={i} className="cd-section-inst">
                 {section.label}
               </div>
             );
@@ -99,18 +69,14 @@ export default function ChordDisplay({ song, transpose = 0, highlightChords = fa
         // Chord line
         if (parseChordLine(line)) {
           return (
-            <div key={i} style={{
-              whiteSpace: 'pre',
-              marginBottom: '4px',
-              minHeight: '1.5em'
-            }}>
+            <div key={i} className="cd-chord">
               {line.split(/(\s+)/).map((token, j) => {
                 if (/^\s+$/.test(token)) return <span key={j}>{token}</span>;
                 let chord = transpose ? transposeChord(token, transpose) : token;
                 return highlightChords ? (
                   <ChordToken key={j} chord={chord} highlight={true} />
                 ) : (
-                  <span key={j} style={{ color: 'var(--primary-color)', fontWeight: '600' }}>
+                  <span key={j} className="cd-token">
                     {chord}
                   </span>
                 );
@@ -122,11 +88,7 @@ export default function ChordDisplay({ song, transpose = 0, highlightChords = fa
         // Number notation line
         if (parseNumberLine(line)) {
           return (
-            <div key={i} style={{
-              whiteSpace: 'pre',
-              marginBottom: '4px',
-              minHeight: '1.5em'
-            }}>
+            <div key={i} className="cd-number">
               {line.split(/(\s+)/).map((token, j) => {
                 if (/^\s+$/.test(token)) return <span key={j}>{token}</span>;
                 return <NumberToken key={j} number={token} />;

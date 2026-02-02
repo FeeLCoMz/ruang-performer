@@ -40,7 +40,9 @@ export default async function handler(req, res) {
          FROM gigs g
          LEFT JOIN bands b ON g.bandId = b.id
          LEFT JOIN setlists s ON g.setlistId = s.id
-         WHERE g.id = ? AND g.userId = ? LIMIT 1`,
+         WHERE g.id = ? AND g.bandId IN (
+           SELECT bandId FROM band_members WHERE userId = ?
+         ) LIMIT 1`,
         [idStr, userId]
       );
 
@@ -70,6 +72,16 @@ export default async function handler(req, res) {
       const body = await readJson(req);
       const now = new Date().toISOString();
 
+      // Check if user is the creator of the gig
+      const gigCheck = await client.execute(
+        `SELECT userId FROM gigs WHERE id = ?`,
+        [idStr]
+      );
+      
+      if (!gigCheck.rows?.[0] || gigCheck.rows[0].userId !== userId) {
+        return res.status(403).json({ error: 'Forbidden - only creator can edit' });
+      }
+
       await client.execute(
         `UPDATE gigs SET 
            bandId = COALESCE(?, bandId),
@@ -80,7 +92,7 @@ export default async function handler(req, res) {
            setlistId = COALESCE(?, setlistId),
            notes = COALESCE(?, notes),
            updatedAt = ?
-         WHERE id = ? AND userId = ?`,
+         WHERE id = ?`,
         [
           body.bandId !== undefined ? body.bandId : null,
           body.date ?? null,
@@ -90,8 +102,7 @@ export default async function handler(req, res) {
           body.setlistId ?? null,
           body.notes ?? null,
           now,
-          idStr,
-          userId,
+          idStr
         ]
       );
 
@@ -100,7 +111,17 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      await client.execute(`DELETE FROM gigs WHERE id = ? AND userId = ?`, [idStr, userId]);
+      // Check if user is the creator of the gig
+      const gigCheck = await client.execute(
+        `SELECT userId FROM gigs WHERE id = ?`,
+        [idStr]
+      );
+      
+      if (!gigCheck.rows?.[0] || gigCheck.rows[0].userId !== userId) {
+        return res.status(403).json({ error: 'Forbidden - only creator can delete' });
+      }
+
+      await client.execute(`DELETE FROM gigs WHERE id = ?`, [idStr]);
       res.status(204).end();
       return;
     }

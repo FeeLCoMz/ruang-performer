@@ -19,19 +19,18 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   }, [setlistId, setlists]);
 
   // State untuk order lagu di setlist
-  const [localOrder, setLocalOrder] = useState(setlist ? [...(setlist.songs || [])] : []);
+  const [localOrder, setLocalOrder] = useState([]);
   useEffect(() => {
     if (setlist && Array.isArray(setlist.songs)) {
       setLocalOrder([...(setlist.songs || [])]);
     }
-  }, [setlist]);
+  }, [setlist?.id, setlist?.songs]);
 
   // State untuk filter dan search
   const [searchText, setSearchText] = useState('');
   const [filterArtist, setFilterArtist] = useState('');
-  const [filterKey, setFilterKey] = useState('');
   const [filterGenre, setFilterGenre] = useState('');
-  const [sortBy, setSortBy] = useState('title');
+  const [sortBy, setSortBy] = useState('custom');
   const [sortOrder, setSortOrder] = useState('asc');
 
   // State untuk modal tambah lagu
@@ -55,9 +54,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [confirmDeleteSongId, setConfirmDeleteSongId] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  if (isLoading) return <div className="main-content info-text">Memuat setlist...</div>;
-  if (!setlist) return <div className="main-content error-text">Setlist tidak ditemukan</div>;
-
   // Get songs dalam setlist sesuai localOrder
   const setlistSongs = (localOrder || []).map(id => songs.find(song => song.id === id)).filter(Boolean);
 
@@ -65,11 +61,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const uniqueArtists = useMemo(() => {
     const artists = setlistSongs.map(s => s.artist).filter(Boolean);
     return [...new Set(artists)].sort();
-  }, [setlistSongs]);
-
-  const uniqueKeys = useMemo(() => {
-    const keys = setlistSongs.map(s => s.key).filter(Boolean);
-    return [...new Set(keys)].sort();
   }, [setlistSongs]);
 
   const uniqueGenres = useMemo(() => {
@@ -84,57 +75,61 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         (song.title || '').toLowerCase().includes(searchText.toLowerCase()) ||
         (song.artist || '').toLowerCase().includes(searchText.toLowerCase());
       const matchArtist = !filterArtist || song.artist === filterArtist;
-      const matchKey = !filterKey || song.key === filterKey;
       const matchGenre = !filterGenre || song.genre === filterGenre;
-      return matchSearch && matchArtist && matchKey && matchGenre;
+      return matchSearch && matchArtist && matchGenre;
     });
 
-    // Sort
-    result.sort((a, b) => {
-      let aVal, bVal;
-      switch (sortBy) {
-        case 'title':
-          aVal = a.title || '';
-          bVal = b.title || '';
-          break;
-        case 'artist':
-          aVal = a.artist || '';
-          bVal = b.artist || '';
-          break;
-        case 'key':
-          aVal = a.key || '';
-          bVal = b.key || '';
-          break;
-        case 'tempo':
-          aVal = parseInt(a.tempo) || 0;
-          bVal = parseInt(b.tempo) || 0;
-          break;
-        case 'created':
-          aVal = new Date(a.createdAt || 0).getTime();
-          bVal = new Date(b.createdAt || 0).getTime();
-          break;
-        default:
-          return 0;
-      }
-      
-      if (typeof aVal === 'string') {
-        aVal = aVal.toLowerCase();
-        bVal = bVal.toLowerCase();
-        return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      } else {
-        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-    });
+    // Sort (skip when custom to preserve manual order)
+    if (sortBy !== 'custom') {
+      result.sort((a, b) => {
+        let aVal, bVal;
+        switch (sortBy) {
+          case 'title':
+            aVal = a.title || '';
+            bVal = b.title || '';
+            break;
+          case 'artist':
+            aVal = a.artist || '';
+            bVal = b.artist || '';
+            break;
+          case 'key':
+            aVal = a.key || '';
+            bVal = b.key || '';
+            break;
+          case 'tempo':
+            aVal = parseInt(a.tempo) || 0;
+            bVal = parseInt(b.tempo) || 0;
+            break;
+          case 'created':
+            aVal = new Date(a.createdAt || 0).getTime();
+            bVal = new Date(b.createdAt || 0).getTime();
+            break;
+          default:
+            return 0;
+        }
+        
+        if (typeof aVal === 'string') {
+          aVal = aVal.toLowerCase();
+          bVal = bVal.toLowerCase();
+          return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        } else {
+          return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+      });
+    }
 
     return result;
-  }, [setlistSongs, searchText, filterArtist, filterKey, filterGenre, sortBy, sortOrder]);
+  }, [setlistSongs, searchText, filterArtist, filterGenre, sortBy, sortOrder]);
 
-  const hasActiveFilters = searchText || filterArtist || filterKey || filterGenre;
+  const hasActiveFilters = searchText || filterArtist || filterGenre;
+
+  // Early returns AFTER all hooks
+  if (isLoading) return <div className="main-content info-text">Memuat setlist...</div>;
+  if (!setlist) return <div className="main-content error-text">Setlist tidak ditemukan</div>;
 
   function handleClearFilters() {
     setSearchText('');
     setFilterArtist('');
-    setFilterKey('');
     setFilterGenre('');
   }
 
@@ -309,17 +304,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           </select>
 
           <select
-            value={filterKey}
-            onChange={(e) => setFilterKey(e.target.value)}
-            className="filter-select"
-          >
-            <option value="">Kunci: Semua</option>
-            {uniqueKeys.map(key => (
-              <option key={key} value={key}>{key}</option>
-            ))}
-          </select>
-
-          <select
             value={filterGenre}
             onChange={(e) => setFilterGenre(e.target.value)}
             className="filter-select"
@@ -335,6 +319,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             onChange={(e) => setSortBy(e.target.value)}
             className="filter-select"
           >
+            <option value="custom">Urutkan: Custom</option>
             <option value="title">Urutkan: Judul</option>
             <option value="artist">Urutkan: Artis</option>
             <option value="key">Urutkan: Kunci</option>
@@ -381,9 +366,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               <div
                 key={song.id}
                 className="song-item"
+                onClick={() => navigate(`/songs/view/${song.id}`)}
               >
                 {/* Song Info */}
-                <div className="song-info" onClick={() => navigate(`/songs/view/${song.id}`)}>
+                <div className="song-info">
                   <h3 className="song-title">
                     {song.title}
                   </h3>
@@ -480,13 +466,14 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             <div className="modal-title">Bagikan Setlist</div>
             <textarea
               className="modal-input"
-              style={{ marginBottom: 12, fontFamily: 'inherit', fontSize: '1.05em', background: '#f3f4fa', color: '#23243a', maxHeight: '220px', resize: 'vertical' }}
               rows={7}
               value={shareText}
               readOnly
             />
-            <button className="tab-btn full-width" style={{ marginBottom: 8 }} onClick={handleCopyShare}>{shareCopied ? '✅ Tersalin!' : 'Salin Teks'}</button>
-            <button className="back-btn" style={{ marginTop: 8 }} onClick={() => setShowShareModal(false)}>Tutup</button>
+            <button className="btn-base tab-btn" style={{ marginBottom: 8 }} onClick={handleCopyShare}>
+              {shareCopied ? '✅ Tersalin!' : 'Salin Teks'}
+            </button>
+            <button className="btn-base back-btn" onClick={() => setShowShareModal(false)}>Tutup</button>
           </div>
         </div>
       )}

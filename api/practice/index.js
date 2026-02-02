@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       console.error('Table creation error:', tableError);
     }
 
-    // GET - Fetch all practice sessions for user
+    // GET - Fetch all practice sessions for user's bands
     if (req.method === 'GET') {
       const { bandId } = req.query;
       
@@ -51,7 +51,9 @@ export default async function handler(req, res) {
                b.name as bandName
         FROM practice_sessions ps
         LEFT JOIN bands b ON ps.bandId = b.id
-        WHERE ps.userId = ?
+        WHERE ps.bandId IN (
+          SELECT bandId FROM band_members WHERE userId = ?
+        )
       `;
       const params = [userId];
       

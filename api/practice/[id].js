@@ -39,7 +39,9 @@ export default async function handler(req, res) {
                 b.name as bandName
          FROM practice_sessions ps
          LEFT JOIN bands b ON ps.bandId = b.id
-         WHERE ps.id = ? AND ps.userId = ? LIMIT 1`,
+         WHERE ps.id = ? AND ps.bandId IN (
+           SELECT bandId FROM band_members WHERE userId = ?
+         ) LIMIT 1`,
         [idStr, userId]
       );
 
@@ -72,6 +74,16 @@ export default async function handler(req, res) {
       const body = await readJson(req);
       const now = new Date().toISOString();
 
+      // Check if user is the creator of the practice session
+      const sessionCheck = await client.execute(
+        `SELECT userId FROM practice_sessions WHERE id = ?`,
+        [idStr]
+      );
+      
+      if (!sessionCheck.rows?.[0] || sessionCheck.rows[0].userId !== userId) {
+        return res.status(403).json({ error: 'Forbidden - only creator can edit' });
+      }
+
       const songsJson = body.songs ? JSON.stringify(body.songs) : null;
 
       await client.execute(
@@ -82,7 +94,7 @@ export default async function handler(req, res) {
            songs = COALESCE(?, songs),
            notes = COALESCE(?, notes),
            updatedAt = ?
-         WHERE id = ? AND userId = ?`,
+         WHERE id = ?`,
         [
           body.bandId !== undefined ? body.bandId : null,
           body.date ?? null,
@@ -90,8 +102,7 @@ export default async function handler(req, res) {
           songsJson,
           body.notes ?? null,
           now,
-          idStr,
-          userId,
+          idStr
         ]
       );
 
@@ -100,7 +111,17 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      await client.execute(`DELETE FROM practice_sessions WHERE id = ? AND userId = ?`, [idStr, userId]);
+      // Check if user is the creator of the practice session
+      const sessionCheck = await client.execute(
+        `SELECT userId FROM practice_sessions WHERE id = ?`,
+        [idStr]
+      );
+      
+      if (!sessionCheck.rows?.[0] || sessionCheck.rows[0].userId !== userId) {
+        return res.status(403).json({ error: 'Forbidden - only creator can delete' });
+      }
+
+      await client.execute(`DELETE FROM practice_sessions WHERE id = ?`, [idStr]);
       res.status(204).end();
       return;
     }
