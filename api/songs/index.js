@@ -24,24 +24,31 @@ export default async function handler(req, res) {
 
     const client = getTursoClient();
 
+    await client.execute(
+      `CREATE TABLE IF NOT EXISTS songs (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        artist TEXT,
+        youtubeId TEXT,
+        lyrics TEXT,
+        key TEXT,
+        tempo TEXT,
+        genre TEXT,
+        capo TEXT,
+        instruments TEXT,
+        time_markers TEXT,
+        userId TEXT,
+        createdAt TEXT DEFAULT (datetime('now')),
+        updatedAt TEXT
+      )`
+    );
+    const columnsResult = await client.execute(`PRAGMA table_info(songs)`);
+    const columns = (columnsResult.rows || []).map(row => row.name);
+    if (!columns.includes('userId')) {
+      await client.execute(`ALTER TABLE songs ADD COLUMN userId TEXT`);
+    }
+
     if (req.method === 'GET') {
-      await client.execute(
-        `CREATE TABLE IF NOT EXISTS songs (
-          id TEXT PRIMARY KEY,
-          title TEXT NOT NULL,
-          artist TEXT,
-          youtubeId TEXT,
-          lyrics TEXT,
-          key TEXT,
-          tempo TEXT,
-          genre TEXT,
-          capo TEXT,
-          instruments TEXT,
-          time_markers TEXT,
-          createdAt TEXT DEFAULT (datetime('now')),
-          updatedAt TEXT
-        )`
-      );
       const rows = await client.execute(
         `SELECT id, title, artist, youtubeId, lyrics, key, tempo, genre, capo, instruments, time_markers, userId, createdAt, updatedAt
          FROM songs

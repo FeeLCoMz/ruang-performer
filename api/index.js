@@ -36,7 +36,7 @@ import bandsHandler from './bands/index.js';
 import bandsIdHandler from './bands/[id].js';
 import bandMembersHandler from './bands/members.js';
 import bandInvitationsHandler from './bands/invitations.js';
-import bandInvIdHandler from './bands/[invId].js';
+import bandInvIdHandler from './bands/invitations/[id].js';
 import practiceHandler from './practice/index.js';
 import practiceIdHandler from './practice/[id].js';
 import gigsHandler from './gigs/index.js';
@@ -205,6 +205,14 @@ app.get('/api/invitations/pending', verifyToken, async (req, res) => {
 
 app.use('/api/invitations/:id', verifyToken, (req, res, next) => {
   Promise.resolve(bandInvIdHandler(req, res)).catch(next);
+
+// Route for /api/bands/invitations/:id
+app.use('/api/bands/invitations/:id', verifyToken, (req, res, next) => {
+  // Pass the id as query for compatibility
+  req.query = req.query || {};
+  req.query.id = req.params.id;
+  Promise.resolve(bandInvIdHandler(req, res)).catch(next);
+});
 });
 app.use('/api/bands/:id', verifyToken, (req, res, next) => {
   Promise.resolve(bandsIdHandler(req, res)).catch(next);
