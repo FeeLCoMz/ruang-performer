@@ -109,6 +109,9 @@ export default function BandDetailPage() {
         </div>
         {band.isOwner && (
           <div className="band-actions">
+            <button className="icon-btn-small" onClick={() => navigate(`/bands/admin/${id}`)} title="Kelola Member & Roles">
+              ⚙️
+            </button>
             <button className="icon-btn-small" onClick={() => setShowEditModal(true)} title="Edit Band">
               <EditIcon size={18} />
             </button>
