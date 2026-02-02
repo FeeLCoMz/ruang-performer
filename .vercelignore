@@ -8,6 +8,13 @@ api/gigs/
 # Band sub-endpoints - consolidate into bands/[id].js
 api/bands/members.js
 api/bands/invitations.js
+api/bands/invitations/
+
+# Unused API endpoints
+api/ai.js
+api/permissions.js
+api/status.js
+api/index.js
 
 # Middleware utilities (not serverless functions)
 api/middleware/
