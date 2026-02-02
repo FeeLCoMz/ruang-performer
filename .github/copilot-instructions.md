@@ -1,49 +1,42 @@
-# Copilot Instructions for Ronz Chord Pro
+# Copilot Instructions — PerformerHub
 
 ## Project Overview
-- **Ronz Chord Pro** is a web app for managing chords, setlists, and music performances.
-- The project is split into a React frontend (`src/`), a backend API (`api/`), and a database schema (`db/`).
+# Copilot Instructions — PerformerHub
 
-## Key Directories
-- `src/` — React components, pages, and utilities. Main entry: `src/App.jsx`.
-- `api/` — Node.js backend API endpoints, organized by resource (e.g., `songs/`, `setlists/`).
-- `db/` — SQL schema and migrations.
-- `public/` — Static assets.
+## Project Overview
+- React (Vite) frontend in `src/`, API routes in `api/`, DB schema in `db/`.
+- Main entry: `src/App.jsx`.
 
-## Developer Workflows
-- **Install dependencies:** `npm install`
-- **Start dev server:** `npm run dev` (Vite-powered, serves frontend and API)
-- **Run tests:** `npm test` (see `src/__tests__/` for examples)
-- **Environment:** Copy `.env.example` to `.env` and fill required variables.
+## Commands
+- Install: `npm install`
+- Dev: `npm run dev`
+- Tests: `npm test`
+- Env: `.env.example` → `.env`
 
-## Patterns & Conventions
-- **API routes:** Each resource (e.g., songs, setlists) has its own folder in `api/` with `[id].js` for item routes and `index.js` for collection routes.
-- **Component structure:** UI components in `src/components/`, page-level components in `src/pages/`.
-- **Utilities:** Shared logic in `src/utils/` (e.g., `chordUtils.js`, `audio.js`).
-- **Testing:** Place tests in `src/__tests__/`, use descriptive test names.
-- **Styling:** Use `App.css` for global styles; component-specific styles inline or via CSS modules if present.
+## Architecture
+- API routes: `api/<resource>/index.js` and `api/<resource>/[id].js`.
+- Frontend API calls via `src/apiClient.js`.
+- State: React hooks + context only.
 
-## UI Consistency Guidelines
-- Use `App.css` for global styles and main theme.
-- UI components in `src/components/` should follow the same styling pattern (inline style or CSS module if present).
-- Avoid introducing new style approaches outside the established standards unless required for special features.
-- When adding new components, mimic the structure and style of existing components.
-- Ensure elements like buttons, inputs, and layouts match the look and feel already used in the app.
+## UI Standards
+- Layout: Sidebar (desktop) + mobile header with hamburger only.
+- Avoid desktop top‑tab header.
+- Pages: use `.page-container` + `.page-header` + cards/grids.
+- Inputs in modals/forms: `.modal-input`.
+- Styling: keep everything in `src/App.css`.
+- Breakpoints: 1200px, 1024px, 768px, 600px.
 
-## Integration & Data Flow
-- **Frontend ↔ Backend:** Frontend calls API endpoints in `api/` (see `src/apiClient.js`).
-- **Database:** API uses SQL schema from `db/schema.sql`.
-- **No external state management:** State is managed via React hooks and context.
-
-## Examples
-- To add a new API resource, create a folder in `api/`, add `index.js` and `[id].js`.
-- To add a new page, create a component in `src/pages/` and update routing if needed.
+## Conventions
+- Components: `src/components/`
+- Pages: `src/pages/`
+- Utils: `src/utils/`
+- Tests: `src/__tests__/`
 
 ## References
-- See `README.md` for setup and workflow basics.
-- See `src/apiClient.js` for API usage patterns.
-- See `db/schema.sql` for DB structure.
+- `README.md`
+- `src/apiClient.js`
+- `db/schema.sql`
 
 ---
-
-**Keep instructions concise and up-to-date. Update this file if project structure or workflows change.**
+Keep this file concise and updated when structure/workflow changes.
+- Main entry: `src/App.jsx`.

@@ -17,6 +17,12 @@ async function readJson(req) {
 export default async function handler(req, res) {
   try {
     const client = getTursoClient();
+    const userId = req.user?.userId;
+    
+    // Debug: log user info
+    if (!userId) {
+      console.warn('[setlists] No userId found in req.user:', req.user);
+    }
 
     if (req.method === 'GET') {
       // Create table if not exists
@@ -25,6 +31,7 @@ export default async function handler(req, res) {
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           desc TEXT DEFAULT '',
+          bandId TEXT,
           songs TEXT DEFAULT '[]',
           setlistSongMeta TEXT DEFAULT '{}',
           completedSongs TEXT DEFAULT '{}',
@@ -43,16 +50,30 @@ export default async function handler(req, res) {
       try {
         await client.execute(`ALTER TABLE setlists ADD COLUMN setlistSongMeta TEXT DEFAULT '{}'`);
       } catch (e) {}
+      try {
+        await client.execute(`ALTER TABLE setlists ADD COLUMN bandId TEXT`);
+      } catch (e) {}
       
+      // Get only setlists user has access to
+      // Rules: user's own setlists OR setlists from bands they're a member of
       const rows = await client.execute(
-        `SELECT id, name, desc, songs, setlistSongMeta, completedSongs, createdAt, updatedAt
-         FROM setlists
-         ORDER BY (updatedAt IS NULL) ASC, datetime(updatedAt) DESC, datetime(createdAt) DESC`
+        `SELECT s.id, s.name, s.desc, s.bandId, s.songs, s.setlistSongMeta, s.completedSongs, s.createdAt, s.updatedAt,
+                b.name as bandName
+         FROM setlists s
+         LEFT JOIN bands b ON s.bandId = b.id
+         WHERE s.bandId IS NULL 
+            OR (s.bandId IS NOT NULL AND EXISTS (
+              SELECT 1 FROM band_members WHERE bandId = s.bandId AND userId = ?
+            ))
+         ORDER BY (s.updatedAt IS NULL) ASC, datetime(s.updatedAt) DESC, datetime(s.createdAt) DESC`,
+        [userId]
       );
       const setlists = (rows.rows ?? []).map(row => ({
         id: row.id,
         name: row.name,
         desc: row.desc || '',
+        bandId: row.bandId,
+        bandName: row.bandName,
         songs: (() => {
           try {
             return row.songs ? JSON.parse(row.songs) : [];
@@ -93,6 +114,19 @@ export default async function handler(req, res) {
         return;
       }
       
+      // If bandId is provided, verify user is a member of that band
+      if (body.bandId) {
+        const bandCheck = await client.execute(
+          `SELECT 1 FROM band_members WHERE bandId = ? AND userId = ?`,
+          [body.bandId, userId]
+        );
+        
+        if (!bandCheck.rows || bandCheck.rows.length === 0) {
+          res.status(403).json({ error: 'You are not a member of this band' });
+          return;
+        }
+      }
+      
       const id = body.id?.toString() || randomUUID();
       const now = new Date().toISOString();
       
@@ -102,11 +136,13 @@ export default async function handler(req, res) {
         const completedSongsJson = JSON.stringify(body.completedSongs || {});
         
         await client.execute(
-          `INSERT INTO setlists (id, name, songs, setlistSongMeta, completedSongs, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO setlists (id, name, desc, bandId, songs, setlistSongMeta, completedSongs, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             id,
             body.name.trim(),
+            body.desc || '',
+            body.bandId || null,
             songsJson,
             setlistSongMetaJson,
             completedSongsJson,
@@ -120,12 +156,14 @@ export default async function handler(req, res) {
         if (insertErr.message && insertErr.message.includes('UNIQUE')) {
           // Setlist already exists, update instead
           const songsJson = JSON.stringify(body.songs || []);
-          const songKeysJson = JSON.stringify(body.songKeys || {});
+          const setlistSongMetaJson = JSON.stringify(body.setlistSongMeta || {});
           const completedSongsJson = JSON.stringify(body.completedSongs || {});
           
           await client.execute(
             `UPDATE setlists SET 
                name = ?, 
+               desc = ?,
+               bandId = ?,
                songs = ?, 
                setlistSongMeta = ?, 
                completedSongs = ?, 
@@ -133,6 +171,8 @@ export default async function handler(req, res) {
              WHERE id = ?`,
             [
               body.name.trim(),
+              body.desc || '',
+              body.bandId || null,
               songsJson,
               setlistSongMetaJson,
               completedSongsJson,

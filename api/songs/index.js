@@ -28,21 +28,22 @@ export default async function handler(req, res) {
           lyrics TEXT,
           key TEXT,
           tempo TEXT,
-          style TEXT,
+          genre TEXT,
+          capo TEXT,
           instruments TEXT,
-          timestamps TEXT,
+          time_markers TEXT,
           createdAt TEXT DEFAULT (datetime('now')),
           updatedAt TEXT
         )`
       );
       const rows = await client.execute(
-        `SELECT id, title, artist, youtubeId, lyrics, key, tempo, style, instruments, timestamps, createdAt, updatedAt
+        `SELECT id, title, artist, youtubeId, lyrics, key, tempo, genre, capo, instruments, time_markers, createdAt, updatedAt
          FROM songs
          ORDER BY (updatedAt IS NULL) ASC, datetime(updatedAt) DESC, datetime(createdAt) DESC`
       );
       const list = (rows.rows ?? []).map(row => ({
         ...row,
-        timestamps: row.timestamps ? JSON.parse(row.timestamps) : [],
+        time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
         instruments: row.instruments ? JSON.parse(row.instruments) : [],
       }));
       res.status(200).json(list);
@@ -61,9 +62,15 @@ export default async function handler(req, res) {
           const tempoInt = parseInt(String(item.tempo).replace(/,/g, '.'), 10);
           if (!isNaN(tempoInt)) tempoStr = tempoInt.toString();
         }
+        // Pastikan capo disimpan sebagai string integer
+        let capoStr = null;
+        if (item.capo !== undefined && item.capo !== null && item.capo !== '') {
+          const capoInt = parseInt(String(item.capo), 10);
+          if (!isNaN(capoInt)) capoStr = capoInt.toString();
+        }
         await client.execute(
-          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, style, instruments, timestamps, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, genre, capo, instruments, time_markers, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title,
              artist = excluded.artist,
@@ -71,9 +78,10 @@ export default async function handler(req, res) {
              lyrics = excluded.lyrics,
              key = excluded.key,
              tempo = excluded.tempo,
-             style = excluded.style,
+             genre = excluded.genre,
+             capo = excluded.capo,
              instruments = excluded.instruments,
-             timestamps = excluded.timestamps,
+             time_markers = excluded.time_markers,
              updatedAt = excluded.updatedAt`,
           [
             id,
@@ -83,7 +91,8 @@ export default async function handler(req, res) {
             item.lyrics || null,
             item.key || null,
             tempoStr,
-            item.style || null,
+            item.genre || null,
+            capoStr,
             (Array.isArray(item.instruments) ? JSON.stringify(item.instruments) : (item.instruments || null)),
             (Array.isArray(item.timestamps) ? JSON.stringify(item.timestamps) : (item.timestamps || null)),
             item.createdAt || now,

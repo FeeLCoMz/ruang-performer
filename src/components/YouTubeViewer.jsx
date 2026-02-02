@@ -18,33 +18,6 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 
-
-
-function extractYouTubeId(input) {
-  if (!input) return null;
-  // If already looks like an ID (11 chars, letters/numbers/-/_)
-  const maybeId = input.trim();
-  if (/^[a-zA-Z0-9_-]{11}$/.test(maybeId)) return maybeId;
-
-  // Try to extract from URL
-  try {
-    const url = new URL(maybeId.includes('http') ? maybeId : `https://${maybeId}`);
-    // v= query param
-    if (url.searchParams && url.searchParams.get('v')) return url.searchParams.get('v');
-    // youtu.be short link
-    if (url.hostname && url.pathname) {
-      const parts = url.pathname.split('/').filter(Boolean);
-      if (parts.length > 0) return parts[parts.length - 1];
-    }
-  } catch (e) {
-    // not a full url, try regex fallback
-    const m = maybeId.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
-    if (m) return m[1];
-  }
-
-  return null;
-}
-
 const YouTubeViewer = React.forwardRef(({
   videoId,
   minimalControls = false,
@@ -78,8 +51,7 @@ const YouTubeViewer = React.forwardRef(({
   }, []);
 
   useEffect(() => {
-    const id = extractYouTubeId(videoId);
-    if (!id) return;
+    if (!videoId) return;
 
     let canceled = false;
     let prevOnReady = null;
@@ -95,10 +67,10 @@ const YouTubeViewer = React.forwardRef(({
         prevOnReady = window.onYouTubeIframeAPIReady;
         window.onYouTubeIframeAPIReady = () => {
           if (typeof prevOnReady === 'function') prevOnReady();
-          if (!canceled) initPlayer(id);
+          if (!canceled) initPlayer(videoId);
         };
       } else {
-        initPlayer(id);
+        initPlayer(videoId);
       }
     };
 
@@ -181,20 +153,11 @@ const YouTubeViewer = React.forwardRef(({
     const value = e.target.value;
     setIsScrubbing(false);
     handleSeek(value);
-    setTimeout(() => { scrubberValueRef.current = null; }, 100); // Reset agar polling aktif lagi
-    setCurrentTime(Number(value)); // Update currentTime setelah seek
+    setTimeout(() => { scrubberValueRef.current = null; }, 100);
+    setCurrentTime(Number(value));
   };
 
-  const id = extractYouTubeId(videoId);
-  if (!id) {
-    return (
-      <div className="youtube-viewer">
-        <div className="no-video">ID Video YouTube tidak valid</div>
-      </div>
-    );
-  }
-
-  // Poll current time every 200ms when player is available (smoother sync)
+  // Poll current time every 200ms when player is available
   useEffect(() => {
     if (!player) return;
     const interval = setInterval(() => {
@@ -236,6 +199,21 @@ const YouTubeViewer = React.forwardRef(({
     return `${m}:${r.toString().padStart(2, '0')}`;
   };
 
+  if (!videoId) {
+    return (
+      <div style={{
+        background: 'var(--card-bg)',
+        borderRadius: '8px',
+        padding: '20px',
+        border: '1px solid var(--border-color)',
+        textAlign: 'center',
+        color: 'var(--text-muted)'
+      }}>
+        ID Video YouTube tidak valid
+      </div>
+    );
+  }
+
   // Shared controls markup
   const Controls = (
     <>
@@ -273,34 +251,148 @@ const YouTubeViewer = React.forwardRef(({
   );
 
   return (
-    <div className={minimalControls ? 'youtube-viewer-minimal' : 'youtube-viewer'}>
+    <div style={{
+      background: 'var(--card-bg)',
+      borderRadius: '8px',
+      padding: '16px',
+      border: '1px solid var(--border-color)'
+    }}>
       <button
         type="button"
-        className={`btn-base yt-collapse-btn${videoExpanded ? ' expanded' : ''}`}
-        data-align={videoExpanded ? 'expanded' : 'collapsed'}
         onClick={() => setVideoExpanded(e => !e)}
+        style={{
+          width: '100%',
+          padding: '10px 16px',
+          background: 'var(--secondary-bg)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '6px',
+          fontSize: '0.95em',
+          fontWeight: '600',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          marginBottom: videoExpanded ? '16px' : '0',
+          transition: 'all 0.2s ease'
+        }}
         aria-label={videoExpanded ? 'Sembunyikan video' : 'Tampilkan video'}
-        style={{ marginBottom: 8 }}
       >
-        {videoExpanded ? 'Sembunyikan Video 🎬' : 'Tampilkan Video 🎬'}
+        <span>{videoExpanded ? '▼' : '▶'}</span>
+        <span>🎬 {videoExpanded ? 'Sembunyikan Video' : 'Tampilkan Video'}</span>
       </button>
-      <div className={videoExpanded ? 'yt-expandable expanded' : 'yt-expandable'}>
-        {videoExpanded && (
-          <>
-            {minimalControls ? (
-              <div className="yt-hidden-player">
-                <div id={containerIdRef.current}></div>
-              </div>
-            ) : (
-              <div className="video-container">
-                <div id={containerIdRef.current}></div>
+      
+      {videoExpanded && (
+        <>
+          {minimalControls ? (
+            <div style={{ height: 0, overflow: 'hidden' }}>
+              <div id={containerIdRef.current}></div>
+            </div>
+          ) : (
+            <div style={{
+              position: 'relative',
+              paddingBottom: '56.25%',
+              height: 0,
+              overflow: 'hidden',
+              marginBottom: '16px',
+              borderRadius: '8px',
+              background: '#000'
+            }}>
+              <div id={containerIdRef.current} style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%'
+              }}></div>
+            </div>
+          )}
+          
+          {/* Scrubber */}
+          <div style={{ marginBottom: '12px' }}>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(1, Math.floor(duration))}
+              step={1}
+              value={
+                minimalControls
+                  ? Math.floor(currentTime)
+                  : (isScrubbing && scrubberValueRef.current !== null ? scrubberValueRef.current : Math.floor(currentTime))
+              }
+              onChange={minimalControls ? (e) => handleSeek(e.target.value) : handleScrubberChange}
+              onInput={minimalControls ? (e) => handleSeek(e.target.value) : undefined}
+              onMouseUp={minimalControls ? undefined : handleScrubberCommit}
+              onTouchEnd={minimalControls ? undefined : handleScrubberCommit}
+              disabled={!player || !duration}
+              aria-label="Scrub waktu video"
+              style={{
+                width: '100%',
+                height: '6px',
+                borderRadius: '3px',
+                background: 'var(--secondary-bg)',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            />
+            {!minimalControls && (
+              <div style={{
+                marginTop: '8px',
+                fontSize: '0.9em',
+                color: 'var(--text-muted)',
+                textAlign: 'center'
+              }}>
+                {fmt(currentTime)} / {fmt(duration)}
               </div>
             )}
-            {Controls}
-          </>
-        )}
-        {/* TimeMarkers dihapus dari YouTubeViewer. Render di SongAddEditPage.jsx */}
-      </div>
+          </div>
+          
+          {/* Controls */}
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            justifyContent: 'center'
+          }}>
+            <button
+              type="button"
+              onClick={handlePlayPause}
+              style={{
+                padding: '10px 20px',
+                background: isPlaying ? 'var(--secondary-bg)' : 'var(--primary-color)',
+                color: isPlaying ? 'var(--text-primary)' : 'white',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                fontSize: '0.95em',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: 1
+              }}
+            >
+              {isPlaying ? '⏸️ Pause' : '▶️ Play'}
+            </button>
+            <button
+              type="button"
+              onClick={handleStop}
+              style={{
+                padding: '10px 20px',
+                background: 'var(--secondary-bg)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                fontSize: '0.95em',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flex: 1
+              }}
+            >
+              ⏹️ Stop
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 });

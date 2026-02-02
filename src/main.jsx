@@ -2,11 +2,43 @@ import React from 'react';
 import './App.css';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-
-
 import { BrowserRouter } from 'react-router-dom';
+import { initializeWebVitals, reportNavigationMetrics } from './utils/webVitalsUtil.js';
 
 console.log('Mounting React app...');
+
+// Initialize Web Vitals monitoring
+initializeWebVitals();
+
+// Report navigation metrics when page fully loads
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    setTimeout(() => reportNavigationMetrics(), 0);
+  });
+}
+
+// Register Service Worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('Service Worker registered:', registration);
+        
+        // Check for updates periodically
+        setInterval(() => {
+          registration.update();
+        }, 60000); // Check every 1 minute
+      })
+      .catch((error) => {
+        console.warn('Service Worker registration failed:', error);
+      });
+  });
+
+  // Handle service worker updates
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('Service Worker updated, reloading...');
+  });
+}
 
 class ErrorBoundary extends React.Component {
   constructor(props) {

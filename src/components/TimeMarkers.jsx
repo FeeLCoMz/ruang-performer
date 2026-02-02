@@ -1,160 +1,386 @@
+import React, { useState } from 'react';
 
-import React, { useState, useEffect, useRef } from 'react';
+export default function TimeMarkers({
+  timeMarkers = [],
+  onSeek,
+  currentTime = 0,
+  duration = 0,
+  readonly = false,
+  onUpdate
+}) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [editingId, setEditingId] = useState(null);
+  const [editTime, setEditTime] = useState('');
+  const [editLabel, setEditLabel] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [newLabel, setNewLabel] = useState('');
 
-// Helper to format seconds as mm:ss
-function formatTime(sec) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-// API helpers
-async function fetchSongMarkers(songId) {
-  const res = await fetch(`/api/songs/${songId}`);
-  if (!res.ok) return [];
-  const data = await res.json();
-  return Array.isArray(data.timestamps) ? data.timestamps : [];
-}
-async function saveSongMarkers(songId, markers) {
-  await fetch(`/api/songs/${songId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ timestamps: markers })
-  });
-}
-
-export default function TimeMarkers({ markers: initialMarkers = [], onMarkersChange, getCurrentTime, seekTo, readonly }) {
-  const [markers, setMarkersState] = useState(initialMarkers);
-  // Propagate markers ke parent
-  useEffect(() => {
-    if (typeof onMarkersChange === 'function') onMarkersChange(markers);
-  }, [markers, onMarkersChange]);
-  // didMountRef tidak diperlukan lagi
-  const [input, setInput] = useState('');
-  const [editingIdx, setEditingIdx] = useState(null);
-  const [editValue, setEditValue] = useState('');
-  const [currentVideoTime, setCurrentVideoTime] = useState(0);
-  const [collapsed, setCollapsed] = useState(false);
-  const inputRef = useRef();
-
-  // Update current video time every 200ms
-  useEffect(() => {
-    if (!getCurrentTime) return;
-    const interval = setInterval(() => {
-      setCurrentVideoTime(getCurrentTime() || 0);
-    }, 200);
-    return () => clearInterval(interval);
-  }, [getCurrentTime]);
-
-  // Sync markers jika initialMarkers berubah
-  useEffect(() => {
-    setMarkersState(initialMarkers);
-  }, [initialMarkers]);
-
-  // Semua fetch/save otomatis dihapus. Parent bertanggung jawab simpan ke DB.
-
-  // Add marker at current time
-  const handleAdd = () => {
-    if (readonly) return;
-    if (!input.trim() || !getCurrentTime) return;
-    let time = getCurrentTime();
-    // Tidak perlu akses window._ytRef, cukup pakai getCurrentTime()
-    setMarkersState(prev => [...prev, { label: input.trim(), time }].sort((a, b) => a.time - b.time));
-    setInput('');
-    inputRef.current?.focus();
+  const formatTime = (seconds) => {
+    const sec = Math.max(0, Math.floor(seconds || 0));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Remove marker
-  const handleRemove = idx => {
-    if (readonly) return;
-    setMarkersState(markers.filter((_, i) => i !== idx));
+  const parseTime = (timeStr) => {
+    const parts = timeStr.split(':').map(p => parseInt(p) || 0);
+    if (parts.length === 2) {
+      return parts[0] * 60 + parts[1];
+    }
+    return parseInt(timeStr) || 0;
   };
 
-  // Edit marker
-  const handleEdit = idx => {
-    if (readonly) return;
-    setEditingIdx(idx);
-    setEditValue(markers[idx].label);
-  };
-  const handleEditSave = idx => {
-    if (readonly) return;
-    setMarkersState(markers.map((m, i) => i === idx ? { ...m, label: editValue } : m));
-    setEditingIdx(null);
+  const handlePlay = (timestamp) => {
+    if (onSeek && typeof onSeek === 'function') {
+      onSeek(timestamp);
+    }
   };
 
-  // Jump to marker
-  const handleJump = t => {
-    if (seekTo) seekTo(t);
+  const handleEdit = (marker) => {
+    setEditingId(marker.id || marker.time);
+    setEditTime(formatTime(marker.time));
+    setEditLabel(marker.label || '');
   };
+
+  const handleSaveEdit = () => {
+    if (!onUpdate || readonly) return;
+    const updatedMarkers = timeMarkers.map(m => {
+      const markerId = m.id || m.time;
+      if (markerId === editingId) {
+        return {
+          ...m,
+          time: parseTime(editTime),
+          label: editLabel
+        };
+      }
+      return m;
+    });
+    onUpdate(updatedMarkers);
+    setEditingId(null);
+    setEditTime('');
+    setEditLabel('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditTime('');
+    setEditLabel('');
+  };
+
+  const handleDelete = (marker) => {
+    if (!onUpdate || readonly) return;
+    const markerId = marker.id || marker.time;
+    const updatedMarkers = timeMarkers.filter(m => (m.id || m.time) !== markerId);
+    onUpdate(updatedMarkers);
+  };
+
+  const handleAddNew = () => {
+    if (!onUpdate || readonly || !newTime) return;
+    const newMarker = {
+      time: parseTime(newTime),
+      label: newLabel || `Marker ${formatTime(parseTime(newTime))}`
+    };
+    const updatedMarkers = [...timeMarkers, newMarker].sort((a, b) => a.time - b.time);
+    onUpdate(updatedMarkers);
+    setNewTime('');
+    setNewLabel('');
+  };
+
+  const sortedMarkers = [...timeMarkers].sort((a, b) => a.time - b.time);
 
   return (
-    <div className="time-markers-container">
-      <div className="time-markers-header" style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-        <span>Penanda Waktu</span>
-        <button
-          className="time-markers-toggle-btn"
-          type="button"
-          aria-label={collapsed ? 'Tampilkan penanda waktu' : 'Sembunyikan penanda waktu'}
-          onClick={() => setCollapsed(c => !c)}
-          style={{marginLeft:8, fontSize:'1.1em', background:'none', border:'none', color:'var(--primary-accent, #6366f1)', cursor:'pointer'}}
-        >
-          {collapsed ? '▼' : '▲'}
-        </button>
-      </div>
-      {!collapsed && (
-        <>
-          <div style={{fontSize: '0.98em', color: 'var(--primary-accent-dark)', marginBottom: 6}}>
-            Waktu video saat ini: <b>{formatTime(currentVideoTime)}</b>
-          </div>
-          <div className="time-markers-list">
-            {markers.length === 0 && <div className="time-markers-empty">Belum ada penanda.</div>}
-            {markers.map((m, idx) => (
-              <div className="time-marker-item" key={idx}>
-                <span className="time-marker-time" onClick={() => handleJump(m.time)} title="Lompat ke waktu">{formatTime(m.time)}</span>
-                <button
-                  className="btn-base time-marker-play-btn"
-                  type="button"
-                  onClick={e => { e.preventDefault(); handleJump(m.time); }}
-                  title="Play ke waktu ini"
-                  style={{marginLeft: 6, marginRight: 6}}
-                >
-                  ▶️
-                </button>                
-                {editingIdx === idx && !readonly ? (
-                  <>
-                    <input
-                      className="time-marker-edit-input"
-                      value={editValue}
-                      onChange={e => setEditValue(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleEditSave(idx)}
-                      autoFocus
-                    />
-                    <button type="button" className="btn-base time-marker-save-btn" onClick={() => handleEditSave(idx)}>Simpan</button>
-                  </>
-                ) : (
-                  <>
-                    <span className="time-marker-label">{m.label}</span>
-                    {!readonly && <button type="button" className="btn-base time-marker-edit-btn" onClick={() => handleEdit(idx)} title="Edit">✎</button>}
-                  </>
-                )}
-                {!readonly && <button type="button" className="btn-base time-marker-remove-btn" onClick={() => handleRemove(idx)} title="Hapus">🗑</button>}
-              </div>
-            ))}
-          </div>
-          {!readonly && (
-            <div className="time-markers-add">
-              <input
-                className="time-marker-input"
-                ref={inputRef}
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                placeholder="Tulis label penanda..."
-                onKeyDown={e => e.key === 'Enter' && handleAdd()}
-              />
-              <button type="button" className="btn-base time-marker-add-btn" onClick={handleAdd} disabled={!input.trim() || !getCurrentTime}>+</button>
+    <div style={{
+      background: 'var(--card-bg)',
+      borderRadius: '8px',
+      padding: '16px',
+      border: '1px solid var(--border-color)'
+    }}>
+      {/* Header */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{
+          width: '100%',
+          padding: '10px 12px',
+          background: 'var(--secondary-bg)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '6px',
+          fontSize: '1em',
+          fontWeight: '600',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: isExpanded ? '16px' : '0'
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>{isExpanded ? '▼' : '▶'}</span>
+          <span>⏲️ Time Markers</span>
+          {sortedMarkers.length > 0 && (
+            <span style={{
+              background: 'var(--primary-color)',
+              color: 'white',
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: '0.85em',
+              fontWeight: '700'
+            }}>
+              {sortedMarkers.length}
+            </span>
+          )}
+        </span>
+        {duration > 0 && (
+          <span style={{
+            fontSize: '0.9em',
+            color: 'var(--text-muted)'
+          }}>
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+        )}
+      </button>
+
+      {/* Expanded Content */}
+      {isExpanded && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Marker List */}
+          {sortedMarkers.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {sortedMarkers.map((marker, idx) => {
+                const markerId = marker.id || marker.time;
+                const isEditing = editingId === markerId;
+
+                if (isEditing) {
+                  return (
+                    <div
+                      key={markerId}
+                      style={{
+                        padding: '12px',
+                        background: 'var(--secondary-bg)',
+                        borderRadius: '6px',
+                        border: '2px solid var(--primary-color)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px'
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={editTime}
+                        onChange={(e) => setEditTime(e.target.value)}
+                        placeholder="mm:ss"
+                        style={{
+                          padding: '8px 12px',
+                          background: 'var(--input-bg)',
+                          color: 'var(--text-primary)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '4px',
+                          fontSize: '0.95em'
+                        }}
+                      />
+                      <input
+                        type="text"
+                        value={editLabel}
+                        onChange={(e) => setEditLabel(e.target.value)}
+                        placeholder="Label"
+                        style={{
+                          padding: '8px 12px',
+                          background: 'var(--input-bg)',
+                          color: 'var(--text-primary)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '4px',
+                          fontSize: '0.95em'
+                        }}
+                      />
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={handleSaveEdit}
+                          style={{
+                            flex: 1,
+                            padding: '8px',
+                            background: 'var(--primary-color)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '0.9em',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✓ Simpan
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          style={{
+                            flex: 1,
+                            padding: '8px',
+                            background: 'var(--secondary-bg)',
+                            color: 'var(--text-primary)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '4px',
+                            fontSize: '0.9em',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✕ Batal
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={markerId}
+                    style={{
+                      padding: '12px',
+                      background: 'var(--secondary-bg)',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-color)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}
+                  >
+                    <button
+                      onClick={() => handlePlay(marker.time)}
+                      style={{
+                        padding: '8px 12px',
+                        background: 'var(--primary-color)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '0.9em',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        minWidth: '60px'
+                      }}
+                    >
+                      ▶ {formatTime(marker.time)}
+                    </button>
+                    <div style={{
+                      flex: 1,
+                      color: 'var(--text-primary)',
+                      fontSize: '0.95em'
+                    }}>
+                      {marker.label || `Marker ${idx + 1}`}
+                    </div>
+                    {!readonly && (
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          onClick={() => handleEdit(marker)}
+                          style={{
+                            padding: '6px 10px',
+                            background: 'var(--secondary-bg)',
+                            color: 'var(--text-primary)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '4px',
+                            fontSize: '0.85em',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => handleDelete(marker)}
+                          style={{
+                            padding: '6px 10px',
+                            background: 'var(--danger-color, #ef4444)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '0.85em',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{
+              padding: '20px',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              fontSize: '0.9em',
+              fontStyle: 'italic'
+            }}>
+              Belum ada timestamp
             </div>
           )}
-        </>
+
+          {/* Add New Marker */}
+          {!readonly && (
+            <div style={{
+              padding: '12px',
+              background: 'var(--secondary-bg)',
+              borderRadius: '6px',
+              border: '1px dashed var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{
+                fontSize: '0.9em',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                marginBottom: '4px'
+              }}>
+                ➕ Tambah Timestamp Baru
+              </div>
+              <input
+                type="text"
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+                placeholder="mm:ss (contoh: 1:30)"
+                style={{
+                  padding: '8px 12px',
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  fontSize: '0.95em'
+                }}
+              />
+              <input
+                type="text"
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                placeholder="Label (opsional)"
+                style={{
+                  padding: '8px 12px',
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  fontSize: '0.95em'
+                }}
+              />
+              <button
+                onClick={handleAddNew}
+                disabled={!newTime}
+                style={{
+                  padding: '10px',
+                  background: newTime ? 'var(--primary-color)' : 'var(--secondary-bg)',
+                  color: newTime ? 'white' : 'var(--text-muted)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '0.95em',
+                  fontWeight: '600',
+                  cursor: newTime ? 'pointer' : 'not-allowed',
+                  opacity: newTime ? 1 : 0.6
+                }}
+              >
+                ➕ Tambah Timestamp
+              </button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

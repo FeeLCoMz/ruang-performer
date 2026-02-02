@@ -1,14 +1,57 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
-import SongListPage from './pages/SongListPage.jsx';
-import SongLyricsPage from './pages/SongLyricsPage.jsx';
-import SongAddEditPage from './pages/SongAddEditPage.jsx';
-import SetlistPage from './pages/SetlistPage.jsx';
+
+// Eager load critical pages
+import LoginPage from './pages/LoginPage.jsx';
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
+import TwoFactorSetupPage from './pages/TwoFactorSetupPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
 import NotFound from './components/NotFound.jsx';
-import SetlistSongsPage from './pages/SetlistSongsPage.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
+import Sidebar from './components/Sidebar.jsx';
+import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
+import * as apiClient from './apiClient.js';
+
+// Lazy load non-critical pages for code splitting
+const SongListPage = lazy(() => import('./pages/SongListPage.jsx'));
+const SongLyricsPage = lazy(() => import('./pages/SongLyricsPage.jsx'));
+const SongAddEditPage = lazy(() => import('./pages/SongAddEditPage.jsx'));
+const SetlistPage = lazy(() => import('./pages/SetlistPage.jsx'));
+const SetlistSongsPage = lazy(() => import('./pages/SetlistSongsPage.jsx'));
+const BandDetailPage = lazy(() => import('./pages/BandDetailPage.jsx'));
+const BandManagementPage = lazy(() => import('./pages/BandManagementPage.jsx'));
+const InvitationPage = lazy(() => import('./pages/InvitationPage.jsx'));
+const PendingInvitationsPage = lazy(() => import('./pages/PendingInvitationsPage.jsx'));
+const AdminPanelPage = lazy(() => import('./pages/AdminPanelPage.jsx'));
+const PracticeSessionPage = lazy(() => import('./pages/PracticeSessionPage.jsx'));
+const GigPage = lazy(() => import('./pages/GigPage.jsx'));
+const AuditLogPage = lazy(() => import('./pages/AuditLogPage.jsx'));
+
+// Loading fallback component
+function PageLoader() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--primary-bg)' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: '3em', marginBottom: '16px' }}>⏳</div>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1em' }}>Memuat...</p>
+      </div>
+    </div>
+  );
+}
 
 function App() {
-  // State untuk modal create setlist
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCreateSetlist, setShowCreateSetlist] = useState(false);
   const [createSetlistName, setCreateSetlistName] = useState('');
   const [createSetlistError, setCreateSetlistError] = useState('');
@@ -24,19 +67,69 @@ function App() {
   const [highlightChords, setHighlightChords] = useState(false);
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('ronz_theme') || 'dark';
+      return localStorage.getItem('performerhub_theme') || 'dark';
     }
     return 'dark';
   });
-  // State untuk setlist aktif (untuk navigasi antar lagu di lyric page)
   const [activeSetlist, setActiveSetlist] = useState(null);
-  // State untuk modal tambah lagu ke setlist
   const [showAddSongToSetlist, setShowAddSongToSetlist] = useState(false);
   const [addSongSearch, setAddSongSearch] = useState('');
   const [addSongSelectedId, setAddSongSelectedId] = useState(null);
   const addSongInputRef = useRef(null);
-  const location = useLocation();
-  // Filter lagu yang belum ada di setlist aktif
+
+  // ALL HOOKS MUST BE HERE - BEFORE ANY CONDITIONAL LOGIC
+  useEffect(() => {
+    document.body.classList.remove('dark-mode', 'light-mode');
+    document.body.classList.add(theme === 'dark' ? 'dark-mode' : 'light-mode');
+    localStorage.setItem('performerhub_theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    setLoadingSongs(true);
+    apiClient.fetchSongs()
+      .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); })
+      .catch(err => { setErrorSongs(err.message || 'Gagal mengambil data'); setLoadingSongs(false); });
+  }, [isLoading, isAuthenticated]);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    if (location.pathname.startsWith('/setlists')) {
+      setLoadingSetlists(true);
+      apiClient.fetchSetLists()
+        .then(data => { setSetlists(Array.isArray(data) ? data : []); setLoadingSetlists(false); })
+        .catch(err => { setErrorSetlists(err.message || 'Gagal mengambil data setlist'); setLoadingSetlists(false); });
+    }
+  }, [location.pathname, isLoading, isAuthenticated]);
+
+  // CONDITIONAL LOGIC AFTER ALL HOOKS
+  if (isLoading) {
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>Loading...</div>;
+  }
+
+  // Allow public pages even without auth
+  const publicPages = ['/login', '/reset-password'];
+  const isPublicPage = publicPages.some(page => location.pathname.startsWith(page));
+
+  if (!isAuthenticated && !isPublicPage) {
+    return <LoginPage />;
+  }
+
+  // Show public pages without sidebar/header
+  if (isPublicPage) {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="*" element={<Navigate to="/login" />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+  
   const availableSongsForSetlist = activeSetlist
     ? songs.filter(song => !(activeSetlist.songs || []).includes(song.id))
     : [];
@@ -45,81 +138,72 @@ function App() {
     (song.artist || '').toLowerCase().includes(addSongSearch.toLowerCase())
   );
 
-  useEffect(() => {
-    document.body.classList.remove('dark-mode', 'light-mode');
-    document.body.classList.add(theme === 'dark' ? 'dark-mode' : 'light-mode');
-    localStorage.setItem('ronz_theme', theme);
-  }, [theme]);
-
-  useEffect(() => {
-    setLoadingSongs(true);
-    fetch('/api/songs')
-      .then(res => { if (!res.ok) throw new Error('Gagal mengambil data lagu'); return res.json(); })
-      .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); })
-      .catch(err => { setErrorSongs(err.message || 'Gagal mengambil data'); setLoadingSongs(false); });
-  }, []);
-
-  // Fetch setlists setiap kali route /setlists diakses
-  useEffect(() => {
-    if (location.pathname.startsWith('/setlists')) {
-      setLoadingSetlists(true);
-      fetch('/api/setlists')
-        .then(res => { if (!res.ok) throw new Error('Gagal mengambil data setlist'); return res.json(); })
-        .then(data => { setSetlists(Array.isArray(data) ? data : []); setLoadingSetlists(false); })
-        .catch(err => { setErrorSetlists(err.message || 'Gagal mengambil data setlist'); setLoadingSetlists(false); });
-    }
-  }, [location.pathname]);
-
   const filteredSongs = songs.filter(song =>
     (song.title || '').toLowerCase().includes(search.toLowerCase()) ||
     (song.artist || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const navigate = useNavigate();
-  
-  const showHeader = (
-    location.pathname === '/' ||
-    location.pathname === '/setlists'    
-  );
   return (
-    <>
-      {showHeader && (
-        <header className="app-header">
-          <h1 className="app-title" style={{fontSize: '1.5rem'}}>🎸 RoNz Chord</h1>
-          <button
-            className={`btn-base theme-switch-btn ${theme === 'dark' ? 'dark' : 'light'}`}
-            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-            title="Ganti mode gelap/terang"
-          >
-            {theme === 'dark' ? '🌙' : '☀️'}
-          </button>
-          <div className="tab-nav">
-            <button onClick={() => navigate('/')} className={`btn-base tab-btn${location.pathname === '/' ? ' active' : ''}`}>Lagu</button>
-            <button onClick={() => navigate('/setlists')} className={`btn-base tab-btn${location.pathname.startsWith('/setlists') ? ' active' : ''}`}>Setlist</button>
-          </div>
-        </header>
-      )}
+    <ErrorBoundary>
+      <>
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        
+        <div className="app-container">
+          {/* Mobile Header dengan Hamburger */}
+          <header className="app-header-mobile">
+            <button 
+              className="hamburger-btn" 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              title="Toggle sidebar"
+            >
+              ☰
+            </button>
+            <h1 className="header-title">PerformerHub</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                className={`btn-base theme-switch-btn ${theme === 'dark' ? 'dark' : 'light'}`}
+                onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+                title="Ganti mode gelap/terang"
+              >
+                {theme === 'dark' ? '🌙' : '☀️'}
+              </button>
+            </div>
+          </header>
+
+        </div>
+
       <main className="main-content">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              loadingSongs ? (
-                <div>Memuat data lagu...</div>
-              ) : errorSongs ? (
-                <div className="error-text">{errorSongs}</div>
-              ) : (
-                <SongListPage
-                  songs={filteredSongs}
-                  loading={loadingSongs}
-                  error={errorSongs}
-                  search={search}
-                  setSearch={setSearch}
-                  onSongClick={songOrAction => {
-                    const from = location.pathname;
-                    if (songOrAction === 'add') navigate('/songs/add', { state: { from } });
-                    else if (songOrAction && songOrAction.id) navigate(`/songs/${songOrAction.id}`, { state: { from } });
-                  }}
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<DashboardPage />} />
+            <Route
+              path="/songs"
+              element={
+                loadingSongs ? (
+                  <div>Memuat data lagu...</div>
+                ) : errorSongs ? (
+                  <div className="error-text">{errorSongs}</div>
+                ) : (
+                  <SongListPage
+                    songs={filteredSongs}
+                    loading={loadingSongs}
+                    error={errorSongs}
+                    search={search}
+                    setSearch={setSearch}
+                    onSongClick={(action, id) => {
+                      const from = location.pathname;
+                      if (action === 'add') navigate('/songs/add', { state: { from } });
+                      else if (action === 'edit' && id) navigate(`/songs/edit/${id}`, { state: { from } });
+                      else if (action === 'delete' && id) {
+                        if (confirm('Yakin ingin menghapus lagu ini?')) {
+                          apiClient.deleteSong(id)
+                            .then(() => {
+                              setSongs(songs.filter(s => s.id !== id));
+                            })
+                            .catch(err => alert('Gagal menghapus lagu: ' + err.message));
+                        }
+                      }
+                    }}
                 />
               )
             }
@@ -127,32 +211,39 @@ function App() {
           <Route
             path="/songs/add"
             element={<AddSongRoute onSongUpdated={() => {
-              navigate('/');
+              navigate('/songs');
               setLoadingSongs(true);
-              fetch('/api/songs')
-                .then(res => res.json())
-                .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); });
+              apiClient.fetchSongs()
+                .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); })
+                .catch(err => { setErrorSongs(err.message || 'Gagal mengambil data'); setLoadingSongs(false); });
             }} />}
           />
           <Route
-            path="/songs/:id/edit"
+            path="/songs/edit/:id"
             element={<EditSongRoute onSongUpdated={(id) => {
-              navigate(`/songs/${id}`);
+              navigate(`/songs/view/${id}`);
               setLoadingSongs(true);
-              fetch('/api/songs')
-                .then(res => res.json())
-                .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); });
+              apiClient.fetchSongs()
+                .then(data => { setSongs(Array.isArray(data) ? data : []); setLoadingSongs(false); })
+                .catch(err => { setErrorSongs(err.message || 'Gagal mengambil data'); setLoadingSongs(false); });
             }} />}
           />
           <Route
-            path="/songs/:id"
-            element={<SongLyricsRoute activeSetlist={activeSetlist} />}
+            path="/songs/view/:id"
+            element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} />}
+          />
+          <Route
+            path="/setlists/:id"
+            element={<SetlistSongsPage activeSetlist={activeSetlist} setActiveSetlist={setActiveSetlist} songs={songs} setlists={setlists} setSetlists={setSetlists} setLoadingSetlists={setLoadingSetlists} />}
           />
           <Route
             path="/setlists"
             element={
               <SetlistPage
                 setlists={setlists}
+                setSetlists={setSetlists}
+                loadingSetlists={loadingSetlists}
+                errorSetlists={errorSetlists}
                 songs={songs}
                 showCreateSetlist={showCreateSetlist}
                 setShowCreateSetlist={setShowCreateSetlist}
@@ -160,82 +251,56 @@ function App() {
                 setCreateSetlistName={setCreateSetlistName}
                 createSetlistError={createSetlistError}
                 setCreateSetlistError={setCreateSetlistError}
-                loadingSetlists={loadingSetlists}
-                errorSetlists={errorSetlists}
-                showAddSongToSetlist={showAddSongToSetlist}
-                setShowAddSongToSetlist={setShowAddSongToSetlist}
-                addSongError={addSongError}
-                setAddSongError={setAddSongError}
-                addSongSearch={addSongSearch}
-                setAddSongSearch={setAddSongSearch}
-                addSongSelectedId={addSongSelectedId}
-                setAddSongSelectedId={setAddSongSelectedId}
-                addSongInputRef={addSongInputRef}
-                filteredAvailableSongs={filteredAvailableSongs}
-                setSetlists={setSetlists}
+                onSetlistCreated={() => {
+                  setShowCreateSetlist(false);
+                  setLoadingSetlists(true);
+                  apiClient.fetchSetLists()
+                    .then(data => { setSetlists(Array.isArray(data) ? data : []); setLoadingSetlists(false); })
+                    .catch(err => { setErrorSetlists(err.message || 'Gagal mengambil data'); setLoadingSetlists(false); });
+                }}
+                onSetlistClick={(setlist) => {
+                  setActiveSetlist(setlist);
+                  navigate(`/setlists/${setlist.id}`);
+                }}
               />
             }
           />
-          <Route
-            path="/setlists/:setlistId/songs"
-            element={<SetlistSongsPage setlists={setlists} songs={songs} setSetlists={setSetlists} setActiveSetlist={setActiveSetlist} loadingSetlists={loadingSetlists} />}
-          />
+          <Route path="/practice" element={<PracticeSessionPage />} />
+          <Route path="/gigs" element={<GigPage />} />
+          <Route path="/bands/manage" element={<BandManagementPage />} />
+          <Route path="/bands/admin/:bandId" element={<AdminPanelPage />} />
+          <Route path="/bands" element={<Navigate to="/bands/manage" replace />} />
+          <Route path="/bands/:id" element={<BandDetailPage />} />
+          <Route path="/invitations/pending" element={<PendingInvitationsPage />} />
+          <Route path="/invitations/:invitationId" element={<InvitationPage />} />
+          <Route path="/settings/2fa" element={<TwoFactorSetupPage />} />
+          <Route path="/audit-logs" element={<AuditLogPage />} />
           <Route path="*" element={<NotFound />} />
-        </Routes>
+          </Routes>
+        </Suspense>
       </main>
     </>
+    </ErrorBoundary>
   );
+}
 
+// AddSongRoute component
+function AddSongRoute({ onSongUpdated }) {
+  return <SongAddEditPage onSongUpdated={onSongUpdated} />;
+}
 
-// Route wrapper for showing only lyrics and chord by id from URL
-function SongLyricsRoute({ activeSetlist }) {
+// EditSongRoute component
+function EditSongRoute({ onSongUpdated }) {
   const { id } = useParams();
-  const [song, setSong] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
-  React.useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    fetch(`/api/songs/${id}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Gagal mengambil data lagu');
-        return res.json();
-      })
-      .then(data => { setSong(data); setLoading(false); })
-      .catch(e => { setError(e.message || 'Gagal mengambil data'); setLoading(false); });
-  }, [id]);
-  if (loading) return <div className="main-content">Memuat data lagu...</div>;
-  if (error) return <div className="main-content error-text">{error}</div>;
+  return <SongAddEditPage songId={id} onSongUpdated={onSongUpdated} />;
+}
+
+// SongLyricsRoute component
+function SongLyricsRoute({ songs, activeSetlist }) {
+  const { id } = useParams();
+  const song = Array.isArray(songs) ? songs.find(s => String(s.id) === String(id)) : null;
   return <SongLyricsPage song={song} activeSetlist={activeSetlist} />;
 }
 
-// Route wrapper for adding a song
-function AddSongRoute({ onSongUpdated }) {
-  const navigate = useNavigate();
-  return (
-    <SongAddEditPage
-      mode="add"
-      onBack={() => navigate('/')}
-      onSongUpdated={onSongUpdated}
-    />
-  );
-}
-
-// Route wrapper for editing a song by id from URL
-function EditSongRoute({ onSongUpdated }) {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  return (
-    <SongAddEditPage
-      songId={id}
-      mode="edit"
-      onBack={() => navigate(`/songs/${id}`)}
-      onSongUpdated={() => onSongUpdated(id)}
-    />
-  );
-}
-
-
-}
-
 export default App;
+

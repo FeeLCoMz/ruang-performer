@@ -27,6 +27,7 @@ export default async function handler(req, res) {
 
   try {
     let client;
+    const userId = req.user?.userId;
     try {
       client = getTursoClient();
     } catch (clientErr) {
@@ -37,9 +38,16 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       try {
         const result = await client.execute(
-          `SELECT id, name, desc, songs, setlistSongMeta, completedSongs, createdAt, updatedAt
-           FROM setlists WHERE id = ? LIMIT 1`,
-          [idStr]
+          `SELECT s.id, s.name, s.desc, s.bandId, s.songs, s.setlistSongMeta, s.completedSongs, s.createdAt, s.updatedAt,
+                  b.name as bandName
+           FROM setlists s
+           LEFT JOIN bands b ON s.bandId = b.id
+           WHERE s.id = ? 
+           AND (s.bandId IS NULL OR EXISTS (
+             SELECT 1 FROM band_members WHERE bandId = s.bandId AND userId = ?
+           ))
+           LIMIT 1`,
+          [idStr, userId]
         );
 
         const row = result.rows?.[0] || null;
@@ -51,6 +59,8 @@ export default async function handler(req, res) {
           id: row.id,
           name: row.name,
           desc: row.desc || '',
+          bandId: row.bandId,
+          bandName: row.bandName,
           songs: (() => {
             try {
               return row.songs ? JSON.parse(row.songs) : [];
@@ -95,6 +105,7 @@ export default async function handler(req, res) {
         `UPDATE setlists SET 
            name = COALESCE(?, name),
            desc = COALESCE(?, desc),
+           bandId = COALESCE(?, bandId),
            songs = COALESCE(?, songs),
            setlistSongMeta = COALESCE(?, setlistSongMeta),
            completedSongs = COALESCE(?, completedSongs),
@@ -103,6 +114,7 @@ export default async function handler(req, res) {
         [
           body.name ?? null,
           body.desc ?? null,
+          body.bandId !== undefined ? body.bandId : null,
           songsJson,
           setlistSongMetaJson,
           completedSongsJson,
@@ -116,6 +128,22 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      // Check if user has permission to delete this setlist
+      const checkResult = await client.execute(
+        `SELECT s.id FROM setlists s
+         WHERE s.id = ? 
+         AND (s.bandId IS NULL OR EXISTS (
+           SELECT 1 FROM band_members WHERE bandId = s.bandId AND userId = ?
+         ))
+         LIMIT 1`,
+        [idStr, userId]
+      );
+      
+      if (!checkResult.rows || checkResult.rows.length === 0) {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+      
       await client.execute(`DELETE FROM setlists WHERE id = ?`, [idStr]);
       res.status(204).end();
       return;

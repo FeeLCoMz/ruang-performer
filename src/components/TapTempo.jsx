@@ -30,21 +30,28 @@ export default function TapTempo({ onTempo, initialTempo = '', disabled = false 
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-      <button type="button" onClick={handleTap} disabled={disabled} style={{ fontWeight: 600, fontSize: 16, padding: '6px 14px', borderRadius: 6, background: '#23243a', color: '#facc15', border: '1.5px solid #35376a', cursor: 'pointer' }}>
-        Tap Tempo
-      </button>
-      <input
-        type="number"
-        min="30"
-        max="300"
-        value={bpm}
-        onChange={handleInput}
-        placeholder="BPM"
-        style={{ width: 60, fontWeight: 600, fontSize: 15, borderRadius: 5, border: '1.2px solid #35376a', background: '#18192b', color: '#facc15', padding: '4px 6px' }}
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',                  
+    }}>
+      <button
+        type="button"
+        onClick={handleTap}
         disabled={disabled}
-      />
-      <span style={{ color: '#aaa', fontSize: 13 }}>BPM</span>
+        className="btn-base"        
+        title="Tap to detect BPM"
+      >
+        🎯 Tap Tempo
+      </button>         
+      {taps.length > 0 && (
+        <span style={{
+          fontSize: '0.8em',
+          color: 'var(--primary-color)',
+          marginLeft: 'auto'
+        }}>
+          Taps: {taps.length}
+        </span>
+      )}
     </div>
   );
 }

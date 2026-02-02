@@ -6,7 +6,12 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
-    host: true,
+    host: '0.0.0.0',
+    hmr: {
+      host: 'localhost',
+      port: 5173,
+      protocol: 'ws'
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
@@ -19,5 +24,9 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     minify: 'esbuild'
+  },
+  define: {
+    __APP_NAME__: JSON.stringify('PerformerHub'),
+    __APP_VERSION__: JSON.stringify('1.0.0')
   }
 });

@@ -1,0 +1,153 @@
+/* Audit Log Page Styles */
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.activity-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+.activity-timeline::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-color);
+}
+
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px 0;
+  padding-left: 56px;
+  position: relative;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: 8px;
+  top: 18px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid var(--card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-content {
+  flex: 1;
+  padding: 12px;
+  background: var(--surface-color);
+  border-radius: 8px;
+  border-left: 3px solid var(--border-color);
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-name {
+  color: var(--text-color);
+}
+
+.timeline-time {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.timeline-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .timeline-time {
+    width: 100%;
+  }
+
+  .activity-timeline::before {
+    left: 12px;
+  }
+
+  .timeline-marker {
+    left: 0;
+  }
+
+  .timeline-item {
+    padding-left: 40px;
+  }
+}
+
+@media (max-width: 600px) {
+  .timeline-item {
+    padding-left: 36px;
+    gap: 12px;
+  }
+
+  .timeline-marker {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+  }
+
+  .timeline-content {
+    padding: 10px;
+  }
+
+  .action-name {
+    font-size: 0.95em;
+  }
+
+  .timeline-time {
+    font-size: 0.8em;
+  }
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+  .timeline-content {
+    background: var(--surface-color);
+    border-left-color: var(--primary-color);
+  }
+
+  .badge {
+    opacity: 0.9;
+  }
+}

@@ -40,30 +40,78 @@ export default function AutoScrollBar({ tempo = 80, onScrollChange }) {
   }, [scrolling, speed, onScrollChange]);
 
   return (
-    <div className="auto-scroll-bar">
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '12px',
+      background: 'var(--secondary-bg)',
+      borderRadius: '8px',
+      border: '1px solid var(--border-color)',
+      flexWrap: 'wrap'
+    }}>
       <button
-        className={scrolling ? 'auto-scroll-btn active' : 'auto-scroll-btn'}
+        className="btn-base"
         onClick={() => setScrolling(s => !s)}
-      >{scrolling ? '⏸️ Stop Scroll' : '▶️ Auto Scroll'}</button>
-      <label className="tempo-label">
-        BPM:
+        style={{
+          padding: '8px 12px',
+          fontSize: '0.9em',
+          background: scrolling ? 'var(--primary-color)' : 'var(--secondary-bg)',
+          color: scrolling ? 'white' : 'var(--text-primary)',
+          borderColor: scrolling ? 'var(--primary-color)' : 'var(--border-color)'
+        }}
+        title="Toggle auto scroll"
+      >
+        {scrolling ? '⏸️ Scrolling' : '▶️ Auto Scroll'}
+      </button>
+      
+      <label style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        fontSize: '0.9em',
+        color: 'var(--text-muted)'
+      }}>
+        ⏱️ BPM:
         <input
           type="number"
           min={40}
           max={240}
           value={speed}
           onChange={e => setSpeed(Number(e.target.value))}
-          className="tempo-input"
+          style={{
+            width: '60px',
+            padding: '6px 8px',
+            fontSize: '0.9em',
+            border: '1px solid var(--border-color)',
+            borderRadius: '4px',
+            background: 'var(--primary-bg)',
+            color: 'var(--text-primary)'
+          }}
         />
       </label>
-      <div className="metronome-indicator">
-        {[0, 1, 2, 3].map(i => (
-          <span
-            key={i}
-            className={beat === i ? 'metronome-dot active' : 'metronome-dot'}
-          >●</span>
-        ))}
-      </div>
+      
+      {scrolling && (
+        <div style={{
+          display: 'flex',
+          gap: '4px',
+          alignItems: 'center',
+          fontSize: '0.8em'
+        }}>
+          {[0, 1, 2, 3].map(i => (
+            <span
+              key={i}
+              style={{
+                fontSize: '1.2em',
+                opacity: beat === i ? 1 : 0.3,
+                transition: 'opacity 0.1s'
+              }}
+            >
+              ●
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

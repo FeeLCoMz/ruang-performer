@@ -10,6 +10,18 @@
       "dest": "/api/setlists/[id].js?id=$1"
     },
     {
+      "src": "/api/bands/([^/]+)$",
+      "dest": "/api/bands/[id].js?id=$1"
+    },
+    {
+      "src": "/api/practice/([^/]+)$",
+      "dest": "/api/practice/[id].js?id=$1"
+    },
+    {
+      "src": "/api/gigs/([^/]+)$",
+      "dest": "/api/gigs/[id].js?id=$1"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     },

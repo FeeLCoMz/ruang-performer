@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlusIcon from '../components/PlusIcon.jsx';
 import SetlistForm from '../components/SetlistForm.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
+import { fetchBands, addSetList, updateSetList, deleteSetList, fetchSetLists } from '../apiClient.js';
+import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 
 export default function SetlistPage({
   setlists,
@@ -25,25 +27,281 @@ export default function SetlistPage({
   const [deleteSetlist, setDeleteSetlist] = React.useState(null);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState('');
+  const [bands, setBands] = React.useState([]);
+  
+  // Filter & Sort States
+  const [search, setSearch] = React.useState('');
+  const [filterBand, setFilterBand] = React.useState('all');
+  const [sortBy, setSortBy] = React.useState('name');
+  const [sortOrder, setSortOrder] = React.useState('asc');
+  
+  // Update page meta tags on mount
+  React.useEffect(() => {
+    updatePageMeta(pageMetadata.setlists);
+  }, []);
+  
+  // Fetch bands on mount
+  React.useEffect(() => {
+    const loadBands = async () => {
+      try {
+        const data = await fetchBands();
+        setBands(data || []);
+      } catch (err) {
+        console.error('Failed to load bands:', err);
+      }
+    };
+    loadBands();
+  }, []);
+  
   // Helper untuk refresh setlists dari API
   const refreshSetlists = async () => {
     try {
-      const res = await fetch('/api/setlists');
-      const data = await res.json();
+      const data = await fetchSetLists();
       setSetlists(Array.isArray(data) ? data : []);
-    } catch {}
+    } catch (err) {
+      console.error('Failed to refresh setlists:', err);
+    }
   };
+
+  // Extract unique band names for filter
+  const bandOptions = useMemo(() => {
+    const bandSet = new Set();
+    setlists.forEach(setlist => {
+      if (setlist.bandName) bandSet.add(setlist.bandName);
+    });
+    return Array.from(bandSet).sort();
+  }, [setlists]);
+
+  // Filter and sort setlists
+  const filteredSetlists = useMemo(() => {
+    let result = [...setlists];
+
+    // Apply search
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      result = result.filter(setlist =>
+        setlist.name?.toLowerCase().includes(searchLower) ||
+        setlist.desc?.toLowerCase().includes(searchLower) ||
+        setlist.bandName?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply band filter
+    if (filterBand !== 'all') {
+      if (filterBand === 'personal') {
+        result = result.filter(setlist => !setlist.bandId);
+      } else {
+        result = result.filter(setlist => setlist.bandName === filterBand);
+      }
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      let aVal, bVal;
+      
+      switch (sortBy) {
+        case 'name':
+          aVal = a.name?.toLowerCase() || '';
+          bVal = b.name?.toLowerCase() || '';
+          break;
+        case 'band':
+          aVal = a.bandName?.toLowerCase() || '';
+          bVal = b.bandName?.toLowerCase() || '';
+          break;
+        case 'songs':
+          aVal = a.songs?.length || 0;
+          bVal = b.songs?.length || 0;
+          break;
+        case 'created':
+          aVal = new Date(a.createdAt || 0).getTime();
+          bVal = new Date(b.createdAt || 0).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [setlists, search, filterBand, sortBy, sortOrder]);
+
+  const handleClearFilters = () => {
+    setSearch('');
+    setFilterBand('all');
+    setSortBy('name');
+    setSortOrder('asc');
+  };
+
+  const hasActiveFilters = search || filterBand !== 'all';
+
+  if (loadingSetlists) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <h1>🎵 Setlist</h1>
+        </div>
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+          Memuat setlist...
+        </div>
+      </div>
+    );
+  }
+
+  if (errorSetlists) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <h1>🎵 Setlist</h1>
+        </div>
+        <div className="error-text" style={{ padding: '20px' }}>{errorSetlists}</div>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className="section-title">Setlist</div>
-      <button
-        className="btn-base tab-btn setlist-add-btn"
-        onClick={() => setShowCreateSetlist(true)}
-        title="Buat Setlist Baru"
-        aria-label="Buat Setlist Baru"
-      >
-        <PlusIcon size={22} />
-      </button>
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div>
+          <h1>🎵 Setlist</h1>
+          <p>{filteredSetlists.length} dari {setlists.length} setlist</p>
+        </div>
+        <button className="btn-base" onClick={() => setShowCreateSetlist(true)}>
+          <PlusIcon size={18} /> Buat Setlist
+        </button>
+      </div>
+
+      {/* Filters & Search */}
+      <div className="filter-container" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
+      }}>
+        {/* Search Bar */}
+        <input
+          type="text"
+          placeholder="🔍 Cari nama setlist, deskripsi, atau band..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="search-input-main"
+        />
+
+        {/* Filters Row */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '12px'
+        }}>
+          <select
+            value={filterBand}
+            onChange={(e) => setFilterBand(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">Semua Band</option>
+            <option value="personal">Personal</option>
+            {bandOptions.map(band => (
+              <option key={band} value={band}>{band}</option>
+            ))}
+          </select>
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="filter-select"
+          >
+            <option value="name">Urutkan: Nama</option>
+            <option value="band">Urutkan: Band</option>
+            <option value="songs">Urutkan: Jumlah Lagu</option>
+            <option value="created">Urutkan: Tanggal</option>
+          </select>
+
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="btn-base sort-button"
+            title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
+          >
+            {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+          </button>
+
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearFilters}
+              className="btn-base reset-filter-btn"
+            >
+              ✕ Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Setlist List */}
+      {filteredSetlists.length === 0 ? (
+        <div className="empty-state">
+          <p>
+            {hasActiveFilters ? 'Tidak ada setlist yang cocok dengan filter' : 'Belum ada setlist'}
+          </p>
+          {!hasActiveFilters && (
+            <button className="btn-base" onClick={() => setShowCreateSetlist(true)} style={{ marginTop: '12px' }}>
+              <PlusIcon size={18} /> Buat Setlist Pertama
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="song-list-container">
+          {filteredSetlists.map(setlist => (
+            <div
+              key={setlist.id}
+              className="setlist-item"
+              onClick={() => navigate(`/setlists/${setlist.id}`)}
+            >
+              {/* Setlist Info */}
+              <div className="setlist-info">
+                <h3 className="setlist-title">
+                  {setlist.name}
+                </h3>
+                <div className="setlist-meta">
+                  {setlist.desc && <span>{setlist.desc}</span>}
+                  {setlist.bandName && <span>🎸 {setlist.bandName}</span>}
+                  <span>🎵 {setlist.songs?.length || 0} lagu</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div
+                className="setlist-actions"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setEditSetlist(setlist)}
+                  className="btn-base"
+                  style={{ padding: '6px 12px', fontSize: '0.85em' }}
+                  title="Edit"
+                >
+                  <EditIcon size={16} />
+                </button>
+                <button
+                  onClick={() => setDeleteSetlist(setlist)}
+                  className="btn-base"
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.85em',
+                    background: '#dc2626',
+                    borderColor: '#b91c1c',
+                    color: '#fff'
+                  }}
+                  title="Hapus"
+                >
+                  <DeleteIcon size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Modal Buat Setlist Baru */}
       {showCreateSetlist && (
         <div
@@ -58,19 +316,15 @@ export default function SetlistPage({
             mode="create"
             title="Buat Setlist Baru"
             initialData={{}}
+            bands={bands}
             loading={editLoading}
             error={createSetlistError}
             onCancel={() => setShowCreateSetlist(false)}
-            onSubmit={async ({ name, desc }) => {
+            onSubmit={async ({ name, desc, bandId }) => {
               setCreateSetlistError('');
               setEditLoading(true);
               try {
-                const res = await fetch('/api/setlists', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ name, desc })
-                });
-                if (!res.ok) throw new Error('Gagal membuat setlist');
+                await addSetList({ name, desc, bandId });
                 setShowCreateSetlist(false);
                 setCreateSetlistName('');
                 setCreateSetlistError('');
@@ -84,6 +338,7 @@ export default function SetlistPage({
           />
         </div>
       )}
+
       {/* Modal Edit Setlist */}
       {editSetlist && (
         <div
@@ -98,19 +353,15 @@ export default function SetlistPage({
             mode="edit"
             title="Edit Setlist"
             initialData={editSetlist}
+            bands={bands}
             loading={editLoading}
             error={editError}
             onCancel={() => setEditSetlist(null)}
-            onSubmit={async ({ name, desc }) => {
+            onSubmit={async ({ name, desc, bandId }) => {
               setEditError('');
               setEditLoading(true);
               try {
-                const res = await fetch(`/api/setlists/${editSetlist.id}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ name, desc })
-                });
-                if (!res.ok) throw new Error('Gagal mengupdate setlist');
+                await updateSetList({ id: editSetlist.id, name, desc, bandId });
                 setEditSetlist(null);
                 await refreshSetlists();
               } catch (err) {
@@ -122,90 +373,51 @@ export default function SetlistPage({
           />
         </div>
       )}
-      {loadingSetlists && <div className="info-text">Memuat setlist...</div>}
-      {errorSetlists && <div className="error-text">{errorSetlists}</div>}
-      <ul className="setlist-list">
-        {!loadingSetlists && !errorSetlists && setlists.length === 0 && (
-          <li className="info-text">Tidak ada setlist.</li>
-        )}
-        {setlists.map(setlist => (
-          <li key={setlist.id} className="setlist-list-item setlist-list-flex">
-            <span
-              className="setlist-title setlist-title-flex pointer"
-              onClick={() => navigate(`/setlists/${setlist.id}/songs`)}
-            >
-              {setlist.name}
-                {setlist.desc && (
-                  <div className="setlist-desc">
-                    {setlist.desc}
-                  </div>
-                )}
-            </span>
-            <span
-              className="setlist-count setlist-count-flex"
-              onClick={() => navigate(`/setlists/${setlist.id}/songs`)}
-            >
-              {(setlist.songs?.length || 0)} lagu
-            </span>
-            <span className="setlist-actions-flex">
-              <button
-                className="tab-btn setlist-edit-btn setlist-action-btn icon-btn"
-                title="Edit Setlist"
-                onClick={e => { e.stopPropagation(); setEditSetlist(setlist); }}
-              >
-                <EditIcon size={16} />
+
+      {/* Modal Konfirmasi Hapus */}
+      {deleteSetlist && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          tabIndex={-1}
+          onClick={() => setDeleteSetlist(null)}
+          onKeyDown={e => { if (e.key === 'Escape') setDeleteSetlist(null); }}
+        >
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h2 style={{ color: 'var(--error)' }}>Hapus Setlist?</h2>
+            <p style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>
+              Yakin ingin menghapus setlist <b>{deleteSetlist.name}</b>? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            {deleteError && <div className="error-text" style={{ marginBottom: '16px' }}>{deleteError}</div>}
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button className="btn-base" onClick={() => setDeleteSetlist(null)}>
+                Batal
               </button>
               <button
-                className="tab-btn setlist-delete-btn setlist-action-btn setlist-delete-color icon-btn"
-                title="Hapus Setlist"
-                onClick={e => { e.stopPropagation(); setDeleteSetlist(setlist); }}
+                className="btn-base"
+                disabled={deleteLoading}
+                style={{ backgroundColor: 'var(--error)', color: 'white' }}
+                onClick={async () => {
+                  setDeleteError('');
+                  setDeleteLoading(true);
+                  try {
+                    await deleteSetList(deleteSetlist.id);
+                    setDeleteSetlist(null);
+                    await refreshSetlists();
+                  } catch (err) {
+                    setDeleteError(err.message || 'Gagal menghapus setlist');
+                  } finally {
+                    setDeleteLoading(false);
+                  }
+                }}
               >
-                <DeleteIcon size={16} />
+                {deleteLoading ? 'Menghapus...' : 'Hapus'}
               </button>
-            </span>
-                {/* Modal Konfirmasi Hapus Setlist */}
-                {deleteSetlist && (
-                  <div
-                    className="modal-overlay"
-                    role="dialog"
-                    aria-modal="true"
-                    tabIndex={-1}
-                    onClick={() => setDeleteSetlist(null)}
-                    onKeyDown={e => { if (e.key === 'Escape') setDeleteSetlist(null); }}
-                  >
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                      <h3 className="setlist-modal-title setlist-delete-color">Hapus Setlist?</h3>
-                      <div className="setlist-modal-desc">
-                        Yakin ingin menghapus setlist <b>{deleteSetlist.name}</b>? Tindakan ini tidak dapat dibatalkan.
-                      </div>
-                      {deleteError && <div className="error-text setlist-modal-error">{deleteError}</div>}
-                      <div className="setlist-modal-actions">
-                        <button className="tab-btn" onClick={() => setDeleteSetlist(null)}>Batal</button>
-                        <button
-                          className="tab-btn setlist-modal-delete-btn"
-                          disabled={deleteLoading}
-                          onClick={async () => {
-                            setDeleteError('');
-                            setDeleteLoading(true);
-                            try {
-                              const res = await fetch(`/api/setlists/${deleteSetlist.id}`, { method: 'DELETE' });
-                              if (!res.ok) throw new Error('Gagal menghapus setlist');
-                              setDeleteSetlist(null);
-                              await refreshSetlists();
-                            } catch (err) {
-                              setDeleteError(err.message || 'Gagal menghapus setlist');
-                            } finally {
-                              setDeleteLoading(false);
-                            }
-                          }}
-                        >{deleteLoading ? 'Menghapus...' : 'Hapus'}</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-          </li>
-        ))}
-      </ul>
-    </>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,165 +1,215 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import EditIcon from '../components/EditIcon.jsx';
-import ChordDisplay from '../components/ChordDisplay.jsx';
-import YouTubeViewer from '../components/YouTubeViewer.jsx';
-import TimeMarkers from '../components/TimeMarkers.jsx';
-import TransposeBar from '../components/TransposeBar.jsx';
-import AutoScrollBar from '../components/AutoScrollBar.jsx';
-import SetlistSongNavigator from '../components/SetlistSongNavigator.jsx';
-import SongDetailHeader from '../components/SongDetailHeader.jsx';
-import SongInfo from '../components/SongInfo.jsx';
-import SongControls from '../components/SongControls.jsx';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { parseChordPro, transposeChord, getTransposeSteps } from '../utils/chordUtils.js';
+import ChordDisplay from '../components/ChordDisplay';
+import TransposeBar from '../components/TransposeBar';
+import AutoScrollBar from '../components/AutoScrollBar';
+import YouTubeViewer from '../components/YouTubeViewer';
+import TimeMarkers from '../components/TimeMarkers';
+import SetlistSongNavigator from '../components/SetlistSongNavigator';
 
-export default function SongLyricsPage({ song, activeSetlist }) {
+export default function SongLyricsPage({ song: songProp }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [transpose, setTranspose] = React.useState(0);
-  const [highlightChords, setHighlightChords] = React.useState(false);
-  // Ref dan state untuk video scrubber
-  const ytRef = useRef(null);
-  const [ytCurrentTime, setYtCurrentTime] = useState(0);
-  const [ytDuration, setYtDuration] = useState(0);
-  // Parse metadata dari lirik jika ada
-  let lyricMeta = {};
-  if (song && song.lyrics) {
-    try {
-      lyricMeta = parseChordPro(song.lyrics).metadata || {};
-    } catch {}
-  }
-  if (!song) return <div className="main-content error-text">Lagu tidak ditemukan</div>;
-  // Jika setlist aktif, cari meta lagu dari setlist
-  let setlistMeta = null;
-  if (activeSetlist && Array.isArray(activeSetlist.setlistSongMeta) && song) {
-    setlistMeta = activeSetlist.setlistSongMeta.find(meta => meta && meta.id === song.id);
-  }
-  // Gabungkan metadata: prioritas setlist > lirik > master song
-  const metaKey = (setlistMeta && setlistMeta.key) || lyricMeta.key || song.key;
-  const metaTempo = (setlistMeta && setlistMeta.tempo) || lyricMeta.tempo || song.tempo;
-  const metaStyle = (setlistMeta && setlistMeta.style) || song.style;
-  const originalKey = song.key;
-  const originalTempo = song.tempo;
-  const originalStyle = song.style;
+  
+  // Get metadata from location state (setlist context)
+  const setlistSongData = location.state?.setlistSong || {};
+  const setlistData = location.state?.setlist || {};
+  const setlistId = location.state?.setlistId;
+  
+  // Merge song data: prioritize setlist metadata > location state > song prop
+  const song = songProp || location.state?.song;
+  const artist = setlistSongData.artist || song?.artist || '';
+  const key = setlistSongData.key || song?.key || '';
+  const tempo = setlistSongData.tempo || song?.tempo || '';
+  const genre = setlistSongData.genre || song?.genre || '';
+  const capo = setlistSongData.capo || song?.capo || '';
+  const youtubeId = song?.youtubeId || song?.youtube_url || '';
+  const timeMarkers = song?.time_markers || [];
 
-  // Hitung steps transpose otomatis dari key database ke metaKey (setlist/lirik)
-  const autoTranspose = useMemo(() => {
-    if (typeof metaKey === 'string' && typeof song.key === 'string' && metaKey !== song.key) {
-      return getTransposeSteps(song.key, metaKey);
-    }
-    return 0;
-  }, [metaKey, song.key]);
+  // Transpose state
+  const [transpose, setTranspose] = useState(0);
+  const [highlightChords, setHighlightChords] = useState(true);
 
-  // Reset transpose manual saat song atau metaKey berubah
+  // Auto-calculate transpose if setlist has different key
   useEffect(() => {
-    setTranspose(0);
-  }, [song.id, metaKey]);
-
-  // Info rows: tampilkan meta, dan jika berbeda tampilkan original
-  const infoRows = useMemo(() => [
-    { label: 'Album', value: song.album },
-    (typeof metaKey === 'string' && typeof song.key === 'string' && metaKey !== song.key)
-      ? { label: 'Key', value: `${metaKey} (Original: ${song.key})` }
-      : { label: 'Key', value: metaKey },
-    (typeof metaTempo === 'string' && typeof song.tempo === 'string' && metaTempo !== song.tempo)
-      ? { label: 'Tempo', value: `${metaTempo} (Original: ${song.tempo})` }
-      : { label: 'Tempo', value: metaTempo },
-    (typeof metaStyle === 'string' && typeof song.style === 'string' && metaStyle !== song.style)
-      ? { label: 'Style', value: `${metaStyle} (Original: ${song.style})` }
-      : { label: 'Style', value: metaStyle },
-    { label: 'Capo', value: lyricMeta.capo },
-    { label: 'Time Signature', value: lyricMeta.time_signature || song.time_signature },
-  ].filter(row => row.value), [metaKey, metaTempo, metaStyle, lyricMeta, song]);
-  // Metadata lain di lirik (selain yang sudah di atas)
-  const extraMeta = Object.entries(lyricMeta)
-    .filter(([k]) => !['key','tempo','capo','time','original_key'].includes(k))
-    .map(([k,v]) => ({ label: k.replace(/_/g,' ').replace(/\b\w/g, l => l.toUpperCase()), value: v }));
-  // Navigasi antar lagu jika activeSetlist tersedia
-  let navPrev = null, navNext = null;
-  if (activeSetlist && activeSetlist.songs && song && song.id) {
-    const idx = activeSetlist.songs.findIndex(id => String(id) === String(song.id));
-    if (idx > 0) navPrev = activeSetlist.songs[idx - 1];
-    if (idx < activeSetlist.songs.length - 1) navNext = activeSetlist.songs[idx + 1];
-  }
-  // Nomor urutan lagu di setlist
-  let songNumber = null, totalSongs = null;
-  if (activeSetlist && activeSetlist.songs && song && song.id) {
-    const idx = activeSetlist.songs.findIndex(id => String(id) === String(song.id));
-    if (idx !== -1) {
-      songNumber = idx + 1;
-      totalSongs = activeSetlist.songs.length;
+    if (setlistSongData.key && song?.key && setlistSongData.key !== song.key) {
+      const keyMap = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+      const originalIdx = keyMap.indexOf(song.key);
+      const targetIdx = keyMap.indexOf(setlistSongData.key);
+      if (originalIdx >= 0 && targetIdx >= 0) {
+        let steps = targetIdx - originalIdx;
+        if (steps < 0) steps += 12;
+        setTranspose(steps);
+      }
     }
+  }, [setlistSongData.key, song?.key]);
+
+  if (!song) {
+    return (
+      <div className="page-container">
+        <div className="not-found-container">
+          <div className="not-found-icon">🎵</div>
+          <h2 className="not-found-title">Lagu Tidak Ditemukan</h2>
+          <p className="not-found-message">
+            Lagu yang Anda cari tidak tersedia
+          </p>
+          <button
+            onClick={() => navigate(-1)}
+            className="btn-submit"
+          >
+            ← Kembali
+          </button>
+        </div>
+      </div>
+    );
   }
+
+  const handleBack = () => {
+    if (setlistId) {
+      navigate(`/setlists/${setlistId}/songs`);
+    } else {
+      navigate('/songs');
+    }
+  };
+
+  const handleEdit = () => {
+    navigate(`/songs/edit/${song.id}`);
+  };
+
   return (
-    <div className="song-detail-container">
-      {/* Navigasi antar lagu (jika setlist aktif) */}
-      {activeSetlist && (
-        <SetlistSongNavigator
-          navPrev={navPrev}
-          navNext={navNext}
-          songNumber={songNumber}
-          totalSongs={totalSongs}
-          onPrev={() => navPrev && navigate(`/songs/${navPrev}`)}
-          onNext={() => navNext && navigate(`/songs/${navNext}`)}
-        />
-      )}
-      <SongDetailHeader
-        song={song.title}
-        artist={song.artist}
-        onBack={() => {
-          if (activeSetlist) {
-            navigate(`/setlists/${activeSetlist.id}/songs`);
-          } else {
-            navigate(location.state?.from || '/');
-          }
-        }}
-        onEdit={() => navigate(`/songs/${song.id}/edit`)}
-        // Ikon edit tetap diisi di komponen ini
-        onEditIcon={<EditIcon size={16} />}
-      />
-      <SongInfo
-        infoRows={infoRows}
-        instruments={song.instruments}
-        extraMeta={extraMeta}
-      />
-      {/* YouTube viewer & scrubber */}
-      {song.youtubeId && (
-        <div className="song-detail-youtube">
-          <YouTubeViewer
-            videoId={song.youtubeId}
-            songId={song.id}
-            ref={ytRef}
-            onTimeUpdate={(t, d) => {
-              setYtCurrentTime(t);
-              if (typeof d === 'number') setYtDuration(d);
-            }}
-          />
+    <div className="page-container">
+      {/* Header */}
+      <div className="song-detail-header">
+        <button
+          onClick={handleBack}
+          className="song-detail-back"
+          aria-label="Kembali"
+        >
+          ←
+        </button>
+        <div className="song-detail-info">
+          <h1 className="song-detail-title">
+            {song.title}
+          </h1>
+          {artist && (
+            <div className="song-detail-artist">
+              {artist}
+            </div>
+          )}
+        </div>
+        <button
+          onClick={handleEdit}
+          className="song-detail-edit"
+        >
+          ✏️ Edit
+        </button>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="content-grid">
+        {/* Left Column: Song Info & Controls */}
+        <div className="form-section">
+          {/* Song Details Card */}
+          <div className="song-section-card">
+            <h3 className="song-section-title">
+              📋 Detail Lagu
+            </h3>
+            <div className="form-section" style={{ gap: '10px' }}>
+              {artist && (
+                <div className="song-info-row">
+                  <span className="song-info-label">👤 Artist:</span>
+                  <span className="song-info-value">{artist}</span>
+                </div>
+              )}
+              {key && (
+                <div className="song-info-row">
+                  <span className="song-info-label">🎹 Key:</span>
+                  <span className="song-info-value">{key}</span>
+                </div>
+              )}
+              {tempo && (
+                <div className="song-info-row">
+                  <span className="song-info-label">⏱️ Tempo:</span>
+                  <span className="song-info-value">{tempo} BPM</span>
+                </div>
+              )}
+              {genre && (
+                <div className="song-info-row">
+                  <span className="song-info-label">🎸 Genre:</span>
+                  <span className="song-info-value">{genre}</span>
+                </div>
+              )}
+              {capo && (
+                <div className="song-info-row">
+                  <span className="song-info-label">📌 Capo:</span>
+                  <span className="song-info-value">Fret {capo}</span>
+                </div>
+              )}
+              {!artist && !key && !tempo && !genre && !capo && (
+                <div className="not-found-message" style={{ marginBottom: 0 }}>
+                  Tidak ada detail metadata
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Playback Controls Card */}
+          <div className="song-section-card">
+            <h3 className="song-section-title">
+              🎚️ Kontrol Playback
+            </h3>
+            <div className="form-section">
+              <TransposeBar
+                transpose={transpose}
+                setTranspose={setTranspose}
+              />
+              <AutoScrollBar tempo={tempo || 120} />
+              <div className="checkbox-control">
+                <input
+                  type="checkbox"
+                  id="highlight-chords"
+                  checked={highlightChords}
+                  onChange={(e) => setHighlightChords(e.target.checked)}
+                />
+                <label htmlFor="highlight-chords">
+                  🎨 Highlight Chords
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: YouTube & Time Markers */}
+        <div className="form-section">
+          <YouTubeViewer videoId={youtubeId || ''} />
+          
           <TimeMarkers
-            markers={Array.isArray(song.timestamps) ? song.timestamps : []}
-            getCurrentTime={() => ytRef.current && typeof ytRef.current.currentTime === 'number' ? ytRef.current.currentTime : ytCurrentTime}
-            seekTo={t => {
-              if (ytRef.current && typeof ytRef.current.handleSeek === 'function') {
-                ytRef.current.handleSeek(t);
-              }
-            }}
-            duration={ytRef.current && typeof ytRef.current.currentTime === 'number' ? ytDuration : undefined}
+            timeMarkers={timeMarkers}
             readonly={true}
           />
         </div>
-      )}
-      <SongControls
-        transpose={transpose + autoTranspose}
-        setTranspose={delta => setTranspose(prev => typeof delta === 'function' ? delta(prev) : delta - autoTranspose)}
-        highlightChords={highlightChords}
-        setHighlightChords={setHighlightChords}
-        tempo={metaTempo ? Number(metaTempo) : 80}
-        TransposeBar={TransposeBar}
-        AutoScrollBar={AutoScrollBar}
-      />
-      {/* Chord/lyrics */}
-      <div className="song-detail-chord">
-        <ChordDisplay song={song} transpose={transpose + autoTranspose} highlightChords={highlightChords} />
       </div>
+
+      {/* Lyrics Section */}
+      <div className="song-section-card">
+        <h3 className="song-section-title">
+          🎤 Lirik & Chord
+        </h3>
+        <ChordDisplay
+          song={song}
+          transpose={transpose}
+          highlightChords={highlightChords}
+        />
+      </div>
+
+      {/* Setlist Navigation (if in setlist context) */}
+      {setlistId && setlistData.songs && (
+        <SetlistSongNavigator
+          setlistId={setlistId}
+          currentSongId={song.id}
+          songs={setlistData.songs}
+        />
+      )}
     </div>
   );
 }

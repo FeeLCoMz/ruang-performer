@@ -2,22 +2,35 @@ import React from 'react';
 
 export default function SearchBar({ value, onChange, onVoiceSearch, placeholder = "Cari judul atau artist..." }) {
   return (
-    <div className="song-search-bar">
+    <div style={{
+      display: 'flex',
+      gap: '8px',
+      width: '100%'
+    }}>
       <input
         type="text"
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="search-input"
+        style={{
+          flex: 1,
+          padding: '10px 14px',
+          fontSize: '0.95em',
+          border: '1px solid var(--border-color)',
+          borderRadius: '6px',
+          background: 'var(--primary-bg)',
+          color: 'var(--text-primary)'
+        }}
       />
       {onVoiceSearch && (
         <button
           type="button"
-          className="btn-base tab-btn mic-btn"
-          title="Cari dengan suara"
+          className="btn-base"
+          title="Voice search"
           onClick={onVoiceSearch}
+          style={{ padding: '10px 14px' }}
         >
-          <span role="img" aria-label="Mic">🎤</span>
+          🎤
         </button>
       )}
     </div>

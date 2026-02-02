@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       try {
         const result = await client.execute(
-          `SELECT id, title, artist, youtubeId, lyrics, key, tempo, style, instruments, timestamps, createdAt, updatedAt
+          `SELECT id, title, artist, youtubeId, lyrics, key, tempo, genre, capo, instruments, time_markers, createdAt, updatedAt
            FROM songs WHERE id = ? LIMIT 1`,
           [idStr]
         );
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
         }
         res.status(200).json({
           ...row,
-          timestamps: row.timestamps ? JSON.parse(row.timestamps) : [],
+          time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
           instruments: row.instruments ? JSON.parse(row.instruments) : [],
         });
         return;
@@ -70,14 +70,22 @@ export default async function handler(req, res) {
         lyrics = COALESCE(?, lyrics),
         key = COALESCE(?, key),
         tempo = COALESCE(?, tempo),
-        style = COALESCE(?, style),
+        genre = COALESCE(?, genre),
+        capo = COALESCE(?, capo),
         instruments = COALESCE(?, instruments),
+        time_markers = COALESCE(?, time_markers),
         updatedAt = ?`;
       // Pastikan tempo disimpan sebagai string integer tanpa koma
       let tempoStr = null;
       if (body.tempo !== undefined && body.tempo !== null && body.tempo !== '') {
         const tempoInt = parseInt(String(body.tempo).replace(/,/g, '.'), 10);
         if (!isNaN(tempoInt)) tempoStr = tempoInt.toString();
+      }
+      // Pastikan capo disimpan sebagai string integer
+      let capoStr = null;
+      if (body.capo !== undefined && body.capo !== null && body.capo !== '') {
+        const capoInt = parseInt(String(body.capo), 10);
+        if (!isNaN(capoInt)) capoStr = capoInt.toString();
       }
       let updateParams = [
         body.title ?? null,
@@ -86,14 +94,12 @@ export default async function handler(req, res) {
         body.lyrics ?? null,
         body.key ?? null,
         tempoStr,
-        body.style ?? null,
+        body.genre ?? null,
+        capoStr,
         (Array.isArray(body.instruments) ? JSON.stringify(body.instruments) : (body.instruments ?? null)),
+        (Array.isArray(body.time_markers) ? JSON.stringify(body.time_markers) : (body.time_markers ?? null)),
         now
       ];
-      if (body.hasOwnProperty('timestamps')) {
-        updateSql += ', timestamps = ?';
-        updateParams.push(Array.isArray(body.timestamps) ? JSON.stringify(body.timestamps) : (body.timestamps ?? null));
-      }
       updateSql += ' WHERE id = ?';
       updateParams.push(idStr);
 

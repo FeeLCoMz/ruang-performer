@@ -1,87 +1,143 @@
 import React from 'react';
-import { transposeChord as transposeChordUtil, getNoteIndex, parseChordLine, parseSection, parseNumberLine } from '../utils/chordUtils.js';
+import { transposeChord as transposeChordUtil, parseChordLine, parseSection, parseNumberLine } from '../utils/chordUtils.js';
 import ChordToken from './ChordToken.jsx';
 import NumberToken from './NumberToken.jsx';
 
-// Gunakan langsung transposeChordUtil dari chordUtils
 const transposeChord = transposeChordUtil;
 
 export default function ChordDisplay({ song, transpose = 0, highlightChords = false }) {
-  if (!song || !song.lyrics) return <div>Tidak ada lirik</div>;
+  if (!song?.lyrics) {
+    return (
+      <div style={{
+        textAlign: 'center',
+        padding: '40px 20px',
+        color: 'var(--text-muted)',
+        fontStyle: 'italic'
+      }}>
+        No lyrics available
+      </div>
+    );
+  }
+
   const lines = song.lyrics.split(/\r?\n/);
 
-  // Fungsi render line dengan komponen token modular
   function renderLyricsLine(line, key) {
     const tokens = line.split(/(\s+)/).filter(Boolean);
     return (
-      <span key={key} className="lyrics-line">
+      <div key={key} style={{ minHeight: '1.5em', whiteSpace: 'pre-wrap' }}>
         {tokens.map((token, idx) => {
           const trimmed = token.trim();
           if (parseChordLine(trimmed)) {
             let chord = transpose ? transposeChord(trimmed, transpose) : trimmed;
-            return <ChordToken key={idx} chord={chord} highlight={true} />;
+            return <ChordToken key={idx} chord={chord} highlight={highlightChords} />;
           }
           if (parseNumberLine(trimmed)) {
             return <NumberToken key={idx} number={token} />;
           }
-          return token;
+          return <span key={idx}>{token}</span>;
         })}
-      </span>
+      </div>
     );
   }
 
   return (
-    <div className="chord-display">
-      <pre>
-        {lines.map((line, i) => {
-          if (line.trim() === '') {
-            // Baris kosong, render span kosong agar tetap terlihat
-            return <span key={i} className="lyrics-line-empty">&nbsp;</span>;
-          }
-          const section = parseSection(line);
-          if (section) {
-            if (section.type === 'structure') {
-              return (
-                <span key={i} className="structure-marker">
-                  <span className="structure-label">{section.label}</span>
-                </span>
-              );
-            }
-            if (section.type === 'instrument') {
-              return (
-                <span key={i} className="instrument-highlight">
-                  {section.label}
-                </span>
-              );
-            }
-          }
-          if (parseChordLine(line)) {
-            // Render chord line per karakter agar spasi tetap
+    <div style={{
+      fontFamily: 'var(--font-mono, "Courier New", monospace)',
+      fontSize: '1em',
+      lineHeight: '1.8',
+      color: 'var(--text-primary)',
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word'
+    }}>
+      {lines.map((line, i) => {
+        // Empty line
+        if (line.trim() === '') {
+          return (
+            <div key={i} style={{ minHeight: '1.5em' }}>
+              &nbsp;
+            </div>
+          );
+        }
+
+        // Section markers
+        const section = parseSection(line);
+        if (section) {
+          if (section.type === 'structure') {
             return (
-              <span key={i} className="chord-line" style={{ whiteSpace: 'pre' }}>
-                {line.split(/(\s+)/).map((token, j) => {
-                  if (/^\s+$/.test(token)) return token;
-                  let chord = transpose ? transposeChord(token, transpose) : token;
-                  return highlightChords ? <ChordToken key={j} chord={chord} highlight={true} /> : chord;
-                })}
-              </span>
+              <div key={i} style={{
+                margin: '16px 0 8px 0',
+                padding: '8px 12px',
+                background: 'var(--primary-color)',
+                color: 'white',
+                borderRadius: '4px',
+                fontWeight: '700',
+                fontSize: '0.95em',
+                display: 'inline-block'
+              }}>
+                {section.label}
+              </div>
             );
-          } else if (parseNumberLine(line)) {
-            // Render not angka line per karakter agar spasi tetap
-            return (
-              <span key={i} className="number-line" style={{ whiteSpace: 'pre' }}>
-                {line.split(/(\s+)/).map((token, j) => {
-                  if (/^\s+$/.test(token)) return token;
-                  return <NumberToken key={j} number={token} />;
-                })}
-              </span>
-            );
-          } else {
-            // Render lirik biasa dengan highlight chord/not angka per token
-            return renderLyricsLine(line, i);
           }
-        })}
-      </pre>
+          if (section.type === 'instrument') {
+            return (
+              <div key={i} style={{
+                margin: '12px 0 6px 0',
+                padding: '6px 10px',
+                background: 'var(--secondary-bg)',
+                color: 'var(--primary-color)',
+                borderLeft: '3px solid var(--primary-color)',
+                fontWeight: '600',
+                fontSize: '0.9em',
+                fontStyle: 'italic'
+              }}>
+                {section.label}
+              </div>
+            );
+          }
+        }
+
+        // Chord line
+        if (parseChordLine(line)) {
+          return (
+            <div key={i} style={{
+              whiteSpace: 'pre',
+              marginBottom: '4px',
+              minHeight: '1.5em'
+            }}>
+              {line.split(/(\s+)/).map((token, j) => {
+                if (/^\s+$/.test(token)) return <span key={j}>{token}</span>;
+                let chord = transpose ? transposeChord(token, transpose) : token;
+                return highlightChords ? (
+                  <ChordToken key={j} chord={chord} highlight={true} />
+                ) : (
+                  <span key={j} style={{ color: 'var(--primary-color)', fontWeight: '600' }}>
+                    {chord}
+                  </span>
+                );
+              })}
+            </div>
+          );
+        }
+
+        // Number notation line
+        if (parseNumberLine(line)) {
+          return (
+            <div key={i} style={{
+              whiteSpace: 'pre',
+              marginBottom: '4px',
+              minHeight: '1.5em'
+            }}>
+              {line.split(/(\s+)/).map((token, j) => {
+                if (/^\s+$/.test(token)) return <span key={j}>{token}</span>;
+                return <NumberToken key={j} number={token} />;
+              })}
+            </div>
+          );
+        }
+
+        // Regular lyrics line
+        return renderLyricsLine(line, i);
+      })}
     </div>
   );
 }
