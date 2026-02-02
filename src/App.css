@@ -590,6 +590,157 @@ textarea::placeholder {
 }
 
 /* ========================================
+   ADD SONG MODAL STYLES
+   ======================================== */
+.modal.add-song-modal {
+  background: var(--card-bg);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
+  max-width: 500px;
+  width: 90%;
+  max-height: 75vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideUpModal 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-lg) 0;
+  letter-spacing: -0.5px;
+}
+
+.modal.add-song-modal .modal-input {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--spacing-md);
+}
+
+.modal.add-song-modal .modal-input:hover {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modal.add-song-modal .modal-input:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  background: var(--card-bg);
+}
+
+/* Song List in Modal */
+.modal.add-song-modal .song-list {
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  list-style: none;
+  margin: var(--spacing-md) 0;
+  padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.modal.add-song-modal .song-list-item {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.modal.add-song-modal .song-list-item:last-child {
+  border-bottom: none;
+}
+
+.modal.add-song-modal .song-list-item:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 4px solid var(--primary-accent);
+  padding-left: calc(var(--spacing-lg) - 4px);
+  cursor: pointer;
+}
+
+.modal.add-song-modal .info-text {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Modal Buttons in add-song-modal */
+.modal.add-song-modal .btn-base {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  margin-top: var(--spacing-sm);
+}
+
+.modal.add-song-modal .btn-base:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+}
+
+.modal.add-song-modal .back-btn {
+  background: var(--card-bg);
+  color: var(--text-muted);
+  border-color: var(--border-color);
+}
+
+.modal.add-song-modal .back-btn:hover {
+  border-color: var(--primary-accent);
+  color: var(--text-primary);
+}
+
+/* Modal label styling for edit modal */
+.modal.add-song-modal label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.modal.add-song-modal label input {
+  padding: var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  transition: all var(--transition-fast);
+}
+
+.modal.add-song-modal label input:hover {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modal.add-song-modal label input:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  background: var(--card-bg);
+}
+
+/* ========================================
    9. LISTS & ITEMS
    ======================================== */
 .list-container {
@@ -771,6 +922,20 @@ textarea::placeholder {
   .modal-content h2,
   .modal-card h2 {
     font-size: var(--font-size-xl);
+  }
+
+  .modal.add-song-modal {
+    width: 95%;
+    padding: var(--spacing-lg);
+    max-height: 80vh;
+  }
+
+  .modal-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .modal.add-song-modal .song-list {
+    max-height: 250px;
   }
 
   .form-row {
@@ -2211,6 +2376,82 @@ textarea::placeholder {
 }
 
 /* Responsive */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 30px 24px;
+  }
+  
+  .login-title {
+    font-size: 1.6em;
+  }
+}
+
+/* ========================================
+   DATE INPUT STYLES
+   ======================================== */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  padding: var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+input[type="date"]:hover,
+input[type="time"]:hover,
+input[type="datetime-local"]:hover {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="datetime-local"]:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  background: var(--card-bg);
+}
+
+/* Calendar icon styling */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  margin-right: var(--spacing-sm);
+  filter: invert(0.8);
+  opacity: 0.8;
+  transition: all var(--transition-fast);
+}
+
+input[type="date"]:hover::-webkit-calendar-picker-indicator,
+input[type="time"]:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  filter: invert(0.6);
+}
+
+input[type="date"]:focus::-webkit-calendar-picker-indicator,
+input[type="time"]:focus::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  filter: invert(0.4);
+}
+
+/* Date input disabled state */
+input[type="date"]:disabled,
+input[type="time"]:disabled,
+input[type="datetime-local"]:disabled {
+  background: var(--disabled-bg);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 @media (max-width: 480px) {
   .login-card {
     padding: 30px 24px;
