@@ -23,20 +23,10 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
         console.log('Service Worker registered:', registration);
-        
-        // Check for updates periodically
-        setInterval(() => {
-          registration.update();
-        }, 60000); // Check every 1 minute
       })
       .catch((error) => {
         console.warn('Service Worker registration failed:', error);
       });
-  });
-
-  // Handle service worker updates
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    console.log('Service Worker updated, reloading...');
   });
 }
 
