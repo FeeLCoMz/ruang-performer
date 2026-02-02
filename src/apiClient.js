@@ -427,7 +427,7 @@ export async function fetchBandInvitations(bandId) {
 }
 
 export async function getInvitation(invitationId) {
-  const res = await fetch(`${API_BASE}/invitations/${invitationId}`, {
+  const res = await fetch(`${API_BASE}/bands/invitations/${invitationId}`, {
     headers: getHeaders()
   });
   if (!res.ok) throw new Error('Failed to fetch invitation');
@@ -435,7 +435,7 @@ export async function getInvitation(invitationId) {
 }
 
 export async function acceptInvitation(invitationId) {
-  const res = await fetch(`${API_BASE}/invitations/${invitationId}`, {
+  const res = await fetch(`${API_BASE}/bands/invitations/${invitationId}`, {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({ action: 'accept' })
@@ -449,7 +449,7 @@ export async function acceptInvitation(invitationId) {
 }
 
 export async function rejectInvitation(invitationId) {
-  const res = await fetch(`${API_BASE}/invitations/${invitationId}`, {
+  const res = await fetch(`${API_BASE}/bands/invitations/${invitationId}`, {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({ action: 'reject' })
@@ -476,7 +476,7 @@ export async function getPendingInvitations() {
 }
 
 export async function cancelInvitation(invitationId) {
-  const res = await fetch(`${API_BASE}/invitations/${invitationId}`, {
+  const res = await fetch(`${API_BASE}/bands/invitations/${invitationId}`, {
     method: 'DELETE',
     headers: getHeaders()
   });
