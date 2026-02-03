@@ -197,8 +197,12 @@ export default function SongAddEditPage() {
       
       const savedSong = await res.json();
       
-      // Navigate to song detail page
-      navigate(`/songs/view/${savedSong.id || id}`);
+      // Navigate based on mode: list for new song, detail for edit
+      if (isEditMode) {
+        navigate(`/songs/view/${savedSong.id || id}`);
+      } else {
+        navigate('/songs');
+      }
     } catch (err) {
       setError(err.message);
     } finally {

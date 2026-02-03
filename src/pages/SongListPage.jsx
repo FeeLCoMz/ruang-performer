@@ -15,8 +15,8 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   const [filterArtist, setFilterArtist] = useState('all');
   const [filterKey, setFilterKey] = useState('all');
   const [filterGenre, setFilterGenre] = useState('all');
-  const [sortBy, setSortBy] = useState('title');
-  const [sortOrder, setSortOrder] = useState('asc');
+  const [sortBy, setSortBy] = useState('created');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   useEffect(() => {
     updatePageMeta(pageMetadata.songs);
@@ -108,8 +108,8 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     setFilterArtist('all');
     setFilterKey('all');
     setFilterGenre('all');
-    setSortBy('title');
-    setSortOrder('asc');
+    setSortBy('created');
+    setSortOrder('desc');
   };
 
   const hasActiveFilters = search || filterArtist !== 'all' || filterKey !== 'all' || filterGenre !== 'all';
