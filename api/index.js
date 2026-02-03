@@ -144,11 +144,6 @@ app.use('/api/bands', verifyToken, (req, res, next) => {
   Promise.resolve(bandsHandler(req, res)).catch(next);
 });
 
-// Invitations that aren't band-specific
-app.use('/api/invitations/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(bandInvIdHandler(req, res)).catch(next);
-});
-
 // GET pending invitations for current user
 app.get('/api/invitations/pending', verifyToken, async (req, res) => {
   try {
@@ -190,12 +185,18 @@ app.get('/api/invitations/pending', verifyToken, async (req, res) => {
   }
 });
 
-app.use('/api/invitations/:id', verifyToken, (req, res, next) => {
+// Handle specific invitations by ID (using explicit methods, not app.use)
+app.get('/api/invitations/:id', verifyToken, (req, res, next) => {
   Promise.resolve(bandInvIdHandler(req, res)).catch(next);
 });
 
-// Route for /api/bands/invitations/:id
-// Handled by bandsHandler
+app.post('/api/invitations/:id', verifyToken, (req, res, next) => {
+  Promise.resolve(bandInvIdHandler(req, res)).catch(next);
+});
+
+app.delete('/api/invitations/:id', verifyToken, (req, res, next) => {
+  Promise.resolve(bandInvIdHandler(req, res)).catch(next);
+});
 
 app.use('/api/practice', verifyToken, (req, res, next) => {
   Promise.resolve(resourcesHandler(req, res)).catch(next);

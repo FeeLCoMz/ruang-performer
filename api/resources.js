@@ -9,30 +9,48 @@ import gigsIndexHandler from './gigs/index.js';
 import gigsIdHandler from './gigs/[id].js';
 
 export default async function handler(req, res) {
-  const path = req.url.split('?')[0];
+  // When using app.use(), req.baseUrl is the mount point and req.path is relative
+  // For /api/practice -> baseUrl='/api/practice', path='/'
+  // For /api/practice/123 -> baseUrl='/api/practice', path='/123'
   
-  // Practice sessions routes
-  if (path === '/api/resources/practice' || path === '/api/practice') {
-    return practiceIndexHandler(req, res);
+  const baseUrl = req.baseUrl || '';
+  const path = req.path || '/';
+  
+  let resource, id;
+  
+  if (baseUrl.includes('/practice')) {
+    resource = 'practice';
+    // Extract ID from path if present (path would be /123 or just /)
+    if (path !== '/' && path) {
+      id = path.replace(/^\//, '');
+    }
+  } else if (baseUrl.includes('/gigs')) {
+    resource = 'gigs';
+    // Extract ID from path if present
+    if (path !== '/' && path) {
+      id = path.replace(/^\//, '');
+    }
+  } else {
+    return res.status(404).json({ error: 'Resource not found' });
   }
   
-  if (path.startsWith('/api/resources/practice/') || path.startsWith('/api/practice/')) {
-    const id = path.split('/').pop();
-    req.query = { ...req.query, id };
-    req.params = { ...req.params, id };
-    return practiceIdHandler(req, res);
+  // Route to appropriate handler
+  if (resource === 'practice') {
+    if (id) {
+      req.params.id = id;
+      return practiceIdHandler(req, res);
+    } else {
+      return practiceIndexHandler(req, res);
+    }
   }
   
-  // Gigs routes
-  if (path === '/api/resources/gigs' || path === '/api/gigs') {
-    return gigsIndexHandler(req, res);
-  }
-  
-  if (path.startsWith('/api/resources/gigs/') || path.startsWith('/api/gigs/')) {
-    const id = path.split('/').pop();
-    req.query = { ...req.query, id };
-    req.params = { ...req.params, id };
-    return gigsIdHandler(req, res);
+  if (resource === 'gigs') {
+    if (id) {
+      req.params.id = id;
+      return gigsIdHandler(req, res);
+    } else {
+      return gigsIndexHandler(req, res);
+    }
   }
   
   res.status(404).json({ error: 'Resource not found' });
