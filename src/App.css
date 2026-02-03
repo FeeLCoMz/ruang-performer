@@ -2465,9 +2465,10 @@ input[type="datetime-local"]:disabled {
    CHORD DISPLAY COMPONENT STYLES
    ======================================== */
 .cd {
-  font-family: 'Courier New', 'Monaco', monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Courier New', monospace;
   font-size: clamp(0.75rem, 2vw, 1rem);
   line-height: 1.8;
+  letter-spacing: 0.3px;
   color: var(--text-primary);
   white-space: pre;
   display: inline-block;
