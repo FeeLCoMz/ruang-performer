@@ -8,7 +8,7 @@ export default function TimeMarkers({
   readonly = false,
   onUpdate
 }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editTime, setEditTime] = useState('');
   const [editLabel, setEditLabel] = useState('');
