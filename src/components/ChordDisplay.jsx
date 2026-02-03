@@ -5,7 +5,7 @@ import NumberToken from './NumberToken.jsx';
 
 const transposeChord = transposeChordUtil;
 
-export default function ChordDisplay({ song, transpose = 0, highlightChords = false }) {
+export default function ChordDisplay({ song, transpose = 0, highlightChords = false, zoom = 1 }) {
   if (!song?.lyrics) {
     return (
       <div className="cd-empty">
@@ -36,7 +36,7 @@ export default function ChordDisplay({ song, transpose = 0, highlightChords = fa
   }
 
   return (
-    <div className="cd">
+    <div className="cd" style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
       {lines.map((line, i) => {
         // Empty line
         if (line.trim() === '') {

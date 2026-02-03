@@ -28,6 +28,7 @@ export default function SongLyricsPage({ song: songProp }) {
 
   // Transpose state
   const [transpose, setTranspose] = useState(0);
+  const [zoom, setZoom] = useState(1);
   const highlightChords = false;
 
   // Auto-calculate transpose if setlist has different key
@@ -181,13 +182,40 @@ export default function SongLyricsPage({ song: songProp }) {
 
       {/* Lyrics Section */}
       <div className="song-section-card">
-        <h3 className="song-section-title">
-          🎤 Lirik & Chord
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 className="song-section-title">
+            🎤 Lirik & Chord
+          </h3>
+          <div className="zoom-controls">
+            <button
+              onClick={() => setZoom(Math.max(0.7, zoom - 0.1))}
+              className="btn-base zoom-btn"
+              title="Perkecil"
+            >
+              −
+            </button>
+            <span className="zoom-display">{(zoom * 100).toFixed(0)}%</span>
+            <button
+              onClick={() => setZoom(Math.min(1.5, zoom + 0.1))}
+              className="btn-base zoom-btn"
+              title="Perbesar"
+            >
+              +
+            </button>
+            <button
+              onClick={() => setZoom(1)}
+              className="btn-base zoom-btn"
+              title="Reset"
+            >
+              ⟲
+            </button>
+          </div>
+        </div>
         <ChordDisplay
           song={song}
           transpose={transpose}
           highlightChords={highlightChords}
+          zoom={zoom}
         />
       </div>
 
