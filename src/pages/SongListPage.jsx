@@ -11,6 +11,7 @@ import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 export default function SongListPage({ songs, loading, error, onSongClick }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const currentUserId = user?.userId || user?.id;
   const [search, setSearch] = useState('');
   const [filterArtist, setFilterArtist] = useState('all');
   const [filterKey, setFilterKey] = useState('all');
@@ -268,32 +269,43 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                 className="song-actions"
                 onClick={(e) => e.stopPropagation()}
               >
-                {user?.id === song.userId && (
-                  <>
-                    <button
-                      onClick={() => onSongClick('edit', song.id)}
-                      className="btn-base"
-                      style={{ padding: '6px 12px', fontSize: '0.85em' }}
-                      title="Edit"
-                    >
-                      <EditIcon size={16} />
-                    </button>
-                    <button
-                      onClick={() => onSongClick('delete', song.id)}
-                      className="btn-base"
-                      style={{
-                        padding: '6px 12px',
-                        fontSize: '0.85em',
-                        background: '#dc2626',
-                        borderColor: '#b91c1c',
-                        color: '#fff'
-                      }}
-                      title="Hapus"
-                    >
-                      <DeleteIcon size={16} />
-                    </button>
-                  </>
-                )}
+                {(() => {
+                  const canEdit = !song.userId || song.userId === currentUserId;
+                  const canDelete = song.userId && song.userId === currentUserId;
+
+                  if (!canEdit && !canDelete) return null;
+
+                  return (
+                    <>
+                      {canEdit && (
+                        <button
+                          onClick={() => onSongClick('edit', song.id)}
+                          className="btn-base"
+                          style={{ padding: '6px 12px', fontSize: '0.85em' }}
+                          title="Edit"
+                        >
+                          <EditIcon size={16} />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={() => onSongClick('delete', song.id)}
+                          className="btn-base"
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '0.85em',
+                            background: '#dc2626',
+                            borderColor: '#b91c1c',
+                            color: '#fff'
+                          }}
+                          title="Hapus"
+                        >
+                          <DeleteIcon size={16} />
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           ))}

@@ -89,6 +89,10 @@ export default async function handler(req, res) {
       const body = await readJson(req);
       const now = new Date().toISOString();
       const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
 
       // Check if song exists and user is the creator
       const songCheck = await client.execute(
@@ -101,7 +105,7 @@ export default async function handler(req, res) {
         return;
       }
 
-      if (songCheck.rows[0].userId !== userId) {
+      if (songCheck.rows[0].userId && songCheck.rows[0].userId !== userId) {
         res.status(403).json({ error: 'You can only edit your own songs' });
         return;
       }
@@ -120,6 +124,7 @@ export default async function handler(req, res) {
         capo = COALESCE(?, capo),
         instruments = COALESCE(?, instruments),
         time_markers = COALESCE(?, time_markers),
+        userId = COALESCE(userId, ?),
         updatedAt = ?`;
       // Pastikan tempo disimpan sebagai string integer tanpa koma
       let tempoStr = null;
@@ -144,6 +149,7 @@ export default async function handler(req, res) {
         capoStr,
         (Array.isArray(body.instruments) ? JSON.stringify(body.instruments) : (body.instruments ?? null)),
         (Array.isArray(body.time_markers) ? JSON.stringify(body.time_markers) : (body.time_markers ?? null)),
+        userId,
         now
       ];
       updateSql += ' WHERE id = ?';
