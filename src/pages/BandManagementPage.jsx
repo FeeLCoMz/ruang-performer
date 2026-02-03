@@ -5,6 +5,7 @@ import * as apiClient from '../apiClient.js';
 import { updatePageMeta } from '../utils/metaTagsUtil.js';
 import PlusIcon from '../components/PlusIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
+import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 
 export default function BandManagementPage() {
   const navigate = useNavigate();
@@ -146,7 +147,7 @@ export default function BandManagementPage() {
         <div className="page-header">
           <h1>🎸 Band Management</h1>
         </div>
-        <div className="loading-container">Loading bands...</div>
+        <ListSkeleton count={6} />
       </div>
     );
   }

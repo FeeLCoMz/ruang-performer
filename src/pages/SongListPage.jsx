@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
+import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 
 export default function SongListPage({ songs, loading, error, onSongClick }) {
@@ -119,9 +120,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
         <div className="page-header">
           <h1>🎵 Lagu Saya</h1>
         </div>
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-          Memuat daftar lagu...
-        </div>
+        <SongListSkeleton count={8} />
       </div>
     );
   }

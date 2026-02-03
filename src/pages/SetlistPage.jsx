@@ -5,6 +5,7 @@ import PlusIcon from '../components/PlusIcon.jsx';
 import SetlistForm from '../components/SetlistForm.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
+import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { fetchBands, addSetList, updateSetList, deleteSetList, fetchSetLists } from '../apiClient.js';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 
@@ -143,9 +144,7 @@ export default function SetlistPage({
         <div className="page-header">
           <h1>🎵 Setlist</h1>
         </div>
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-          Memuat setlist...
-        </div>
+        <ListSkeleton count={6} />
       </div>
     );
   }

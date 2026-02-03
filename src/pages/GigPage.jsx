@@ -3,6 +3,7 @@ import { fetchBands, fetchGigs, fetchSetLists, createGig, updateGig, deleteGig }
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
+import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 
 export default function GigPage() {
   const [gigs, setGigs] = useState([]);
@@ -312,11 +313,7 @@ export default function GigPage() {
       </div>
 
       {/* Content */}
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-          Memuat jadwal konser...
-        </div>
-      )}
+      {loading && <ListSkeleton count={5} />}
       {error && <div className="error-text">{error}</div>}
       
       {!loading && gigs.length === 0 ? (

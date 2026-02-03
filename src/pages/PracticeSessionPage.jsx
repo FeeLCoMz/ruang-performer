@@ -3,6 +3,7 @@ import { fetchBands, fetchPracticeSessions, createPracticeSession, updatePractic
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
+import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 
 export default function PracticeSessionPage() {
@@ -299,11 +300,7 @@ export default function PracticeSessionPage() {
       </div>
 
       {/* Content */}
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-          Memuat sesi latihan...
-        </div>
-      )}
+      {loading && <ListSkeleton count={5} />}
       {error && <div className="error-text">{error}</div>}
       
       {!loading && sessions.length === 0 ? (
