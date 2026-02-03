@@ -60,7 +60,8 @@ export function parseChordLine(line) {
     .replace(/\|:|:\||\[\:|\:\]|\|\||\|/g, ' ') // ganti barline dengan spasi
     .replace(/\s+/g, ' ') // normalisasi spasi
     .trim();
-  const chordRegex = /^[A-G][#b]?m?(aj|sus|dim|aug|add)?\d*(\/([A-G][#b]?))?$/i;
+  // Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F..
+  const chordRegex = /^[A-G][#b]?m?(aj|sus|dim|aug|add)?\d*(\/([A-G][#b]?))?((\.{2,}|-)[A-G][#b]?m?(aj|sus|dim|aug|add)?\d*(\/([A-G][#b]?))?)*(\.{2,})?$/i;
   const words = cleaned.split(/\s+/);
   if (!words.length) return false;
   const chordCount = words.filter(w => chordRegex.test(w)).length;
@@ -109,7 +110,8 @@ const NOTES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#',
 const NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
 // Regex untuk mendeteksi chord (termasuk leading dash untuk passing chord dan trailing dots untuk durasi)
-const CHORD_REGEX_GLOBAL = /-?([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?(\.+)?/g;
+// Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F.., Am....
+const CHORD_REGEX_GLOBAL = /-?([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?(((\.{2,}|-)([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?)*)(\.{2,})?/g;
 
 export const transposeChord = (chord, steps) => {
   if (!chord || steps === 0) return chord;
