@@ -28,7 +28,7 @@ export default function SongLyricsPage({ song: songProp }) {
 
   // Transpose state
   const [transpose, setTranspose] = useState(0);
-  const [highlightChords, setHighlightChords] = useState(true);
+  const highlightChords = false;
 
   // Auto-calculate transpose if setlist has different key
   useEffect(() => {
@@ -164,17 +164,6 @@ export default function SongLyricsPage({ song: songProp }) {
                 setTranspose={setTranspose}
               />
               <AutoScrollBar tempo={tempo || 120} />
-              <div className="checkbox-control">
-                <input
-                  type="checkbox"
-                  id="highlight-chords"
-                  checked={highlightChords}
-                  onChange={(e) => setHighlightChords(e.target.checked)}
-                />
-                <label htmlFor="highlight-chords">
-                  🎨 Highlight Chords
-                </label>
-              </div>
             </div>
           </div>
         </div>

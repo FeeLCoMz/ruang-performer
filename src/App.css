@@ -2540,12 +2540,6 @@ input[type="datetime-local"]:disabled {
   transition: all 0.2s ease;
 }
 
-.ct-highlight {
-  background: rgba(59, 130, 246, 0.1);
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
 /* ========================================
    LOADING SKELETON STYLES
    ======================================== */
