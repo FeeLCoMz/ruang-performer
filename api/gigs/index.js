@@ -44,7 +44,7 @@ export default async function handler(req, res) {
       console.error('Table creation error:', tableError);
     }
 
-    // GET - Fetch all gigs for user
+    // GET - Fetch all gigs for user (created by user OR from user's bands)
     if (req.method === 'GET') {
       const { bandId } = req.query;
       
@@ -54,9 +54,15 @@ export default async function handler(req, res) {
         FROM gigs g
         LEFT JOIN bands b ON g.bandId = b.id
         LEFT JOIN setlists s ON g.setlistId = s.id
-        WHERE g.userId = ?
+        WHERE (
+          g.userId = ?
+          OR g.bandId IN (
+            SELECT bandId FROM band_members WHERE userId = ?
+          )
+          OR (g.bandId IS NULL AND g.userId = ?)
+        )
       `;
-      const params = [userId];
+      const params = [userId, userId, userId];
       
       if (bandId) {
         query += ` AND g.bandId = ?`;

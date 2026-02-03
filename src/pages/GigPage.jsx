@@ -373,17 +373,28 @@ export default function GigPage() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
+              <div
+                className="setlist-actions"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
-                  className="icon-btn-small"
                   onClick={() => handleEdit(gig)}
+                  className="btn-base"
+                  style={{ padding: '6px 12px', fontSize: '0.85em' }}
                   title="Edit"
                 >
                   <EditIcon size={16} />
                 </button>
                 <button
-                  className="icon-btn-small delete-btn"
                   onClick={() => setDeleteConfirm(gig)}
+                  className="btn-base"
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.85em',
+                    background: '#dc2626',
+                    borderColor: '#b91c1c',
+                    color: '#fff'
+                  }}
                   title="Hapus"
                 >
                   <DeleteIcon size={16} />
