@@ -11,6 +11,16 @@ api/auth/2fa-verify.js
 api/practice/
 api/gigs/
 
+# Songs & Setlists & Bands consolidated into root api files
+api/songs/index.js
+api/songs/[id].js
+api/setlists/index.js
+api/setlists/[id].js
+api/bands/index.js
+api/bands/[id].js
+api/bands/members.js
+api/bands/invitations.js
+
 # Middleware utilities (not serverless functions)
 api/middleware/
 api/_turso.js
@@ -22,4 +32,3 @@ node_modules/
 .env.development
 *.log
 .DS_Store
-

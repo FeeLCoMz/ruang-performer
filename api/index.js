@@ -19,10 +19,9 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 import https from 'https';
 import http from 'http';
-import songsHandler from './songs/index.js';
-import songsIdHandler from './songs/[id].js';
-import setlistsHandler from './setlists/index.js';
-import setlistsIdHandler from './setlists/[id].js';
+import songsHandler from './songs.js';
+import setlistsHandler from './setlists.js';
+import bandsHandler from './bands.js';
 import statusHandler from './status.js';
 import aiHandler from './ai.js';
 import authRegisterHandler from './auth/register.js';
@@ -32,15 +31,8 @@ import authForgotHandler from './auth/forgot-password.js';
 import authResetHandler from './auth/reset-password.js';
 import auth2FASetupHandler from './auth/2fa-setup.js';
 import auth2FAVerifyHandler from './auth/2fa-verify.js';
-import bandsHandler from './bands/index.js';
-import bandsIdHandler from './bands/[id].js';
-import bandMembersHandler from './bands/members.js';
-import bandInvitationsHandler from './bands/invitations.js';
 import bandInvIdHandler from './bands/invitations/[id].js';
-import practiceHandler from './practice/index.js';
-import practiceIdHandler from './practice/[id].js';
-import gigsHandler from './gigs/index.js';
-import gigsIdHandler from './gigs/[id].js';
+import resourcesHandler from './resources.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -140,32 +132,22 @@ app.post('/api/auth/2fa/verify',
   }
 );
 
-app.use('/api/songs/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(songsIdHandler(req, res)).catch(next);
-});
 app.use('/api/songs', verifyToken, (req, res, next) => {
   Promise.resolve(songsHandler(req, res)).catch(next);
 });
-app.use('/api/setlists/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(setlistsIdHandler(req, res)).catch(next);
-});
+
 app.use('/api/setlists', verifyToken, (req, res, next) => {
   Promise.resolve(setlistsHandler(req, res)).catch(next);
 });
 
-// Band members endpoints
-app.get('/api/bands/:id/members', verifyToken, (req, res, next) => {
-  Promise.resolve(bandMembersHandler(req, res)).catch(next);
-});
-app.patch('/api/bands/:id/members/:userId', verifyToken, (req, res, next) => {
-  Promise.resolve(bandMembersHandler(req, res)).catch(next);
-});
-app.delete('/api/bands/:id/members/:userId', verifyToken, (req, res, next) => {
-  Promise.resolve(bandMembersHandler(req, res)).catch(next);
+// Band members endpoints (all consolidated into bandsHandler)
+app.use('/api/bands', verifyToken, (req, res, next) => {
+  Promise.resolve(bandsHandler(req, res)).catch(next);
 });
 
-app.use('/api/bands/:id/invitations', verifyToken, (req, res, next) => {
-  Promise.resolve(bandInvitationsHandler(req, res)).catch(next);
+// Invitations that aren't band-specific
+app.use('/api/invitations/:id', verifyToken, (req, res, next) => {
+  Promise.resolve(bandInvIdHandler(req, res)).catch(next);
 });
 
 // GET pending invitations for current user
@@ -214,29 +196,13 @@ app.use('/api/invitations/:id', verifyToken, (req, res, next) => {
 });
 
 // Route for /api/bands/invitations/:id
-app.use('/api/bands/invitations/:id', verifyToken, (req, res, next) => {
-  // Pass the id as query for compatibility
-  req.query = req.query || {};
-  req.query.id = req.params.id;
-  Promise.resolve(bandInvIdHandler(req, res)).catch(next);
-});
-app.use('/api/bands/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(bandsIdHandler(req, res)).catch(next);
-});
-app.use('/api/bands', verifyToken, (req, res, next) => {
-  Promise.resolve(bandsHandler(req, res)).catch(next);
-});
-app.use('/api/practice/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(practiceIdHandler(req, res)).catch(next);
-});
+// Handled by bandsHandler
+
 app.use('/api/practice', verifyToken, (req, res, next) => {
-  Promise.resolve(practiceHandler(req, res)).catch(next);
-});
-app.use('/api/gigs/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(gigsIdHandler(req, res)).catch(next);
+  Promise.resolve(resourcesHandler(req, res)).catch(next);
 });
 app.use('/api/gigs', verifyToken, (req, res, next) => {
-  Promise.resolve(gigsHandler(req, res)).catch(next);
+  Promise.resolve(resourcesHandler(req, res)).catch(next);
 });
 app.use('/api/status', (req, res, next) => {
   Promise.resolve(statusHandler(req, res)).catch(next);
