@@ -3,10 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import * as apiClient from '../apiClient.js';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
+import { usePermission } from '../hooks/usePermission.js';
+import { PERMISSIONS } from '../utils/permissionUtils.js';
 
 export default function BandDetailPage() {
-  import { usePermission } from '../hooks/usePermission.js';
-  import { PERMISSIONS } from '../utils/permissionUtils.js';
   const { id } = useParams();
   const navigate = useNavigate();
   const [band, setBand] = useState(null);
