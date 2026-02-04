@@ -1,20 +1,7 @@
-# Auth endpoints consolidated into api/auth.js
-api/auth/login.js
-api/auth/register.js
-api/auth/me.js
-api/auth/forgot-password.js
-api/auth/reset-password.js
-api/auth/2fa-setup.js
-api/auth/2fa-verify.js
 
-# Practice & Gigs consolidated into api/resources.js
-api/practice/
-api/gigs/
 
-# Middleware utilities (not serverless functions)
-api/middleware/
-api/_turso.js
-api/_auth.js
+
+
 
 # Development files
 node_modules/
@@ -22,6 +9,7 @@ node_modules/
 .env.development
 *.log
 .DS_Store
+
 
 # Ignore documentation and markdown
 *.md
@@ -35,6 +23,7 @@ IMPLEMENTATION_*
 PERMISSIONS_*
 USER_MANAGEMENT.md
 VERCEL_DEPLOYMENT.md
+
 
 # Ignore database migrations and schema
 db/
