@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as apiClient from '../apiClient.js';
 
-export default function Sidebar({ isOpen, onClose }) {
+export default function Sidebar({ isOpen, onClose, theme, setTheme }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
@@ -60,11 +60,11 @@ export default function Sidebar({ isOpen, onClose }) {
   return (
     <>
       {/* Overlay untuk mobile */}
-      {isOpen && <div className="sidebar-overlay" onClick={onClose}></div>}
+      {isOpen && <div className="sidebar-overlay" onClick={onClose} tabIndex={-1} aria-label="Tutup sidebar"></div>}
       
-      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`} role="navigation" aria-label="Sidebar utama" tabIndex={0}>
         {/* Close button for mobile */}
-        <button className="sidebar-close-btn" onClick={onClose} title="Close sidebar">
+        <button className="sidebar-close-btn" onClick={onClose} title="Tutup sidebar" aria-label="Tutup sidebar" tabIndex={0}>
           ✕
         </button>
 
@@ -74,10 +74,20 @@ export default function Sidebar({ isOpen, onClose }) {
             <span className="sidebar-logo-icon">🎸</span>
             <span className="sidebar-logo-text">PerformerHub</span>
           </div>
+          {/* Theme toggle button for desktop */}
+          <button
+            className={`btn-base theme-switch-btn ${theme === 'dark' ? 'dark' : 'light'}`}
+            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+            title="Ganti mode gelap/terang"
+            style={{ marginLeft: 'auto', marginTop: 4 }}
+            aria-label="Toggle dark mode"
+          >
+            {theme === 'dark' ? '🌙' : '☀️'}
+          </button>
         </div>
 
         {/* Navigation */}
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label="Navigasi utama sidebar">
           <div className="sidebar-nav-section">
             <h3 className="sidebar-nav-title">Menu Utama</h3>
             {navItems.map(item => (
@@ -102,6 +112,8 @@ export default function Sidebar({ isOpen, onClose }) {
             className="sidebar-logout-btn"
             onClick={handleLogout}
             title="Logout"
+            aria-label="Logout"
+            tabIndex={0}
           >
             <span>🚪</span>
             <span>Logout</span>

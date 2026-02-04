@@ -146,7 +146,7 @@ function AppContent() {
   return (
     <ErrorBoundary>
       <>
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} theme={theme} setTheme={setTheme} />
         
         <div className="app-container">
           {/* Mobile Header dengan Hamburger */}

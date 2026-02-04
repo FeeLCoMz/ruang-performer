@@ -29,6 +29,10 @@ export default function AIAutofillModal({
         zIndex: 1000,
         padding: '20px'
       }}
+      role="dialog"
+      aria-modal="true"
+      tabIndex={-1}
+      aria-label="AI Autofill Modal"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

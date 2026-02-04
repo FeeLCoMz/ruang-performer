@@ -393,6 +393,7 @@ export default function SongLyricsPage({ song: songProp }) {
           <button
             onClick={handleBack}
             className="btn-submit"
+            aria-label="Kembali ke halaman sebelumnya"
           >
             ← Kembali
           </button>
@@ -413,6 +414,7 @@ export default function SongLyricsPage({ song: songProp }) {
           <button
             onClick={handleBack}
             className="btn-submit"
+            aria-label="Kembali ke halaman sebelumnya"
           >
             ← Kembali
           </button>

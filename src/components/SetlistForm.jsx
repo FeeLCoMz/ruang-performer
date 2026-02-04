@@ -27,7 +27,14 @@ export default function SetlistForm({
   };
 
   return (
-    <div className="modal-card" onClick={e => e.stopPropagation()}>
+    <div
+      className="modal-card"
+      role="dialog"
+      aria-modal="true"
+      tabIndex={-1}
+      aria-label={title || 'Setlist Modal'}
+      onClick={e => e.stopPropagation()}
+    >
       <h2 style={{ margin: '0 0 20px 0', fontSize: '1.3em' }}>{title}</h2>
       
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

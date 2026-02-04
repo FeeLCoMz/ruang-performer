@@ -560,7 +560,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
       {/* Konfirmasi Hapus Lagu dari Setlist */}
       {confirmDeleteSongId && (
-        <div className="modal-overlay" tabIndex={-1}>
+        <div className="modal-overlay" tabIndex={-1} aria-label="Konfirmasi hapus lagu dari setlist">
           <div className="modal delete-confirm-modal" role="dialog" aria-modal="true" tabIndex={0}>
             <div className="modal-title">Konfirmasi Hapus Lagu</div>
             <div className="modal-message">
@@ -582,6 +582,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       {showShareModal && (
         <div
           className="modal-overlay"
+          aria-label="Modal bagikan setlist"
           onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowShareModal(false); }}
           tabIndex={-1}
           onKeyDown={e => { if (e.key === 'Escape') setShowShareModal(false); }}
@@ -626,6 +627,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       {showAddSong && (
         <div
           className="modal-overlay"
+          aria-label="Modal tambah lagu ke setlist"
           onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowAddSong(false); }}
           tabIndex={-1}
           onKeyDown={e => { if (e.key === 'Escape') setShowAddSong(false); }}
