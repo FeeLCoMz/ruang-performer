@@ -120,42 +120,49 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       const body = await readJson(req);
-      
-      // Validate required fields
-      if (!body.name || body.name.trim() === '') {
+
+      // Simple sanitization
+      function sanitize(str, maxLen = 100) {
+        if (typeof str !== 'string') return '';
+        return str.replace(/[<>"'`]/g, '').slice(0, maxLen);
+      }
+
+      // Validate and sanitize required fields
+      const name = sanitize(body.name, 100);
+      if (!name || name.length < 1) {
         res.status(400).json({ error: 'Setlist name is required' });
         return;
       }
-      
-      // If bandId is provided, verify user is a member of that band
-      if (body.bandId) {
+      const description = sanitize(body.description || '', 300);
+      let bandId = body.bandId || null;
+      if (bandId) {
+        bandId = sanitize(bandId, 50);
         const bandCheck = await client.execute(
           `SELECT 1 FROM band_members WHERE bandId = ? AND userId = ?`,
-          [body.bandId, userId]
+          [bandId, userId]
         );
-        
         if (!bandCheck.rows || bandCheck.rows.length === 0) {
           res.status(403).json({ error: 'You are not a member of this band' });
           return;
         }
       }
-      
+
       const id = body.id?.toString() || randomUUID();
       const now = new Date().toISOString();
-      
+
       try {
-        const songsJson = JSON.stringify(body.songs || []);
-        const setlistSongMetaJson = JSON.stringify(body.setlistSongMeta || {});
-        const completedSongsJson = JSON.stringify(body.completedSongs || {});
-        
+        const songsJson = JSON.stringify(Array.isArray(body.songs) ? body.songs : []);
+        const setlistSongMetaJson = JSON.stringify(typeof body.setlistSongMeta === 'object' && body.setlistSongMeta !== null ? body.setlistSongMeta : {});
+        const completedSongsJson = JSON.stringify(typeof body.completedSongs === 'object' && body.completedSongs !== null ? body.completedSongs : {});
+
         await client.execute(
           `INSERT INTO setlists (id, name, description, bandId, songs, setlistSongMeta, completedSongs, createdAt, updatedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             id,
-            body.name.trim(),
-            body.description || '',
-            body.bandId || null,
+            name,
+            description,
+            bandId,
             songsJson,
             setlistSongMetaJson,
             completedSongsJson,
@@ -168,10 +175,10 @@ export default async function handler(req, res) {
         // Check if it's a duplicate key error
         if (insertErr.message && insertErr.message.includes('UNIQUE')) {
           // Setlist already exists, update instead
-          const songsJson = JSON.stringify(body.songs || []);
-          const setlistSongMetaJson = JSON.stringify(body.setlistSongMeta || {});
-          const completedSongsJson = JSON.stringify(body.completedSongs || {});
-          
+          const songsJson = JSON.stringify(Array.isArray(body.songs) ? body.songs : []);
+          const setlistSongMetaJson = JSON.stringify(typeof body.setlistSongMeta === 'object' && body.setlistSongMeta !== null ? body.setlistSongMeta : {});
+          const completedSongsJson = JSON.stringify(typeof body.completedSongs === 'object' && body.completedSongs !== null ? body.completedSongs : {});
+
           await client.execute(
             `UPDATE setlists SET 
                name = ?, 
@@ -183,9 +190,9 @@ export default async function handler(req, res) {
                updatedAt = ?
              WHERE id = ?`,
             [
-              body.name.trim(),
-              body.description || '',
-              body.bandId || null,
+              name,
+              description,
+              bandId,
               songsJson,
               setlistSongMetaJson,
               completedSongsJson,

@@ -98,11 +98,19 @@ export default async function handler(req, res) {
     // POST - Create new band
     if (req.method === 'POST') {
       const body = await readJson(req);
-      const { name, description, genre } = body;
+      // Simple sanitization
+      function sanitize(str, maxLen = 100) {
+        if (typeof str !== 'string') return '';
+        return str.replace(/[<>"'`]/g, '').slice(0, maxLen);
+      }
 
-      if (!name) {
+      // Validate and sanitize required fields
+      const name = sanitize(body.name, 100);
+      if (!name || name.length < 1) {
         return res.status(400).json({ error: 'Band name is required' });
       }
+      const description = sanitize(body.description || '', 300);
+      const genre = sanitize(body.genre || '', 50);
 
       const bandId = `band_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date().toISOString();

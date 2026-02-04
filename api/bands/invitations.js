@@ -1,6 +1,7 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import nodemailer from 'nodemailer';
+import { createRateLimiter, RATE_LIMITS } from '../middleware/rateLimiter.js';
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -26,7 +27,9 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+const rateLimiter = createRateLimiter({ ...RATE_LIMITS.API_WRITE });
 export default async function handler(req, res) {
+  await rateLimiter(req, res, () => {});
   try {
     // Verify JWT token first
     if (!verifyToken(req, res)) {

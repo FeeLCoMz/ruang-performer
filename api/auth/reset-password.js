@@ -6,7 +6,10 @@ import { getTursoClient } from '../_turso.js';
  * POST /api/auth/reset-password
  * Reset password with valid token
  */
+import { createRateLimiter, RATE_LIMITS } from '../middleware/rateLimiter.js';
+const rateLimiter = createRateLimiter({ ...RATE_LIMITS.AUTH_RESET });
 export default async function handler(req, res) {
+  await rateLimiter(req, res, () => {});
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

@@ -94,10 +94,26 @@ export default async function handler(req, res) {
     // POST - Create new gig
     if (req.method === 'POST') {
       const body = await readJson(req);
-      const { bandId, date, venue, city, fee, setlistId, notes } = body;
+      // Simple sanitization
+      function sanitize(str, maxLen = 100) {
+        if (typeof str !== 'string') return '';
+        return str.replace(/[<>"'`]/g, '').slice(0, maxLen);
+      }
 
-      if (!date) {
+      // Validate and sanitize required fields
+      const date = sanitize(body.date, 30);
+      if (!date || date.length < 1) {
         return res.status(400).json({ error: 'Date is required' });
+      }
+      const venue = sanitize(body.venue || '', 100);
+      const city = sanitize(body.city || '', 100);
+      const notes = sanitize(body.notes || '', 300);
+      const bandId = body.bandId ? sanitize(body.bandId, 50) : null;
+      const setlistId = body.setlistId ? sanitize(body.setlistId, 50) : null;
+      let fee = null;
+      if (body.fee !== undefined && body.fee !== null && body.fee !== '') {
+        const feeInt = parseInt(String(body.fee).replace(/,/g, '.'), 10);
+        if (!isNaN(feeInt)) fee = feeInt;
       }
 
       const id = randomUUID();
@@ -107,7 +123,7 @@ export default async function handler(req, res) {
         await client.execute(
           `INSERT INTO gigs (id, bandId, userId, date, venue, city, fee, setlistId, notes, createdAt, updatedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [id, bandId || null, userId, date, venue || '', city || '', fee || null, setlistId || null, notes || '', now, now]
+          [id, bandId || null, userId, date, venue, city, fee, setlistId || null, notes, now, now]
         );
         res.status(201).json({ id });
       } catch (err) {

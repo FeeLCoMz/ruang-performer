@@ -80,12 +80,25 @@ export default async function handler(req, res) {
       const now = new Date().toISOString();
       const userId = req.user?.userId;
 
+      // Simple sanitization
+      function sanitize(str, maxLen = 100) {
+        if (typeof str !== 'string') return '';
+        return str.replace(/[<>"'`]/g, '').slice(0, maxLen);
+      }
+
       const upsertOne = async (item) => {
-        const id = item.id?.toString() || randomUUID();
+        // Validasi title wajib
+        const title = sanitize(item.title, 100);
+        if (!title || title.length < 1) {
+          throw new Error('Judul lagu wajib diisi');
+        }
+        const artist = sanitize(item.artist, 100);
+        const genre = sanitize(item.genre, 50);
+        const key = sanitize(item.key, 20);
+        const youtubeId = sanitize(item.youtubeId, 30);
         // Pastikan tempo disimpan sebagai string integer tanpa koma
         let tempoStr = null;
         if (item.tempo !== undefined && item.tempo !== null && item.tempo !== '') {
-          // Ambil hanya bagian integer, buang koma/desimal
           const tempoInt = parseInt(String(item.tempo).replace(/,/g, '.'), 10);
           if (!isNaN(tempoInt)) tempoStr = tempoInt.toString();
         }
@@ -95,6 +108,7 @@ export default async function handler(req, res) {
           const capoInt = parseInt(String(item.capo), 10);
           if (!isNaN(capoInt)) capoStr = capoInt.toString();
         }
+        const id = item.id?.toString() || randomUUID();
         await client.execute(
           `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, genre, capo, instruments, time_markers, userId, createdAt, updatedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -112,13 +126,13 @@ export default async function handler(req, res) {
              updatedAt = excluded.updatedAt`,
           [
             id,
-            item.title || '',
-            item.artist || null,
-            item.youtubeId || null,
+            title,
+            artist || null,
+            youtubeId || null,
             item.lyrics || null,
-            item.key || null,
+            key || null,
             tempoStr,
-            item.genre || null,
+            genre || null,
             capoStr,
             (Array.isArray(item.instruments) ? JSON.stringify(item.instruments) : (item.instruments || null)),
             (Array.isArray(item.timestamps) ? JSON.stringify(item.timestamps) : (item.timestamps || null)),
@@ -129,16 +143,20 @@ export default async function handler(req, res) {
         );
         return id;
       };
-      if (Array.isArray(body)) {
-        const ids = [];
-        for (const item of body) {
-          const id = await upsertOne(item);
-          ids.push(id);
+      try {
+        if (Array.isArray(body)) {
+          const ids = [];
+          for (const item of body) {
+            const id = await upsertOne(item);
+            ids.push(id);
+          }
+          res.status(200).json({ ids });
+        } else {
+          const id = await upsertOne(body);
+          res.status(201).json({ id });
         }
-        res.status(200).json({ ids });
-      } else {
-        const id = await upsertOne(body);
-        res.status(201).json({ id });
+      } catch (err) {
+        res.status(400).json({ error: err.message || 'Input tidak valid' });
       }
       return;
     }

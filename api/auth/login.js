@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getTursoClient } from '../_turso.js';
+import { createRateLimiter, RATE_LIMITS } from '../middleware/rateLimiter.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -17,7 +18,9 @@ async function readJson(req) {
   });
 }
 
+const rateLimiter = createRateLimiter({ ...RATE_LIMITS.AUTH_LOGIN });
 export default async function handler(req, res) {
+  await rateLimiter(req, res, () => {});
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
