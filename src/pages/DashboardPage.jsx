@@ -198,24 +198,6 @@ export default function DashboardPage() {
 
       {/* Main Content Grid */}
       <div className="dashboard-content-grid">
-        {/* Calendar Integration */}
-        <div className="dashboard-card">
-          <h2>📅 Kalender Gigs & Latihan</h2>
-          <CalendarView
-            events={[
-              ...upcomingEvents.map(ev => ({
-                ...ev,
-                bandName: ev.bandName || '',
-                details: ev.title
-              }))
-            ]}
-            onEventClick={ev => {
-              if (ev.type === 'practice') navigate('/practice');
-              else if (ev.type === 'gig') navigate('/gigs');
-            }}
-          />
-        </div>
-
         {/* Recent Activity */}
         <div className="dashboard-card">
           <h2>📊 Aktivitas Terbaru</h2>
