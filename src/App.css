@@ -5752,3 +5752,203 @@ body.dark-mode .song-lyrics-error {
     font-size: 6px;
   }
 }
+
+  /* ========================================
+     SETLIST POSTER SHARE
+     ======================================== */
+  .setlist-poster-preview-wrapper {
+    background: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    max-height: 55vh;
+    overflow: auto;
+  }
+
+  .setlist-poster {
+    background: radial-gradient(circle at top, rgba(59, 130, 246, 0.22), rgba(15, 23, 42, 0.96) 45%),
+      #0b1220;
+    color: #e2e8f0;
+    border-radius: 18px;
+    padding: 32px;
+    width: 900px;
+    min-height: 1125px;
+    aspect-ratio: 4 / 5;
+    max-width: 100%;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .setlist-poster-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .setlist-poster-kicker {
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    color: #60a5fa;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .setlist-poster-title {
+    font-size: clamp(1.4rem, 2.2vw, 2.2rem);
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: #f8fafc;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .setlist-poster-subtitle {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .setlist-poster-divider {
+    width: 220px;
+    height: 1px;
+    background: rgba(148, 163, 184, 0.4);
+    margin-top: 8px;
+  }
+
+  .setlist-poster-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+
+
+  .setlist-poster-item {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(96, 165, 250, 0.2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    break-inside: avoid;
+    box-shadow: inset 0 0 0 1px rgba(30, 58, 138, 0.2);
+    margin-bottom: 0;
+  }
+
+
+  .setlist-poster-index {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #bfdbfe;
+  }
+
+
+  .setlist-poster-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .setlist-poster-song {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f8fafc;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+
+  .setlist-poster-artist {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+
+  .setlist-poster-extra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .setlist-poster-tag {
+    background: rgba(59, 130, 246, 0.18);
+    color: #bfdbfe;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+
+  .setlist-poster-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-top: 1px dashed rgba(148, 163, 184, 0.3);
+    padding-top: 14px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .setlist-poster-brand {
+    font-weight: 700;
+    color: #e2e8f0;
+  }
+
+  .setlist-share-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .poster-download-btn {
+    background: var(--primary-accent);
+    color: #fff;
+  }
+
+  .setlist-poster-error {
+    margin-top: 8px;
+  }
+
+  @media (max-width: 768px) {
+    .setlist-poster {
+      padding: 20px;
+    }
+
+    .setlist-poster-item {
+      grid-template-columns: 32px 1fr;
+      grid-template-rows: auto auto;
+    }
+
+    .setlist-poster-extra {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+    }
+
+    .setlist-poster-list.two-columns {
+      column-count: 1;
+    }
+  }

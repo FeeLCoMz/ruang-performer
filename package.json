@@ -32,6 +32,7 @@
     "dotenv": "^17.2.3",
     "express": "^4.18.2",
     "express-session": "^1.18.2",
+    "html-to-image": "^1.11.13",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^7.0.13",
     "prop-types": "^15.8.1",

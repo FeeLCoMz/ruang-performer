@@ -3,8 +3,10 @@
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
+import SetlistPoster from '../components/SetlistPoster.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { toPng } from 'html-to-image';
 import * as authUtils from '../utils/auth.js';
 
 export default function SetlistSongsPage({ setlists, songs, setSetlists, setActiveSetlist, loadingSetlists }) {
@@ -43,6 +45,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // State untuk share modal
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+  const [posterError, setPosterError] = useState('');
+  const posterRef = useRef(null);
 
   // State untuk edit lagu
   const [editSongId, setEditSongId] = useState(null);
@@ -160,17 +165,46 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // Generate share text
   const shareUrl = `${window.location.origin}/setlists/${setlist.id}`;
   const bandText = setlist.bandName ? `🎸 Band: ${setlist.bandName}\n` : '';
-  const shareText = `🎶 Setlist: ${setlist.name}\n${bandText}\n` +
+  const shareText = `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
     setlistSongs.map((song, idx) => {
       const songKey = song.key ? ` [${song.key}]` : '';
       return `${idx + 1}. ${song.title}${song.artist ? ' - ' + song.artist : ''}${songKey}`;
     }).join('\n') +
     `\n\nLihat detail & chord: ${shareUrl}`;
 
+
   function handleCopyShare() {
     navigator.clipboard.writeText(shareText);
     setShareCopied(true);
     setTimeout(() => setShareCopied(false), 1500);
+  }
+
+  function handleDownloadPoster() {
+    if (!posterRef.current || !setlist) return;
+    setIsGeneratingPoster(true);
+    setPosterError('');
+
+    const safeName = (setlist.name || 'setlist')
+      .replace(/[\\/:*?"<>|]+/g, '')
+      .trim();
+
+    toPng(posterRef.current, {
+      cacheBust: true,
+      pixelRatio: 2,
+      backgroundColor: '#0f172a'
+    })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `${safeName || 'setlist'}-poster.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch(() => {
+        setPosterError('Gagal membuat poster. Coba lagi.');
+      })
+      .finally(() => {
+        setIsGeneratingPoster(false);
+      });
   }
 
   // Lagu yang belum ada di setlist
@@ -531,16 +565,31 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             tabIndex={0}
           >
             <div className="modal-title">Bagikan Setlist</div>
+            <SetlistPoster
+              setlist={setlist}
+              setlistSongs={setlistSongs}
+              posterRef={posterRef}
+            />
             <textarea
               className="modal-input"
               rows={7}
               value={shareText}
               readOnly
             />
-            <button className="btn-base tab-btn" style={{ marginBottom: 8 }} onClick={handleCopyShare}>
-              {shareCopied ? '✅ Tersalin!' : 'Salin Teks'}
-            </button>
-            <button className="btn-base back-btn" onClick={() => setShowShareModal(false)}>Tutup</button>
+            {posterError && <div className="error-text setlist-poster-error">{posterError}</div>}
+            <div className="setlist-share-actions">
+              <button className="btn-base tab-btn" onClick={handleCopyShare}>
+                {shareCopied ? '✅ Tersalin!' : 'Salin Teks'}
+              </button>
+              <button
+                className="btn-base tab-btn poster-download-btn"
+                onClick={handleDownloadPoster}
+                disabled={isGeneratingPoster}
+              >
+                {isGeneratingPoster ? 'Membuat Poster...' : 'Unduh Poster'}
+              </button>
+              <button className="btn-base back-btn" onClick={() => setShowShareModal(false)}>Tutup</button>
+            </div>
           </div>
         </div>
       )}
