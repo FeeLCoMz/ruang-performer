@@ -3,6 +3,7 @@ import React from 'react';
 export default function SetlistPoster({ setlist, setlistSongs, posterRef }) {
   const posterTitle = setlist?.bandName || 'Band';
   const posterSubtitle = setlist?.name || 'Setlist';
+  const useTwoColumns = (setlistSongs || []).length > 10;
 
   return (
     <div className="setlist-poster-preview-wrapper">
@@ -13,7 +14,7 @@ export default function SetlistPoster({ setlist, setlistSongs, posterRef }) {
           <div className="setlist-poster-subtitle">{posterSubtitle}</div>
           <div className="setlist-poster-divider" />
         </div>
-        <div className="setlist-poster-list">
+        <div className={`setlist-poster-list${useTwoColumns ? ' two-columns' : ''}`}>
           {(setlistSongs || []).map((song, idx) => (
             <div className="setlist-poster-item" key={`${song.id}-${idx}`}>
               <div className="setlist-poster-index">{idx + 1}</div>
