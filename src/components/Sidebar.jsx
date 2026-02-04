@@ -3,32 +3,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as apiClient from '../apiClient.js';
 
-export default function Sidebar({ isOpen, onClose, theme, setTheme }) {
+export default function Sidebar({ isOpen, onClose, theme, setTheme, invitationCount: propInvitationCount }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
-  const [invitationCount, setInvitationCount] = useState(0);
-
-  // Fetch invitation count on mount and when route changes
-  useEffect(() => {
-    const fetchInvitationCount = async () => {
-      try {
-        const data = await apiClient.getPendingInvitations();
-        setInvitationCount(Array.isArray(data) ? data.length : 0);
-      } catch (err) {
-        // Silently fail if user not authenticated or fetch fails
-        setInvitationCount(0);
-      }
-    };
-    
-    // Only fetch if user is authenticated
-    if (logout) {
-      fetchInvitationCount();
-      // Refresh every 30 seconds
-      const interval = setInterval(fetchInvitationCount, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [location.pathname, logout]);
+  // Gunakan invitationCount dari prop (AppContent)
+  const invitationCount = typeof propInvitationCount === 'number' ? propInvitationCount : 0;
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: '🏠' },
