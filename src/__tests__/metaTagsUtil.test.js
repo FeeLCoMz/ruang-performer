@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeEach } from 'vitest';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 
 describe('metaTagsUtil', () => {

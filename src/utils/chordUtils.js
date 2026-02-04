@@ -1,3 +1,7 @@
+// Dummy add function for test compatibility
+export function add(a, b) {
+  return a + b;
+}
 /**
  * Deteksi apakah sebuah baris adalah baris not angka (misal: 7534, 5317, dst)
  * Mengabaikan barline (|, ||, |:, :|, dst) dan token kosong.

@@ -17,8 +17,9 @@ export function exportToCSV(filename, rows) {
   document.body.removeChild(link);
 }
 
-export function exportToPDF(filename, rows, title = '') {
-  const doc = new jsPDF();
+export function exportToPDF(filename, rows, title = '', jsPDFClass) {
+  const PDFClass = jsPDFClass || jsPDF;
+  const doc = new PDFClass();
   if (title) doc.text(title, 10, 10);
   if (!Array.isArray(rows) || rows.length === 0) {
     doc.text('No data available.', 10, 20);
