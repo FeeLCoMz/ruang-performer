@@ -23,3 +23,32 @@ node_modules/
 *.log
 .DS_Store
 
+# Ignore documentation and markdown
+*.md
+*.MD
+*.txt
+CSS_REFACTORING_*
+PHASE_*
+QUICKSTART.md
+DOCUMENTATION_INDEX.md
+IMPLEMENTATION_*
+PERMISSIONS_*
+USER_MANAGEMENT.md
+VERCEL_DEPLOYMENT.md
+
+# Ignore database migrations and schema
+db/
+
+# Ignore test files and test folders
+src/__tests__/
+
+# Ignore local dev script
+runMigration.js
+
+# Ignore local dev server command (for clarity, not a file)
+# npm run dev:api
+
+# Ignore public files not needed (if any)
+# public/ (uncomment if you want to exclude all public assets except manifest.json)
+# !public/manifest.json
+
