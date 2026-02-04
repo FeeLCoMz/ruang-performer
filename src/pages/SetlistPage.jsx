@@ -8,10 +8,10 @@ import DeleteIcon from '../components/DeleteIcon.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { fetchBands, addSetList, updateSetList, deleteSetList, fetchSetLists } from '../apiClient.js';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
+import { usePermission } from '../hooks/usePermission.js';
+import { PERMISSIONS } from '../utils/permissionUtils.js';
 
 export default function SetlistPage({
-  import { usePermission } from '../hooks/usePermission.js';
-  import { PERMISSIONS } from '../utils/permissionUtils.js';
   setlists,
   loadingSetlists,
   errorSetlists,
@@ -24,6 +24,7 @@ export default function SetlistPage({
   setSetlists
 }) {
   const navigate = useNavigate();
+  const [bands, setBands] = React.useState([]);
   // Example: Assume userBandInfo is available from props or context (replace as needed)
   const userBandInfo = bands && bands.length > 0 ? bands[0] : { role: 'member' };
   const { can } = usePermission(null, userBandInfo);
@@ -33,7 +34,6 @@ export default function SetlistPage({
   const [deleteSetlist, setDeleteSetlist] = React.useState(null);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState('');
-  const [bands, setBands] = React.useState([]);
   
   // Filter & Sort States
   const [search, setSearch] = React.useState('');
