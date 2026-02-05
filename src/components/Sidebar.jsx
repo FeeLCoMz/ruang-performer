@@ -13,7 +13,7 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, invitationCo
   const navItems = [
     { path: '/', label: 'Dashboard', icon: '🏠' },
     { path: '/songs', label: 'Lagu', icon: '🎵' },
-    { path: '/karaoke', label: 'Lirik Lagu', icon: '🎤' },
+    { path: '/karaoke', label: 'Lirik', icon: '🎤' },
     { path: '/setlists', label: 'Setlist', icon: '📋' },
     { path: '/bands/manage', label: 'Band Saya', icon: '🎸' },
     { path: '/invitations/pending', label: 'Undangan', icon: '📨', badge: invitationCount },

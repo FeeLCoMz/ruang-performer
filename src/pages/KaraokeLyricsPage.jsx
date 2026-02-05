@@ -96,22 +96,9 @@ export default function KaraokeLyricsPage() {
       <div className="karaoke-header">
         <h1 className="karaoke-title">{song.title}</h1>
         <p className="karaoke-artist">{song.artist}</p>
-        {!fullscreen && (
-          <button className="btn btn-primary" onClick={handleFullscreen}>Layar Penuh</button>
-        )}
         <button className="btn btn-secondary" onClick={() => setAutoScroll(s => !s)}>
           {autoScroll ? 'Pause Auto-Scroll' : 'Mulai Auto-Scroll'}
         </button>
-        <label style={{ marginLeft: 16 }}>
-          Kecepatan: <input type="number" min="500" max="10000" step="100" value={scrollSpeed} onChange={e => setScrollSpeed(Number(e.target.value))} style={{ width: 80 }} /> ms/baris
-        </label>
-        <button className="btn btn-secondary" style={{ marginLeft: 16 }} onClick={() => setDarkMode(d => !d)}>
-          {darkMode ? 'Mode Terang' : 'Mode Gelap'}
-        </button>
-        <div style={{ marginTop: 16 }}>
-          <button className="btn" onClick={() => setActiveLine(l => Math.max(0, l - 1))} disabled={activeLine === 0}>⬆️ Baris Sebelumnya</button>
-          <button className="btn" onClick={() => setActiveLine(l => Math.min(lyricLines.length - 1, l + 1))} disabled={activeLine === lyricLines.length - 1} style={{ marginLeft: 8 }}>⬇️ Baris Berikutnya</button>
-        </div>
       </div>
       <div className="karaoke-lyrics-container">
         <div className="karaoke-lyrics-text">
