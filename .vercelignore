@@ -14,7 +14,6 @@ api/auth/forgot-password.js
 api/auth/reset-password.js
 api/server.js
 api/_auth.js
-api/_turso.js
 api/__tests__/
 api/middleware/
 api/legacy/
