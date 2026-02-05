@@ -6,126 +6,84 @@ import * as apiClient from '../apiClient.js';
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    songs: 0,
-    setlists: 0,
-    bands: 0,
-    gigs: 0
-  });
+  const [stats, setStats] = useState({ songs: 0, setlists: 0, bands: 0, gigs: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState([]);
   const [bands, setBands] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [bandsLoading, setBandsLoading] = useState(true);
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      const [songsData, setlistsData, bandsData, practiceData, gigsData] = await Promise.all([
-        apiClient.fetchSongs().catch(() => []),
-        apiClient.fetchSetLists().catch(() => []),
-        apiClient.fetchBands().catch(() => []),
-        apiClient.fetchPracticeSessions().catch(() => []),
-        apiClient.fetchGigs().catch(() => [])
-      ]);
-
-      const songs = songsData || [];
-      const setlists = setlistsData || [];
-      const bandsList = bandsData || [];
-      const sessions = practiceData || [];
-      const gigs = gigsData || [];
-
-      setStats({
-        songs: songs.length,
-        setlists: setlists.length,
-        bands: bandsList.length,
-        gigs: gigs.length
-      });
-
-      setBands(bandsList.slice(0, 5)); // Show top 5 bands
-
-      // Get upcoming events (next 7 days)
-      const now = new Date();
-      const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-      const upcomingPractice = sessions
-        .filter(s => {
+    // Stats
+    (async () => {
+      setStatsLoading(true);
+      try {
+        const [songsData, setlistsData, bandsData, gigsData] = await Promise.all([
+          apiClient.fetchSongs().catch(() => []),
+          apiClient.fetchSetLists().catch(() => []),
+          apiClient.fetchBands().catch(() => []),
+          apiClient.fetchGigs().catch(() => [])
+        ]);
+        setStats({
+          songs: songsData.length || 0,
+          setlists: setlistsData.length || 0,
+          bands: bandsData.length || 0,
+          gigs: gigsData.length || 0
+        });
+        setStatsLoading(false);
+        // Recent activity
+        const now = new Date();
+        const activities = [];
+        if (songsData.length > 0) activities.push({ icon: '🎵', text: `${songsData.length} lagu dalam database`, time: 'Always' });
+        if (bandsData.length > 0) activities.push({ icon: '🎸', text: `${bandsData.length} band terdaftar`, time: 'Recently' });
+        if (setlistsData.length > 0) activities.push({ icon: '📋', text: `${setlistsData.length} setlist tersedia`, time: 'Recently' });
+        if (gigsData.length > 0) {
+          const completedGigs = gigsData.filter(g => new Date(g.date) < now).length;
+          activities.push({ icon: '🎤', text: `${completedGigs} gig telah selesai`, time: 'All time' });
+        }
+        setRecentActivity(activities.slice(0, 4));
+      } catch (err) {
+        setStatsLoading(false);
+      }
+    })();
+    // Events
+    (async () => {
+      setEventsLoading(true);
+      try {
+        const [practiceData, gigsData] = await Promise.all([
+          apiClient.fetchPracticeSessions().catch(() => []),
+          apiClient.fetchGigs().catch(() => [])
+        ]);
+        const now = new Date();
+        const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const upcomingPractice = practiceData.filter(s => {
           const sessionDate = new Date(s.date);
           return sessionDate >= now && sessionDate <= sevenDaysLater;
-        })
-        .map(s => ({
-          type: 'practice',
-          id: s.id,
-          title: s.bandName || 'Practice Session',
-          date: s.date,
-          icon: '💪'
-        }));
-
-      const upcomingGigs = gigs
-        .filter(g => {
+        }).map(s => ({ type: 'practice', id: s.id, title: s.bandName || 'Practice Session', date: s.date, icon: '💪' }));
+        const upcomingGigs = gigsData.filter(g => {
           const gigDate = new Date(g.date);
           return gigDate >= now && gigDate <= sevenDaysLater;
-        })
-        .map(g => ({
-          type: 'gig',
-          id: g.id,
-          title: `${g.venue || 'Venue'} - ${g.bandName || 'Gig'}`,
-          date: g.date,
-          icon: '🎤'
-        }));
-
-      const combined = [...upcomingPractice, ...upcomingGigs]
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
-        .slice(0, 5);
-
-      setUpcomingEvents(combined);
-
-      // Build recent activity
-      const activities = [];
-      
-      if (songs.length > 0) {
-        activities.push({
-          icon: '🎵',
-          text: `${songs.length} lagu dalam database`,
-          time: 'Always'
-        });
+        }).map(g => ({ type: 'gig', id: g.id, title: `${g.venue || 'Venue'} - ${g.bandName || 'Gig'}`, date: g.date, icon: '🎤' }));
+        const combined = [...upcomingPractice, ...upcomingGigs].sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
+        setUpcomingEvents(combined);
+        setEventsLoading(false);
+      } catch (err) {
+        setEventsLoading(false);
       }
-
-      if (bandsList.length > 0) {
-        activities.push({
-          icon: '🎸',
-          text: `${bandsList.length} band terdaftar`,
-          time: 'Recently'
-        });
+    })();
+    // Bands
+    (async () => {
+      setBandsLoading(true);
+      try {
+        const bandsData = await apiClient.fetchBands().catch(() => []);
+        setBands(bandsData.slice(0, 5));
+        setBandsLoading(false);
+      } catch (err) {
+        setBandsLoading(false);
       }
-
-      if (setlists.length > 0) {
-        activities.push({
-          icon: '📋',
-          text: `${setlists.length} setlist tersedia`,
-          time: 'Recently'
-        });
-      }
-
-      if (gigs.length > 0) {
-        const completedGigs = gigs.filter(g => new Date(g.date) < now).length;
-        activities.push({
-          icon: '🎤',
-          text: `${completedGigs} gig telah selesai`,
-          time: 'All time'
-        });
-      }
-
-      setRecentActivity(activities.slice(0, 4));
-      setLoading(false);
-    } catch (err) {
-      console.error('Failed to load dashboard:', err);
-      setLoading(false);
-    }
-  };
+    })();
+  }, []);
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -142,13 +100,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div>Memuat dashboard...</div>
-      </div>
-    );
-  }
+  // ...existing code...
 
   return (
     <div className="page-container">
@@ -175,22 +127,22 @@ export default function DashboardPage() {
       <div className="dashboard-grid">
         <div className="stat-card" onClick={() => navigate('/songs')}>
           <h3>🎵 Lagu</h3>
-          <div className="stat-value">{stats.songs}</div>
+          <div className="stat-value">{statsLoading ? <span className="loading-skeleton" style={{width:40}} /> : stats.songs}</div>
           <p>Total lagu</p>
         </div>
         <div className="stat-card" onClick={() => navigate('/setlists')}>
           <h3>📋 Setlist</h3>
-          <div className="stat-value">{stats.setlists}</div>
+          <div className="stat-value">{statsLoading ? <span className="loading-skeleton" style={{width:40}} /> : stats.setlists}</div>
           <p>Setlist tersedia</p>
         </div>
         <div className="stat-card" onClick={() => navigate('/bands')}>
           <h3>🎸 Band</h3>
-          <div className="stat-value">{stats.bands}</div>
+          <div className="stat-value">{statsLoading ? <span className="loading-skeleton" style={{width:40}} /> : stats.bands}</div>
           <p>Band aktif</p>
         </div>
         <div className="stat-card" onClick={() => navigate('/gigs')}>
           <h3>🎤 Konser</h3>
-          <div className="stat-value">{stats.gigs}</div>
+          <div className="stat-value">{statsLoading ? <span className="loading-skeleton" style={{width:40}} /> : stats.gigs}</div>
           <p>Jadwal konser</p>
         </div>
       </div>
@@ -201,10 +153,16 @@ export default function DashboardPage() {
         {/* Recent Activity */}
         <div className="dashboard-card">
           <h2>📊 Aktivitas Terbaru</h2>
-          {recentActivity.length === 0 ? (
-            <div className="dashboard-empty">
-              Belum ada aktivitas
+          {statsLoading ? (
+            <div className="dashboard-event-list">
+              {[...Array(3)].map((_, idx) => (
+                <div key={idx} className="activity-item">
+                  <span className="loading-skeleton" style={{width:'100%',height:24}} />
+                </div>
+              ))}
             </div>
+          ) : recentActivity.length === 0 ? (
+            <div className="dashboard-empty">Belum ada aktivitas</div>
           ) : (
             <div className="dashboard-event-list">
               {recentActivity.map((activity, idx) => (
@@ -222,14 +180,18 @@ export default function DashboardPage() {
       </div>
 
       {/* Band Highlights */}
-      {bands.length > 0 && (
-        <div className="card">
-          <h2 style={{ fontSize: '1.2em', marginTop: 0, marginBottom: '16px' }}>🎸 Band Saya</h2>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: '12px'
-          }}>
+      <div className="card">
+        <h2 style={{ fontSize: '1.2em', marginTop: 0, marginBottom: '16px' }}>🎸 Band Saya</h2>
+        {bandsLoading ? (
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))',gap:'12px'}}>
+            {[...Array(3)].map((_, idx) => (
+              <div key={idx} className="card" style={{padding:'16px'}}>
+                <span className="loading-skeleton" style={{width:'100%',height:32,display:'block'}} />
+              </div>
+            ))}
+          </div>
+        ) : bands.length > 0 ? (
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))',gap:'12px'}}>
             {bands.map(band => (
               <div
                 key={band.id}
@@ -281,8 +243,10 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="dashboard-empty">Belum ada band</div>
+        )}
+      </div>
     </div>
   );
 }

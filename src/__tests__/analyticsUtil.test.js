@@ -1,11 +1,11 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach } from '@jest/globals';
 import { trackEvent, trackSongAction, trackSetlistAction, trackError } from '../utils/analyticsUtil.js';
 
 describe('analyticsUtil', () => {
   beforeEach(() => {
     // Mock gtag
     window.dataLayer = [];
-    window.gtag = vi.fn();
+    window.gtag = jest.fn();
   });
 
   test('trackEvent calls gtag with correct parameters', () => {
