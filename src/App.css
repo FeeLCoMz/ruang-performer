@@ -4675,14 +4675,11 @@ input[type="datetime-local"]:disabled {
     margin-bottom: var(--spacing-xl);
   }
   
-  .media-panel-grid {
-    grid-template-columns: 1fr;
+  .media-panel-grid {      
+    grid-template-columns: 1fr 1fr;
   }
   
-  .media-video-section,
-  .media-markers-section {
-    grid-column: 1;
-  }
+
 }
 
 @media (max-width: 768px) {

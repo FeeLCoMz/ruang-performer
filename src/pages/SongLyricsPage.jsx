@@ -727,7 +727,7 @@ export default function SongLyricsPage({ song: songProp }) {
           <div className="song-lyrics-toolbar">
             {/* 1. Auto Scroll - PRIORITY (LEFT) */}
             {!isEditingLyrics && (
-              <div className="autoscroll-controls">
+              <div className="autoscroll-controls" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <button
                   onClick={() => setAutoScrollActive(!autoScrollActive)}
                   className={`autoscroll-toggle ${autoScrollActive ? 'active' : ''}`}
@@ -769,9 +769,27 @@ export default function SongLyricsPage({ song: songProp }) {
                       ))}
                     </div>
                   </>
-                )}
+                )}                
               </div>
+              
             )}
+            {/* Fullscreen Button */}
+                <button
+                  className="btn btn-secondary"
+                  title="Tampilkan lirik layar penuh"                  
+                  onClick={() => {
+                    const el = document.querySelector('.song-lyrics-display');
+                    if (el && el.requestFullscreen) {
+                      el.requestFullscreen();
+                    } else if (el && el.webkitRequestFullscreen) {
+                      el.webkitRequestFullscreen();
+                    } else if (el && el.msRequestFullscreen) {
+                      el.msRequestFullscreen();
+                    }
+                  }}
+                >
+                  🖥️ Fullscreen
+                </button>
 
             {/* 2. Zoom Controls */}
             <div className="song-lyrics-zoom-controls">
