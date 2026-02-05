@@ -13,7 +13,6 @@ api/auth/2fa-verify.js
 api/auth/forgot-password.js
 api/auth/reset-password.js
 api/server.js
-api/_auth.js
 api/__tests__/
 api/middleware/
 api/legacy/
