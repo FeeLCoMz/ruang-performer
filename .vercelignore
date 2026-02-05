@@ -1,3 +1,15 @@
+db/
+*.md
+*.txt
+*.test.js
+*.spec.js
+.env*
+runMigration.js
+jest.config.*
+jest.setup.js
+vitest.config.js
+vite.config.js
+node_modules/
 # Ignore non-endpoint API files/folders (Vercel Free Tier optimization)
 api/__tests__/
 api/middleware/
