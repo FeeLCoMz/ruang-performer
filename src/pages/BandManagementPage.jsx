@@ -6,23 +6,28 @@ import * as apiClient from '../apiClient.js';
 import { updatePageMeta } from '../utils/metaTagsUtil.js';
 import PlusIcon from '../components/PlusIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
+import BandListItem from '../components/BandListItem.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 
 export default function BandManagementPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-    // Helper: get userBandInfo for a bandId
-    const getUserBandInfo = (bandId) => {
-      if (!user) return null;
-      const band = bands.find(b => b.id === bandId);
-      if (band && band.userRole) {
-        return { role: band.userRole, bandId };
-      }
-      if (band && band.isOwner) {
-        return { role: 'owner', bandId };
-      }
-      return { role: user?.role || 'member', bandId };
-    };
+  // Duplicate state declaration removed
+
+  // Helper: get userBandInfo for a bandId
+  const getUserBandInfo = (bandId) => {
+    if (!user) return null;
+    const band = bands.find(b => b.id === bandId);
+    if (band && band.userRole) {
+      return { role: band.userRole, bandId };
+    }
+    if (band && band.isOwner) {
+      return { role: 'owner', bandId };
+    }
+    return { role: user?.role || 'member', bandId };
+  };
+
+  // --- Hapus pemanggilan usePermission di useMemo, panggil di dalam map JSX ---
   const [bands, setBands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -258,55 +263,18 @@ export default function BandManagementPage() {
         </div>
       ) : (
         <div className="song-list-container">
-          {filteredBands.map(band => (
-            <div
-              key={band.id}
-              className="setlist-item"
-              onClick={() => navigate(`/bands/${band.id}`)}
-            >
-              {/* Band Info */}
-              <div className="setlist-info">
-                <h3 className="setlist-title">
-                  {band.name}
-                </h3>
-                <div className="setlist-meta">
-                  {band.genre && <span>🎵 {band.genre}</span>}
-                  {band.description && <span>{band.description}</span>}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div
-                className="setlist-actions"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {(() => {
-                  // Permission: Only show delete if user is owner or admin
-                  const userBandInfo = getUserBandInfo(band.id);
-                  const { can } = usePermission(band.id, userBandInfo);
-                  if (userBandInfo && can('edit_band')) {
-                    return (
-                      <button
-                        onClick={() => handleDeleteBand(band.id)}
-                        className="btn-base"
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: '0.85em',
-                          background: '#dc2626',
-                          borderColor: '#b91c1c',
-                          color: '#fff'
-                        }}
-                        title="Hapus"
-                      >
-                        <DeleteIcon size={16} />
-                      </button>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
-            </div>
-          ))}
+          {filteredBands.map(band => {
+            const userBandInfo = getUserBandInfo(band.id);
+            return (
+              <BandListItem
+                key={band.id}
+                band={band}
+                userBandInfo={userBandInfo}
+                onDelete={handleDeleteBand}
+                navigate={navigate}
+              />
+            );
+          })}
         </div>
       )}
 
