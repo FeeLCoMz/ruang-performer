@@ -25,6 +25,11 @@ export default function BandDetailPage() {
   const [practiceSessions, setPracticeSessions] = useState([]);
   const [gigs, setGigs] = useState([]);
 
+  // --- Permission hooks (top-level, not inside JSX) ---
+  // Default userBandInfo, will be updated after band loaded
+  const userBandInfo = band ? { role: band.userRole || (band.isOwner ? 'owner' : 'member') } : { role: 'member' };
+  const { can } = usePermission(id, userBandInfo);
+
   useEffect(() => {
     loadBand();
   }, [id]);
@@ -112,10 +117,8 @@ export default function BandDetailPage() {
             <p className="band-description">{band.description}</p>
           )}
         </div>
+        {/* --- Permission logic: allow edit/delete/manage roles --- */}
         {(() => {
-          const userBandInfo = { role: band.userRole || (band.isOwner ? 'owner' : 'member') };
-          const { can } = usePermission(id, userBandInfo);
-          // Permission logic: allow edit/delete if user is owner/admin band atau punya permission global
           let canEdit = false;
           let canDelete = false;
           let canManageRoles = false;
@@ -177,19 +180,15 @@ export default function BandDetailPage() {
       <div className="dashboard-card" style={{ marginBottom: '24px' }}>
         <div className="card-header">
           <h2 className="card-title">👥 Anggota Band ({band.members?.length || 0})</h2>
-          {(() => {
-            const userBandInfo = { role: band.userRole || (band.isOwner ? 'owner' : 'member') };
-            const { can } = usePermission(id, userBandInfo);
-            return can(PERMISSIONS.MEMBER_INVITE) && (
-              <button 
-                className="btn-base"
-                onClick={() => setShowInviteModal(true)}
-                style={{ fontSize: '0.9em', padding: '8px 14px' }}
-              >
-                + Undang Member
-              </button>
-            );
-          })()}
+          {can(PERMISSIONS.MEMBER_INVITE) && (
+            <button 
+              className="btn-base"
+              onClick={() => setShowInviteModal(true)}
+              style={{ fontSize: '0.9em', padding: '8px 14px' }}
+            >
+              + Undang Member
+            </button>
+          )}
         </div>
         {!band.members || band.members.length === 0 ? (
           <div className="empty-state">

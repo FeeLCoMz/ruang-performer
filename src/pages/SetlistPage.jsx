@@ -18,7 +18,6 @@ export default function SetlistPage({
   errorSetlists,
   showCreateSetlist,
   setShowCreateSetlist,
-  createSetlistName,
   setCreateSetlistName,
   createSetlistError,
   setCreateSetlistError,
