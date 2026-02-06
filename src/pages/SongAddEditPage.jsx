@@ -61,7 +61,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
         .then(data => {
           setTitle(data.title || '');
           setArtist(data.artist || '');
-          setSongKey(data.key || 'C');
+          setSongKey(data.key || '');
           setTempo(data.tempo || '');
           setTimeSignature(data.time_signature || '4/4');
           setGenre(data.genre || '');
