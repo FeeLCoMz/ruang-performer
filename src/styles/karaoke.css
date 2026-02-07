@@ -1,34 +1,36 @@
 /* Modern card and gradient background */
 .karaoke-lyrics-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #e0e7ff 0%, #f0f9ff 100%);
+  background: var(--primary-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  transition: background var(--transition-base);
 }
 .karaoke-card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(59,130,246,0.12);
-  padding: 24px 32px;
-  margin-bottom: 24px;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
   display: flex;
   flex-direction: column;
   align-items: center;
   max-width: 480px;
+  transition: background var(--transition-base);
 }
 .karaoke-song-title {
-  font-size: 2rem;
+  font-size: var(--font-size-3xl);
   font-weight: bold;
-  color: #3b82f6;
-  margin-bottom: 8px;
+  color: var(--primary-accent);
+  margin-bottom: var(--spacing-sm);
   display: flex;
   align-items: center;
 }
 .karaoke-song-artist {
-  font-size: 1.2rem;
-  color: #64748b;
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
 }
@@ -38,59 +40,61 @@
 
 /* Header: Judul dan Artis */
 .karaoke-title {
-  font-size: 2rem;
-  margin-bottom: 4px;
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--spacing-xs);
   text-align: center;
+  color: var(--text-primary);
 }
 .karaoke-artist {
-  font-size: 1.2rem;
-  margin-bottom: 8px;
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--spacing-sm);
   text-align: center;
+  color: var(--text-secondary);
 }
 .karaoke-header {
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-md);
 }
 
 /* Lirik utama */
 .karaoke-lyrics-text {
-  font-size: 2rem;
+  font-size: var(--font-size-3xl);
   line-height: 1.5;
   white-space: pre-wrap;
   text-align: center;
   background: none;
-  color: inherit;
+  color: var(--text-primary);
   border: none;
   margin: 0;
   padding: 0;
   overflow-y: visible;
 }
 .karaoke-line {
-  padding: 8px 0;
-  font-size: 2rem;
+  padding: var(--spacing-sm) 0;
+  font-size: var(--font-size-3xl);
   font-weight: normal;
-  color: inherit;
+  color: var(--text-primary);
   letter-spacing: normal;
   text-transform: none;
   white-space: nowrap;
   overflow-x: auto;
-  transition: color 0.2s, font-weight 0.2s;
+  transition: color var(--transition-fast), font-weight var(--transition-fast);
 }
 .karaoke-line.active {
-  color: #ffeb3b;
+  color: var(--warning);
   font-weight: bold;
 }
 
 /* Struktur (section) */
 .karaoke-section {
-  color: #3b82f6;
-  font-size: 2.1rem;
+  color: var(--primary-accent);
+  font-size: calc(var(--font-size-3xl) + 0.1rem);
   font-weight: bold;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 12px 0;
+  padding: var(--spacing-md) 0;
   background: rgba(59, 130, 246, 0.08);
-  border-radius: 8px;
-  border-left: 4px solid #3b82f6;
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--primary-accent);
 }
 
 /* LYRICS CONTAINER */
@@ -115,25 +119,57 @@
 }
 @media (max-width: 600px) {
   .karaoke-title {
-    font-size: 1.2rem;
+    font-size: var(--font-size-lg);
   }
   .karaoke-artist {
-    font-size: 1rem;
+    font-size: var(--font-size-base);
   }
   .karaoke-lyrics-text {
-    font-size: 1.1rem;
+    font-size: var(--font-size-base);
     padding: 0 2px;
   }
   .karaoke-line {
-    font-size: 1.1rem;
+    font-size: var(--font-size-base);
   }
   .karaoke-section {
-    font-size: 1.2rem;
+    font-size: var(--font-size-lg);
   }
   .karaoke-header {
-    margin-bottom: 12px;
+    margin-bottom: var(--spacing-md);
   }
   .karaoke-lyrics-page {
     padding: 0;
   }
+}
+
+/* ========== DARK MODE ========== */
+body.dark-mode .karaoke-lyrics-page {
+  background: var(--primary-bg);
+}
+body.dark-mode .karaoke-card {
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md);
+}
+body.dark-mode .karaoke-song-title {
+  color: #93c5fd;
+}
+body.dark-mode .karaoke-song-artist {
+  color: var(--text-muted);
+}
+body.dark-mode .karaoke-title {
+  color: var(--text-primary);
+}
+body.dark-mode .karaoke-lyrics-text {
+  color: var(--text-primary);
+}
+body.dark-mode .karaoke-line {
+  color: var(--text-primary);
+}
+body.dark-mode .karaoke-line.active {
+  color: var(--warning);
+}
+body.dark-mode .karaoke-section {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.18);
+  border-left: 4px solid #93c5fd;
 }

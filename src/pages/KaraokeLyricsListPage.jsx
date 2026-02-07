@@ -74,7 +74,7 @@ export default function KaraokeLyricsListPage({ songs }) {
     <div className="page-container">
       <AddLyricsModal open={showAdd} onClose={() => setShowAdd(false)} onAdd={handleAddSong} />
       <div className="page-header">
-        <h1>🎤 Daftar Lirik Lagu Karaoke</h1>
+        <h1>🎤 Lirik Lagu</h1>
         {loading ? (
           <p>Memuat lagu...</p>
         ) : error ? (
@@ -82,20 +82,21 @@ export default function KaraokeLyricsListPage({ songs }) {
         ) : (
           <p>{filtered.length} dari {localSongs.length} lagu</p>
         )}
-        <input
-          type="text"
-          placeholder="Cari judul atau artis..."
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          className="search-input-main"
-          style={{ width: 320, marginTop: 12 }}
-          disabled={loading}
-        />
-        <button className="btn btn-primary" style={{ marginLeft: 16, marginTop: 12 }} onClick={() => setShowAdd(true)} disabled={loading}>
-          + Tambah Lirik Lagu
-        </button>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            placeholder="Cari judul atau artis..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            className="search-input-main"
+            disabled={loading}
+          />
+          <button className="btn btn-primary" onClick={() => setShowAdd(true)} disabled={loading}>
+            + Tambah Lirik Lagu
+          </button>
+        </div>
       </div>
-      <div className="karaoke-list-container">
+      <div className="song-list-container">
         {loading ? (
           <div className="empty-state">Memuat...</div>
         ) : error ? (
@@ -103,19 +104,21 @@ export default function KaraokeLyricsListPage({ songs }) {
         ) : filtered.length === 0 ? (
           <div className="empty-state">Tidak ada lagu ditemukan</div>
         ) : (
-          <ul className="karaoke-lyrics-list">
-            {filtered.map(song => (
-              <li
-                key={song.id}
-                className="karaoke-lyrics-list-item"
-                onClick={() => navigate(`/karaoke/${song.id}`)}
-                style={{ cursor: 'pointer', padding: '16px', borderBottom: '1px solid #eee' }}
-              >
-                <b>{song.title}</b> <span style={{ color: '#888' }}>({song.artist})</span>
-                {song.genre && <span style={{ marginLeft: 12, color: '#aaa' }}>{song.genre}</span>}
-              </li>
-            ))}
-          </ul>
+          filtered.map(song => (
+            <div
+              key={song.id}
+              className="song-item"
+              onClick={() => navigate(`/karaoke/${song.id}`)}
+            >
+              <div className="song-info">
+                <h3 className="song-title">{song.title}</h3>
+                <div className="song-meta">
+                  {song.artist && <span>👤 {song.artist}</span>}
+                  {song.genre && <span>🎸 {song.genre}</span>}
+                </div>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>

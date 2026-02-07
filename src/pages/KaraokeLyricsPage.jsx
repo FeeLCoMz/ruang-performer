@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/karaoke.css';
+import AutoScrollBar from '../components/AutoScrollBar.jsx';
 import { useParams } from 'react-router-dom';
 import { getAuthHeader } from '../utils/auth.js';
 import { parseChordLine, parseSection } from '../utils/chordUtils.js';
@@ -58,6 +59,7 @@ export default function KaraokeLyricsPage() {
         </div>
       </div>
       <div className="karaoke-lyrics-container">
+        <AutoScrollBar tempo={80} />
         <div className="karaoke-lyrics-text">
           {lyricOnlyLines.map((line, idx) => {
             const section = parseSection(line);
