@@ -48,6 +48,12 @@ export default function SongLyricsPage({ song: songProp }) {
 
   // Transpose state
   const [transpose, setTranspose] = useState(0);
+
+  // Reset transpose when song changes
+  useEffect(() => {
+    setTranspose(0);
+  }, [id]);
+
   const [zoom, setZoom] = useState(1);
   const highlightChords = false;
 
