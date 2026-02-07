@@ -103,15 +103,21 @@ export default async function handler(req, res) {
       }
       // Permission constants
       const { SONG_EDIT } = PERMISSIONS;
-      // Only allow edit if user has SONG_EDIT permission for their role
-      if (!hasPermission(userRole, SONG_EDIT)) {
-        res.status(403).json({ error: 'You do not have permission to edit songs' });
-        return;
-      }
-      // Still require ownership or band membership for band songs
-      if (song.userId && !isOwner && !isBandMember) {
-        res.status(403).json({ error: 'You can only edit your own songs or band songs' });
-        return;
+      // Allow owner of the song to edit their own song
+      if (isOwner) {
+        // Owner can always edit their own song
+        // (even if not band member or role is member)
+      } else {
+        // Only allow edit if user has SONG_EDIT permission for their role
+        if (!hasPermission(userRole, SONG_EDIT)) {
+          res.status(403).json({ error: 'You do not have permission to edit songs' });
+          return;
+        }
+        // For band songs, must be band member
+        if (isBandSong && !isBandMember) {
+          res.status(403).json({ error: 'You can only edit band songs if you are a band member' });
+          return;
+        }
       }
 
       // DEBUG: log payload yang diterima
