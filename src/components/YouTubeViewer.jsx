@@ -36,8 +36,20 @@ const YouTubeViewer = React.forwardRef(({
     return () => { mountedRef.current = false; };
   }, []);
 
+  // Helper: extract YouTube video ID from URL or return as-is if already an ID
+  function extractVideoId(input) {
+    if (!input) return '';
+    // If input looks like a YouTube URL, extract the ID
+    const urlMatch = String(input).match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:.*v=|v\/|embed\/|shorts\/|live\/|user\/.*#p\/u\/\d\/))([\w-]{11})/);
+    if (urlMatch && urlMatch[1]) return urlMatch[1];
+    // If input is 11-char ID
+    if (/^[\w-]{11}$/.test(input)) return input;
+    return '';
+  }
+
   useEffect(() => {
-    if (!videoId) return;
+    const id = extractVideoId(videoId);
+    if (!id) return;
 
     let canceled = false;
     let prevOnReady = null;
@@ -53,10 +65,10 @@ const YouTubeViewer = React.forwardRef(({
         prevOnReady = window.onYouTubeIframeAPIReady;
         window.onYouTubeIframeAPIReady = () => {
           if (typeof prevOnReady === 'function') prevOnReady();
-          if (!canceled) initPlayer(videoId);
+          if (!canceled) initPlayer(id);
         };
       } else {
-        initPlayer(videoId);
+        initPlayer(id);
       }
     };
 
@@ -124,7 +136,8 @@ const YouTubeViewer = React.forwardRef(({
     return `${m}:${r.toString().padStart(2, '0')}`;
   };
 
-  if (!videoId) {
+  const validId = extractVideoId(videoId);
+  if (!validId) {
     return (
       <div className="youtube-viewer-empty">
         ID Video YouTube tidak valid

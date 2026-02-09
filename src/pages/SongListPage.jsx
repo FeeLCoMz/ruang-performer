@@ -17,7 +17,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   const [filterArtist, setFilterArtist] = useState('all');
   const [filterKey, setFilterKey] = useState('all');
   const [filterGenre, setFilterGenre] = useState('all');
-  const [sortBy, setSortBy] = useState('created');
+  const [sortBy, setSortBy] = useState('updated');
   const [sortOrder, setSortOrder] = useState('desc');
 
   useEffect(() => {
@@ -93,6 +93,10 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           aVal = new Date(a.createdAt || 0).getTime();
           bVal = new Date(b.createdAt || 0).getTime();
           break;
+        case 'updated':
+          aVal = new Date(a.updatedAt || a.createdAt || 0).getTime();
+          bVal = new Date(b.updatedAt || b.createdAt || 0).getTime();
+          break;
         default:
           return 0;
       }
@@ -110,7 +114,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     setFilterArtist('all');
     setFilterKey('all');
     setFilterGenre('all');
-    setSortBy('created');
+    setSortBy('updated');
     setSortOrder('desc');
   };
 
@@ -210,7 +214,8 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
             <option value="artist">Urutkan: Artis</option>
             <option value="key">Urutkan: Kunci</option>
             <option value="tempo">Urutkan: Tempo</option>
-            <option value="created">Urutkan: Tanggal</option>
+            <option value="created">Urutkan: Tanggal dibuat</option>
+            <option value="updated">Urutkan: Tanggal diupdate</option>
           </select>
 
           <button
@@ -274,7 +279,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                   // Permission logic: allow edit/delete if user is creator OR has global permission
                   let canEdit = false;
                   let canDelete = false;
-                  // If song has userId, check permission
                   if (song.userId) {
                     canEdit = canPerformAction(
                       user,
@@ -288,9 +292,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                       { role: user?.role || 'member', bandId: song.bandId || null },
                       PERMISSIONS.SONG_DELETE
                     ) && song.userId === currentUserId;
-                  } else {
-                    // Legacy: allow edit if no userId (old data)
-                    canEdit = true;
                   }
                   if (!canEdit && !canDelete) return null;
                   return (
