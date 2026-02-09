@@ -118,49 +118,18 @@ export default function BandDetailPage() {
           )}
         </div>
         {/* --- Permission logic: allow edit/delete/manage roles --- */}
-        {(() => {
-          let canEdit = false;
-          let canDelete = false;
-          let canManageRoles = false;
-          if (band.userId) {
-            canEdit = canPerformAction(
-              user,
-              id,
-              { role: user?.role || userBandInfo.role || 'member', bandId: id },
-              PERMISSIONS.BAND_EDIT
-            ) || band.userId === currentUserId || band.isOwner;
-            canDelete = canPerformAction(
-              user,
-              id,
-              { role: user?.role || userBandInfo.role || 'member', bandId: id },
-              PERMISSIONS.BAND_DELETE
-            ) && (band.userId === currentUserId || band.isOwner);
-            canManageRoles = canPerformAction(
-              user,
-              id,
-              { role: user?.role || userBandInfo.role || 'member', bandId: id },
-              PERMISSIONS.ADMIN_MANAGE_ROLES
-            ) || band.isOwner;
-          } else {
-            // Legacy: allow edit if no userId (old data)
-            canEdit = true;
-            canManageRoles = true;
-          }
-          return (
-            <div className="band-actions">
-              {canEdit && (
-                <button className="btn btn-primary" onClick={() => setShowEditModal(true)} title="Edit Band">
-                  <EditIcon size={18} /> Edit Band
-                </button>
-              )}
-              {canDelete && (
-                <button className="icon-btn-small delete-btn" onClick={handleDelete} title="Hapus Band">
-                  <DeleteIcon size={18} />
-                </button>
-              )}
-            </div>
-          );
-        })()}
+        <div className="band-actions">
+          {can(PERMISSIONS.BAND_EDIT) && (
+            <button className="btn btn-primary" onClick={() => setShowEditModal(true)} title="Edit Band">
+              <EditIcon size={18} /> Edit Band
+            </button>
+          )}
+          {can(PERMISSIONS.BAND_DELETE) && (
+            <button className="btn-base danger" onClick={handleDelete} title="Hapus Band" style={{marginLeft: '12px'}}>
+              <DeleteIcon size={18} /> Hapus Band
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Info Bar */}

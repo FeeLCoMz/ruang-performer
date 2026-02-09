@@ -18,27 +18,7 @@ export default function BandListItem({ band, userBandInfo, onDelete, navigate })
         </div>
       </div>
       {/* Actions */}
-      <div
-        className="setlist-actions"
-        onClick={e => e.stopPropagation()}
-      >
-        {can('edit_band') && (
-          <button
-            onClick={() => onDelete(band.id)}
-            className="btn-base"
-            style={{
-              padding: '6px 12px',
-              fontSize: '0.85em',
-              background: '#dc2626',
-              borderColor: '#b91c1c',
-              color: '#fff'
-            }}
-            title="Hapus"
-          >
-            <DeleteIcon size={16} />
-          </button>
-        )}
-      </div>
+      {/* No delete button here; only in BandDetailPage */}
     </div>
   );
 }
