@@ -26,7 +26,6 @@ const BandDetailPage = lazy(() => import('./pages/BandDetailPage.jsx'));
 const BandManagementPage = lazy(() => import('./pages/BandManagementPage.jsx'));
 const InvitationPage = lazy(() => import('./pages/InvitationPage.jsx'));
 const PendingInvitationsPage = lazy(() => import('./pages/PendingInvitationsPage.jsx'));
-const AdminPanelPage = lazy(() => import('./pages/AdminPanelPage.jsx'));
 const PracticeSessionPage = lazy(() => import('./pages/PracticeSessionPage.jsx'));
 const GigPage = lazy(() => import('./pages/GigPage.jsx'));
 const AuditLogPage = lazy(() => import('./pages/AuditLogPage.jsx'));
@@ -319,7 +318,6 @@ function AppContent() {
           <Route path="/practice" element={<PracticeSessionPage />} />
           <Route path="/gigs" element={<GigPage />} />
           <Route path="/bands/manage" element={<BandManagementPage />} />
-          <Route path="/bands/admin/:bandId" element={<AdminPanelPage />} />
           <Route path="/bands" element={<Navigate to="/bands/manage" replace />} />
           <Route path="/bands/:id" element={<BandDetailPage />} />
           <Route path="/invitations/pending" element={<PendingInvitationsPage />} />
