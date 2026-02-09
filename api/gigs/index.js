@@ -36,8 +36,8 @@ export default async function handler(req, res) {
       }
       if (req.method === 'GET') {
         const result = await client.execute(
-          `SELECT g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt,\n                b.name as bandName, s.name as setlistName\n         FROM gigs g\n         LEFT JOIN bands b ON g.bandId = b.id\n         LEFT JOIN setlists s ON g.setlistId = s.id\n         WHERE g.id = ? AND g.userId = ? LIMIT 1`,
-          [idStr, userId]
+          `SELECT g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt,\n                b.name as bandName, s.name as setlistName\n         FROM gigs g\n         LEFT JOIN bands b ON g.bandId = b.id\n         LEFT JOIN setlists s ON g.setlistId = s.id\n         WHERE g.id = ? AND (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?)) LIMIT 1`,
+          [idStr, userId, userId]
         );
         const row = result.rows?.[0] || null;
         if (!row) {
@@ -72,18 +72,16 @@ export default async function handler(req, res) {
         if (!gig) {
           return res.status(404).json({ error: 'Gig not found' });
         }
-        // Permission check
+        // Permission check: allow all band members
         let canEdit = false;
         if (gig.userId === userId) {
           canEdit = true;
         } else if (gig.bandId) {
-          // Get band role
           const bandMember = await client.execute(
-            `SELECT role FROM band_members WHERE bandId = ? AND userId = ? AND status = 'active' LIMIT 1`,
+            `SELECT 1 FROM band_members WHERE bandId = ? AND userId = ? AND status = 'active' LIMIT 1`,
             [gig.bandId, userId]
           );
-          const role = bandMember.rows?.[0]?.role;
-          if (role && require('../../src/utils/permissionUtils.js').hasPermission(role, 'gig:edit')) {
+          if (bandMember.rows?.length > 0) {
             canEdit = true;
           }
         }
@@ -117,18 +115,16 @@ export default async function handler(req, res) {
         if (!gig) {
           return res.status(404).json({ error: 'Gig not found' });
         }
-        // Permission check
+        // Permission check: allow all band members
         let canDelete = false;
         if (gig.userId === userId) {
           canDelete = true;
         } else if (gig.bandId) {
-          // Get band role
           const bandMember = await client.execute(
-            `SELECT role FROM band_members WHERE bandId = ? AND userId = ? AND status = 'active' LIMIT 1`,
+            `SELECT 1 FROM band_members WHERE bandId = ? AND userId = ? AND status = 'active' LIMIT 1`,
             [gig.bandId, userId]
           );
-          const role = bandMember.rows?.[0]?.role;
-          if (role && require('../../src/utils/permissionUtils.js').hasPermission(role, 'gig:edit')) {
+          if (bandMember.rows?.length > 0) {
             canDelete = true;
           }
         }

@@ -10,11 +10,11 @@
       "src": "/api/auth/(login|register|me|forgot-password|reset-password|2fa-setup|2fa-verify)",
       "dest": "/api/auth.js"
     },
-        {
+    {
       "src": "/api/gigs/([^/]+)$",
       "dest": "/api/gigs/index.js?id=$1"
     },
-        {
+    {
       "src": "/api/songs/([^/]+)$",
       "dest": "/api/songs/[id].js?id=$1"
     },
