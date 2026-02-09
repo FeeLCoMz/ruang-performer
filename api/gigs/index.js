@@ -1,6 +1,5 @@
 import { getTursoClient } from '../_turso.js';
 import { randomUUID } from 'crypto';
-import gigIdHandler from './[id].js';
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -19,13 +18,133 @@ export default async function handler(req, res) {
   // Check if this is a request for a specific gig ID
   const path = req.path || req.url.split('?')[0];
   const relativePath = path.replace(/^\/api\/gigs\/?/, '').replace(/^\//, '');
-  if (relativePath && (req.method === 'GET' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE')) {
-    req.params = { ...req.params, id: relativePath };
-    req.query = { ...req.query, id: relativePath };
-    return gigIdHandler(req, res);
-  }
+  const isIdRoute = relativePath && relativePath !== '';
+  const id = isIdRoute ? relativePath : null;
 
   try {
+    if (isIdRoute && (req.method === 'GET' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE')) {
+      // --- Begin logic from [id].js ---
+      const idStr = id ? String(id).trim() : '';
+      if (!idStr) {
+        res.status(400).json({ error: 'Missing gig id' });
+        return;
+      }
+      const client = getTursoClient();
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      if (req.method === 'GET') {
+        const result = await client.execute(
+          `SELECT g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt,\n                b.name as bandName, s.name as setlistName\n         FROM gigs g\n         LEFT JOIN bands b ON g.bandId = b.id\n         LEFT JOIN setlists s ON g.setlistId = s.id\n         WHERE g.id = ? AND g.userId = ? LIMIT 1`,
+          [idStr, userId]
+        );
+        const row = result.rows?.[0] || null;
+        if (!row) {
+          res.status(404).json({ error: 'Gig not found' });
+          return;
+        }
+        res.status(200).json({
+          id: row.id,
+          bandId: row.bandId,
+          bandName: row.bandName,
+          date: row.date,
+          venue: row.venue || '',
+          city: row.city || '',
+          fee: row.fee,
+          setlistId: row.setlistId,
+          setlistName: row.setlistName,
+          notes: row.notes || '',
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt
+        });
+        return;
+      }
+      if (req.method === 'PUT' || req.method === 'PATCH') {
+        const body = await readJson(req);
+        const now = new Date().toISOString();
+        // Check gig data
+        const gigCheck = await client.execute(
+          `SELECT userId, bandId FROM gigs WHERE id = ?`,
+          [idStr]
+        );
+        const gig = gigCheck.rows?.[0];
+        if (!gig) {
+          return res.status(404).json({ error: 'Gig not found' });
+        }
+        // Permission check
+        let canEdit = false;
+        if (gig.userId === userId) {
+          canEdit = true;
+        } else if (gig.bandId) {
+          // Get band role
+          const bandMember = await client.execute(
+            `SELECT role FROM band_members WHERE bandId = ? AND userId = ? AND status = 'active' LIMIT 1`,
+            [gig.bandId, userId]
+          );
+          const role = bandMember.rows?.[0]?.role;
+          if (role && require('../../src/utils/permissionUtils.js').hasPermission(role, 'gig:edit')) {
+            canEdit = true;
+          }
+        }
+        if (!canEdit) {
+          return res.status(403).json({ error: 'Forbidden - insufficient permission to edit gig' });
+        }
+        await client.execute(
+          `UPDATE gigs SET \n           bandId = COALESCE(?, bandId),\n           date = COALESCE(?, date),\n           venue = COALESCE(?, venue),\n           city = COALESCE(?, city),\n           fee = COALESCE(?, fee),\n           setlistId = COALESCE(?, setlistId),\n           notes = COALESCE(?, notes),\n           updatedAt = ?\n         WHERE id = ?`,
+          [
+            body.bandId !== undefined ? body.bandId : null,
+            body.date ?? null,
+            body.venue ?? null,
+            body.city ?? null,
+            body.fee ?? null,
+            body.setlistId ?? null,
+            body.notes ?? null,
+            now,
+            idStr
+          ]
+        );
+        res.status(200).json({ id: idStr });
+        return;
+      }
+      if (req.method === 'DELETE') {
+        // Check gig data
+        const gigCheck = await client.execute(
+          `SELECT userId, bandId FROM gigs WHERE id = ?`,
+          [idStr]
+        );
+        const gig = gigCheck.rows?.[0];
+        if (!gig) {
+          return res.status(404).json({ error: 'Gig not found' });
+        }
+        // Permission check
+        let canDelete = false;
+        if (gig.userId === userId) {
+          canDelete = true;
+        } else if (gig.bandId) {
+          // Get band role
+          const bandMember = await client.execute(
+            `SELECT role FROM band_members WHERE bandId = ? AND userId = ? AND status = 'active' LIMIT 1`,
+            [gig.bandId, userId]
+          );
+          const role = bandMember.rows?.[0]?.role;
+          if (role && require('../../src/utils/permissionUtils.js').hasPermission(role, 'gig:edit')) {
+            canDelete = true;
+          }
+        }
+        if (!canDelete) {
+          return res.status(403).json({ error: 'Forbidden - insufficient permission to delete gig' });
+        }
+        await client.execute(`DELETE FROM gigs WHERE id = ?`, [idStr]);
+        res.status(204).end();
+        return;
+      }
+      res.setHeader('Allow', 'GET, PUT, PATCH, DELETE');
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+      // --- End logic from [id].js ---
+    }
+
     // Bypass DB and userId for tests
     if (process.env.NODE_ENV === 'test') {
       // GET - return dummy gigs
