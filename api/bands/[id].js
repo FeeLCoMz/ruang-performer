@@ -70,7 +70,8 @@ export default async function handler(req, res) {
         email: row.email,
         role: row.role,
         status: row.status,
-        joinedAt: row.joinedAt
+        joinedAt: row.joinedAt,
+        isOwner: row.userId === band.createdBy // Tandai owner
       }));
 
       return res.status(200).json({

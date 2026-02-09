@@ -42,7 +42,12 @@ export default function AdminPanelPage() {
       setMembers(data || []);
       
       // Find current user's role
-      const currentUserMember = data?.find(m => m.userId === user?.userId);
+      let currentUserMember = data?.find(m => m.userId === user?.userId);
+      // Jika user adalah owner (isOwner true), set userRole ke 'owner' meskipun tidak ada di band_members
+      if (!currentUserMember) {
+        const owner = data?.find(m => m.isOwner && m.userId === user?.userId);
+        if (owner) currentUserMember = owner;
+      }
       if (currentUserMember) {
         setUserRole(currentUserMember.role);
       }

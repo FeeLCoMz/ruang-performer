@@ -204,7 +204,7 @@ export default function BandDetailPage() {
                 <div>
                   <div className="member-name">{member.username}</div>
                   <div className="member-role">
-                    {member.isOwner ? '👑 Owner' : '🎸 Member'} • Bergabung {new Date(member.joinedAt).toLocaleDateString('id-ID')}
+                    {member.isOwner ? '👑 Owner' : member.role === 'admin' ? '🛡️ Admin' : '🎸 Member'} • Bergabung {new Date(member.joinedAt).toLocaleDateString('id-ID')}
                   </div>
                 </div>
               </div>
