@@ -113,13 +113,13 @@ CREATE TABLE IF NOT EXISTS gigs (
   setlistId TEXT,
   notes TEXT,
   status TEXT DEFAULT 'scheduled',
-  createdBy TEXT,
+  userId TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   updatedAt TEXT,
   deletedAt TEXT,
   FOREIGN KEY (bandId) REFERENCES bands(id) ON DELETE CASCADE,
   FOREIGN KEY (setlistId) REFERENCES setlists(id),
-  FOREIGN KEY (createdBy) REFERENCES users(id)
+  FOREIGN KEY (userId) REFERENCES users(id)
 );
 
 

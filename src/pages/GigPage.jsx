@@ -8,22 +8,8 @@ import DeleteIcon from '../components/DeleteIcon.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 
 export default function GigPage() {
+    // ...existing code...
   const { user } = useAuth();
-    // Helper: get userBandInfo for a bandId
-    const getUserBandInfo = (bandId) => {
-      if (!user) return null;
-      // Try to find band membership info if available
-      const band = bands.find(b => b.id === bandId);
-      if (band && band.userRole) {
-        return { role: band.userRole, bandId };
-      }
-      // Fallback: if user is owner (legacy)
-      if (band && band.isOwner) {
-        return { role: 'owner', bandId };
-      }
-      // Default: member
-      return { role: user?.role || 'member', bandId };
-    };
   const [gigs, setGigs] = useState([]);
   const [bands, setBands] = useState([]);
   const [setlists, setSetlists] = useState([]);
@@ -33,8 +19,6 @@ export default function GigPage() {
   const [showForm, setShowForm] = useState(false);
   const [editGig, setEditGig] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  
-  // Form state
   const [formData, setFormData] = useState({
     bandId: '',
     date: new Date().toISOString().split('T')[0],
@@ -45,6 +29,25 @@ export default function GigPage() {
     notes: ''
   });
   const [formError, setFormError] = useState('');
+
+  // Helper: get userBandInfo for a bandId
+  const getUserBandInfo = React.useCallback((bandId) => {
+    if (!user) return null;
+    const band = bands.find(b => b.id === bandId);
+    if (band && band.userRole) {
+      return { role: band.userRole, bandId };
+    }
+    if (band && band.isOwner) {
+      return { role: 'owner', bandId };
+    }
+    return { role: user?.role || 'member', bandId };
+  }, [bands, user]);
+
+  // Permission hooks for selected band (letakkan setelah getUserBandInfo)
+  const userBandInfo = getUserBandInfo(selectedBandId || '');
+  const permissionForSelectedBand = usePermission(selectedBandId || '', userBandInfo);
+  // Form state
+  // (Removed duplicate formData declaration)
 
   // Fetch bands and setlists on mount
   useEffect(() => {
@@ -162,8 +165,6 @@ export default function GigPage() {
         </div>
         {/* Permission: Only show if user can create gig for selected band */}
         {(() => {
-          const userBandInfo = getUserBandInfo(selectedBandId || '');
-          const { can } = usePermission(selectedBandId || '', userBandInfo);
           // If no band selected, allow if user is authenticated (personal gig)
           if (!selectedBandId && user) {
             return (
@@ -186,7 +187,7 @@ export default function GigPage() {
             );
           }
           // If band selected, check permission
-          if (userBandInfo && can('edit_setlist')) {
+          if (userBandInfo && permissionForSelectedBand.can('gig:edit')) {
             return (
               <button className="btn-base" onClick={() => {
                 setShowForm(true);
@@ -429,14 +430,12 @@ export default function GigPage() {
               >
                 {(() => {
                   // Permission: Only show edit/delete if user can edit/delete this gig
-                  const userBandInfo = getUserBandInfo(gig.bandId || '');
-                  const { can } = usePermission(gig.bandId || '', userBandInfo);
                   // Allow edit/delete if:
                   // - user is gig creator (legacy/personal gig)
-                  // - or has edit_setlist permission for the band
+                  // - or has gig:edit permission for the band
                   const isCreator = gig.userId && user && gig.userId === (user.userId || user.id);
-                  const canEdit = isCreator || (userBandInfo && can('edit_setlist'));
-                  const canDelete = isCreator || (userBandInfo && can('edit_setlist'));
+                  const canEdit = isCreator || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
+                  const canDelete = isCreator || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
                   if (!canEdit && !canDelete) return null;
                   return (
                     <>

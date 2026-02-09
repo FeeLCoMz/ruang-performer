@@ -1,4 +1,5 @@
 import { getTursoClient } from '../_turso.js';
+import { hasPermission } from '../../src/utils/permissionUtils.js';
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -14,6 +15,8 @@ async function readJson(req) {
 }
 
 export default async function handler(req, res) {
+  // Debug log for method and URL
+  console.log('API gigs/[id].js called:', req.method, req.url);
   const id =
     (req.params && req.params.id) ||
     (req.query && req.query.id) ||
@@ -70,14 +73,33 @@ export default async function handler(req, res) {
       const body = await readJson(req);
       const now = new Date().toISOString();
 
-      // Check if user is the creator of the gig
+      // Check gig data
       const gigCheck = await client.execute(
-        `SELECT userId FROM gigs WHERE id = ?`,
+        `SELECT userId, bandId FROM gigs WHERE id = ?`,
         [idStr]
       );
-      
-      if (!gigCheck.rows?.[0] || gigCheck.rows[0].userId !== userId) {
-        return res.status(403).json({ error: 'Forbidden - only creator can edit' });
+      const gig = gigCheck.rows?.[0];
+      if (!gig) {
+        return res.status(404).json({ error: 'Gig not found' });
+      }
+
+      // Permission check
+      let canEdit = false;
+      if (gig.userId === userId) {
+        canEdit = true;
+      } else if (gig.bandId) {
+        // Get band role
+        const bandMember = await client.execute(
+          `SELECT role FROM band_members WHERE bandId = ? AND userId = ? AND status = 'active' LIMIT 1`,
+          [gig.bandId, userId]
+        );
+        const role = bandMember.rows?.[0]?.role;
+        if (role && hasPermission(role, 'gig:edit')) {
+          canEdit = true;
+        }
+      }
+      if (!canEdit) {
+        return res.status(403).json({ error: 'Forbidden - insufficient permission to edit gig' });
       }
 
       await client.execute(
@@ -109,14 +131,33 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      // Check if user is the creator of the gig
+      // Check gig data
       const gigCheck = await client.execute(
-        `SELECT userId FROM gigs WHERE id = ?`,
+        `SELECT userId, bandId FROM gigs WHERE id = ?`,
         [idStr]
       );
-      
-      if (!gigCheck.rows?.[0] || gigCheck.rows[0].userId !== userId) {
-        return res.status(403).json({ error: 'Forbidden - only creator can delete' });
+      const gig = gigCheck.rows?.[0];
+      if (!gig) {
+        return res.status(404).json({ error: 'Gig not found' });
+      }
+
+      // Permission check
+      let canDelete = false;
+      if (gig.userId === userId) {
+        canDelete = true;
+      } else if (gig.bandId) {
+        // Get band role
+        const bandMember = await client.execute(
+          `SELECT role FROM band_members WHERE bandId = ? AND userId = ? AND status = 'active' LIMIT 1`,
+          [gig.bandId, userId]
+        );
+        const role = bandMember.rows?.[0]?.role;
+        if (role && hasPermission(role, 'gig:edit')) {
+          canDelete = true;
+        }
+      }
+      if (!canDelete) {
+        return res.status(403).json({ error: 'Forbidden - insufficient permission to delete gig' });
       }
 
       await client.execute(`DELETE FROM gigs WHERE id = ?`, [idStr]);

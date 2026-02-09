@@ -28,7 +28,10 @@ export const PERMISSIONS = {
   SETLIST_EDIT: 'setlist:edit',
   SETLIST_DELETE: 'setlist:delete',
   SETLIST_VIEW: 'setlist:view',
-  
+
+  // Gig permissions
+  GIG_EDIT: 'gig:edit',
+
   // Admin permissions
   ADMIN_MANAGE_ROLES: 'admin:manage_roles',
   ADMIN_VIEW_LOGS: 'admin:view_logs'
@@ -42,25 +45,28 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.BAND_EDIT,
     PERMISSIONS.BAND_DELETE,
     PERMISSIONS.BAND_VIEW,
-    
+
     // Member management
     PERMISSIONS.MEMBER_INVITE,
     PERMISSIONS.MEMBER_REMOVE,
     PERMISSIONS.MEMBER_CHANGE_ROLE,
     PERMISSIONS.MEMBER_VIEW,
-    
+
     // Song management
     PERMISSIONS.SONG_CREATE,
     PERMISSIONS.SONG_EDIT,
     PERMISSIONS.SONG_DELETE,
     PERMISSIONS.SONG_VIEW,
-    
+
     // Setlist management
     PERMISSIONS.SETLIST_CREATE,
     PERMISSIONS.SETLIST_EDIT,
     PERMISSIONS.SETLIST_DELETE,
     PERMISSIONS.SETLIST_VIEW,
-    
+
+    // Gig management
+    PERMISSIONS.GIG_EDIT,
+
     // Admin
     PERMISSIONS.ADMIN_MANAGE_ROLES,
     PERMISSIONS.ADMIN_VIEW_LOGS
@@ -69,25 +75,28 @@ export const ROLE_PERMISSIONS = {
     // Band management (no delete)
     PERMISSIONS.BAND_EDIT,
     PERMISSIONS.BAND_VIEW,
-    
+
     // Member management
     PERMISSIONS.MEMBER_INVITE,
     PERMISSIONS.MEMBER_REMOVE,
     PERMISSIONS.MEMBER_CHANGE_ROLE,
     PERMISSIONS.MEMBER_VIEW,
-    
+
     // Song management
     PERMISSIONS.SONG_CREATE,
     PERMISSIONS.SONG_EDIT,
     PERMISSIONS.SONG_DELETE,
     PERMISSIONS.SONG_VIEW,
-    
+
     // Setlist management
     PERMISSIONS.SETLIST_CREATE,
     PERMISSIONS.SETLIST_EDIT,
     PERMISSIONS.SETLIST_DELETE,
     PERMISSIONS.SETLIST_VIEW,
-    
+
+    // Gig management
+    PERMISSIONS.GIG_EDIT,
+
     // View logs
     PERMISSIONS.ADMIN_VIEW_LOGS
   ],
