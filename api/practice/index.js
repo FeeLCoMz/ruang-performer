@@ -1,5 +1,6 @@
 import { getTursoClient } from '../_turso.js';
 import { randomUUID } from 'crypto';
+import practiceIdHandler from './[id].js';
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -15,6 +16,15 @@ async function readJson(req) {
 }
 
 export default async function handler(req, res) {
+  // Check if this is a request for a specific practice session ID
+  const path = req.path || req.url.split('?')[0];
+  const relativePath = path.replace(/^\/api\/practice\/?/, '').replace(/^\//, '');
+  if (relativePath && (req.method === 'GET' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE')) {
+    req.params = { ...req.params, id: relativePath };
+    req.query = { ...req.query, id: relativePath };
+    return practiceIdHandler(req, res);
+  }
+
   try {
     const client = getTursoClient();
     const userId = req.user?.userId;

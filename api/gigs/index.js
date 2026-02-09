@@ -1,5 +1,6 @@
 import { getTursoClient } from '../_turso.js';
 import { randomUUID } from 'crypto';
+import gigIdHandler from './[id].js';
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -15,6 +16,15 @@ async function readJson(req) {
 }
 
 export default async function handler(req, res) {
+  // Check if this is a request for a specific gig ID
+  const path = req.path || req.url.split('?')[0];
+  const relativePath = path.replace(/^\/api\/gigs\/?/, '').replace(/^\//, '');
+  if (relativePath && (req.method === 'GET' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE')) {
+    req.params = { ...req.params, id: relativePath };
+    req.query = { ...req.query, id: relativePath };
+    return gigIdHandler(req, res);
+  }
+
   try {
     // Bypass DB and userId for tests
     if (process.env.NODE_ENV === 'test') {

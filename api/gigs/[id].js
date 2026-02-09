@@ -16,7 +16,17 @@ async function readJson(req) {
 
 export default async function handler(req, res) {
   // Debug log for method and URL
-  console.log('API gigs/[id].js called:', req.method, req.url);
+  console.log('API gigs/[id].js called:', req.method, req.url, 'body:', req.body);
+  // Extra log for debugging proxy/routing
+  if (!req.method) {
+    console.error('Request method missing!');
+  }
+  if (!req.url) {
+    console.error('Request URL missing!');
+  }
+  if (!req.body) {
+    console.warn('Request body is empty');
+  }
   const id =
     (req.params && req.params.id) ||
     (req.query && req.query.id) ||
