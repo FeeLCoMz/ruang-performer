@@ -32,6 +32,50 @@ async function readJson(req) {
 export default async function handler(req, res) {
   // Invitations subroute: /api/bands/invitations/:id
   const path = req.path || req.url.split('?')[0];
+  // Accept/reject invitation: /api/bands/invitations/:id/accept atau /reject
+  const invitationAcceptMatch = path.match(/^\/api\/bands\/invitations\/([^/]+)\/(accept|reject)$/);
+  if (invitationAcceptMatch && req.method === 'PATCH') {
+    await rateLimiter(req, res, () => {});
+    try {
+      if (!verifyToken(req, res)) return;
+      const client = getTursoClient();
+      const userId = req.user?.userId;
+      const invitationId = invitationAcceptMatch[1];
+      const action = invitationAcceptMatch[2];
+      // Get invitation
+      const invRes = await client.execute('SELECT * FROM band_invitations WHERE id = ?', [invitationId]);
+      if (!invRes.rows || invRes.rows.length === 0) {
+        return res.status(404).json({ error: 'Invitation not found' });
+      }
+      const invitation = invRes.rows[0];
+      // Get user email
+      const userRes = await client.execute('SELECT email FROM users WHERE id = ?', [userId]);
+      if (!userRes.rows || userRes.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      const userEmail = userRes.rows[0].email;
+      if (userEmail.toLowerCase() !== invitation.email.toLowerCase()) {
+        return res.status(403).json({ error: 'You are not authorized for this invitation' });
+      }
+      if (action === 'accept') {
+        // Add to band_members if not already
+        const memberRes = await client.execute('SELECT id FROM band_members WHERE bandId = ? AND userId = ?', [invitation.bandId, userId]);
+        if (!memberRes.rows || memberRes.rows.length === 0) {
+          await client.execute('INSERT INTO band_members (bandId, userId, role, joinedAt) VALUES (?, ?, ?, ?)', [invitation.bandId, userId, invitation.role, new Date().toISOString()]);
+        }
+        await client.execute('UPDATE band_invitations SET status = ?, acceptedAt = ? WHERE id = ?', ['accepted', new Date().toISOString(), invitationId]);
+        return res.status(200).json({ success: true, message: 'Invitation accepted' });
+      } else if (action === 'reject') {
+        await client.execute('UPDATE band_invitations SET status = ? WHERE id = ?', ['rejected', invitationId]);
+        return res.status(200).json({ success: true, message: 'Invitation rejected' });
+      } else {
+        return res.status(400).json({ error: 'Invalid action' });
+      }
+    } catch (error) {
+      console.error('Invitation accept/reject error:', error);
+      return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+  }
   if (/^\/api\/bands\/invitations(\/|$)/.test(path)) {
     await rateLimiter(req, res, () => {});
     try {
