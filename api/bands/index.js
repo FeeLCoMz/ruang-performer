@@ -1,38 +1,3 @@
-  // Handle GET /api/invitations/pending (for vercel.json route)
-  if (path === '/api/invitations/pending' && req.method === 'GET') {
-    try {
-      if (!verifyToken(req, res)) return;
-      const client = getTursoClient();
-      const userId = req.user?.userId;
-      if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-      // Get user's email
-      const userResult = await client.execute(
-        'SELECT email FROM users WHERE id = ?',
-        [userId]
-      );
-      if (!userResult.rows || userResult.rows.length === 0) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-      const userEmail = userResult.rows[0].email;
-      // Get pending invitations for this user (case-insensitive email match)
-      const invResult = await client.execute(
-        `SELECT i.id, i.bandId, i.email, i.role, i.invitedBy, i.status, i.createdAt, i.expiresAt,
-                b.name as bandName, u.username as invitedByName
-         FROM band_invitations i
-         LEFT JOIN bands b ON i.bandId = b.id
-         LEFT JOIN users u ON i.invitedBy = u.id
-         WHERE LOWER(i.email) = LOWER(?) AND i.status = 'pending' AND datetime(i.expiresAt) > datetime('now')
-         ORDER BY datetime(i.createdAt) DESC`,
-        [userEmail]
-      );
-      return res.status(200).json(invResult.rows || []);
-    } catch (error) {
-      console.error('Error fetching pending invitations:', error);
-      res.status(500).json({ error: error.message || 'Failed to fetch pending invitations' });
-    }
-  }
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { PERMISSIONS, hasPermission } from '../../src/utils/permissionUtils.js';
@@ -67,6 +32,46 @@ async function readJson(req) {
 export default async function handler(req, res) {
   // Invitations subroute: /api/bands/invitations/:id
   const path = req.path || req.url.split('?')[0];
+
+  // Handle GET /api/invitations/pending (for vercel route)
+  if (path === '/api/invitations/pending' && req.method === 'GET') {
+    try {
+      if (!verifyToken(req, res)) return;
+      const client = getTursoClient();
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+      // Get user's email
+      const userResult = await client.execute(
+        'SELECT email FROM users WHERE id = ?',
+        [userId]
+      );
+      if (!userResult.rows || userResult.rows.length === 0) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+      const userEmail = userResult.rows[0].email;
+      // Get pending invitations for this user (case-insensitive email match)
+      const invResult = await client.execute(
+        `SELECT i.id, i.bandId, i.email, i.role, i.invitedBy, i.status, i.createdAt, i.expiresAt,
+                b.name as bandName, u.username as invitedByName
+         FROM band_invitations i
+         LEFT JOIN bands b ON i.bandId = b.id
+         LEFT JOIN users u ON i.invitedBy = u.id
+         WHERE LOWER(i.email) = LOWER(?) AND i.status = 'pending' AND datetime(i.expiresAt) > datetime('now')
+         ORDER BY datetime(i.createdAt) DESC`,
+        [userEmail]
+      );
+      res.status(200).json(invResult.rows || []);
+      return;
+    } catch (error) {
+      console.error('Error fetching pending invitations:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch pending invitations' });
+      return;
+    }
+  }
   // Accept/reject invitation: /api/bands/invitations/:id/accept atau /reject
   const invitationAcceptMatch = path.match(/^\/api\/bands\/invitations\/([^/]+)\/(accept|reject)$/);
   if (invitationAcceptMatch && req.method === 'PATCH') {
