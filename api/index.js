@@ -30,7 +30,7 @@ import authForgotHandler from './auth/forgot-password.js';
 import authResetHandler from './auth/reset-password.js';
 import auth2FASetupHandler from './auth/2fa-setup.js';
 import auth2FAVerifyHandler from './auth/2fa-verify.js';
-import bandInvIdHandler from './bands/invitations/[id].js';
+
 
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -185,17 +185,18 @@ app.get('/api/invitations/pending', verifyToken, async (req, res) => {
   }
 });
 
-// Handle specific invitations by ID (using explicit methods, not app.use)
+// Handle specific invitations by ID via bandsHandler
 app.get('/api/invitations/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(bandInvIdHandler(req, res)).catch(next);
+  // Route to bandsHandler for invitation actions
+  Promise.resolve(bandsHandler(req, res)).catch(next);
 });
 
 app.post('/api/invitations/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(bandInvIdHandler(req, res)).catch(next);
+  Promise.resolve(bandsHandler(req, res)).catch(next);
 });
 
 app.delete('/api/invitations/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(bandInvIdHandler(req, res)).catch(next);
+  Promise.resolve(bandsHandler(req, res)).catch(next);
 });
 
 

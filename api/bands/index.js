@@ -2,6 +2,19 @@ import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { PERMISSIONS, hasPermission } from '../../src/utils/permissionUtils.js';
 import bandIdHandler from './[id].js';
+import nodemailer from 'nodemailer';
+import { createRateLimiter, RATE_LIMITS } from '../middleware/rateLimiter.js';
+// Invitations email setup
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: process.env.EMAIL_PORT || 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  }
+});
+const rateLimiter = createRateLimiter({ ...RATE_LIMITS.API_WRITE });
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -17,6 +30,145 @@ async function readJson(req) {
 }
 
 export default async function handler(req, res) {
+  // Invitations subroute: /api/bands/invitations/:id
+  const path = req.path || req.url.split('?')[0];
+  if (/^\/api\/bands\/invitations(\/|$)/.test(path)) {
+    await rateLimiter(req, res, () => {});
+    try {
+      if (!verifyToken(req, res)) return;
+      const client = getTursoClient();
+      const userId = req.user?.userId;
+      // Extract invitation id or band id
+      const parts = path.split('/');
+      const bandId = req.params?.id || parts[parts.length - 1];
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+      // Create table if not exist
+      try {
+        await client.execute(`
+          CREATE TABLE IF NOT EXISTS band_invitations (
+            id TEXT PRIMARY KEY,
+            bandId TEXT NOT NULL,
+            email TEXT NOT NULL,
+            role TEXT DEFAULT 'member',
+            invitedBy TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            createdAt TEXT DEFAULT (datetime('now')),
+            expiresAt TEXT,
+            acceptedAt TEXT,
+            UNIQUE(bandId, email)
+          )
+        `);
+      } catch (e) {}
+      if (req.method === 'GET') {
+        const bandResult = await client.execute(
+          'SELECT createdBy FROM bands WHERE id = ?',
+          [bandId]
+        );
+        if (!bandResult.rows || bandResult.rows.length === 0) {
+          return res.status(404).json({ error: 'Band not found' });
+        }
+        const isOwner = bandResult.rows[0].createdBy === userId;
+        if (!isOwner) {
+          return res.status(403).json({ error: 'Only band owner can view invitations' });
+        }
+        const result = await client.execute(`
+          SELECT id, email, role, invitedBy, status, createdAt, expiresAt, acceptedAt
+          FROM band_invitations
+          WHERE bandId = ?
+          ORDER BY createdAt DESC
+        `, [bandId]);
+        return res.status(200).json(result.rows || []);
+      }
+      if (req.method === 'POST') {
+        const body = req.body || await (async function(req){
+          return await new Promise((resolve, reject) => {
+            let data = '';
+            req.on('data', chunk => { data += chunk; });
+            req.on('end', () => {
+              try { resolve(data ? JSON.parse(data) : {}); }
+              catch (e) { reject(e); }
+            });
+            req.on('error', reject);
+          });
+        })(req);
+        const { email, role = 'member' } = body;
+        if (!email) {
+          return res.status(400).json({ error: 'Email is required' });
+        }
+        const bandResult = await client.execute(
+          'SELECT name, createdBy FROM bands WHERE id = ?',
+          [bandId]
+        );
+        if (!bandResult.rows || bandResult.rows.length === 0) {
+          return res.status(404).json({ error: 'Band not found' });
+        }
+        if (bandResult.rows[0].createdBy !== userId) {
+          return res.status(403).json({ error: 'Only band owner can send invitations' });
+        }
+        const existingMember = await client.execute(`
+          SELECT id FROM band_members
+          WHERE bandId = ? AND userId IN (
+            SELECT id FROM users WHERE LOWER(email) = LOWER(?)
+          )
+        `, [bandId, email]);
+        if (existingMember.rows && existingMember.rows.length > 0) {
+          return res.status(409).json({ error: 'User already a band member' });
+        }
+        const existingInv = await client.execute(
+          'SELECT id, status FROM band_invitations WHERE bandId = ? AND LOWER(email) = LOWER(?)',
+          [bandId, email]
+        );
+        if (existingInv.rows && existingInv.rows.length > 0) {
+          if (existingInv.rows[0].status === 'pending') {
+            return res.status(409).json({ error: 'Invitation already sent to this email' });
+          }
+        }
+        const invId = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const now = new Date().toISOString();
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        await client.execute(`
+          INSERT INTO band_invitations (id, bandId, email, role, invitedBy, status, createdAt, expiresAt)
+          VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
+        `, [invId, bandId, email, role, userId, now, expiresAt]);
+        if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+          const acceptLink = `${process.env.APP_URL || 'http://localhost:5173'}/invitations/${invId}/accept`;
+          const rejectLink = `${process.env.APP_URL || 'http://localhost:5173'}/invitations/${invId}/reject`;
+          try {
+            await transporter.sendMail({
+              from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+              to: email,
+              subject: `Join ${bandResult.rows[0].name} on Ruang Performer`,
+              html: `
+                <h2>You're invited to join a band!</h2>
+                <p>You've been invited to join <strong>${bandResult.rows[0].name}</strong> as a ${role}.</p>
+                <p>
+                  <a href="${acceptLink}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Accept Invitation</a>
+                  &nbsp;
+                  <a href="${rejectLink}" style="background-color: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Decline</a>
+                </p>
+                <p>This invitation expires in 7 days.</p>
+              `
+            });
+          } catch (emailError) {
+            console.error('Email send error:', emailError);
+          }
+        }
+        return res.status(201).json({
+          id: invId,
+          bandId,
+          email,
+          role,
+          status: 'pending',
+          createdAt: now,
+          expiresAt
+        });
+      }
+      return res.status(405).json({ error: 'Method not allowed' });
+    } catch (error) {
+      console.error('Invitations handler error:', error);
+      return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+  }
   try {
     // Verify JWT token first
     if (!verifyToken(req, res)) {
