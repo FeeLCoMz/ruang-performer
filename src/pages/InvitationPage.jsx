@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as apiClient from '../apiClient.js';
 
+
 export default function InvitationPage() {
   const { invitationId } = useParams();
+  console.log('[InvitationPage] mount, invitationId:', invitationId);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [invitation, setInvitation] = useState(null);
