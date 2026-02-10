@@ -309,7 +309,16 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
               <div
                 className="song-actions"
                 onClick={(e) => e.stopPropagation()}
+                style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
               >
+                <button
+                  className="btn-base btn-secondary"
+                  style={{ padding: '6px 14px', fontSize: '0.85em' }}
+                  title="Lihat Lirik"
+                  onClick={() => navigate(`/songs/lyrics/${song.id}`)}
+                >
+                  Lirik
+                </button>
                 {(() => {
                   // Permission logic: allow edit/delete if user is creator OR has global permission
                   let canEdit = false;
