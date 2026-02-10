@@ -285,14 +285,13 @@ export default async function handler(req, res) {
 
       try {
         await client.execute(
-          `INSERT INTO setlists (id, name, description, bandId, completedSongs, createdAt, updatedAt, userId)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO setlists (id, name, description, bandId, createdAt, updatedAt, userId)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [
             id,
             name,
             description,
             bandId,
-            completedSongsJson,
             body.createdAt || now,
             now,
             userId,
@@ -320,7 +319,6 @@ export default async function handler(req, res) {
                name = ?, 
                description = ?,
                bandId = ?,
-               completedSongs = ?, 
                updatedAt = ?,
                userId = ?
              WHERE id = ?`,
@@ -328,7 +326,6 @@ export default async function handler(req, res) {
               name,
               description,
               bandId,
-              completedSongsJson,
               now,
               userId,
               id,
