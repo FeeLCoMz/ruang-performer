@@ -3,8 +3,6 @@
 ########################################
 
 # === API: Unused/disabled/over-quota endpoints ===
-api/ai.js
-api/practice/
 api/bands/invitations.js
 api/bands/invitations/
 api/auth/2fa-setup.js
