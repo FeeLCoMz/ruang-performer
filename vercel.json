@@ -11,6 +11,11 @@
       "dest": "/api/auth/index.js"
     },
     {
+      "src": "/api/bands/invitations/([^/]+)/(accept|reject)$",
+      "methods": ["PATCH"],
+      "dest": "/api/bands/index.js?id=$1&action=$2"
+    },
+    {
       "src": "/api/bands/invitations/([^/]+)$",
       "dest": "/api/bands/index.js?id=$1"
     },
