@@ -18,9 +18,6 @@ export default function BandDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '', genre: '' });
-  const [inviteData, setInviteData] = useState({ email: '', role: 'member' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [inviting, setInviting] = useState(false);
   const [setlists, setSetlists] = useState([]);
   const [practiceSessions, setPracticeSessions] = useState([]);
   const [gigs, setGigs] = useState([]);
@@ -83,20 +80,6 @@ export default function BandDetailPage() {
       navigate('/bands');
     } catch (err) {
       setError(err.message);
-    }
-  };
-
-  const handleSendInvite = async (e) => {
-    e.preventDefault();
-    try {
-      setInviting(true);
-      await apiClient.sendBandInvitation(id, inviteData.email, inviteData.role);
-      setInviteData({ email: '', role: 'member' });
-      setShowInviteModal(false);
-      alert('Undangan berhasil dikirim!');
-    } catch (err) {
-      setError(err.message);
-    } finally {
       setInviting(false);
     }
   };
