@@ -67,8 +67,8 @@ export default async function handler(req, res) {
       res.status(200).json(invResult.rows || []);
       return;
     } catch (error) {
-      console.error('Error fetching pending invitations:', error);
-      res.status(500).json({ error: error.message || 'Failed to fetch pending invitations' });
+      console.error('[API] /api/invitations/pending error:', error, error?.stack);
+      res.status(500).json({ error: error.message || 'Failed to fetch pending invitations', stack: error?.stack });
       return;
     }
   }
