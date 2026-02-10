@@ -101,7 +101,7 @@ function AppContent() {
   const [highlightChords, setHighlightChords] = useState(false);
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('performerhub_theme') || 'dark';
+      return localStorage.getItem('ruangperformer_theme') || 'dark';
     }
     return 'dark';
   });
@@ -115,7 +115,7 @@ function AppContent() {
   useEffect(() => {
     document.body.classList.remove('dark-mode', 'light-mode');
     document.body.classList.add(theme === 'dark' ? 'dark-mode' : 'light-mode');
-    localStorage.setItem('performerhub_theme', theme);
+    localStorage.setItem('ruangperformer_theme', theme);
   }, [theme]);
 
   useEffect(() => {
@@ -193,7 +193,7 @@ function AppContent() {
             >
               ☰
             </button>
-            <h1 className="header-title">PerformerHub</h1>
+            <h1 className="header-title">Ruang Performer</h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
                 className={`btn-base theme-switch-btn ${theme === 'dark' ? 'dark' : 'light'}`}

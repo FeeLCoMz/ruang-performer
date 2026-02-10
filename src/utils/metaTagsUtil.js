@@ -4,14 +4,14 @@
  */
 
 export function updatePageMeta({
-  title = 'PerformerHub',
-  description = 'PerformerHub - Manajemen band, setlist, latihan, dan konser dalam satu platform.',
+  title = 'Ruang Performer',
+  description = 'Ruang Performer - Manajemen band, setlist, latihan, dan konser dalam satu platform.',
   image = '/favicon.svg',
   url = window.location.href,
   type = 'website'
 }) {
   // Update title
-  document.title = `${title} | PerformerHub`;
+  document.title = `${title} | Ruang Performer`;
   
   // Update or create meta tags
   updateMetaTag('description', description);
@@ -41,7 +41,7 @@ function updateMetaTag(name, content, type = 'name') {
 export const pageMetadata = {
   home: {
     title: 'Beranda',
-    description: 'Dashboard utama PerformerHub - Kelola band, setlist, latihan, dan konser Anda'
+    description: 'Dashboard utama Ruang Performer - Kelola band, setlist, latihan, dan konser Anda'
   },
   songs: {
     title: 'Lagu Saya',

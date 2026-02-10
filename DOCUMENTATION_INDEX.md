@@ -1,6 +1,6 @@
-# PerformerHub - Documentation Index
+# Ruang Performer - Documentation Index
 
-Welcome to PerformerHub! This is your guide to all available documentation.
+Welcome to Ruang Performer! This is your guide to all available documentation.
 
 ## 📖 Documentation Files
 
@@ -178,7 +178,7 @@ Welcome to PerformerHub! This is your guide to all available documentation.
 ## 📁 File Structure
 
 ```
-PerformerHub/
+Ruang Performer/
 ├── 📖 Documentation
 │   ├── README.md                          ← Project overview
 │   ├── QUICKSTART.md                      ← Setup guide (READ FIRST!)
@@ -262,7 +262,7 @@ npm test                      # Run tests
 
 | Property | Value |
 |----------|-------|
-| **Project Name** | PerformerHub |
+| **Project Name** | Ruang Performer |
 | **Version** | 2.0.10 |
 | **Status** | ✅ Production Ready |
 | **Build Size** | 386 KB |
@@ -336,6 +336,6 @@ Choose what to do next:
 
 ---
 
-**Welcome to PerformerHub! 🎵**
+**Welcome to Ruang Performer! 🎵**
 
 Start with [QUICKSTART.md](QUICKSTART.md) to get up and running in 5 minutes!

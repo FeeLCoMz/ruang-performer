@@ -477,7 +477,7 @@ function BandControls({ bandId, userRole }) {
 
 **Phase 3 is 100% complete and production-ready.**
 
-The PerformerHub permission system is fully functional with:
+The Ruang Performer permission system is fully functional with:
 - Comprehensive RBAC with 18 permissions
 - 3-tier role hierarchy
 - Frontend permission checking via React hooks

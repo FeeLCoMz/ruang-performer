@@ -2,7 +2,7 @@
 
 ## 📋 Complete Overview
 
-Saya telah membuat sistem permission dan user management yang komprehensif untuk PerformerHub. Berikut adalah ringkasannya:
+Saya telah membuat sistem permission dan user management yang komprehensif untuk Ruang Performer. Berikut adalah ringkasannya:
 
 ---
 

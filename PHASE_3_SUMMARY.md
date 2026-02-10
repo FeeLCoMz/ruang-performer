@@ -156,7 +156,7 @@ app.delete('/api/bands/:id',
 ## Build Information
 
 ```
-Project: PerformerHub v2.0.10
+Project: Ruang Performer v2.0.10
 Build Tool: Vite 5.4.21
 Total Size: 205.17 KB
 Gzip Size: 65.73 KB

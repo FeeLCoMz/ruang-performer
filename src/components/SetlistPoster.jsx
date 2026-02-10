@@ -31,7 +31,7 @@ export default function SetlistPoster({ setlist, setlistSongs, posterRef }) {
           ))}
         </div>
         <div className="setlist-poster-footer">
-          <div className="setlist-poster-brand">PerformerHub</div>
+          <div className="setlist-poster-brand">Ruang Performer</div>
         </div>
       </div>
     </div>

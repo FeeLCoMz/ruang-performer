@@ -1,7 +1,7 @@
 # Permission System Usage Guide
 
 ## Overview
-This guide demonstrates how to use the PerformerHub permission system (RBAC) in both frontend and backend code.
+This guide demonstrates how to use the Ruang Performer permission system (RBAC) in both frontend and backend code.
 
 ## Table of Contents
 1. [Frontend Usage](#frontend-usage)

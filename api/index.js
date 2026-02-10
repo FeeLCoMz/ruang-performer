@@ -1,5 +1,5 @@
 /**
- * PerformerHub API Server
+ * Ruang Performer API Server
  * Handles songs, setlists, bands, practice sessions, and gigs management
  */
 
@@ -294,14 +294,14 @@ app.post('/api/extract-chord', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('PerformerHub API is running');
+  res.send('Ruang Performer API is running');
 });
 
 // Only listen in local dev
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`PerformerHub API running on port ${PORT}`);
+    console.log(`Ruang Performer API running on port ${PORT}`);
   });
 }
 

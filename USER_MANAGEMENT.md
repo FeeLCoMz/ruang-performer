@@ -1,4 +1,4 @@
-# PerformerHub - User Management Best Practices
+# Ruang Performer - User Management Best Practices
 
 ## 👥 User Management System
 
@@ -92,7 +92,7 @@ If invalid:
 
 ```javascript
 // Store JWT in localStorage
-localStorage.setItem('performerhub_token', jwtToken);
+localStorage.setItem('ruangperformer_token', jwtToken);
 
 // Send token with every API request
 const headers = {
@@ -100,7 +100,7 @@ const headers = {
 };
 
 // Clear token on logout
-localStorage.removeItem('performerhub_token');
+localStorage.removeItem('ruangperformer_token');
 ```
 
 ---
@@ -216,25 +216,25 @@ localStorage.removeItem('performerhub_token');
 ### Invitation Email Template
 
 ```
-Subject: [Member Name] invited you to [Band Name] on PerformerHub
+Subject: [Member Name] invited you to [Band Name] on Ruang Performer
 
 Hi [Recipient Name],
 
-[Inviter Name] invited you to join [Band Name] on PerformerHub!
+[Inviter Name] invited you to join [Band Name] on Ruang Performer!
 
 Band: [Band Name]
 Genre: [Genre]
 Role: Member
 
 To accept the invitation:
-[Click Here] → https://performerhub.app/join?code=XXXX
+[Click Here] → https://ruangperformer.app/join?code=XXXX
 
 Or copy this code: XXXX
 
 Questions? Reply to this email.
 
 Best regards,
-PerformerHub Team
+Ruang Performer Team
 ```
 
 ### Role Change Notification
@@ -255,7 +255,7 @@ As an admin, you can now:
 You still cannot manage members - only the band owner can do that.
 
 Best regards,
-PerformerHub Team
+Ruang Performer Team
 ```
 
 ### New Member Welcome
@@ -265,7 +265,7 @@ Subject: Welcome to [Band Name]!
 
 Hi [New Member Name],
 
-Welcome to [Band Name] on PerformerHub! 🎵
+Welcome to [Band Name] on Ruang Performer! 🎵
 
 Here's what you can do:
 📝 View all band songs
@@ -277,7 +277,7 @@ Here's what you can do:
 Get started: [Dashboard Link]
 
 Best regards,
-PerformerHub Team
+Ruang Performer Team
 ```
 
 ---

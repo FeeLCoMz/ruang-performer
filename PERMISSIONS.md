@@ -1,4 +1,4 @@
-# PerformerHub - User Permissions & Authorization System
+# Ruang Performer - User Permissions & Authorization System
 
 ## 🔐 Recommended Permission Architecture
 

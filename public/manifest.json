@@ -1,6 +1,6 @@
 {
-  "name": "PerformerHub",
-  "short_name": "PerformerHub",
+  "name": "Ruang Performer",
+  "short_name": "Ruang Performer",
   "description": "Manajemen band, setlist, latihan, dan konser dalam satu platform",
   "start_url": "/",
   "scope": "/",

@@ -1,4 +1,4 @@
-# PerformerHub - Quick Start Guide
+# Ruang Performer - Quick Start Guide
 
 ## 🚀 Getting Started in 5 Minutes
 
@@ -28,7 +28,7 @@ cp .env.example .env
 API_URL=http://localhost:3000
 DB_PATH=./db/schema.sql
 JWT_SECRET=your-secret-key
-APP_NAME=PerformerHub
+APP_NAME=Ruang Performer
 APP_ENV=development
 ```
 

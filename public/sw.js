@@ -1,12 +1,12 @@
 /**
- * PerformerHub Service Worker
+ * Ruang Performer Service Worker
  * Advanced caching strategy for different resource types
  */
 
-const CACHE_NAME = 'performerhub-v1';
-const STATIC_CACHE = 'performerhub-static-v1';
-const DYNAMIC_CACHE = 'performerhub-dynamic-v1';
-const API_CACHE = 'performerhub-api-v1';
+const CACHE_NAME = 'ruangperformer-v1';
+const STATIC_CACHE = 'ruangperformer-static-v1';
+const DYNAMIC_CACHE = 'ruangperformer-dynamic-v1';
+const API_CACHE = 'ruangperformer-api-v1';
 
 const STATIC_URLS = [
   '/',

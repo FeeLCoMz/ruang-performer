@@ -36,7 +36,7 @@ export function parseNumberLine(line) {
 /**
  * chordUtils.js
  *
- * Utilitas utama untuk manipulasi dan analisis chord pada aplikasi PerformerHub.
+ * Utilitas utama untuk manipulasi dan analisis chord pada aplikasi Ruang Performer.
  *
  * Fitur utama:
  * - Transposisi chord (transposeChord)

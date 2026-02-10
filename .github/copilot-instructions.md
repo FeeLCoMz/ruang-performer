@@ -1,5 +1,5 @@
 
-# Copilot Instructions — PerformerHub
+# Copilot Instructions — Ruang Performer
 ## Permission Enforcement Policy (CRITICAL)
 
 **ALWAYS check and enforce the permission system whenever adding, editing, or suggesting any CRUD (Create, Read, Update, Delete) button, action, or feature that requires user authorization.**
@@ -16,7 +16,7 @@ This applies to all pages, components, and API routes. If in doubt, ask for clar
 
 
 ## Project Overview
-**PerformerHub** is a React (Vite) app for managing songs, setlists, bands, gigs, and practice sessions.
+**Ruang Performer** is a React (Vite) app for managing songs, setlists, bands, gigs, and practice sessions.
 - **Frontend:** `src/` (React + React Router)
 - **Backend:** `api/` (Vercel serverless functions)
 - **Database:** Turso (libSQL) via `@libsql/client`

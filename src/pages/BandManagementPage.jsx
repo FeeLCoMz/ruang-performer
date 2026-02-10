@@ -43,7 +43,7 @@ export default function BandManagementPage() {
 
   useEffect(() => {
     updatePageMeta({
-      title: 'Band Management | PerformerHub',
+      title: 'Band Management | Ruang Performer',
       description: 'Create and manage your bands'
     });
   }, []);

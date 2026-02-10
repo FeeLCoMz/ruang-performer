@@ -1,4 +1,4 @@
-# PerformerHub
+# Ruang Performer
 
 Aplikasi web untuk manajemen chord, setlist, dan performa musik.
 

@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1 className="login-title">🎸 PerformerHub</h1>
+        <h1 className="login-title">🎸 Ruang Performer</h1>
         <p className="login-subtitle">Band Management & Setlist Organizer</p>
         
         <form onSubmit={handleSubmit} className="login-form">

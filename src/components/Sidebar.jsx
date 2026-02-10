@@ -53,7 +53,7 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, invitationCo
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <span className="sidebar-logo-icon">🎸</span>
-            <span className="sidebar-logo-text">PerformerHub</span>
+            <span className="sidebar-logo-text">Ruang Performer</span>
           </div>
           {/* Theme toggle button for desktop */}
           <button

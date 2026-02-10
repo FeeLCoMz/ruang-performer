@@ -1,4 +1,4 @@
-# PerformerHub - Advanced Features Documentation
+# Ruang Performer - Advanced Features Documentation
 
 ## 🎯 Latest Features Added (v2.0.10)
 
@@ -76,9 +76,9 @@ Advanced caching strategy with different approaches for different resource types
 
 | Resource Type | Strategy | Cache Name | Purpose |
 |---|---|---|---|
-| Static assets (CSS, JS, fonts) | Cache-first | `performerhub-static-v1` | Quick load, rarely change |
-| HTML pages | Network-first | `performerhub-v1` | Always get fresh content |
-| API calls | Network-first | `performerhub-api-v1` | Real-time data |
+| Static assets (CSS, JS, fonts) | Cache-first | `ruangperformer-static-v1` | Quick load, rarely change |
+| HTML pages | Network-first | `ruangperformer-v1` | Always get fresh content |
+| API calls | Network-first | `ruangperformer-api-v1` | Real-time data |
 | External resources | Network-only | N/A | Don't cache (YouTube, etc) |
 
 **Features:**

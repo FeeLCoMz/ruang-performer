@@ -200,7 +200,7 @@ Logout          🚪
 ## 📧 Email Invitation Features
 
 ### Email Template
-- **Subject:** "Join [Band Name] on PerformerHub"
+- **Subject:** "Join [Band Name] on Ruang Performer"
 - **Body:** Formatted HTML with band name and role
 - **Actions:**
   - Accept link: `/invitations/{invId}/accept`
@@ -213,7 +213,7 @@ EMAIL_HOST=smtp.gmail.com  # Your SMTP server
 EMAIL_PORT=587
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password
-EMAIL_FROM=noreply@performerhub.com
+EMAIL_FROM=noreply@ruangperformer.com
 APP_URL=http://localhost:5173  # For invitation links
 ```
 

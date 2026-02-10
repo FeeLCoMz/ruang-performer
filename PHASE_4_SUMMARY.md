@@ -2,7 +2,7 @@
 
 ## 🎯 Phase 4 at a Glance
 
-Advanced security and operational logging features for PerformerHub with 5 major components and 12 new files.
+Advanced security and operational logging features for Ruang Performer with 5 major components and 12 new files.
 
 ## 📦 What's New
 
