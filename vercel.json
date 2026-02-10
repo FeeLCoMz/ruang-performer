@@ -10,16 +10,7 @@
       "src": "/api/auth/(login|register|me|forgot-password|reset-password|2fa-setup|2fa-verify)",
       "dest": "/api/auth/index.js"
     },
-    {
-      "src": "/api/bands/invitations/([^/]+)/(accept|reject)$",
-      "methods": ["PATCH"],
-      "dest": "/api/bands/index.js?id=$1&action=$2"
-    },
-    {
-      "src": "/api/bands/invitations/([^/]+)$",
-      "dest": "/api/bands/index.js?id=$1"
-    },
-    {
+        {
       "src": "/api/bands/([^/]+)$",
       "dest": "/api/bands/[id].js?id=$1"
     },
@@ -38,11 +29,7 @@
     {
       "src": "/api/events/(gig|practice)$",
       "dest": "/api/events/index.js"
-    },
-    {
-      "src": "/api/invitations/pending",
-      "dest": "/api/bands/index.js"
-    },
+    },    
     {
       "src": "/api/(.*)",
       "dest": "/api/$1"

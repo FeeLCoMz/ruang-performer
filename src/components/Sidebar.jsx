@@ -3,12 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as apiClient from '../apiClient.js';
 
-export default function Sidebar({ isOpen, onClose, theme, setTheme, invitationCount: propInvitationCount }) {
+export default function Sidebar({ isOpen, onClose, theme, setTheme }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
-  // Gunakan invitationCount dari prop (AppContent)
-  const invitationCount = typeof propInvitationCount === 'number' ? propInvitationCount : 0;
+  // ...invitation logic removed...
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: '🏠' },

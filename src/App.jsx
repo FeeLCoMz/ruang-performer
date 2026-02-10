@@ -12,7 +12,7 @@ import NotFound from './components/NotFound.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import Toast from './components/Toast.jsx';
-import { shouldShowInvitationToast } from './utils/notificationUtil.js';
+// ...notificationUtil import removed...
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import * as apiClient from './apiClient.js';
 
@@ -53,34 +53,7 @@ function AppContent() {
     // Notifikasi toast global
     const { isAuthenticated, isLoading } = useAuth();
     const [toastMessage, setToastMessage] = useState('');
-    // Untuk deteksi undangan baru
-    const [invitationCount, setInvitationCount] = useState(0);
-    const prevInvitationCount = useRef(0);
-
-    // Polling undangan band (30 detik) hanya jika sudah login
-    useEffect(() => {
-      if (!isAuthenticated) {
-        setInvitationCount(0);
-        return;
-      }
-      let interval;
-      async function fetchInvitationCount() {
-        try {
-          const data = await apiClient.getPendingInvitations();
-          const newCount = Array.isArray(data) ? data.length : 0;
-          setInvitationCount(newCount);
-          if (shouldShowInvitationToast(prevInvitationCount.current, newCount)) {
-            setToastMessage('Ada undangan band baru!');
-          }
-          prevInvitationCount.current = newCount;
-        } catch {
-          setInvitationCount(0);
-        }
-      }
-      fetchInvitationCount();
-      interval = setInterval(fetchInvitationCount, 30000);
-      return () => clearInterval(interval);
-    }, [isAuthenticated]);
+    // ...undangan band logic removed...
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -178,7 +151,7 @@ function AppContent() {
   return (
     <ErrorBoundary>
       <>
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} theme={theme} setTheme={setTheme} invitationCount={invitationCount} />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} theme={theme} setTheme={setTheme} />
         <Toast message={toastMessage} onClose={() => setToastMessage('')} />
         
         <div className="app-container">

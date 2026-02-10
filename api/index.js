@@ -144,60 +144,7 @@ app.use('/api/bands', verifyToken, (req, res, next) => {
   Promise.resolve(bandsHandler(req, res)).catch(next);
 });
 
-// GET pending invitations for current user
-app.get('/api/invitations/pending', verifyToken, async (req, res) => {
-  try {
-    const client = getTursoClient();
-    const userId = req.user?.userId;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    // Get user's email
-    const userResult = await client.execute(
-      'SELECT email FROM users WHERE id = ?',
-      [userId]
-    );
-
-    if (!userResult.rows || userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const userEmail = userResult.rows[0].email;
-
-    // Get pending invitations for this user (case-insensitive email match)
-    const invResult = await client.execute(
-      `SELECT i.id, i.bandId, i.email, i.role, i.invitedBy, i.status, i.createdAt, i.expiresAt,
-              b.name as bandName, u.username as invitedByName
-       FROM band_invitations i
-       LEFT JOIN bands b ON i.bandId = b.id
-       LEFT JOIN users u ON i.invitedBy = u.id
-       WHERE LOWER(i.email) = LOWER(?) AND i.status = 'pending' AND datetime(i.expiresAt) > datetime('now')
-       ORDER BY datetime(i.createdAt) DESC`,
-      [userEmail]
-    );
-
-    return res.status(200).json(invResult.rows || []);
-  } catch (error) {
-    console.error('Error fetching pending invitations:', error);
-    res.status(500).json({ error: error.message || 'Failed to fetch pending invitations' });
-  }
-});
-
-// Handle specific invitations by ID via bandsHandler
-app.get('/api/invitations/:id', verifyToken, (req, res, next) => {
-  // Route to bandsHandler for invitation actions
-  Promise.resolve(bandsHandler(req, res)).catch(next);
-});
-
-app.post('/api/invitations/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(bandsHandler(req, res)).catch(next);
-});
-
-app.delete('/api/invitations/:id', verifyToken, (req, res, next) => {
-  Promise.resolve(bandsHandler(req, res)).catch(next);
-});
+// ...invitation endpoints removed...
 
 
 // Practice and gigs endpoints now handled by their own handlers
