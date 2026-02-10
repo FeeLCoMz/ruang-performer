@@ -27,8 +27,16 @@ export default async function handler(req, res) {
   if (!verifyToken(req, res)) return;
 
   // Use Express params for route matching
-  const type = req.params?.type;
-  const id = req.params?.id || null;
+  let type = req.params?.type;
+  let id = req.params?.id || null;
+  // Fallback: parse type from URL if not present (for Vercel)
+  if (!type) {
+    const match = req.url.match(/\/api\/events\/(gig|practice)(?:\/(\w+))?/);
+    if (match) {
+      type = match[1];
+      id = match[2] || null;
+    }
+  }
   if (!type || (type !== 'gig' && type !== 'practice')) {
     res.status(400).json({ error: 'Invalid route' });
     return;
