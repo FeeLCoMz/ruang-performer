@@ -11,9 +11,13 @@
       "dest": "/api/auth/index.js"
     },
         {
-      "src": "/api/bands/([^/]+)$",
-      "dest": "/api/bands/[id].js?id=$1"
-    },
+          "src": "/api/bands/([^/]+)/members(?:/([^/]+))?",
+          "dest": "/api/bands/members.js?id=$1&userId=$2"
+        },
+        {
+          "src": "/api/bands/([^/]+)$",
+          "dest": "/api/bands/[id].js?id=$1"
+        },
     {
       "src": "/api/events/(gig|practice)/([^/]+)$",
       "dest": "/api/events/index.js"

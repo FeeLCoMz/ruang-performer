@@ -20,6 +20,14 @@ async function readJson(req) {
  * DELETE /api/bands/:id/members/:userId - Remove member
  */
 export default async function handler(req, res) {
+    // DEBUG LOGGING
+    console.log('[BandMembersHandler]', {
+      method: req.method,
+      path: req.path || req.url,
+      params: req.params,
+      query: req.query,
+      body: req.body
+    });
   try {
     // Verify JWT token first
     if (!verifyToken(req, res)) {
@@ -35,6 +43,64 @@ export default async function handler(req, res) {
     }
 
     const client = getTursoClient();
+
+    if (req.method === 'POST') {
+      // Add a new member to the band (invite by email)
+      const body = await readJson(req);
+      const { email, role } = body;
+      if (!email || !role || !['member', 'admin'].includes(role)) {
+        return res.status(400).json({ error: 'Email dan role wajib diisi' });
+      }
+
+      // Only owner or admin can add members
+      const bandResult = await client.execute(
+        'SELECT createdBy FROM bands WHERE id = ?',
+        [bandId]
+      );
+      if (!bandResult.rows || bandResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Band not found' });
+      }
+      // Cek role user di band
+      const roleCheck = await client.execute(
+        'SELECT role FROM band_members WHERE bandId = ? AND userId = ?',
+        [bandId, userId]
+      );
+      const isOwner = bandResult.rows[0].createdBy === userId;
+      const isAdmin = roleCheck.rows && roleCheck.rows[0]?.role === 'admin';
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ error: 'Hanya owner/admin yang bisa menambah anggota' });
+      }
+
+      // Cari userId dari email
+      const userResult = await client.execute(
+        'SELECT id, username, email FROM users WHERE email = ?',
+        [email]
+      );
+      if (!userResult.rows || userResult.rows.length === 0) {
+        return res.status(404).json({ error: 'User tidak ditemukan' });
+      }
+      const targetUserId = userResult.rows[0].id;
+      // Cek apakah sudah jadi anggota
+      const exists = await client.execute(
+        'SELECT id FROM band_members WHERE bandId = ? AND userId = ?',
+        [bandId, targetUserId]
+      );
+      if (exists.rows && exists.rows.length > 0) {
+        return res.status(400).json({ error: 'User sudah menjadi anggota band' });
+      }
+      // Tambahkan ke band_members
+      await client.execute(
+        'INSERT INTO band_members (bandId, userId, role, status, joinedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+        [bandId, targetUserId, role, 'active']
+      );
+      return res.status(201).json({
+        userId: targetUserId,
+        username: userResult.rows[0].username,
+        email: userResult.rows[0].email,
+        role,
+        isOwner: false
+      });
+    }
 
     if (req.method === 'GET') {
       // Verify user is member of band or owner

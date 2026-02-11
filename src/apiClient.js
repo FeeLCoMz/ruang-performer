@@ -433,6 +433,20 @@ export async function deleteGig(id) {
 // ...invitation API functions removed...
 
 // Band Members endpoints
+// Tambah anggota band
+export async function addBandMember(bandId, email, role) {
+  const res = await fetch(`${API_BASE}/bands/${bandId}/members`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ email, role })
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Failed to add band member');
+  }
+  return await res.json();
+}
 export async function getBandMembers(bandId) {
   const res = await fetch(`${API_BASE}/bands/${bandId}/members`, {
     headers: getHeaders()

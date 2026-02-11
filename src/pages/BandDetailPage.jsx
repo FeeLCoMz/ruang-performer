@@ -8,6 +8,12 @@ import { PERMISSIONS, canPerformAction } from '../utils/permissionUtils.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
 export default function BandDetailPage() {
+    // State untuk invite member
+    const [showInviteModal, setShowInviteModal] = useState(false);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteRole, setInviteRole] = useState('member');
+    const [inviteError, setInviteError] = useState(null);
+    const [inviteLoading, setInviteLoading] = useState(false);
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id;
   const { id } = useParams();
@@ -124,9 +130,13 @@ export default function BandDetailPage() {
 
       {/* Members Section */}
       <div className="dashboard-card" style={{ marginBottom: '24px' }}>
-        <div className="card-header">
+        <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 className="card-title">👥 Anggota Band ({band.members?.length || 0})</h2>
-          {/* Invite Member button removed */}
+          {(can('manage_members') || band.isOwner || band.userRole === 'admin') && (
+            <button className="btn-base" onClick={() => setShowInviteModal(true)}>
+              + Tambah Anggota
+            </button>
+          )}
         </div>
         {!band.members || band.members.length === 0 ? (
           <div className="empty-state">
@@ -136,13 +146,16 @@ export default function BandDetailPage() {
           <div className="grid-gap">
             {band.members.map(member => (
               <div
-                key={member.id}
+                key={member.id || member.userId}
                 className="member-item"
               >
                 <div>
                   <div className="member-name">{member.username}</div>
                   <div className="member-role">
-                    {member.isOwner ? '👑 Owner' : member.role === 'admin' ? '🛡️ Admin' : '🎸 Member'} • Bergabung {new Date(member.joinedAt).toLocaleDateString('id-ID')}
+                    {member.isOwner ? '👑 Owner' : member.role === 'admin' ? '🛡️ Admin' : '🎸 Member'}
+                    {member.joinedAt && (
+                      <> • Bergabung {new Date(member.joinedAt).toLocaleDateString('id-ID')}</>
+                    )}
                   </div>
                 </div>
               </div>
@@ -151,7 +164,60 @@ export default function BandDetailPage() {
         )}
       </div>
 
-      {/* Invite Modal removed */}
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <div className="modal-overlay" onClick={() => setShowInviteModal(false)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ minWidth: 320 }}>
+            <h2>Tambah Anggota Band</h2>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setInviteLoading(true);
+                setInviteError(null);
+                try {
+                  await apiClient.addBandMember(id, inviteEmail, inviteRole);
+                  setInviteEmail('');
+                  setInviteRole('member');
+                  setShowInviteModal(false);
+                  await loadBand();
+                } catch (err) {
+                  setInviteError(err.message);
+                } finally {
+                  setInviteLoading(false);
+                }
+              }}
+            >
+              <input
+                type="email"
+                placeholder="Email anggota"
+                value={inviteEmail}
+                onChange={e => setInviteEmail(e.target.value)}
+                required
+                className="modal-input"
+                autoFocus
+              />
+              <select
+                value={inviteRole}
+                onChange={e => setInviteRole(e.target.value)}
+                className="modal-input"
+                style={{ marginTop: 8 }}
+              >
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+              </select>
+              {inviteError && <div className="error-message" style={{ marginTop: 8 }}>{inviteError}</div>}
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <button type="submit" className="btn-base" disabled={inviteLoading}>
+                  {inviteLoading ? 'Menambah...' : 'Tambah'}
+                </button>
+                <button type="button" className="btn-base" onClick={() => setShowInviteModal(false)}>
+                  Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {showEditModal && (
