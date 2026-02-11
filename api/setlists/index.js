@@ -166,49 +166,22 @@ export default async function handler(req, res) {
     const userId = req.user?.userId;
 
     if (req.method === 'GET') {
-      // Create table if not exists
-      await client.execute(
-        `CREATE TABLE IF NOT EXISTS setlists (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          description TEXT DEFAULT '',
-          bandId TEXT,
-          songs TEXT DEFAULT '[]',
-          setlistSongMeta TEXT DEFAULT '{}',
-          completedSongs TEXT DEFAULT '{}',
-          createdAt TEXT DEFAULT (datetime('now')),
-          updatedAt TEXT
-        )`
-      );
-
-      // Try to add desc and completedSongs column if not exist (for existing tables)
-      try {
-        await client.execute(`ALTER TABLE setlists ADD COLUMN description TEXT DEFAULT ''`);
-      } catch (e) {}
-      try {
-        await client.execute(`ALTER TABLE setlists ADD COLUMN completedSongs TEXT DEFAULT '{}'`);
-      } catch (e) {}
-      try {
-        await client.execute(`ALTER TABLE setlists ADD COLUMN setlistSongMeta TEXT DEFAULT '{}'`);
-      } catch (e) {}
-      try {
-        await client.execute(`ALTER TABLE setlists ADD COLUMN bandId TEXT`);
-      } catch (e) {}
+      // ...existing code...
       
       // Get only setlists user has access to
-      // Rules: user's own setlists OR setlists from bands they're a member of
+      // Rules: setlists owned by user OR setlists from bands where user is a member
       const rows = await client.execute(
         `SELECT s.id, s.name, s.description, s.bandId, s.completedSongs, s.createdAt, s.updatedAt,
                 b.name as bandName, u.username as userName, s.userId
          FROM setlists s
          LEFT JOIN bands b ON s.bandId = b.id
          LEFT JOIN users u ON s.userId = u.id
-         WHERE s.bandId IS NULL 
+         WHERE (s.userId = ?)
             OR (s.bandId IS NOT NULL AND EXISTS (
               SELECT 1 FROM band_members WHERE bandId = s.bandId AND userId = ?
             ))
          ORDER BY (s.updatedAt IS NULL) ASC, datetime(s.updatedAt) DESC, datetime(s.createdAt) DESC`,
-        [userId]
+        [userId, userId]
       );
       // For each setlist, fetch songs and meta from setlist_songs
       const setlists = [];

@@ -128,8 +128,9 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { bandId } = req.query;
       if (type === 'gig') {
-        let query = `SELECT g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt, b.name as bandName FROM gigs g LEFT JOIN bands b ON g.bandId = b.id WHERE g.userId = ?`;
-        const params = [userId];
+        // Allow all band members to see all gigs for their band
+        let query = `SELECT g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt, b.name as bandName FROM gigs g LEFT JOIN bands b ON g.bandId = b.id WHERE (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?))`;
+        const params = [userId, userId];
         if (bandId) { query += ' AND g.bandId = ?'; params.push(bandId); }
         query += ' ORDER BY g.date DESC LIMIT 100';
         const result = await client.execute(query, params);
