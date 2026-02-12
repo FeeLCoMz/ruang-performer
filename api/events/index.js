@@ -34,7 +34,8 @@ export default async function handler(req, res) {
   let id = req.params?.id || null;
   // Fallback: parse type from URL if not present (for Vercel)
   if (!type) {
-    const match = req.url.match(/\/api\/events\/(gig|practice)(?:\/(\w+))?/);
+    // Improved: match id with dashes (UUID)
+    const match = req.url.match(/\/api\/events\/(gig|practice)(?:\/([^/?]+))?/);
     if (match) {
       type = match[1];
       id = match[2] || null;
