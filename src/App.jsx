@@ -1,4 +1,6 @@
 import KaraokeLyricsListPage from './pages/KaraokeLyricsListPage.jsx';
+import PracticeSessionDetailPage from './pages/PracticeSessionDetailPage.jsx';
+import GigDetailPage from './pages/GigDetailPage.jsx';
 import KaraokeSongSearch from './components/KaraokeSongSearch.jsx';
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
@@ -287,7 +289,9 @@ function AppContent() {
             }
           />
           <Route path="/practice" element={<PracticeSessionPage />} />
+          <Route path="/practice/:id" element={<PracticeSessionDetailPage />} />
           <Route path="/gigs" element={<GigPage />} />
+          <Route path="/gigs/:id" element={<GigDetailPage />} />
           <Route path="/bands/manage" element={<BandManagementPage />} />
           <Route path="/bands" element={<Navigate to="/bands/manage" replace />} />
           <Route path="/bands/:id" element={<BandDetailPage />} />
