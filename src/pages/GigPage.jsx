@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { fetchBands, fetchGigs, fetchSetLists, createGig, updateGig, deleteGig } from '../apiClient.js';
@@ -8,6 +9,7 @@ import DeleteIcon from '../components/DeleteIcon.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 
 export default function GigPage() {
+  const navigate = useNavigate();
     // ...existing code...
   const { user } = useAuth();
   const [gigs, setGigs] = useState([]);
@@ -22,6 +24,7 @@ export default function GigPage() {
   const [formData, setFormData] = useState({
     bandId: '',
     date: new Date().toISOString().split('T')[0],
+    time: '',
     venue: '',
     city: '',
     fee: '',
@@ -123,6 +126,7 @@ export default function GigPage() {
     setFormData({
       bandId: gig.bandId || '',
       date: gig.date,
+      time: gig.time || '',
       venue: gig.venue || '',
       city: gig.city || '',
       fee: gig.fee || '',
@@ -233,13 +237,24 @@ export default function GigPage() {
 
               <div>
                 <label className="form-label">Tanggal *</label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="modal-input"
-                  required
-                />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="modal-input"
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  <input
+                    type="time"
+                    value={formData.time}
+                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                    className="modal-input"
+                    style={{ flex: 1 }}
+                    placeholder="Jam"
+                  />
+                </div>
               </div>
 
               <div>
@@ -384,13 +399,20 @@ export default function GigPage() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'start',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                cursor: 'pointer'
               }}
               className="hover-lift"
+              onClick={() => navigate(`/gigs/${gig.id}`)}
             >
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: '600', marginBottom: '8px', fontSize: '1.05em' }}>
                   🎤 {new Date(gig.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  {gig.time && (
+                    <span style={{ marginLeft: 8, color: 'var(--primary-accent)', fontWeight: 500, fontSize: '0.95em' }}>
+                      • {gig.time.slice(0,5)}
+                    </span>
+                  )}
                 </div>
                 
                 {gig.bandName && (

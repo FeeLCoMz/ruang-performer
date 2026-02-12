@@ -31,7 +31,7 @@ export default function GigDetailPage() {
         <button className="btn" onClick={() => navigate(-1)}>← Kembali</button>
       </div>
       <div className="card">
-        <p><b>Tanggal:</b> {new Date(gig.date).toLocaleString('id-ID')}</p>
+        <p><b>Tanggal:</b> {new Date(gig.date).toLocaleString('id-ID')}{gig.time ? `, Jam: ${gig.time.slice(0,5)}` : ''}</p>
         <p><b>Venue:</b> {gig.venue || '-'}</p>
         <p><b>Catatan:</b> {gig.notes || '-'}</p>
       </div>

@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       if (req.method === 'GET') {
         if (type === 'gig') {
           const result = await client.execute(
-            `SELECT g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt, b.name as bandName, s.name as setlistName FROM gigs g LEFT JOIN bands b ON g.bandId = b.id LEFT JOIN setlists s ON g.setlistId = s.id WHERE g.id = ? AND (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?)) LIMIT 1`,
+            `SELECT g.id, g.bandId, g.date, g.time, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt, b.name as bandName, s.name as setlistName FROM gigs g LEFT JOIN bands b ON g.bandId = b.id LEFT JOIN setlists s ON g.setlistId = s.id WHERE g.id = ? AND (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?)) LIMIT 1`,
             [id, userId, userId]
           );
           const row = result.rows?.[0] || null;
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
             if (bandMember.rows?.length > 0) canEdit = true;
           }
           if (!canEdit) return res.status(403).json({ error: 'Forbidden - insufficient permission to edit gig' });
-          await client.execute(`UPDATE gigs SET bandId = COALESCE(?, bandId), date = COALESCE(?, date), venue = COALESCE(?, venue), city = COALESCE(?, city), fee = COALESCE(?, fee), setlistId = COALESCE(?, setlistId), notes = COALESCE(?, notes), updatedAt = ? WHERE id = ?`, [body.bandId ?? null, body.date ?? null, body.venue ?? null, body.city ?? null, body.fee ?? null, body.setlistId ?? null, body.notes ?? null, now, id]);
+          await client.execute(`UPDATE gigs SET bandId = COALESCE(?, bandId), date = COALESCE(?, date), time = COALESCE(?, time), venue = COALESCE(?, venue), city = COALESCE(?, city), fee = COALESCE(?, fee), setlistId = COALESCE(?, setlistId), notes = COALESCE(?, notes), updatedAt = ? WHERE id = ?`, [body.bandId ?? null, body.date ?? null, body.time ?? null, body.venue ?? null, body.city ?? null, body.fee ?? null, body.setlistId ?? null, body.notes ?? null, now, id]);
           res.status(200).json({ id });
           return;
         } else {
@@ -129,7 +129,7 @@ export default async function handler(req, res) {
       const { bandId } = req.query;
       if (type === 'gig') {
         // Allow all band members to see all gigs for their band
-        let query = `SELECT g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt, b.name as bandName FROM gigs g LEFT JOIN bands b ON g.bandId = b.id WHERE (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?))`;
+        let query = `SELECT g.id, g.bandId, g.date, g.time, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt, b.name as bandName FROM gigs g LEFT JOIN bands b ON g.bandId = b.id WHERE (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?))`;
         const params = [userId, userId];
         if (bandId) { query += ' AND g.bandId = ?'; params.push(bandId); }
         query += ' ORDER BY g.date DESC LIMIT 100';
@@ -153,7 +153,7 @@ export default async function handler(req, res) {
       const now = new Date().toISOString();
       if (type === 'gig') {
         const id = randomUUID();
-        await client.execute(`INSERT INTO gigs (id, bandId, userId, date, venue, city, fee, setlistId, notes, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [id, body.bandId ?? null, userId, body.date ?? null, body.venue ?? '', body.city ?? '', body.fee ?? null, body.setlistId ?? null, body.notes ?? '', now, now]);
+        await client.execute(`INSERT INTO gigs (id, bandId, userId, date, time, venue, city, fee, setlistId, notes, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [id, body.bandId ?? null, userId, body.date ?? null, body.time ?? null, body.venue ?? '', body.city ?? '', body.fee ?? null, body.setlistId ?? null, body.notes ?? '', now, now]);
         res.status(201).json({ id });
         return;
       } else {
