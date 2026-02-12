@@ -22,6 +22,11 @@ export default function BandDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  // State for editing member
+  const [editMember, setEditMember] = useState(null);
+  const [editRole, setEditRole] = useState('member');
+  const [editError, setEditError] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '', genre: '' });
   const [setlists, setSetlists] = useState([]);
   const [practiceSessions, setPracticeSessions] = useState([]);
@@ -148,6 +153,7 @@ export default function BandDetailPage() {
               <div
                 key={member.id || member.userId}
                 className="member-item"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
               >
                 <div>
                   <div className="member-name">{member.username}</div>
@@ -158,8 +164,69 @@ export default function BandDetailPage() {
                     )}
                   </div>
                 </div>
+                {/* Permission: Only show edit for non-owner if can manage_members */}
+                {(can('manage_members') || band.isOwner || band.userRole === 'admin') && !member.isOwner && (
+                  <button
+                    className="btn-base"
+                    style={{ marginLeft: 8 }}
+                    title="Edit Member Role"
+                    onClick={() => {
+                      setEditMember(member);
+                      setEditRole(member.role || 'member');
+                      setEditError(null);
+                    }}
+                  >
+                    <EditIcon size={16} />
+                  </button>
+                )}
               </div>
             ))}
+                {/* Edit Member Modal */}
+                {editMember && (
+                  <div className="modal-overlay" onClick={() => setEditMember(null)}>
+                    <div className="modal-card" onClick={e => e.stopPropagation()} style={{ minWidth: 320 }}>
+                      <h2>Edit Peran Anggota</h2>
+                      <div style={{ marginBottom: 12 }}>
+                        <b>{editMember.username}</b> ({editMember.email})
+                      </div>
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          setEditLoading(true);
+                          setEditError(null);
+                          try {
+                            await apiClient.updateMemberRole(id, editMember.userId || editMember.id, editRole);
+                            setEditMember(null);
+                            await loadBand();
+                          } catch (err) {
+                            setEditError(err.message);
+                          } finally {
+                            setEditLoading(false);
+                          }
+                        }}
+                      >
+                        <select
+                          value={editRole}
+                          onChange={e => setEditRole(e.target.value)}
+                          className="modal-input"
+                          style={{ marginBottom: 12 }}
+                        >
+                          <option value="member">Member</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                        {editError && <div className="error-message" style={{ marginBottom: 8 }}>{editError}</div>}
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button type="submit" className="btn-base" disabled={editLoading}>
+                            {editLoading ? 'Menyimpan...' : 'Simpan'}
+                          </button>
+                          <button type="button" className="btn-base" onClick={() => setEditMember(null)}>
+                            Batal
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
           </div>
         )}
       </div>
