@@ -30,15 +30,19 @@ export default async function handler(req, res) {
     });
   try {
     // Verify JWT token first
+
     if (!verifyToken(req, res)) {
+      console.log('[BandMembersHandler][DEBUG] Token verification failed');
       return;
     }
 
     // Extract bandId from Express params (now guaranteed to be set by app.get/patch/delete)
     const bandId = req.params?.id;
     const userId = req.user?.userId;
+    console.log('[BandMembersHandler][DEBUG] bandId:', bandId, 'userId:', userId);
 
     if (!bandId || !userId) {
+      console.log('[BandMembersHandler][DEBUG] Missing bandId or userId');
       return res.status(400).json({ error: 'Missing bandId or unauthorized' });
     }
 
@@ -48,7 +52,9 @@ export default async function handler(req, res) {
       // Add a new member to the band (invite by email)
       const body = await readJson(req);
       const { email, role } = body;
+      console.log('[BandMembersHandler][DEBUG] POST body:', body);
       if (!email || !role || !['member', 'admin'].includes(role)) {
+        console.log('[BandMembersHandler][DEBUG] Email/role missing or invalid:', { email, role });
         return res.status(400).json({ error: 'Email dan role wajib diisi' });
       }
 
@@ -57,7 +63,9 @@ export default async function handler(req, res) {
         'SELECT createdBy FROM bands WHERE id = ?',
         [bandId]
       );
+      console.log('[BandMembersHandler][DEBUG] bandResult:', bandResult.rows);
       if (!bandResult.rows || bandResult.rows.length === 0) {
+        console.log('[BandMembersHandler][DEBUG] Band not found:', bandId);
         return res.status(404).json({ error: 'Band not found' });
       }
       // Cek role user di band
@@ -65,9 +73,12 @@ export default async function handler(req, res) {
         'SELECT role FROM band_members WHERE bandId = ? AND userId = ?',
         [bandId, userId]
       );
+      console.log('[BandMembersHandler][DEBUG] roleCheck:', roleCheck.rows);
       const isOwner = bandResult.rows[0].createdBy === userId;
       const isAdmin = roleCheck.rows && roleCheck.rows[0]?.role === 'admin';
+      console.log('[BandMembersHandler][DEBUG] isOwner:', isOwner, 'isAdmin:', isAdmin);
       if (!isOwner && !isAdmin) {
+        console.log('[BandMembersHandler][DEBUG] Not owner/admin:', userId);
         return res.status(403).json({ error: 'Hanya owner/admin yang bisa menambah anggota' });
       }
 
@@ -76,7 +87,9 @@ export default async function handler(req, res) {
         'SELECT id, username, email FROM users WHERE email = ?',
         [email]
       );
+      console.log('[BandMembersHandler][DEBUG] userResult:', userResult.rows);
       if (!userResult.rows || userResult.rows.length === 0) {
+        console.log('[BandMembersHandler][DEBUG] User not found:', email);
         return res.status(404).json({ error: 'User tidak ditemukan' });
       }
       const targetUserId = userResult.rows[0].id;
@@ -85,7 +98,9 @@ export default async function handler(req, res) {
         'SELECT id FROM band_members WHERE bandId = ? AND userId = ?',
         [bandId, targetUserId]
       );
+      console.log('[BandMembersHandler][DEBUG] exists:', exists.rows);
       if (exists.rows && exists.rows.length > 0) {
+        console.log('[BandMembersHandler][DEBUG] User already member:', targetUserId);
         return res.status(400).json({ error: 'User sudah menjadi anggota band' });
       }
       // Tambahkan ke band_members
@@ -93,6 +108,7 @@ export default async function handler(req, res) {
         'INSERT INTO band_members (bandId, userId, role, status, joinedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
         [bandId, targetUserId, role, 'active']
       );
+      console.log('[BandMembersHandler][DEBUG] Member added:', targetUserId);
       return res.status(201).json({
         userId: targetUserId,
         username: userResult.rows[0].username,
