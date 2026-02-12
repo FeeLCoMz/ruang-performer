@@ -10,19 +10,19 @@ import React from 'react';
  */
 export default function TransposeKeyControl({ originalKey, transpose, onTransposeChange, compact = false }) {
   // Calculate transposed key
+  // Transpose hanya root key, suffix (misal 'm') tetap dipertahankan tanpa logika mayor/minor
   const getTransposedKey = (key, semitones) => {
     if (!key || semitones === 0) return key;
-    // Support for minor (Am, Bm, F#m, etc)
     const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    // Regex: root (C, D#, F#) + optional 'm' (minor)
-    const match = key.match(/^([A-G]#?|[A-G]b?)(m)?$/);
+    // Regex: root (C, D#, F#) + sisa (misal 'm', 'maj7', dsb)
+    const match = key.match(/^([A-G]#?|[A-G]b?)(.*)$/);
     if (!match) return key;
     const root = match[1];
-    const isMinor = !!match[2];
+    const suffix = match[2] || '';
     const currentIndex = keys.indexOf(root);
     if (currentIndex === -1) return key;
     const newIndex = (currentIndex + semitones + 12) % 12;
-    return keys[newIndex] + (isMinor ? 'm' : '');
+    return keys[newIndex] + suffix;
   };
 
   const transposedKey = getTransposedKey(originalKey, transpose);
@@ -122,6 +122,18 @@ export default function TransposeKeyControl({ originalKey, transpose, onTranspos
         >
           +
         </button>
+        {transpose !== 0 && (
+          <button
+            type="button"
+            onClick={handleReset}
+            className="key-transpose-reset"
+            title="Reset transpose"
+            aria-label="Reset transpose"
+            style={{ marginLeft: 8 }}
+          >
+            ⟲
+          </button>
+        )}
       </div>
       {transpose !== 0 && (
         <div className="song-info-key-status">

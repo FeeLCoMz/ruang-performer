@@ -61,6 +61,11 @@ export default function SongLyricsPage({ song: songProp }) {
 
   // Transpose state
   const [transpose, setTranspose] = useState(0);
+
+  // Reset transpose ke 0 setiap kali id lagu/setlistSongData.key berubah
+  useEffect(() => {
+    setTranspose(0);
+  }, [id, setlistSongData.key]);
   const [zoom, setZoom] = useState(1);
   // ...existing code...
 
@@ -213,32 +218,23 @@ export default function SongLyricsPage({ song: songProp }) {
 
   // Auto-calculate transpose if setlist has different key
   useEffect(() => {
-    // Helper to parse key into root and type (major/minor)
-    function parseKey(keyStr) {
-      if (!keyStr) return { root: '', type: 'major' };
-      const match = keyStr.match(/^([A-G][b#]?)(m|m$| minor)?$/i);
-      if (!match) return { root: keyStr, type: 'major' };
-      const root = match[1].toUpperCase();
-      const type = match[2] && match[2].toLowerCase().includes('m') ? 'minor' : 'major';
-      return { root, type };
+    // Helper to parse key into root only (abaikan mayor/minor)
+    function parseKeyRoot(keyStr) {
+      if (!keyStr) return '';
+      const match = keyStr.match(/^([A-G][b#]?)/i);
+      return match ? match[1].toUpperCase() : keyStr.toUpperCase();
     }
 
     if (setlistSongData.key && song?.key && setlistSongData.key !== song.key) {
       const keyMap = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-      const orig = parseKey(song.key);
-      const targ = parseKey(setlistSongData.key);
-      // Only transpose if both keys are the same type (major-major or minor-minor)
-      if (orig.type === targ.type) {
-        const originalIdx = keyMap.indexOf(orig.root);
-        const targetIdx = keyMap.indexOf(targ.root);
-        if (originalIdx >= 0 && targetIdx >= 0) {
-          let steps = targetIdx - originalIdx;
-          if (steps < 0) steps += 12;
-          setTranspose(steps);
-        }
-      } else {
-        // If types differ (e.g. C -> Am), do not auto-transpose
-        setTranspose(0);
+      const origRoot = parseKeyRoot(song.key);
+      const targRoot = parseKeyRoot(setlistSongData.key);
+      const originalIdx = keyMap.indexOf(origRoot);
+      const targetIdx = keyMap.indexOf(targRoot);
+      if (originalIdx >= 0 && targetIdx >= 0) {
+        let steps = targetIdx - originalIdx;
+        if (steps < 0) steps += 12;
+        setTranspose(steps);
       }
     }
   }, [setlistSongData.key, song?.key]);
@@ -502,6 +498,18 @@ export default function SongLyricsPage({ song: songProp }) {
       setFetchedSong(updatedSong);
       setIsEditingLyrics(false);
       setEditedLyrics("");
+
+      // Jika ada setlist context, navigate ulang dengan state setlist agar navigator tetap muncul
+      if (setlistId && setlistData && setlistData.songs) {
+        navigate(`/songs/view/${song.id}`, {
+          state: {
+            setlistId,
+            setlist: setlistData,
+            setlistSong: setlistSongData,
+          },
+          replace: true,
+        });
+      }
     } catch (err) {
       setEditError(err.message);
     } finally {
@@ -930,11 +938,56 @@ export default function SongLyricsPage({ song: songProp }) {
             className="song-lyrics-display"
             style={{ overflowX: 'auto', whiteSpace: 'pre-wrap', maxWidth: '100%' }}
           >
+            {/* Toolbar autoscroll tetap tampil di fullscreen */}
+            <div className="autoscroll-toolbar-fullscreen" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <button
+                onClick={() => setAutoScrollActive(!autoScrollActive)}
+                className={`autoscroll-toggle ${autoScrollActive ? 'active' : ''}`}
+                title={autoScrollActive ? 'Stop auto scroll' : 'Start auto scroll'}
+              >
+                {autoScrollActive ? (
+                  <>
+                    <span>⏹️</span>
+                    <span>Stop Scroll</span>
+                  </>
+                ) : (
+                  <>
+                    <span>📜</span>
+                    <span>Auto Scroll</span>
+                  </>
+                )}
+              </button>
+              {autoScrollActive && (
+                <>
+                  <div className="autoscroll-speed">
+                    <label htmlFor="scroll-speed-fullscreen" className="autoscroll-speed-label">BPM:</label>
+                    <input
+                      id="scroll-speed-fullscreen"
+                      type="number"
+                      min="40"
+                      max="240"
+                      value={scrollSpeed}
+                      onChange={(e) => setScrollSpeed(parseInt(e.target.value) || 120)}
+                      className="autoscroll-speed-input"
+                    />
+                  </div>
+                  <div className="autoscroll-beats">
+                    {[0, 1, 2, 3].map((i) => (
+                      <span key={i} className={`beat-dot ${currentBeat === i ? 'active' : ''}`}>●</span>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
             <ChordDisplay
               song={song}
               transpose={transpose}
-              // ...existing code...
               zoom={zoom}
+              onTimestampClick={(seconds) => {
+                if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
+                  youtubeRef.current.handleSeek(seconds);
+                }
+              }}
             />
           </div>
         )}

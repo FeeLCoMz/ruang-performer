@@ -3,6 +3,19 @@ import React from 'react';
 import NumberToken from './NumberToken.jsx';
 import { transposeChord, parseChordLine, parseSection, parseNumberLine, isChordLine } from '../utils/chordUtils.js';
 
+// Helper: parse [mm:ss] or [hh:mm:ss] timestamp to seconds
+function parseTimestampToken(token) {
+  const m = token.match(/^\[(\d{1,2}):(\d{2})\]$/); // [mm:ss]
+  if (m) {
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+  const h = token.match(/^\[(\d{1,2}):(\d{2}):(\d{2})\]$/); // [hh:mm:ss]
+  if (h) {
+    return parseInt(h[1], 10) * 3600 + parseInt(h[2], 10) * 60 + parseInt(h[3], 10);
+  }
+  return null;
+}
+
 /**
  * Komponen ChordDisplay
  * Menampilkan lirik lagu beserta notasi chord, angka, dan struktur bagian lagu.
@@ -12,6 +25,7 @@ import { transposeChord, parseChordLine, parseSection, parseNumberLine, isChordL
  * @param {Object} song - Objek lagu, harus memiliki properti 'lyrics' (string)
  * @param {number} [transpose=0] - Jumlah transposisi chord (positif/negatif)
  * @param {number} [zoom=1] - Skala zoom tampilan (1 = normal)
+ * @param {function} [onTimestampClick] - Handler saat timestamp diklik (detik)
  *
  * Fitur:
  * - Parsing baris lirik menjadi struktur: kosong, struktur, instrumen, chord, angka, lirik
@@ -62,7 +76,7 @@ function parseLines(lines, transpose) {
   });
 }
 
-export default function ChordDisplay({ song, transpose = 0, zoom = 1 }) {
+export default function ChordDisplay({ song, transpose = 0, zoom = 1, onTimestampClick }) {
   // Jika tidak ada lirik, tampilkan pesan kosong
   if (!song?.lyrics) {
     return (
@@ -113,9 +127,25 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1 }) {
             // Baris lirik: tokenisasi inline
             return (
               <div key={i} className="cd-lyrics">
-                {lineObj.tokens.map((t, j) => (
-                  <span key={j}>{t.token}</span>
-                ))}
+                {lineObj.tokens.map((t, j) => {
+                  // Timestamp token: [mm:ss] atau [hh:mm:ss]
+                  const seconds = typeof t.token === 'string' ? parseTimestampToken(t.token) : null;
+                  if (seconds !== null) {
+                    return (
+                      <button
+                        key={j}
+                        className="cd-timestamp-btn"
+                        type="button"
+                        onClick={() => onTimestampClick && onTimestampClick(seconds)}
+                        style={{ color: 'var(--primary-accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
+                        title={`Putar ke ${t.token.replace(/\[|\]/g, '')}`}
+                      >
+                        {t.token}
+                      </button>
+                    );
+                  }
+                  return <span key={j}>{t.token}</span>;
+                })}
               </div>
             );
           default:

@@ -1,3 +1,19 @@
+/* Timestamp button in ChordDisplay */
+.cd-timestamp-btn {
+  color: var(--primary-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: color 0.15s var(--transition);
+}
+.cd-timestamp-btn:hover, .cd-timestamp-btn:focus {
+  color: var(--text-primary);
+  text-decoration: underline;
+  outline: none;
+}
 /* ========================================
    NUMBER TOKEN COMPONENT
    ======================================== */
