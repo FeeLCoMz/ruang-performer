@@ -52,6 +52,7 @@ body.dark-mode .number-token {
 :root {
   /* Colors */
   --primary-accent: #3b82f6;
+  --chord-bright: #ffd966;
   --primary-accent-dark: #1e40af;
   --primary-bg: #f8fafc;
   --secondary-bg: #f1f5f9;
@@ -107,6 +108,7 @@ body.dark-mode {
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
   --border-color: #334155;
+  --chord-bright: #ffe066;
 }
 
 /* ========================================
@@ -2908,6 +2910,10 @@ input[type="datetime-local"]:disabled {
   color: var(--primary-accent);
   font-weight: 600;
 }
+body.dark-mode .cd-token {
+  color: var(--chord-bright);
+  text-shadow: 0 1px 8px #222, 0 0 2px #ffe066;
+}
 
 .cd-number {
   white-space: pre;
@@ -2925,6 +2931,10 @@ input[type="datetime-local"]:disabled {
   padding: 0;
   border-radius: 0;
   transition: all 0.2s ease;
+}
+body.dark-mode .ct {
+  color: var(--chord-bright);
+  text-shadow: 0 1px 8px #222, 0 0 2px #ffe066;
 }
 
 /* ========================================
