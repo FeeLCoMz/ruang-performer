@@ -3,6 +3,7 @@ import PracticeSessionDetailPage from './pages/PracticeSessionDetailPage.jsx';
 import GigDetailPage from './pages/GigDetailPage.jsx';
 import KaraokeSongSearch from './components/KaraokeSongSearch.jsx';
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+// import PerformanceModePage from './pages/PerformanceModePage.jsx';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 
 // Eager load critical pages
@@ -295,6 +296,8 @@ function AppContent() {
           <Route path="/bands/manage" element={<BandManagementPage />} />
           <Route path="/bands" element={<Navigate to="/bands/manage" replace />} />
           <Route path="/bands/:id" element={<BandDetailPage />} />
+          {/* Performance Mode routes */}
+          {/* Performance Mode routes removed */}
           {/* InvitationPage and PendingInvitationsPage removed */}
           <Route path="/settings/2fa" element={<TwoFactorSetupPage />} />
           <Route path="/audit-logs" element={<AuditLogPage />} />

@@ -26,6 +26,8 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme }) {
     // Invitations menu removed
     { path: '/practice', label: 'Latihan', icon: '💪' },
     { path: '/gigs', label: 'Konser', icon: '🎤' },
+    // Performance Mode menu (always visible)
+    { path: '/perform', label: 'Perform', icon: '🎬' },
     // Menu Audit Log (khusus admin/owner)
     ...(can && can(PERMISSIONS.ADMIN_VIEW_LOGS)
       ? [{ path: '/audit-logs', label: 'Audit Log', icon: '🕵️' }] : []),
