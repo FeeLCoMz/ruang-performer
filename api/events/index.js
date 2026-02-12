@@ -26,8 +26,6 @@ function getTable(type) {
 export default async function handler(req, res) {
   if (!verifyToken(req, res)) return;
 
-  // Debug: log route params and url
-  console.log('[EVENTS] req.params:', req.params, 'req.url:', req.url);
 
   // Use Express params for route matching
   let type = req.params?.type;
@@ -41,8 +39,6 @@ export default async function handler(req, res) {
       id = match[2] || null;
     }
   }
-  // Debug: log resolved type and id
-  console.log('[EVENTS] resolved type:', type, 'id:', id);
   if (!type || (type !== 'gig' && type !== 'practice')) {
     res.status(400).json({ error: 'Invalid route' });
     return;

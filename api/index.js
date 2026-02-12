@@ -10,7 +10,6 @@ import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import { createRateLimiter, userKeyGenerator, RATE_LIMITS } from './middleware/rateLimiter.js';
-import { getTursoClient } from './_turso.js';
 
 // Load .env.local first (highest priority), then .env
 const __filename = fileURLToPath(import.meta.url);
