@@ -232,10 +232,30 @@ export default function SongLyricsPage({ song: songProp }) {
       return;
     }
 
-    const chordRegex =
-      /\[([A-G][b#]?(?:m|maj|min|dim|aug)?(?:7|9|11|13)?(?:sus\d)?(?:\/[A-G][b#]?)?)\]/g;
-    const matches = song.lyrics.matchAll(chordRegex);
-    const chordArray = Array.from(matches).map((m) => m[1]);
+    // Regex untuk mendeteksi chord dengan atau tanpa braket
+    // 1. [C], [Am7], dst (bracketed)
+    // 2. C, Am7, F#m, Bbmaj7, dst (tanpa braket, di baris chord)
+    // Deteksi baris chord: minimal 2-3 token yang cocok pola chord
+    const bracketed = /\[([A-G][b#]?(?:m|maj|min|dim|aug)?(?:7|9|11|13)?(?:sus\d)?(?:\/[A-G][b#]?)?)\]/g;
+    const plain = /\b([A-G][b#]?(?:m|maj|min|dim|aug)?(?:7|9|11|13)?(?:sus\d)?(?:\/[A-G][b#]?)?)\b/g;
+
+    // Ambil semua chord dalam braket
+    const matchesBracketed = Array.from(song.lyrics.matchAll(bracketed)).map(m => m[1]);
+
+    // Ambil juga baris yang kemungkinan baris chord (bukan lirik)
+    const lines = song.lyrics.split(/\r?\n/);
+    let matchesPlain = [];
+    for (const line of lines) {
+      // Skip jika baris sudah mengandung braket
+      if (bracketed.test(line)) continue;
+      // Ambil semua token yang cocok pola chord
+      const tokens = Array.from(line.matchAll(plain)).map(m => m[1]);
+      // Jika baris punya >=2 token chord, anggap baris chord
+      if (tokens.length >= 2) {
+        matchesPlain.push(...tokens);
+      }
+    }
+    const chordArray = [...matchesBracketed, ...matchesPlain];
     const uniqueChords = [...new Set(chordArray)].sort();
 
     setChordStats({
