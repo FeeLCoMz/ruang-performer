@@ -1,3 +1,19 @@
+/**
+ * Get tempo term by BPM (e.g. Andante, Allegro)
+ * @param {number} bpm
+ * @returns {string}
+ */
+export function getTempoTerm(bpm) {
+  if (bpm < 40) return "";
+  if (bpm < 60) return "Grave";
+  if (bpm < 66) return "Largo";
+  if (bpm < 76) return "Adagio";
+  if (bpm < 108) return "Andante";
+  if (bpm < 120) return "Moderato";
+  if (bpm < 168) return "Allegro";
+  if (bpm < 200) return "Presto";
+  return "Prestissimo";
+}
 // Music Notation Utilities
 // Parse and display melody notation (not angka and staff notation)
 

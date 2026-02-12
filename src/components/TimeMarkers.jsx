@@ -19,14 +19,14 @@ export default function TimeMarkers({
 
   // Auto-fill newTime with YouTube time when add form is shown
   useEffect(() => {
-    if (!readonly && isExpanded && typeof getCurrentYouTubeTime === 'function') {
+    if (!readonly && typeof getCurrentYouTubeTime === 'function') {
       const ytTime = getCurrentYouTubeTime();
       if (typeof ytTime === 'number' && !isNaN(ytTime)) {
         setNewTime(formatTime(ytTime));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isExpanded, readonly]);
+  }, [readonly]);
 
   // Auto-fill editTime with YouTube time when edit form is opened
   useEffect(() => {
@@ -135,168 +135,164 @@ export default function TimeMarkers({
   return (
     <div className="time-markers">
       {/* Header */}
-      <ExpandButton
-        isExpanded={isExpanded}
-        setIsExpanded={setIsExpanded}
-        icon="⏲️"
-        label="Time Markers"
-        badge={sortedMarkers.length > 0 ? sortedMarkers.length : null}
-        rightContent={duration > 0 ? (
+      <div className="time-markers-header">
+        <span className="time-markers-title">⏲️ Time Markers</span>
+        {sortedMarkers.length > 0 && (
+          <span className="time-markers-badge">{sortedMarkers.length}</span>
+        )}
+        {duration > 0 && (
           <span className="time-markers-time">
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
-        ) : null}
-      />
-
-      {/* Expanded Content */}
-      {isExpanded && (
-        <div className="time-markers-content">
-          {/* Add New Marker (moved above list) */}
-          {!readonly && (
-            <div className="time-marker-add" style={{ marginBottom: '16px' }}>
-              <div className="time-marker-add-title">
-                ➕ Tambah Timestamp Baru
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input
-                  type="text"
-                  value={newTime}
-                  onChange={(e) => setNewTime(e.target.value)}
-                  placeholder="mm:ss (contoh: 1:30)"
-                  className="time-marker-input"
-                  style={{ flex: 1 }}
-                />
-                <button
-                  type="button"
-                  title="Ambil waktu dari YouTube"
-                  onClick={handleFillNewTimeFromYouTube}
-                  className="time-marker-fill-btn"
-                  style={{ padding: '0 8px' }}
-                >
-                  ⏱️ Ambil dari YouTube
-                </button>
-              </div>
+        )}
+      </div>
+      <div className="time-markers-content">
+        {/* Add New Marker (moved above list) */}
+        {!readonly && (
+          <div className="time-marker-add" style={{ marginBottom: '16px' }}>
+            <div className="time-marker-add-title">
+              ➕ Tambah Timestamp Baru
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input
                 type="text"
-                value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
-                placeholder="Label (opsional)"
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+                placeholder="mm:ss (contoh: 1:30)"
                 className="time-marker-input"
+                style={{ flex: 1 }}
               />
               <button
                 type="button"
-                onClick={handleAddNew}
-                disabled={!newTime}
-                className="time-marker-add-btn"
+                title="Ambil waktu dari YouTube"
+                onClick={handleFillNewTimeFromYouTube}
+                className="time-marker-fill-btn"
+                style={{ padding: '0 8px' }}
               >
-                ➕ Tambah Timestamp
+                ⏱️ Ambil dari YouTube
               </button>
             </div>
-          )}
+            <input
+              type="text"
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              placeholder="Label (opsional)"
+              className="time-marker-input"
+            />
+            <button
+              type="button"
+              onClick={handleAddNew}
+              disabled={!newTime}
+              className="time-marker-add-btn"
+            >
+              ➕ Tambah Timestamp
+            </button>
+          </div>
+        )}
 
-          {/* Marker List */}
-          {sortedMarkers.length > 0 ? (
-            <div className="time-markers-list">
-              {sortedMarkers.map((marker, idx) => {
-                const markerId = marker.id || marker.time;
-                const isEditing = editingId === markerId;
+        {/* Marker List */}
+        {sortedMarkers.length > 0 ? (
+          <div className="time-markers-list">
+            {sortedMarkers.map((marker, idx) => {
+              const markerId = marker.id || marker.time;
+              const isEditing = editingId === markerId;
 
-                if (isEditing) {
-                  return (
-                    <div
-                      key={markerId}
-                      className="time-marker-item time-marker-item-editing"
-                    >
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <input
-                          type="text"
-                          value={editTime}
-                          onChange={(e) => setEditTime(e.target.value)}
-                          placeholder="mm:ss"
-                          className="time-marker-input"
-                          style={{ flex: 1 }}
-                        />
-                        <button
-                          type="button"
-                          title="Ambil waktu dari YouTube"
-                          onClick={handleFillEditTimeFromYouTube}
-                          className="time-marker-fill-btn"
-                          style={{ padding: '0 8px' }}
-                        >
-                          ⏱️ Ambil dari YouTube
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        value={editLabel}
-                        onChange={(e) => setEditLabel(e.target.value)}
-                        placeholder="Label"
-                        className="time-marker-input"
-                      />
-                      <div className="time-marker-edit-actions">
-                        <button
-                          type="button"
-                          onClick={handleSaveEdit}
-                          className="time-marker-save-btn"
-                        >
-                          ✓ Simpan
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCancelEdit}
-                          className="time-marker-cancel-btn"
-                        >
-                          ✕ Batal
-                        </button>
-                      </div>
-                    </div>
-                  );
-                }
-
+              if (isEditing) {
                 return (
                   <div
                     key={markerId}
-                    className="time-marker-item"
+                    className="time-marker-item time-marker-item-editing"
                   >
-                    <button
-                      type="button"
-                      onClick={() => handlePlay(marker.time)}
-                      className="time-marker-play-btn"
-                    >
-                      ▶ {formatTime(marker.time)}
-                    </button>
-                    <div className="time-marker-label">
-                      {marker.label || `Marker ${idx + 1}`}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        value={editTime}
+                        onChange={(e) => setEditTime(e.target.value)}
+                        placeholder="mm:ss"
+                        className="time-marker-input"
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        title="Ambil waktu dari YouTube"
+                        onClick={handleFillEditTimeFromYouTube}
+                        className="time-marker-fill-btn"
+                        style={{ padding: '0 8px' }}
+                      >
+                        ⏱️ Ambil dari YouTube
+                      </button>
                     </div>
-                    {!readonly && (
-                      <div className="time-marker-actions">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(marker)}
-                          className="time-marker-edit-btn"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(marker)}
-                          className="time-marker-delete-btn"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    )}
+                    <input
+                      type="text"
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      placeholder="Label"
+                      className="time-marker-input"
+                    />
+                    <div className="time-marker-edit-actions">
+                      <button
+                        type="button"
+                        onClick={handleSaveEdit}
+                        className="time-marker-save-btn"
+                      >
+                        ✓ Simpan
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        className="time-marker-cancel-btn"
+                      >
+                        ✕ Batal
+                      </button>
+                    </div>
                   </div>
                 );
-              })}
-            </div>
-          ) : (
-            <div className="time-marker-empty">
-              Belum ada timestamp
-            </div>
-          )}
-        </div>
-      )}
+              }
+
+              return (
+                <div
+                  key={markerId}
+                  className="time-marker-item"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handlePlay(marker.time)}
+                    className="time-marker-play-btn"
+                  >
+                    ▶ {formatTime(marker.time)}
+                  </button>
+                  <div className="time-marker-label">
+                    {marker.label || `Marker ${idx + 1}`}
+                  </div>
+                  {!readonly && (
+                    <div className="time-marker-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(marker)}
+                        className="time-marker-edit-btn"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(marker)}
+                        className="time-marker-delete-btn"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="time-marker-empty">
+            Belum ada timestamp
+          </div>
+        )}
+      </div>
     </div>
   );
+  
 }

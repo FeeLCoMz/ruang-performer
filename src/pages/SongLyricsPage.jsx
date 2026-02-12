@@ -9,46 +9,55 @@ import { getAuthHeader } from "../utils/auth.js";
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
+// (getTempoTerm dipindahkan ke utils/musicNotationUtils.js)
+import { getTempoTerm } from "../utils/musicNotationUtils.js";
 
-// Helper: get tempo term by BPM
-function getTempoTerm(bpm) {
-  if (bpm < 40) return "";
-  if (bpm < 60) return "Grave";
-  if (bpm < 66) return "Largo";
-  if (bpm < 76) return "Adagio";
-  if (bpm < 108) return "Andante";
-  if (bpm < 120) return "Moderato";
-  if (bpm < 168) return "Allegro";
-  if (bpm < 200) return "Presto";
-  return "Prestissimo";
-}
-
+/**
+ * SongLyricsPage
+ * Halaman utama untuk menampilkan lirik, chord, dan kontrol lagu.
+ * Mendukung konteks setlist, navigasi antar lagu, transpose, autoscroll, dan fitur media.
+ *
+ * Props:
+ *   - song: (optional) data lagu yang diterima dari parent
+ */
 export default function SongLyricsPage({ song: songProp }) {
+  // =========================
+  // 1. Routing & Context
+  // =========================
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
   const { user } = useAuth();
 
-  // Determine bandId and userBandInfo for permission
+  // =========================
+  // 2. Permission Handling
+  // =========================
+  // Dapatkan bandId dan info role user
   const bandId = songProp?.bandId || songProp?.band_id || undefined;
-  // Try to get user role info from song or user
-  const userBandInfo = user && bandId ? {
-    role: user?.bandRoles?.[bandId] || user?.role || 'member',
-    bandId
-  } : user ? { role: user?.role || 'member' } : null;
+  const userBandInfo = user && bandId
+    ? { role: user?.bandRoles?.[bandId] || user?.role || 'member', bandId }
+    : user ? { role: user?.role || 'member' } : null;
   const { can } = usePermission(bandId, userBandInfo);
 
-  // State for fetched song data
-  const [fetchedSong, setFetchedSong] = useState(null);
+  // =========================
+  // 3. State: Data Lagu
+  // =========================
+  const [fetchedSong, setFetchedSong] = useState(null); // Data lagu hasil fetch
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Get metadata from location state (setlist context)
+  // =========================
+  // 4. State: Setlist Context
+  // =========================
+  // Metadata lagu dalam setlist (jika ada)
   const setlistSongData = location.state?.setlistSong || {};
   const setlistData = location.state?.setlist || {};
   const setlistId = location.state?.setlistId;
 
-  // Always use fetchedSong if available, otherwise fallback to empty object
+   // =========================
+  // 6. Data Lagu & Metadata
+  // =========================
+  // Gunakan fetchedSong jika sudah ada, fallback ke object kosong
   const song = fetchedSong || {};
   const artist = setlistSongData.artist || song?.artist || "";
   const key = setlistSongData.key || song?.key || "";
@@ -58,17 +67,11 @@ export default function SongLyricsPage({ song: songProp }) {
   const timeSignature = setlistSongData.time_signature || song?.time_signature || "4/4";
   const youtubeId = song?.youtubeId || song?.youtube_url || "";
   const timeMarkers = song?.time_markers || [];
-
+     
   // Transpose state
   const [transpose, setTranspose] = useState(0);
-
-  // Reset transpose ke 0 setiap kali id lagu/setlistSongData.key berubah
-  useEffect(() => {
-    setTranspose(0);
-  }, [id, setlistSongData.key]);
   const [zoom, setZoom] = useState(1);
-  // ...existing code...
-
+  
   // In-place editing state
   const [isEditingLyrics, setIsEditingLyrics] = useState(false);
   const [editedLyrics, setEditedLyrics] = useState("");
@@ -82,11 +85,17 @@ export default function SongLyricsPage({ song: songProp }) {
   // Export menu state
   const [showExportMenu, setShowExportMenu] = useState(false);
 
+  // State untuk menampilkan/menyembunyikan info lagu
+  const [showSongInfo, setShowSongInfo] = useState(true);
+
   // Share state
   const [shareMessage, setShareMessage] = useState("");
 
   // Media panel collapse state
   const [mediaPanelExpanded, setMediaPanelExpanded] = useState(true);
+
+  // State untuk menampilkan/menyembunyikan time marker panel
+  const [showTimeMarkers, setShowTimeMarkers] = useState(true);
 
   // Metronome state for quick access
   const [isMetronomeActive, setIsMetronomeActive] = useState(false);
@@ -216,30 +225,7 @@ export default function SongLyricsPage({ song: songProp }) {
       });
   }, [id]);
 
-  // Auto-calculate transpose if setlist has different key
-  useEffect(() => {
-    // Helper to parse key into root only (abaikan mayor/minor)
-    function parseKeyRoot(keyStr) {
-      if (!keyStr) return '';
-      const match = keyStr.match(/^([A-G][b#]?)/i);
-      return match ? match[1].toUpperCase() : keyStr.toUpperCase();
-    }
-
-    if (setlistSongData.key && song?.key && setlistSongData.key !== song.key) {
-      const keyMap = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-      const origRoot = parseKeyRoot(song.key);
-      const targRoot = parseKeyRoot(setlistSongData.key);
-      const originalIdx = keyMap.indexOf(origRoot);
-      const targetIdx = keyMap.indexOf(targRoot);
-      if (originalIdx >= 0 && targetIdx >= 0) {
-        let steps = targetIdx - originalIdx;
-        if (steps < 0) steps += 12;
-        setTranspose(steps);
-      }
-    }
-  }, [setlistSongData.key, song?.key]);
-
-  // Analyze chords when lyrics change
+    // Analyze chords when lyrics change
   useEffect(() => {
     if (!song?.lyrics) {
       setChordStats({ chords: [], count: 0 });
@@ -600,31 +586,44 @@ export default function SongLyricsPage({ song: songProp }) {
 
             {/* Time Markers Section - Right */}
             <div className="media-section media-markers-section">
-              <div className="media-section-header">
-                <span className="media-section-icon">⏱️</span>
-                <span className="media-section-label">Time Markers</span>
-                {timeMarkers.length > 0 && (
-                  <span className="media-section-badge">{timeMarkers.length}</span>
-                )}
+              <div className="media-section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <span className="media-section-icon">⏱️</span>
+                  <span className="media-section-label">Time Markers</span>
+                  {timeMarkers.length > 0 && (
+                    <span className="media-section-badge">{timeMarkers.length}</span>
+                  )}
+                </div>
+                <button
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.9em' }}
+                  onClick={() => setShowTimeMarkers(!showTimeMarkers)}
+                  aria-label={showTimeMarkers ? 'Sembunyikan time marker' : 'Tampilkan time marker'}
+                  title={showTimeMarkers ? 'Sembunyikan time marker' : 'Tampilkan time marker'}
+                >
+                  {showTimeMarkers ? '▲ Sembunyikan' : '▼ Tampilkan'}
+                </button>
               </div>
-              <div className="media-section-body">
-                <TimeMarkers
-                  timeMarkers={timeMarkers}
-                  readonly={!can(PERMISSIONS.SONG_EDIT)}
-                  onUpdate={handleTimeMarkerUpdate}
-                  onSeek={(time) => {
-                    if (youtubeRef.current && youtubeRef.current.handleSeek) {
-                      youtubeRef.current.handleSeek(time);
-                    }
-                  }}
-                  getCurrentYouTubeTime={() => {
-                    if (youtubeRef.current && typeof youtubeRef.current.currentTime === "number") {
-                      return youtubeRef.current.currentTime;
-                    }
-                    return 0;
-                  }}
-                />
-              </div>
+              {showTimeMarkers && (
+                <div className="media-section-body">
+                  <TimeMarkers
+                    timeMarkers={timeMarkers}
+                    readonly={!can(PERMISSIONS.SONG_EDIT)}
+                    onUpdate={handleTimeMarkerUpdate}
+                    onSeek={(time) => {
+                      if (youtubeRef.current && youtubeRef.current.handleSeek) {
+                        youtubeRef.current.handleSeek(time);
+                      }
+                    }}
+                    getCurrentYouTubeTime={() => {
+                      if (youtubeRef.current && typeof youtubeRef.current.currentTime === "number") {
+                        return youtubeRef.current.currentTime;
+                      }
+                      return 0;
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -632,135 +631,151 @@ export default function SongLyricsPage({ song: songProp }) {
 
       {/* 2. Song Info - Compact Horizontal Layout */}
       <div className="song-info-compact">
-        <h3 className="song-info-compact-title">📋 Info Lagu</h3>
-        <div className="song-info-compact-grid">
-          {/* 1. Key - Most Important */}
-          {key && (
-            <div className="song-info-item song-info-priority song-info-key">
-              <span className="song-info-label">🎹 Key</span>
-              <TransposeKeyControl
-                originalKey={song?.key || key}
-                transpose={transpose}
-                onTransposeChange={setTranspose}
-              />
-            </div>
-          )}
-          {/* 2. Capo - Setup Info */}
-          {capo && (
-            <div className="song-info-item song-info-priority">
-              <span className="song-info-label">📌 Capo</span>
-              <span className="song-info-value">Fret {capo}</span>
-            </div>
-          )}
-          {/* 3. Time Signature - Rhythm Structure */}
-          {timeSignature && (
-            <div className="song-info-item">
-              <span className="song-info-label">🎼 Time</span>
-              <span className="song-info-value">{timeSignature}</span>
-            </div>
-          )}
-          {/* 4. Tempo - Timing */}
-          {tempo && (
-            <div className="song-info-item song-info-tempo">
-              <span className="song-info-label">⏱️ Tempo</span>
-              <div className="song-info-tempo-controls">
-                <button
-                  onClick={() => setScrollSpeed(Math.max(40, scrollSpeed - 5))}
-                  className="tempo-adjust-btn"
-                  title="Tempo down"
-                  aria-label="Tempo down"
-                >
-                  −
-                </button>
-                <div className="song-info-tempo-display">
-                  <span className="song-info-value">{scrollSpeed}</span>
-                  <span className="song-info-tempo-unit">BPM</span>                  
-                </div>
-                <button
-                  onClick={() => setScrollSpeed(Math.min(240, scrollSpeed + 5))}
-                  className="tempo-adjust-btn"
-                  title="Tempo up"
-                  aria-label="Tempo up"
-                >
-                  +
-                </button>
-                <button
-                  onClick={() => setIsMetronomeActive(!isMetronomeActive)}
-                  className={`tempo-metronome-btn ${isMetronomeActive ? "active" : ""}`}
-                  title={isMetronomeActive ? "Stop metronome" : "Start metronome"}
-                  aria-label={isMetronomeActive ? "Stop metronome" : "Start metronome"}
-                >
-                  {isMetronomeActive ? "⏹️" : "▶️"}
-                </button>
-              </div>
-                  <span
-                    className="song-info-tempo-term"
-                    style={{ fontStyle: "italic", color: "var(--text-secondary)" }}
-                  >
-                    {getTempoTerm(scrollSpeed)}
-                  </span>
-
-              {isMetronomeActive && <div className="song-info-tempo-status">♪ Playing...</div>}
-
-            </div>
-          )}
-
-          {/* 5. Genre - Style Context */}
-          {genre && (
-            <div className="song-info-item">
-              <span className="song-info-label">🎸 Genre</span>
-              <span className="song-info-value">{genre}</span>
-            </div>
-          )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 className="song-info-compact-title">📋 Info Lagu</h3>
+          <button
+            className="btn btn-secondary"
+            style={{ fontSize: '0.9em' }}
+            onClick={() => setShowSongInfo(!showSongInfo)}
+            aria-label={showSongInfo ? 'Sembunyikan info lagu' : 'Tampilkan info lagu'}
+            title={showSongInfo ? 'Sembunyikan info lagu' : 'Tampilkan info lagu'}
+          >
+            {showSongInfo ? '▲ Sembunyikan' : '▼ Tampilkan'}
+          </button>
         </div>
+        {showSongInfo && (
+          <div className="song-info-compact-grid">
+            {/* 1. Key - Most Important */}
+            {key && (
+              <div className="song-info-item song-info-priority song-info-key">
+                <span className="song-info-label">🎹 Key</span>
+                <TransposeKeyControl
+                  originalKey={song?.key || key}
+                  targetKey={setlistSongData.key || song?.key || key}
+                  transpose={transpose}
+                  onTransposeChange={setTranspose}
+                />
+              </div>
+            )}
+            {/* 2. Capo - Setup Info */}
+            {capo && (
+              <div className="song-info-item song-info-priority">
+                <span className="song-info-label">📌 Capo</span>
+                <span className="song-info-value">Fret {capo}</span>
+              </div>
+            )}
+            {/* 3. Time Signature - Rhythm Structure */}
+            {timeSignature && (
+              <div className="song-info-item">
+                <span className="song-info-label">🎼 Time</span>
+                <span className="song-info-value">{timeSignature}</span>
+              </div>
+            )}
+            {/* 4. Tempo - Timing */}
+            {tempo && (
+              <div className="song-info-item song-info-tempo">
+                <span className="song-info-label">⏱️ Tempo</span>
+                <div className="song-info-tempo-controls">
+                  <button
+                    onClick={() => setScrollSpeed(Math.max(40, scrollSpeed - 5))}
+                    className="tempo-adjust-btn"
+                    title="Tempo down"
+                    aria-label="Tempo down"
+                  >
+                    −
+                  </button>
+                  <div className="song-info-tempo-display">
+                    <span className="song-info-value">{scrollSpeed}</span>
+                    <span className="song-info-tempo-unit">BPM</span>                  
+                  </div>
+                  <button
+                    onClick={() => setScrollSpeed(Math.min(240, scrollSpeed + 5))}
+                    className="tempo-adjust-btn"
+                    title="Tempo up"
+                    aria-label="Tempo up"
+                  >
+                    +
+                  </button>
+                  <button
+                    onClick={() => setIsMetronomeActive(!isMetronomeActive)}
+                    className={`tempo-metronome-btn ${isMetronomeActive ? "active" : ""}`}
+                    title={isMetronomeActive ? "Stop metronome" : "Start metronome"}
+                    aria-label={isMetronomeActive ? "Stop metronome" : "Start metronome"}
+                  >
+                    {isMetronomeActive ? "⏹️" : "▶️"}
+                  </button>
+                </div>
+                    <span
+                      className="song-info-tempo-term"
+                      style={{ fontStyle: "italic", color: "var(--text-secondary)" }}
+                    >
+                      {getTempoTerm(scrollSpeed)}
+                    </span>
+
+                {isMetronomeActive && <div className="song-info-tempo-status">♪ Playing...</div>}
+
+              </div>
+            )}
+
+            {/* 5. Genre - Style Context */}
+            {genre && (
+              <div className="song-info-item">
+                <span className="song-info-label">🎸 Genre</span>
+                <span className="song-info-value">{genre}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Chord Analyzer Panel */}
-      {chordStats.chords.length > 0 && !isEditingLyrics && (
-        <div className="song-lyrics-analyzer">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "var(--spacing-lg)",
-            }}
+      {/* Chord Analyzer Panel - Selalu tampil */}
+      <div className="song-lyrics-analyzer">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "var(--spacing-lg)",
+          }}
+        >
+          <h3 className="song-lyrics-analyzer-title">🎵 Analisis Chord</h3>
+          <button
+            onClick={() => setShowChordAnalyzer(!showChordAnalyzer)}
+            className="btn btn-secondary"
+            style={{ fontSize: "0.85em" }}
           >
-            <h3 className="song-lyrics-analyzer-title">🎵 Analisis Chord</h3>
-            <button
-              onClick={() => setShowChordAnalyzer(!showChordAnalyzer)}
-              className="btn btn-secondary"
-              style={{ fontSize: "0.85em" }}
-            >
-              {showChordAnalyzer ? "▼ Sembunyikan" : "▶ Tampilkan"}
-            </button>
-          </div>
-          {showChordAnalyzer && (
-            <>
-              <div className="song-lyrics-analyzer-grid">
-                <div className="song-lyrics-analyzer-stat">
-                  <div className="song-lyrics-analyzer-stat-label">Total Chord</div>
-                  <div className="song-lyrics-analyzer-stat-value">{chordStats.count}</div>
-                </div>
-                <div className="song-lyrics-analyzer-stat">
-                  <div className="song-lyrics-analyzer-stat-label">Unique Chord</div>
-                  <div className="song-lyrics-analyzer-stat-value">{chordStats.chords.length}</div>
-                </div>
+            {showChordAnalyzer ? "▼ Sembunyikan" : "▶ Tampilkan"}
+          </button>
+        </div>
+        {showChordAnalyzer && (
+          <>
+            <div className="song-lyrics-analyzer-grid">
+              <div className="song-lyrics-analyzer-stat">
+                <div className="song-lyrics-analyzer-stat-label">Total Chord</div>
+                <div className="song-lyrics-analyzer-stat-value">{chordStats.count}</div>
               </div>
-              <div className="song-lyrics-analyzer-chords">
-                <label className="song-lyrics-analyzer-chords-label">Chord yang Digunakan:</label>
-                <div className="song-lyrics-analyzer-chords-list">
-                  {chordStats.chords.map((chord) => (
+              <div className="song-lyrics-analyzer-stat">
+                <div className="song-lyrics-analyzer-stat-label">Unique Chord</div>
+                <div className="song-lyrics-analyzer-stat-value">{chordStats.chords.length}</div>
+              </div>
+            </div>
+            <div className="song-lyrics-analyzer-chords">
+              <label className="song-lyrics-analyzer-chords-label">Chord yang Digunakan:</label>
+              <div className="song-lyrics-analyzer-chords-list">
+                {chordStats.chords.length > 0 ? (
+                  chordStats.chords.map((chord) => (
                     <span key={chord} className="song-lyrics-analyzer-chord-tag">
                       {chord}
                     </span>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <span className="song-lyrics-analyzer-chord-tag song-lyrics-analyzer-chord-empty">Tidak ada chord ditemukan</span>
+                )}
               </div>
-            </>
-          )}
-        </div>
-      )}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Lyrics Main Section */}
       <div className="song-lyrics-main">

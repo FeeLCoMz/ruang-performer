@@ -8,7 +8,29 @@ import React from 'react';
  * @param {function} onTransposeChange - Callback when transpose changes
  * @param {boolean} compact - Optional compact mode for smaller display
  */
-export default function TransposeKeyControl({ originalKey, transpose, onTransposeChange, compact = false }) {
+export default function TransposeKeyControl({ originalKey, targetKey, transpose, onTransposeChange, compact = false }) {
+  // Kalkulasi otomatis transpose jika targetKey berbeda dengan originalKey
+  React.useEffect(() => {
+    if (!originalKey || !targetKey) return;
+    // Helper: parse root key
+    function parseKeyRoot(keyStr) {
+      if (!keyStr) return '';
+      const match = keyStr.match(/^([A-G][b#]?)/i);
+      return match ? match[1].toUpperCase() : keyStr.toUpperCase();
+    }
+    const keyMap = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const origRoot = parseKeyRoot(originalKey);
+    const targRoot = parseKeyRoot(targetKey);
+    const originalIdx = keyMap.indexOf(origRoot);
+    const targetIdx = keyMap.indexOf(targRoot);
+    if (originalIdx >= 0 && targetIdx >= 0 && origRoot !== targRoot) {
+      let steps = targetIdx - originalIdx;
+      if (steps < 0) steps += 12;
+      if (steps !== transpose) onTransposeChange(steps);
+    } else if (origRoot === targRoot && transpose !== 0) {
+      onTransposeChange(0);
+    }
+  }, [originalKey, targetKey]);
   // Calculate transposed key
   // Transpose hanya root key, suffix (misal 'm') tetap dipertahankan tanpa logika mayor/minor
   const getTransposedKey = (key, semitones) => {
