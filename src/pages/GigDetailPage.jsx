@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import * as apiClient from '../apiClient.js';
 import GigPoster from '../components/GigPoster.jsx';
 import { toPng } from 'html-to-image';
+import { usePermission } from '../hooks/usePermission.js';
 
 export default function GigDetailPage() {
   const { id } = useParams();
@@ -12,6 +13,10 @@ export default function GigDetailPage() {
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [posterError, setPosterError] = useState('');
   const posterRef = useRef(null);
+  // Permission logic
+  const bandId = gig?.bandId || null;
+  const userBandInfo = gig?.userBandInfo || null; // Pastikan gig API mengembalikan userBandInfo
+  const { can } = usePermission(bandId, userBandInfo);
 
   useEffect(() => {
     (async () => {
@@ -58,6 +63,18 @@ export default function GigDetailPage() {
       <div className="page-header">
         <h1>🎤 Gig: {gig.bandName || 'Gig'}</h1>
         <button className="btn" onClick={() => navigate(-1)}>← Kembali</button>
+        {/* Permission check: hanya tampil jika user boleh edit gig */}
+        {can && can('gig:edit') && (
+          <button
+            className="btn btn-primary"
+            style={{ marginLeft: 8 }}
+            onClick={() => navigate(`/gigs/edit/${gig.id}`)}
+          >
+            ✏️ Edit Gig
+          </button>
+        )}
+        {/* Jika logic userBandInfo tidak jelas, pastikan gig API mengembalikan userBandInfo sesuai bandId */}
+        {/* Referensi permission: gig:edit, lihat permissionUtils.js */}
       </div>
       <div className="card">
         <p><b>Tanggal:</b> {new Date(gig.date).toLocaleString('id-ID')}</p>
