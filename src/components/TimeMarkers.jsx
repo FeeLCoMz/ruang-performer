@@ -166,11 +166,10 @@ export default function TimeMarkers({
                 type="button"
                 title="Ambil waktu dari YouTube"
                 onClick={handleFillNewTimeFromYouTube}
-                className="time-marker-fill-btn"
-                style={{ padding: '0 8px' }}
-              >
-                ⏱️ Ambil dari YouTube
-              </button>
+                className="btn btn-secondary"
+                >
+                 <span role="img" aria-label="Ambil waktu dari YouTube">⏱️</span>
+               </button>
             </div>
             <input
               type="text"
@@ -216,11 +215,10 @@ export default function TimeMarkers({
                         type="button"
                         title="Ambil waktu dari YouTube"
                         onClick={handleFillEditTimeFromYouTube}
-                        className="time-marker-fill-btn"
-                        style={{ padding: '0 8px' }}
-                      >
-                        ⏱️ Ambil dari YouTube
-                      </button>
+                        className="btn btn-secondary"
+                        >
+                         <span role="img" aria-label="Ambil waktu dari YouTube">⏱️</span>
+                       </button>
                     </div>
                     <input
                       type="text"
