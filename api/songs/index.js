@@ -63,7 +63,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       // Join ke tabel users untuk ambil nama kontributor
       const rows = await client.execute(
-        `SELECT songs.id, songs.title, songs.artist, songs.youtubeId, songs.lyrics, songs.key, songs.tempo, songs.genre, songs.capo, songs.time_markers, songs.userId, songs.createdAt, songs.updatedAt, users.username AS contributorUsername
+        `SELECT songs.id, songs.title, songs.artist, songs.youtubeId, songs.lyrics, songs.key, songs.tempo, songs.genre, songs.capo, songs.time_markers, songs.userId, songs.createdAt, songs.updatedAt, songs.sheet_music_xml, users.username AS contributorUsername
          FROM songs
          LEFT JOIN users ON users.id = songs.userId
          ORDER BY (songs.updatedAt IS NULL) ASC, datetime(songs.updatedAt) DESC, datetime(songs.createdAt) DESC`
@@ -72,6 +72,7 @@ export default async function handler(req, res) {
         ...row,
         contributorName: row.contributorUsername, // alias agar frontend tetap pakai contributorName
         time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
+        sheetMusicXml: row.sheet_music_xml || '',
       }));
       res.status(200).json(list);
       return;
@@ -112,8 +113,8 @@ export default async function handler(req, res) {
         }
         const id = item.id?.toString() || randomUUID();
         await client.execute(
-          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, genre, capo, time_markers, arrangement_style, keyboard_patch, userId, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, genre, capo, time_markers, arrangement_style, keyboard_patch, sheet_music_xml, userId, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title,
              artist = excluded.artist,
@@ -126,6 +127,7 @@ export default async function handler(req, res) {
              time_markers = excluded.time_markers,
              arrangement_style = excluded.arrangement_style,
              keyboard_patch = excluded.keyboard_patch,
+             sheet_music_xml = excluded.sheet_music_xml,
              updatedAt = excluded.updatedAt`,
           [
             id,
@@ -140,6 +142,7 @@ export default async function handler(req, res) {
             (Array.isArray(item.timestamps) ? JSON.stringify(item.timestamps) : (item.timestamps || null)),
             item.arrangementStyle || null,
             item.keyboardPatch || null,
+            item.sheetMusicXml || null,
             userId,
             item.createdAt || now,
             now

@@ -1,15 +1,69 @@
-// Parsing section dan chord dari baris seperti '[Intro] Am Em Dm'
-export function parseChordLineWithSection(line) {
-  const sectionMatch = line.match(/^\[(.+?)\]/);
-  const section = sectionMatch ? sectionMatch[1] : null;
-  const chordPart = line.replace(/^\[.+?\]\s*/, '').trim();
-  const chords = chordPart.split(/\s+/).filter(w => w && /^[A-G][#b]?m?(aj|sus|dim|aug|add)?\d*(\/([A-G][#b]?))?$/.test(w));
-  return { section, chords };
+/**
+ * Mem-parse array baris lirik menjadi struktur token untuk rendering.
+ * @param {string[]} lines - Array baris lirik
+ * @param {number} transpose - Jumlah transposisi chord
+ * @returns {Array} Array objek baris terstruktur
+ */
+export function parseLines(lines, transpose) {
+  return lines.map(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return { type: 'empty' };
+    const section = parseSection(line);
+    if (section) return { type: section.type, label: section.label };
+    if (isChordLine(line)) {
+      // Token chord (dengan transpose jika perlu)
+      return {
+        type: 'chord',
+        tokens: line.split(/(\s+)/).map(token =>
+          /^\s+$/.test(token)
+            ? { token, isSpace: true }
+            : { token: transpose ? transposeChord(token, transpose) : token, isChord: true }
+        )
+      };
+    }
+    if (parseNumberLine(line)) {
+      return {
+        type: 'number',
+        tokens: line.split(/(\s+)/).map(token =>
+          /^\s+$/.test(token)
+            ? { token, isSpace: true }
+            : { token, isNumber: true }
+        )
+      };
+    }
+    // Baris lirik: tokenisasi, deteksi chord/angka/timestamp inline
+    return {
+      type: 'lyrics',
+      tokens: line.split(/(\s+)/).map(token => {
+        if (/^\s+$/.test(token)) return { token, isSpace: true };
+        if (isChordLine(token)) return { token: transpose ? transposeChord(token, transpose) : token, isChord: true };
+        if (parseNumberLine(token)) return { token, isNumber: true };
+        return { token };
+      })
+    };
+  });
 }
-// Dummy add function for test compatibility
-export function add(a, b) {
-  return a + b;
+/**
+ * Helper: parse [mm:ss] or [hh:mm:ss] timestamp to seconds
+ * @param {string} token - Token timestamp (misal: [01:23] atau [1:02:03])
+ * @returns {number|null} detik, atau null jika tidak cocok
+ */
+export function parseTimestampToken(token) {
+  const m = token.match(/^\[(\d{1,2}):(\d{2})\]$/); // [mm:ss]
+  if (m) {
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+  const h = token.match(/^\[(\d{1,2}):(\d{2}):(\d{2})\]$/); // [hh:mm:ss]
+  if (h) {
+    return parseInt(h[1], 10) * 3600 + parseInt(h[2], 10) * 60 + parseInt(h[3], 10);
+  }
+  return null;
 }
+// Global regex untuk deteksi chord (standar, konsisten di semua fungsi)
+const CHORD_REGEX = /^[A-G][#b]?m?(aj|sus|dim|aug|add)?\d*(\/([A-G][#b]?))?$/i;
+
+// ...existing code...
+// ...existing code...
 
 /**
  * Deteksi apakah sebuah baris adalah baris not angka (misal: 7534, 5317, dst)
@@ -48,7 +102,7 @@ export function parseNumberLine(line) {
  *
  * Fitur utama:
  * - Transposisi chord (transposeChord)
- * - Deteksi dan parsing baris chord (parseChordLine, isChordLine)
+ * - Deteksi dan parsing baris chord (isChordLine)
  * - Parsing struktur lagu/section (parseSection)
  * - Analisis dan ekstraksi chord dari lirik (parseChordPro, getAllChords, getChordsByBar)
  * - Mendukung format barline (|, ||, |:, :|) dan compact chord (D..Gm..Bb)
@@ -61,25 +115,13 @@ export function parseNumberLine(line) {
  *   - transposeChord(chord, steps): string
  *   - getNoteIndex(root): number|null
  *   - getTransposeSteps(fromKey, toKey): number
- *   - parseChordLine(line): boolean
+ *   - isChordLine(line): boolean
  *   - parseSection(line): {type, label}|null
  *   - parseChordPro(text): {metadata, lines, structures}
  *   - getAllChords(parsedSong): string[]
  *   - getChordsByBar(parsedSong): string[][]
  */
-export function parseChordLine(line) {
-  // Hilangkan barline di awal/akhir/token (|, ||, |:, :|, [:, :])
-  const cleaned = line
-    .replace(/\|:|:\||\[\:|\:\]|\|\||\|/g, ' ') // ganti barline dengan spasi
-    .replace(/\s+/g, ' ') // normalisasi spasi
-    .trim();
-  // Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F..
-  const chordRegex = /^[A-G][#b]?m?(aj|sus|dim|aug|add)?\d*(\/([A-G][#b]?))?((\.{2,}|-)[A-G][#b]?m?(aj|sus|dim|aug|add)?\d*(\/([A-G][#b]?))?)*(\.{2,})?$/i;
-  const words = cleaned.split(/\s+/);
-  if (!words.length) return false;
-  const chordCount = words.filter(w => chordRegex.test(w)).length;
-  return chordCount > 0 && chordCount >= words.length / 2;
-}
+// parseChordLine dihapus, gunakan isChordLine sebagai pengganti
 
 // Fungsi untuk mendeteksi section/struktur lagu atau instrumen
 export function parseSection(line) {
@@ -186,21 +228,26 @@ export const isChordLine = (line) => {
   const compactPattern = /^(?:-?[A-G][#b]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/([A-G][#b]?))?)(?:\.\.(?:-?[A-G][#b]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/([A-G][#b]?))?))+$/;
   if (compactPattern.test(cleanedLine.trim())) return true;
 
-  // Try to extract all chords using CHORD_REGEX_GLOBAL
+  // Tokenisasi: pisahkan berdasarkan spasi
+  const tokens = cleanedLine.split(/\s+/).filter(Boolean);
+  if (!tokens.length) return false;
+
+  // Hitung jumlah token chord dan token pengisi (hanya . atau -)
+  let chordOrFiller = 0;
+  for (const t of tokens) {
+    if (CHORD_REGEX.test(t) || /^\.*$/.test(t) || /^-+$/.test(t)) chordOrFiller++;
+  }
+  // Jika mayoritas token adalah chord atau filler, anggap baris chord
+  if (chordOrFiller > 0 && chordOrFiller >= tokens.length * 0.7) return true;
+
+  // Fallback: coverage karakter chord (lama)
   const matches = [...cleanedLine.matchAll(CHORD_REGEX_GLOBAL)];
-
   if (matches.length === 0) return false;
-
-  // Calculate how much of the line is covered by chords
   let totalChordLength = 0;
   for (const match of matches) {
     totalChordLength += match[0].length;
   }
-
-  // Remove spaces to get actual character count
   const lineWithoutSpaces = cleanedLine.replace(/\s+/g, '');
-
-  // If more than 50% of non-space characters are chords, treat as chord line
   return totalChordLength > 0 && (totalChordLength / lineWithoutSpaces.length) >= 0.5;
 };
 

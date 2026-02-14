@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { usePermission } from '../hooks/usePermission.js';
+import { PERMISSIONS } from '../utils/permissionUtils.js';
 import { useNavigate, useParams } from 'react-router-dom';
 import YouTubeViewer from '../components/YouTubeViewer';
 import TimeMarkers from '../components/TimeMarkers';
@@ -14,6 +16,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
   const isEditMode = !!id;
   
   // Form states
+  const [sheetMusicXml, setSheetMusicXml] = useState('');
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [songKey, setSongKey] = useState('C');
@@ -71,6 +74,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
           setArrangementStyle(data.arrangementStyle || '');
           setKeyboardPatch(Array.isArray(data.keyboardPatch) ? data.keyboardPatch.join(', ') : (data.keyboardPatch || ''));
           setTimeMarkers(data.time_markers || []);
+          setSheetMusicXml(data.sheetMusicXml || '');
           setLoadingData(false);
         })
         .catch(err => {
@@ -210,6 +214,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
     }
   };
 
+  // Cancel handler
   const handleCancel = () => {
     if (isEditMode) {
       navigate(`/songs/view/${id}`);
@@ -218,196 +223,170 @@ export default function SongAddEditPage({ onSongUpdated }) {
     }
   };
 
-  if (loadingData) {
-    return (
-      <div className="page-container">
-        <div className="loading-container">
-          <div className="loading-icon">⏳</div>
-          <div>Memuat data lagu...</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="page-container">
-      {/* Header */}
-      <div className="song-edit-header">
-        <button
-          type="button"
-          onClick={handleCancel}
-          className="song-edit-back-btn"
-        >
-          ← Kembali
-        </button>
+      <div className="page-header">
+        <h1>{isEditMode ? 'Edit Lagu' : 'Tambah Lagu Baru'}</h1>
       </div>
-
       <form onSubmit={handleSubmit}>
-        {/* Basic Info Section */}
-        <div className="song-section-card">
-          <h3 className="song-section-title">
-            📝 Informasi Dasar
-          </h3>
-          
-          <div className="form-section">
+        <div className="form-section">
 
-            <div className="form-grid-2col">
-              <div>
-                <label className="form-label-required">
-                  🎵 Judul Lagu <span className="required-asterisk">*</span>
-                </label>
+          <div className="form-grid-2col">
+            <div>
+              <label className="form-label-required">
+                🎵 Judul Lagu <span className="required-asterisk">*</span>
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                placeholder="Masukkan judul lagu"
+                className="form-input-field"
+              />
+            </div>
+
+            <div>
+              <label className="form-label-required">
+                👤 Artist
+              </label>
+              <input
+                type="text"
+                value={artist}
+                onChange={(e) => setArtist(e.target.value)}
+                placeholder="Nama artist atau band"
+                className="form-input-field"
+              />
+            </div>
+          </div>
+
+          {/* AI Autofill Button */}
+          <div style={{ marginTop: 12, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleAIAutofill}
+              disabled={aiLoading}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              🤖 AI Autofill
+              {aiLoading && <span style={{ marginLeft: 6 }}>⏳</span>}
+            </button>
+            <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+              Otomatis isi data lagu dari AI (judul wajib diisi)
+            </span>
+          </div>
+
+          <div className="form-grid-2col">
+            <div>
+              <label className="form-label-required">
+                🎹 Key
+              </label>
+              <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
                 <input
                   type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  placeholder="Masukkan judul lagu"
+                  value={songKey}
+                  onChange={(e) => setSongKey(e.target.value)}
+                  placeholder="C, D, E, dll"
                   className="form-input-field"
+                  style={{ flex: 1 }}
                 />
-              </div>
-
-              <div>
-                <label className="form-label-required">
-                  👤 Artist
-                </label>
-                <input
-                  type="text"
-                  value={artist}
-                  onChange={(e) => setArtist(e.target.value)}
-                  placeholder="Nama artist atau band"
-                  className="form-input-field"
-                />
+                <button
+                  type="button"
+                  onClick={() => setShowPiano(true)}
+                  className="btn btn-secondary"
+                  style={{ whiteSpace: 'nowrap' }}
+                  title="Buka Piano Virtual"
+                >
+                  🎹 Piano
+                </button>
               </div>
             </div>
 
-            {/* AI Autofill Button */}
-            <div style={{ marginTop: 12, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleAIAutofill}
-                disabled={aiLoading}
-                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-              >
-                🤖 AI Autofill
-                {aiLoading && <span style={{ marginLeft: 6 }}>⏳</span>}
-              </button>
-              <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-                Otomatis isi data lagu dari AI (judul wajib diisi)
-              </span>
-            </div>
-
-            <div className="form-grid-2col">
-              <div>
-                <label className="form-label-required">
-                  🎹 Key
-                </label>
-                <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
-                  <input
-                    type="text"
-                    value={songKey}
-                    onChange={(e) => setSongKey(e.target.value)}
-                    placeholder="C, D, E, dll"
-                    className="form-input-field"
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPiano(true)}
-                    className="btn btn-secondary"
-                    style={{ whiteSpace: 'nowrap' }}
-                    title="Buka Piano Virtual"
-                  >
-                    🎹 Piano
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="form-label-required">
-                  ⏱️ Tempo (BPM)
-                </label>
-                <div className="form-section" style={{ flexDirection: 'row' }}>
-                  <input
-                    type="number"
-                    value={tempo}
-                    onChange={(e) => setTempo(e.target.value)}
-                    placeholder="120"
-                    min="40"
-                    max="240"
-                    className="form-input-field"
-                    style={{ flex: 1 }}
-                  />
-                  <TapTempo onTempo={setTempo} initialTempo={tempo} />
-                </div>
-              </div>
-
-              <div>
-                <label className="form-label-required">
-                  � Time Signature
-                </label>
-                <input
-                  type="text"
-                  value={timeSignature}
-                  onChange={(e) => setTimeSignature(e.target.value)}
-                  placeholder="4/4, 3/4, 6/8, dll"
-                  className="form-input-field"
-                />
-              </div>
-
-              <div>
-                <label className="form-label-required">
-                  �🎸 Genre
-                </label>
-                <input
-                  type="text"
-                  value={genre}
-                  onChange={(e) => setGenre(e.target.value)}
-                  placeholder="Pop, Rock, Jazz, dll"
-                  className="form-input-field"
-                />
-              </div>
-
-              <div>
-                <label className="form-label-required">
-                  📌 Capo
-                </label>
+            <div>
+              <label className="form-label-required">
+                ⏱️ Tempo (BPM)
+              </label>
+              <div className="form-section" style={{ flexDirection: 'row' }}>
                 <input
                   type="number"
-                  value={capo}
-                  onChange={(e) => setCapo(e.target.value)}
-                  placeholder="Fret number"
-                  min="0"
-                  max="12"
+                  value={tempo}
+                  onChange={(e) => setTempo(e.target.value)}
+                  placeholder="120"
+                  min="40"
+                  max="240"
                   className="form-input-field"
+                  style={{ flex: 1 }}
                 />
+                <TapTempo onTempo={setTempo} initialTempo={tempo} />
               </div>
             </div>
 
             <div>
               <label className="form-label-required">
-                🎼 Gaya Aransemen
+                � Time Signature
               </label>
               <input
                 type="text"
-                value={arrangementStyle}
-                onChange={e => setArrangementStyle(e.target.value)}
-                placeholder="Contoh: full band, akustik, unplugged"
+                value={timeSignature}
+                onChange={(e) => setTimeSignature(e.target.value)}
+                placeholder="4/4, 3/4, 6/8, dll"
                 className="form-input-field"
               />
             </div>
+
             <div>
               <label className="form-label-required">
-                🎹 Keyboard Patch
+                �🎸 Genre
               </label>
               <input
                 type="text"
-                value={keyboardPatch}
-                onChange={e => setKeyboardPatch(e.target.value)}
-                placeholder="Contoh: EP Mark I, Pad, Strings"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+                placeholder="Pop, Rock, Jazz, dll"
                 className="form-input-field"
               />
             </div>
+
+            <div>
+              <label className="form-label-required">
+                📌 Capo
+              </label>
+              <input
+                type="number"
+                value={capo}
+                onChange={(e) => setCapo(e.target.value)}
+                placeholder="Fret number"
+                min="0"
+                max="12"
+                className="form-input-field"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="form-label-required">
+              🎼 Gaya Aransemen
+            </label>
+            <input
+              type="text"
+              value={arrangementStyle}
+              onChange={e => setArrangementStyle(e.target.value)}
+              placeholder="Contoh: full band, akustik, unplugged"
+              className="form-input-field"
+            />
+          </div>
+          <div>
+            <label className="form-label-required">
+              🎹 Keyboard Patch
+            </label>
+            <input
+              type="text"
+              value={keyboardPatch}
+              onChange={e => setKeyboardPatch(e.target.value)}
+              placeholder="Contoh: EP Mark I, Pad, Strings"
+              className="form-input-field"
+            />
           </div>
         </div>
 
@@ -503,10 +482,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
 
         {/* Lyrics Section */}
         <div className="song-section-card">
-          <h3 className="song-section-title">
-            🎤 Lirik & Chord
-          </h3>
-
+          <h3 className="song-section-title">🎤 Lirik & Chord</h3>
           <textarea
             value={lyrics}
             onChange={(e) => setLyrics(e.target.value)}
@@ -520,6 +496,31 @@ export default function SongAddEditPage({ onSongUpdated }) {
             }}
           />
         </div>
+        {/* Sheet Music Section (hanya user berizin edit lagu) */}
+        {(() => {
+          // Permission: hanya tampil jika user bisa edit lagu
+          // Ambil bandId dari url param atau state jika ada
+          const bandId = null; // TODO: ambil bandId jika ada konteks band
+          const userBandInfo = null; // TODO: ambil userBandInfo jika ada konteks band
+          const { can } = usePermission(bandId, userBandInfo);
+          if (can && can(PERMISSIONS.SONG_EDIT)) {
+            return (
+              <div className="song-section-card">
+                <h3 className="song-section-title">🎼 Partitur (MusicXML)</h3>
+                <textarea
+                  value={sheetMusicXml}
+                  onChange={e => setSheetMusicXml(e.target.value)}
+                  placeholder="Paste MusicXML di sini..."
+                  rows={10}
+                  className="form-input-field"
+                  style={{ fontFamily: 'monospace', resize: 'vertical' }}
+                />
+                <div className="form-hint">Hanya format MusicXML. Gunakan software notasi musik untuk ekspor MusicXML.</div>
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {/* Error Display */}
         {error && (

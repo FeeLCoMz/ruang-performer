@@ -46,7 +46,7 @@ export default async function handler(req, res) {
         const result = await client.execute(
           `SELECT s.id, s.title, s.artist, s.youtubeId, s.lyrics, s.key, s.tempo, s.genre, s.capo, 
                   s.time_markers, s.arrangement_style, s.keyboard_patch, s.userId, s.bandId, s.createdAt, s.updatedAt,
-                  b.name as bandName, u.username as contributor
+                  s.sheet_music_xml, b.name as bandName, u.username as contributor
            FROM songs s
            LEFT JOIN bands b ON s.bandId = b.id
            LEFT JOIN users u ON s.userId = u.id
@@ -63,6 +63,7 @@ export default async function handler(req, res) {
           time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
           arrangementStyle: row.arrangement_style || '',
           keyboardPatch: row.keyboard_patch || '',
+          sheetMusicXml: row.sheet_music_xml || '',
         });
         return;
       } catch (queryErr) {
@@ -136,6 +137,7 @@ export default async function handler(req, res) {
         time_markers = COALESCE(?, time_markers),
         arrangement_style = COALESCE(?, arrangement_style),
         keyboard_patch = COALESCE(?, keyboard_patch),
+        sheet_music_xml = COALESCE(?, sheet_music_xml),
         bandId = ?,
         updatedAt = ?`;
       // Pastikan tempo disimpan sebagai string integer tanpa koma
@@ -162,6 +164,7 @@ export default async function handler(req, res) {
         (Array.isArray(body.time_markers) ? JSON.stringify(body.time_markers) : (body.time_markers ?? null)),
         body.arrangementStyle ?? null,
         body.keyboardPatch ?? null,
+        body.sheetMusicXml ?? null,
         body.bandId ?? null,
         now
       ];

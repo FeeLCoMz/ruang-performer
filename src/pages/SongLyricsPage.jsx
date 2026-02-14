@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import ChordDisplay from "../components/ChordDisplay";
+import SongSheetMusic from "../components/SongSheetMusic.jsx";
 import YouTubeViewer from "../components/YouTubeViewer";
 import TimeMarkers from "../components/TimeMarkers";
 import SetlistSongNavigator from "../components/SetlistSongNavigator";
@@ -20,6 +21,8 @@ import { getTempoTerm } from "../utils/musicNotationUtils.js";
  *   - song: (optional) data lagu yang diterima dari parent
  */
 export default function SongLyricsPage({ song: songProp }) {
+  // State untuk toggle tampilan partitur
+  const [showSheetMusic, setShowSheetMusic] = useState(false);
   // =========================
   // 1. Routing & Context
   // =========================
@@ -62,6 +65,8 @@ export default function SongLyricsPage({ song: songProp }) {
   const key = setlistSongData.key || song?.key || "";
   const tempo = setlistSongData.tempo || song?.tempo || "";
   const genre = setlistSongData.genre || song?.genre || "";
+  const arrangementStyle = setlistSongData.arrangementStyle || song?.arrangementStyle || song?.arrangement_style || "";
+  const keyboardPatch = setlistSongData.keyboardPatch || song?.keyboardPatch || song?.keyboard_patch || "";
   const capo = setlistSongData.capo || song?.capo || "";
   const timeSignature = setlistSongData.time_signature || song?.time_signature || "4/4";
   const youtubeId = song?.youtubeId || song?.youtube_url || "";
@@ -743,6 +748,20 @@ export default function SongLyricsPage({ song: songProp }) {
                 <span className="song-info-value">{genre}</span>
               </div>
             )}
+            {/* 6. Arrangement Style (baris terpisah) */}
+            {arrangementStyle && (
+              <div className="song-info-item song-info-block" style={{gridColumn: '1 / -1', marginTop: 8}}>
+                <span className="song-info-label">🎷 Aransemen</span>
+                <span className="song-info-value">{arrangementStyle}</span>
+              </div>
+            )}
+            {/* 7. Keyboard Patch (baris terpisah) */}
+            {keyboardPatch && (
+              <div className="song-info-item song-info-block" style={{gridColumn: '1 / -1', marginTop: 4}}>
+                <span className="song-info-label">🎹 Keyboard Patch</span>
+                <span className="song-info-value">{keyboardPatch}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1013,6 +1032,20 @@ export default function SongLyricsPage({ song: songProp }) {
                 </>
               )}
             </div>
+            {/* Tombol Lihat Partitur (hanya user berizin edit lagu) */}
+            {can && can(PERMISSIONS.SONG_EDIT) && song?.sheetMusicXml && (
+              <button
+                className="btn btn-secondary"
+                style={{ marginBottom: 16 }}
+                onClick={() => setShowSheetMusic((v) => !v)}
+              >
+                {showSheetMusic ? 'Sembunyikan Partitur' : 'Lihat Partitur'}
+              </button>
+            )}
+            {/* Tampilkan partitur jika diaktifkan */}
+            {showSheetMusic && song?.sheetMusicXml && (
+              <SongSheetMusic sheetMusicXml={song.sheetMusicXml} />
+            )}
             <ChordDisplay
               song={song}
               transpose={transpose}
