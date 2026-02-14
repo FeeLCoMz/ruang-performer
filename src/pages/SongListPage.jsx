@@ -357,8 +357,8 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                 <button
                   className="btn-base btn-secondary"
                   style={{ padding: '6px 14px', fontSize: '0.85em' }}
-                  title="Lihat Lirik"
-                  onClick={() => navigate(`/songs/lyrics/${song.id}`)}
+                  title="Lihat Karaoke"
+                  onClick={() => navigate(`/karaoke/${song.id}`)}
                 >
                   Lirik
                 </button>
