@@ -5,9 +5,8 @@ import TimeMarkers from '../components/TimeMarkers';
 import TapTempo from '../components/TapTempo';
 import VirtualPiano from '../components/VirtualPiano';
 import AIAutofillModal from '../components/AIAutofillModal';
-import TransposeKeyControl from '../components/TransposeKeyControl';
-import ChordDisplay from '../components/ChordDisplay';
 import { getAuthHeader } from '../utils/auth';
+import { extractYouTubeId } from '../utils/youtubeUtils';
 
 export default function SongAddEditPage({ onSongUpdated }) {
   const navigate = useNavigate();
@@ -24,7 +23,8 @@ export default function SongAddEditPage({ onSongUpdated }) {
   const [capo, setCapo] = useState('');
   const [lyrics, setLyrics] = useState('');
   const [youtubeId, setYoutubeId] = useState('');
-  const [instruments, setInstruments] = useState('');
+  const [arrangementStyle, setArrangementStyle] = useState('');
+  const [keyboardPatch, setKeyboardPatch] = useState('');
   const [timeMarkers, setTimeMarkers] = useState([]);
   
   // UI states
@@ -68,7 +68,8 @@ export default function SongAddEditPage({ onSongUpdated }) {
           setCapo(data.capo || '');
           setLyrics(data.lyrics || '');
           setYoutubeId(extractYouTubeId(data.youtubeId || data.youtube_url || ''));
-          setInstruments(Array.isArray(data.instruments) ? data.instruments.join(', ') : '');
+          setArrangementStyle(data.arrangementStyle || '');
+          setKeyboardPatch(Array.isArray(data.keyboardPatch) ? data.keyboardPatch.join(', ') : (data.keyboardPatch || ''));
           setTimeMarkers(data.time_markers || []);
           setLoadingData(false);
         })
@@ -79,25 +80,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
     }
   }, [id, isEditMode]);
 
-  // Extract YouTube ID from URL
-  const extractYouTubeId = (input) => {
-    if (!input) return '';
-    const maybeId = input.trim();
-    if (/^[a-zA-Z0-9_-]{11}$/.test(maybeId)) return maybeId;
-    
-    try {
-      const url = new URL(maybeId.includes('http') ? maybeId : `https://${maybeId}`);
-      if (url.searchParams && url.searchParams.get('v')) return url.searchParams.get('v');
-      if (url.hostname && url.pathname) {
-        const parts = url.pathname.split('/').filter(Boolean);
-        if (parts.length > 0) return parts[parts.length - 1];
-      }
-    } catch (e) {
-      const m = maybeId.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
-      if (m) return m[1];
-    }
-    return input;
-  };
+
 
   const handleAIAutofill = async () => {
     if (!title.trim()) {
@@ -133,7 +116,8 @@ export default function SongAddEditPage({ onSongUpdated }) {
         capo: data.capo !== undefined && data.capo !== null,
         youtubeId: !!data.youtubeId,
         lyrics: !!data.lyrics,
-        instruments: Array.isArray(data.instruments) && data.instruments.length > 0
+        arrangementStyle: !!data.arrangementStyle,
+        keyboardPatch: !!data.keyboardPatch,
       });
       setShowAiModal(true);
     } catch (err) {
@@ -145,7 +129,6 @@ export default function SongAddEditPage({ onSongUpdated }) {
 
   const handleApplyAI = () => {
     if (!aiResult) return;
-    
     if (aiConfirmFields.artist && aiResult.artist) setArtist(aiResult.artist);
     if (aiConfirmFields.key && aiResult.key) setSongKey(aiResult.key);
     if (aiConfirmFields.tempo && aiResult.tempo) setTempo(aiResult.tempo.toString());
@@ -153,10 +136,8 @@ export default function SongAddEditPage({ onSongUpdated }) {
     if (aiConfirmFields.capo && aiResult.capo !== undefined && aiResult.capo !== null) setCapo(aiResult.capo.toString());
     if (aiConfirmFields.youtubeId && aiResult.youtubeId) setYoutubeId(aiResult.youtubeId);
     if (aiConfirmFields.lyrics && aiResult.lyrics) setLyrics(aiResult.lyrics);
-    if (aiConfirmFields.instruments && aiResult.instruments) {
-      setInstruments(Array.isArray(aiResult.instruments) ? aiResult.instruments.join(', ') : aiResult.instruments);
-    }
-    
+    if (aiConfirmFields.arrangementStyle && aiResult.arrangementStyle) setArrangementStyle(aiResult.arrangementStyle);
+    if (aiConfirmFields.keyboardPatch && aiResult.keyboardPatch) setKeyboardPatch(Array.isArray(aiResult.keyboardPatch) ? aiResult.keyboardPatch.join(', ') : aiResult.keyboardPatch);
     setShowAiModal(false);
     setAiResult(null);
   };
@@ -182,7 +163,8 @@ export default function SongAddEditPage({ onSongUpdated }) {
       capo: capo ? parseInt(capo) : null,
       lyrics: lyrics.trim(),
       youtubeId: extractYouTubeId(youtubeId),
-      instruments: instruments.split(',').map(i => i.trim()).filter(Boolean),
+        arrangementStyle: arrangementStyle.trim(),
+        keyboardPatch: keyboardPatch.trim(),
       time_markers: timeMarkers
     };
     
@@ -252,26 +234,11 @@ export default function SongAddEditPage({ onSongUpdated }) {
       {/* Header */}
       <div className="song-edit-header">
         <button
+          type="button"
           onClick={handleCancel}
           className="song-edit-back-btn"
         >
-          ←
-        </button>
-        <div className="song-edit-title-section">
-          <h1 className="song-edit-title">
-            {isEditMode ? '✏️ Edit Lagu' : '➕ Tambah Lagu Baru'}
-          </h1>
-          <p className="song-edit-subtitle">
-            {isEditMode ? 'Perbarui informasi lagu' : 'Tambahkan lagu baru ke koleksi'}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleAIAutofill}
-          disabled={aiLoading || !title.trim()}
-          className="btn-ai-autofill"
-        >
-          {aiLoading ? '⏳ Memuat...' : '🤖 AI Autofill'}
+          ← Kembali
         </button>
       </div>
 
@@ -283,6 +250,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
           </h3>
           
           <div className="form-section">
+
             <div className="form-grid-2col">
               <div>
                 <label className="form-label-required">
@@ -310,6 +278,23 @@ export default function SongAddEditPage({ onSongUpdated }) {
                   className="form-input-field"
                 />
               </div>
+            </div>
+
+            {/* AI Autofill Button */}
+            <div style={{ marginTop: 12, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleAIAutofill}
+                disabled={aiLoading}
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                🤖 AI Autofill
+                {aiLoading && <span style={{ marginLeft: 6 }}>⏳</span>}
+              </button>
+              <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+                Otomatis isi data lagu dari AI (judul wajib diisi)
+              </span>
             </div>
 
             <div className="form-grid-2col">
@@ -401,13 +386,25 @@ export default function SongAddEditPage({ onSongUpdated }) {
 
             <div>
               <label className="form-label-required">
-                🎺 Instrumen (pisahkan dengan koma)
+                🎼 Gaya Aransemen
               </label>
               <input
                 type="text"
-                value={instruments}
-                onChange={(e) => setInstruments(e.target.value)}
-                placeholder="Gitar, Piano, Drum, Bass"
+                value={arrangementStyle}
+                onChange={e => setArrangementStyle(e.target.value)}
+                placeholder="Contoh: full band, akustik, unplugged"
+                className="form-input-field"
+              />
+            </div>
+            <div>
+              <label className="form-label-required">
+                🎹 Keyboard Patch
+              </label>
+              <input
+                type="text"
+                value={keyboardPatch}
+                onChange={e => setKeyboardPatch(e.target.value)}
+                placeholder="Contoh: EP Mark I, Pad, Strings"
                 className="form-input-field"
               />
             </div>

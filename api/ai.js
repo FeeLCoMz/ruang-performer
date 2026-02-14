@@ -88,7 +88,8 @@ async function handleSongSearch(req, res) {
       tempo: null,
       genre: null,
       capo: null,
-      instruments: [],
+      arrangementStyle: null, // new field
+      keyboardPatch: null,    // new field
       youtubeId: null,
       lyrics: null,
       chordLinks: [],
@@ -132,9 +133,9 @@ async function handleSongSearch(req, res) {
         const model = genAI.getGenerativeModel({ model: geminiModel });
         let prompt;
         if (!artist) {
-          prompt = `Cari informasi lagu berjudul \"${title}\". Jika diketahui, berikan juga nama artis/penyanyi. Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- capo: posisi capo (angka 0-12) atau null jika tidak ada/tidak diketahui\n- instruments: array berisi daftar instrumen yang digunakan (misal: [\"gitar\", \"piano\"])\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"artist": "John Doe", "key": "G", "tempo": 120, "genre": "pop", "capo": 2, "instruments": ["gitar", "piano"], "lyrics": "Ini lirik lagu..."}`;
+          prompt = `Cari informasi lagu berjudul \"${title}\". Jika diketahui, berikan juga nama artis/penyanyi. Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- capo: posisi capo (angka 0-12) atau null jika tidak ada/tidak diketahui\n- arrangement_style: gaya aransemen (akustik, full band, unplugged, dll)\n- keyboard_patch: string penjelasan patch keyboard yang digunakan dan bagaimana patch tersebut dipakai dalam lagu (misal: \"EP1 untuk intro dan verse, Pad untuk chorus, Strings untuk bridge\") atau null jika tidak diketahui\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"artist": "John Doe", "key": "G", "tempo": 120, "genre": "pop", "capo": 2, "arrangement_style": "full band", "keyboard_patch": "EP1 untuk intro, Pad untuk chorus", "lyrics": "Ini lirik lagu..."}`;
         } else {
-          prompt = `Cari informasi lagu \"${title}\" oleh \"${artist}\". Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- capo: posisi capo (angka 0-12) atau null jika tidak ada/tidak diketahui\n- instruments: array berisi daftar instrumen yang digunakan (misal: [\"gitar\", \"piano\"])\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"artist": "${artist}", "key": "G", "tempo": 120, "genre": "pop", "capo": 2, "instruments": ["gitar", "piano"], "lyrics": "Ini lirik lagu..."}`;
+          prompt = `Cari informasi lagu \"${title}\" oleh \"${artist}\". Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- capo: posisi capo (angka 0-12) atau null jika tidak ada/tidak diketahui\n- arrangement_style: gaya aransemen (akustik, full band, unplugged, dll)\n- keyboard_patch: string penjelasan patch keyboard yang digunakan dan bagaimana patch tersebut dipakai dalam lagu (misal: \"EP1 untuk intro dan verse, Pad untuk chorus, Strings untuk bridge\") atau null jika tidak diketahui\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"artist": "${artist}", "key": "G", "tempo": 120, "genre": "pop", "capo": 2, "arrangement_style": "akustik", "keyboard_patch": "EP1 untuk intro, Pad untuk chorus", "lyrics": "Ini lirik lagu..."}`;
         }
         const response = await model.generateContent(prompt);
         const text = response.response.text();
@@ -146,7 +147,8 @@ async function handleSongSearch(req, res) {
           if (parsed.tempo) results.tempo = parsed.tempo;
           if (parsed.genre) results.genre = parsed.genre;
           if (parsed.capo !== undefined && parsed.capo !== null) results.capo = parsed.capo;
-          if (Array.isArray(parsed.instruments)) results.instruments = parsed.instruments;
+          if (parsed.arrangement_style) results.arrangementStyle = parsed.arrangement_style;
+          if (parsed.keyboard_patch) results.keyboardPatch = parsed.keyboard_patch;
           if (parsed.lyrics) results.lyrics = parsed.lyrics;
         }
       } catch (err) {

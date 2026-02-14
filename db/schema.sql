@@ -25,8 +25,10 @@ CREATE TABLE IF NOT EXISTS songs (
   genre TEXT,
   capo TEXT,
   lyrics TEXT,
-  instruments TEXT,
+  -- instruments TEXT,  -- removed
   time_markers TEXT,
+  arrangement_style TEXT,
+  keyboard_patch TEXT,
   userId TEXT,
   difficulty TEXT,
   duration INTEGER,

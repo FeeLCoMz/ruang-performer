@@ -47,7 +47,7 @@ export default async function handler(req, res) {
         tempo TEXT,
         genre TEXT,
         capo TEXT,
-        instruments TEXT,
+        -- instruments TEXT, -- removed
         time_markers TEXT,
         userId TEXT,
         createdAt TEXT DEFAULT (datetime('now')),
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       // Join ke tabel users untuk ambil nama kontributor
       const rows = await client.execute(
-        `SELECT songs.id, songs.title, songs.artist, songs.youtubeId, songs.lyrics, songs.key, songs.tempo, songs.genre, songs.capo, songs.instruments, songs.time_markers, songs.userId, songs.createdAt, songs.updatedAt, users.username AS contributorUsername
+        `SELECT songs.id, songs.title, songs.artist, songs.youtubeId, songs.lyrics, songs.key, songs.tempo, songs.genre, songs.capo, songs.time_markers, songs.userId, songs.createdAt, songs.updatedAt, users.username AS contributorUsername
          FROM songs
          LEFT JOIN users ON users.id = songs.userId
          ORDER BY (songs.updatedAt IS NULL) ASC, datetime(songs.updatedAt) DESC, datetime(songs.createdAt) DESC`
@@ -72,7 +72,6 @@ export default async function handler(req, res) {
         ...row,
         contributorName: row.contributorUsername, // alias agar frontend tetap pakai contributorName
         time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
-        instruments: row.instruments ? JSON.parse(row.instruments) : [],
       }));
       res.status(200).json(list);
       return;
@@ -113,8 +112,8 @@ export default async function handler(req, res) {
         }
         const id = item.id?.toString() || randomUUID();
         await client.execute(
-          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, genre, capo, instruments, time_markers, userId, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, genre, capo, time_markers, arrangement_style, keyboard_patch, userId, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title,
              artist = excluded.artist,
@@ -124,8 +123,9 @@ export default async function handler(req, res) {
              tempo = excluded.tempo,
              genre = excluded.genre,
              capo = excluded.capo,
-             instruments = excluded.instruments,
              time_markers = excluded.time_markers,
+             arrangement_style = excluded.arrangement_style,
+             keyboard_patch = excluded.keyboard_patch,
              updatedAt = excluded.updatedAt`,
           [
             id,
@@ -137,8 +137,9 @@ export default async function handler(req, res) {
             tempoStr,
             genre || null,
             capoStr,
-            (Array.isArray(item.instruments) ? JSON.stringify(item.instruments) : (item.instruments || null)),
             (Array.isArray(item.timestamps) ? JSON.stringify(item.timestamps) : (item.timestamps || null)),
+            item.arrangementStyle || null,
+            item.keyboardPatch || null,
             userId,
             item.createdAt || now,
             now

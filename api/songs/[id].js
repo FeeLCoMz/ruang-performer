@@ -45,7 +45,7 @@ export default async function handler(req, res) {
       try {
         const result = await client.execute(
           `SELECT s.id, s.title, s.artist, s.youtubeId, s.lyrics, s.key, s.tempo, s.genre, s.capo, 
-                  s.instruments, s.time_markers, s.userId, s.bandId, s.createdAt, s.updatedAt,
+                  s.time_markers, s.arrangement_style, s.keyboard_patch, s.userId, s.bandId, s.createdAt, s.updatedAt,
                   b.name as bandName, u.username as contributor
            FROM songs s
            LEFT JOIN bands b ON s.bandId = b.id
@@ -61,7 +61,8 @@ export default async function handler(req, res) {
         res.status(200).json({
           ...row,
           time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
-          instruments: row.instruments ? JSON.parse(row.instruments) : [],
+          arrangementStyle: row.arrangement_style || '',
+          keyboardPatch: row.keyboard_patch || '',
         });
         return;
       } catch (queryErr) {
@@ -132,8 +133,9 @@ export default async function handler(req, res) {
         tempo = COALESCE(?, tempo),
         genre = COALESCE(?, genre),
         capo = COALESCE(?, capo),
-        instruments = COALESCE(?, instruments),
         time_markers = COALESCE(?, time_markers),
+        arrangement_style = COALESCE(?, arrangement_style),
+        keyboard_patch = COALESCE(?, keyboard_patch),
         bandId = ?,
         updatedAt = ?`;
       // Pastikan tempo disimpan sebagai string integer tanpa koma
@@ -157,8 +159,9 @@ export default async function handler(req, res) {
         tempoStr,
         body.genre ?? null,
         capoStr,
-        (Array.isArray(body.instruments) ? JSON.stringify(body.instruments) : (body.instruments ?? null)),
         (Array.isArray(body.time_markers) ? JSON.stringify(body.time_markers) : (body.time_markers ?? null)),
+        body.arrangementStyle ?? null,
+        body.keyboardPatch ?? null,
         body.bandId ?? null,
         now
       ];
