@@ -7,6 +7,7 @@ import TimeMarkers from "../components/TimeMarkers";
 import TapTempo from "../components/TapTempo";
 import VirtualPiano from "../components/VirtualPiano";
 import AIAutofillModal from "../components/AIAutofillModal";
+import ChordLinks from "../components/ChordLinks";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
 
@@ -460,6 +461,9 @@ export default function SongAddEditPage({ onSongUpdated }) {
             </div>
           )}
         </div>
+
+        {/* Chord Links Panel */}
+        <ChordLinks searchQuery={[title, artist].filter(Boolean).join(" - ")} />
 
         {/* Lyrics Section */}
         <div className="song-section-card">

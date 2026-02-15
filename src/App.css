@@ -1,3 +1,49 @@
+/* ========================================
+   CHORD LINKS PANEL (ChordLinks.jsx)
+   ======================================== */
+.chord-links-panel {
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: var(--secondary-bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.chord-links-title {
+  margin-bottom: var(--spacing-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+}
+
+.chord-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.chord-link-btn {
+  padding: 8px 16px;
+  text-decoration: none;
+  width: 100%;
+  max-width: 320px;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.chord-link-btn:hover,
+.chord-link-btn:focus {
+  background: var(--primary-accent);
+  color: #fff;
+  box-shadow: var(--shadow-md);
+  outline: none;
+}
 
 /* Timestamp button in ChordDisplay */
 .cd-timestamp-btn {

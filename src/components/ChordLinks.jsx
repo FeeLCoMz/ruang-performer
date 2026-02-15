@@ -4,17 +4,16 @@ export default function ChordLinks({ searchQuery }) {
   if (!searchQuery) return null;
 
   return (
-    <div style={{ marginTop: 20, padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
-      <div style={{ marginBottom: 12, fontWeight: 500, color: 'var(--text-primary)' }}>
+    <div className="chord-links-panel">
+      <div className="chord-links-title">
         Cari chord di situs lain:
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+      <div className="chord-links-list">
         <a
           href={`https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(searchQuery)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="tab-btn"
-          style={{ padding: '8px 16px', textDecoration: 'none', width: '100%', maxWidth: 300 }}
+          className="tab-btn chord-link-btn"
         >
           🎸 Ultimate Guitar
         </a>
@@ -22,8 +21,7 @@ export default function ChordLinks({ searchQuery }) {
           href={`https://www.chordtela.com/?s=${encodeURIComponent(searchQuery)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="tab-btn"
-          style={{ padding: '8px 16px', textDecoration: 'none', width: '100%', maxWidth: 300 }}
+          className="tab-btn chord-link-btn"
         >
           🎵 ChordTela
         </a>
@@ -31,8 +29,7 @@ export default function ChordLinks({ searchQuery }) {
           href={`https://www.google.com/search?q=${encodeURIComponent(searchQuery + ' chord')}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="tab-btn"
-          style={{ padding: '8px 16px', textDecoration: 'none', width: '100%', maxWidth: 300 }}
+          className="tab-btn chord-link-btn"
         >
           🔍 Google Search
         </a>
