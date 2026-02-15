@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { PERMISSIONS } from '../utils/permissionUtils.js';
+import { PERMISSIONS, hasPermission } from '../utils/permissionUtils.js';
 import { usePermission } from '../hooks/usePermission.js';
 import { fetchBands, fetchPracticeSessions, createPracticeSession, updatePracticeSession, deletePracticeSession, fetchSongs } from '../apiClient.js';
 import PlusIcon from '../components/PlusIcon.jsx';
@@ -21,7 +21,7 @@ export default function PracticeSessionPage() {
   const [showForm, setShowForm] = useState(false);
   const [editSession, setEditSession] = useState(null);
   const [deleteSession, setDeleteSession] = useState(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     bandId: '',
@@ -42,17 +42,13 @@ export default function PracticeSessionPage() {
   // Permission hook for selected band (for create)
   const { can: canSelectedBand } = usePermission(selectedBandId, getUserBandInfo(selectedBandId));
 
-  // Precompute permissions for all sessions (for edit/delete)
-  const sessionPermissions = React.useMemo(() => {
-    const map = {};
-    sessions.forEach(session => {
-      const bandId = session.bandId;
-      const userBandInfo = getUserBandInfo(bandId);
-      map[session.id] = usePermission(bandId, userBandInfo);
-    });
-    return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessions, bands, user]);
+  // Pure function for permission check per session (no hook)
+  const canSession = (session, action) => {
+    const bandId = session.bandId;
+    const userBandInfo = getUserBandInfo(bandId);
+    if (!userBandInfo || !userBandInfo.role) return false;
+    return hasPermission(userBandInfo.role, action);
+  };
   useEffect(() => {
     updatePageMeta(pageMetadata.practice);
   }, []);
@@ -382,8 +378,8 @@ export default function PracticeSessionPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-                {/* Permission for edit/delete per session */}
-                {sessionPermissions[session.id]?.can(PERMISSIONS.SETLIST_EDIT) && (
+                {/* Permission for edit/delete per session (pure function, not hook) */}
+                {canSession(session, PERMISSIONS.SETLIST_EDIT) && (
                   <button
                     className="icon-btn-small"
                     onClick={() => handleEdit(session)}
@@ -392,7 +388,7 @@ export default function PracticeSessionPage() {
                     <EditIcon size={16} />
                   </button>
                 )}
-                {sessionPermissions[session.id]?.can(PERMISSIONS.SETLIST_DELETE) && (
+                {canSession(session, PERMISSIONS.SETLIST_DELETE) && (
                   <button
                     className="icon-btn-small delete-btn"
                     onClick={() => setDeleteSession(session)}
