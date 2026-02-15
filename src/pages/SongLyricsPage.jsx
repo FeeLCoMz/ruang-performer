@@ -10,7 +10,9 @@ import { getAuthHeader } from "../utils/auth.js";
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
+
 import { getTempoTerm } from "../utils/musicNotationUtils.js";
+import { cacheSong, getSong as getSongOffline } from '../utils/offlineCache.js';
 
 /**
  * SongLyricsPage
@@ -222,9 +224,22 @@ export default function SongLyricsPage({ song: songProp }) {
       .then((data) => {
         setFetchedSong(data);
         setLoading(false);
+        // Simpan ke cache offline
+        cacheSong(data).catch(() => {});
       })
-      .catch((err) => {
-        setError(err.message);
+      .catch(async (err) => {
+        // Jika offline, coba ambil dari cache
+        try {
+          const offlineSong = await getSongOffline(id);
+          if (offlineSong) {
+            setFetchedSong(offlineSong);
+            setError("[Offline] Data dari cache");
+          } else {
+            setError("Gagal memuat lagu: " + err.message);
+          }
+        } catch (e) {
+          setError("Gagal memuat lagu: " + err.message);
+        }
         setLoading(false);
       });
   }, [id]);

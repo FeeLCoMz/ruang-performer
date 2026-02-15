@@ -6,13 +6,30 @@ import SetlistPoster from '../components/SetlistPoster.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { toPng } from 'html-to-image';
+
 import * as authUtils from '../utils/auth.js';
+import { cacheSetlist, getSetlist as getSetlistOffline } from '../utils/offlineCache.js';
 
 export default function SetlistSongsPage({ setlists, songs, setSetlists, setActiveSetlist, loadingSetlists }) {
   const { id: setlistId } = useParams();
   const navigate = useNavigate();
   const isLoading = typeof loadingSetlists === 'boolean' ? loadingSetlists : !Array.isArray(setlists);
-  const setlist = Array.isArray(setlists) ? setlists.find(s => String(s.id) === String(setlistId)) : null;
+  let setlist = Array.isArray(setlists) ? setlists.find(s => String(s.id) === String(setlistId)) : null;
+
+  // Jika setlist tidak ditemukan (misal offline), coba ambil dari cache offline
+  const [offlineSetlist, setOfflineSetlist] = useState(null);
+  useEffect(() => {
+    if (!setlist && setlistId) {
+      getSetlistOffline(setlistId).then((cached) => {
+        if (cached) setOfflineSetlist(cached);
+      });
+    } else if (setlist) {
+      // Simpan ke cache jika ditemukan
+      cacheSetlist(setlist).catch(() => {});
+      setOfflineSetlist(null);
+    }
+  }, [setlist, setlistId]);
+  if (!setlist && offlineSetlist) setlist = offlineSetlist;
   
   // Set setlist aktif saat halaman dibuka
   useEffect(() => {
