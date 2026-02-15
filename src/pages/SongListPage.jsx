@@ -12,6 +12,40 @@ import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 
 export default function SongListPage({ songs, loading, error, onSongClick }) {
+    // Restore songs from offline cache if songs is empty
+    useEffect(() => {
+      if (Array.isArray(songs) && songs.length === 0) {
+        // Try to restore from IndexedDB offline cache
+        (async () => {
+          try {
+            const db = await window.indexedDB.open('ruangperformer_offline', 1);
+            const tx = db.transaction('songs', 'readonly');
+            const store = tx.objectStore('songs');
+            const getAllReq = store.getAll();
+            getAllReq.onsuccess = async () => {
+              const offlineSongs = getAllReq.result || [];
+              if (offlineSongs.length > 0) {
+                // Restore each song to backend
+                for (const song of offlineSongs) {
+                  await fetch('/api/songs', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      ...(window.getAuthHeader ? window.getAuthHeader() : {}),
+                    },
+                    body: JSON.stringify(song),
+                  });
+                }
+                // Optionally reload page or refetch songs
+                window.location.reload();
+              }
+            };
+          } catch (err) {
+            // Ignore errors
+          }
+        })();
+      }
+    }, [songs]);
   const navigate = useNavigate();
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id;

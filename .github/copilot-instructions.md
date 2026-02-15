@@ -179,7 +179,7 @@ if (can('edit_setlist')) { /* allow edit */ }
 Songs use custom chord notation parsed by `chordUtils.js`:
 - Brackets `[Am]` → clickable chord tokens
 - Time markers `[00:32]` → clickable timestamps (for YouTube sync)
-- Handles transposition, capo, key signatures
+- Handles transposition, key signatures
 
 ### Analytics (Already Integrated)
 Track events via `analyticsUtil.js`:
