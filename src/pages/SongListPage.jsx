@@ -12,6 +12,69 @@ import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 
 export default function SongListPage({ songs, loading, error, onSongClick }) {
+      // Backup all songs in offline cache to a JSON file
+      const handleBackupSongs = async () => {
+        try {
+          const dbReq = window.indexedDB.open('ruangperformer_offline', 1);
+          dbReq.onsuccess = function() {
+            const db = dbReq.result;
+            const tx = db.transaction('songs', 'readonly');
+            const store = tx.objectStore('songs');
+            const getAllReq = store.getAll();
+            getAllReq.onsuccess = function() {
+              const offlineSongs = getAllReq.result || [];
+              const blob = new Blob([JSON.stringify(offlineSongs, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'songs-backup.json';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            };
+          };
+        } catch (err) {
+          alert('Gagal backup lagu: ' + err.message);
+        }
+      };
+
+      // Restore songs from a JSON file to offline cache and backend
+      const handleRestoreSongs = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const songsArr = JSON.parse(text);
+          if (!Array.isArray(songsArr)) throw new Error('Format file tidak valid');
+          // Save to offline cache
+          const dbReq = window.indexedDB.open('ruangperformer_offline', 1);
+          dbReq.onsuccess = async function() {
+            const db = dbReq.result;
+            const tx = db.transaction('songs', 'readwrite');
+            const store = tx.objectStore('songs');
+            for (const song of songsArr) {
+              store.put(song);
+            }
+            tx.oncomplete = async function() {
+              // Restore to backend
+              for (const song of songsArr) {
+                await fetch('/api/songs', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(window.getAuthHeader ? window.getAuthHeader() : {}),
+                  },
+                  body: JSON.stringify(song),
+                });
+              }
+              window.location.reload();
+            };
+          };
+        } catch (err) {
+          alert('Gagal restore lagu: ' + err.message);
+        }
+      };
     // Restore songs from offline cache if songs is empty
     useEffect(() => {
       if (Array.isArray(songs) && songs.length === 0) {
@@ -253,6 +316,16 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
 
   return (
     <div className="page-container">
+      {/* Backup/Restore Toolbar */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        <button className="btn-base" onClick={handleBackupSongs}>
+          ⬇️ Backup Lagu
+        </button>
+        <label className="btn-base" style={{ cursor: 'pointer', marginBottom: 0 }}>
+          ⬆️ Restore Lagu
+          <input type="file" accept="application/json" style={{ display: 'none' }} onChange={handleRestoreSongs} />
+        </label>
+      </div>
       {/* Page Header */}
       <div className="page-header">
         <div>
