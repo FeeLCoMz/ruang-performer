@@ -1059,8 +1059,8 @@ export default function SongLyricsPage({ song: songProp }) {
                 </>
               )}
             </div>
-            {/* Tombol Lihat Partitur (hanya user berizin edit lagu) */}
-            {can && can(PERMISSIONS.SONG_EDIT) && song?.sheetMusicXml && (
+            {/* Tombol Lihat Partitur (selalu tampil jika ada MusicXML) */}
+            {song?.sheetMusicXml && (
               <button
                 className="btn btn-secondary"
                 style={{ marginBottom: 16 }}

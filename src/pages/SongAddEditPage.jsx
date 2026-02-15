@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { usePermission } from "../hooks/usePermission.js";
-import { PERMISSIONS } from "../utils/permissionUtils.js";
+// import { usePermission } from "../hooks/usePermission.js";
+// import { PERMISSIONS } from "../utils/permissionUtils.js";
 import { useNavigate, useParams } from "react-router-dom";
 import YouTubeViewer from "../components/YouTubeViewer";
 import TimeMarkers from "../components/TimeMarkers";
@@ -173,6 +173,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
       arrangementStyle: arrangementStyle.trim(),
       keyboardPatch: keyboardPatch.trim(),
       time_markers: timeMarkers,
+      sheetMusicXml: sheetMusicXml,
     };
 
     try {
@@ -476,33 +477,21 @@ export default function SongAddEditPage({ onSongUpdated }) {
             }}
           />
         </div>
-        {/* Sheet Music Section (hanya user berizin edit lagu) */}
-        {(() => {
-          // Permission: hanya tampil jika user bisa edit lagu
-          // Ambil bandId dari url param atau state jika ada
-          const bandId = null; // TODO: ambil bandId jika ada konteks band
-          const userBandInfo = null; // TODO: ambil userBandInfo jika ada konteks band
-          const { can } = usePermission(bandId, userBandInfo);
-          if (can && can(PERMISSIONS.SONG_EDIT)) {
-            return (
-              <div className="song-section-card">
-                <h3 className="song-section-title">🎼 Partitur (MusicXML)</h3>
-                <textarea
-                  value={sheetMusicXml}
-                  onChange={(e) => setSheetMusicXml(e.target.value)}
-                  placeholder="Paste MusicXML di sini..."
-                  rows={10}
-                  className="form-input-field"
-                  style={{ fontFamily: "monospace", resize: "vertical" }}
-                />
-                <div className="form-hint">
-                  Hanya format MusicXML. Gunakan software notasi musik untuk ekspor MusicXML.
-                </div>
-              </div>
-            );
-          }
-          return null;
-        })()}
+        {/* Sheet Music Section (selalu tampil) */}
+        <div className="song-section-card">
+          <h3 className="song-section-title">🎼 Partitur (MusicXML)</h3>
+          <textarea
+            value={sheetMusicXml}
+            onChange={(e) => setSheetMusicXml(e.target.value)}
+            placeholder="Paste MusicXML di sini..."
+            rows={10}
+            className="form-input-field"
+            style={{ fontFamily: "monospace", resize: "vertical" }}
+          />
+          <div className="form-hint">
+            Hanya format MusicXML. Gunakan software notasi musik untuk ekspor MusicXML.
+          </div>
+        </div>
 
         {/* Error Display */}
         {error && <div className="error-message">{error}</div>}
