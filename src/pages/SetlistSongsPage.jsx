@@ -377,10 +377,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           <p>{setlistSongs.length} lagu di setlist ini</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="btn-base tab-btn add-song-btn" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
+          <button className="btn tab-btn add-song-btn" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
             <PlusIcon size={22} /> Tambah Lagu
           </button>
-          <button className="btn-base tab-btn add-song-btn share-setlist-btn" onClick={() => setShowShareModal(true)} title="Bagikan Setlist">
+          <button className="btnbtn add-song-btn share-setlist-btn" onClick={() => setShowShareModal(true)} title="Bagikan Setlist">
             📤 Bagikan
           </button>
         </div>
@@ -442,7 +442,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="btn-base sort-button"
+            className="btn sort-button"
             title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
           >
             {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
@@ -451,7 +451,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           {hasActiveFilters && (
             <button
               onClick={handleClearFilters}
-              className="btn-base reset-filter-btn"
+              className="btn reset-filter-btn"
             >
               ✕ Reset
             </button>
@@ -466,7 +466,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             {hasActiveFilters ? 'Tidak ada lagu yang cocok dengan filter' : 'Setlist ini belum berisi lagu'}
           </p>
           {!hasActiveFilters && setlistSongs.length === 0 && (
-            <button className="btn-base" onClick={() => setShowAddSong(true)} style={{ marginTop: '12px' }}>
+            <button className="btn" onClick={() => setShowAddSong(true)} style={{ marginTop: '12px' }}>
               <PlusIcon size={18} /> Tambah Lagu Pertama
             </button>
           )}
@@ -564,7 +564,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 >
                   <button
                     onClick={() => openEditSong(song.id)}
-                    className="btn-base"
+                    className="btn"
                     style={{ padding: '6px 12px', fontSize: '0.85em' }}
                     title="Edit detail lagu di setlist"
                   >
@@ -572,7 +572,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   </button>
                   <button
                     onClick={() => handleDeleteSongFromSetlist(song.id)}
-                    className="btn-base"
+                    className="btn"
                     style={{
                       padding: '6px 12px',
                       fontSize: '0.85em',
@@ -600,10 +600,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               Apakah Anda yakin ingin menghapus lagu ini dari setlist?
             </div>
             <div className="modal-actions">
-              <button className="btn-base danger-btn" onClick={confirmDeleteSong} disabled={deleting}>
+              <button className="btn danger-btn" onClick={confirmDeleteSong} disabled={deleting}>
                 {deleting ? 'Menghapus...' : 'Ya, Hapus'}
               </button>
-              <button className="btn-base back-btn" onClick={() => setConfirmDeleteSongId(null)} disabled={deleting}>
+              <button className="btn back-btn" onClick={() => setConfirmDeleteSongId(null)} disabled={deleting}>
                 Batal
               </button>
             </div>
@@ -641,17 +641,17 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             />
             {posterError && <div className="error-text setlist-poster-error">{posterError}</div>}
             <div className="setlist-share-actions">
-              <button className="btn-base tab-btn" onClick={handleCopyShare}>
+              <button className="btn tab-btn" onClick={handleCopyShare}>
                 {shareCopied ? '✅ Tersalin!' : 'Salin Teks'}
               </button>
               <button
-                className="btn-base tab-btn poster-download-btn"
+                className="btn tab-btn poster-download-btn"
                 onClick={handleDownloadPoster}
                 disabled={isGeneratingPoster}
               >
                 {isGeneratingPoster ? 'Membuat Poster...' : 'Unduh Poster'}
               </button>
-              <button className="btn-base back-btn" onClick={() => setShowShareModal(false)}>Tutup</button>
+              <button className="btn back-btn" onClick={() => setShowShareModal(false)}>Tutup</button>
             </div>
           </div>
         </div>
@@ -700,7 +700,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               ))}
             </ul>
             {addSongError && <div className="error-text" style={{ marginBottom: 8 }}>{addSongError}</div>}
-            <button className="btn-base" style={{ marginTop: 8 }} onClick={() => setShowAddSong(false)}>Batal</button>
+            <button className="btn" style={{ marginTop: 8 }} onClick={() => setShowAddSong(false)}>Batal</button>
           </div>
         </div>
       )}
@@ -729,8 +729,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             <label>Genre
               <input type="text" value={editSongStyle} onChange={e => setEditSongStyle(e.target.value)} className="modal-input" style={{ marginBottom: 8 }} />
             </label>
-            <button className="btn-base tab-btn" style={{ marginBottom: 8 }} onClick={handleEditSongSave}>Simpan</button>
-            <button className="btn-base back-btn" style={{ marginTop: 8 }} onClick={() => setEditSongId(null)}>Batal</button>
+            <button className="btn tab-btn" style={{ marginBottom: 8 }} onClick={handleEditSongSave}>Simpan</button>
+            <button className="btn back-btn" style={{ marginTop: 8 }} onClick={() => setEditSongId(null)}>Batal</button>
           </div>
         </div>
       )}

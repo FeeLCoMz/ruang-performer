@@ -81,7 +81,7 @@ export default function ResetPasswordPage() {
           </p>
           <button 
             onClick={() => navigate('/login')}
-            className="btn-base full-width-btn"
+            className="btn full-width-btn"
             style={{ background: 'var(--primary-color)', color: 'white' }}
           >
             Back to Login
@@ -154,7 +154,7 @@ export default function ResetPasswordPage() {
 
           <button
             type="submit"
-            className="btn-base full-width-btn"
+            className="btn full-width-btn"
             style={{
               background: 'var(--primary-color)',
               color: 'white',

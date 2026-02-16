@@ -111,13 +111,13 @@ export default function DashboardPage() {
           <p>Kelola lagu, setlist, latihan, dan konser dalam satu platform</p>
         </div>
         <div>
-          <button className="btn-base" onClick={() => navigate('/songs/add')}>
+          <button className="btn" onClick={() => navigate('/songs/add')}>
             ➕ Tambah Lagu
           </button>
-          <button className="btn-base" onClick={() => navigate('/setlists')}>
+          <button className="btn" onClick={() => navigate('/setlists')}>
             📋 Buat Setlist
           </button>
-          <button className="btn-base" onClick={() => navigate('/gigs')}>
+          <button className="btn" onClick={() => navigate('/gigs')}>
             🎤 Jadwal Konser
           </button>
         </div>

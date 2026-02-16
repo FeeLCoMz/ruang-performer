@@ -180,7 +180,7 @@ export default function BandManagementPage() {
         </div>
         {/* Permission: Only show if user can create a band */}
         {user && (
-          <button className="btn-base" onClick={() => setShowCreateForm(true)}>
+          <button className="btn" onClick={() => setShowCreateForm(true)}>
             <PlusIcon size={18} /> Buat Band
           </button>
         )}
@@ -232,7 +232,7 @@ export default function BandManagementPage() {
 
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="btn-base sort-button"
+            className="btn sort-button"
             title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
           >
             {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
@@ -241,7 +241,7 @@ export default function BandManagementPage() {
           {hasActiveFilters && (
             <button
               onClick={handleClearFilters}
-              className="btn-base reset-filter-btn"
+              className="btn reset-filter-btn"
             >
               ✕ Reset
             </button>
@@ -256,7 +256,7 @@ export default function BandManagementPage() {
             {hasActiveFilters ? 'Tidak ada band yang cocok dengan filter' : 'Belum ada band'}
           </p>
           {!hasActiveFilters && (
-            <button className="btn-base" onClick={() => setShowCreateForm(true)} style={{ marginTop: '12px' }}>
+            <button className="btn" onClick={() => setShowCreateForm(true)} style={{ marginTop: '12px' }}>
               <PlusIcon size={18} /> Buat Band Pertama
             </button>
           )}
@@ -307,13 +307,13 @@ export default function BandManagementPage() {
                 className="modal-input"
               />
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="submit" disabled={submitting} className="btn-base">
+                <button type="submit" disabled={submitting} className="btn">
                   {submitting ? 'Membuat...' : 'Buat Band'}
                 </button>
                 <button 
                   type="button" 
                   onClick={() => setShowCreateForm(false)}
-                  className="btn-base"
+                  className="btn"
                   style={{ background: 'var(--card-bg)', color: 'var(--text-muted)' }}
                 >
                   Batal

@@ -75,7 +75,7 @@ export default function AuditLogPage() {
         <h1>Audit Log & Activity</h1>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
-            className={`btn-base ${view === 'timeline' ? 'active' : ''}`}
+            className={`btn ${view === 'timeline' ? 'active' : ''}`}
             onClick={() => setView('timeline')}
             style={{ 
               background: view === 'timeline' ? 'var(--primary-color)' : 'var(--border-color)',
@@ -85,7 +85,7 @@ export default function AuditLogPage() {
             Timeline
           </button>
           <button 
-            className={`btn-base ${view === 'stats' ? 'active' : ''}`}
+            className={`btn ${view === 'stats' ? 'active' : ''}`}
             onClick={() => setView('stats')}
             style={{ 
               background: view === 'stats' ? 'var(--primary-color)' : 'var(--border-color)',
@@ -167,13 +167,13 @@ export default function AuditLogPage() {
                 onClick={() => setFilters({
                   category: '', severity: '', status: '', startDate: '', endDate: ''
                 })}
-                className="btn-base reset-filter-btn"
+                className="btn reset-filter-btn"
               >
                 Clear Filters
               </button>
               <button 
                 onClick={fetchAuditLogs}
-                className="btn-base"
+                className="btn"
                 style={{ background: 'var(--primary-color)', color: 'white' }}
               >
                 Refresh

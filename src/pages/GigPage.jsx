@@ -188,7 +188,7 @@ export default function GigPage() {
           // If no band selected, allow if user is authenticated (personal gig)
           if (!selectedBandId && user) {
             return (
-              <button className="btn-base" onClick={() => {
+              <button className="btn" onClick={() => {
                 setShowForm(true);
                 setEditGig(null);
                 setFormData({
@@ -209,7 +209,7 @@ export default function GigPage() {
           // If band selected, check permission
           if (userBandInfo && permissionForSelectedBand.can('gig:edit')) {
             return (
-              <button className="btn-base" onClick={() => {
+              <button className="btn" onClick={() => {
                 setShowForm(true);
                 setEditGig(null);
                 setFormData({
@@ -339,14 +339,14 @@ export default function GigPage() {
               <div className="form-actions">
                 <button
                   type="button"
-                  className="btn-base tab-btn"
+                  className="btn tab-btn"
                   onClick={() => { setShowForm(false); setEditGig(null); }}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="btn-base tab-btn"
+                  className="btn tab-btn"
                   style={{ background: '#4f8cff', color: '#fff', fontWeight: 600 }}
                 >
                   {editGig ? 'Simpan Perubahan' : 'Buat Jadwal'}
@@ -366,9 +366,9 @@ export default function GigPage() {
               Yakin ingin menghapus konser di <b>{deleteConfirm.venue || deleteConfirm.city || 'lokasi ini'}</b> tanggal <b>{new Date(deleteConfirm.date).toLocaleDateString('id-ID')}</b>?
             </p>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button className="btn-base" onClick={() => setDeleteConfirm(null)}>Batal</button>
+              <button className="btn" onClick={() => setDeleteConfirm(null)}>Batal</button>
               <button
-                className="btn-base"
+                className="btn"
                 style={{ backgroundColor: 'var(--error)', color: 'white' }}
                 onClick={handleDelete}
               >
@@ -480,7 +480,7 @@ export default function GigPage() {
                       {canEdit && (
                         <button
                           onClick={() => handleEdit(gig)}
-                          className="btn-base"
+                          className="btn"
                           style={{ padding: '6px 12px', fontSize: '0.85em' }}
                           title="Edit"
                         >
@@ -490,7 +490,7 @@ export default function GigPage() {
                       {canDelete && (
                         <button
                           onClick={() => setDeleteConfirm(gig)}
-                          className="btn-base"
+                          className="btn"
                           style={{
                             padding: '6px 12px',
                             fontSize: '0.85em',

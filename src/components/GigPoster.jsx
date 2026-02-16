@@ -55,7 +55,7 @@ const GigPoster = React.forwardRef(({ gig }, ref) => {
           onChange={handleFileChange}
         />
         <button
-          className="btn-base tab-btn"
+          className="btn tab-btn"
           style={{ marginBottom: 8 }}
           onClick={() => fileInputRef.current && fileInputRef.current.click()}
         >

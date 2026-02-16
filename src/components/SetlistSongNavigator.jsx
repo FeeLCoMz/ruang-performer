@@ -13,7 +13,7 @@ export default function SetlistSongNavigator({ navPrev, navNext, songNumber, tot
       marginBottom: '24px'
     }}>
       <button
-        className="btn-base"
+        className="btn"
         disabled={!navPrev}
         title="Previous song"
         onClick={onPrev}
@@ -67,7 +67,7 @@ export default function SetlistSongNavigator({ navPrev, navNext, songNumber, tot
       )}
       
       <button
-        className="btn-base"
+        className="btn"
         disabled={!navNext}
         title="Next song"
         onClick={onNext}

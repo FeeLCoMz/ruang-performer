@@ -66,7 +66,7 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
           {/* Theme & Performance Mode toggle buttons for desktop */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', marginTop: 4 }}>
             <button
-              className={`btn-base theme-switch-btn ${theme === 'dark' ? 'dark' : 'light'}`}
+              className={`btn theme-switch-btn ${theme === 'dark' ? 'dark' : 'light'}`}
               onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
               title="Ganti mode gelap/terang"
               aria-label="Toggle dark mode"
@@ -74,7 +74,7 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
               {theme === 'dark' ? '🌙' : '☀️'}
             </button>
             <button
-              className={`btn-base performance-switch-btn${performanceMode ? ' active' : ''}`}
+              className={`btn performance-switch-btn${performanceMode ? ' active' : ''}`}
               onClick={() => setPerformanceMode(v => !v)}
               title={performanceMode ? 'Nonaktifkan Performance Mode' : 'Aktifkan Performance Mode'}
               aria-label="Toggle performance mode"

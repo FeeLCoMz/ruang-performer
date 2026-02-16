@@ -99,7 +99,7 @@ export default function SetlistForm({
         <div style={{ display: 'flex', gap: '12px', marginTop: '12px', justifyContent: 'flex-end' }}>
           <button
             type="button"
-            className="btn-base"
+            className="btn"
             onClick={onCancel}
             style={{ background: 'var(--card-bg)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
           >
@@ -107,7 +107,7 @@ export default function SetlistForm({
           </button>
           <button
             type="submit"
-            className="btn-base"
+            className="btn"
             disabled={loading || !name.trim()}
             style={{ minWidth: '140px' }}
           >

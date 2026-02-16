@@ -25,7 +25,7 @@ export default function SearchBar({ value, onChange, onVoiceSearch, placeholder 
       {onVoiceSearch && (
         <button
           type="button"
-          className="btn-base"
+          className="btn"
           title="Voice search"
           onClick={onVoiceSearch}
           style={{ padding: '10px 14px' }}

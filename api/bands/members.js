@@ -1,7 +1,6 @@
 // Band Members API handler for /api/bands/[bandId]/members and /api/bands/[bandId]/members/[userId]
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
-import { PERMISSIONS, hasPermission } from '../../src/utils/permissionUtils.js';
 
 export default async function handler(req, res) {
   // URL: /api/bands/:id/members or /api/bands/:id/members/:userId (Express: req.params.id)

@@ -176,7 +176,7 @@ export default function SetlistPage({
           <p>{filteredSetlists.length} dari {setlists.length} setlist</p>
         </div>
         {can(PERMISSIONS.SETLIST_CREATE) && (
-          <button className="btn-base" onClick={() => setShowCreateSetlist(true)}>
+          <button className="btn" onClick={() => setShowCreateSetlist(true)}>
             <PlusIcon size={18} /> Buat Setlist
           </button>
         )}
@@ -228,7 +228,7 @@ export default function SetlistPage({
 
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="btn-base sort-button"
+            className="btn sort-button"
             title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
           >
             {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
@@ -237,7 +237,7 @@ export default function SetlistPage({
           {hasActiveFilters && (
             <button
               onClick={handleClearFilters}
-              className="btn-base reset-filter-btn"
+              className="btn reset-filter-btn"
             >
               ✕ Reset
             </button>
@@ -252,7 +252,7 @@ export default function SetlistPage({
             {hasActiveFilters ? 'Tidak ada setlist yang cocok dengan filter' : 'Belum ada setlist'}
           </p>
           {!hasActiveFilters && (
-            <button className="btn-base" onClick={() => setShowCreateSetlist(true)} style={{ marginTop: '12px' }}>
+            <button className="btn" onClick={() => setShowCreateSetlist(true)} style={{ marginTop: '12px' }}>
               <PlusIcon size={18} /> Buat Setlist Pertama
             </button>
           )}
@@ -317,7 +317,7 @@ export default function SetlistPage({
                     {canEdit && (
                       <button
                         onClick={() => setEditSetlist(setlist)}
-                        className="btn-base"
+                        className="btn"
                         style={{ padding: '6px 12px', fontSize: '0.85em' }}
                         title="Edit"
                       >
@@ -327,7 +327,7 @@ export default function SetlistPage({
                     {canDelete && (
                       <button
                         onClick={() => setDeleteSetlist(setlist)}
-                        className="btn-base"
+                        className="btn"
                         style={{
                           padding: '6px 12px',
                           fontSize: '0.85em',
@@ -437,11 +437,11 @@ export default function SetlistPage({
             </p>
             {deleteError && <div className="error-text" style={{ marginBottom: '16px' }}>{deleteError}</div>}
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button className="btn-base" onClick={() => setDeleteSetlist(null)}>
+              <button className="btn" onClick={() => setDeleteSetlist(null)}>
                 Batal
               </button>
               <button
-                className="btn-base"
+                className="btn"
                 disabled={deleteLoading}
                 style={{ backgroundColor: 'var(--error)', color: 'white' }}
                 onClick={async () => {

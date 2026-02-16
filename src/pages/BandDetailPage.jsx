@@ -101,7 +101,7 @@ export default function BandDetailPage() {
   return (
     <div className="page-container">
       <div className="band-header">
-        <button className="btn-base" onClick={() => navigate('/bands')} style={{ padding: '8px 16px', fontSize: '0.9em' }}>
+        <button className="btn" onClick={() => navigate('/bands')} style={{ padding: '8px 16px', fontSize: '0.9em' }}>
           ← Kembali
         </button>
         <div className="band-header-info">
@@ -118,7 +118,7 @@ export default function BandDetailPage() {
             </button>
           )}
           {can(PERMISSIONS.BAND_DELETE) && (
-            <button className="btn-base danger" onClick={handleDelete} title="Hapus Band" style={{marginLeft: '12px'}}>
+            <button className="btn danger" onClick={handleDelete} title="Hapus Band" style={{marginLeft: '12px'}}>
               <DeleteIcon size={18} /> Hapus Band
             </button>
           )}
@@ -138,7 +138,7 @@ export default function BandDetailPage() {
         <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 className="card-title">👥 Anggota Band ({band.members?.length || 0})</h2>
           {(can('manage_members') || band.isOwner || band.userRole === 'admin') && (
-            <button className="btn-base" onClick={() => setShowInviteModal(true)}>
+            <button className="btn" onClick={() => setShowInviteModal(true)}>
               + Tambah Anggota
             </button>
           )}
@@ -168,7 +168,7 @@ export default function BandDetailPage() {
                 {(can('manage_members') || band.isOwner || band.userRole === 'admin') && !member.isOwner && (
                   <div style={{ display: 'flex', gap: 4 }}>
                     <button
-                      className="btn-base"
+                      className="btn"
                       style={{ marginLeft: 8 }}
                       title="Edit Member Role"
                       onClick={() => {
@@ -180,7 +180,7 @@ export default function BandDetailPage() {
                       <EditIcon size={16} />
                     </button>
                     <button
-                      className="btn-base danger"
+                      className="btn danger"
                       style={{ marginLeft: 4 }}
                       title="Hapus Member"
                       onClick={async () => {
@@ -235,10 +235,10 @@ export default function BandDetailPage() {
                         </select>
                         {editError && <div className="error-message" style={{ marginBottom: 8 }}>{editError}</div>}
                         <div style={{ display: 'flex', gap: 8 }}>
-                          <button type="submit" className="btn-base" disabled={editLoading}>
+                          <button type="submit" className="btn" disabled={editLoading}>
                             {editLoading ? 'Menyimpan...' : 'Simpan'}
                           </button>
-                          <button type="button" className="btn-base" onClick={() => setEditMember(null)}>
+                          <button type="button" className="btn" onClick={() => setEditMember(null)}>
                             Batal
                           </button>
                         </div>
@@ -293,10 +293,10 @@ export default function BandDetailPage() {
               </select>
               {inviteError && <div className="error-message" style={{ marginTop: 8 }}>{inviteError}</div>}
               <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <button type="submit" className="btn-base" disabled={inviteLoading}>
+                <button type="submit" className="btn" disabled={inviteLoading}>
                   {inviteLoading ? 'Menambah...' : 'Tambah'}
                 </button>
-                <button type="button" className="btn-base" onClick={() => setShowInviteModal(false)}>
+                <button type="button" className="btn" onClick={() => setShowInviteModal(false)}>
                   Batal
                 </button>
               </div>

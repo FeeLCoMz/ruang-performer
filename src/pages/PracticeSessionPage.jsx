@@ -164,7 +164,7 @@ export default function PracticeSessionPage() {
           <p>Kelola latihan band mu</p>
         </div>
         {canSelectedBand(PERMISSIONS.SETLIST_CREATE) && (
-          <button className="btn-base" onClick={() => {
+          <button className="btn" onClick={() => {
             setShowForm(true);
             setEditSession(null);
             setFormData({
@@ -267,14 +267,14 @@ export default function PracticeSessionPage() {
               <div className="form-actions">
                 <button
                   type="button"
-                  className="btn-base"
+                  className="btn"
                   onClick={() => { setShowForm(false); setEditSession(null); }}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="btn-base"
+                  className="btn"
                   style={{ backgroundColor: 'var(--primary-accent)', color: 'white' }}
                 >
                   {editSession ? 'Simpan Perubahan' : 'Buat Sesi'}
@@ -294,9 +294,9 @@ export default function PracticeSessionPage() {
               Yakin ingin menghapus sesi latihan tanggal <b>{new Date(deleteSession.date).toLocaleDateString('id-ID')}</b>?
             </p>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button className="btn-base" onClick={() => setDeleteSession(null)}>Batal</button>
+              <button className="btn" onClick={() => setDeleteSession(null)}>Batal</button>
               <button
-                className="btn-base"
+                className="btn"
                 style={{ backgroundColor: 'var(--error)', color: 'white' }}
                 onClick={handleDelete}
               >

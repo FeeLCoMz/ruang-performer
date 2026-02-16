@@ -38,7 +38,7 @@ export default function TapTempo({ onTempo, initialTempo = '', disabled = false,
         type="button"
         onClick={handleTap}
         disabled={disabled}
-        className="btn-base"        
+        className="btn"        
         title="Tap to detect BPM"
       >
         🎯 {label}

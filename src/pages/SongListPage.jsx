@@ -225,7 +225,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           <h1>🎵 Lagu Saya</h1>
           <p>{filteredSongs.length} dari {songs.length} lagu</p>
         </div>
-        <button className="btn-base" onClick={() => onSongClick('add')}>
+        <button className="btn" onClick={() => onSongClick('add')}>
           <PlusIcon size={18} /> Tambah Lagu
         </button>
       </div>
@@ -315,7 +315,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
 
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="btn-base sort-button"
+            className="btn sort-button"
             title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
           >
             {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
@@ -324,7 +324,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           {hasActiveFilters && (
             <button
               onClick={handleClearFilters}
-              className="btn-base reset-filter-btn"
+              className="btn reset-filter-btn"
             >
               ✕ Reset
             </button>
@@ -339,7 +339,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
             {hasActiveFilters ? 'Tidak ada lagu yang cocok dengan filter' : 'Belum ada lagu'}
           </p>
           {!hasActiveFilters && (
-            <button className="btn-base" onClick={() => onSongClick('add')} style={{ marginTop: '12px' }}>
+            <button className="btn" onClick={() => onSongClick('add')} style={{ marginTop: '12px' }}>
               <PlusIcon size={18} /> Tambah Lagu Pertama
             </button>
           )}
@@ -379,7 +379,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                 style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
               >
                 <button
-                  className="btn-base btn-secondary"
+                  className="btn btn-secondary"
                   style={{ padding: '6px 14px', fontSize: '0.85em' }}
                   title="Lihat Karaoke"
                   onClick={() => navigate(`/karaoke/${song.id}`)}
@@ -415,7 +415,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                       {canEdit && (
                         <button
                           onClick={() => onSongClick('edit', song.id)}
-                          className="btn-base"
+                          className="btn"
                           style={{ padding: '6px 12px', fontSize: '0.85em' }}
                           title="Edit"
                         >
@@ -425,7 +425,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                       {canDelete && (
                         <button
                           onClick={() => onSongClick('delete', song.id)}
-                          className="btn-base"
+                          className="btn"
                           style={{
                             padding: '6px 12px',
                             fontSize: '0.85em',

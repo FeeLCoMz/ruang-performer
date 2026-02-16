@@ -225,14 +225,14 @@ function AppContent() {
             <h1 className="header-title">Ruang Performer</h1>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <button
-                className={`btn-base theme-switch-btn ${theme === "dark" ? "dark" : "light"}`}
+                className={`btn theme-switch-btn ${theme === "dark" ? "dark" : "light"}`}
                 onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
                 title="Ganti mode gelap/terang"
               >
                 {theme === "dark" ? "🌙" : "☀️"}
               </button>
               <button
-                className={`btn-base performance-switch-btn${performanceMode ? " active" : ""}`}
+                className={`btn performance-switch-btn${performanceMode ? " active" : ""}`}
                 onClick={() => setPerformanceMode((v) => !v)}
                 title={
                   performanceMode ? "Nonaktifkan Performance Mode" : "Aktifkan Performance Mode"

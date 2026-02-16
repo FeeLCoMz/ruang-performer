@@ -86,7 +86,7 @@ export default function GigDetailPage() {
         <GigPoster gig={gig} ref={posterRef} />
         {posterError && <div className="error-text setlist-poster-error">{posterError}</div>}
         <button
-          className="btn-base tab-btn poster-download-btn"
+          className="btn tab-btn poster-download-btn"
           style={{ marginTop: 16 }}
           onClick={handleDownloadPoster}
           disabled={isGeneratingPoster}

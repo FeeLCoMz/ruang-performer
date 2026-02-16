@@ -82,7 +82,7 @@ export default function KaraokeLyricsListPage({ songs }) {
       <div className="page-header">
         <h1>🎤 Lirik Lagu</h1>
         <p>{filtered.length} dari {localSongs.length} lagu</p>
-        <button className="btn-base" onClick={() => setShowAdd(true)}>
+        <button className="btn" onClick={() => setShowAdd(true)}>
           + Tambah Lirik Lagu
         </button>
       </div>
