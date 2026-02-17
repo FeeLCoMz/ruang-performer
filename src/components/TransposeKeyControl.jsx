@@ -1,4 +1,5 @@
 import React from 'react';
+import { transposeChord, getNoteIndex, getTransposeSteps } from '../utils/chordUtils.js';
 
 /**
  * TransposeKeyControl - Component for displaying and transposing musical keys
@@ -12,39 +13,17 @@ export default function TransposeKeyControl({ originalKey, targetKey, transpose,
   // Kalkulasi otomatis transpose jika targetKey berbeda dengan originalKey
   React.useEffect(() => {
     if (!originalKey || !targetKey) return;
-    // Helper: parse root key
-    function parseKeyRoot(keyStr) {
-      if (!keyStr) return '';
-      const match = keyStr.match(/^([A-G][b#]?)/i);
-      return match ? match[1].toUpperCase() : keyStr.toUpperCase();
-    }
-    const keyMap = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    const origRoot = parseKeyRoot(originalKey);
-    const targRoot = parseKeyRoot(targetKey);
-    const originalIdx = keyMap.indexOf(origRoot);
-    const targetIdx = keyMap.indexOf(targRoot);
-    if (originalIdx >= 0 && targetIdx >= 0 && origRoot !== targRoot) {
-      let steps = targetIdx - originalIdx;
-      if (steps < 0) steps += 12;
-      if (steps !== transpose) onTransposeChange(steps);
-    } else if (origRoot === targRoot && transpose !== 0) {
+    const steps = getTransposeSteps(originalKey, targetKey);
+    if (steps !== null && steps !== transpose) {
+      onTransposeChange(steps);
+    } else if (steps === 0 && transpose !== 0) {
       onTransposeChange(0);
     }
   }, [originalKey, targetKey]);
-  // Calculate transposed key
-  // Transpose hanya root key, suffix (misal 'm') tetap dipertahankan tanpa logika mayor/minor
+  // Calculate transposed key menggunakan chordUtils
   const getTransposedKey = (key, semitones) => {
     if (!key || semitones === 0) return key;
-    const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    // Regex: root (C, D#, F#) + sisa (misal 'm', 'maj7', dsb)
-    const match = key.match(/^([A-G]#?|[A-G]b?)(.*)$/);
-    if (!match) return key;
-    const root = match[1];
-    const suffix = match[2] || '';
-    const currentIndex = keys.indexOf(root);
-    if (currentIndex === -1) return key;
-    const newIndex = (currentIndex + semitones + 12) % 12;
-    return keys[newIndex] + suffix;
+    return transposeChord(key, semitones);
   };
 
   const transposedKey = getTransposedKey(originalKey, transpose);

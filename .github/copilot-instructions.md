@@ -158,6 +158,17 @@ src/
 
 ### Special Utils to Know
 - **`chordUtils.js`:** `transposeChord()`, `parseChordLine()` — music theory logic
+
+## Copilot Chord Handling Policy (ADDITIONAL)
+
+**ALWAYS** gunakan helper/fungsi dari `chordUtils.js` terlebih dahulu untuk setiap permintaan, fitur, atau logika yang berhubungan dengan chord, transposisi, parsing chord, atau notasi musik.
+
+- Jika user meminta fitur, perubahan, atau logika terkait chord:
+  - Cari dan gunakan fungsi yang relevan di `chordUtils.js` (misal: `transposeChord`, `parseChordLine`, dsb).
+  - Hanya buat logika baru jika helper di `chordUtils.js` tidak mencukupi.
+  - Prioritaskan konsistensi dan reuse helper agar hasil sesuai standar aplikasi.
+
+**JANGAN** membuat logika chord baru tanpa mengecek dan menggunakan helper di `chordUtils.js` terlebih dahulu.
 - **`permissionUtils.js`:** Role-based permissions (owner > admin > member > guest)
 - **`analyticsUtil.js`:** Google Analytics tracking (already integrated in pages)
 - **`auditLogger.js`:** Audit trail constants (`AUDIT_ACTIONS`, `SEVERITY_LEVELS`)
