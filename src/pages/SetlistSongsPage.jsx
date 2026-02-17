@@ -5,7 +5,7 @@ import DeleteIcon from '../components/DeleteIcon.jsx';
 import SetlistPoster from '../components/SetlistPoster.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { toPng } from 'html-to-image';
+import html2canvas from 'html2canvas';
 
 import * as authUtils from '../utils/auth.js';
 import { cacheSetlist, getSetlist as getSetlistOffline } from '../utils/offlineCache.js';
@@ -217,22 +217,24 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setPosterError('');
 
     const safeName = (setlist.name || 'setlist')
-      .replace(/[\\/:*?"<>|]+/g, '')
+      .replace(/[\/:*?"<>|]+/g, '')
       .trim();
 
-    toPng(posterRef.current, {
-      cacheBust: true,
-      pixelRatio: 2,
-      backgroundColor: '#0f172a'
+    html2canvas(posterRef.current, {
+      backgroundColor: '#0f172a',
+      scale: 2,
+      useCORS: true
     })
-      .then((dataUrl) => {
+      .then((canvas) => {
+        const dataUrl = canvas.toDataURL('image/png');
         const link = document.createElement('a');
         link.download = `${safeName || 'setlist'}-poster.png`;
         link.href = dataUrl;
         link.click();
       })
-      .catch(() => {
+      .catch((err) => {
         setPosterError('Gagal membuat poster. Coba lagi.');
+        console.error('html2canvas error:', err);
       })
       .finally(() => {
         setIsGeneratingPoster(false);
@@ -630,8 +632,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             <SetlistPoster
               setlist={setlist}
               setlistSongs={setlistSongs}
-              posterRef={posterRef}
-              // Pastikan tempo diteruskan ke komponen poster
+              posterRef={posterRef}              
             />
             <textarea
               className="modal-input"
