@@ -234,6 +234,9 @@ export default function SongAddEditPage({ onSongUpdated }) {
     <div className="page-container">
       <div className="page-header">
         <h1>{isEditMode ? "Edit Lagu" : "Tambah Lagu Baru"}</h1>
+        {error && (
+          <div className="error-message" style={{marginTop: 12, marginBottom: 0, fontWeight: 'bold', color: '#c00', fontSize: 16}}>{error}</div>
+        )}
       </div>
       <form onSubmit={handleSubmit}>
         <div className="card song-section-card">
@@ -526,7 +529,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
         </div>
 
         {/* Error Display */}
-        {error && <div className="error-message">{error}</div>}
+        {/* Error Display dipindahkan ke atas form */}
 
         {/* Action Buttons */}
         <div className="form-actions">

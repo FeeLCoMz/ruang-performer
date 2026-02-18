@@ -25,6 +25,11 @@ export default function ToolsPage() {
   const [backupSuccess, setBackupSuccess] = useState(null);
   const fileInputRef = useRef();
 
+  // State for Gemini models
+  const [models, setModels] = useState(null);
+  const [modelsError, setModelsError] = useState(null);
+  const [loadingModels, setLoadingModels] = useState(false);
+
   // Export handler
   const handleExport = async () => {
     setExporting(true);
@@ -88,6 +93,19 @@ export default function ToolsPage() {
     fileInputRef.current.value = '';
   };
 
+  // Handler to fetch Gemini models
+  const handleFetchModels = async () => {
+    setLoadingModels(true);
+    setModelsError(null);
+    try {
+      const data = await apiClient.listGeminiModels();
+      setModels(data.models || []);
+    } catch (err) {
+      setModelsError(err.message || 'Gagal mengambil daftar model');
+    }
+    setLoadingModels(false);
+  };
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -143,6 +161,24 @@ export default function ToolsPage() {
           <h2>Pengaturan Aplikasi</h2>
           <p>Ubah setting global aplikasi (branding, notifikasi, dsb).</p>
           <button className="btn btn-secondary" disabled>Pengaturan (coming soon)</button>
+        </div>
+        <div className="tool-card">
+          <h2>List Gemini Models</h2>
+          <p>Lihat daftar model Gemini yang tersedia dari Google Generative AI API.</p>
+          <button className="btn btn-secondary" onClick={handleFetchModels} disabled={loadingModels}>
+            {loadingModels ? 'Loading...' : 'List Models'}
+          </button>
+          {modelsError && <div style={{ color: 'red', marginTop: 8 }}>{modelsError}</div>}
+          {models && (
+            <div style={{ marginTop: 12, maxHeight: 200, overflow: 'auto', fontSize: 13 }}>
+              <b>Models:</b>
+              <ul style={{ paddingLeft: 18 }}>
+                {models.map((m) => (
+                  <li key={m.name}><b>{m.displayName || m.name}</b> <span style={{ color: '#888' }}>({m.name})</span></li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
       <style>{`

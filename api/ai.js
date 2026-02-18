@@ -1,3 +1,10 @@
+// Global array Gemini models yang didukung (urutkan dari prioritas utama ke cadangan)
+const GEMINI_MODELS_SUPPORTED = [
+  'gemini-2.5-flash',
+  'gemini-pro',
+  'gemini-1.5-pro',
+  'gemini-pro-vision',
+];
 // Simple in-memory cache for song info (title+artist)
 const songInfoCache = {};
 
@@ -22,7 +29,28 @@ export default async function handler(req, res) {
   if (url.startsWith('/song-search')) return await handleSongSearch(req, res);
   if (url.startsWith('/transcribe')) return await handleTranscribe(req, res);
   if (url.startsWith('/recommend-setlist')) return await handleRecommendSetlist(req, res);
+  if (url.startsWith('/list-models')) return await handleListModels(req, res);
   return await handleChat(req, res);
+// --- List Models handler ---
+async function handleListModels(req, res) {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'GEMINI_API_KEY tidak diset' });
+    }
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+    const resp = await fetch(url, { method: 'GET' });
+    const data = await resp.json();
+    if (!resp.ok) {
+      console.error('Gemini ListModels API error:', data);
+      return res.status(resp.status).json({ error: data.error?.message || 'Gemini ListModels API gagal' });
+    }
+    res.status(200).json({ models: data.models || [] });
+  } catch (err) {
+    console.error('ListModels error:', err);
+    res.status(500).json({ error: 'Failed to list models', message: err.message });
+  }
+}
 
 // --- AI Setlist Recommendation Handler ---
 async function handleRecommendSetlist(req, res) {
@@ -186,34 +214,55 @@ async function handleSongSearch(req, res) {
     ];
     // Gemini song info
     if (process.env.GEMINI_API_KEY) {
-      try {
-        const { GoogleGenerativeAI } = await import('@google/generative-ai');
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-        const model = genAI.getGenerativeModel({ model: geminiModel });
-        let prompt;
-        if (!artist) {
-          prompt = `Cari informasi lagu berjudul \"${title}\". Jika diketahui, berikan juga nama artis/penyanyi. Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- arrangement_style: gaya aransemen (akustik, full band, unplugged, dll)\n- keyboard_patch: string penjelasan patch keyboard yang digunakan dan bagaimana patch tersebut dipakai dalam lagu (misal: \"EP1 untuk intro dan verse, Pad untuk chorus, Strings untuk bridge\") atau null jika tidak diketahui\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"artist": "John Doe", "key": "G", "tempo": 120, "genre": "pop", "arrangement_style": "full band", "keyboard_patch": "EP1 untuk intro, Pad untuk chorus", "lyrics": "Ini lirik lagu..."}`;
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      let prompt;
+      if (!artist) {
+        prompt = `Cari informasi lagu berjudul "${title}". Jika diketahui, berikan juga nama artis/penyanyi. Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- arrangement_style: gaya aransemen (akustik, full band, unplugged, dll)\n- keyboard_patch: string penjelasan patch keyboard yang digunakan dan bagaimana patch tersebut dipakai dalam lagu (misal: "EP1 untuk intro dan verse, Pad untuk chorus, Strings untuk bridge") atau null jika tidak diketahui\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"artist": "John Doe", "key": "G", "tempo": 120, "genre": "pop", "arrangement_style": "full band", "keyboard_patch": "EP1 untuk intro, Pad untuk chorus", "lyrics": "Ini lirik lagu..."}`;
+      } else {
+        prompt = `Cari informasi lagu "${title}" oleh "${artist}". Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- arrangement_style: gaya aransemen (akustik, full band, unplugged, dll)\n- keyboard_patch: string penjelasan patch keyboard yang digunakan dan bagaimana patch tersebut dipakai dalam lagu (misal: "EP1 untuk intro dan verse, Pad untuk chorus, Strings untuk bridge") atau null jika tidak diketahui\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"artist": "${artist}", "key": "G", "tempo": 120, "genre": "pop", "arrangement_style": "akustik", "keyboard_patch": "EP1 untuk intro, Pad untuk chorus", "lyrics": "Ini lirik lagu..."}`;
+      }
+      let success = false;
+      let lastError = null;
+      for (const modelName of GEMINI_MODELS_SUPPORTED) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const response = await model.generateContent(prompt);
+          const text = response.response.text();
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.artist) results.artist = parsed.artist;
+            if (parsed.key) results.key = parsed.key;
+            if (parsed.tempo) results.tempo = parsed.tempo;
+            if (parsed.genre) results.genre = parsed.genre;
+            if (parsed.arrangement_style) results.arrangementStyle = parsed.arrangement_style;
+            if (parsed.keyboard_patch) results.keyboardPatch = parsed.keyboard_patch;
+            if (parsed.lyrics) results.lyrics = parsed.lyrics;
+            results.debug.geminiModel = modelName;
+            success = true;
+            break;
+          }
+        } catch (err) {
+          lastError = err;
+          console.error(`Gemini API error (model: ${modelName}):`, err);
+          // Jika error quota atau error lain, lanjut ke model berikutnya
+        }
+      }
+      if (!success) {
+        // Cek error quota
+        let isQuotaError = false;
+        if (lastError && (lastError.status === 429 || (lastError.message && lastError.message.includes('429')) || (lastError.message && lastError.message.toLowerCase().includes('quota')))) {
+          isQuotaError = true;
+        }
+        if (isQuotaError) {
+          results.debug.geminiError = 'Gemini API quota exceeded';
+          results.debug.geminiQuota = true;
+          return res.status(429).json({ error: 'Gemini API quota exceeded. Please try again later.' });
         } else {
-          prompt = `Cari informasi lagu \"${title}\" oleh \"${artist}\". Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- arrangement_style: gaya aransemen (akustik, full band, unplugged, dll)\n- keyboard_patch: string penjelasan patch keyboard yang digunakan dan bagaimana patch tersebut dipakai dalam lagu (misal: \"EP1 untuk intro dan verse, Pad untuk chorus, Strings untuk bridge\") atau null jika tidak diketahui\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"artist": "${artist}", "key": "G", "tempo": 120, "genre": "pop", "arrangement_style": "akustik", "keyboard_patch": "EP1 untuk intro, Pad untuk chorus", "lyrics": "Ini lirik lagu..."}`;
+          results.debug.geminiError = lastError?.message || 'Gemini API gagal';
+          return res.status(500).json({ error: 'Gemini API gagal', message: lastError?.message });
         }
-        const response = await model.generateContent(prompt);
-        const text = response.response.text();
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.artist) results.artist = parsed.artist;
-          if (parsed.key) results.key = parsed.key;
-          if (parsed.tempo) results.tempo = parsed.tempo;
-          if (parsed.genre) results.genre = parsed.genre;          
-          if (parsed.arrangement_style) results.arrangementStyle = parsed.arrangement_style;
-          if (parsed.keyboard_patch) results.keyboardPatch = parsed.keyboard_patch;
-          if (parsed.lyrics) results.lyrics = parsed.lyrics;
-        }
-      } catch (err) {
-        console.error('Gemini API error:', err);
-        results.debug.geminiError = err.message;
-        results.debug.geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
       }
     }
     // Always return artist (from input or AI)

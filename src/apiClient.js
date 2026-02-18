@@ -469,7 +469,19 @@ export async function deleteGig(id) {
   return await res.json();
 }
 
-// ...invitation API functions removed...
+// List Gemini Models
+export async function listGeminiModels() {
+  const res = await fetch(`/api/ai/list-models`, {
+    method: 'GET',
+    headers: getHeaders(),
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Failed to list Gemini models');
+  }
+  return await res.json();
+}
 
 // Band Members endpoints
 // Tambah anggota band
