@@ -1,18 +1,19 @@
 
+
 # Copilot Instructions — Ruang Performer
 
 ## Data Deletion Confirmation Policy (CRITICAL)
 
-**ALWAYS confirm with the user before making any change (migration, schema edit, or API modification) that could result in deletion of records from the database.**
+**ALWAYS** confirm with the user before making any change (migration, schema edit, or API modification) that could result in deletion of records from the database.
 
 - If a change may cause data loss (e.g., dropping columns, tables, or records), you MUST:
   - Clearly inform the user about the risk.
   - Ask for explicit confirmation before proceeding.
   - Document the confirmation in the change log or commit message if relevant.
 
-**NEVER proceed with destructive database changes without user confirmation.** This is crucial to prevent accidental data loss and ensure that all changes are intentional and understood by the user.
+**NEVER** proceed with destructive database changes without user confirmation. This is crucial to prevent accidental data loss and ensure that all changes are intentional and understood by the user.
 
-**ALWAYS check and enforce the permission system whenever adding, editing, or suggesting any CRUD (Create, Read, Update, Delete) button, action, or feature that requires user authorization.**
+**ALWAYS** check and enforce the permission system whenever adding, editing, or suggesting any CRUD (Create, Read, Update, Delete) button, action, or feature that requires user authorization.
 
 - For every new or modified UI element or API endpoint that allows data creation, editing, or deletion, you MUST:
   - Identify the relevant permission(s) and role(s) required for the action.
@@ -20,45 +21,55 @@
   - Ensure that unauthorized users cannot see or trigger the action, both in the UI and in the backend if relevant.
   - Add a code comment referencing the permission check if the logic is non-obvious.
 
-**NEVER add a CRUD button, modal, or sensitive action without explicit permission logic.**
+**NEVER** add a CRUD button, modal, or sensitive action without explicit permission logic.
 
 This applies to all pages, components, and API routes. If in doubt, ask for clarification or refer to `permissionUtils.js` and `usePermission.js`.
 
+---
 
 ## Project Overview
+
 **Ruang Performer** is a React (Vite) app for managing songs, setlists, bands, gigs, and practice sessions.
+
 - **Frontend:** `src/` (React + React Router)
 - **Backend:** `api/` (Vercel serverless functions)
 - **Database:** Turso (libSQL) via `@libsql/client`
 - **Entry:** `src/App.jsx`
+
+---
 
 ## Commands
 
 **PENTING:** Setelah memodifikasi file di folder `api/`, Anda harus merestart server lokal (`npm run dev:api` atau server Vercel/Express) agar perubahan API diterapkan.
 
 ```bash
-npm install              # Install dependencies
-npm run dev              # Dev server (port 5173, proxies /api to 3000)
-npm run dev:api          # Local Express API (dev only)
-npm run build            # Production build
-npm test                 # Run Vitest tests
-node runMigration.js <file>  # Run DB migration from db/
+npm install                   # Install dependencies
+npm run dev                   # Dev server (port 5173, proxies /api to 3000)
+npm run dev:api               # Local Express API (dev only)
+npm run build                 # Production build
+npm test                      # Run Vitest tests
+node runMigration.js <file>   # Run DB migration from db/
 ```
 
 **Environment:** Copy `.env.example` → `.env` and set:
+
 - `TURSO_DATABASE_URL` / `rz_TURSO_DATABASE_URL`
 - `TURSO_AUTH_TOKEN` / `rz_TURSO_AUTH_TOKEN`
 - `JWT_SECRET` (auth token signing)
 
+---
+
 ## Architecture
 
 ### Serverless API Pattern (Vercel)
+
 - Routes defined in `vercel.json` using regex rewrites
 - API handlers: `api/<resource>/index.js` (list/create) + `api/<resource>/[id].js` (get/update/delete)
 - All handlers use `verifyToken(req, res)` from `api/_auth.js` for JWT validation
 - DB client: `getTursoClient()` from `api/_turso.js` (env-aware, supports `rz_` prefixed vars)
 
 **Example pattern** (`api/songs/[id].js`):
+
 ```javascript
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
@@ -66,42 +77,51 @@ import { verifyToken } from '../_auth.js';
 export default async function handler(req, res) {
   const id = req.query.id || req.params.id; // Support Vercel + Express
   if (!verifyToken(req, res)) return; // Auth check
-  
+
   const client = getTursoClient();
   // SQL operations...
 }
 ```
 
 ### Frontend Data Flow
+
 1. User actions → React components
 2. API calls → `src/apiClient.js` (centralized fetch wrapper with `getAuthHeader()`)
 3. Auth state → `AuthContext` (`src/contexts/AuthContext.jsx`)
 4. Permissions → `usePermission(bandId, userBandInfo)` hook → `src/utils/permissionUtils.js`
 
 **Auth flow:**
+
 - JWT stored in `localStorage` (via `src/utils/auth.js`)
 - Context provides: `user`, `isAuthenticated`, `login()`, `logout()`
 - Protected routes check `isAuthenticated` in components
 
 ### Database Schema (`db/schema.sql`)
+
 - **Multi-tenancy:** Songs/setlists have `userId` AND optional `bandId`
 - **Band roles:** `band_members` table with `role` field (owner, admin, member, guest)
 - **Permissions:** Role-based checks in `permissionUtils.js` (e.g., `canPerformAction('edit_setlist', role)`)
 - **JSON columns:** `setlists.songs` (array), `setlistSongMeta` (object), `songs.time_markers` (array)
 
 **Migration workflow:**
+
 ```bash
 # Edit db/migrations_<name>.sql
 node runMigration.js migrations_<name>.sql
 ```
+
 Migrations split by `;`, skip `--` comments, run sequentially.
+
+---
 
 ## UI Standards
 
 ### CSS Architecture (CRITICAL)
+
 **Single source of truth:** `src/App.css` — NEVER use inline styles, CSS-in-JS, or CSS modules.
 
 **Pattern:**
+
 ```jsx
 // ✅ CORRECT
 <div className="song-item">...</div>
@@ -111,12 +131,14 @@ Migrations split by `;`, skip `--` comments, run sequentially.
 ```
 
 **CSS Variables (use these):**
+
 ```css
 --primary-bg, --card-bg, --text-primary, --text-secondary
 --border-color, --primary-accent, --transition
 ```
 
 **Standard classes:**
+
 - Layout: `.page-container`, `.page-header`, `.card`, `.grid`
 - Buttons: `.btn`, `.btn-primary`, `.btn-secondary`
 - Forms: `.modal-input`, `.modal`, `.modal-overlay`
@@ -125,9 +147,11 @@ Migrations split by `;`, skip `--` comments, run sequentially.
 **Responsive breakpoints:** 1200px, 1024px, 768px, 600px
 
 ### Layout Structure
+
 - **Desktop:** Sidebar navigation (`.sidebar`)
 - **Mobile:** Hamburger menu (NO top-tab header pattern)
 - **Page template:**
+
 ```jsx
 <div className="page-container">
   <div className="page-header">
@@ -137,9 +161,12 @@ Migrations split by `;`, skip `--` comments, run sequentially.
 </div>
 ```
 
+---
+
 ## Conventions
 
 ### Folder Structure
+
 ```
 src/
 ├── components/   # Reusable UI (modals, controls, tokens)
@@ -151,13 +178,17 @@ src/
 ```
 
 ### Naming Patterns
+
 - **Pages:** `<Feature>Page.jsx` (e.g., `SongListPage.jsx`)
 - **Components:** PascalCase (e.g., `ChordDisplay.jsx`)
 - **Utils:** camelCase functions (e.g., `transposeChord()`)
 - **API routes:** Match HTTP verbs (GET all → `index.js`, GET/PUT/DELETE one → `[id].js`)
 
 ### Special Utils to Know
+
 - **`chordUtils.js`:** `transposeChord()`, `parseChordLine()` — music theory logic
+
+---
 
 ## Copilot Chord Handling Policy (ADDITIONAL)
 
@@ -173,10 +204,14 @@ src/
 - **`analyticsUtil.js`:** Google Analytics tracking (already integrated in pages)
 - **`auditLogger.js`:** Audit trail constants (`AUDIT_ACTIONS`, `SEVERITY_LEVELS`)
 
+---
+
 ## Key Integration Points
 
 ### Permission System
+
 Always check permissions for band-related actions:
+
 ```javascript
 import { usePermission } from '../hooks/usePermission.js';
 
@@ -187,24 +222,34 @@ if (can('edit_setlist')) { /* allow edit */ }
 **Available actions:** `view_band`, `edit_band`, `manage_members`, `edit_setlist`, `delete_setlist`, etc.
 
 ### Chord Display System
+
 Songs use custom chord notation parsed by `chordUtils.js`:
+
 - Brackets `[Am]` → clickable chord tokens
 - Time markers `[00:32]` → clickable timestamps (for YouTube sync)
 - Handles transposition, key signatures
 
 ### Analytics (Already Integrated)
+
 Track events via `analyticsUtil.js`:
+
 ```javascript
 import { trackSongAction } from '../utils/analyticsUtil.js';
 trackSongAction('view', songTitle); // Auto-sends to GA
 ```
 
+---
+
 ## References
+
 - **Architecture:** `vercel.json` (routing), `vite.config.js` (proxy), `api/_turso.js`, `api/_auth.js`
 - **Auth flow:** `src/contexts/AuthContext.jsx`, `src/utils/auth.js`
 - **Permissions:** `src/utils/permissionUtils.js`, `src/hooks/usePermission.js`
 - **DB schema:** `db/schema.sql`
 - **Features:** `FEATURES.md` (analytics, service worker, web vitals)
+
+---
+
 # Documentation Handling Policy (ADDITIONAL)
 
 **ALWAYS** baca file dokumentasi yang relevan (misal: README.md, PERMISSIONS.md, FEATURES.md, USER_MANAGEMENT.md, dsb) sebelum melakukan perubahan atau menjawab permintaan yang berkaitan dengan dokumentasi, kebijakan, atau panduan.
