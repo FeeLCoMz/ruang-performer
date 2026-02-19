@@ -8,6 +8,7 @@ api/auth/2fa-setup.js
 api/auth/2fa-verify.js
 api/auth/forgot-password.js
 api/auth/reset-password.js
+api/auth/change-password.js
 api/__tests__/
 # api/middleware/
 api/ai.js
