@@ -10,7 +10,7 @@ api/auth/forgot-password.js
 api/auth/reset-password.js
 api/auth/change-password.js
 api/auth/delete-account.js
-/api/auth/user-audit-logs.js
+api/auth/user-audit-logs.js
 api/__tests__/
 # api/middleware/
 api/ai.js
