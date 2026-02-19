@@ -1,78 +1,105 @@
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { hasPermission, hasAllPermissions, hasAnyPermission, canPerformAction } from '../utils/permissionUtils.js';
+import {
+  hasPermission,
+  hasAllPermissions,
+  hasAnyPermission,
+  getPermissionsForRole,
+  isValidRole,
+  getAllRoles
+} from '../utils/permissionUtils.js';
+
 
 /**
- * Hook to check permissions in React components
+ * usePermission hook
  * @param {string} bandId - Current band ID (if in band context)
- * @param {object} userBandInfo - User's role info for band
- * @returns {object} Permission checking functions
+ * @param {object} userBandInfo - User's band info (should contain .role)
+ * @returns {object} Permission checking helpers for UI logic
+ *
+ * Usage:
+ *   const { can, canAll, canAny, isOwner, isAdmin, isMember, getRole, getUser, getPermissions } = usePermission(bandId, userBandInfo);
  */
-export function usePermission(userBandInfo) {
+export function usePermission(bandId, userBandInfo) {
   const { user } = useAuth();
-  
-  // (debug log removed)
+  const role = userBandInfo?.role || null;
+
   return {
     /**
-     * Check single permission
-     * @param {string} permission - Permission to check
+     * Check if user has a single permission
+     * @param {string} permission
      * @returns {boolean}
      */
     can: (permission) => {
-      if (!userBandInfo) return false;
-      return hasPermission(userBandInfo.role, permission);
+      if (!role) return false;
+      return hasPermission(role, permission);
     },
-    
+
     /**
-     * Check multiple permissions (ALL must be true)
-     * @param {array} permissions - Permissions to check
+     * Check if user has ALL of the given permissions
+     * @param {array} permissions
      * @returns {boolean}
      */
     canAll: (permissions) => {
-      if (!userBandInfo) return false;
-      return hasAllPermissions(userBandInfo.role, permissions);
+      if (!role) return false;
+      return hasAllPermissions(role, permissions);
     },
-    
+
     /**
-     * Check multiple permissions (ANY can be true)
-     * @param {array} permissions - Permissions to check
+     * Check if user has ANY of the given permissions
+     * @param {array} permissions
      * @returns {boolean}
      */
     canAny: (permissions) => {
-      if (!userBandInfo) return false;
-      return hasAnyPermission(userBandInfo.role, permissions);
+      if (!role) return false;
+      return hasAnyPermission(role, permissions);
     },
-    
+
     /**
      * Check if user is band owner
      * @returns {boolean}
      */
-    isOwner: () => {
-      return userBandInfo?.role === 'owner';
-    },
-    
+    isOwner: () => role === 'owner',
+
     /**
      * Check if user is band admin
      * @returns {boolean}
      */
-    isAdmin: () => {
-      return ['owner', 'admin'].includes(userBandInfo?.role);
-    },
-    
+    isAdmin: () => role === 'admin',
+
+    /**
+     * Check if user is band member
+     * @returns {boolean}
+     */
+    isMember: () => role === 'member',
+
     /**
      * Get user's role in band
-     * @returns {string} User's role (owner, admin, member)
+     * @returns {string|null}
      */
-    getRole: () => {
-      return userBandInfo?.role || null;
-    },
-    
+    getRole: () => role,
+
     /**
-     * Get current user
-     * @returns {object} Current user
+     * Get all permissions for current role
+     * @returns {array}
      */
-    getUser: () => {
-      return user;
-    }
+    getPermissions: () => getPermissionsForRole(role),
+
+    /**
+     * Get current user object
+     * @returns {object|null}
+     */
+    getUser: () => user,
+
+    /**
+     * Check if role is valid
+     * @returns {boolean}
+     */
+    isValidRole: () => isValidRole(role),
+
+    /**
+     * Get all available roles
+     * @returns {array}
+     */
+    getAllRoles: () => getAllRoles(),
   };
 }
 
@@ -95,12 +122,8 @@ export function PermissionGate({
   children,
   fallback = null
 }) {
-  if (!userRole) {
-    return fallback;
-  }
-  
+  if (!userRole) return fallback;
   let isPermitted = false;
-  
   if (type === 'single') {
     isPermitted = hasPermission(userRole, permission);
   } else if (type === 'all') {
@@ -108,6 +131,5 @@ export function PermissionGate({
   } else if (type === 'any') {
     isPermitted = hasAnyPermission(userRole, permissions);
   }
-  
   return isPermitted ? children : fallback;
 }
