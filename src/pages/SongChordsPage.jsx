@@ -11,6 +11,7 @@ import { getAuthHeader } from "../utils/auth.js";
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
+import { transposeChord, isValidChord } from "../utils/chordUtils.js";
 
 import { getTempoTerm } from "../utils/musicNotationUtils.js";
 import { cacheSong, getSong as getSongOffline } from '../utils/offlineCache.js';
@@ -806,7 +807,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
                 {chordStats.chords.length > 0 ? (
                   chordStats.chords.map((chord) => (
                     <span key={chord} className="song-lyrics-analyzer-chord-tag">
-                      {chord}
+                      {transpose !== 0 ? transposeChord(chord, transpose) : chord}
                     </span>
                   ))
                 ) : (
