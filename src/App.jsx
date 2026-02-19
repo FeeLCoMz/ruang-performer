@@ -390,6 +390,7 @@ function AppContent() {
                       setActiveSetlist(setlist);
                       navigate(`/setlists/${setlist.id}`);
                     }}
+                    isPerformanceMode={performanceMode}
                   />
                 }
               />

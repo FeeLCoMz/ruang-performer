@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlusIcon from '../components/PlusIcon.jsx';
@@ -21,7 +20,8 @@ export default function SetlistPage({
   setCreateSetlistName,
   createSetlistError,
   setCreateSetlistError,
-  setSetlists
+  setSetlists,
+  isPerformanceMode = false
 }) {
   const navigate = useNavigate();
   const [bands, setBands] = React.useState([]);
@@ -168,14 +168,16 @@ export default function SetlistPage({
   }
 
   return (
-    <div className="page-container">
+    <div className={`page-container${isPerformanceMode ? ' performance-mode' : ''}`}>
       {/* Page Header */}
       <div className="page-header">
         <div>
           <h1>🎵 Setlist</h1>
-          <p>{filteredSetlists.length} dari {setlists.length} setlist</p>
+          {!isPerformanceMode && (
+            <p>{filteredSetlists.length} dari {setlists.length} setlist</p>
+          )}
         </div>
-        {can(PERMISSIONS.SETLIST_CREATE) && (
+        {!isPerformanceMode && can(PERMISSIONS.SETLIST_CREATE) && (
           <button className="btn" onClick={() => setShowCreateSetlist(true)}>
             <PlusIcon size={18} /> Buat Setlist
           </button>
@@ -183,67 +185,69 @@ export default function SetlistPage({
       </div>
 
       {/* Filters & Search */}
-      <div className="filter-container" style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }}>
-        {/* Search Bar */}
-        <input
-          type="text"
-          placeholder="🔍 Cari nama setlist, deskripsi, atau band..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="search-input-main"
-        />
-
-        {/* Filters Row */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+      {!isPerformanceMode && (
+        <div className="filter-container" style={{
+          display: 'flex',
+          flexDirection: 'column',
           gap: '12px'
         }}>
-          <select
-            value={filterBand}
-            onChange={(e) => setFilterBand(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">Semua Band</option>
-            <option value="personal">Personal</option>
-            {bandOptions.map(band => (
-              <option key={band} value={band}>{band}</option>
-            ))}
-          </select>
+          {/* Search Bar */}
+          <input
+            type="text"
+            placeholder="🔍 Cari nama setlist, deskripsi, atau band..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="search-input-main"
+          />
 
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="filter-select"
-          >
-            <option value="name">Urutkan: Nama</option>
-            <option value="band">Urutkan: Band</option>
-            <option value="songs">Urutkan: Jumlah Lagu</option>
-            <option value="created">Urutkan: Tanggal</option>
-          </select>
-
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="btn btn-secondary"
-            title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
-          >
-            {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
-          </button>
-
-          {hasActiveFilters && (
-            <button
-              onClick={handleClearFilters}
-              className="btn btn-secondary"
+          {/* Filters Row */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '12px'
+          }}>
+            <select
+              value={filterBand}
+              onChange={(e) => setFilterBand(e.target.value)}
+              className="filter-select"
             >
-              ✕ Reset
+              <option value="all">Semua Band</option>
+              <option value="personal">Personal</option>
+              {bandOptions.map(band => (
+                <option key={band} value={band}>{band}</option>
+              ))}
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select"
+            >
+              <option value="name">Urutkan: Nama</option>
+              <option value="band">Urutkan: Band</option>
+              <option value="songs">Urutkan: Jumlah Lagu</option>
+              <option value="created">Urutkan: Tanggal</option>
+            </select>
+
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="btn btn-secondary"
+              title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
+            >
+              {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
             </button>
-          )}
+
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearFilters}
+                className="btn btn-secondary"
+              >
+                ✕ Reset
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Setlist List */}
       {filteredSetlists.length === 0 ? (
@@ -251,7 +255,7 @@ export default function SetlistPage({
           <p>
             {hasActiveFilters ? 'Tidak ada setlist yang cocok dengan filter' : 'Belum ada setlist'}
           </p>
-          {!hasActiveFilters && (
+          {!hasActiveFilters && !isPerformanceMode && (
             <button className="btn" onClick={() => setShowCreateSetlist(true)} style={{ marginTop: '12px' }}>
               <PlusIcon size={18} /> Buat Setlist Pertama
             </button>
@@ -270,86 +274,87 @@ export default function SetlistPage({
                 <h3 className="setlist-title">
                   {setlist.name}
                 </h3>
-                <div className="setlist-meta">
-                  {setlist.description && <span>{setlist.description}</span>}
-                  {setlist.bandName && <span>🎸 {setlist.bandName}</span>}
-                  {setlist.userName && <span>👤 {setlist.userName}</span>}
-                  <span>🎵 {setlist.songs?.length || 0} lagu</span>
-                </div>
+                {!isPerformanceMode && (
+                  <div className="setlist-meta">
+                    {setlist.description && <span>{setlist.description}</span>}
+                    {setlist.bandName && <span>🎸 {setlist.bandName}</span>}
+                    {setlist.userName && <span>👤 {setlist.userName}</span>}
+                    <span>🎵 {setlist.songs?.length || 0} lagu</span>
+                  </div>
+                )}
               </div>
 
               {/* Actions */}
-              <div
-                className="setlist-actions"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {(() => {
-                  // Allow edit/delete jika:
-                  // - Setlist tanpa band: user adalah pembuat (userId)
-                  // - Setlist band: cek permission band
-                  let canEdit = false;
-                  let canDelete = false;
-                  if (setlist.userId) {
-                    if (!setlist.bandId) {
-                      // Setlist pribadi
-                      canEdit = setlist.userId === currentUserId;
-                      canDelete = setlist.userId === currentUserId;
+              {!isPerformanceMode && (
+                <div
+                  className="setlist-actions"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {(() => {
+                    // Allow edit/delete jika:
+                    // - Setlist tanpa band: user adalah pembuat (userId)
+                    // - Setlist band: cek permission band
+                    let canEdit = false;
+                    let canDelete = false;
+                    if (setlist.userId) {
+                      if (!setlist.bandId) {
+                        canEdit = setlist.userId === currentUserId;
+                        canDelete = setlist.userId === currentUserId;
+                      } else {
+                        canEdit = canPerformAction(
+                          user,
+                          setlist.bandId,
+                          { role: user?.role || 'member', bandId: setlist.bandId },
+                          PERMISSIONS.SETLIST_EDIT
+                        ) || setlist.userId === currentUserId;
+                        canDelete = canPerformAction(
+                          user,
+                          setlist.bandId,
+                          { role: user?.role || 'member', bandId: setlist.bandId },
+                          PERMISSIONS.SETLIST_DELETE
+                        ) && (setlist.userId === currentUserId || user?.role === 'owner' || user?.role === 'admin');
+                      }
                     } else {
-                      // Setlist band
-                      canEdit = canPerformAction(
-                        user,
-                        setlist.bandId,
-                        { role: user?.role || 'member', bandId: setlist.bandId },
-                        PERMISSIONS.SETLIST_EDIT
-                      ) || setlist.userId === currentUserId;
-                      canDelete = canPerformAction(
-                        user,
-                        setlist.bandId,
-                        { role: user?.role || 'member', bandId: setlist.bandId },
-                        PERMISSIONS.SETLIST_DELETE
-                      ) && (setlist.userId === currentUserId || user?.role === 'owner' || user?.role === 'admin');
+                      canEdit = true;
                     }
-                  } else {
-                    // Legacy: allow edit if no userId (old data)
-                    canEdit = true;
-                  }
-                  return <>
-                    {canEdit && (
-                      <button
-                        onClick={() => setEditSetlist(setlist)}
-                        className="btn"
-                        style={{ padding: '6px 12px', fontSize: '0.85em' }}
-                        title="Edit"
-                      >
-                        <EditIcon size={16} />
-                      </button>
-                    )}
-                    {canDelete && (
-                      <button
-                        onClick={() => setDeleteSetlist(setlist)}
-                        className="btn"
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: '0.85em',
-                          background: '#dc2626',
-                          borderColor: '#b91c1c',
-                          color: '#fff'
-                        }}
-                        title="Hapus"
-                      >
-                        <DeleteIcon size={16} />
-                      </button>
-                    )}
-                  </>;
-                })()}
-              </div>
+                    return <>
+                      {canEdit && (
+                        <button
+                          onClick={() => setEditSetlist(setlist)}
+                          className="btn"
+                          style={{ padding: '6px 12px', fontSize: '0.85em' }}
+                          title="Edit"
+                        >
+                          <EditIcon size={16} />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={() => setDeleteSetlist(setlist)}
+                          className="btn"
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '0.85em',
+                            background: '#dc2626',
+                            borderColor: '#b91c1c',
+                            color: '#fff'
+                          }}
+                          title="Hapus"
+                        >
+                          <DeleteIcon size={16} />
+                        </button>
+                      )}
+                    </>;
+                  })()}
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
 
       {/* Modal Buat Setlist Baru */}
-      {showCreateSetlist && (
+      {!isPerformanceMode && showCreateSetlist && (
         <div
           className="modal-overlay"
           role="dialog"
@@ -386,7 +391,7 @@ export default function SetlistPage({
       )}
 
       {/* Modal Edit Setlist */}
-      {editSetlist && (
+      {!isPerformanceMode && editSetlist && (
         <div
           className="modal-overlay"
           role="dialog"
@@ -421,7 +426,7 @@ export default function SetlistPage({
       )}
 
       {/* Modal Konfirmasi Hapus */}
-      {deleteSetlist && (
+      {!isPerformanceMode && deleteSetlist && (
         <div
           className="modal-overlay"
           role="dialog"
