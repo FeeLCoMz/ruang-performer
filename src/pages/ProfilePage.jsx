@@ -42,6 +42,7 @@ export default function ProfilePage() {
       instrument: profile.instrument || '',
       experience: profile.experience || '',
       location: profile.location || '',
+      genres: Array.isArray(profile.genres) ? profile.genres.join(', ') : (profile.genres || ''),
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -93,6 +94,9 @@ export default function ProfilePage() {
             <label>Lokasi
               <input className="modal-input" name="location" value={form.location} onChange={handleChange} />
             </label>
+              <label>Preferensi Genre
+                <input className="modal-input" name="genres" value={form.genres} onChange={handleChange} placeholder="Contoh: pop, rock, jazz" />
+              </label>
             {error && <div className="error-text">{error}</div>}
             {success && <div className="success-text">{success}</div>}
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
@@ -212,6 +216,11 @@ export default function ProfilePage() {
             <span className="text-secondary">Lokasi:</span>
             <span className="text-primary">{profile.location || '-'}</span>
           </div>
+           <div className="profile-row">
+             <span className="text-secondary">Preferensi Genre:</span>
+             <span className="text-primary">{Array.isArray(profile.genres) ? profile.genres.join(', ') : (profile.genres || '-')}</span>
+             <button className="btn btn-secondary" style={{ marginLeft: 8 }} type="button" onClick={() => setShowEdit(true)}>Edit Preferensi</button>
+           </div>
         </div>
         <div className="profile-actions">
           <button className="btn btn-primary" type="button" onClick={() => setShowEdit(true)}>Edit Profil</button>
