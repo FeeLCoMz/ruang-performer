@@ -11,8 +11,8 @@ export function canDeleteSetlist(setlist, userBandInfo, user) {
     // Setlist band: cek permission band
     let info = null;
     if (Array.isArray(userBandInfo)) {
-      info = userBandInfo.find(b => String(b.bandId) === String(setlist.bandId));
-    } else if (userBandInfo && userBandInfo.bandId && String(userBandInfo.bandId) === String(setlist.bandId)) {
+      info = userBandInfo.find(b => String(b.bandId || b.id) === String(setlist.bandId));
+    } else if (userBandInfo && (userBandInfo.bandId || userBandInfo.id) && String(userBandInfo.bandId || userBandInfo.id) === String(setlist.bandId)) {
       info = userBandInfo;
     }
     // Only allow delete if user has permission and is owner/admin or setlist creator
@@ -45,8 +45,8 @@ export function canEditSetlist(setlist, userBandInfo, user) {
     // Setlist band: cek permission band
     let info = null;
     if (Array.isArray(userBandInfo)) {
-      info = userBandInfo.find(b => String(b.bandId) === String(setlist.bandId));
-    } else if (userBandInfo && userBandInfo.bandId && String(userBandInfo.bandId) === String(setlist.bandId)) {
+      info = userBandInfo.find(b => String(b.bandId || b.id) === String(setlist.bandId));
+    } else if (userBandInfo && (userBandInfo.bandId || userBandInfo.id) && String(userBandInfo.bandId || userBandInfo.id) === String(setlist.bandId)) {
       info = userBandInfo;
     }
     return info && hasPermission(info.role, PERMISSIONS.SETLIST_EDIT);

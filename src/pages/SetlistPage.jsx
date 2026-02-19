@@ -25,8 +25,8 @@ export default function SetlistPage({
 }) {
   const navigate = useNavigate();
   const [bands, setBands] = React.useState([]);
-  // Example: Assume userBandInfo is available from props or context (replace as needed)
-  const userBandInfo = bands && bands.length > 0 ? bands[0] : { role: 'member' };
+  // Gunakan seluruh array bands agar permission cek semua band user
+  const userBandInfo = bands && bands.length > 0 ? bands : [];
   const { can } = usePermission(null, userBandInfo);
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id;
@@ -177,10 +177,16 @@ export default function SetlistPage({
             <p>{filteredSetlists.length} dari {setlists.length} setlist</p>
           )}
         </div>
-        {!isPerformanceMode && can(PERMISSIONS.SETLIST_CREATE) && (
-          <button className="btn" onClick={() => setShowCreateSetlist(true)}>
-            <PlusIcon size={18} /> Buat Setlist
-          </button>
+        {!isPerformanceMode && (
+          // Tampilkan tombol jika user punya role (selain guest) di salah satu band ATAU user login (untuk setlist personal)
+          ((Array.isArray(userBandInfo)
+            ? userBandInfo.some(b => b.role && b.role !== 'guest')
+            : can(PERMISSIONS.SETLIST_CREATE))
+          ) && (
+            <button className="btn" onClick={() => setShowCreateSetlist(true)}>
+              <PlusIcon size={18} /> Buat Setlist
+            </button>
+          )
         )}
       </div>
 
@@ -263,70 +269,77 @@ export default function SetlistPage({
         </div>
       ) : (
         <div className="song-list-container">
-          {filteredSetlists.map(setlist => (
-            <div
-              key={setlist.id}
-              className="setlist-item"
-              onClick={() => navigate(`/setlists/${setlist.id}`)}
-            >
-              {/* Setlist Info */}
-              <div className="setlist-info">
-                <h3 className="setlist-title">
-                  {setlist.name}
-                </h3>
+          {filteredSetlists.map(setlist => {
+            // DEBUG: tampilkan info band, setlist, dan hasil permission
+            const canEdit = canEditSetlist(setlist, userBandInfo, user);
+            const canDelete = canDeleteSetlist(setlist, userBandInfo, user);
+            console.log('[DEBUG setlist]', {
+              setlistId: setlist.id,
+              setlistBandId: setlist.bandId,
+              setlistUserId: setlist.userId,
+              userBandInfo,
+              user,
+              canEdit,
+              canDelete
+            });
+            return (
+              <div
+                key={setlist.id}
+                className="setlist-item"
+                onClick={() => navigate(`/setlists/${setlist.id}`)}
+              >
+                {/* Setlist Info */}
+                <div className="setlist-info">
+                  <h3 className="setlist-title">
+                    {setlist.name}
+                  </h3>
+                  {!isPerformanceMode && (
+                    <div className="setlist-meta">
+                      {setlist.description && <span>{setlist.description}</span>}
+                      {setlist.bandName && <span>🎸 {setlist.bandName}</span>}
+                      {setlist.userName && <span>👤 {setlist.userName}</span>}
+                      <span>🎵 {setlist.songs?.length || 0} lagu</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
                 {!isPerformanceMode && (
-                  <div className="setlist-meta">
-                    {setlist.description && <span>{setlist.description}</span>}
-                    {setlist.bandName && <span>🎸 {setlist.bandName}</span>}
-                    {setlist.userName && <span>👤 {setlist.userName}</span>}
-                    <span>🎵 {setlist.songs?.length || 0} lagu</span>
+                  <div
+                    className="setlist-actions"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {canEdit && (
+                      <button
+                        onClick={() => setEditSetlist(setlist)}
+                        className="btn"
+                        style={{ padding: '6px 12px', fontSize: '0.85em' }}
+                        title="Edit"
+                      >
+                        <EditIcon size={16} />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => setDeleteSetlist(setlist)}
+                        className="btn"
+                        style={{
+                          padding: '6px 12px',
+                          fontSize: '0.85em',
+                          background: '#dc2626',
+                          borderColor: '#b91c1c',
+                          color: '#fff'
+                        }}
+                        title="Hapus"
+                      >
+                        <DeleteIcon size={16} />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
-
-              {/* Actions */}
-              {!isPerformanceMode && (
-                <div
-                  className="setlist-actions"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {(() => {
-                    // Centralized permission logic
-                    const canEdit = canEditSetlist(setlist, userBandInfo, user);
-                    const canDelete = canDeleteSetlist(setlist, userBandInfo, user);
-                    return <>
-                      {canEdit && (
-                        <button
-                          onClick={() => setEditSetlist(setlist)}
-                          className="btn"
-                          style={{ padding: '6px 12px', fontSize: '0.85em' }}
-                          title="Edit"
-                        >
-                          <EditIcon size={16} />
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button
-                          onClick={() => setDeleteSetlist(setlist)}
-                          className="btn"
-                          style={{
-                            padding: '6px 12px',
-                            fontSize: '0.85em',
-                            background: '#dc2626',
-                            borderColor: '#b91c1c',
-                            color: '#fff'
-                          }}
-                          title="Hapus"
-                        >
-                          <DeleteIcon size={16} />
-                        </button>
-                      )}
-                    </>;
-                  })()}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
