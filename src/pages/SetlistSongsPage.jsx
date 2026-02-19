@@ -10,12 +10,49 @@ import jsPDF from 'jspdf';
 
 import * as authUtils from '../utils/auth.js';
 import { cacheSetlist, getSetlist as getSetlistOffline } from '../utils/offlineCache.js';
+import { usePermission } from '../hooks/usePermission.js';
+import { canEditSetlist } from '../utils/permissionUtils.js';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import * as chordUtils from '../utils/chordUtils.js';
 
-export default function SetlistSongsPage({ setlists, songs, setSetlists, setActiveSetlist, loadingSetlists }) {
+// userBandInfo: bisa array (multi-band) atau object (single band)
+export default function SetlistSongsPage({ setlists, songs, setSetlists, setActiveSetlist, loadingSetlists, userBandInfo }) {
   const { id: setlistId } = useParams();
   const navigate = useNavigate();
   const isLoading = typeof loadingSetlists === 'boolean' ? loadingSetlists : !Array.isArray(setlists);
   let setlist = Array.isArray(setlists) ? setlists.find(s => String(s.id) === String(setlistId)) : null;
+  // Permission logic
+  const bandId = setlist?.bandId || null;
+  // Mendukung userBandInfo array (multi-band) atau object (single band)
+  let currentUserBandInfo = null;
+  if (Array.isArray(userBandInfo) && bandId) {
+    currentUserBandInfo = userBandInfo.find(b => String(b.bandId) === String(bandId));
+  } else if (userBandInfo && bandId && userBandInfo.bandId && String(userBandInfo.bandId) === String(bandId)) {
+    currentUserBandInfo = userBandInfo;
+  } else if (!bandId) {
+    // Setlist pribadi, role owner, bandId null agar konsisten
+    currentUserBandInfo = { role: 'owner', bandId: null };
+  }
+  const { user: userFromAuth } = useAuth();
+  const { user } = usePermission(bandId, currentUserBandInfo);
+  // For personal setlist, fallback to userFromAuth if user is undefined
+  const effectiveUser = user || userFromAuth;
+  const canEdit = canEditSetlist(setlist, userBandInfo, effectiveUser);
+  // DEBUG LOGGING for permission troubleshooting
+  React.useEffect(() => {
+    // Only log if setlist and bandId exist
+    if (setlist) {
+      console.log('[DEBUG][SetlistSongsPage]');
+      console.log('setlist.id:', setlist.id);
+      console.log('setlist.bandId:', setlist.bandId);
+      console.log('userBandInfo:', userBandInfo);
+      console.log('currentUserBandInfo:', currentUserBandInfo);
+      console.log('user:', user);
+      console.log('userFromAuth:', userFromAuth);
+      console.log('effectiveUser:', effectiveUser);
+      console.log('canEditSetlist:', canEdit);
+    }
+  }, [setlist, bandId, userBandInfo, currentUserBandInfo, user, userFromAuth, effectiveUser, canEdit]);
 
   // Jika setlist tidak ditemukan (misal offline), coba ambil dari cache offline
   const [offlineSetlist, setOfflineSetlist] = useState(null);
@@ -71,6 +108,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [editSongKey, setEditSongKey] = useState('');
   const [editSongTempo, setEditSongTempo] = useState('');
   const [editSongStyle, setEditSongStyle] = useState('');
+  const [editSongKeyError, setEditSongKeyError] = useState('');
 
   // State untuk konfirmasi hapus
   const [confirmDeleteSongId, setConfirmDeleteSongId] = useState(null);
@@ -354,6 +392,13 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
   async function handleEditSongSave() {
     if (!editSongId) return;
+    // Validasi chord
+    if (editSongKey && !chordUtils.isValidChord(editSongKey)) {
+      setEditSongKeyError('Format chord tidak valid');
+      return;
+    } else {
+      setEditSongKeyError('');
+    }
     const newSetlistSongMeta = typeof setlist.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
       ? { ...setlist.setlistSongMeta }
       : {};
@@ -422,9 +467,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           <p>{setlistSongs.length} lagu di setlist ini</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="btn" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
-            <PlusIcon size={22} /> Tambah Lagu
-          </button>
+          {canEdit && (
+            <button className="btn" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
+              <PlusIcon size={22} /> Tambah Lagu
+            </button>
+          )}
           <button className="btn" onClick={() => setShowShareModal(true)} title="Bagikan Setlist">
             📤 Bagikan
           </button>
@@ -607,28 +654,32 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   className="song-actions"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button
-                    onClick={() => openEditSong(song.id)}
-                    className="btn"
-                    style={{ padding: '6px 12px', fontSize: '0.85em' }}
-                    title="Edit detail lagu di setlist"
-                  >
-                    <EditIcon size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSongFromSetlist(song.id)}
-                    className="btn"
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: '0.85em',
-                      background: '#dc2626',
-                      borderColor: '#b91c1c',
-                      color: '#fff'
-                    }}
-                    title="Hapus dari setlist"
-                  >
-                    <DeleteIcon size={16} />
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => openEditSong(song.id)}
+                      className="btn"
+                      style={{ padding: '6px 12px', fontSize: '0.85em' }}
+                      title="Edit detail lagu di setlist"
+                    >
+                      <EditIcon size={16} />
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button
+                      onClick={() => handleDeleteSongFromSetlist(song.id)}
+                      className="btn"
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '0.85em',
+                        background: '#dc2626',
+                        borderColor: '#b91c1c',
+                        color: '#fff'
+                      }}
+                      title="Hapus dari setlist"
+                    >
+                      <DeleteIcon size={16} />
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -709,7 +760,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       )}
 
       {/* Modal Tambah Lagu ke Setlist */}
-      {showAddSong && (
+      {showAddSong && canEdit && (
         <div
           className="modal-overlay"
           aria-label="Modal tambah lagu ke setlist"
@@ -757,7 +808,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       )}
 
       {/* Modal Edit Detail Lagu di Setlist */}
-      {editSongId != null && (
+      {editSongId != null && canEdit && (
         <div
           className="modal-overlay"
           onClick={e => { if (e.target.classList.contains('modal-overlay')) setEditSongId(null); }}
@@ -774,6 +825,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             <label>Key
               <input type="text" value={editSongKey} onChange={e => setEditSongKey(e.target.value)} className="modal-input" style={{ marginBottom: 8 }} />
             </label>
+            {editSongKeyError && <div className="error-text" style={{ marginBottom: 8 }}>{editSongKeyError}</div>}
             <label>Tempo
               <input type="text" value={editSongTempo} onChange={e => setEditSongTempo(e.target.value)} className="modal-input" style={{ marginBottom: 8 }} />
             </label>

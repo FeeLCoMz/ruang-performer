@@ -61,8 +61,25 @@ function App() {
 }
 
 function AppContent() {
-  // Notifikasi toast global
-  const { isAuthenticated, isLoading } = useAuth();
+  // State for userBandInfo (array of user's bands with role)
+  const [userBandInfo, setUserBandInfo] = useState([]);
+  // Only call useAuth ONCE and destructure all needed values
+  const { user, isAuthenticated, isLoading } = useAuth();
+  // Fetch user bands on mount (or when authenticated)
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      apiClient.fetchBands()
+        .then((bands) => {
+          // Map to array of { bandId, role }
+          if (Array.isArray(bands)) {
+            setUserBandInfo(bands.map(b => ({ bandId: b.id, role: b.userRole || (b.isOwner ? 'owner' : 'member') })));
+          } else {
+            setUserBandInfo([]);
+          }
+        })
+        .catch(() => setUserBandInfo([]));
+    }
+  }, [isLoading, isAuthenticated]);
   const [toastMessage, setToastMessage] = useState("");
 
   const navigate = useNavigate();
@@ -350,6 +367,7 @@ function AppContent() {
                     setlists={setlists}
                     setSetlists={setSetlists}
                     setLoadingSetlists={setLoadingSetlists}
+                    userBandInfo={userBandInfo}
                   />
                 }
               />

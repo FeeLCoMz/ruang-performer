@@ -7,9 +7,10 @@ import { hasPermission, hasAllPermissions, hasAnyPermission, canPerformAction } 
  * @param {object} userBandInfo - User's role info for band
  * @returns {object} Permission checking functions
  */
-export function usePermission(bandId, userBandInfo) {
+export function usePermission(userBandInfo) {
   const { user } = useAuth();
   
+  // (debug log removed)
   return {
     /**
      * Check single permission

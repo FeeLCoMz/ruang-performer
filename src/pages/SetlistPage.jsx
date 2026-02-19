@@ -8,7 +8,7 @@ import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { fetchBands, addSetList, updateSetList, deleteSetList, fetchSetLists } from '../apiClient.js';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import { usePermission } from '../hooks/usePermission.js';
-import { PERMISSIONS, canPerformAction } from '../utils/permissionUtils.js';
+import { PERMISSIONS, canPerformAction, canEditSetlist, canDeleteSetlist } from '../utils/permissionUtils.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
 export default function SetlistPage({
@@ -291,32 +291,9 @@ export default function SetlistPage({
                   onClick={(e) => e.stopPropagation()}
                 >
                   {(() => {
-                    // Allow edit/delete jika:
-                    // - Setlist tanpa band: user adalah pembuat (userId)
-                    // - Setlist band: cek permission band
-                    let canEdit = false;
-                    let canDelete = false;
-                    if (setlist.userId) {
-                      if (!setlist.bandId) {
-                        canEdit = setlist.userId === currentUserId;
-                        canDelete = setlist.userId === currentUserId;
-                      } else {
-                        canEdit = canPerformAction(
-                          user,
-                          setlist.bandId,
-                          { role: user?.role || 'member', bandId: setlist.bandId },
-                          PERMISSIONS.SETLIST_EDIT
-                        ) || setlist.userId === currentUserId;
-                        canDelete = canPerformAction(
-                          user,
-                          setlist.bandId,
-                          { role: user?.role || 'member', bandId: setlist.bandId },
-                          PERMISSIONS.SETLIST_DELETE
-                        ) && (setlist.userId === currentUserId || user?.role === 'owner' || user?.role === 'admin');
-                      }
-                    } else {
-                      canEdit = true;
-                    }
+                    // Centralized permission logic
+                    const canEdit = canEditSetlist(setlist, userBandInfo, user);
+                    const canDelete = canDeleteSetlist(setlist, userBandInfo, user);
                     return <>
                       {canEdit && (
                         <button

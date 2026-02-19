@@ -1,4 +1,62 @@
 /**
+ * Check if user can delete a setlist (band or personal)
+ * @param {object} setlist - Setlist object (harus ada bandId jika setlist band)
+ * @param {object|array} userBandInfo - Info user di band (bisa array multi-band atau object single band)
+ * @param {object} [user] - Optional, user object (untuk setlist pribadi)
+ * @returns {boolean}
+ */
+export function canDeleteSetlist(setlist, userBandInfo, user) {
+  if (!setlist) return false;
+  if (setlist.bandId) {
+    // Setlist band: cek permission band
+    let info = null;
+    if (Array.isArray(userBandInfo)) {
+      info = userBandInfo.find(b => String(b.bandId) === String(setlist.bandId));
+    } else if (userBandInfo && userBandInfo.bandId && String(userBandInfo.bandId) === String(setlist.bandId)) {
+      info = userBandInfo;
+    }
+    // Only allow delete if user has permission and is owner/admin or setlist creator
+    if (!info) return false;
+    const hasDeletePerm = hasPermission(info.role, PERMISSIONS.SETLIST_DELETE);
+    if (!hasDeletePerm) return false;
+    if (!user) return false;
+    // Only allow if user is setlist creator or owner/admin
+    return (
+      String(setlist.userId) === String(user.userId || user.id) ||
+      info.role === 'owner' ||
+      info.role === 'admin'
+    );
+  } else {
+    // Setlist pribadi: hanya owner (userId) yang boleh delete
+    if (!user) return false;
+    return String(setlist.userId) === String(user.userId || user.id);
+  }
+}
+/**
+ * Check if user can edit a setlist (band or personal)
+ * @param {object} setlist - Setlist object (harus ada bandId jika setlist band)
+ * @param {object|array} userBandInfo - Info user di band (bisa array multi-band atau object single band)
+ * @param {object} [user] - Optional, user object (untuk setlist pribadi)
+ * @returns {boolean}
+ */
+export function canEditSetlist(setlist, userBandInfo, user) {
+  if (!setlist) return false;
+  if (setlist.bandId) {
+    // Setlist band: cek permission band
+    let info = null;
+    if (Array.isArray(userBandInfo)) {
+      info = userBandInfo.find(b => String(b.bandId) === String(setlist.bandId));
+    } else if (userBandInfo && userBandInfo.bandId && String(userBandInfo.bandId) === String(setlist.bandId)) {
+      info = userBandInfo;
+    }
+    return info && hasPermission(info.role, PERMISSIONS.SETLIST_EDIT);
+  } else {
+    // Setlist pribadi: hanya owner (userId) yang boleh edit
+    if (!user) return false;
+    return String(setlist.userId) === String(user.userId || user.id);
+  }
+}
+/**
  * Permission System Utilities
  * Role-based access control with granular permissions
  */
