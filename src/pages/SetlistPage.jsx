@@ -275,18 +275,8 @@ export default function SetlistPage({
       ) : (
         <div className="song-list-container">
           {filteredSetlists.map(setlist => {
-            // DEBUG: tampilkan info band, setlist, dan hasil permission
             const canEdit = canEditSetlist(setlist, userBandInfo, user);
             const canDelete = canDeleteSetlist(setlist, userBandInfo, user);
-            console.log('[DEBUG setlist]', {
-              setlistId: setlist.id,
-              setlistBandId: setlist.bandId,
-              setlistUserId: setlist.userId,
-              userBandInfo,
-              user,
-              canEdit,
-              canDelete
-            });
             return (
               <div
                 key={setlist.id}
@@ -325,14 +315,7 @@ export default function SetlistPage({
                     {canDelete && (
                       <button
                         onClick={() => setDeleteSetlist(setlist)}
-                        className="btn"
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: '0.85em',
-                          background: '#dc2626',
-                          borderColor: '#b91c1c',
-                          color: '#fff'
-                        }}
+                        className="btn btn-red"
                         title="Hapus"
                       >
                         <DeleteIcon size={16} />
@@ -439,9 +422,8 @@ export default function SetlistPage({
                 Batal
               </button>
               <button
-                className="btn"
+                className="btn btn-red"
                 disabled={deleteLoading}
-                style={{ backgroundColor: 'var(--error)', color: 'white' }}
                 onClick={async () => {
                   setDeleteError('');
                   setDeleteLoading(true);

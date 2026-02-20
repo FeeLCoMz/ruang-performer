@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import * as apiClient from '../apiClient.js';
 import { Link } from 'react-router-dom';
-import GigPoster from '../components/GigPoster.jsx';
+import EflyerPoster from '../components/EflyerPoster.jsx';
 import { toPng } from 'html-to-image';
 import { usePermission } from '../hooks/usePermission.js';
 
@@ -84,33 +84,19 @@ export default function GigDetailPage() {
           </button>
         )}
       </div>
-      <div className="card">
-        <p><b>Tanggal:</b> {new Date(gig.date).toLocaleString('id-ID')}</p>
-        <p><b>Venue:</b> {gig.venue || '-'}</p>
-        <p><b>Kota:</b> {gig.city || '-'}</p>
-        <p><b>Fee/Bayaran:</b> {gig.fee ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(gig.fee) : '-'}</p>
-        <p><b>Status:</b> {gig.status || '-'}</p>
-        <div style={{ marginBottom: 8 }}>
-          <b>Setlist:</b> {gig.setlistName ? (
-            <>
-              <Link to={gig.setlistId ? `/setlists/${gig.setlistId}` : '#'} style={{ color: 'var(--primary-accent)', textDecoration: 'underline' }}>
-                {gig.setlistName}
-              </Link>
-              {setlist && Array.isArray(setlist.songs) && setlist.songs.length > 0 && (
-                <ul style={{ margin: '8px 0 0 16px', padding: 0, fontSize: '0.98em', color: 'var(--text-secondary)' }}>
-                  {setlist.songs.map((song, idx) => (
-                    <li key={song.id || idx}>
-                      {song.title || '[Lagu dihapus]'}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          ) : '-'}
-        </div>
-        <p><b>Catatan:</b> {gig.notes || '-'}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0 8px 0' }}>
+        <button
+          className="btn btn-primary"
+          onClick={handleDownloadPoster}
+          disabled={isGeneratingPoster}
+        >
+          {isGeneratingPoster ? 'Mengunduh...' : 'Download E-Flyer'}
+        </button>
+        {posterError && (
+          <span style={{ color: 'var(--danger, #ef4444)', marginLeft: 8, fontWeight: 500 }}>{posterError}</span>
+        )}
       </div>
-      {/* Poster Gig dihapus sesuai permintaan */}
+      <EflyerPoster gig={gig} setlist={setlist} posterRef={posterRef} />
     </div>
   );
 }
