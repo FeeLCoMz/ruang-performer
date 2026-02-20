@@ -548,8 +548,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       />
 
       <SongChordsInfo
-        songKey={key}
-        originalKey={originalKey}
+        originalKey={originalKey || song?.key || ''}
+        targetKey={key || originalKey || song?.key || ''}
         transpose={transpose}
         setTranspose={setTranspose}
         timeSignature={timeSignature}

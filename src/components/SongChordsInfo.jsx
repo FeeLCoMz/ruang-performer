@@ -5,9 +5,11 @@ import TransposeKeyControl from "./TransposeKeyControl.jsx";
  * SongChordsInfo
  * Komponen info lagu (key, tempo, genre, aransemen, patch, dsb)
  */
+// originalKey: key from database (song)
+// targetKey: key from setlist (if any)
 export default function SongChordsInfo({
-  songKey,
-  originalKey,
+  originalKey, // from song DB
+  targetKey,   // from setlist (can be undefined)
   transpose,
   setTranspose,
   timeSignature,
@@ -37,12 +39,12 @@ export default function SongChordsInfo({
       </div>
       {showSongInfo && (
         <div className="song-info-compact-grid">
-           {songKey && (
+           {(originalKey || targetKey) && (
              <div className="song-info-item song-info-priority song-info-key">
                <span className="song-info-label">🎹 Key</span>
                <TransposeKeyControl
-                 originalKey={songKey}
-                 targetKey={songKey}
+                 originalKey={originalKey}
+                 targetKey={targetKey}
                  transpose={transpose}
                  onTransposeChange={setTranspose}
                />
@@ -50,6 +52,12 @@ export default function SongChordsInfo({
                  <div className="song-info-original-key">
                    <span className="song-info-original-key-label">Original: </span>
                    <span>{originalKey}</span>
+                 </div>
+               )}
+               {targetKey && targetKey !== originalKey && (
+                 <div className="song-info-target-key">
+                   <span className="song-info-target-key-label">Setlist: </span>
+                   <span>{targetKey}</span>
                  </div>
                )}
              </div>

@@ -213,10 +213,19 @@ export const getNoteIndex = (root) => {
   return idx === -1 ? null : idx;
 };
 
-// Calculate semitone steps needed to transpose fromKey -> toKey
+// Helper to extract root note from key string (e.g., 'Am' -> 'A', 'G#m' -> 'G#')
+const extractRoot = (key) => {
+  if (!key) return null;
+  const m = key.match(/^([A-G][#b]?)/);
+  return m ? m[1] : null;
+};
+
+// Calculate semitone steps needed to transpose fromKey -> toKey (root only)
 export const getTransposeSteps = (fromKey, toKey) => {
-  const fromIdx = getNoteIndex(fromKey);
-  const toIdx = getNoteIndex(toKey);
+  const fromRoot = extractRoot(fromKey);
+  const toRoot = extractRoot(toKey);
+  const fromIdx = getNoteIndex(fromRoot);
+  const toIdx = getNoteIndex(toRoot);
   if (fromIdx == null || toIdx == null) return 0;
   let steps = toIdx - fromIdx;
   if (steps > 6) steps -= 12;
