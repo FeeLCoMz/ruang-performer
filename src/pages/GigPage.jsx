@@ -10,7 +10,6 @@ import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 
 export default function GigPage() {
   const navigate = useNavigate();
-    // ...existing code...
   const { user } = useAuth();
   const [gigs, setGigs] = useState([]);
   const [bands, setBands] = useState([]);

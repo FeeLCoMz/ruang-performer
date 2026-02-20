@@ -172,9 +172,7 @@ export default async function handler(req, res) {
     const client = getTursoClient();
     const userId = req.user?.userId;
 
-    if (req.method === 'GET') {
-      // ...existing code...
-      
+    if (req.method === 'GET') {      
       // Get only setlists user has access to
       // Rules: setlists owned by user OR setlists from bands where user is a member
       const rows = await client.execute(

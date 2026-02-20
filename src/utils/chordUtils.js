@@ -72,7 +72,6 @@ export function isValidChord(chord) {
   return CHORD_REGEX.test(chord.trim());
 }
 
-// ...existing code...
 
 /**
  * Deteksi apakah sebuah baris adalah baris not angka (misal: 7534, 5317, dst)

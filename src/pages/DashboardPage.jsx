@@ -100,8 +100,6 @@ export default function DashboardPage() {
     }
   };
 
-  // ...existing code...
-
   return (
     <div className="page-container">
       {/* Welcome Section */}
