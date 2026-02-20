@@ -278,6 +278,7 @@ function AppContent() {
                       error={errorSongs}
                       search={search}
                       setSearch={setSearch}
+                      performanceMode={performanceMode}
                       onSongClick={(action, id) => {
                         const from = location.pathname;
                         if (action === "add") navigate("/songs/add", { state: { from } });

@@ -11,7 +11,7 @@ import { fetchSetLists } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 
-export default function SongListPage({ songs, loading, error, onSongClick }) {
+export default function SongListPage({ songs, loading, error, onSongClick, performanceMode = false }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id;
@@ -218,21 +218,23 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   }
 
   return (
-    <div className="page-container">
+    <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}>  
       {/* Page Header */}
       <div className="page-header">
         <div>
           <h1>🎵 Lagu Saya</h1>
           <p>{filteredSongs.length} dari {songs.length} lagu</p>
         </div>
-        <button className="btn" onClick={() => onSongClick('add')}>
-          <PlusIcon size={18} /> Tambah Lagu
-        </button>
+        {!performanceMode && (
+          <button className="btn" onClick={() => onSongClick('add')}>
+            <PlusIcon size={18} /> Tambah Lagu
+          </button>
+        )}
       </div>
 
       {/* Filters & Search */}
+      {/* Search Bar + Voice Search: Selalu tampil */}
       <div className="filter-container" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {/* Search Bar + Voice Search */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 4 }}>
           <input
             type="text"
@@ -249,87 +251,88 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
             />
           </div>
         </div>
-
-        {/* Filters Row */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '12px'
-        }}>
-          {/* Filter by Setlist */}
-          <select
-            value={filterSetlist}
-            onChange={e => setFilterSetlist(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">Semua Setlist</option>
-            {setlistOptions.map(sl => (
-              <option key={sl.id} value={sl.id}>{sl.name}</option>
-            ))}
-          </select>
-          <select
-            value={filterArtist}
-            onChange={(e) => setFilterArtist(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">Semua Artis</option>
-            {artists.map(artist => (
-              <option key={artist} value={artist}>{artist}</option>
-            ))}
-          </select>
-
-          <select
-            value={filterKey}
-            onChange={(e) => setFilterKey(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">Semua Kunci</option>
-            {keys.map(key => (
-              <option key={key} value={key}>{key}</option>
-            ))}
-          </select>
-
-          <select
-            value={filterGenre}
-            onChange={(e) => setFilterGenre(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">Semua Genre</option>
-            {genres.map(genre => (
-              <option key={genre} value={genre}>{genre}</option>
-            ))}
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="filter-select"
-          >
-            <option value="title">Urutkan: Judul</option>
-            <option value="artist">Urutkan: Artis</option>
-            <option value="key">Urutkan: Kunci</option>
-            <option value="tempo">Urutkan: Tempo</option>
-            <option value="created">Urutkan: Tanggal dibuat</option>
-            <option value="updated">Urutkan: Tanggal diupdate</option>
-          </select>
-
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="btn btn-secondary"
-            title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
-          >
-            {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
-          </button>
-
-          {hasActiveFilters && (
-            <button
-              onClick={handleClearFilters}
-              className="btn btn-secondary"
+        {/* Filter dan sort hanya jika !performanceMode */}
+        {!performanceMode && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '12px'
+          }}>
+            {/* Filter by Setlist */}
+            <select
+              value={filterSetlist}
+              onChange={e => setFilterSetlist(e.target.value)}
+              className="filter-select"
             >
-              ✕ Reset
+              <option value="all">Semua Setlist</option>
+              {setlistOptions.map(sl => (
+                <option key={sl.id} value={sl.id}>{sl.name}</option>
+              ))}
+            </select>
+            <select
+              value={filterArtist}
+              onChange={(e) => setFilterArtist(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">Semua Artis</option>
+              {artists.map(artist => (
+                <option key={artist} value={artist}>{artist}</option>
+              ))}
+            </select>
+
+            <select
+              value={filterKey}
+              onChange={(e) => setFilterKey(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">Semua Kunci</option>
+              {keys.map(key => (
+                <option key={key} value={key}>{key}</option>
+              ))}
+            </select>
+
+            <select
+              value={filterGenre}
+              onChange={(e) => setFilterGenre(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">Semua Genre</option>
+              {genres.map(genre => (
+                <option key={genre} value={genre}>{genre}</option>
+              ))}
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select"
+            >
+              <option value="title">Urutkan: Judul</option>
+              <option value="artist">Urutkan: Artis</option>
+              <option value="key">Urutkan: Kunci</option>
+              <option value="tempo">Urutkan: Tempo</option>
+              <option value="created">Urutkan: Tanggal dibuat</option>
+              <option value="updated">Urutkan: Tanggal diupdate</option>
+            </select>
+
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="btn btn-secondary"
+              title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
+            >
+              {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
             </button>
-          )}
-        </div>
+
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearFilters}
+                className="btn btn-secondary"
+              >
+                ✕ Reset
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Song List */}
@@ -338,7 +341,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           <p>
             {hasActiveFilters ? 'Tidak ada lagu yang cocok dengan filter' : 'Belum ada lagu'}
           </p>
-          {!hasActiveFilters && (
+          {!hasActiveFilters && !performanceMode && (
             <button className="btn" onClick={() => onSongClick('add')}>
               <PlusIcon size={18} /> Tambah Lagu Pertama
             </button>
@@ -385,7 +388,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                 >
                   Lirik
                 </button>
-                {(() => {
+                {!performanceMode && (() => {
                   // Permission logic: allow edit/delete if user is creator OR has global permission
                   let canEdit = false;
                   let canDelete = false;
