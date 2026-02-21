@@ -48,18 +48,6 @@ export default function SongChordsInfo({
                  transpose={transpose}
                  onTransposeChange={setTranspose}
                />
-               {originalKey && (
-                 <div className="song-info-original-key">
-                   <span className="song-info-original-key-label">Original: </span>
-                   <span>{originalKey}</span>
-                 </div>
-               )}
-               {targetKey && targetKey !== originalKey && (
-                 <div className="song-info-target-key">
-                   <span className="song-info-target-key-label">Setlist: </span>
-                   <span>{targetKey}</span>
-                 </div>
-               )}
              </div>
            )}
           {timeSignature && (
