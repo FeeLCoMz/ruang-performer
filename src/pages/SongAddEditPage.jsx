@@ -399,7 +399,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
               <div style={{ flex: 1 }}>
                 <h3 className="media-panel-title">
                   <span className="media-panel-icon">📺</span>
-                  Video Referensi & Time Markers
+                  Video & Time Markers
                 </h3>
                 <p className="media-panel-subtitle">Tambahkan video dan marker untuk referensi</p>
               </div>

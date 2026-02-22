@@ -16,7 +16,7 @@ export default function SongChordsMediaPanel({
   setShowTimeMarkers,
   performanceMode,
   canEdit,
-  handleTimeMarkerUpdate
+  handleTimeMarkerUpdate,
 }) {
   return (
     <div className="media-panel">
@@ -25,16 +25,15 @@ export default function SongChordsMediaPanel({
           <div>
             <h3 className="media-panel-title">
               <span className="media-panel-icon">📺</span>
-              Video Referensi
+              Video & Time Markers
             </h3>
-            <p className="media-panel-subtitle">Dengarkan referensi lagu sebelum berlatih</p>
           </div>
           <button
             className="media-panel-toggle"
             onClick={() => setMediaPanelExpanded(!mediaPanelExpanded)}
             aria-label={mediaPanelExpanded ? "Sembunyikan panel" : "Tampilkan panel"}
           >
-            {mediaPanelExpanded ? '▲' : '▶'}
+            {mediaPanelExpanded ? "▲" : "▶"}
           </button>
         </div>
       </div>
@@ -71,10 +70,10 @@ export default function SongChordsMediaPanel({
               <button
                 className="btn btn-secondary btn-small"
                 onClick={() => setShowTimeMarkers(!showTimeMarkers)}
-                aria-label={showTimeMarkers ? 'Sembunyikan time marker' : 'Tampilkan time marker'}
-                title={showTimeMarkers ? 'Sembunyikan time marker' : 'Tampilkan time marker'}
+                aria-label={showTimeMarkers ? "Sembunyikan time marker" : "Tampilkan time marker"}
+                title={showTimeMarkers ? "Sembunyikan time marker" : "Tampilkan time marker"}
               >
-                {showTimeMarkers ? '▼' : '▶' }
+                {showTimeMarkers ? "▼" : "▶"}
               </button>
             </div>
             {showTimeMarkers && (
@@ -84,11 +83,20 @@ export default function SongChordsMediaPanel({
                   readonly={performanceMode || !canEdit}
                   onUpdate={handleTimeMarkerUpdate}
                   onSeek={(time, opts) => {
-                    if (opts && opts.pause && youtubeRef.current && youtubeRef.current.handlePause) {
+                    if (
+                      opts &&
+                      opts.pause &&
+                      youtubeRef.current &&
+                      youtubeRef.current.handlePause
+                    ) {
                       youtubeRef.current.handlePause();
                       return;
                     }
-                    if (typeof time === 'number' && youtubeRef.current && youtubeRef.current.handleSeek) {
+                    if (
+                      typeof time === "number" &&
+                      youtubeRef.current &&
+                      youtubeRef.current.handleSeek
+                    ) {
                       youtubeRef.current.handleSeek(time);
                     }
                   }}
