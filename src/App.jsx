@@ -62,6 +62,7 @@ function App() {
 function AppContent() {
   // State for userBandInfo (array of user's bands with role)
   const [userBandInfo, setUserBandInfo] = useState([]);
+  const [addSongSearch, setAddSongSearch] = useState("");
   // Only call useAuth ONCE and destructure all needed values
   const { user, isAuthenticated, isLoading } = useAuth();
   // Fetch user bands on mount (or when authenticated)
