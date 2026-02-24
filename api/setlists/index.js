@@ -121,14 +121,17 @@ export default async function handler(req, res) {
         // Update setlist_songs: remove all then insert new
         if (Array.isArray(body.songs)) {
           await client.execute(`DELETE FROM setlist_songs WHERE setlist_id = ?`, [idStr]);
+          // Deduplicate song IDs while preserving order
           const seenSongIds = new Set();
-          for (let i = 0; i < body.songs.length; i++) {
-            const songId = body.songs[i];
-            if (seenSongIds.has(songId)) {
-              // Skip duplicate song in setlist
-              continue;
+          const dedupedSongs = [];
+          for (const songId of body.songs) {
+            if (!seenSongIds.has(songId)) {
+              seenSongIds.add(songId);
+              dedupedSongs.push(songId);
             }
-            seenSongIds.add(songId);
+          }
+          for (let i = 0; i < dedupedSongs.length; i++) {
+            const songId = dedupedSongs[i];
             const metaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
             await client.execute(
               `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
@@ -277,8 +280,17 @@ export default async function handler(req, res) {
         );
         // Insert setlist_songs
         if (Array.isArray(body.songs)) {
-          for (let i = 0; i < body.songs.length; i++) {
-            const songId = body.songs[i];
+          // Deduplicate song IDs while preserving order
+          const seenSongIds = new Set();
+          const dedupedSongs = [];
+          for (const songId of body.songs) {
+            if (!seenSongIds.has(songId)) {
+              seenSongIds.add(songId);
+              dedupedSongs.push(songId);
+            }
+          }
+          for (let i = 0; i < dedupedSongs.length; i++) {
+            const songId = dedupedSongs[i];
             const metaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
             await client.execute(
               `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
@@ -312,8 +324,17 @@ export default async function handler(req, res) {
           // Remove all old setlist_songs before re-insert
           await client.execute(`DELETE FROM setlist_songs WHERE setlist_id = ?`, [id]);
           if (Array.isArray(body.songs)) {
-            for (let i = 0; i < body.songs.length; i++) {
-              const songId = body.songs[i];
+            // Deduplicate song IDs while preserving order
+            const seenSongIds = new Set();
+            const dedupedSongs = [];
+            for (const songId of body.songs) {
+              if (!seenSongIds.has(songId)) {
+                seenSongIds.add(songId);
+                dedupedSongs.push(songId);
+              }
+            }
+            for (let i = 0; i < dedupedSongs.length; i++) {
+              const songId = dedupedSongs[i];
               const metaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
               await client.execute(
                 `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)

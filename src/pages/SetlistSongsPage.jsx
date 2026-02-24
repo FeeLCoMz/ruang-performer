@@ -76,11 +76,12 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [sortBy, setSortBy] = useState('custom');
   const [sortOrder, setSortOrder] = useState('asc');
 
-  // State untuk modal tambah lagu
+  // State untuk modal tambah lagu (multi-select)
   const [showAddSong, setShowAddSong] = useState(false);
   const [addSongSearch, setAddSongSearch] = useState('');
   const [addSongError, setAddSongError] = useState('');
-  const [addingSongId, setAddingSongId] = useState(null);
+  const [addingSongIds, setAddingSongIds] = useState([]); // array of selected song ids
+  const [isAddingSongs, setIsAddingSongs] = useState(false);
   const addSongInputRef = useRef(null);
 
   // State untuk share modal
@@ -338,26 +339,39 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   }
 
   // Handler tambah lagu ke setlist
-  async function handleAddSongToSetlist(songId) {
-    setAddingSongId(songId);
+  // Handler batch tambah lagu ke setlist
+  async function handleAddSongsToSetlist() {
+    if (!addingSongIds.length) return;
+    setIsAddingSongs(true);
     setAddSongError('');
-    const newOrder = [...localOrder, songId];
-    setLocalOrder(newOrder);
+    // Gabungkan localOrder (lagu lama) + lagu baru, lalu dedup
+    const combined = [...localOrder, ...addingSongIds];
+    const seen = new Set();
+    const deduped = [];
+    for (const id of combined) {
+      if (!seen.has(id)) {
+        seen.add(id);
+        deduped.push(id);
+      }
+    }
+    setLocalOrder(deduped);
     if (setSetlists) {
-      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: newOrder } : s));
+      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: deduped } : s));
     }
     try {
       const res = await fetch(`/api/setlists/${setlist.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
-        body: JSON.stringify({ ...setlist, songs: newOrder }),
+        body: JSON.stringify({ ...setlist, songs: deduped }),
       });
       if (!res.ok) throw new Error('Gagal menambah lagu ke setlist');
       setAddSongSearch('');
+      setShowAddSong(false);
+      setAddingSongIds([]);
     } catch (e) {
       setAddSongError(e.message || 'Gagal menambah lagu');
     } finally {
-      setAddingSongId(null);
+      setIsAddingSongs(false);
     }
   }
 
@@ -754,17 +768,28 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               {filteredAvailableSongs.map(song => (
                 <li
                   key={song.id}
-                  className="song-list-item pointer"
-                  style={addingSongId === song.id ? { opacity: 0.5 } : undefined}
-                  onClick={() => handleAddSongToSetlist(song.id)}
+                  className={
+                    'song-list-item pointer' + (addingSongIds.includes(song.id) ? ' selected' : '')
+                  }
+                  onClick={() => {
+                    setAddingSongIds(ids => ids.includes(song.id)
+                      ? ids.filter(id => id !== song.id)
+                      : [...ids, song.id]);
+                  }}
+                  style={addingSongIds.includes(song.id) ? { background: 'var(--primary-accent, #e0e7ff)' } : undefined}
                 >
                   <span style={{ fontWeight: 700, color: 'var(--text-primary, #3730a3)' }}>{song.title}</span> <span style={{ color: 'var(--text-muted, #888)', marginLeft: 8 }}>{song.artist}</span>
-                  {addingSongId === song.id && <span style={{ marginLeft: 8 }}>⏳</span>}
+                  {addingSongIds.includes(song.id) && <span style={{ marginLeft: 8 }}>✔️</span>}
                 </li>
               ))}
             </ul>
             {addSongError && <div className="error-text" style={{ marginBottom: 8 }}>{addSongError}</div>}
-            <button className="btn" style={{ marginTop: 8 }} onClick={() => setShowAddSong(false)}>Batal</button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button className="btn btn-primary" disabled={isAddingSongs || !addingSongIds.length} onClick={handleAddSongsToSetlist}>
+                {isAddingSongs ? 'Menambah...' : `Tambah ${addingSongIds.length ? `(${addingSongIds.length})` : ''}`}
+              </button>
+              <button className="btn" onClick={() => setShowAddSong(false)}>Batal</button>
+            </div>
           </div>
         </div>
       )}
