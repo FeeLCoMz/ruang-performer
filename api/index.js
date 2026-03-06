@@ -35,6 +35,10 @@ import toolsHandler from './tools/index.js';
 import toolsBackupHandler from './tools/backup.js';
 import toolsRestoreHandler from './tools/restore.js';
 import userAuditLogsHandler from './auth/user-audit-logs.js';
+// Users management handler
+import usersHandler from './users/index.js';
+import userByIdHandler from './users/[id].js';
+import userResetPasswordHandler from './users/reset-password.js';
 
 // --- Env setup ---
 const __filename = fileURLToPath(import.meta.url);
@@ -189,6 +193,23 @@ app.use('/api/bands', verifyToken, (req, res, next) => {
 import eventsHandler from './events/index.js';
 app.use('/api/events/:type/:id?', verifyToken, (req, res, next) => {
   Promise.resolve(eventsHandler(req, res)).catch(next);
+});
+
+// Users management endpoints (owner only)
+app.post('/api/users/:id/reset-password', verifyToken, (req, res, next) => {
+  Promise.resolve(userResetPasswordHandler(req, res)).catch(next);
+});
+app.get('/api/users/:id', verifyToken, (req, res, next) => {
+  Promise.resolve(userByIdHandler(req, res)).catch(next);
+});
+app.put('/api/users/:id', verifyToken, (req, res, next) => {
+  Promise.resolve(userByIdHandler(req, res)).catch(next);
+});
+app.delete('/api/users/:id', verifyToken, (req, res, next) => {
+  Promise.resolve(userByIdHandler(req, res)).catch(next);
+});
+app.get('/api/users', verifyToken, (req, res, next) => {
+  Promise.resolve(usersHandler(req, res)).catch(next);
 });
 
 // Status endpoint

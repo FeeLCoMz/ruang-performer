@@ -201,7 +201,7 @@ export default function ToolsPage() {
         <div className="tool-card">
           <h2>User Management</h2>
           <p>Kelola user: reset password, nonaktifkan user, atau ubah role user secara manual.</p>
-          <button className="btn btn-secondary" disabled>Kelola User (coming soon)</button>
+          <button className="btn btn-secondary" onClick={() => window.location.href='/user-management'}>Kelola User</button>
         </div>
         <div className="tool-card">
           <h2>Audit Log Viewer</h2>

@@ -29,6 +29,7 @@ const PracticeSessionPage = lazy(() => import("./pages/PracticeSessionPage.jsx")
 const GigPage = lazy(() => import("./pages/GigPage.jsx"));
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage.jsx"));
 const SongLyricsPage = lazy(() => import("./pages/SongLyricsPage.jsx"));
+const UserManagementPage = lazy(() => import("./pages/UserManagementPage.jsx"));
 
 // Loading fallback component
 function PageLoader() {
@@ -399,6 +400,7 @@ function AppContent() {
               <Route path="/settings/2fa" element={<TwoFactorSetupPage />} />
               <Route path="/audit-logs" element={<AuditLogPage />} />
               <Route path="/tools" element={<ToolsPage />} />
+              <Route path="/user-management" element={<UserManagementPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -586,3 +586,71 @@ export async function removeBandMember(bandId, userId) {
   return await res.json();
 }
 
+// --- User Management (Owner Only) ---
+export async function getAllUsers() {
+  const res = await fetch(`${API_BASE}/users`, {
+    method: 'GET',
+    headers: getHeaders()
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Gagal mengambil daftar users');
+  }
+  return await res.json();
+}
+
+export async function getUserById(userId) {
+  const res = await fetch(`${API_BASE}/users/${userId}`, {
+    method: 'GET',
+    headers: getHeaders()
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Gagal mengambil data user');
+  }
+  return await res.json();
+}
+
+export async function updateUser(userId, updates) {
+  const res = await fetch(`${API_BASE}/users/${userId}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(updates)
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Gagal mengupdate user');
+  }
+  return await res.json();
+}
+
+export async function deleteUser(userId) {
+  const res = await fetch(`${API_BASE}/users/${userId}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Gagal menghapus user');
+  }
+  return await res.json();
+}
+
+export async function resetUserPassword(userId, newPassword) {
+  const res = await fetch(`${API_BASE}/users/${userId}/reset-password`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ newPassword })
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Gagal reset password');
+  }
+  return await res.json();
+}
+
