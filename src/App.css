@@ -765,7 +765,7 @@ body.dark-mode {
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
   --border-color: #334155;
-  --chord-bright: #ffe066;
+  --chord-bright: #e5ff00;
 }
 
 /* ========================================
@@ -3292,24 +3292,6 @@ body.dark-mode .cd-token {
   white-space: pre;
   margin-bottom: 4px;
   min-height: 1.5em;
-}
-
-/* ========================================
-   CHORD TOKEN COMPONENT STYLES
-   ======================================== */
-.ct {
-  color: var(--primary-accent);
-  font-weight: 700;
-  background: transparent;
-  padding: 0;
-  border-radius: 0;
-  transition: all 0.2s ease;
-}
-body.dark-mode .ct {
-  color: var(--chord-bright);
-  text-shadow:
-    0 1px 8px #222,
-    0 0 2px #ffe066;
 }
 
 /* ========================================
