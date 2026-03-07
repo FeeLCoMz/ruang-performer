@@ -18,44 +18,60 @@ export default function DashboardPage() {
     let isMounted = true;
 
     const loadDashboard = async () => {
+      // Wave 1: Load lightweight critical data first (setlists, bands)
       setStatsLoading(true);
-      setEventsLoading(true);
       setBandsLoading(true);
 
-      const songsPromise = apiClient.fetchSongs().catch(() => []);
-      const setlistsPromise = apiClient.fetchSetLists({ summary: true }).catch(() => []);
-      const bandsPromise = apiClient.fetchBands().catch(() => []);
-      const gigsPromise = apiClient.fetchGigs().catch(() => []);
-      const practicePromise = apiClient.fetchPracticeSessions().catch(() => []);
-
-      const [songsData, setlistsData, bandsData, gigsData, practiceData] = await Promise.all([
-        songsPromise,
-        setlistsPromise,
-        bandsPromise,
-        gigsPromise,
-        practicePromise,
+      const [setlistsData, bandsData] = await Promise.all([
+        apiClient.fetchSetLists({ summary: true }).catch(() => []),
+        apiClient.fetchBands().catch(() => []),
       ]);
 
       if (!isMounted) return;
 
-      setStats({
-        songs: songsData.length || 0,
+      // Render first wave immediately
+      setStats(prev => ({
+        ...prev,
         setlists: setlistsData.length || 0,
-        bands: bandsData.length || 0,
-        gigs: gigsData.length || 0
-      });
+        bands: bandsData.length || 0
+      }));
+      setBands(bandsData.slice(0, 5));
+      setBandsLoading(false);
 
       const now = new Date();
       const activities = [];
-      if (songsData.length > 0) activities.push({ icon: '🎵', text: `${songsData.length} lagu dalam database`, time: 'Always' });
       if (bandsData.length > 0) activities.push({ icon: '🎸', text: `${bandsData.length} band terdaftar`, time: 'Recently' });
       if (setlistsData.length > 0) activities.push({ icon: '📋', text: `${setlistsData.length} setlist tersedia`, time: 'Recently' });
+      setRecentActivity(activities);
+
+      // Wave 2: Load heavier data (songs, gigs, practice) in background
+      setEventsLoading(true);
+
+      const [songsData, gigsData, practiceData] = await Promise.all([
+        apiClient.fetchSongs().catch(() => []),
+        apiClient.fetchGigs().catch(() => []),
+        apiClient.fetchPracticeSessions().catch(() => []),
+      ]);
+
+      if (!isMounted) return;
+
+      // Update stats with heavy data
+      setStats(prev => ({
+        ...prev,
+        songs: songsData.length || 0,
+        gigs: gigsData.length || 0
+      }));
+
+      // Update activities
+      const updatedActivities = [...activities];
+      if (songsData.length > 0) updatedActivities.unshift({ icon: '🎵', text: `${songsData.length} lagu dalam database`, time: 'Always' });
       if (gigsData.length > 0) {
         const completedGigs = gigsData.filter(g => new Date(g.date) < now).length;
-        activities.push({ icon: '🎤', text: `${completedGigs} gig telah selesai`, time: 'All time' });
+        updatedActivities.push({ icon: '🎤', text: `${completedGigs} gig telah selesai`, time: 'All time' });
       }
-      setRecentActivity(activities.slice(0, 4));
+      setRecentActivity(updatedActivities.slice(0, 4));
 
+      // Process upcoming events
       const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       const upcomingPractice = practiceData.filter(s => {
         const sessionDate = new Date(s.date);
@@ -70,11 +86,9 @@ export default function DashboardPage() {
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .slice(0, 5);
       setUpcomingEvents(combined);
-      setBands(bandsData.slice(0, 5));
 
       setStatsLoading(false);
       setEventsLoading(false);
-      setBandsLoading(false);
     };
 
     loadDashboard();
