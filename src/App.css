@@ -2378,6 +2378,75 @@ body.dark-mode .lyrics-editor-textarea {
   margin-top: 4px;
 }
 
+.activity-item--clickable {
+  cursor: pointer;
+}
+
+.loading-skeleton-stat {
+  width: 40px;
+}
+
+.loading-skeleton-full {
+  width: 100%;
+  height: 24px;
+}
+
+.loading-skeleton-block {
+  width: 100%;
+  height: 32px;
+  display: block;
+}
+
+.dashboard-section-title {
+  font-size: 1.2em;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.dashboard-band-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.dashboard-band-card {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  transition: all var(--transition-fast);
+}
+
+.dashboard-band-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.dashboard-band-card-title {
+  margin: 0 0 8px 0;
+  font-size: 1.1em;
+  color: var(--text-primary);
+}
+
+.dashboard-band-card-description {
+  margin: 0 0 8px 0;
+  color: var(--text-muted);
+  font-size: 0.9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-band-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: auto;
+}
+
 .loading-container {
   display: flex;
   align-items: center;

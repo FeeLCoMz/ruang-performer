@@ -247,8 +247,12 @@ export async function deleteSong(id) {
   return await res.json();
 }
 
-export async function fetchSetLists() {
-  const res = await fetch(`${API_BASE}/setlists`, {
+export async function fetchSetLists(options = {}) {
+  const params = new URLSearchParams();
+  if (options.summary) params.set('summary', '1');
+  const url = params.toString() ? `${API_BASE}/setlists?${params.toString()}` : `${API_BASE}/setlists`;
+
+  const res = await fetch(url, {
     headers: getHeaders()
   });
   if (!res.ok) throw new Error('Failed to fetch setlists');

@@ -174,10 +174,50 @@ export default async function handler(req, res) {
 
     const client = getTursoClient();
     const userId = req.user?.userId;
+    const summaryParam = req.query?.summary || new URL(req.url, 'http://localhost').searchParams.get('summary');
+    const isSummaryRequest = ['1', 'true', 'yes'].includes(String(summaryParam || '').toLowerCase());
 
     if (req.method === 'GET') {      
       // Get only setlists user has access to
       // Rules: setlists owned by user OR setlists from bands where user is a member
+      if (isSummaryRequest) {
+        const summaryRows = await client.execute(
+          `SELECT s.id, s.name, s.description, s.bandId, s.createdAt, s.updatedAt,
+                  b.name as bandName, u.username as userName, s.userId,
+                  COALESCE(ss.song_count, 0) as songCount
+           FROM setlists s
+           LEFT JOIN bands b ON s.bandId = b.id
+           LEFT JOIN users u ON s.userId = u.id
+           LEFT JOIN (
+             SELECT setlist_id, COUNT(*) as song_count
+             FROM setlist_songs
+             GROUP BY setlist_id
+           ) ss ON ss.setlist_id = s.id
+           WHERE (s.userId = ?)
+              OR (s.bandId IS NOT NULL AND EXISTS (
+                SELECT 1 FROM band_members WHERE bandId = s.bandId AND userId = ?
+              ))
+           ORDER BY (s.updatedAt IS NULL) ASC, datetime(s.updatedAt) DESC, datetime(s.createdAt) DESC`,
+          [userId, userId]
+        );
+
+        const summarySetlists = (summaryRows.rows || []).map((row) => ({
+          id: row.id,
+          name: row.name,
+          description: row.description || '',
+          bandId: row.bandId,
+          bandName: row.bandName,
+          userId: row.userId,
+          userName: row.userName || '',
+          songCount: Number(row.songCount || 0),
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt
+        }));
+
+        res.status(200).json(summarySetlists);
+        return;
+      }
+
       const rows = await client.execute(
         `SELECT s.id, s.name, s.description, s.bandId, s.completedSongs, s.createdAt, s.updatedAt,
                 b.name as bandName, u.username as userName, s.userId
@@ -191,23 +231,46 @@ export default async function handler(req, res) {
          ORDER BY (s.updatedAt IS NULL) ASC, datetime(s.updatedAt) DESC, datetime(s.createdAt) DESC`,
         [userId, userId]
       );
-      // For each setlist, fetch songs and meta from setlist_songs
-      const setlists = [];
-      for (const row of rows.rows ?? []) {
-        const songRows = await client.execute(
-          `SELECT song_id, position, meta FROM setlist_songs WHERE setlist_id = ? ORDER BY position ASC`,
-          [row.id]
-        );
-        const songs = songRows.rows?.map(r => r.song_id) || [];
-        const setlistSongMeta = {};
-        (songRows.rows || []).forEach(r => {
-          try {
-            setlistSongMeta[r.song_id] = r.meta ? JSON.parse(r.meta) : {};
-          } catch {
-            setlistSongMeta[r.song_id] = {};
+      const baseRows = rows.rows ?? [];
+      const setlistIds = baseRows.map(row => row.id).filter(Boolean);
+
+      // Avoid N+1 queries by fetching song rows in chunks and grouping in memory.
+      const songRowsBySetlistId = new Map();
+      if (setlistIds.length > 0) {
+        const chunkSize = 200;
+        for (let i = 0; i < setlistIds.length; i += chunkSize) {
+          const chunk = setlistIds.slice(i, i + chunkSize);
+          const placeholders = chunk.map(() => '?').join(', ');
+          const songRows = await client.execute(
+            `SELECT setlist_id, song_id, position, meta
+             FROM setlist_songs
+             WHERE setlist_id IN (${placeholders})
+             ORDER BY setlist_id ASC, position ASC`,
+            chunk
+          );
+
+          for (const songRow of songRows.rows || []) {
+            const list = songRowsBySetlistId.get(songRow.setlist_id) || [];
+            list.push(songRow);
+            songRowsBySetlistId.set(songRow.setlist_id, list);
           }
-        });
-        setlists.push({
+        }
+      }
+
+      const setlists = baseRows.map(row => {
+        const groupedSongRows = songRowsBySetlistId.get(row.id) || [];
+        const songs = groupedSongRows.map(r => r.song_id);
+        const setlistSongMeta = {};
+
+        for (const songRow of groupedSongRows) {
+          try {
+            setlistSongMeta[songRow.song_id] = songRow.meta ? JSON.parse(songRow.meta) : {};
+          } catch {
+            setlistSongMeta[songRow.song_id] = {};
+          }
+        }
+
+        return {
           id: row.id,
           name: row.name,
           description: row.description || '',
@@ -226,8 +289,8 @@ export default async function handler(req, res) {
           })(),
           createdAt: row.createdAt,
           updatedAt: row.updatedAt
-        });
-      }
+        };
+      });
       res.status(200).json(setlists);
       return;
     }

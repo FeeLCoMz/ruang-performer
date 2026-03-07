@@ -15,6 +15,7 @@ export default function SetlistPage({
   setlists,
   loadingSetlists,
   errorSetlists,
+  userBandInfo = [],
   showCreateSetlist,
   setShowCreateSetlist,
   setCreateSetlistName,
@@ -25,8 +26,6 @@ export default function SetlistPage({
 }) {
   const navigate = useNavigate();
   const [bands, setBands] = React.useState([]);
-  // Gunakan seluruh array bands agar permission cek semua band user
-  const userBandInfo = bands && bands.length > 0 ? bands : [];
   const { can } = usePermission(null, userBandInfo);
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id;
@@ -39,32 +38,43 @@ export default function SetlistPage({
   
   // Filter & Sort States
   const [search, setSearch] = React.useState('');
+  const [debouncedSearch, setDebouncedSearch] = React.useState('');
   const [filterBand, setFilterBand] = React.useState('all');
   const [sortBy, setSortBy] = React.useState('updated');
   const [sortOrder, setSortOrder] = React.useState('desc');
+
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 200);
+    return () => clearTimeout(timeoutId);
+  }, [search]);
   
   // Update page meta tags on mount
   React.useEffect(() => {
     updatePageMeta(pageMetadata.setlists);
   }, []);
   
-  // Fetch bands on mount
-  React.useEffect(() => {
-    const loadBands = async () => {
-      try {
-        const data = await fetchBands();
-        setBands(data || []);
-      } catch (err) {
-        console.error('Failed to load bands:', err);
-      }
-    };
-    loadBands();
+  const loadBands = React.useCallback(async () => {
+    try {
+      const data = await fetchBands();
+      setBands(data || []);
+    } catch (err) {
+      console.error('Failed to load bands:', err);
+    }
   }, []);
+
+  // Load band options only when create/edit modal needs them.
+  React.useEffect(() => {
+    if ((showCreateSetlist || editSetlist) && bands.length === 0) {
+      loadBands();
+    }
+  }, [showCreateSetlist, editSetlist, bands.length, loadBands]);
   
   // Helper untuk refresh setlists dari API
   const refreshSetlists = async () => {
     try {
-      const data = await fetchSetLists();
+      const data = await fetchSetLists({ summary: true });
       setSetlists(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to refresh setlists:', err);
@@ -85,8 +95,8 @@ export default function SetlistPage({
     let result = [...setlists];
 
     // Apply search
-    if (search.trim()) {
-      const searchLower = search.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const searchLower = debouncedSearch.toLowerCase();
       result = result.filter(setlist =>
         setlist.name?.toLowerCase().includes(searchLower) ||
         setlist.description?.toLowerCase().includes(searchLower) || 
@@ -138,7 +148,7 @@ export default function SetlistPage({
     });
 
     return result;
-  }, [setlists, search, filterBand, sortBy, sortOrder]);
+  }, [setlists, debouncedSearch, filterBand, sortBy, sortOrder]);
 
   const handleClearFilters = () => {
     setSearch('');
@@ -292,7 +302,7 @@ export default function SetlistPage({
                       {setlist.description && <span>{setlist.description}</span>}
                       {setlist.bandName && <span>🎸 {setlist.bandName}</span>}
                       {setlist.userName && <span>👤 {setlist.userName}</span>}
-                      <span>🎵 {setlist.songs?.length || 0} lagu</span>
+                      <span>🎵 {(setlist.songCount ?? setlist.songs?.length) || 0} lagu</span>
                     </div>
                 </div>
 

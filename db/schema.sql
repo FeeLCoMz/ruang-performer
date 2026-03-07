@@ -84,6 +84,21 @@ CREATE TABLE IF NOT EXISTS setlists (
 );
 
 
+-- Setlist songs relation table (ordered songs + per-song metadata in setlist)
+CREATE TABLE IF NOT EXISTS setlist_songs (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  setlist_id TEXT NOT NULL,
+  song_id TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  meta TEXT DEFAULT '{}',
+  createdAt TEXT DEFAULT (datetime('now')),
+  updatedAt TEXT,
+  FOREIGN KEY (setlist_id) REFERENCES setlists(id) ON DELETE CASCADE,
+  FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE,
+  UNIQUE(setlist_id, song_id)
+);
+
+
 -- Practice sessions table
 CREATE TABLE IF NOT EXISTS practice_sessions (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -125,10 +140,13 @@ CREATE TABLE IF NOT EXISTS gigs (
 -- Indexes for faster searches
 CREATE INDEX IF NOT EXISTS idx_songs_title ON songs(title);
 CREATE INDEX IF NOT EXISTS idx_setlists_name ON setlists(name);
+CREATE INDEX IF NOT EXISTS idx_setlists_userId_updatedAt ON setlists(userId, updatedAt);
+CREATE INDEX IF NOT EXISTS idx_setlists_bandId_updatedAt ON setlists(bandId, updatedAt);
 CREATE INDEX IF NOT EXISTS idx_bands_createdBy ON bands(createdBy);
 CREATE INDEX IF NOT EXISTS idx_band_members_bandId ON band_members(bandId);
 CREATE INDEX IF NOT EXISTS idx_band_members_userId ON band_members(userId);
 CREATE INDEX IF NOT EXISTS idx_band_members_role ON band_members(role);
+CREATE INDEX IF NOT EXISTS idx_setlist_songs_setlist_id_position ON setlist_songs(setlist_id, position);
 CREATE INDEX IF NOT EXISTS idx_practice_sessions_bandId ON practice_sessions(bandId);
 CREATE INDEX IF NOT EXISTS idx_gigs_bandId ON gigs(bandId);
 CREATE INDEX IF NOT EXISTS idx_gigs_status ON gigs(status);

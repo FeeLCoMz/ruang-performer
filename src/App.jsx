@@ -139,8 +139,9 @@ function AppContent() {
     if (isLoading || !isAuthenticated) return;
     if (location.pathname.startsWith("/setlists")) {
       setLoadingSetlists(true);
+      const isSetlistListPage = location.pathname === "/setlists";
       apiClient
-        .fetchSetLists()
+        .fetchSetLists({ summary: isSetlistListPage })
         .then((data) => {
           setSetlists(Array.isArray(data) ? data : []);
           setLoadingSetlists(false);
@@ -358,6 +359,7 @@ function AppContent() {
                     setSetlists={setSetlists}
                     loadingSetlists={loadingSetlists}
                     errorSetlists={errorSetlists}
+                    userBandInfo={userBandInfo}
                     songs={songs}
                     showCreateSetlist={showCreateSetlist}
                     setShowCreateSetlist={setShowCreateSetlist}
