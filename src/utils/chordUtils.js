@@ -141,7 +141,7 @@ export function parseSection(line) {
     const originalLabel = match[1].trim();
     const labelLower = originalLabel.toLowerCase();
     // Daftar kata kunci struktur lagu
-    const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'pre-chorus'];
+    const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain', 'pre-chorus', 'solo', 'musik'];
     // Daftar kata kunci instrumen umum per kategori
     const instrumentKeywords = [
       'gitar', 'guitar', 'bass', 'ukulele', 'mandolin',
@@ -153,7 +153,7 @@ export function parseSection(line) {
       'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
       'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana'
     ];
-    if (structureKeywords.some(k => labelLower.includes(k))) {
+    if (labelLower === 'int' || structureKeywords.some(k => labelLower.includes(k))) {
       return { type: 'structure', label: originalLabel };
     }
     if (instrumentKeywords.some(k => labelLower.includes(k))) {
