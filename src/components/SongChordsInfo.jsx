@@ -9,9 +9,11 @@ import TempoControl from "./TempoControl.jsx";
  */
 // originalKey: key from database (song)
 // targetKey: key from setlist (if any)
+// lyricsOriginalKey: original key metadata from lyrics text (informational only, does not affect transpose)
 export default function SongChordsInfo({
   originalKey, // from song DB
   targetKey,   // from setlist (can be undefined)
+  lyricsOriginalKey, // from lyrics metadata (display only)
   transpose,
   setTranspose,
   timeSignature,
@@ -68,6 +70,12 @@ export default function SongChordsInfo({
               />
             </div>
            )}
+          {lyricsOriginalKey && (
+            <div className="song-info-item">
+              <span className="song-info-label">🎵 Nada Asli</span>
+              <span className="song-info-value">{lyricsOriginalKey}</span>
+            </div>
+          )}
           {timeSignature && (
             <div className="song-info-item">
               <span className="song-info-label">🎼 Time</span>

@@ -64,14 +64,14 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // 6. Data Lagu & Metadata
   // =========================
   // Gunakan fetchedSong jika sudah ada, fallback ke object kosong
-  // Deteksi metadata "Original Key: X" di lirik
+  // Deteksi metadata "Original Key: X" di lirik (hanya sebagai informasi, tidak mempengaruhi transpose)
   let song = fetchedSong || {};
-  let originalKey = '';
+  let lyricsMetaKey = ''; // Kunci asli dari metadata lirik — hanya informasi
   let lyricsClean = song.lyrics || '';
   if (lyricsClean) {
     const metaMatch = lyricsClean.match(/^Original Key:\s*([A-G][#b]?m?(?:aj|min|dim|aug)?\b)/im);
     if (metaMatch) {
-      originalKey = metaMatch[1];
+      lyricsMetaKey = metaMatch[1];
       // Hapus baris metadata dari lirik
       lyricsClean = lyricsClean.replace(/^Original Key:.*$/im, '').replace(/^\s*\n/, '');
     }
@@ -354,8 +354,9 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       />
 
       <SongChordsInfo
-        originalKey={originalKey || song?.key || ''}
-        targetKey={key || originalKey || song?.key || ''}
+        originalKey={song?.key || key || ''}
+        targetKey={key || song?.key || ''}
+        lyricsOriginalKey={lyricsMetaKey}
         transpose={transpose}
         setTranspose={setTranspose}
         timeSignature={timeSignature}
@@ -408,8 +409,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         handleCancelEditLyrics={handleCancelEditLyrics}
         showExportMenu={showExportMenu}
         setShowExportMenu={setShowExportMenu}
-        handleExportText={() => handleExportText(song, artist, key, originalKey, tempo, lyricsClean, setShowExportMenu)}
-        handleExportPDF={() => handleExportPDF(song, artist, key, originalKey, tempo, lyricsClean, setShowExportMenu)}
+        handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsClean, setShowExportMenu)}
+        handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsClean, setShowExportMenu)}
         tempo={tempo}
         autoScrollActive={autoScrollActive}
         scrollSpeed={scrollSpeed}
