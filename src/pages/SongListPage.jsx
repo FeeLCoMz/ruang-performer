@@ -341,6 +341,29 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
           <p>
             {hasActiveFilters ? 'Tidak ada lagu yang cocok dengan filter' : 'Belum ada lagu'}
           </p>
+          {hasActiveFilters && search.trim() && (
+            <div style={{ marginTop: '12px' }}>
+              <p>Tidak menemukan lagu? Cari di Google:</p>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                <a
+                  href={`https://www.google.com/search?q=chord+${encodeURIComponent(search)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary"
+                >
+                  🔍 Chord "{search}"
+                </a>
+                <a
+                  href={`https://www.google.com/search?q=lirik+${encodeURIComponent(search)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary"
+                >
+                  🎤 Lirik "{search}"
+                </a>
+              </div>
+            </div>
+          )}
           {!hasActiveFilters && !performanceMode && (
             <button className="btn" onClick={() => onSongClick('add')}>
               <PlusIcon size={18} /> Tambah Lagu Pertama
