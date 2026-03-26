@@ -91,6 +91,12 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [posterError, setPosterError] = useState('');
   const posterRef = useRef(null);
 
+  // State untuk copy modal
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [copyName, setCopyName] = useState('');
+  const [copying, setCopying] = useState(false);
+  const [copyError, setCopyError] = useState('');
+
   // State untuk edit lagu
   const [editSongId, setEditSongId] = useState(null);
   const [editSongKey, setEditSongKey] = useState('');
@@ -310,6 +316,51 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       });
   }
 
+  // Handler copy setlist
+  async function handleCopySetlist() {
+    if (!copyName.trim()) {
+      setCopyError('Nama setlist tidak boleh kosong');
+      return;
+    }
+    setCopying(true);
+    setCopyError('');
+    try {
+      const copyData = {
+        name: copyName.trim(),
+        description: setlist.description || '',
+        bandId: setlist.bandId || null,
+        songs: setlist.songs || [],
+        setlistSongMeta: setlist.setlistSongMeta || {}
+      };
+      const res = await fetch('/api/setlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
+        body: JSON.stringify(copyData),
+      });
+      if (!res.ok) throw new Error('Gagal copy setlist');
+      const { id: newId } = await res.json();
+      // Update local setlists state
+      if (setSetlists) {
+        const newSetlist = {
+          ...setlist,
+          id: newId,
+          name: copyName.trim(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        setSetlists(prev => [newSetlist, ...prev]);
+      }
+      setShowCopyModal(false);
+      setCopyName('');
+      // Navigate to the new setlist
+      navigate(`/setlists/${newId}`);
+    } catch (e) {
+      setCopyError(e.message || 'Gagal copy setlist');
+    } finally {
+      setCopying(false);
+    }
+  }
+
   // Lagu yang belum ada di setlist
   const availableSongs = songs.filter(song => !(localOrder || []).includes(song.id));
   const filteredAvailableSongs = availableSongs.filter(song =>
@@ -468,6 +519,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           {!performanceMode && canEdit && (
             <button className="btn" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
               <PlusIcon size={22} /> Tambah Lagu
+            </button>
+          )}
+          {!performanceMode && (
+            <button className="btn" onClick={() => setShowCopyModal(true)} title="Copy Setlist">
+              📋 Copy Setlist
             </button>
           )}
           {!performanceMode && (
@@ -730,6 +786,46 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 {isGeneratingPoster ? 'Membuat PDF...' : 'Download PDF'}
               </button>
               <button className="btn btn-secondary" onClick={() => setShowShareModal(false)}>Tutup</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Copy Setlist */}
+      {showCopyModal && (
+        <div
+          className="modal-overlay"
+          aria-label="Modal copy setlist"
+          onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowCopyModal(false); }}
+          tabIndex={-1}
+          onKeyDown={e => { if (e.key === 'Escape') setShowCopyModal(false); }}
+        >
+          <div
+            className="modal add-song-modal"
+            role="dialog"
+            aria-modal="true"
+            tabIndex={0}
+          >
+            <div className="modal-title">Copy Setlist</div>
+            <div className="modal-message">
+              Buat salinan dari setlist "{setlist.name}" dengan nama baru.
+            </div>
+            <input
+              type="text"
+              className="modal-input"
+              placeholder="Nama setlist baru"
+              value={copyName}
+              onChange={(e) => setCopyName(e.target.value)}
+              maxLength={100}
+            />
+            {copyError && <div className="error-text">{copyError}</div>}
+            <div className="modal-actions">
+              <button className="btn" onClick={handleCopySetlist} disabled={copying}>
+                {copying ? 'Mencopy...' : 'Copy Setlist'}
+              </button>
+              <button className="btn btn-secondary" onClick={() => { setShowCopyModal(false); setCopyName(''); setCopyError(''); }} disabled={copying}>
+                Batal
+              </button>
             </div>
           </div>
         </div>
