@@ -220,7 +220,88 @@ const extractRoot = (key) => {
   return m ? m[1] : null;
 };
 
-// Calculate semitone steps needed to transpose fromKey -> toKey (root only)
+// Helper map untuk degree notasi angka
+const MAJOR_SCALE_DEGREES = {
+  0: '1',
+  2: '2',
+  4: '3',
+  5: '4',
+  7: '5',
+  9: '6',
+  11: '7',
+};
+const MAJOR_SCALE_ALTERNATE = {
+  1: '#1/b2',
+  3: 'b3',
+  6: 'b5',
+  8: '#5',
+  10: 'b7',
+};
+
+const MINOR_SCALE_DEGREES = {
+  0: '1',
+  2: '2',
+  3: 'b3',
+  5: '4',
+  7: '5',
+  8: 'b6',
+  10: 'b7',
+};
+const MINOR_SCALE_ALTERNATE = {
+  1: '#1/b2',
+  4: '3',
+  6: 'b5',
+  9: '#6',
+  11: '7',
+};
+
+const getScaleTypeFromKey = (key = 'C') => {
+  if (!key) return 'major';
+  const normalized = key.trim().toLowerCase();
+  if (normalized.endsWith('m') && !normalized.includes('maj')) return 'minor';
+  if (normalized.startsWith('m') && normalized.length === 1) return 'minor';
+  return 'major';
+};
+
+const getScaleDegreeFromRoot = (rootNote, key = 'C', scaleType = 'major') => {
+  const root = extractRoot(rootNote);
+  const base = extractRoot(key);
+  if (!root || !base) return null;
+
+  const rootIdx = getNoteIndex(root);
+  const baseIdx = getNoteIndex(base);
+  if (rootIdx == null || baseIdx == null) return null;
+
+  const interval = (rootIdx - baseIdx + 12) % 12;
+  if (scaleType === 'minor') {
+    if (MINOR_SCALE_DEGREES[interval] !== undefined) return MINOR_SCALE_DEGREES[interval];
+    if (MINOR_SCALE_ALTERNATE[interval] !== undefined) return MINOR_SCALE_ALTERNATE[interval];
+  } else {
+    if (MAJOR_SCALE_DEGREES[interval] !== undefined) return MAJOR_SCALE_DEGREES[interval];
+    if (MAJOR_SCALE_ALTERNATE[interval] !== undefined) return MAJOR_SCALE_ALTERNATE[interval];
+  }
+  return null;
+};
+
+const normalizeChordQuality = (quality = '') => {
+  if (!quality) return '';
+
+  let norm = quality.trim();
+
+  // Change common synonyms
+  if (/^maj7?/i.test(norm)) {
+    // keep maj7, maj9, maj
+    return norm.replace(/^maj/i, 'maj');
+  }
+  if (/^min/i.test(norm)) {
+    return norm.replace(/^min/i, 'm');
+  }
+  if (/^m(?!aj)/i.test(norm)) {
+    return norm.replace(/^m/i, 'm');
+  }
+  return norm;
+};
+
 export const getTransposeSteps = (fromKey, toKey) => {
   const fromRoot = extractRoot(fromKey);
   const toRoot = extractRoot(toKey);
@@ -231,6 +312,59 @@ export const getTransposeSteps = (fromKey, toKey) => {
   if (steps > 6) steps -= 12;
   if (steps < -6) steps += 12;
   return steps;
+};
+
+/**
+ * Convert a chord name into numeric scale degree notation (Nashville) based on key.
+ * Example: chordToNumber('Am', 'C') -> '6m'
+ *          chordToNumber('G7', 'C') -> '57'
+ *          chordToNumber('F#dim', 'D') -> '#4dim'
+ */
+export const chordToNumber = (chord, key = 'C') => {
+  if (!chord || typeof chord !== 'string') return null;
+
+  const normalizedChord = chord.trim();
+  const match = normalizedChord.match(/^([A-G][#b]?)(.*)$/i);
+  if (!match) return null;
+
+  const root = match[1];
+  let remainder = match[2] || '';
+
+  // Handle slash bass
+  let bassDegree = '';
+  const slashMatch = remainder.match(/\/([A-G][#b]?)/);
+  if (slashMatch) {
+    const bassRoot = slashMatch[1];
+    const baseScaleType = getScaleTypeFromKey(key);
+    const bassValue = getScaleDegreeFromRoot(bassRoot, key, baseScaleType);
+    if (bassValue) {
+      bassDegree = '/' + bassValue;
+    }
+    // Remove bass part from quality
+    remainder = remainder.replace(/\/([A-G][#b]?)/, '');
+  }
+
+  const quality = normalizeChordQuality(remainder);
+  const scaleType = getScaleTypeFromKey(key);
+  const degree = getScaleDegreeFromRoot(root, key, scaleType);
+  if (!degree) return null;
+
+  const chordNumber = `${degree}${quality || ''}${bassDegree}`;
+  return chordNumber;
+};
+
+export const chordTextToNumberText = (text, key = 'C') => {
+  if (!text || typeof text !== 'string') return text;
+
+  const replaced = text.replace(CHORD_REGEX_GLOBAL, (match) => {
+    const sanitized = match.replace(/\.+$/, ''); // remove trailing duration dots
+    const numberChord = chordToNumber(sanitized, key);
+    if (!numberChord) return match;
+    const trailingDots = match.slice(sanitized.length);
+    return numberChord + trailingDots;
+  });
+
+  return replaced;
 };
 
 // Fungsi untuk mendeteksi apakah sebuah baris adalah baris chord

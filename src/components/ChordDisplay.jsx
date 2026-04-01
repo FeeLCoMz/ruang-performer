@@ -20,10 +20,10 @@
 
 import React, { useState } from 'react';
 import NumberToken from './NumberToken.jsx';
-import { transposeChord, isChordLine, parseTimestampToken, parseLines } from '../utils/chordUtils.js';
+import { transposeChord, isChordLine, parseTimestampToken, parseLines, chordTextToNumberText } from '../utils/chordUtils.js';
 
 
-export default function ChordDisplay({ song, transpose = 0, zoom = 1, onTimestampClick, onTimestampPause }) {
+export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordNumbers = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   if (!song?.lyrics) {
@@ -55,7 +55,9 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, onTimestam
                 ) : t.isBarline ? (
                   <span key={j} className="cd-barline-token">{t.token}</span>
                 ) : (
-                  <span key={j} className="cd-token">{t.token}</span>
+                  <span key={j} className="cd-token">
+                    {showChordNumbers ? chordTextToNumberText(t.token, keySignature) : t.token}
+                  </span>
                 )
               )}
             </div>
@@ -72,11 +74,12 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, onTimestam
         return (
           <div key={i} className="cd-lyrics">
             {lineObj.tokens.map((t, j) => {
-              const seconds = typeof t.token === 'string' ? parseTimestampToken(t.token) : null;
+              const tokenText = t.isChord && showChordNumbers ? chordTextToNumberText(t.token, keySignature) : t.token;
+              const seconds = typeof tokenText === 'string' ? parseTimestampToken(tokenText) : null;
               if (seconds !== null) {
                 return (
                   <span key={j} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{fontWeight: 600}}>{t.token}</span>
+                    <span style={{fontWeight: 600}}>{tokenText}</span>
                     <button
                       type="button"
                       className="btn"
@@ -96,7 +99,7 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, onTimestam
                   </span>
                 );
               }
-              return <span key={j}>{t.token}</span>;
+              return <span key={j}>{tokenText}</span>;
             })}
           </div>
         );

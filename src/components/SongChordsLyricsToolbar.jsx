@@ -42,6 +42,9 @@ export default function SongChordsLyricsToolbar({
   setCurrentBeat,
   zoom,
   setZoom,
+  showChordNumbers,
+  setShowChordNumbers,
+  keySignature,
   handleEditLyrics,
   savingLyrics,
   handleSaveLyrics,
@@ -83,6 +86,17 @@ export default function SongChordsLyricsToolbar({
       >
         🖥️ Fullscreen
       </button>
+
+      {!performanceMode && (
+        <button
+          className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'}`}
+          title="Toggle angka chord"
+          onClick={() => setShowChordNumbers((prev) => !prev)}
+          style={{ fontSize: '0.9em' }}
+        >
+          {showChordNumbers ? '🔢 Chord (angka)' : '🎼 Chord (tulisan)'}
+        </button>
+      )}
 
       {/* 2. Zoom Controls */}
       <div className="song-lyrics-zoom-controls">

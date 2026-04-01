@@ -37,6 +37,9 @@ export default function SongLyricsMainSection({
   canEdit,
   song,
   transpose,
+  showChordNumbers,
+  setShowChordNumbers,
+  keySignature,
   showSheetMusic,
   setShowSheetMusic,
   youtubeRef,
@@ -70,6 +73,9 @@ export default function SongLyricsMainSection({
             setCurrentBeat={setCurrentBeat}
             zoom={zoom}
             setZoom={setZoom}
+            showChordNumbers={showChordNumbers}
+            setShowChordNumbers={setShowChordNumbers}
+            keySignature={keySignature}
             handleEditLyrics={handleEditLyrics}
             savingLyrics={savingLyrics}
             handleSaveLyrics={handleSaveLyrics}
@@ -107,6 +113,8 @@ export default function SongLyricsMainSection({
               song={song}
               transpose={transpose}
               zoom={zoom}
+              showChordNumbers={showChordNumbers}
+              keySignature={keySignature}
               autoScrollActive={autoScrollActive}
               scrollSpeed={scrollSpeed}
               setAutoScrollActive={setAutoScrollActive}

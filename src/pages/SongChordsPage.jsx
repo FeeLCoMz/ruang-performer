@@ -89,6 +89,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // Transpose state
   const [transpose, setTranspose] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [showChordNumbers, setShowChordNumbers] = useState(false);
   
   // In-place editing state
   const [isEditingLyrics, setIsEditingLyrics] = useState(false);
@@ -428,6 +429,9 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setShowSheetMusic={setShowSheetMusic}
         youtubeRef={youtubeRef}
         loading={loading}
+        showChordNumbers={showChordNumbers}
+        setShowChordNumbers={setShowChordNumbers}
+        keySignature={key || song?.key || ''}
       />
 
       {/* Setlist Navigation (if in setlist context) */}
