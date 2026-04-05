@@ -3762,16 +3762,6 @@ body.dark-mode .cd-token {
   font-weight: 600;
 }
 
-.auto-scroll-tempo {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--primary-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-}
-
 .auto-scroll-tempo-label {
   display: flex;
   align-items: center;
@@ -3802,6 +3792,23 @@ body.dark-mode .cd-token {
   text-align: center;
   font-family: "Courier New", monospace;
   transition: all var(--transition-fast);
+}
+
+.auto-scroll-tempo-slider {
+  width: 100%;
+  accent-color: var(--primary-accent);
+  cursor: pointer;
+}
+
+.auto-scroll-tempo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 220px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
 }
 
 .auto-scroll-tempo-input:focus {

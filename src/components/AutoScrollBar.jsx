@@ -5,20 +5,62 @@ import React, { useRef, useEffect, useState } from 'react';
  * 
  * Props:
  * - tempo: number (BPM default, default 80)
- * - onScrollChange: function (callback ketika scroll speed berubah, optional)
+ * - active: boolean
+ * - speed: number
+ * - onToggle: function
+ * - onSpeedChange: function
+ * - lyricsDisplayRef: ref
+ * - currentBeat: number
+ * - setCurrentBeat: function
  */
-export default function AutoScrollBar({ tempo = 120, onScrollChange, lyricsDisplayRef }) {
-  const [scrolling, setScrolling] = useState(false);
-  const [speed, setSpeed] = useState(tempo);
-  const [beat, setBeat] = useState(0);
+export default function AutoScrollBar({
+  tempo = 120,
+  active = false,
+  speed = 120,
+  onToggle,
+  onSpeedChange,
+  lyricsDisplayRef,
+  currentBeat,
+  setCurrentBeat,
+}) {
+  const [scrolling, setScrolling] = useState(active);
+  const [currentSpeed, setCurrentSpeed] = useState(speed || tempo);
+  const [beat, setBeat] = useState(currentBeat || 0);
   const frameRef = useRef(null);
   const beatTimeRef = useRef(null);
   const barBeatRef = useRef(0);
+  const beatRef = useRef(currentBeat || 0);
 
-  // Sync speed with tempo prop
   useEffect(() => {
-    setSpeed(tempo);
-  }, [tempo]);
+    setCurrentSpeed(speed || tempo);
+  }, [speed, tempo]);
+
+  useEffect(() => {
+    setScrolling(active);
+  }, [active]);
+
+  useEffect(() => {
+    if (typeof currentBeat === 'number') {
+      setBeat(currentBeat);
+      beatRef.current = currentBeat;
+    }
+  }, [currentBeat]);
+
+  const handleToggle = () => {
+    if (typeof onToggle === 'function') {
+      onToggle();
+    } else {
+      setScrolling((s) => !s);
+    }
+  };
+
+  const handleSpeedChange = (nextSpeed) => {
+    const normalized = Math.max(40, Math.min(240, Number(nextSpeed) || 40));
+    setCurrentSpeed(normalized);
+    if (typeof onSpeedChange === 'function') {
+      onSpeedChange(normalized);
+    }
+  };
 
   useEffect(() => {
     if (scrolling) {
@@ -28,16 +70,19 @@ export default function AutoScrollBar({ tempo = 120, onScrollChange, lyricsDispl
       const scrollStep = () => {
         const now = performance.now();
 
-        // Metronome beat
-        if (now - beatTimeRef.current > 60000 / speed) {
-          setBeat(b => (b + 1) % 4);
+        if (now - beatTimeRef.current > 60000 / currentSpeed) {
+          const nextBeat = (beatRef.current + 1) % 4;
+          setBeat(nextBeat);
+          beatRef.current = nextBeat;
           beatTimeRef.current = now;
           barBeatRef.current += 1;
 
+          if (typeof setCurrentBeat === 'function') {
+            setCurrentBeat(nextBeat);
+          }
+
           if (barBeatRef.current >= 4) {
-            // Scroll the lyrics display element if ref is provided
             if (lyricsDisplayRef && lyricsDisplayRef.current) {
-              // Jika ref adalah root halaman, scroll window
               if (lyricsDisplayRef.current === document.body || lyricsDisplayRef.current.classList.contains('karaoke-lyrics-page')) {
                 window.scrollBy({ top: 50, behavior: 'smooth' });
               } else {
@@ -48,7 +93,6 @@ export default function AutoScrollBar({ tempo = 120, onScrollChange, lyricsDispl
           }
         }
 
-        if (onScrollChange) onScrollChange(speed);
         frameRef.current = requestAnimationFrame(scrollStep);
       };
 
@@ -60,16 +104,16 @@ export default function AutoScrollBar({ tempo = 120, onScrollChange, lyricsDispl
     return () => {
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
-  }, [scrolling, speed, onScrollChange, lyricsDisplayRef]);
+  }, [scrolling, currentSpeed, lyricsDisplayRef, setCurrentBeat]);
 
   return (
     <div className="auto-scroll-bar">
-      {/* Controls Row */}
       <div className="auto-scroll-controls">
         <button
           className={`auto-scroll-toggle ${scrolling ? 'active' : ''}`}
-          onClick={() => setScrolling(s => !s)}
-          title={scrolling ? 'Stop auto scroll' : 'Start auto scroll'}
+          onClick={handleToggle}
+          title={scrolling ? 'Berhenti autoscroll' : 'Mulai autoscroll'}
+          type="button"
         >
           <span className="auto-scroll-icon">
             {scrolling ? '⏸️' : '▶️'}
@@ -78,31 +122,39 @@ export default function AutoScrollBar({ tempo = 120, onScrollChange, lyricsDispl
             {scrolling ? 'Scrolling' : 'Autoscroll'}
           </span>
         </button>
-        
+
         <div className="auto-scroll-tempo">
-          <label className="auto-scroll-tempo-label">
+          <label className="auto-scroll-tempo-label" htmlFor="auto-scroll-speed-range">
             <span className="auto-scroll-tempo-icon">⏱️</span>
-            <span className="auto-scroll-tempo-text">BPM</span>
+            <span className="auto-scroll-tempo-text">Kecepatan</span>
           </label>
+          <input
+            id="auto-scroll-speed-range"
+            type="range"
+            min={40}
+            max={240}
+            value={currentSpeed}
+            onChange={(e) => handleSpeedChange(e.target.value)}
+            className="auto-scroll-tempo-slider"
+            title="Sesuaikan kecepatan autoscroll"
+          />
           <input
             type="number"
             min={40}
             max={240}
-            value={speed}
-            onChange={e => setSpeed(Number(e.target.value))}
-            disabled={scrolling}
+            value={currentSpeed}
+            onChange={(e) => handleSpeedChange(e.target.value)}
             className="auto-scroll-tempo-input"
-            title={scrolling ? 'Stop auto scroll untuk mengubah tempo' : 'Atur tempo scroll'}
+            title="Masukkan nilai BPM autoscroll"
           />
         </div>
       </div>
-      
-      {/* Beat Indicator - hanya tampil saat scrolling */}
+
       {scrolling && (
         <div className="auto-scroll-beats">
           <span className="auto-scroll-beats-label">Beat:</span>
           <div className="auto-scroll-beat-dots">
-            {[0, 1, 2, 3].map(i => (
+            {[0, 1, 2, 3].map((i) => (
               <span
                 key={i}
                 className={`beat-dot ${beat === i ? 'active' : ''}`}
