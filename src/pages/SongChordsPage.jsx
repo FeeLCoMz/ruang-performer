@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
 import SongChordsAnalyzer from '../components/SongChordsAnalyzer.jsx';
-import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import SetlistSongNavigator from "../components/SetlistSongNavigator.jsx";
@@ -12,7 +10,6 @@ import { getAuthHeader } from "../utils/auth.js";
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
-import { cacheSong, getSong as getSongOffline } from '../utils/offlineCache.js';
 import { useSongFetch } from '../hooks/useSongFetch.js';
 import { handleExportText, handleExportPDF, handleShare } from '../utils/songHandlers.js';
 import useMetronome from '../hooks/useMetronome.js';

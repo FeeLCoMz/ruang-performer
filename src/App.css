@@ -5149,9 +5149,10 @@ body.dark-mode .song-lyrics-error {
   padding: var(--spacing-lg);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
-  height: 500px;
+  min-height: 500px;
+  max-height: calc(100vh - 260px);
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 /* Chord Analyzer Panel */
