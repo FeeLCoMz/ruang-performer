@@ -677,8 +677,7 @@
 .number-token {
   color: var(--primary-accent);
   font-weight: 600;
-  background: rgba(59, 130, 246, 0.08);
-  padding: 2px 6px;
+  background: rgba(59, 130, 246, 0.08);  
   border-radius: 3px;
   font-size: var(--font-size-base);
   display: inline-block;
