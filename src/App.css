@@ -3339,6 +3339,19 @@ input[type="datetime-local"]:disabled {
   font-style: italic;
 }
 
+.cd-modulation {
+  margin: 16px 0 8px 0;
+  padding: 8px 12px;
+  background: #ffeb3b; /* Yellow highlight */
+  color: #000; /* Black text for contrast */
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: inline-block;
+  border: 2px solid #f57c00; /* Orange border */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 .cd-chord {
   white-space: pre;
   margin-bottom: 4px;

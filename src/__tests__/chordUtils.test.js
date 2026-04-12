@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords } from "../utils/chordUtils";
+import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -11,6 +11,11 @@ describe("chordUtils", () => {
     expect(parsed).toHaveLength(2);
     expect(parsed[0]).toEqual({ type: 'structure', label: 'Intro' });
     expect(parsed[1].type).toBe('chord');
+  });
+
+  test("parseSection detects modulation lines", () => {
+    expect(parseSection('Modulation: G')).toEqual({ type: 'modulation', label: 'G' });
+    expect(parseSection('Key change: A')).toEqual({ type: 'modulation', label: 'A' });
   });
 
   test("chordToNumber converts basic chords in C major", () => {

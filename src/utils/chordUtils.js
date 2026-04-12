@@ -182,6 +182,14 @@ export function parseSection(line) {
       return { type: 'instrument', label: originalLabel };
     }
   }
+
+  // Deteksi modulasi/key change
+  const modulationMatch = line.trim().match(/^(?:modulation|key\s+change)\s*:\s*(.+)$/i);
+  if (modulationMatch) {
+    const targetKey = modulationMatch[1].trim();
+    return { type: 'modulation', label: targetKey };
+  }
+
   return null;
 }
 /**

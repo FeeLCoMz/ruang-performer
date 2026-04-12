@@ -46,6 +46,8 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordN
           return <div key={i} className="cd-section-struct">{lineObj.label}</div>;
         if (lineObj.type === 'instrument')
           return <div key={i} className="cd-section-inst">{lineObj.label}</div>;
+        if (lineObj.type === 'modulation')
+          return <div key={i} className="cd-modulation">🔄 Modulasi ke {lineObj.label}</div>;
         if (lineObj.type === 'chord')
           return (
             <div key={i} className="cd-chord">
