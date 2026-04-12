@@ -4,44 +4,66 @@
  * @param {number} transpose - Jumlah transposisi chord
  * @returns {Array} Array objek baris terstruktur
  */
-export function parseLines(lines, transpose) {
-  return lines.map(line => {
-    const trimmed = line.trim();
-    if (!trimmed) return { type: 'empty' };
-    const section = parseSection(line);
-    if (section) return { type: section.type, label: section.label };
-    if (isChordLine(line)) {
-      // Token chord (dengan transpose jika perlu)
-      return {
-        type: 'chord',
-        tokens: line.split(/(\s+)/).map(token => {
-          if (/^\s+$/.test(token)) return { token, isSpace: true };
-          // Deteksi barline
-          if (/^(\|:|:\||\[\:|\:\]|\|\||\|)$/.test(token)) return { token, isBarline: true };
-          return { token: transpose ? transposeChord(token, transpose) : token, isChord: true };
-        })
-      };
-    }
-    if (parseNumberLine(line)) {
-      return {
-        type: 'number',
-        tokens: line.split(/(\s+)/).map(token =>
-          /^\s+$/.test(token)
-            ? { token, isSpace: true }
-            : { token, isNumber: true }
-        )
-      };
-    }
-    // Baris lirik: tokenisasi, deteksi chord/angka/timestamp inline
+export function splitSectionLabelWithChords(line) {
+  if (typeof line !== 'string') return null;
+  const trimmedLine = line.trim();
+  const match = trimmedLine.match(/^(\[?[A-Za-z0-9 ._-]+\]?)\s*:\s*(.+)$/);
+  if (!match) return null;
+
+  const labelToken = match[1].trim();
+  const trailing = match[2].trim();
+  if (!trailing) return null;
+
+  const section = parseSection(`${labelToken}:`);
+  if (!section) return null;
+  if (!isChordLine(trailing)) return null;
+
+  return [`${labelToken}:`, trailing];
+}
+
+function parseLine(line, transpose) {
+  const trimmed = line.trim();
+  if (!trimmed) return { type: 'empty' };
+  const section = parseSection(line);
+  if (section) return { type: section.type, label: section.label };
+  if (isChordLine(line)) {
     return {
-      type: 'lyrics',
+      type: 'chord',
       tokens: line.split(/(\s+)/).map(token => {
         if (/^\s+$/.test(token)) return { token, isSpace: true };
-        if (isChordLine(token)) return { token: transpose ? transposeChord(token, transpose) : token, isChord: true };
-        if (parseNumberLine(token)) return { token, isNumber: true };
-        return { token };
+        if (/^(\|:|:\||\[\:|\:\]|\|\||\|)$/.test(token)) return { token, isBarline: true };
+        return { token: transpose ? transposeChord(token, transpose) : token, isChord: true };
       })
     };
+  }
+  if (parseNumberLine(line)) {
+    return {
+      type: 'number',
+      tokens: line.split(/(\s+)/).map(token =>
+        /^\s+$/.test(token)
+          ? { token, isSpace: true }
+          : { token, isNumber: true }
+      )
+    };
+  }
+  return {
+    type: 'lyrics',
+    tokens: line.split(/(\s+)/).map(token => {
+      if (/^\s+$/.test(token)) return { token, isSpace: true };
+      if (isChordLine(token)) return { token: transpose ? transposeChord(token, transpose) : token, isChord: true };
+      if (parseNumberLine(token)) return { token, isNumber: true };
+      return { token };
+    })
+  };
+}
+
+export function parseLines(lines, transpose) {
+  return lines.flatMap(line => {
+    const sectionChunks = splitSectionLabelWithChords(line);
+    if (sectionChunks) {
+      return sectionChunks.map(chunk => parseLine(chunk, transpose));
+    }
+    return [parseLine(line, transpose)];
   });
 }
 /**

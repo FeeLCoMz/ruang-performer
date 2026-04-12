@@ -1,7 +1,18 @@
 import { describe, test, expect } from '@jest/globals';
-import { chordToNumber, chordTextToNumberText } from "../utils/chordUtils";
+import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
+  test("splitSectionLabelWithChords separates section label and chord line", () => {
+    expect(splitSectionLabelWithChords('Intro: Am..Em..F..C..')).toEqual(['Intro:', 'Am..Em..F..C..']);
+  });
+
+  test("parseLines splits a section label with inline chords into section and chord lines", () => {
+    const parsed = parseLines(['Intro: Am..Em..F..C..'], 0);
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0]).toEqual({ type: 'structure', label: 'Intro' });
+    expect(parsed[1].type).toBe('chord');
+  });
+
   test("chordToNumber converts basic chords in C major", () => {
     expect(chordToNumber('C', 'C')).toBe('1');
     expect(chordToNumber('Dm', 'C')).toBe('2m');

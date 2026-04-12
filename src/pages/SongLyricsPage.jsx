@@ -3,7 +3,7 @@ import '../styles/karaoke.css';
 import AutoScrollBar from '../components/AutoScrollBar.jsx';
 import { useParams } from 'react-router-dom';
 import { getAuthHeader } from '../utils/auth.js';
-import { isChordLine, parseSection } from '../utils/chordUtils.js';
+import { isChordLine, parseSection, splitSectionLabelWithChords } from '../utils/chordUtils.js';
 import KaraokeSongSearch from '../components/KaraokeSongSearch.jsx';
 import * as apiClient from '../apiClient.js';
 
@@ -45,7 +45,10 @@ export default function SongLyricsPage() {
   // Ref untuk root halaman
   const pageScrollRef = useRef(null);
   // Split lyrics into lines
-  const lyricLines = song && song.lyrics ? song.lyrics.split(/\r?\n/) : [];
+  const lyricLines = song && song.lyrics ? song.lyrics.split(/\r?\n/).flatMap((line) => {
+    const sectionChunks = splitSectionLabelWithChords(line);
+    return sectionChunks || [line];
+  }) : [];
   // Sembunyikan baris chord (hanya tampilkan lirik dan struktur)
   const lyricOnlyLines = lyricLines.filter(line => !isChordLine(line));
   // Render loading/error/null after all hooks
