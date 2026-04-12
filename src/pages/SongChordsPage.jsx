@@ -14,6 +14,7 @@ import { useSongFetch } from '../hooks/useSongFetch.js';
 import { handleExportText, handleExportPDF, handleShare } from '../utils/songHandlers.js';
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
+import { fetchSetLists } from '../apiClient.js';
 
 /**
  * SongChordsPage
@@ -98,6 +99,10 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [showChordAnalyzer, setShowChordAnalyzer] = useState(false);
   const chordStats = useChordStats(song?.lyrics);
 
+  // Setlists state for showing which setlists contain this song
+  const [setlists, setSetlists] = useState([]);
+  const [loadingSetlists, setLoadingSetlists] = useState(false);
+
   // Export menu state
   const [showExportMenu, setShowExportMenu] = useState(false);
 
@@ -141,6 +146,24 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
     // Analyze chords when lyrics change
   // ChordStats logic now handled by useChordStats hook
+
+  // Fetch setlists that contain this song
+  useEffect(() => {
+    if (song.id && !performanceMode) {
+      setLoadingSetlists(true);
+      fetchSetLists()
+        .then((data) => {
+          setSetlists(Array.isArray(data) ? data : []);
+        })
+        .catch((err) => {
+          console.error('Failed to fetch setlists:', err);
+          setSetlists([]);
+        })
+        .finally(() => {
+          setLoadingSetlists(false);
+        });
+    }
+  }, [song.id, performanceMode]);
 
   // Handler export & share di utils/songHandlers.js
 
@@ -467,6 +490,51 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
             />
           );
         })()}
+
+      {/* Setlists containing this song */}
+      {!performanceMode && song.id && !loadingSetlists && setlists.length > 0 && (() => {
+        const containingSetlists = setlists.filter(setlist =>
+          Array.isArray(setlist.songs) && setlist.songs.includes(song.id)
+        );
+        if (containingSetlists.length === 0) return null;
+        return (
+          <div className="card" style={{ marginTop: '20px' }}>
+            <h3 style={{ marginBottom: '12px', color: 'var(--text-primary)' }}>
+              📋 Setlist yang Memuat Lagu Ini ({containingSetlists.length})
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {containingSetlists.map(setlist => (
+                <div
+                  key={setlist.id}
+                  style={{
+                    padding: '8px 12px',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    backgroundColor: 'var(--card-bg)',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onClick={() => navigate(`/setlists/${setlist.id}`)}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--primary-bg)'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--card-bg)'}
+                >
+                  <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
+                    {setlist.name}
+                  </div>
+                  {setlist.description && (
+                    <div style={{ fontSize: '0.85em', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      {setlist.description}
+                    </div>
+                  )}
+                  <div style={{ fontSize: '0.8em', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    🎵 {setlist.songs?.length || 0} lagu
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
