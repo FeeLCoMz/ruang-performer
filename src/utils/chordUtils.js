@@ -25,7 +25,13 @@ function parseLine(line, transpose) {
   const trimmed = line.trim();
   if (!trimmed) return { type: 'empty' };
   const section = parseSection(line);
-  if (section) return { type: section.type, label: section.label };
+  if (section) {
+    // Transpose modulation key label
+    if (section.type === 'modulation' && transpose) {
+      return { type: section.type, label: transposeChord(section.label, transpose) };
+    }
+    return { type: section.type, label: section.label };
+  }
   if (isChordLine(line)) {
     return {
       type: 'chord',
