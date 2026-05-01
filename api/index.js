@@ -300,8 +300,9 @@ app.get('/', (req, res) => {
   res.send('Ruang Performer API is running');
 });
 
-// Only listen in local dev
-if (process.env.NODE_ENV !== 'production') {
+// Only listen when this file is executed directly, not when imported by tests
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+if (process.env.NODE_ENV !== 'production' && isMain) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`Ruang Performer API running on port ${PORT}`);

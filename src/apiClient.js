@@ -658,3 +658,12 @@ export async function resetUserPassword(userId, newPassword) {
   return await res.json();
 }
 
+// Popular Songs API
+export async function fetchPopularSongs() {
+  const res = await fetch(`${API_BASE}/ai/popular-songs`, {
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to fetch popular songs');
+  return await res.json();
+}
+

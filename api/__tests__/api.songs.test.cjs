@@ -1,4 +1,4 @@
-// __tests__/api.songs.test.js
+// __tests__/api.songs.test.cjs
 // Jest test for /api/songs endpoint
 require('../test-helpers/setupEnv');
 const request = require('supertest');

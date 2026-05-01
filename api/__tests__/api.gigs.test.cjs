@@ -1,4 +1,4 @@
-// __tests__/api.gigs.test.js
+// __tests__/api.gigs.test.cjs
 // Jest test for /api/gigs endpoint
 require('../test-helpers/setupEnv');
 const request = require('supertest');

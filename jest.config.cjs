@@ -1,7 +1,11 @@
 module.exports = {
   testEnvironment: 'jsdom',
-  setupFiles: [
-    './api/__tests__/jest.setup.api.js'
+  testMatch: [
+    '<rootDir>/src/**/?(*.)+(test|spec).[jt]s?(x)',
+    '<rootDir>/api/__tests__/**/*.cjs'
   ],
-  setupFilesAfterEnv: ['./jest.setup.js'],
+  setupFiles: [
+    './api/test-helpers/jest.setup.api.js'
+  ],
+  setupFilesAfterEnv: ['./jest.setup.cjs'],
 };
