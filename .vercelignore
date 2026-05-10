@@ -3,7 +3,6 @@
 ########################################
 
 # === API: Unused/disabled/over-quota endpoints ===
-api/youtube/
 api/users/
 api/index.js
 api/auth/2fa-setup.js
@@ -20,6 +19,8 @@ api/tools/
 api/legacy/
 api/old_*.js
 api/dev_*.js
+api/youtube/
+api/test-helpers/
 
 # === Database, test, and dev files ===
 db/
