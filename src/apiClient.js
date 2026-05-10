@@ -419,6 +419,18 @@ export async function fetchPracticeSessionById(id) {
   return await res.json();
 }
 
+export async function fetchYoutubeTrending() {
+  const res = await fetch(`${API_BASE}/youtube/trending`, {
+    headers: getHeaders()
+  });
+  if (!res.ok) {
+    let err;
+    try { err = await res.json(); } catch {}
+    throw new Error(err?.error || 'Failed to fetch YouTube trending');
+  }
+  return await res.json();
+}
+
 export async function createPracticeSession(session) {
   const res = await fetch(`${API_BASE}/events/practice`, {
     method: 'POST',

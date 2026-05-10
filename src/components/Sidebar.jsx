@@ -21,6 +21,7 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
   const navItems = [
     { path: '/', label: 'Dashboard', icon: '🏠' },
     { path: '/songs', label: 'Lagu', icon: '🎵' },
+    { path: '/youtube-trending', label: 'Trending YouTube', icon: '📺' },
     { path: '/setlists', label: 'Setlist', icon: '📋' },
     { path: '/bands/manage', label: 'Band', icon: '🎸' },
     { path: '/gigs', label: 'Konser', icon: '🎤' },

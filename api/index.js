@@ -35,6 +35,7 @@ import toolsHandler from './tools/index.js';
 import toolsBackupHandler from './tools/backup.js';
 import toolsRestoreHandler from './tools/restore.js';
 import userAuditLogsHandler from './auth/user-audit-logs.js';
+import youtubeTrendingHandler from './youtube/trending.js';
 // Users management handler
 import usersHandler from './users/index.js';
 import userByIdHandler from './users/[id].js';
@@ -172,6 +173,10 @@ app.post('/api/auth/2fa/verify',
 
 app.use('/api/songs', verifyToken, (req, res, next) => {
   Promise.resolve(songsHandler(req, res)).catch(next);
+});
+
+app.get('/api/youtube/trending', verifyToken, (req, res, next) => {
+  Promise.resolve(youtubeTrendingHandler(req, res)).catch(next);
 });
 
 app.use('/api/setlists', verifyToken, (req, res, next) => {

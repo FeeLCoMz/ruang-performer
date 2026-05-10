@@ -27,6 +27,7 @@ const BandDetailPage = lazy(() => import("./pages/BandDetailPage.jsx"));
 const BandManagementPage = lazy(() => import("./pages/BandManagementPage.jsx"));
 const PracticeSessionPage = lazy(() => import("./pages/PracticeSessionPage.jsx"));
 const GigPage = lazy(() => import("./pages/GigPage.jsx"));
+const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx"));
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage.jsx"));
 const SongLyricsPage = lazy(() => import("./pages/SongLyricsPage.jsx"));
 const UserManagementPage = lazy(() => import("./pages/UserManagementPage.jsx"));
@@ -393,6 +394,7 @@ function AppContent() {
               <Route path="/practice/:id" element={<PracticeSessionDetailPage />} />
               <Route path="/gigs" element={<GigPage />} />
               <Route path="/gigs/:id" element={<GigDetailPage />} />
+              <Route path="/youtube-trending" element={<YouTubeTrendingPage performanceMode={performanceMode} />} />
               <Route path="/bands/manage" element={<BandManagementPage />} />
               <Route path="/bands" element={<Navigate to="/bands/manage" replace />} />
               <Route path="/bands/:id" element={<BandDetailPage />} />
