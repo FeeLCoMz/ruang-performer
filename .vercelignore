@@ -3,24 +3,20 @@
 ########################################
 
 # === API: Unused/disabled/over-quota endpoints ===
-api/users/
+api/ai.js
 api/index.js
+api/__tests__/
 api/auth/2fa-setup.js
 api/auth/2fa-verify.js
-api/auth/forgot-password.js
-api/auth/reset-password.js
 api/auth/change-password.js
 api/auth/delete-account.js
+api/auth/forgot-password.js
+api/auth/reset-password.js
 api/auth/user-audit-logs.js
-api/__tests__/
-# api/middleware/
-api/ai.js
-api/tools/
-api/legacy/
-api/old_*.js
-api/dev_*.js
-api/youtube/
 api/test-helpers/
+api/tools/
+api/users/
+api/youtube/
 
 # === Database, test, and dev files ===
 db/
