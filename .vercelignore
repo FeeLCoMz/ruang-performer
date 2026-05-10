@@ -3,6 +3,7 @@
 ########################################
 
 # === API: Unused/disabled/over-quota endpoints ===
+api/youtube/
 api/users/
 api/index.js
 api/auth/2fa-setup.js
