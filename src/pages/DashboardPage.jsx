@@ -13,6 +13,9 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [bands, setBands] = useState([]);
   const [bandsLoading, setBandsLoading] = useState(true);
+  const [popularSongs, setPopularSongs] = useState([]);
+  const [spotifyPopularSongs, setSpotifyPopularSongs] = useState([]);
+  const [popularSongsLoading, setPopularSongsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -46,11 +49,13 @@ export default function DashboardPage() {
 
       // Wave 2: Load heavier data (songs, gigs, practice) in background
       setEventsLoading(true);
+      setPopularSongsLoading(true);
 
-      const [songsData, gigsData, practiceData] = await Promise.all([
+      const [songsData, gigsData, practiceData, popularData] = await Promise.all([
         apiClient.fetchSongs().catch(() => []),
         apiClient.fetchGigs().catch(() => []),
         apiClient.fetchPracticeSessions().catch(() => []),
+        apiClient.fetchPopularSongs().catch(() => ({ youtubeSongs: [], spotifySongs: [] })),
       ]);
 
       if (!isMounted) return;
@@ -86,6 +91,10 @@ export default function DashboardPage() {
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .slice(0, 5);
       setUpcomingEvents(combined);
+
+      setPopularSongs(popularData.youtubeSongs || popularData.songs || []);
+      setSpotifyPopularSongs(popularData.spotifySongs || []);
+      setPopularSongsLoading(false);
 
       setStatsLoading(false);
       setEventsLoading(false);
@@ -213,6 +222,61 @@ export default function DashboardPage() {
                   <div className="activity-content">
                     <div className="activity-text">{event.title}</div>
                     <div className="activity-time">{formatDate(event.date)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Popular Songs */}
+        <div className="dashboard-card">
+          <h2>🔥 Lagu Populer di YouTube</h2>
+          {popularSongsLoading ? (
+            <div className="dashboard-event-list">
+              {[...Array(5)].map((_, idx) => (
+                <div key={idx} className="activity-item">
+                  <span className="loading-skeleton loading-skeleton-full" />
+                </div>
+              ))}
+            </div>
+          ) : popularSongs.length === 0 ? (
+            <div className="dashboard-empty">Tidak dapat memuat lagu populer YouTube</div>
+          ) : (
+            <div className="dashboard-popular-list">
+              {popularSongs.slice(0, 5).map((song) => (
+                <div key={song.id} className="activity-item activity-item--clickable" onClick={() => window.open(`https://www.youtube.com/watch?v=${song.youtubeId}`, '_blank')}>
+                  <div className="activity-icon">🎵</div>
+                  <div className="activity-content">
+                    <div className="activity-text">{song.title}</div>
+                    <div className="activity-time">{song.artist}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="dashboard-card">
+          <h2>🎧 Lagu Populer di Spotify</h2>
+          {popularSongsLoading ? (
+            <div className="dashboard-event-list">
+              {[...Array(5)].map((_, idx) => (
+                <div key={idx} className="activity-item">
+                  <span className="loading-skeleton loading-skeleton-full" />
+                </div>
+              ))}
+            </div>
+          ) : spotifyPopularSongs.length === 0 ? (
+            <div className="dashboard-empty">Tidak dapat memuat lagu populer Spotify</div>
+          ) : (
+            <div className="dashboard-popular-list">
+              {spotifyPopularSongs.slice(0, 5).map((song) => (
+                <div key={song.id} className="activity-item activity-item--clickable" onClick={() => window.open(song.spotifyUrl || '#', '_blank')}>
+                  <div className="activity-icon">🎧</div>
+                  <div className="activity-content">
+                    <div className="activity-text">{song.title}</div>
+                    <div className="activity-time">{song.artist}</div>
                   </div>
                 </div>
               ))}

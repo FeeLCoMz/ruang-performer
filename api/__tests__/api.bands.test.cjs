@@ -1,4 +1,4 @@
-// __tests__/api.bands.test.js
+// __tests__/api.bands.test.cjs
 // Jest test for /api/bands endpoint
 require('../test-helpers/setupEnv');
 const request = require('supertest');

@@ -24,6 +24,16 @@ export function splitSectionLabelWithChords(line) {
 function parseLine(line, transpose) {
   const trimmed = line.trim();
   if (!trimmed) return { type: 'empty' };
+  // Jangan transpose baris "Original Key:" — tetap tampilkan metadata asli tanpa transposi
+  if (/^Original\s+Key:/i.test(trimmed)) {
+    return {
+      type: 'lyrics',
+      tokens: line.split(/(\s+)/).map(token => ({
+        token,
+        isSpace: /^\s+$/.test(token)
+      }))
+    };
+  }
   const section = parseSection(line);
   if (section) {
     // Transpose modulation key label

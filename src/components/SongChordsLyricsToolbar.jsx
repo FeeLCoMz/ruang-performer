@@ -56,19 +56,6 @@ export default function SongChordsLyricsToolbar({
 }) {
   return (
     <div className="song-lyrics-toolbar">
-      {/* 1. Auto Scroll - PRIORITY (LEFT) */}
-      {!isEditingLyrics && (
-        <AutoScrollBar
-          tempo={parseInt(tempo) || 120}
-          active={autoScrollActive}
-          speed={scrollSpeed}
-          onToggle={() => setAutoScrollActive(!autoScrollActive)}
-          onSpeedChange={setScrollSpeed}
-          lyricsDisplayRef={lyricsDisplayRef}
-          currentBeat={currentBeat}
-          setCurrentBeat={setCurrentBeat}
-        />
-      )}
       {/* Fullscreen Button */}
       <button
         className="btn btn-secondary"
@@ -86,6 +73,19 @@ export default function SongChordsLyricsToolbar({
       >
         🖥️ Fullscreen
       </button>
+
+      {!isEditingLyrics && (
+        <AutoScrollBar
+          tempo={parseInt(tempo) || 120}
+          active={autoScrollActive}
+          speed={scrollSpeed}
+          onToggle={() => setAutoScrollActive(!autoScrollActive)}
+          onSpeedChange={setScrollSpeed}
+          lyricsDisplayRef={lyricsDisplayRef}
+          currentBeat={currentBeat}
+          setCurrentBeat={setCurrentBeat}
+        />
+      )}
 
       {!performanceMode && (
         <button

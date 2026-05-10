@@ -68,6 +68,7 @@ async function readJson(req) {
 export default async function handler(req, res) {
   const url = req.url || '';
   if (url.startsWith('/song-search')) return await handleSongSearch(req, res);
+  if (url.startsWith('/popular-songs')) return await handlePopularSongs(req, res);
   if (url.startsWith('/transcribe')) return await handleTranscribe(req, res);
   if (url.startsWith('/recommend-setlist')) return await handleRecommendSetlist(req, res);
   if (url.startsWith('/list-models')) return await handleListModels(req, res);
@@ -323,6 +324,121 @@ async function handleSongSearch(req, res) {
     console.error('Error in song search:', error);
     return res.status(500).json({ error: 'Failed to search song information', message: error.message, details: process.env.NODE_ENV === 'development' ? error.stack : undefined });
   }
+}
+
+// --- Spotify helpers ---
+const spotifyAuthCache = { accessToken: null, expiresAt: 0 };
+
+async function getSpotifyAccessToken() {
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error('Spotify client credentials not configured');
+  }
+  if (spotifyAuthCache.accessToken && Date.now() < spotifyAuthCache.expiresAt - 60000) {
+    return spotifyAuthCache.accessToken;
+  }
+
+  const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
+    },
+    body: 'grant_type=client_credentials'
+  });
+
+  if (!tokenResponse.ok) {
+    const errorBody = await tokenResponse.text();
+    throw new Error(`Spotify token request failed: ${tokenResponse.status} ${errorBody}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  spotifyAuthCache.accessToken = tokenData.access_token;
+  spotifyAuthCache.expiresAt = Date.now() + ((tokenData.expires_in || 3600) * 1000);
+  return spotifyAuthCache.accessToken;
+}
+
+async function fetchSpotifyPopularTracks() {
+  const playlistId = process.env.SPOTIFY_POPULAR_PLAYLIST_ID || '37i9dQZEVXbMDoHDwVN2tF';
+  const accessToken = await getSpotifyAccessToken();
+  const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?market=ID&limit=10`;
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Spotify playlist request failed: ${response.status} ${errorBody}`);
+  }
+  const data = await response.json();
+  return (data.items || []).map(item => {
+    const track = item.track || {};
+    return {
+      id: track.id || `${(track.name || 'unknown').replace(/\s+/g, '-').toLowerCase()}-${Math.random().toString(36).slice(2, 8)}`,
+      title: track.name || 'Unknown track',
+      artist: (track.artists || []).map(a => a.name).join(', ') || 'Unknown artist',
+      album: track.album?.name || null,
+      coverUrl: track.album?.images?.[0]?.url || null,
+      spotifyUrl: track.external_urls?.spotify || null,
+      previewUrl: track.preview_url || null
+    };
+  });
+}
+
+// --- Popular Songs handler ---
+async function handlePopularSongs(req, res) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const youtubeApiKey = process.env.VITE_YOUTUBE_API_KEY;
+  const spotifyHasCredentials = Boolean(process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET);
+  const debug = {};
+  const youtubeSongs = [];
+  let spotifySongs = [];
+
+  if (youtubeApiKey) {
+    try {
+      const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&videoCategoryId=10&regionCode=ID&maxResults=10&key=${youtubeApiKey}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        debug.youtubeStatus = response.status;
+        console.error('YouTube trending API error:', response.status);
+      } else {
+        const data = await response.json();
+        youtubeSongs.push(...(data.items || []).map(item => ({
+          id: item.id,
+          title: item.snippet.title,
+          artist: item.snippet.channelTitle,
+          youtubeId: item.id,
+          thumbnail: item.snippet.thumbnails.default.url,
+          viewCount: item.statistics?.viewCount,
+          publishedAt: item.snippet.publishedAt
+        })));
+      }
+    } catch (error) {
+      debug.youtubeError = error.message;
+      console.error('YouTube popular songs error:', error);
+    }
+  } else {
+    debug.youtubeKeyMissing = true;
+  }
+
+  if (spotifyHasCredentials) {
+    try {
+      spotifySongs = await fetchSpotifyPopularTracks();
+    } catch (error) {
+      debug.spotifyError = error.message;
+      console.error('Spotify popular songs error:', error);
+    }
+  } else {
+    debug.spotifyCredentialsMissing = true;
+  }
+
+  if (!youtubeSongs.length && !spotifySongs.length) {
+    return res.status(500).json({ error: 'No popular music sources are configured', debug });
+  }
+
+  res.status(200).json({ songs: youtubeSongs, youtubeSongs, spotifySongs, debug });
 }
 
 // --- Transcribe handler ---

@@ -66,12 +66,15 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   let song = fetchedSong || {};
   let lyricsMetaKey = ''; // Kunci asli dari metadata lirik — hanya informasi
   let lyricsClean = song.lyrics || '';
+  let lyricsForExport = lyricsClean; // Untuk export (tanpa duplik "Original Key:")
   if (lyricsClean) {
-    const metaMatch = lyricsClean.match(/^Original Key:\s*([A-G][#b]?m?(?:aj|min|dim|aug)?\b)/im);
+    // Format: Original Key: C, Cm, C#, F#m, Dmaj7, G7, etc.
+    // Menangkap berbagai format notasi chord (single/double accidental + mode/extension)
+    const metaMatch = lyricsClean.match(/^Original\s+Key:\s*([A-G][#b]?(?:maj|min|M|m|add|sus|dim|aug|7|maj7|min7|dom7|b5|#5|\+|-)?(?:7|9|11|13)?\s*(?:major|minor)?[)]?(?:\s|$))/im);
     if (metaMatch) {
-      lyricsMetaKey = metaMatch[1];
-      // Hapus baris metadata dari lirik
-      lyricsClean = lyricsClean.replace(/^Original Key:.*$/im, '').replace(/^\s*\n/, '');
+      lyricsMetaKey = metaMatch[1].trim();
+      // Buat versi untuk export tanpa duplikat "Original Key:"
+      lyricsForExport = lyricsClean.replace(/^Original\s+Key:.*$/im, '').replace(/^\s*\n/, '');
     }
   }
   const artist = setlistSongData.artist || song?.artist || "";
@@ -430,8 +433,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         handleCancelEditLyrics={handleCancelEditLyrics}
         showExportMenu={showExportMenu}
         setShowExportMenu={setShowExportMenu}
-        handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsClean, setShowExportMenu)}
-        handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsClean, setShowExportMenu)}
+        handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, setShowExportMenu)}
+        handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, setShowExportMenu)}
         tempo={tempo}
         autoScrollActive={autoScrollActive}
         scrollSpeed={scrollSpeed}

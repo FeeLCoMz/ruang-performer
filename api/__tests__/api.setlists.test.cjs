@@ -1,4 +1,4 @@
-// __tests__/api.setlists.test.js
+// __tests__/api.setlists.test.cjs
 // Jest test for /api/setlists endpoint
 require('../test-helpers/setupEnv');
 const request = require('supertest');
