@@ -1079,6 +1079,197 @@ body {
   display: none;
 }
 
+/* YouTube Trending Card Wrapper & Share Button */
+.youtube-trending-card-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.youtube-trending-share-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  z-index: 10;
+  box-shadow: var(--shadow-sm);
+}
+
+.youtube-trending-share-btn:hover {
+  background: white;
+  box-shadow: var(--shadow-md);
+  transform: scale(1.05);
+}
+
+.youtube-trending-share-btn:active {
+  transform: scale(0.98);
+}
+
+/* YouTube Share Modal Styles */
+.youtube-share-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.youtube-share-info {
+  padding: 12px;
+  background: var(--primary-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.youtube-share-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.1em;
+  color: var(--text-primary);
+}
+
+.youtube-share-channel {
+  margin: 0 0 8px 0;
+  color: var(--text-secondary);
+  font-size: 0.95em;
+}
+
+.youtube-share-stats {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
+.youtube-share-link-section,
+.youtube-share-text-section,
+.youtube-share-social {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.youtube-share-link-section label,
+.youtube-share-text-section label,
+.youtube-share-social label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95em;
+}
+
+.youtube-share-link-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.youtube-share-link-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.youtube-share-textarea {
+  padding: 10px 12px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9em;
+  resize: vertical;
+  min-height: 80px;
+  max-height: 150px;
+}
+
+.youtube-share-social-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.btn-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-social:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-social.whatsapp {
+  background: #25D366;
+  color: white;
+  border-color: #25D366;
+}
+
+.btn-social.whatsapp:hover {
+  background: #1fb854;
+  border-color: #1fb854;
+}
+
+.btn-social.telegram {
+  background: #0088cc;
+  color: white;
+  border-color: #0088cc;
+}
+
+.btn-social.telegram:hover {
+  background: #006ba3;
+  border-color: #006ba3;
+}
+
+.btn-social.twitter {
+  background: #000000;
+  color: white;
+  border-color: #000000;
+}
+
+.btn-social.twitter:hover {
+  background: #333333;
+  border-color: #333333;
+}
+
+.btn-social.facebook {
+  background: #1877F2;
+  color: white;
+  border-color: #1877F2;
+}
+
+.btn-social.facebook:hover {
+  background: #0a66c2;
+  border-color: #0a66c2;
+}
+
+.youtube-share-direct-link {
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
 /* ========================================
    6. BUTTONS & INPUTS
    ======================================== */
