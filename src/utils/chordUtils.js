@@ -220,29 +220,49 @@ const NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 
 // Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F.., Am....
 const CHORD_REGEX_GLOBAL = /-?([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?(((\.{2,}|-)([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?)*)(\.{2,})?/g;
 
-export const transposeChord = (chord, steps) => {
-  if (!chord || steps === 0) return chord;
-
-  const chordRegex = /^([A-G][#b]?)(.*)/;
-  const match = chord.match(chordRegex);
-
-  if (!match) return chord;
-
-  const [, root, suffix] = match;
-  const useFlat = root.includes('b');
+const transposeNote = (note, steps) => {
+  if (!note || steps === 0) return note;
+  const useFlat = note.includes('b');
   const noteArray = useFlat ? NOTES_FLAT : NOTES_SHARP;
 
-  let index = noteArray.indexOf(root);
+  let index = noteArray.indexOf(note);
   if (index === -1) {
     const altArray = useFlat ? NOTES_SHARP : NOTES_FLAT;
-    index = altArray.indexOf(root);
-    if (index === -1) return chord;
+    index = altArray.indexOf(note);
+    if (index === -1) return note;
   }
 
   let newIndex = (index + steps) % 12;
   if (newIndex < 0) newIndex += 12;
+  return noteArray[newIndex];
+};
 
-  return noteArray[newIndex] + suffix;
+export const transposeChord = (chord, steps) => {
+  if (!chord || steps === 0) return chord;
+
+  const chordRegex = /^([A-G][#b]?)(.*)$/;
+  const match = chord.match(chordRegex);
+  if (!match) return chord;
+
+  const [, root, suffix] = match;
+  const qualityAndBass = suffix || '';
+  const slashIndex = qualityAndBass.indexOf('/');
+  const quality = slashIndex === -1 ? qualityAndBass : qualityAndBass.slice(0, slashIndex);
+  const bass = slashIndex === -1 ? '' : qualityAndBass.slice(slashIndex + 1);
+
+  const transposedRoot = transposeNote(root, steps);
+  let transposedBass = '';
+
+  if (bass) {
+    const bassMatch = bass.match(/^([A-G][#b]?)(.*)$/);
+    if (bassMatch) {
+      transposedBass = '/' + transposeNote(bassMatch[1], steps) + bassMatch[2];
+    } else {
+      transposedBass = '/' + bass;
+    }
+  }
+
+  return `${transposedRoot}${quality}${transposedBass}`;
 };
 
 // Get semitone index for a root note using sharp scale, accepting flats

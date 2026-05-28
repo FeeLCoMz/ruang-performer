@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection } from "../utils/chordUtils";
+import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -34,5 +34,11 @@ describe("chordUtils", () => {
   test("chordTextToNumberText converts inline chord tokens", () => {
     expect(chordTextToNumberText('C G Am F', 'C')).toBe('1 5 6m 4');
     expect(chordTextToNumberText('D.. Gm..', 'C')).toBe('2.. 5m..');
+  });
+
+  test("transposeChord handles slash bass chords", () => {
+    expect(transposeChord('B/D#', 1)).toBe('C#/F#');
+    expect(transposeChord('Am/G', 2)).toBe('Bm/A');
+    expect(transposeChord('F#maj7/D', -1)).toBe('Fmaj7/C#');
   });
 });
