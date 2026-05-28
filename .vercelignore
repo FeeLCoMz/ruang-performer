@@ -16,7 +16,6 @@ api/auth/user-audit-logs.js
 api/test-helpers/
 api/tools/
 api/users/
-api/youtube/
 
 temp-inspect-file.js
 temp-parse.js
