@@ -3,6 +3,7 @@
 ########################################
 
 # === API: Unused/disabled/over-quota endpoints ===
+api/__tests__/
 api/ai.js
 api/index.js
 api/server.js
@@ -16,6 +17,7 @@ api/auth/user-audit-logs.js
 api/test-helpers/
 api/tools/
 api/users/
+api/youtube/
 
 temp-inspect-file.js
 temp-parse.js
