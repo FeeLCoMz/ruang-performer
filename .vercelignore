@@ -5,7 +5,7 @@
 # === API: Unused/disabled/over-quota endpoints ===
 api/ai.js
 api/index.js
-api/__tests__/
+api/server.js
 api/auth/2fa-setup.js
 api/auth/2fa-verify.js
 api/auth/change-password.js
@@ -17,6 +17,9 @@ api/test-helpers/
 api/tools/
 api/users/
 api/youtube/
+
+temp-inspect-file.js
+temp-parse.js
 
 # === Database, test, and dev files ===
 db/
