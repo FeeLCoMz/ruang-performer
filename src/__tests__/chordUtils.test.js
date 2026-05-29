@@ -41,4 +41,9 @@ describe("chordUtils", () => {
     expect(transposeChord('Am/G', 2)).toBe('Bm/A');
     expect(transposeChord('F#maj7/D', -1)).toBe('Fmaj7/C#');
   });
+
+  test("transpose chord tokens inside parentheses", () => {
+    const parsed = parseLines(['Lirik (Am) masih ada'], 2);
+    expect(parsed[0].tokens).toContainEqual({ token: '(Bm)', isChord: true });
+  });
 });

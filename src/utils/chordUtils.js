@@ -48,7 +48,10 @@ function parseLine(line, transpose) {
       tokens: line.split(/(\s+)/).map(token => {
         if (/^\s+$/.test(token)) return { token, isSpace: true };
         if (/^(\|:|:\||\[\:|\:\]|\|\||\|)$/.test(token)) return { token, isBarline: true };
-        return { token: transpose ? transposeChord(token, transpose) : token, isChord: true };
+        if (isChordToken(token)) {
+          return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };
+        }
+        return { token, isChord: true };
       })
     };
   }
@@ -66,7 +69,7 @@ function parseLine(line, transpose) {
     type: 'lyrics',
     tokens: line.split(/(\s+)/).map(token => {
       if (/^\s+$/.test(token)) return { token, isSpace: true };
-      if (isChordLine(token)) return { token: transpose ? transposeChord(token, transpose) : token, isChord: true };
+      if (isChordToken(token)) return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };
       if (parseNumberLine(token)) return { token, isNumber: true };
       return { token };
     })
@@ -217,8 +220,35 @@ const NOTES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#',
 const NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
 // Regex untuk mendeteksi chord (termasuk leading dash untuk passing chord dan trailing dots untuk durasi)
-// Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F.., Am....
-const CHORD_REGEX_GLOBAL = /-?([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?(((\.{2,}|-)([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?)*)(\.{2,})?/g;
+// Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F.., Am...., (Am), [C]
+const CHORD_REGEX_GLOBAL = /[\(\[\{]?-?([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?(((\.{2,}|-)([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?)*)(\.{2,})?[\)\]\}]?/g;
+
+const normalizeChordToken = (token) => {
+  if (typeof token !== 'string') return token;
+  return token
+    .trim()
+    .replace(/^[\(\[\{]+/, '')
+    .replace(/[\)\]\}]+$/, '')
+    .replace(/\.{2,}$/, '');
+};
+
+const isChordToken = (token) => {
+  if (typeof token !== 'string') return false;
+  const normalized = normalizeChordToken(token);
+  return CHORD_REGEX.test(normalized);
+};
+
+const transposeChordToken = (token, steps) => {
+  if (!token || steps === 0) return token;
+  const match = token.match(/^([\(\[\{]?)(.+?)([\)\]\}]?)(\.{2,})?$/);
+  if (!match) return token;
+
+  const [, prefix = '', inner, suffix = '', dots = ''] = match;
+  const normalized = normalizeChordToken(inner);
+  if (!CHORD_REGEX.test(normalized)) return token;
+
+  return `${prefix}${transposeChord(normalized, steps)}${suffix}${dots || ''}`;
+};
 
 const transposeNote = (note, steps) => {
   if (!note || steps === 0) return note;
@@ -423,11 +453,15 @@ export const chordTextToNumberText = (text, key = 'C') => {
   if (!text || typeof text !== 'string') return text;
 
   const replaced = text.replace(CHORD_REGEX_GLOBAL, (match) => {
-    const sanitized = match.replace(/\.+$/, ''); // remove trailing duration dots
+    const innerMatch = match.match(/^([\(\[\{]?)(.+?)([\)\]\}]?)$/);
+    const fullMatch = innerMatch ? innerMatch[2] : match;
+    const sanitized = normalizeChordToken(fullMatch.replace(/\.+$/, ''));
     const numberChord = chordToNumber(sanitized, key);
     if (!numberChord) return match;
-    const trailingDots = match.slice(sanitized.length);
-    return numberChord + trailingDots;
+    const trailingDots = match.slice(match.replace(/\.+$/, '').length);
+    const prefix = innerMatch ? innerMatch[1] : '';
+    const suffix = innerMatch ? innerMatch[3] : '';
+    return `${prefix}${numberChord}${suffix}${trailingDots}`;
   });
 
   return replaced;
@@ -456,7 +490,7 @@ export const isChordLine = (line) => {
   // Hitung jumlah token chord dan token pengisi (hanya . atau -)
   let chordOrFiller = 0;
   for (const t of tokens) {
-    if (CHORD_REGEX.test(t) || /^\.*$/.test(t) || /^-+$/.test(t)) chordOrFiller++;
+    if (isChordToken(t) || /^\.*$/.test(t) || /^-+$/.test(t)) chordOrFiller++;
   }
   // Jika mayoritas token adalah chord atau filler, anggap baris chord
   if (chordOrFiller > 0 && chordOrFiller >= tokens.length * 0.7) return true;
