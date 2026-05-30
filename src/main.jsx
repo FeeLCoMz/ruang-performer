@@ -4,6 +4,29 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 import { initializeWebVitals, reportNavigationMetrics } from './utils/webVitalsUtil.js';
+import * as authUtils from './utils/auth.js';
+
+const originalFetch = typeof window !== 'undefined' ? window.fetch.bind(window) : null;
+
+function shouldRedirectOnUnauthorized(url, options = {}) {
+  const headers = options.headers || {};
+  return Boolean(headers.Authorization || headers.authorization);
+}
+
+async function fetchWithAuth(input, init) {
+  const response = originalFetch ? await originalFetch(input, init) : await fetch(input, init);
+  if (response.status === 401 && shouldRedirectOnUnauthorized(input, init)) {
+    authUtils.logout();
+    if (typeof window !== 'undefined') {
+      window.location.replace('/login');
+    }
+  }
+  return response;
+}
+
+if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+  window.fetch = fetchWithAuth;
+}
 
 console.log('Mounting React app...');
 
