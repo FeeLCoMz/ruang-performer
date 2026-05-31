@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { fetchBands, fetchGigs, fetchSetLists, createGig, updateGig, deleteGig } from '../apiClient.js';
+import {
+  createGigScheduleText,
+  createGigCalendar,
+  downloadTextFile,
+  downloadCalendarFile
+} from '../utils/scheduleShareUtils.js';
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
@@ -20,6 +26,8 @@ export default function GigPage() {
   const [showForm, setShowForm] = useState(false);
   const [editGig, setEditGig] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   // Pisahkan tanggal dan waktu untuk input
   const today = new Date();
   const defaultDate = today.toISOString().split('T')[0];
@@ -35,6 +43,34 @@ export default function GigPage() {
     notes: ''
   });
   const [formError, setFormError] = useState('');
+
+  const selectedBand = bands.find(band => band.id === selectedBandId);
+  const scheduleTitle = selectedBand?.name || 'Jadwal Konser';
+  const scheduleText = createGigScheduleText(
+    scheduleTitle,
+    gigs,
+    typeof window !== 'undefined' ? window.location.href : ''
+  );
+
+  const handleCopyScheduleText = async () => {
+    if (!scheduleText) return;
+    try {
+      await navigator.clipboard.writeText(scheduleText);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1500);
+    } catch (err) {
+      console.error('Gagal menyalin teks jadwal:', err);
+    }
+  };
+
+  const handleDownloadScheduleText = () => {
+    downloadTextFile(`${scheduleTitle || 'jadwal-konser'}.txt`, scheduleText);
+  };
+
+  const handleDownloadScheduleCalendar = () => {
+    const calendarContent = createGigCalendar(scheduleTitle, gigs);
+    downloadCalendarFile(`${scheduleTitle || 'jadwal-konser'}.ics`, calendarContent);
+  };
 
   // Helper: get userBandInfo for a bandId
   const getUserBandInfo = React.useCallback((bandId) => {
@@ -187,43 +223,57 @@ export default function GigPage() {
           // If no band selected, allow if user is authenticated (personal gig)
           if (!selectedBandId && user) {
             return (
-              <button className="btn" onClick={() => {
-                setShowForm(true);
-                setEditGig(null);
-                setFormData({
-                  bandId: selectedBandId || '',
-                  date: new Date().toISOString().split('T')[0],
-                  venue: '',
-                  city: '',
-                  fee: '',
-                  setlistId: '',
-                  notes: ''
-                });
-                setFormError('');
-              }}>
-                <PlusIcon size={18} /> Buat Konser
-              </button>
+              <>
+                <button className="btn" onClick={() => {
+                  setShowForm(true);
+                  setEditGig(null);
+                  setFormData({
+                    bandId: selectedBandId || '',
+                    date: new Date().toISOString().split('T')[0],
+                    venue: '',
+                    city: '',
+                    fee: '',
+                    setlistId: '',
+                    notes: ''
+                  });
+                  setFormError('');
+                }}>
+                  <PlusIcon size={18} /> Buat Konser
+                </button>
+                {gigs.length > 0 && (
+                  <button className="btn btn-secondary" style={{ marginLeft: 12 }} onClick={() => setShowShareModal(true)}>
+                    📤 Bagikan Jadwal
+                  </button>
+                )}
+              </>
             );
           }
           // If band selected, check permission
           if (userBandInfo && permissionForSelectedBand.can('gig:edit')) {
             return (
-              <button className="btn" onClick={() => {
-                setShowForm(true);
-                setEditGig(null);
-                setFormData({
-                  bandId: selectedBandId || '',
-                  date: new Date().toISOString().split('T')[0],
-                  venue: '',
-                  city: '',
-                  fee: '',
-                  setlistId: '',
-                  notes: ''
-                });
-                setFormError('');
-              }}>
-                <PlusIcon size={18} /> Buat Konser
-              </button>
+              <>
+                <button className="btn" onClick={() => {
+                  setShowForm(true);
+                  setEditGig(null);
+                  setFormData({
+                    bandId: selectedBandId || '',
+                    date: new Date().toISOString().split('T')[0],
+                    venue: '',
+                    city: '',
+                    fee: '',
+                    setlistId: '',
+                    notes: ''
+                  });
+                  setFormError('');
+                }}>
+                  <PlusIcon size={18} /> Buat Konser
+                </button>
+                {gigs.length > 0 && (
+                  <button className="btn btn-secondary" style={{ marginLeft: 12 }} onClick={() => setShowShareModal(true)}>
+                    📤 Bagikan Jadwal
+                  </button>
+                )}
+              </>
             );
           }
           return null;
@@ -372,6 +422,36 @@ export default function GigPage() {
                 onClick={handleDelete}
               >
                 Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showShareModal && (
+        <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Bagikan Jadwal Konser</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Salin teks jadwal atau unduh file kalender untuk dibagikan ke anggota band dan penggemar.
+            </p>
+            <textarea
+              readOnly
+              value={scheduleText}
+              style={{ width: '100%', minHeight: '220px', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontFamily: 'inherit' }}
+            />
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '16px' }}>
+              <button className="btn" onClick={handleCopyScheduleText}>
+                {shareCopied ? '✅ Tersalin!' : 'Salin Teks'}
+              </button>
+              <button className="btn" onClick={handleDownloadScheduleText}>
+                Unduh Teks
+              </button>
+              <button className="btn btn-primary" onClick={handleDownloadScheduleCalendar}>
+                Unduh Kalender (.ics)
+              </button>
+              <button className="btn btn-secondary" onClick={() => setShowShareModal(false)}>
+                Tutup
               </button>
             </div>
           </div>

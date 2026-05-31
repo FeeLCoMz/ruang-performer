@@ -6,6 +6,12 @@ import DeleteIcon from '../components/DeleteIcon.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS, canPerformAction } from '../utils/permissionUtils.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import {
+  createGigScheduleText,
+  createGigCalendar,
+  downloadTextFile,
+  downloadCalendarFile
+} from '../utils/scheduleShareUtils.js';
 
 export default function BandDetailPage() {
     // State untuk invite member
@@ -33,6 +39,8 @@ export default function BandDetailPage() {
   const [setlists, setSetlists] = useState([]);
   const [practiceSessions, setPracticeSessions] = useState([]);
   const [gigs, setGigs] = useState([]);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   // --- Permission hooks (top-level, not inside JSX) ---
   // Default userBandInfo, will be updated after band loaded
@@ -96,6 +104,32 @@ export default function BandDetailPage() {
     }
   };
 
+  const scheduleText = createGigScheduleText(
+    band?.name || 'Band Anda',
+    gigs,
+    typeof window !== 'undefined' ? window.location.href : ''
+  );
+
+  const handleCopyScheduleText = async () => {
+    if (!scheduleText) return;
+    try {
+      await navigator.clipboard.writeText(scheduleText);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1500);
+    } catch (err) {
+      console.error('Gagal menyalin teks jadwal:', err);
+    }
+  };
+
+  const handleDownloadScheduleText = () => {
+    downloadTextFile(`${band?.name || 'jadwal-konser'}.txt`, scheduleText);
+  };
+
+  const handleDownloadScheduleCalendar = () => {
+    const calendarContent = createGigCalendar(band?.name || 'Jadwal Konser', gigs);
+    downloadCalendarFile(`${band?.name || 'jadwal-konser'}.ics`, calendarContent);
+  };
+
   if (loading) return <div className="page-container"><div className="loading-container">Memuat data band...</div></div>;
   if (error) return <div className="page-container"><div className="error-text">{error}</div></div>;
   if (!band) return <div className="page-container"><div className="error-text">Band tidak ditemukan</div></div>;
@@ -122,6 +156,11 @@ export default function BandDetailPage() {
           {can(PERMISSIONS.BAND_DELETE) && (
             <button className="btn danger" onClick={handleDelete} title="Hapus Band" style={{marginLeft: '12px'}}>
               <DeleteIcon size={18} /> Hapus Band
+            </button>
+          )}
+          {gigs.length > 0 && (
+            <button className="btn btn-secondary" onClick={() => setShowShareModal(true)} style={{ marginLeft: '12px' }}>
+              📤 Bagikan Jadwal
             </button>
           )}
         </div>
@@ -437,6 +476,36 @@ export default function BandDetailPage() {
           </div>
         )}
       </div>
+
+      {showShareModal && (
+        <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Bagikan Jadwal Konser</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Salin teks jadwal atau unduh file kalender untuk dibagikan ke anggota band dan penggemar.
+            </p>
+            <textarea
+              readOnly
+              value={scheduleText}
+              style={{ width: '100%', minHeight: '220px', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontFamily: 'inherit' }}
+            />
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '16px' }}>
+              <button className="btn" onClick={handleCopyScheduleText}>
+                {shareCopied ? '✅ Tersalin!' : 'Salin Teks'}
+              </button>
+              <button className="btn" onClick={handleDownloadScheduleText}>
+                Unduh Teks
+              </button>
+              <button className="btn btn-primary" onClick={handleDownloadScheduleCalendar}>
+                Unduh Kalender (.ics)
+              </button>
+              <button className="btn btn-secondary" onClick={() => setShowShareModal(false)}>
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Upcoming Gigs */}
       <div className="dashboard-card" style={{ marginBottom: '24px' }}>
