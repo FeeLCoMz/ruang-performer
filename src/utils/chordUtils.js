@@ -177,7 +177,7 @@ export function parseNumberLine(line) {
 export function parseSection(line) {
   // Gabungkan deteksi [Section], Section:, [Instrumen], Instrumen: dengan satu regex
   // Contoh cocok: [Intro], Intro:, [Gitar], Gitar:
-  const match = line.trim().match(/^(?:\[)?([A-Za-z0-9 .:_-]+?)(?:\])?\s*:?\s*$/);
+  const match = line.trim().match(/^(?:\[)?([A-Za-z0-9 .:_\-\+&(),\/']+?)(?:\])?\s*:?\s*$/);
   if (match) {
     const originalLabel = match[1].trim();
     const labelLower = originalLabel.toLowerCase();
