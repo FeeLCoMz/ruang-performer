@@ -14,7 +14,6 @@ export default function DashboardPage() {
   const [bands, setBands] = useState([]);
   const [bandsLoading, setBandsLoading] = useState(true);
   const [popularSongs, setPopularSongs] = useState([]);
-  const [spotifyPopularSongs, setSpotifyPopularSongs] = useState([]);
   const [popularSongsLoading, setPopularSongsLoading] = useState(true);
 
   useEffect(() => {
@@ -55,7 +54,7 @@ export default function DashboardPage() {
         apiClient.fetchSongs().catch(() => []),
         apiClient.fetchGigs().catch(() => []),
         apiClient.fetchPracticeSessions().catch(() => []),
-        apiClient.fetchPopularSongs().catch(() => ({ youtubeSongs: [], spotifySongs: [] })),
+        apiClient.fetchPopularSongs().catch(() => ({ youtubeSongs: [] })),
       ]);
 
       if (!isMounted) return;
@@ -93,7 +92,6 @@ export default function DashboardPage() {
       setUpcomingEvents(combined);
 
       setPopularSongs(popularData.youtubeSongs || popularData.songs || []);
-      setSpotifyPopularSongs(popularData.spotifySongs || []);
       setPopularSongsLoading(false);
 
       setStatsLoading(false);
@@ -257,32 +255,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="dashboard-card">
-          <h2>🎧 Lagu Populer di Spotify</h2>
-          {popularSongsLoading ? (
-            <div className="dashboard-event-list">
-              {[...Array(5)].map((_, idx) => (
-                <div key={idx} className="activity-item">
-                  <span className="loading-skeleton loading-skeleton-full" />
-                </div>
-              ))}
-            </div>
-          ) : spotifyPopularSongs.length === 0 ? (
-            <div className="dashboard-empty">Tidak dapat memuat lagu populer Spotify</div>
-          ) : (
-            <div className="dashboard-popular-list">
-              {spotifyPopularSongs.slice(0, 5).map((song) => (
-                <div key={song.id} className="activity-item activity-item--clickable" onClick={() => window.open(song.spotifyUrl || '#', '_blank')}>
-                  <div className="activity-icon">🎧</div>
-                  <div className="activity-content">
-                    <div className="activity-text">{song.title}</div>
-                    <div className="activity-time">{song.artist}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Spotify popular songs feature removed */}
       </div>
 
       {/* Band Highlights */}

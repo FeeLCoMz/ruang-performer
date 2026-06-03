@@ -327,61 +327,7 @@ async function handleSongSearch(req, res) {
 }
 
 // --- Spotify helpers ---
-const spotifyAuthCache = { accessToken: null, expiresAt: 0 };
-
-async function getSpotifyAccessToken() {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-  if (!clientId || !clientSecret) {
-    throw new Error('Spotify client credentials not configured');
-  }
-  if (spotifyAuthCache.accessToken && Date.now() < spotifyAuthCache.expiresAt - 60000) {
-    return spotifyAuthCache.accessToken;
-  }
-
-  const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
-    },
-    body: 'grant_type=client_credentials'
-  });
-
-  if (!tokenResponse.ok) {
-    const errorBody = await tokenResponse.text();
-    throw new Error(`Spotify token request failed: ${tokenResponse.status} ${errorBody}`);
-  }
-
-  const tokenData = await tokenResponse.json();
-  spotifyAuthCache.accessToken = tokenData.access_token;
-  spotifyAuthCache.expiresAt = Date.now() + ((tokenData.expires_in || 3600) * 1000);
-  return spotifyAuthCache.accessToken;
-}
-
-async function fetchSpotifyPopularTracks() {
-  const playlistId = process.env.SPOTIFY_POPULAR_PLAYLIST_ID || '37i9dQZEVXbMDoHDwVN2tF';
-  const accessToken = await getSpotifyAccessToken();
-  const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?market=ID&limit=10`;
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Spotify playlist request failed: ${response.status} ${errorBody}`);
-  }
-  const data = await response.json();
-  return (data.items || []).map(item => {
-    const track = item.track || {};
-    return {
-      id: track.id || `${(track.name || 'unknown').replace(/\s+/g, '-').toLowerCase()}-${Math.random().toString(36).slice(2, 8)}`,
-      title: track.name || 'Unknown track',
-      artist: (track.artists || []).map(a => a.name).join(', ') || 'Unknown artist',
-      album: track.album?.name || null,
-      coverUrl: track.album?.images?.[0]?.url || null,
-      spotifyUrl: track.external_urls?.spotify || null,
-      previewUrl: track.preview_url || null
-    };
-  });
-}
+// Spotify integration removed: feature deprecated. Only YouTube popular tracks are returned now.
 
 // --- Popular Songs handler ---
 async function handlePopularSongs(req, res) {
@@ -391,11 +337,10 @@ async function handlePopularSongs(req, res) {
   }
 
   const youtubeApiKey = process.env.VITE_YOUTUBE_API_KEY;
-  const spotifyHasCredentials = Boolean(process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET);
   const debug = {};
   const youtubeSongs = [];
-  let spotifySongs = [];
 
+  // Only fetch YouTube most popular tracks. Spotify integration removed.
   if (youtubeApiKey) {
     try {
       const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&videoCategoryId=10&regionCode=ID&maxResults=10&key=${youtubeApiKey}`;
@@ -423,22 +368,8 @@ async function handlePopularSongs(req, res) {
     debug.youtubeKeyMissing = true;
   }
 
-  if (spotifyHasCredentials) {
-    try {
-      spotifySongs = await fetchSpotifyPopularTracks();
-    } catch (error) {
-      debug.spotifyError = error.message;
-      console.error('Spotify popular songs error:', error);
-    }
-  } else {
-    debug.spotifyCredentialsMissing = true;
-  }
-
-  if (!youtubeSongs.length && !spotifySongs.length) {
-    return res.status(500).json({ error: 'No popular music sources are configured', debug });
-  }
-
-  res.status(200).json({ songs: youtubeSongs, youtubeSongs, spotifySongs, debug });
+  // Return only YouTube results; maintain previous response shape partially for compatibility.
+  return res.status(200).json({ youtubeSongs });
 }
 
 // --- Transcribe handler ---
