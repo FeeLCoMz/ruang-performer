@@ -67,9 +67,14 @@ export default function GigPage() {
   const monthName = new Date(shareYear, shareMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   const scheduleTitle = `${scheduleBandName} - ${monthName}`;
   const filteredGigs = getGigsByMonthYear(shareMonth, shareYear);
+  const sortedGigs = [...filteredGigs].sort((a, b) => {
+    const aDate = a.date ? new Date(a.date).getTime() : 0;
+    const bDate = b.date ? new Date(b.date).getTime() : 0;
+    return aDate - bDate;
+  });
   const scheduleText = createGigScheduleText(
     scheduleTitle,
-    filteredGigs,
+    sortedGigs,
     typeof window !== 'undefined' ? window.location.href : ''
   );
 
@@ -484,40 +489,8 @@ export default function GigPage() {
           <div className="modal add-song-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Bagikan Jadwal Konser</div>
             <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>
-              Pilih bulan dan tahun yang ingin dibagikan
+              Gunakan bulan dan tahun yang dipilih untuk daftar dan kalender.
             </p>
-            
-            {/* Month/Year Selector */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-              <select
-                value={shareMonth}
-                onChange={(e) => setShareMonth(parseInt(e.target.value))}
-                className="modal-input"
-                style={{ flex: 1 }}
-              >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i} value={i}>
-                    {new Date(2024, i).toLocaleDateString('id-ID', { month: 'long' })}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={shareYear}
-                onChange={(e) => setShareYear(parseInt(e.target.value))}
-                className="modal-input"
-                style={{ flex: 0.7 }}
-              >
-                {Array.from({ length: 5 }, (_, i) => {
-                  const year = new Date().getFullYear() - 2 + i;
-                  return (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-
             <p style={{ color: 'var(--text-muted)', marginBottom: '12px', fontSize: '0.9em' }}>
               📅 <strong>{monthName}</strong> - {filteredGigs.length} konser
             </p>
@@ -528,14 +501,14 @@ export default function GigPage() {
                 <div className="schedule-poster-header">
                   <div>
                     <div className="schedule-poster-kicker">Jadwal Konser</div>
-                    <div className="schedule-poster-title">{scheduleTitle}</div>
-                    <div className="schedule-poster-subtitle">Bagikan ke WhatsApp atau media sosial</div>
+                    <div className="schedule-poster-title">{scheduleBandName}</div>
+                    <div className="schedule-poster-subtitle">{monthName}</div>
                   </div>
                   <div className="share-badge">#RuangPerformer</div>
                 </div>
                 <div className="schedule-poster-list">
-                  {filteredGigs && filteredGigs.length > 0 ? (
-                    filteredGigs.map((g, idx) => (
+                  {sortedGigs && sortedGigs.length > 0 ? (
+                    sortedGigs.map((g, idx) => (
                       <div key={g.id} className="schedule-poster-item">
                         <div className="schedule-poster-item-main">
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
@@ -610,7 +583,35 @@ export default function GigPage() {
             <option key={band.id} value={band.id}>{band.name}</option>
           ))}
         </select>
-        
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <select
+            value={shareMonth}
+            onChange={(e) => setShareMonth(parseInt(e.target.value))}
+            className="modal-input"
+            style={{ maxWidth: '190px' }}
+          >
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i} value={i}>
+                {new Date(2024, i).toLocaleDateString('id-ID', { month: 'long' })}
+              </option>
+            ))}
+          </select>
+          <select
+            value={shareYear}
+            onChange={(e) => setShareYear(parseInt(e.target.value))}
+            className="modal-input"
+            style={{ maxWidth: '110px' }}
+          >
+            {Array.from({ length: 5 }, (_, i) => {
+              const year = new Date().getFullYear() - 2 + i;
+              return (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              );
+            })}
+          </select>
+        </div>
         <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
           <button
             className={`btn ${viewMode === 'list' ? 'btn-primary' : ''}`}
@@ -645,15 +646,15 @@ export default function GigPage() {
       {loading && <ListSkeleton count={5} />}
       {error && <div className="error-text">{error}</div>}
       
-      {!loading && gigs.length === 0 ? (
+      {!loading && sortedGigs.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-          Belum ada jadwal konser
+          Belum ada jadwal konser untuk {monthName}
         </div>
       ) : !loading && viewMode === 'calendar' ? (
-        <CalendarView gigs={gigs} />
+        <CalendarView gigs={sortedGigs} selectedMonth={shareMonth} selectedYear={shareYear} />
       ) : (
         <div className="song-list-container">
-          {gigs.map((gig, idx) => (
+          {sortedGigs.map((gig, idx) => (
             <div
               key={gig.id}
               className="song-item hover-lift"

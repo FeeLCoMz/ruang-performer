@@ -1,13 +1,18 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { downloadCalendarAsJPG, downloadCalendarAsPDF } from '../utils/calendarDownloadUtil.js';
 
-export default function CalendarView({ gigs = [] }) {
+export default function CalendarView({ gigs = [], selectedMonth, selectedYear }) {
   const navigate = useNavigate();
   const exportRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedGigId, setSelectedGigId] = useState(null);
+
+  useEffect(() => {
+    if (typeof selectedMonth === 'number' && typeof selectedYear === 'number') {
+      setCurrentMonth(new Date(selectedYear, selectedMonth, 1));
+    }
+  }, [selectedMonth, selectedYear]);
 
   const formatCurrency = (value) => {
     if (!value) return '-';
@@ -42,31 +47,6 @@ export default function CalendarView({ gigs = [] }) {
     });
   };
 
-  const handleDownloadJPG = async () => {
-    setDownloading(true);
-    try {
-      const monthName = currentMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-      await downloadCalendarAsJPG(exportRef.current, `jadwal-konser-${monthName}.jpg`);
-    } catch (err) {
-      console.error('Error:', err);
-      alert(err.message || 'Gagal mengunduh JPG kalender');
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  const handleDownloadPDF = async () => {
-    setDownloading(true);
-    try {
-      const monthName = currentMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-      await downloadCalendarAsPDF(exportRef.current, `Jadwal Konser - ${monthName}`);
-    } catch (err) {
-      console.error('Error:', err);
-      alert(err.message || 'Gagal mengunduh PDF kalender');
-    } finally {
-      setDownloading(false);
-    }
-  };
 
   const previousMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
@@ -93,20 +73,19 @@ export default function CalendarView({ gigs = [] }) {
 
   return (
     <div className="calendar-container">
-      <div className="calendar-export-card schedule-poster-card" ref={exportRef}>
+      <div className="calendar-export-card schedule-poster-card" ref={exportRef} style={{ width: '100%', maxWidth: 1040 }}>
         <div className="schedule-poster-header">
           <div>
             <div className="schedule-poster-kicker">Jadwal Konser</div>
             <div className="schedule-poster-title">{monthName}</div>
-            <div className="schedule-poster-subtitle">Bagikan ke WhatsApp atau media sosial</div>
           </div>
           <div className="share-badge">#RuangPerformer</div>
         </div>
 
         <div className="calendar-grid">
-        <div className="calendar-day-header">Minggu</div>
-        <div className="calendar-day-header">Senin</div>
-        <div className="calendar-day-header">Selasa</div>
+          <div className="calendar-day-header">Minggu</div>
+          <div className="calendar-day-header">Senin</div>
+          <div className="calendar-day-header">Selasa</div>
         <div className="calendar-day-header">Rabu</div>
         <div className="calendar-day-header">Kamis</div>
         <div className="calendar-day-header">Jumat</div>
@@ -166,25 +145,6 @@ export default function CalendarView({ gigs = [] }) {
         </button>
       </div>
 
-      {/* Download Buttons */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-        <button
-          className="btn"
-          onClick={handleDownloadJPG}
-          disabled={downloading}
-          style={{ padding: '6px 12px', fontSize: '0.95em' }}
-        >
-          {downloading ? '⏳ Memproses...' : '📸 Download JPG'}
-        </button>
-        <button
-          className="btn btn-primary"
-          onClick={handleDownloadPDF}
-          disabled={downloading}
-          style={{ padding: '6px 12px', fontSize: '0.95em' }}
-        >
-          {downloading ? '⏳ Memproses...' : '📥 Download PDF'}
-        </button>
-      </div>
 
       {/* Gig Detail Panel */}
       {selectedGigId && (
