@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { downloadCalendarAsJPG, downloadCalendarAsPDF } from '../utils/calendarDownloadUtil.js';
 
 export default function CalendarView({ gigs = [] }) {
   const navigate = useNavigate();
+  const exportRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedGigId, setSelectedGigId] = useState(null);
 
@@ -23,12 +26,46 @@ export default function CalendarView({ gigs = [] }) {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
+  const formatLocalDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const getGigsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatLocalDate(date);
     return gigs.filter(gig => {
-      const gigDate = new Date(gig.date).toISOString().split('T')[0];
-      return gigDate === dateStr;
+      const gigDate = new Date(gig.date);
+      const gigDateStr = formatLocalDate(gigDate);
+      return gigDateStr === dateStr;
     });
+  };
+
+  const handleDownloadJPG = async () => {
+    setDownloading(true);
+    try {
+      const monthName = currentMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+      await downloadCalendarAsJPG(exportRef.current, `jadwal-konser-${monthName}.jpg`);
+    } catch (err) {
+      console.error('Error:', err);
+      alert(err.message || 'Gagal mengunduh JPG kalender');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    setDownloading(true);
+    try {
+      const monthName = currentMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+      await downloadCalendarAsPDF(exportRef.current, `Jadwal Konser - ${monthName}`);
+    } catch (err) {
+      console.error('Error:', err);
+      alert(err.message || 'Gagal mengunduh PDF kalender');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const previousMonth = () => {
@@ -56,19 +93,17 @@ export default function CalendarView({ gigs = [] }) {
 
   return (
     <div className="calendar-container">
-      {/* Calendar Header */}
-      <div className="calendar-header">
-        <button className="btn" onClick={previousMonth} style={{ padding: '6px 12px' }}>
-          ← Bulan Sebelumnya
-        </button>
-        <h2 style={{ margin: '0 20px' }}>{monthName}</h2>
-        <button className="btn" onClick={nextMonth} style={{ padding: '6px 12px' }}>
-          Bulan Berikutnya →
-        </button>
-      </div>
+      <div className="calendar-export-card schedule-poster-card" ref={exportRef}>
+        <div className="schedule-poster-header">
+          <div>
+            <div className="schedule-poster-kicker">Jadwal Konser</div>
+            <div className="schedule-poster-title">{monthName}</div>
+            <div className="schedule-poster-subtitle">Bagikan ke WhatsApp atau media sosial</div>
+          </div>
+          <div className="share-badge">#RuangPerformer</div>
+        </div>
 
-      {/* Day headers */}
-      <div className="calendar-grid">
+        <div className="calendar-grid">
         <div className="calendar-day-header">Minggu</div>
         <div className="calendar-day-header">Senin</div>
         <div className="calendar-day-header">Selasa</div>
@@ -118,6 +153,37 @@ export default function CalendarView({ gigs = [] }) {
             </div>
           );
         })}
+      </div>
+      </div>
+
+      <div className="calendar-header" style={{ justifyContent: 'center', marginBottom: '16px' }}>
+        <button className="btn" onClick={previousMonth} style={{ padding: '6px 12px' }} disabled={downloading}>
+          ← Bulan Sebelumnya
+        </button>
+        <h2 style={{ margin: '0 20px' }}>{monthName}</h2>
+        <button className="btn" onClick={nextMonth} style={{ padding: '6px 12px' }} disabled={downloading}>
+          Bulan Berikutnya →
+        </button>
+      </div>
+
+      {/* Download Buttons */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <button
+          className="btn"
+          onClick={handleDownloadJPG}
+          disabled={downloading}
+          style={{ padding: '6px 12px', fontSize: '0.95em' }}
+        >
+          {downloading ? '⏳ Memproses...' : '📸 Download JPG'}
+        </button>
+        <button
+          className="btn btn-primary"
+          onClick={handleDownloadPDF}
+          disabled={downloading}
+          style={{ padding: '6px 12px', fontSize: '0.95em' }}
+        >
+          {downloading ? '⏳ Memproses...' : '📥 Download PDF'}
+        </button>
       </div>
 
       {/* Gig Detail Panel */}

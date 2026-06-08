@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
@@ -9,6 +9,8 @@ import {
   downloadTextFile,
   downloadCalendarFile
 } from '../utils/scheduleShareUtils.js';
+import '../styles/setlist-poster.css';
+import { downloadCalendarAsJPG, downloadCalendarAsPDF } from '../utils/calendarDownloadUtil.js';
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
@@ -29,9 +31,14 @@ export default function GigPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const posterRef = useRef(null);
+  const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+  const [posterError, setPosterError] = useState('');
   const [viewMode, setViewMode] = useState('list'); // 'list' atau 'calendar'
-  // Pisahkan tanggal dan waktu untuk input
   const today = new Date();
+  const [shareMonth, setShareMonth] = useState(today.getMonth());
+  const [shareYear, setShareYear] = useState(today.getFullYear());
+  // Pisahkan tanggal dan waktu untuk input
   const defaultDate = today.toISOString().split('T')[0];
   const defaultTime = today.toTimeString().slice(0,5);
   const [formData, setFormData] = useState({
@@ -46,11 +53,23 @@ export default function GigPage() {
   });
   const [formError, setFormError] = useState('');
 
+  // Filter gigs by month/year for sharing
+  const getGigsByMonthYear = (month, year) => {
+    return gigs.filter(gig => {
+      if (!gig.date) return false;
+      const gigDate = new Date(gig.date);
+      return gigDate.getMonth() === month && gigDate.getFullYear() === year;
+    });
+  };
+
   const selectedBand = bands.find(band => band.id === selectedBandId);
-  const scheduleTitle = selectedBand?.name || 'Jadwal Konser';
+  const scheduleBandName = selectedBand?.name || 'Jadwal Konser';
+  const monthName = new Date(shareYear, shareMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  const scheduleTitle = `${scheduleBandName} - ${monthName}`;
+  const filteredGigs = getGigsByMonthYear(shareMonth, shareYear);
   const scheduleText = createGigScheduleText(
     scheduleTitle,
-    gigs,
+    filteredGigs,
     typeof window !== 'undefined' ? window.location.href : ''
   );
 
@@ -70,8 +89,38 @@ export default function GigPage() {
   };
 
   const handleDownloadScheduleCalendar = () => {
-    const calendarContent = createGigCalendar(scheduleTitle, gigs);
+    const calendarContent = createGigCalendar(scheduleTitle, filteredGigs);
     downloadCalendarFile(`${scheduleTitle || 'jadwal-konser'}.ics`, calendarContent);
+  };
+
+  const handleDownloadPoster = async () => {
+    if (!posterRef.current) return;
+    setIsGeneratingPoster(true);
+    setPosterError('');
+    try {
+      const safeName = (scheduleTitle || 'jadwal-konser').replace(/[\\/:*?"<>|]+/g, '').trim();
+      await downloadCalendarAsJPG(posterRef.current, `${safeName}-poster.jpg`);
+    } catch (err) {
+      console.error('Gagal membuat poster:', err);
+      setPosterError('Gagal membuat poster. Coba lagi.');
+    } finally {
+      setIsGeneratingPoster(false);
+    }
+  };
+
+  const handleDownloadPosterPDF = async () => {
+    if (!posterRef.current) return;
+    setIsGeneratingPoster(true);
+    setPosterError('');
+    try {
+      const safeName = (scheduleTitle || 'jadwal-konser').replace(/[\\/:*?"<>|]+/g, '').trim();
+      await downloadCalendarAsPDF(posterRef.current, `Jadwal Konser - ${safeName}`);
+    } catch (err) {
+      console.error('Gagal membuat poster PDF:', err);
+      setPosterError('Gagal membuat PDF. Coba lagi.');
+    } finally {
+      setIsGeneratingPoster(false);
+    }
   };
 
   // Helper: get userBandInfo for a bandId
@@ -432,19 +481,106 @@ export default function GigPage() {
 
       {showShareModal && (
         <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Bagikan Jadwal Konser</h2>
+          <div className="modal add-song-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">Bagikan Jadwal Konser</div>
             <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>
-              Salin teks jadwal atau unduh file kalender untuk dibagikan ke anggota band dan penggemar.
+              Pilih bulan dan tahun yang ingin dibagikan
             </p>
+            
+            {/* Month/Year Selector */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+              <select
+                value={shareMonth}
+                onChange={(e) => setShareMonth(parseInt(e.target.value))}
+                className="modal-input"
+                style={{ flex: 1 }}
+              >
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {new Date(2024, i).toLocaleDateString('id-ID', { month: 'long' })}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={shareYear}
+                onChange={(e) => setShareYear(parseInt(e.target.value))}
+                className="modal-input"
+                style={{ flex: 0.7 }}
+              >
+                {Array.from({ length: 5 }, (_, i) => {
+                  const year = new Date().getFullYear() - 2 + i;
+                  return (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <p style={{ color: 'var(--text-muted)', marginBottom: '12px', fontSize: '0.9em' }}>
+              📅 <strong>{monthName}</strong> - {filteredGigs.length} konser
+            </p>
+
+            {/* Poster preview for sharing */}
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+              <div className="calendar-export-card schedule-poster-card" ref={posterRef} style={{ maxWidth: 540, width: '100%' }}>
+                <div className="schedule-poster-header">
+                  <div>
+                    <div className="schedule-poster-kicker">Jadwal Konser</div>
+                    <div className="schedule-poster-title">{scheduleTitle}</div>
+                    <div className="schedule-poster-subtitle">Bagikan ke WhatsApp atau media sosial</div>
+                  </div>
+                  <div className="share-badge">#RuangPerformer</div>
+                </div>
+                <div className="schedule-poster-list">
+                  {filteredGigs && filteredGigs.length > 0 ? (
+                    filteredGigs.map((g, idx) => (
+                      <div key={g.id} className="schedule-poster-item">
+                        <div className="schedule-poster-item-main">
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+                            <div style={{ fontWeight: 700, color: '#f8fafc' }}>{idx + 1}. {g.bandName || 'Band Tamu'}</div>
+                            {g.date && (
+                              <div className="schedule-poster-meta">
+                                {new Date(g.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                {' • '}
+                                {new Date(g.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            )}
+                          </div>
+                          {(g.venue || g.city) && (
+                            <div className="schedule-poster-details">📍 {g.venue}{g.venue && g.city ? ', ' : ''}{g.city}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="schedule-poster-item" style={{ justifyContent: 'center', color: '#cbd5e1', fontStyle: 'italic' }}>
+                      Tidak ada konser di bulan ini
+                    </div>
+                  )}
+                </div>
+                <div className="setlist-poster-footer" style={{ marginTop: 12, textAlign: 'center' }}>
+                  <div className="setlist-poster-brand">Ruang Performer</div>
+                </div>
+              </div>
+            </div>
+
             <textarea
+              className="modal-input"
               readOnly
+              rows={7}
               value={scheduleText}
-              style={{ width: '100%', minHeight: '220px', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontFamily: 'inherit' }}
             />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '16px' }}>
+            <div className="setlist-share-actions">
               <button className="btn" onClick={handleCopyScheduleText}>
                 {shareCopied ? '✅ Tersalin!' : 'Salin Teks'}
+              </button>
+              <button className="btn" onClick={handleDownloadPoster} disabled={isGeneratingPoster}>
+                {isGeneratingPoster ? 'Membuat Poster...' : 'Unduh Poster'}
+              </button>
+              <button className="btn btn-secondary" onClick={handleDownloadPosterPDF} disabled={isGeneratingPoster}>
+                {isGeneratingPoster ? 'Membuat PDF...' : 'Download PDF'}
               </button>
               <button className="btn" onClick={handleDownloadScheduleText}>
                 Unduh Teks
@@ -456,6 +592,7 @@ export default function GigPage() {
                 Tutup
               </button>
             </div>
+            {posterError && <div className="setlist-poster-error">{posterError}</div>}
           </div>
         </div>
       )}
@@ -515,74 +652,30 @@ export default function GigPage() {
       ) : !loading && viewMode === 'calendar' ? (
         <CalendarView gigs={gigs} />
       ) : (
-        <div style={{ display: 'grid', gap: '12px' }}>
-          {gigs.map(gig => (
+        <div className="song-list-container">
+          {gigs.map((gig, idx) => (
             <div
               key={gig.id}
-              style={{
-                border: '1.5px solid var(--border)',
-                borderRadius: '8px',
-                padding: '16px',
-                backgroundColor: 'var(--card-bg)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'start',
-                transition: 'all 0.2s',
-                cursor: 'pointer'
-              }}
-              className="hover-lift"
+              className="song-item hover-lift"
               onClick={() => navigate(`/gigs/${gig.id}`)}
             >
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '600', marginBottom: '8px', fontSize: '1.05em' }}>
-                  🎤 {new Date(gig.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              <div className="song-info">
+                <div className="song-number">{idx + 1}.</div>
+                <h3 className="song-title">{gig.bandName || 'Band Tamu'}</h3>
+                <div className="song-meta">
+                  <span>📅 {new Date(gig.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                   {gig.date && (
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.95em', marginLeft: 8 }}>
-                      {new Date(gig.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <span>⏰ {new Date(gig.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
                   )}
+                  {(gig.venue || gig.city) && <span>📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}</span>}
                 </div>
-                
-                {gig.bandName && (
-                  <div style={{ color: 'var(--primary-accent)', fontSize: '0.9em', marginBottom: '4px', fontWeight: '500' }}>
-                    🎸 {gig.bandName}
-                  </div>
-                )}
-
-                {(gig.venue || gig.city) && (
-                  <div style={{ fontSize: '0.9em', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                    📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}
-                  </div>
-                )}
-
-                {gig.fee && (
-                  <div style={{ fontSize: '0.9em', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                    💰 {formatCurrency(gig.fee)}
-                  </div>
-                )}
-
-                {gig.setlistName && (
-                  <div style={{ fontSize: '0.9em', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                    🎵 Setlist: {gig.setlistName}
-                  </div>
-                )}
-
-                {gig.notes && (
-                  <div style={{ fontSize: '0.9em', color: 'var(--text-muted)', marginTop: '8px', fontStyle: 'italic', padding: '8px', backgroundColor: 'var(--primary-bg)', borderRadius: '6px' }}>
-                    "{gig.notes}"
-                  </div>
-                )}
               </div>
 
               <div
-                className="setlist-actions"
+                className="song-actions"
                 onClick={(e) => e.stopPropagation()}
               >
                 {(() => {
-                  // Permission: Only show edit/delete if user can edit/delete this gig
-                  // Allow edit/delete if:
-                  // - user is gig creator (legacy/personal gig)
-                  // - or has gig:edit permission for the band
                   const isCreator = gig.userId && user && gig.userId === (user.userId || user.id);
                   const canEdit = isCreator || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
                   const canDelete = isCreator || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
@@ -590,26 +683,20 @@ export default function GigPage() {
                   return (
                     <>
                       {canEdit && (
-                        <button
-                          onClick={() => handleEdit(gig)}
-                          className="btn"
-                          style={{ padding: '6px 12px', fontSize: '0.85em' }}
-                          title="Edit"
-                        >
-                          <EditIcon size={16} />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleEdit(gig)}
+                            className="btn"
+                            title="Edit"
+                          >
+                            <EditIcon size={16} />
+                          </button>
+                        </>
                       )}
                       {canDelete && (
                         <button
                           onClick={() => setDeleteConfirm(gig)}
-                          className="btn"
-                          style={{
-                            padding: '6px 12px',
-                            fontSize: '0.85em',
-                            background: '#dc2626',
-                            borderColor: '#b91c1c',
-                            color: '#fff'
-                          }}
+                          className="btn btn-red"
                           title="Hapus"
                         >
                           <DeleteIcon size={16} />
