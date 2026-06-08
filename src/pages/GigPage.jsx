@@ -13,6 +13,7 @@ import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
+import CalendarView from '../components/CalendarView.jsx';
 
 export default function GigPage() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function GigPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' atau 'calendar'
   // Pisahkan tanggal dan waktu untuk input
   const today = new Date();
   const defaultDate = today.toISOString().split('T')[0];
@@ -458,8 +460,8 @@ export default function GigPage() {
         </div>
       )}
 
-      {/* Filter & List */}
-      <div style={{ marginBottom: '24px', display: 'flex', gap: '12px' }}>
+      {/* Filter & View Mode Toggle */}
+      <div style={{ marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
         <select
           value={selectedBandId}
           onChange={(e) => setSelectedBandId(e.target.value)}
@@ -471,6 +473,35 @@ export default function GigPage() {
             <option key={band.id} value={band.id}>{band.name}</option>
           ))}
         </select>
+        
+        <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+          <button
+            className={`btn ${viewMode === 'list' ? 'btn-primary' : ''}`}
+            onClick={() => setViewMode('list')}
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.9em',
+              backgroundColor: viewMode === 'list' ? '#4f8cff' : 'transparent',
+              color: viewMode === 'list' ? '#fff' : 'var(--text-primary)',
+              border: viewMode === 'list' ? 'none' : '1.5px solid var(--border-color)'
+            }}
+          >
+            📋 List
+          </button>
+          <button
+            className={`btn ${viewMode === 'calendar' ? 'btn-primary' : ''}`}
+            onClick={() => setViewMode('calendar')}
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.9em',
+              backgroundColor: viewMode === 'calendar' ? '#4f8cff' : 'transparent',
+              color: viewMode === 'calendar' ? '#fff' : 'var(--text-primary)',
+              border: viewMode === 'calendar' ? 'none' : '1.5px solid var(--border-color)'
+            }}
+          >
+            📅 Kalender
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -481,6 +512,8 @@ export default function GigPage() {
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
           Belum ada jadwal konser
         </div>
+      ) : !loading && viewMode === 'calendar' ? (
+        <CalendarView gigs={gigs} />
       ) : (
         <div style={{ display: 'grid', gap: '12px' }}>
           {gigs.map(gig => (
