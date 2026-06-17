@@ -17,6 +17,19 @@ function formatPublishedDate(iso) {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function buildTrendingShareText(trending) {
+  if (!Array.isArray(trending) || trending.length === 0) {
+    return 'Daftar lagu trending YouTube belum tersedia.';
+  }
+
+  const lines = trending.map((item, index) => {
+    const youtubeUrl = `https://www.youtube.com/watch?v=${item.videoId}`;
+    return `${index + 1}. ${item.title} - ${item.channelTitle}\n${youtubeUrl}`;
+  });
+
+  return `Daftar Lagu Trending YouTube:\n\n${lines.join('\n\n')}`;
+}
+
 // Share Modal Component
 function ShareModal({ isOpen, video, onClose }) {
   const [copied, setCopied] = useState(false);
@@ -166,11 +179,107 @@ function ShareModal({ isOpen, video, onClose }) {
   );
 }
 
+function ShareAllTrendingModal({ isOpen, trending, onClose }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!isOpen) return null;
+
+  const shareText = buildTrendingShareText(trending);
+  const encodedShareText = encodeURIComponent(shareText);
+  const socialLinks = {
+    whatsapp: `https://wa.me/?text=${encodedShareText}`,
+    telegram: `https://t.me/share/url?text=${encodedShareText}`,
+    twitter: `https://twitter.com/intent/tweet?text=${encodedShareText}`,
+  };
+
+  const handleCopyText = () => {
+    navigator.clipboard.writeText(shareText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Bagikan Semua Lagu Trending</h2>
+          <button
+            className="modal-close"
+            onClick={onClose}
+            title="Tutup"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="modal-body youtube-share-modal-body">
+          <div className="youtube-share-info">
+            <h3>{trending.length} Lagu Siap Dibagikan</h3>
+            <p className="youtube-share-channel">
+              Bagikan daftar lengkap lagu trending YouTube ke teman atau grup band.
+            </p>
+          </div>
+
+          <div className="youtube-share-text-section">
+            <label>Teks Bagikan:</label>
+            <textarea
+              readOnly
+              value={shareText}
+              className="youtube-share-textarea youtube-share-textarea-large"
+            />
+            <button
+              className="btn btn-secondary youtube-share-copy-text-btn"
+              onClick={handleCopyText}
+              title="Salin semua teks"
+            >
+              {copied ? '✓ Disalin' : 'Salin Semua Teks'}
+            </button>
+          </div>
+
+          <div className="youtube-share-social">
+            <label>Bagikan ke Media Sosial:</label>
+            <div className="youtube-share-social-buttons">
+              <a
+                href={socialLinks.whatsapp}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-social whatsapp"
+                title="Bagikan daftar ke WhatsApp"
+              >
+                📱 WhatsApp
+              </a>
+              <a
+                href={socialLinks.telegram}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-social telegram"
+                title="Bagikan daftar ke Telegram"
+              >
+                ✈️ Telegram
+              </a>
+              <a
+                href={socialLinks.twitter}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-social twitter"
+                title="Bagikan daftar ke Twitter"
+              >
+                𝕏 Twitter
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function YouTubeTrendingPage({ performanceMode }) {
   const [trending, setTrending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showShareAllModal, setShowShareAllModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
 
   useEffect(() => {
@@ -210,6 +319,14 @@ export default function YouTubeTrendingPage({ performanceMode }) {
     setSelectedVideo(null);
   };
 
+  const handleOpenShareAll = () => {
+    setShowShareAllModal(true);
+  };
+
+  const handleCloseShareAll = () => {
+    setShowShareAllModal(false);
+  };
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -217,6 +334,17 @@ export default function YouTubeTrendingPage({ performanceMode }) {
           <h1>Trending YouTube</h1>
           <p>Daftar lagu musik paling populer di YouTube saat ini. Klik tombol bagikan untuk share dengan teman.</p>
         </div>
+        {!performanceMode && trending.length > 0 && (
+          <div className="youtube-trending-actions">
+            <button
+              className="btn btn-secondary"
+              onClick={handleOpenShareAll}
+              title="Bagikan seluruh daftar lagu trending"
+            >
+              📤 Bagikan Semua
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="card youtube-trending-panel">
@@ -274,6 +402,12 @@ export default function YouTubeTrendingPage({ performanceMode }) {
         isOpen={showShareModal}
         video={selectedVideo}
         onClose={handleCloseShareModal}
+      />
+
+      <ShareAllTrendingModal
+        isOpen={showShareAllModal}
+        trending={trending}
+        onClose={handleCloseShareAll}
       />
     </div>
   );

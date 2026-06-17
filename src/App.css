@@ -1071,6 +1071,11 @@ body {
   font-weight: 600;
 }
 
+.youtube-trending-actions {
+  display: flex;
+  align-items: center;
+}
+
 .youtube-trending-grid.performance-mode .youtube-trending-card {
   grid-template-columns: 1fr;
 }
@@ -1192,6 +1197,15 @@ body {
   resize: vertical;
   min-height: 80px;
   max-height: 150px;
+}
+
+.youtube-share-textarea-large {
+  min-height: 220px;
+  max-height: 360px;
+}
+
+.youtube-share-copy-text-btn {
+  margin-top: 8px;
 }
 
 .youtube-share-social-buttons {
