@@ -11,6 +11,8 @@
     "dev": "vite",
     "dev:api": "node api/index.js",
     "dev:full": "concurrently \"npm run dev:api\" \"npm run dev\"",
+    "test:unit": "vitest run src/__tests__",
+    "test:unit:watch": "vitest src/__tests__",
     "build": "vite build",
     "preview": "vite preview",
     "update": "npm update",

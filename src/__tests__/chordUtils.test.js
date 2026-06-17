@@ -1,4 +1,4 @@
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect } from 'vitest';
 import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
@@ -37,7 +37,7 @@ describe("chordUtils", () => {
   });
 
   test("transposeChord handles slash bass chords", () => {
-    expect(transposeChord('B/D#', 1)).toBe('C#/F#');
+    expect(transposeChord('B/D#', 1)).toBe('C/E');
     expect(transposeChord('Am/G', 2)).toBe('Bm/A');
     expect(transposeChord('F#maj7/D', -1)).toBe('Fmaj7/C#');
   });
@@ -45,5 +45,15 @@ describe("chordUtils", () => {
   test("transpose chord tokens inside parentheses", () => {
     const parsed = parseLines(['Lirik (Am) masih ada'], 2);
     expect(parsed[0].tokens).toContainEqual({ token: '(Bm)', isChord: true });
+  });
+
+  test("transpose compact chord token in chord line", () => {
+    const parsed = parseLines(['D..F# G'], 2);
+    expect(parsed[0].type).toBe('chord');
+    expect(parsed[0].tokens).toEqual([
+      { token: 'E..G#', isChord: true },
+      { token: ' ', isSpace: true },
+      { token: 'A', isChord: true }
+    ]);
   });
 });

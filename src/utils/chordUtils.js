@@ -51,6 +51,9 @@ function parseLine(line, transpose) {
         if (isChordToken(token)) {
           return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };
         }
+        if (token.includes('..')) {
+          return { token: transposeCompactChordToken(token, transpose), isChord: true };
+        }
         return { token, isChord: true };
       })
     };
@@ -248,6 +251,22 @@ const transposeChordToken = (token, steps) => {
   if (!CHORD_REGEX.test(normalized)) return token;
 
   return `${prefix}${transposeChord(normalized, steps)}${suffix}${dots || ''}`;
+};
+
+const transposeCompactChordToken = (token, steps) => {
+  if (!token || !token.includes('..')) return token;
+
+  const parts = token.split(/(\.{2,})/);
+  let hasChordPart = false;
+
+  const transposedParts = parts.map((part) => {
+    if (!part || /^\.{2,}$/.test(part)) return part;
+    if (!isChordToken(part)) return part;
+    hasChordPart = true;
+    return steps ? transposeChordToken(part, steps) : part;
+  });
+
+  return hasChordPart ? transposedParts.join('') : token;
 };
 
 const transposeNote = (note, steps) => {

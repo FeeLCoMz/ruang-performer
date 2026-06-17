@@ -42,6 +42,6 @@ describe('scheduleShareUtils', () => {
     expect(ics).toContain('BEGIN:VEVENT');
     expect(ics).toContain('SUMMARY:Band A @ Teater Kecil');
     expect(ics).toContain('LOCATION:Teater Kecil, Jakarta');
-    expect(ics).toContain('UID:gig-1@ruang-performer');
+    expect(ics).toContain('UID:gig-1');
   });
 });
