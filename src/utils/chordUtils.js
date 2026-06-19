@@ -51,6 +51,9 @@ function parseLine(line, transpose) {
         if (isChordToken(token)) {
           return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };
         }
+        if (isLeadingDashChordToken(token)) {
+          return { token: transpose ? transposeLeadingDashChordToken(token, transpose) : token, isChord: true };
+        }
         if (token.includes('..')) {
           return { token: transposeCompactChordToken(token, transpose), isChord: true };
         }
@@ -73,6 +76,7 @@ function parseLine(line, transpose) {
     tokens: line.split(/(\s+)/).map(token => {
       if (/^\s+$/.test(token)) return { token, isSpace: true };
       if (isChordToken(token)) return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };
+      if (isLeadingDashChordToken(token)) return { token: transpose ? transposeLeadingDashChordToken(token, transpose) : token, isChord: true };
       if (parseNumberLine(token)) return { token, isNumber: true };
       return { token };
     })
@@ -241,6 +245,11 @@ const isChordToken = (token) => {
   return CHORD_REGEX.test(normalized);
 };
 
+const isLeadingDashChordToken = (token) => {
+  if (typeof token !== 'string' || !token.startsWith('-')) return false;
+  return CHORD_REGEX.test(token.slice(1).trim());
+};
+
 const transposeChordToken = (token, steps) => {
   if (!token || steps === 0) return token;
   const match = token.match(/^([\(\[\{]?)(.+?)([\)\]\}]?)(\.{2,})?$/);
@@ -253,14 +262,21 @@ const transposeChordToken = (token, steps) => {
   return `${prefix}${transposeChord(normalized, steps)}${suffix}${dots || ''}`;
 };
 
-const transposeCompactChordToken = (token, steps) => {
-  if (!token || !token.includes('..')) return token;
+const transposeLeadingDashChordToken = (token, steps) => {
+  if (!token || steps === 0 || !token.startsWith('-')) return token;
+  const chordToken = token.slice(1).trim();
+  if (!CHORD_REGEX.test(chordToken)) return token;
+  return `-${transposeChord(chordToken, steps)}`;
+};
 
-  const parts = token.split(/(\.{2,})/);
+const transposeCompactChordToken = (token, steps) => {
+  if (!token || (!token.includes('..') && !token.includes('-'))) return token;
+
+  const parts = token.split(/(\.{2,}|-)/);
   let hasChordPart = false;
 
   const transposedParts = parts.map((part) => {
-    if (!part || /^\.{2,}$/.test(part)) return part;
+    if (!part || /^\.{2,}$/.test(part) || part === '-') return part;
     if (!isChordToken(part)) return part;
     hasChordPart = true;
     return steps ? transposeChordToken(part, steps) : part;
@@ -439,6 +455,10 @@ export const chordToNumber = (chord, key = 'C') => {
   if (!chord || typeof chord !== 'string') return null;
 
   const normalizedChord = chord.trim();
+  if (normalizedChord.startsWith('-')) {
+    const leadingDashResult = chordToNumber(normalizedChord.slice(1), key);
+    return leadingDashResult ? `-${leadingDashResult}` : null;
+  }
   const match = normalizedChord.match(/^([A-G][#b]?)(.*)$/i);
   if (!match) return null;
 
@@ -527,13 +547,13 @@ export const isChordLine = (line) => {
 
 // Fungsi untuk expand compact chord format (D..Gm..Bb) menjadi format spaced
 const expandCompactChords = (line) => {
-  // Check if line contains compact format (chord..chord..chord)
-  const compactPattern = /(-?[A-G][#b]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)(\.\.)/g;
+  // Check if line contains compact format (chord..chord..chord or chord-chord)
+  const compactPattern = /(-?[A-G][#b]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)(?:\.\.|-)/g;
 
   if (!compactPattern.test(line)) return line;
 
-  // Split by .. and join with spaces for proper spacing
-  const chords = line.split('..').map(c => c.trim()).filter(c => c);
+  // Split by .. or - and join with spaces for proper spacing
+  const chords = line.split(/(?:\.\.|-)/).map(c => c.trim()).filter(c => c);
   return chords.join('   '); // Add spacing between chords
 };
 

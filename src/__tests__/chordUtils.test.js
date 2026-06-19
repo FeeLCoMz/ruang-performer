@@ -56,4 +56,20 @@ describe("chordUtils", () => {
       { token: 'A', isChord: true }
     ]);
   });
+
+  test("transpose compact chord token with hyphen and dot separators", () => {
+    const parsed = parseLines(['Bm-F#m-G..G#m'], 2);
+    expect(parsed[0].type).toBe('chord');
+    expect(parsed[0].tokens).toEqual([
+      { token: 'C#m-G#m-A..A#m', isChord: true }
+    ]);
+  });
+
+  test("transpose leading dash chord token", () => {
+    const parsed = parseLines(['-A'], 2);
+    expect(parsed[0].type).toBe('chord');
+    expect(parsed[0].tokens).toEqual([
+      { token: '-B', isChord: true }
+    ]);
+  });
 });
