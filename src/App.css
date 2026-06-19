@@ -5858,6 +5858,166 @@ body.dark-mode .song-lyrics-error {
   font-family: "Courier New", monospace;
 }
 
+.song-lyrics-analyzer-piano-reco {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--secondary-bg);
+}
+
+.song-lyrics-analyzer-piano-reco-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.song-lyrics-analyzer-piano-reco-difficulty {
+  margin-top: var(--spacing-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.song-lyrics-analyzer-piano-reco-help {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: help;
+}
+
+.song-lyrics-analyzer-piano-reco-help:focus-visible {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
+.song-lyrics-analyzer-piano-reco-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: min(240px, 72vw);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  padding: 8px 10px;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease;
+  z-index: 3;
+}
+
+.song-lyrics-analyzer-piano-reco-help:hover .song-lyrics-analyzer-piano-reco-tooltip,
+.song-lyrics-analyzer-piano-reco-help:focus .song-lyrics-analyzer-piano-reco-tooltip,
+.song-lyrics-analyzer-piano-reco-help:focus-visible .song-lyrics-analyzer-piano-reco-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.song-lyrics-analyzer-piano-reco-difficulty-very-easy {
+  background: #e8f7ed;
+  color: #1b7a3f;
+  border-color: #9fdfb7;
+}
+
+.song-lyrics-analyzer-piano-reco-difficulty-easy {
+  background: #ecf8ff;
+  color: #00668f;
+  border-color: #a8daf0;
+}
+
+.song-lyrics-analyzer-piano-reco-difficulty-medium {
+  background: #fff8e6;
+  color: #8a5a00;
+  border-color: #f0d08a;
+}
+
+.song-lyrics-analyzer-piano-reco-difficulty-hard {
+  background: #ffecec;
+  color: #9f1b1b;
+  border-color: #f1b3b3;
+}
+
+.song-lyrics-analyzer-piano-reco-key {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--primary-accent);
+  font-family: "Courier New", monospace;
+}
+
+.song-lyrics-analyzer-piano-reco-note {
+  margin-top: var(--spacing-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.song-lyrics-analyzer-piano-reco-actions {
+  margin-top: var(--spacing-sm);
+}
+
+.song-lyrics-analyzer-piano-reco-notice {
+  margin-top: var(--spacing-xs);
+  display: inline-block;
+  color: #1b7a3f;
+  background: #e8f7ed;
+  border: 1px solid #9fdfb7;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.song-lyrics-analyzer-piano-reco-compare {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.song-lyrics-analyzer-piano-reco-compare-improved {
+  color: #1b7a3f;
+  background: #e8f7ed;
+  border-color: #9fdfb7;
+}
+
+.song-lyrics-analyzer-piano-reco-compare-same {
+  color: #5d6772;
+  background: #f1f4f8;
+  border-color: #d6dde6;
+}
+
+.song-lyrics-analyzer-piano-reco-compare-harder {
+  color: #9f1b1b;
+  background: #ffecec;
+  border-color: #f1b3b3;
+}
+
 /* Metronome Component */
 .song-lyrics-metronome {
   background: var(--card-bg);

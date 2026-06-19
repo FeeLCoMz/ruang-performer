@@ -831,3 +831,102 @@ export const getChordsByBar = (parsedSong) => {
   });
   return bars;
 };
+
+const KEY_SIGNATURE_ACCIDENTALS = {
+  C: 0,
+  G: 1,
+  D: 2,
+  A: 3,
+  E: 4,
+  B: 5,
+  'F#': 6,
+  'C#': 7,
+  F: 1,
+  Bb: 2,
+  Eb: 3,
+  Ab: 4,
+  Db: 5,
+  Gb: 6,
+  Cb: 7,
+};
+
+const extractChordRoot = (chord) => {
+  if (!chord || typeof chord !== 'string') return null;
+  const cleanChord = chord.trim().replace(/^-/, '').replace(/\.+$/, '');
+  const match = cleanChord.match(/^([A-G][#b]?)/);
+  return match ? match[1] : null;
+};
+
+const getPianoPlayabilityBreakdown = (chords = [], steps = 0) => {
+  const accidentalChordCount = chords.reduce((count, chord) => {
+    const transposedChord = transposeChord(chord, steps);
+    const root = extractChordRoot(transposedChord);
+    if (!root) return count;
+
+    // Chord dengan accidental cenderung lebih menantang untuk mayoritas pemain piano.
+    return /[#b]/.test(root) ? count + 1 : count;
+  }, 0);
+
+  return {
+    accidentalChordCount,
+    totalChords: chords.length,
+    chordPenalty: accidentalChordCount * 2,
+  };
+};
+
+/**
+ * Rekomendasi nada dasar yang lebih mudah dimainkan di piano.
+ * Menilai kandidat key dari perubahan transpose -6..+6 terhadap kondisi saat ini.
+ */
+export const recommendPianoFriendlyKey = ({ chords = [], key = '', transpose = 0 } = {}) => {
+  if (!Array.isArray(chords) || chords.length === 0) {
+    return null;
+  }
+
+  const keyMatch = typeof key === 'string' ? key.trim().match(/^([A-G][#b]?)(.*)$/) : null;
+  const keyRoot = keyMatch ? keyMatch[1] : null;
+  const keySuffix = keyMatch ? keyMatch[2] : '';
+
+  const candidates = [];
+  for (let relativeShift = -6; relativeShift <= 6; relativeShift += 1) {
+    const totalShift = transpose + relativeShift;
+    const transposedKeyRoot = keyRoot ? transposeChord(keyRoot, totalShift) : null;
+    const transposedKey = transposedKeyRoot ? `${transposedKeyRoot}${keySuffix}` : null;
+
+    const breakdown = getPianoPlayabilityBreakdown(chords, totalShift);
+    const chordPenalty = breakdown.chordPenalty;
+    const keyPenalty = transposedKeyRoot
+      ? (KEY_SIGNATURE_ACCIDENTALS[transposedKeyRoot] || 0) * 0.75
+      : 0;
+
+    candidates.push({
+      relativeShift,
+      totalShift,
+      key: transposedKey,
+      chordPenalty,
+      keyPenalty,
+      accidentalChordCount: breakdown.accidentalChordCount,
+      totalChords: breakdown.totalChords,
+      score: chordPenalty + keyPenalty,
+    });
+  }
+
+  candidates.sort((a, b) => {
+    if (a.score !== b.score) return a.score - b.score;
+    return Math.abs(a.relativeShift) - Math.abs(b.relativeShift);
+  });
+
+  const best = candidates[0];
+  const current = candidates.find((candidate) => candidate.relativeShift === 0);
+  const improvement = current ? Math.max(0, current.score - best.score) : 0;
+
+  return {
+    recommendedKey: best.key,
+    transposeFromCurrent: best.relativeShift,
+    score: best.score,
+    improvement,
+    accidentalChordCount: best.accidentalChordCount,
+    totalChords: best.totalChords,
+    keyAccidentalCount: best.key ? (KEY_SIGNATURE_ACCIDENTALS[extractChordRoot(best.key)] || 0) : 0,
+  };
+};

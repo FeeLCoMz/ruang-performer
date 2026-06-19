@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord } from "../utils/chordUtils";
+import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -71,5 +71,19 @@ describe("chordUtils", () => {
     expect(parsed[0].tokens).toEqual([
       { token: '-B', isChord: true }
     ]);
+  });
+
+  test("recommendPianoFriendlyKey returns score breakdown", () => {
+    const recommendation = recommendPianoFriendlyKey({
+      chords: ['F#', 'C#', 'G#m'],
+      key: 'E',
+      transpose: 0,
+    });
+
+    expect(recommendation).toBeTruthy();
+    expect(recommendation).toHaveProperty('recommendedKey');
+    expect(recommendation).toHaveProperty('accidentalChordCount');
+    expect(recommendation).toHaveProperty('totalChords', 3);
+    expect(recommendation).toHaveProperty('keyAccidentalCount');
   });
 });
