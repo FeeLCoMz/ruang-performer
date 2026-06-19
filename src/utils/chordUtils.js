@@ -306,8 +306,8 @@ const normalizeChordToken = (token) => {
   return token
     .trim()
     .replace(/^[\(\[\{]+/, '')
-    .replace(/[\)\]\}]+$/, '')
-    .replace(/\.{2,}$/, '');
+    .replace(/\.+$/, '')
+    .replace(/[\)\]\}]+$/, '');
 };
 
 const isChordToken = (token) => {
@@ -868,8 +868,8 @@ export const getAllChords = (parsedSong) => {
   parsedSong.lines.forEach(line => {
     if (line.type === 'line_with_chords' && line.chords) {
       line.chords.forEach(({ chord }) => {
-        // Clean chord: remove prefix dash (passing chord) and suffix dots (duration)
-        const cleanChord = chord.replace(/^-/, '').replace(/\.+$/, '');
+        // Clean chord: remove passing dash, wrapping parentheses/brackets, and suffix dots.
+        const cleanChord = normalizeChordToken(chord.replace(/^-/, ''));
         if (cleanChord) {
           chordSet.add(cleanChord);
         }
@@ -892,7 +892,7 @@ export const getChordsByBar = (parsedSong) => {
       barParts.forEach(bar => {
         // Ambil semua chord dalam bar ini
         const chords = [...bar.matchAll(CHORD_REGEX_GLOBAL)].map(match =>
-          match[0].replace(/^-/, '').replace(/\.+$/, '')
+          normalizeChordToken(match[0].replace(/^-/, ''))
         ).filter(Boolean);
         if (chords.length > 0) {
           bars.push(chords);
@@ -923,7 +923,7 @@ const KEY_SIGNATURE_ACCIDENTALS = {
 
 const extractChordRoot = (chord) => {
   if (!chord || typeof chord !== 'string') return null;
-  const cleanChord = chord.trim().replace(/^-/, '').replace(/\.+$/, '');
+  const cleanChord = normalizeChordToken(chord.replace(/^-/, ''));
   const match = cleanChord.match(/^([A-G][#b]?)/);
   return match ? match[1] : null;
 };

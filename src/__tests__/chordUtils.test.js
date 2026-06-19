@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines } from "../utils/chordUtils";
+import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, getAllChords } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -102,5 +102,15 @@ describe("chordUtils", () => {
     const input = `Verse 1
 | C G Am F |`;
     expect(alignSelectedBarlines(input)).toBe(input);
+  });
+
+  test("getAllChords strips wrapping parentheses from used chords", () => {
+    const parsedSong = {
+      lines: [
+        { type: 'line_with_chords', chords: [{ chord: '(Am)' }, { chord: 'F' }, { chord: '(C).' }] },
+      ],
+    };
+
+    expect(getAllChords(parsedSong)).toEqual(['Am', 'C', 'F']);
   });
 });
