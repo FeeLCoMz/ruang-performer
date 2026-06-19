@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey } from "../utils/chordUtils";
+import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -85,5 +85,22 @@ describe("chordUtils", () => {
     expect(recommendation).toHaveProperty('accidentalChordCount');
     expect(recommendation).toHaveProperty('totalChords', 3);
     expect(recommendation).toHaveProperty('keyAccidentalCount');
+  });
+
+  test("alignSelectedBarlines aligns barline columns across selected lines", () => {
+    const input = `| C  G | Am F |
+| Dm    G | C  |`;
+
+    const result = alignSelectedBarlines(input);
+    const lines = result.split('\n');
+
+    const firstBars = lines.map(line => line.indexOf('|', 1));
+    expect(firstBars[0]).toBe(firstBars[1]);
+  });
+
+  test("alignSelectedBarlines keeps text unchanged when less than two lines have barlines", () => {
+    const input = `Verse 1
+| C G Am F |`;
+    expect(alignSelectedBarlines(input)).toBe(input);
   });
 });

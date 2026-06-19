@@ -152,6 +152,77 @@ export function parseNumberLine(line) {
   const validCount = tokens.filter(t => numRegex.test(t) || dotRegex.test(t)).length;
   return validCount > 0 && validCount >= tokens.length / 2;
 }
+
+/**
+ * Sejajarkan posisi barline (|, ||, |:, :|) pada teks multiline.
+ * Dipakai di mode edit lirik untuk merapikan teks chord yang dipilih.
+ *
+ * @param {string} text - Potongan teks yang dipilih
+ * @returns {string}
+ */
+export function alignSelectedBarlines(text) {
+  if (typeof text !== 'string' || !text) return text;
+
+  const barlineRegex = /(\|:|:\||\|\||\|)/g;
+  const hasBarline = (line) => /(\|:|:\||\|\||\|)/.test(line);
+  const lines = text.split(/\r?\n/);
+  const linesWithBars = lines.filter(line => hasBarline(line));
+
+  if (linesWithBars.length < 2) return text;
+
+  const barPositionsByLine = lines.map(line => {
+    const positions = [];
+    barlineRegex.lastIndex = 0;
+    let match;
+    while ((match = barlineRegex.exec(line)) !== null) {
+      positions.push(match.index);
+    }
+    return positions;
+  });
+
+  const maxBarCount = Math.max(...barPositionsByLine.map(positions => positions.length), 0);
+  if (maxBarCount === 0) return text;
+
+  const targetColumns = Array.from({ length: maxBarCount }, (_, idx) => {
+    let maxCol = 0;
+    for (const positions of barPositionsByLine) {
+      if (typeof positions[idx] === 'number') {
+        maxCol = Math.max(maxCol, positions[idx]);
+      }
+    }
+    return maxCol;
+  });
+
+  const alignedLines = lines.map((line) => {
+    if (!hasBarline(line)) return line;
+
+    let rebuilt = '';
+    let cursor = 0;
+    let barIdx = 0;
+    barlineRegex.lastIndex = 0;
+    let match;
+
+    while ((match = barlineRegex.exec(line)) !== null) {
+      const segment = line.slice(cursor, match.index);
+      const segmentTrimmedRight = segment.replace(/[ \t]+$/, '');
+
+      rebuilt += segmentTrimmedRight;
+      const target = targetColumns[barIdx] ?? rebuilt.length;
+      if (rebuilt.length < target) {
+        rebuilt += ' '.repeat(target - rebuilt.length);
+      }
+
+      rebuilt += match[0];
+      cursor = match.index + match[0].length;
+      barIdx += 1;
+    }
+
+    rebuilt += line.slice(cursor);
+    return rebuilt;
+  });
+
+  return alignedLines.join('\n');
+}
 /**
  * chordUtils.js
  *

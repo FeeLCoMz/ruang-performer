@@ -15,6 +15,7 @@ import { handleExportText, handleExportPDF, handleShare } from '../utils/songHan
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import { fetchSetLists } from '../apiClient.js';
+import { alignSelectedBarlines } from '../utils/chordUtils.js';
 
 /**
  * SongChordsPage
@@ -224,6 +225,10 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         e.preventDefault();
         handleSaveLyrics();
       }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        handleAlignSelectedBarlines();
+      }
       if (e.key === "Escape") {
         handleCancelEditLyrics();
       }
@@ -365,6 +370,30 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     }
   };
 
+  const handleAlignSelectedBarlines = () => {
+    const textarea = lyricsDisplayRef.current;
+    if (!textarea || typeof textarea.selectionStart !== 'number' || typeof textarea.selectionEnd !== 'number') {
+      return;
+    }
+
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+    if (selectionStart === selectionEnd) return;
+
+    const selectedText = editedLyrics.slice(selectionStart, selectionEnd);
+    const alignedText = alignSelectedBarlines(selectedText);
+    if (alignedText === selectedText) return;
+
+    const nextLyrics = `${editedLyrics.slice(0, selectionStart)}${alignedText}${editedLyrics.slice(selectionEnd)}`;
+    setEditedLyrics(nextLyrics);
+
+    // Restore focus and keep transformed text selected for quick iteration.
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(selectionStart, selectionStart + alignedText.length);
+    });
+  };
+
   return (
     <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}> {/* Tambah class jika performanceMode */}
       <SongChordsHeader
@@ -432,6 +461,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         handleEditLyrics={handleEditLyrics}
         savingLyrics={savingLyrics}
         handleSaveLyrics={handleSaveLyrics}
+        handleAlignSelectedBarlines={handleAlignSelectedBarlines}
         handleCancelEditLyrics={handleCancelEditLyrics}
         showExportMenu={showExportMenu}
         setShowExportMenu={setShowExportMenu}

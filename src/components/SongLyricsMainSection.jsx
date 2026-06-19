@@ -19,6 +19,7 @@ export default function SongLyricsMainSection({
   handleEditLyrics,
   savingLyrics,
   handleSaveLyrics,
+  handleAlignSelectedBarlines,
   handleCancelEditLyrics,
   showExportMenu,
   setShowExportMenu,
@@ -79,6 +80,7 @@ export default function SongLyricsMainSection({
             handleEditLyrics={handleEditLyrics}
             savingLyrics={savingLyrics}
             handleSaveLyrics={handleSaveLyrics}
+            handleAlignSelectedBarlines={handleAlignSelectedBarlines}
             handleCancelEditLyrics={handleCancelEditLyrics}
             showExportMenu={showExportMenu}
             setShowExportMenu={setShowExportMenu}

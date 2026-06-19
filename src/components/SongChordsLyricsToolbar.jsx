@@ -48,6 +48,7 @@ export default function SongChordsLyricsToolbar({
   handleEditLyrics,
   savingLyrics,
   handleSaveLyrics,
+  handleAlignSelectedBarlines,
   handleCancelEditLyrics,
   showExportMenu,
   setShowExportMenu,
@@ -155,6 +156,15 @@ export default function SongChordsLyricsToolbar({
         </>
       ) : (
         <div className="song-lyrics-edit-actions">
+          <button
+            type="button"
+            onClick={handleAlignSelectedBarlines}
+            disabled={savingLyrics}
+            className="btn btn-secondary"
+            title="Sejajarkan garis bar (|) pada teks yang dipilih"
+          >
+            ∥ Sejajarkan Bar
+          </button>
           <button
             type="button"
             onClick={handleSaveLyrics}
