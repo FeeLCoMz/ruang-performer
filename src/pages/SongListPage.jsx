@@ -415,6 +415,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
                   // Permission logic: allow edit/delete if user is creator OR has global permission
                   let canEdit = false;
                   let canDelete = false;
+                  let canDuplicate = false;
                   if (song.userId) {
                     canEdit = canPerformAction(
                       user,
@@ -422,6 +423,12 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
                       { role: user?.role || 'member', bandId: song.bandId || null },
                       PERMISSIONS.SONG_EDIT
                     ) || song.userId === currentUserId;
+                    canDuplicate = canPerformAction(
+                      user,
+                      song.bandId || null,
+                      { role: user?.role || 'member', bandId: song.bandId || null },
+                      PERMISSIONS.SONG_CREATE
+                    ) || canEdit;
                     // Allow delete if user has permission OR is the contributor and song is not in any setlist
                     const isContributor = song.userId === currentUserId;
                     const notInAnySetlist = getSetlistCount(song.id) === 0;
@@ -434,9 +441,18 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
                       ) && isContributor
                     ) || (isContributor && notInAnySetlist);
                   }
-                  if (!canEdit && !canDelete) return null;
+                  if (!canEdit && !canDelete && !canDuplicate) return null;
                   return (
                     <>
+                      {canDuplicate && (
+                        <button
+                          onClick={() => onSongClick('newVersion', song.id)}
+                          className="btn btn-secondary"
+                          title="Buat versi baru"
+                        >
+                          Versi Baru
+                        </button>
+                      )}
                       {canEdit && (
                         <button
                           onClick={() => onSongClick('edit', song.id)}

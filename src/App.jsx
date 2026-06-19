@@ -268,6 +268,8 @@ function AppContent() {
                         if (action === "add") navigate("/songs/add", { state: { from } });
                         else if (action === "edit" && id)
                           navigate(`/songs/edit/${id}`, { state: { from } });
+                        else if (action === "newVersion" && id)
+                          navigate(`/songs/new-version/${id}`, { state: { from } });
                         else if (action === "delete" && id) {
                           if (confirm("Yakin ingin menghapus lagu ini?")) {
                             apiClient
@@ -287,6 +289,27 @@ function AppContent() {
                 path="/songs/add"
                 element={
                   <AddSongRoute
+                    onSongUpdated={() => {
+                      navigate("/songs");
+                      setLoadingSongs(true);
+                      apiClient
+                        .fetchSongs()
+                        .then((data) => {
+                          setSongs(Array.isArray(data) ? data : []);
+                          setLoadingSongs(false);
+                        })
+                        .catch((err) => {
+                          setErrorSongs(err.message || "Gagal mengambil data");
+                          setLoadingSongs(false);
+                        });
+                    }}
+                  />
+                }
+              />
+              <Route
+                path="/songs/new-version/:id"
+                element={
+                  <NewVersionSongRoute
                     onSongUpdated={() => {
                       navigate("/songs");
                       setLoadingSongs(true);
@@ -418,6 +441,10 @@ function AppContent() {
 // AddSongRoute component
 function AddSongRoute({ onSongUpdated }) {
   return <SongAddEditPage onSongUpdated={onSongUpdated} />;
+}
+
+function NewVersionSongRoute({ onSongUpdated }) {
+  return <SongAddEditPage onSongUpdated={onSongUpdated} newVersionMode />;
 }
 
 // EditSongRoute component

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 // import { usePermission } from "../hooks/usePermission.js";
 // import { PERMISSIONS } from "../utils/permissionUtils.js";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import YouTubeViewer from "../components/YouTubeViewer";
 import TimeMarkers from "../components/TimeMarkers";
 import TapTempo from "../components/TapTempo";
@@ -11,10 +11,23 @@ import ChordLinks from "../components/ChordLinks";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
 
-export default function SongAddEditPage({ onSongUpdated }) {
+function buildNewVersionTitle(sourceTitle) {
+  const baseTitle = (sourceTitle || "").trim() || "Tanpa Judul";
+  const versionMatch = baseTitle.match(/^(.*)\s+\(Versi\s+(\d+)\)$/i);
+  if (versionMatch) {
+    const versionNumber = parseInt(versionMatch[2], 10);
+    if (!Number.isNaN(versionNumber)) {
+      return `${versionMatch[1]} (Versi ${versionNumber + 1})`;
+    }
+  }
+  return `${baseTitle} (Versi 2)`;
+}
+
+export default function SongAddEditPage({ onSongUpdated, newVersionMode = false }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
-  const isEditMode = !!id;
+  const isEditMode = !!id && !newVersionMode;
 
   // Form states
   const [sheetMusicXml, setSheetMusicXml] = useState("");
@@ -32,7 +45,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
 
   // UI states
   const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(isEditMode);
+  const [loadingData, setLoadingData] = useState(!!id);
   const [error, setError] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
@@ -49,10 +62,11 @@ export default function SongAddEditPage({ onSongUpdated }) {
   const [ytCurrentTime, setYtCurrentTime] = useState(0);
   const [ytDuration, setYtDuration] = useState(0);
 
-  // Load song data for edit mode
+  // Load source song for edit or duplicate mode
   useEffect(() => {
-    if (isEditMode && id) {
+    if (id) {
       setLoadingData(true);
+      setError("");
       fetch(`/api/songs/${id}`, {
         headers: {
           "Content-Type": "application/json",
@@ -64,7 +78,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
           return res.json();
         })
         .then((data) => {
-          setTitle(data.title || "");
+          setTitle(newVersionMode ? buildNewVersionTitle(data.title) : (data.title || ""));
           setArtist(data.artist || "");
           setSongKey(data.key || "");
           setTempo(data.tempo || "");
@@ -86,8 +100,10 @@ export default function SongAddEditPage({ onSongUpdated }) {
           setError(err.message);
           setLoadingData(false);
         });
+    } else {
+      setLoadingData(false);
     }
-  }, [id, isEditMode]);
+  }, [newVersionMode, id]);
 
   const handleAIAutofill = async () => {
     if (!title.trim()) {
@@ -204,7 +220,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
         onSongUpdated();
       }
 
-      // Navigate based on mode: list for new song, detail for edit
+      // Navigate based on mode: list for new-version/new song, detail for edit
       if (isEditMode) {
         // Navigate with fromEdit flag to force SongChordsPage to fetch fresh data
         navigate(`/songs/view/${savedSong.id || id}`, {
@@ -212,7 +228,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
           state: { fromEdit: true },
         });
       } else {
-        navigate("/songs");
+        navigate(location.state?.from || "/songs");
       }
     } catch (err) {
       setError(err.message);
@@ -226,18 +242,34 @@ export default function SongAddEditPage({ onSongUpdated }) {
     if (isEditMode) {
       navigate(`/songs/view/${id}`);
     } else {
-      navigate("/songs");
+      navigate(location.state?.from || "/songs");
     }
   };
+
+  if (loadingData) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <h1>{newVersionMode ? "Buat Versi Baru Lagu" : "Memuat Lagu"}</h1>
+        </div>
+        <div className="card">Memuat data lagu...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>{isEditMode ? "Edit Lagu" : "Tambah Lagu Baru"}</h1>
+        <h1>{isEditMode ? "Edit Lagu" : newVersionMode ? "Buat Versi Baru Lagu" : "Tambah Lagu Baru"}</h1>
         {error && (
           <div className="error-message" style={{marginTop: 12, marginBottom: 0, fontWeight: 'bold', color: '#c00', fontSize: 16}}>{error}</div>
         )}
       </div>
+      {newVersionMode && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          Form ini membuat versi baru dari lagu yang sudah ada. Ubah judul, aransemen, atau detail lain seperlunya sebelum menyimpan.
+        </div>
+      )}
       <form onSubmit={handleSubmit}>
         <div className="card song-section-card">
           <div className="form-grid-2col">
@@ -537,7 +569,7 @@ export default function SongAddEditPage({ onSongUpdated }) {
             Batal
           </button>
           <button type="submit" disabled={loading} className="btn">
-            {loading ? "⏳ Menyimpan..." : isEditMode ? "💾 Simpan Perubahan" : "➕ Tambah Lagu"}
+            {loading ? "⏳ Menyimpan..." : isEditMode ? "💾 Simpan Perubahan" : newVersionMode ? "🧬 Simpan Versi Baru" : "➕ Tambah Lagu"}
           </button>
         </div>
       </form>
