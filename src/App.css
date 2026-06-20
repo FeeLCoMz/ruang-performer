@@ -2308,6 +2308,31 @@ body.dark-mode .lyrics-editor-textarea {
   background: var(--primary-bg);
 }
 
+.gig-item-completed {
+  border-left: 4px solid #22c55e;
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.12) 0%, var(--card-bg) 28%);
+}
+
+.gig-item-completed .song-title {
+  color: var(--text-secondary);
+}
+
+.gig-status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.gig-status-badge.completed {
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+
 .song-info {
   flex: 1;
   min-width: 0;

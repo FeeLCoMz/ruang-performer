@@ -35,8 +35,9 @@ export default function GigPage() {
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [posterError, setPosterError] = useState('');
   const [viewMode, setViewMode] = useState('list'); // 'list' atau 'calendar'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = terbaru, 'asc' = terlama
   const today = new Date();
-  const [shareMonth, setShareMonth] = useState(today.getMonth());
+  const [shareMonth, setShareMonth] = useState('');
   const [shareYear, setShareYear] = useState(today.getFullYear());
   // Pisahkan tanggal dan waktu untuk input
   const defaultDate = today.toISOString().split('T')[0];
@@ -58,19 +59,25 @@ export default function GigPage() {
     return gigs.filter(gig => {
       if (!gig.date) return false;
       const gigDate = new Date(gig.date);
+      if (month === '' || month === null || Number.isNaN(month)) {
+        return gigDate.getFullYear() === year;
+      }
       return gigDate.getMonth() === month && gigDate.getFullYear() === year;
     });
   };
 
   const selectedBand = bands.find(band => band.id === selectedBandId);
   const scheduleBandName = selectedBand?.name || 'Jadwal Konser';
-  const monthName = new Date(shareYear, shareMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  const monthName = (shareMonth === '' || shareMonth === null || Number.isNaN(shareMonth))
+    ? `Semua bulan ${shareYear}`
+    : new Date(shareYear, shareMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   const scheduleTitle = `${scheduleBandName} - ${monthName}`;
   const filteredGigs = getGigsByMonthYear(shareMonth, shareYear);
+  const calendarSelectedMonth = (shareMonth === '' || shareMonth === null || Number.isNaN(shareMonth)) ? 0 : shareMonth;
   const sortedGigs = [...filteredGigs].sort((a, b) => {
     const aDate = a.date ? new Date(a.date).getTime() : 0;
     const bDate = b.date ? new Date(b.date).getTime() : 0;
-    return aDate - bDate;
+    return sortOrder === 'desc' ? bDate - aDate : aDate - bDate;
   });
   const scheduleText = createGigScheduleText(
     scheduleTitle,
@@ -524,6 +531,9 @@ export default function GigPage() {
                           {(g.venue || g.city) && (
                             <div className="schedule-poster-details">📍 {g.venue}{g.venue && g.city ? ', ' : ''}{g.city}</div>
                           )}
+                          {g.setlistName && (
+                            <div className="schedule-poster-details">🎵 Setlist: {g.setlistName}</div>
+                          )}
                         </div>
                       </div>
                     ))
@@ -586,10 +596,14 @@ export default function GigPage() {
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <select
             value={shareMonth}
-            onChange={(e) => setShareMonth(parseInt(e.target.value))}
+            onChange={(e) => {
+              const value = e.target.value;
+              setShareMonth(value === '' ? '' : parseInt(value, 10));
+            }}
             className="modal-input"
             style={{ maxWidth: '190px' }}
           >
+            <option value="">Semua bulan</option>
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i} value={i}>
                 {new Date(2024, i).toLocaleDateString('id-ID', { month: 'long' })}
@@ -613,6 +627,13 @@ export default function GigPage() {
           </select>
         </div>
         <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
+            title="Ubah urutan tanggal"
+          >
+            {sortOrder === 'desc' ? '⬇️ Terbaru' : '⬆️ Terlama'}
+          </button>
           <button
             className={`btn ${viewMode === 'list' ? 'btn-primary' : ''}`}
             onClick={() => setViewMode('list')}
@@ -651,64 +672,69 @@ export default function GigPage() {
           Belum ada jadwal konser untuk {monthName}
         </div>
       ) : !loading && viewMode === 'calendar' ? (
-        <CalendarView gigs={sortedGigs} selectedMonth={shareMonth} selectedYear={shareYear} />
+        <CalendarView gigs={sortedGigs} selectedMonth={calendarSelectedMonth} selectedYear={shareYear} />
       ) : (
         <div className="song-list-container">
-          {sortedGigs.map((gig, idx) => (
-            <div
-              key={gig.id}
-              className="song-item hover-lift"
-              onClick={() => navigate(`/gigs/${gig.id}`)}
-            >
-              <div className="song-info">
-                <div className="song-number">{idx + 1}.</div>
-                <h3 className="song-title">{gig.bandName || 'Band Tamu'}</h3>
-                <div className="song-meta">
-                  <span>📅 {new Date(gig.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                  {gig.date && (
-                    <span>⏰ {new Date(gig.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
-                  )}
-                  {(gig.venue || gig.city) && <span>📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}</span>}
+          {sortedGigs.map((gig, idx) => {
+            const isCompleted = gig.date ? new Date(gig.date).getTime() < Date.now() : false;
+            return (
+              <div
+                key={gig.id}
+                className={`song-item hover-lift ${isCompleted ? 'gig-item-completed' : ''}`}
+                onClick={() => navigate(`/gigs/${gig.id}`)}
+              >
+                <div className="song-info">
+                  <div className="song-number">{idx + 1}.</div>
+                  <h3 className="song-title">{gig.bandName || 'Band Tamu'}</h3>
+                  <div className="song-meta">
+                    <span>📅 {new Date(gig.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    {gig.date && (
+                      <span>⏰ {new Date(gig.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
+                    )}
+                    {(gig.venue || gig.city) && <span>📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}</span>}
+                    {gig.setlistName && <span>🎵 Setlist: {gig.setlistName}</span>}
+                    {isCompleted && <span className="gig-status-badge completed">Selesai</span>}
+                  </div>
+                </div>
+
+                <div
+                  className="song-actions"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {(() => {
+                    const isCreator = gig.userId && user && gig.userId === (user.userId || user.id);
+                    const canEdit = isCreator || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
+                    const canDelete = isCreator || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
+                    if (!canEdit && !canDelete) return null;
+                    return (
+                      <>
+                        {canEdit && (
+                          <>
+                            <button
+                              onClick={() => handleEdit(gig)}
+                              className="btn"
+                              title="Edit"
+                            >
+                              <EditIcon size={16} />
+                            </button>
+                          </>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => setDeleteConfirm(gig)}
+                            className="btn btn-red"
+                            title="Hapus"
+                          >
+                            <DeleteIcon size={16} />
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
-
-              <div
-                className="song-actions"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {(() => {
-                  const isCreator = gig.userId && user && gig.userId === (user.userId || user.id);
-                  const canEdit = isCreator || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
-                  const canDelete = isCreator || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
-                  if (!canEdit && !canDelete) return null;
-                  return (
-                    <>
-                      {canEdit && (
-                        <>
-                          <button
-                            onClick={() => handleEdit(gig)}
-                            className="btn"
-                            title="Edit"
-                          >
-                            <EditIcon size={16} />
-                          </button>
-                        </>
-                      )}
-                      {canDelete && (
-                        <button
-                          onClick={() => setDeleteConfirm(gig)}
-                          className="btn btn-red"
-                          title="Hapus"
-                        >
-                          <DeleteIcon size={16} />
-                        </button>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
