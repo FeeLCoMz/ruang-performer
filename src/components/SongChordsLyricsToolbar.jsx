@@ -61,69 +61,71 @@ export default function SongChordsLyricsToolbar({
 }) {
   return (
     <div className="song-lyrics-toolbar">
-      {/* Fullscreen Button */}
-      <button
-        className="btn btn-secondary"
-        title="Tampilkan lirik layar penuh"
-        onClick={() => {
-          const el = document.querySelector(".song-lyrics-display");
-          if (el && el.requestFullscreen) {
-            el.requestFullscreen();
-          } else if (el && el.webkitRequestFullscreen) {
-            el.webkitRequestFullscreen();
-          } else if (el && el.msRequestFullscreen) {
-            el.msRequestFullscreen();
-          }
-        }}
-      >
-        🖥️ Fullscreen
-      </button>
-
       {!isEditingLyrics && (
-        <AutoScrollBar
-          tempo={parseInt(tempo) || 120}
-          active={autoScrollActive}
-          speed={scrollSpeed}
-          onToggle={() => setAutoScrollActive(!autoScrollActive)}
-          onSpeedChange={setScrollSpeed}
-          lyricsDisplayRef={lyricsDisplayRef}
-          currentBeat={currentBeat}
-          setCurrentBeat={setCurrentBeat}
-        />
-      )}
+        <>
+          {/* Fullscreen Button */}
+          <button
+            className="btn btn-secondary"
+            title="Tampilkan lirik layar penuh"
+            onClick={() => {
+              const el = document.querySelector(".song-lyrics-display");
+              if (el && el.requestFullscreen) {
+                el.requestFullscreen();
+              } else if (el && el.webkitRequestFullscreen) {
+                el.webkitRequestFullscreen();
+              } else if (el && el.msRequestFullscreen) {
+                el.msRequestFullscreen();
+              }
+            }}
+          >
+            🖥️ Fullscreen
+          </button>
 
-      {!performanceMode && (
-        <button
-          className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'}`}
-          title="Toggle angka chord"
-          onClick={() => setShowChordNumbers((prev) => !prev)}
-          style={{ fontSize: '0.9em' }}
-        >
-          {showChordNumbers ? '🔢 Chord (angka)' : '🎼 Chord (tulisan)'}
-        </button>
-      )}
+          <AutoScrollBar
+            tempo={parseInt(tempo) || 120}
+            active={autoScrollActive}
+            speed={scrollSpeed}
+            onToggle={() => setAutoScrollActive(!autoScrollActive)}
+            onSpeedChange={setScrollSpeed}
+            lyricsDisplayRef={lyricsDisplayRef}
+            currentBeat={currentBeat}
+            setCurrentBeat={setCurrentBeat}
+          />
 
-      {/* 2. Zoom Controls */}
-      <div className="song-lyrics-zoom-controls">
-        <button
-          onClick={() => setZoom(Math.max(0.7, zoom - 0.1))}
-          className="btn btn-secondary"
-          title="Perkecil"
-        >
-          −
-        </button>
-        <span className="song-lyrics-zoom-display">{(zoom * 100).toFixed(0)}%</span>
-        <button
-          onClick={() => setZoom(Math.min(1.5, zoom + 0.1))}
-          className="btn btn-secondary"
-          title="Perbesar"
-        >
-          +
-        </button>
-        <button onClick={() => setZoom(1)} className="btn btn-secondary" title="Reset">
-          ⟲
-        </button>
-      </div>
+          {!performanceMode && (
+            <button
+              className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'}`}
+              title="Toggle angka chord"
+              onClick={() => setShowChordNumbers((prev) => !prev)}
+              style={{ fontSize: '0.9em' }}
+            >
+              {showChordNumbers ? '🔢 Chord (angka)' : '🎼 Chord (tulisan)'}
+            </button>
+          )}
+
+          {/* 2. Zoom Controls */}
+          <div className="song-lyrics-zoom-controls">
+            <button
+              onClick={() => setZoom(Math.max(0.7, zoom - 0.1))}
+              className="btn btn-secondary"
+              title="Perkecil"
+            >
+              −
+            </button>
+            <span className="song-lyrics-zoom-display">{(zoom * 100).toFixed(0)}%</span>
+            <button
+              onClick={() => setZoom(Math.min(1.5, zoom + 0.1))}
+              className="btn btn-secondary"
+              title="Perbesar"
+            >
+              +
+            </button>
+            <button onClick={() => setZoom(1)} className="btn btn-secondary" title="Reset">
+              ⟲
+            </button>
+          </div>
+        </>
+      )}
 
       {/* 3. Edit Lirik */}
       {!isEditingLyrics ? (
