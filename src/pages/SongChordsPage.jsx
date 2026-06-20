@@ -406,9 +406,10 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     const hasSelection = typeof textarea.selectionStart === 'number'
       && typeof textarea.selectionEnd === 'number'
       && textarea.selectionStart !== textarea.selectionEnd;
+    if (!hasSelection) return;
 
-    const selectionStart = hasSelection ? textarea.selectionStart : 0;
-    const selectionEnd = hasSelection ? textarea.selectionEnd : editedLyrics.length;
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
     const selectedText = editedLyrics.slice(selectionStart, selectionEnd);
     if (!selectedText) return;
 

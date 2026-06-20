@@ -3,8 +3,19 @@ import { getTempoTerm } from "../utils/musicNotationUtils.js";
 
 export default function TempoControl({ tempo, scrollSpeed, setScrollSpeed, isMetronomeActive, setIsMetronomeActive }) {
   const tempoTerm = getTempoTerm(scrollSpeed);
+  const normalizedBpm = Math.max(40, Math.min(240, Number(scrollSpeed) || Number(tempo) || 120));
+  const blinkDurationMs = Math.round(60000 / normalizedBpm);
+
   return (
     <>
+      <div className="song-info-tempo-led-row" title={`Indikator tempo ${normalizedBpm} BPM`}>
+        <span
+          className="song-info-tempo-led"
+          style={{ animationDuration: `${blinkDurationMs}ms` }}
+          aria-hidden="true"
+        />
+        <span className="song-info-tempo-led-text">LED Tempo</span>
+      </div>
       <div className="song-info-tempo-controls">
         <button
           onClick={() => setScrollSpeed(Math.max(40, scrollSpeed - 5))}

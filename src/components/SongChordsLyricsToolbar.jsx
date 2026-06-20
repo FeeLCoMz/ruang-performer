@@ -176,7 +176,7 @@ export default function SongChordsLyricsToolbar({
             onClick={handleWrap4BarsPerLine}
             disabled={savingLyrics}
             className="btn btn-secondary"
-            title="Pecah otomatis menjadi 4 bar per baris (seleksi atau seluruh teks)"
+            title="Pecah otomatis menjadi 4 bar per baris pada teks yang dipilih"
           >
             ↩ 4 Bar/Baris
           </button>
@@ -199,7 +199,7 @@ export default function SongChordsLyricsToolbar({
               onClick={() => handleWrapBarsPerLine(barsPerLine)}
               disabled={savingLyrics}
               className="btn btn-secondary"
-              title="Terapkan jumlah bar per baris sesuai pilihan"
+              title="Terapkan jumlah bar per baris pada teks yang dipilih"
             >
               Terapkan
             </button>

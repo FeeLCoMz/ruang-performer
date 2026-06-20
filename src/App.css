@@ -5069,6 +5069,46 @@ body.dark-mode .cd-token {
   margin-top: var(--spacing-xs);
 }
 
+.song-info-tempo-led-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  margin-bottom: var(--spacing-xs);
+}
+
+.song-info-tempo-led {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+  animation-name: tempo-led-pulse;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+.song-info-tempo-led-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+@keyframes tempo-led-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.15);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
 .song-info-tempo-display {
   flex: 1;
   display: flex;
@@ -5831,6 +5871,7 @@ body.dark-mode .song-lyrics-error {
 
 /* Chord Display Container */
 .song-lyrics-display {
+  position: relative;
   background: var(--primary-bg);
   padding: var(--spacing-lg);
   border-radius: var(--radius-md);
@@ -5839,6 +5880,63 @@ body.dark-mode .song-lyrics-error {
   max-height: calc(100vh - 260px);
   overflow-y: auto;
   overflow-x: auto;
+}
+
+.song-lyrics-zoom-hud {
+  position: sticky;
+  top: 0;
+  margin-left: auto;
+  width: fit-content;
+  z-index: 8;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+}
+
+.song-lyrics-fullscreen-tempo-led-row {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--card-bg);
+}
+
+.song-lyrics-fullscreen-tempo-led-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.35px;
+}
+
+.song-lyrics-display:fullscreen,
+.song-lyrics-display:-webkit-full-screen {
+  background: var(--primary-bg);
+  padding: var(--spacing-xl);
+}
+
+.song-lyrics-display:fullscreen .song-lyrics-fullscreen-tempo-led-row,
+.song-lyrics-display:-webkit-full-screen .song-lyrics-fullscreen-tempo-led-row {
+  top: 8px;
+  backdrop-filter: blur(2px);
+}
+
+.song-lyrics-display:fullscreen .song-lyrics-zoom-hud,
+.song-lyrics-display:-webkit-full-screen .song-lyrics-zoom-hud {
+  top: 8px;
+  backdrop-filter: blur(2px);
 }
 
 /* Chord Analyzer Panel */

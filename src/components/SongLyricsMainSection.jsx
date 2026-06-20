@@ -123,6 +123,7 @@ export default function SongLyricsMainSection({
               song={song}
               transpose={transpose}
               zoom={zoom}
+              setZoom={setZoom}
               showChordNumbers={showChordNumbers}
               keySignature={keySignature}
               autoScrollActive={autoScrollActive}
