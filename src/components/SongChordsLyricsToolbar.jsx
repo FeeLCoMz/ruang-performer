@@ -49,6 +49,10 @@ export default function SongChordsLyricsToolbar({
   savingLyrics,
   handleSaveLyrics,
   handleAlignSelectedBarlines,
+  handleWrap4BarsPerLine,
+  barsPerLine,
+  setBarsPerLine,
+  handleWrapBarsPerLine,
   handleCancelEditLyrics,
   showExportMenu,
   setShowExportMenu,
@@ -165,6 +169,39 @@ export default function SongChordsLyricsToolbar({
           >
             ∥ Sejajarkan Bar
           </button>
+          <button
+            type="button"
+            onClick={handleWrap4BarsPerLine}
+            disabled={savingLyrics}
+            className="btn btn-secondary"
+            title="Pecah otomatis menjadi 4 bar per baris (seleksi atau seluruh teks)"
+          >
+            ↩ 4 Bar/Baris
+          </button>
+          <div className="song-lyrics-bar-wrap-controls">
+            <label htmlFor="bars-per-line" className="song-lyrics-bar-wrap-label">Bar/Baris</label>
+            <select
+              id="bars-per-line"
+              className="song-lyrics-bar-wrap-select"
+              value={barsPerLine}
+              onChange={(e) => setBarsPerLine(Number(e.target.value))}
+              disabled={savingLyrics}
+              aria-label="Pilih jumlah bar per baris"
+            >
+              <option value={2}>2</option>
+              <option value={4}>4</option>
+              <option value={6}>6</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => handleWrapBarsPerLine(barsPerLine)}
+              disabled={savingLyrics}
+              className="btn btn-secondary"
+              title="Terapkan jumlah bar per baris sesuai pilihan"
+            >
+              Terapkan
+            </button>
+          </div>
           <button
             type="button"
             onClick={handleSaveLyrics}

@@ -15,7 +15,7 @@ import { handleExportText, handleExportPDF, handleShare } from '../utils/songHan
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import { fetchSetLists } from '../apiClient.js';
-import { alignSelectedBarlines } from '../utils/chordUtils.js';
+import { alignSelectedBarlines, wrapBarsPerLine } from '../utils/chordUtils.js';
 
 /**
  * SongChordsPage
@@ -98,6 +98,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [editedLyrics, setEditedLyrics] = useState("");
   const [savingLyrics, setSavingLyrics] = useState(false);
   const [editError, setEditError] = useState(null);
+  const [barsPerLine, setBarsPerLine] = useState(4);
 
   // Chord Analyzer state
   const [showChordAnalyzer, setShowChordAnalyzer] = useState(false);
@@ -228,6 +229,10 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "b") {
         e.preventDefault();
         handleAlignSelectedBarlines();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "4") {
+        e.preventDefault();
+        handleWrap4BarsPerLine();
       }
       if (e.key === "Escape") {
         handleCancelEditLyrics();
@@ -394,6 +399,34 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     });
   };
 
+  const handleWrapBarsPerLine = (targetBarsPerLine = barsPerLine) => {
+    const textarea = lyricsDisplayRef.current;
+    if (!textarea) return;
+
+    const hasSelection = typeof textarea.selectionStart === 'number'
+      && typeof textarea.selectionEnd === 'number'
+      && textarea.selectionStart !== textarea.selectionEnd;
+
+    const selectionStart = hasSelection ? textarea.selectionStart : 0;
+    const selectionEnd = hasSelection ? textarea.selectionEnd : editedLyrics.length;
+    const selectedText = editedLyrics.slice(selectionStart, selectionEnd);
+    if (!selectedText) return;
+
+    const wrappedText = wrapBarsPerLine(selectedText, targetBarsPerLine);
+    const alignedText = alignSelectedBarlines(wrappedText);
+    if (alignedText === selectedText) return;
+
+    const nextLyrics = `${editedLyrics.slice(0, selectionStart)}${alignedText}${editedLyrics.slice(selectionEnd)}`;
+    setEditedLyrics(nextLyrics);
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(selectionStart, selectionStart + alignedText.length);
+    });
+  };
+
+  const handleWrap4BarsPerLine = () => handleWrapBarsPerLine(4);
+
   return (
     <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}> {/* Tambah class jika performanceMode */}
       <SongChordsHeader
@@ -462,6 +495,10 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         savingLyrics={savingLyrics}
         handleSaveLyrics={handleSaveLyrics}
         handleAlignSelectedBarlines={handleAlignSelectedBarlines}
+        handleWrap4BarsPerLine={handleWrap4BarsPerLine}
+        barsPerLine={barsPerLine}
+        setBarsPerLine={setBarsPerLine}
+        handleWrapBarsPerLine={handleWrapBarsPerLine}
         handleCancelEditLyrics={handleCancelEditLyrics}
         showExportMenu={showExportMenu}
         setShowExportMenu={setShowExportMenu}

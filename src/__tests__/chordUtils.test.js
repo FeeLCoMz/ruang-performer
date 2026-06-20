@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, getAllChords } from "../utils/chordUtils";
+import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -102,6 +102,33 @@ describe("chordUtils", () => {
     const input = `Verse 1
 | C G Am F |`;
     expect(alignSelectedBarlines(input)).toBe(input);
+  });
+
+  test("alignSelectedBarlines normalizes spacing between chord and bar", () => {
+    const input = `|C G|Am F|
+|Dm   G|C|`;
+    const result = alignSelectedBarlines(input);
+    const lines = result.split('\n');
+
+    expect(lines[0]).not.toMatch(/[A-Za-z0-9)]\|/);
+    expect(lines[0]).not.toMatch(/\|[A-Za-z0-9(]/);
+    expect(lines[1]).toContain('| Dm');
+    expect(lines[1]).toContain('| C |');
+  });
+
+  test("wrapBarsPerLine wraps chord bars into groups of four", () => {
+    const input = '| C | G | Am | F | Dm | G | C | C |';
+    const wrapped = wrapBarsPerLine(input, 4);
+    const lines = wrapped.split('\n');
+
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toBe('| C | G | Am | F |');
+    expect(lines[1]).toBe('| Dm | G | C | C |');
+  });
+
+  test("wrapBarsPerLine keeps non-bar lines unchanged", () => {
+    const input = 'Verse 1';
+    expect(wrapBarsPerLine(input, 4)).toBe(input);
   });
 
   test("getAllChords strips wrapping parentheses from used chords", () => {

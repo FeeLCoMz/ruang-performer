@@ -5731,6 +5731,32 @@ body.dark-mode .cd-token {
   animation: fadeIn 0.2s ease-in;
 }
 
+.song-lyrics-bar-wrap-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--secondary-bg);
+}
+
+.song-lyrics-bar-wrap-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.song-lyrics-bar-wrap-select {
+  min-width: 64px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
 .song-lyrics-zoom-controls {
   display: flex;
   align-items: center;

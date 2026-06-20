@@ -20,6 +20,10 @@ export default function SongLyricsMainSection({
   savingLyrics,
   handleSaveLyrics,
   handleAlignSelectedBarlines,
+  handleWrap4BarsPerLine,
+  barsPerLine,
+  setBarsPerLine,
+  handleWrapBarsPerLine,
   handleCancelEditLyrics,
   showExportMenu,
   setShowExportMenu,
@@ -81,6 +85,10 @@ export default function SongLyricsMainSection({
             savingLyrics={savingLyrics}
             handleSaveLyrics={handleSaveLyrics}
             handleAlignSelectedBarlines={handleAlignSelectedBarlines}
+            handleWrap4BarsPerLine={handleWrap4BarsPerLine}
+            barsPerLine={barsPerLine}
+            setBarsPerLine={setBarsPerLine}
+            handleWrapBarsPerLine={handleWrapBarsPerLine}
             handleCancelEditLyrics={handleCancelEditLyrics}
             showExportMenu={showExportMenu}
             setShowExportMenu={setShowExportMenu}
