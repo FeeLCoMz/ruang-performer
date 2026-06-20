@@ -2317,6 +2317,11 @@ body.dark-mode .lyrics-editor-textarea {
   color: var(--text-secondary);
 }
 
+.gig-item-upcoming {
+  border-left: 4px solid #2563eb;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.12) 0%, var(--card-bg) 28%);
+}
+
 .gig-status-badge {
   display: inline-flex;
   align-items: center;
@@ -2331,6 +2336,12 @@ body.dark-mode .lyrics-editor-textarea {
   color: #166534;
   background: #dcfce7;
   border: 1px solid #86efac;
+}
+
+.gig-status-badge.upcoming {
+  color: #1e3a8a;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
 }
 
 .song-info {

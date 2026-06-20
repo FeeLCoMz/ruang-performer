@@ -40,7 +40,7 @@ export default function SetlistPage({
   const [search, setSearch] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
   const [filterBand, setFilterBand] = React.useState('all');
-  const [sortBy, setSortBy] = React.useState('updated');
+  const [sortBy, setSortBy] = React.useState('created');
   const [sortOrder, setSortOrder] = React.useState('desc');
 
   React.useEffect(() => {

@@ -676,11 +676,13 @@ export default function GigPage() {
       ) : (
         <div className="song-list-container">
           {sortedGigs.map((gig, idx) => {
-            const isCompleted = gig.date ? new Date(gig.date).getTime() < Date.now() : false;
+            const gigTime = gig.date ? new Date(gig.date).getTime() : 0;
+            const isCompleted = gigTime > 0 && gigTime < Date.now();
+            const isUpcoming = gigTime > Date.now();
             return (
               <div
                 key={gig.id}
-                className={`song-item hover-lift ${isCompleted ? 'gig-item-completed' : ''}`}
+                className={`song-item hover-lift ${isCompleted ? 'gig-item-completed' : ''} ${isUpcoming ? 'gig-item-upcoming' : ''}`}
                 onClick={() => navigate(`/gigs/${gig.id}`)}
               >
                 <div className="song-info">
@@ -693,6 +695,7 @@ export default function GigPage() {
                     )}
                     {(gig.venue || gig.city) && <span>📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}</span>}
                     {gig.setlistName && <span>🎵 Setlist: {gig.setlistName}</span>}
+                    {isUpcoming && <span className="gig-status-badge upcoming">Akan Datang</span>}
                     {isCompleted && <span className="gig-status-badge completed">Selesai</span>}
                   </div>
                 </div>

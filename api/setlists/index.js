@@ -197,7 +197,7 @@ export default async function handler(req, res) {
               OR (s.bandId IS NOT NULL AND EXISTS (
                 SELECT 1 FROM band_members WHERE bandId = s.bandId AND userId = ?
               ))
-           ORDER BY (s.updatedAt IS NULL) ASC, datetime(s.updatedAt) DESC, datetime(s.createdAt) DESC`,
+           ORDER BY datetime(s.createdAt) DESC, datetime(s.updatedAt) DESC`,
           [userId, userId]
         );
 
@@ -228,7 +228,7 @@ export default async function handler(req, res) {
             OR (s.bandId IS NOT NULL AND EXISTS (
               SELECT 1 FROM band_members WHERE bandId = s.bandId AND userId = ?
             ))
-         ORDER BY (s.updatedAt IS NULL) ASC, datetime(s.updatedAt) DESC, datetime(s.createdAt) DESC`,
+         ORDER BY datetime(s.createdAt) DESC, datetime(s.updatedAt) DESC`,
         [userId, userId]
       );
       const baseRows = rows.rows ?? [];
