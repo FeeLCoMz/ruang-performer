@@ -8,8 +8,10 @@ import TapTempo from "../components/TapTempo";
 import VirtualPiano from "../components/VirtualPiano";
 import AIAutofillModal from "../components/AIAutofillModal";
 import ChordLinks from "../components/ChordLinks";
+import SongLyricsTextarea from "../components/SongLyricsTextarea.jsx";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
+import { alignSelectedBarlines, wrapBarsPerLine } from '../utils/chordUtils.js';
 
 function buildNewVersionTitle(sourceTitle) {
   const baseTitle = (sourceTitle || "").trim() || "Tanpa Judul";
@@ -56,11 +58,43 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [partiturExpanded, setPartiturExpanded] = useState(false);
   const [showPiano, setShowPiano] = useState(false);
   const [transpose, setTranspose] = useState(0);
+  const [barsPerLine, setBarsPerLine] = useState(4);
+  const [lyricsEditError, setLyricsEditError] = useState("");
 
   // YouTube ref
   const ytRef = useRef(null);
+  const formRef = useRef(null);
+  const lyricsTextareaRef = useRef(null);
   const [ytCurrentTime, setYtCurrentTime] = useState(0);
   const [ytDuration, setYtDuration] = useState(0);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const textarea = lyricsTextareaRef.current;
+      if (!textarea || document.activeElement !== textarea) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        formRef.current?.requestSubmit();
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        handleAlignSelectedBarlines();
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "4") {
+        e.preventDefault();
+        handleWrap4BarsPerLine();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lyrics, barsPerLine]);
 
   // Load source song for edit or duplicate mode
   useEffect(() => {
@@ -246,6 +280,73 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     }
   };
 
+  const handleAlignSelectedBarlines = () => {
+    const textarea = lyricsTextareaRef.current;
+    if (!textarea || typeof textarea.selectionStart !== "number" || typeof textarea.selectionEnd !== "number") {
+      return;
+    }
+
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+    if (selectionStart === selectionEnd) {
+      setLyricsEditError("Blok teks lirik terlebih dahulu.");
+      return;
+    }
+
+    const selectedText = lyrics.slice(selectionStart, selectionEnd);
+    const alignedText = alignSelectedBarlines(selectedText);
+    if (alignedText === selectedText) {
+      setLyricsEditError("");
+      return;
+    }
+
+    const nextLyrics = `${lyrics.slice(0, selectionStart)}${alignedText}${lyrics.slice(selectionEnd)}`;
+    setLyrics(nextLyrics);
+    setLyricsEditError("");
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(selectionStart, selectionStart + alignedText.length);
+    });
+  };
+
+  const handleWrapBarsPerLine = (targetBarsPerLine = barsPerLine) => {
+    const textarea = lyricsTextareaRef.current;
+    if (!textarea) return;
+
+    const hasSelection = typeof textarea.selectionStart === "number"
+      && typeof textarea.selectionEnd === "number"
+      && textarea.selectionStart !== textarea.selectionEnd;
+
+    if (!hasSelection) {
+      setLyricsEditError("Blok teks lirik terlebih dahulu.");
+      return;
+    }
+
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+    const selectedText = lyrics.slice(selectionStart, selectionEnd);
+    if (!selectedText) return;
+
+    const wrappedText = wrapBarsPerLine(selectedText, targetBarsPerLine);
+    const alignedText = alignSelectedBarlines(wrappedText);
+    if (alignedText === selectedText) {
+      setLyricsEditError("");
+      return;
+    }
+
+    const nextLyrics = `${lyrics.slice(0, selectionStart)}${alignedText}${lyrics.slice(selectionEnd)}`;
+    setLyrics(nextLyrics);
+    setLyricsEditError("");
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(selectionStart, selectionStart + alignedText.length);
+    });
+  };
+
+  const handleWrap4BarsPerLine = () => handleWrapBarsPerLine(4);
+
   if (loadingData) {
     return (
       <div className="page-container">
@@ -270,7 +371,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
           Form ini membuat versi baru dari lagu yang sudah ada. Ubah judul, aransemen, atau detail lain seperlunya sebelum menyimpan.
         </div>
       )}
-      <form onSubmit={handleSubmit}>
+      <form ref={formRef} onSubmit={handleSubmit}>
         <div className="card song-section-card">
           <div className="form-grid-2col">
             <div>
@@ -521,17 +622,59 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         {/* Lyrics Section */}
         <div className="song-section-card">
           <h3 className="song-section-title">🎤 Lirik & Chord</h3>
-          <textarea
-            value={lyrics}
-            onChange={(e) => setLyrics(e.target.value)}
-            placeholder="Masukkan lirik dan chord di sini..."
-            rows={15}
-            className="form-input-field"
-            style={{
-              fontFamily: 'var(--font-mono, "Courier New", monospace)',
-              lineHeight: "1.6",
-              resize: "vertical",
-            }}
+          {lyricsEditError && <div className="song-lyrics-error">{lyricsEditError}</div>}
+          <div className="song-lyrics-tips">
+            💡 Tips: Blok teks dulu. Pilih <b>2/4/6 Bar/Baris</b> lalu klik <b>Terapkan</b> (atau <kbd>Ctrl+Shift+4</kbd> untuk cepat 4 bar), gunakan <b>Sejajarkan Bar</b> atau <kbd>Ctrl+Shift+B</kbd>, tekan <kbd>Ctrl+S</kbd> untuk simpan form.
+          </div>
+          <div className="song-lyrics-edit-actions">
+            <button
+              type="button"
+              onClick={handleAlignSelectedBarlines}
+              disabled={loading}
+              className="btn btn-secondary"
+              title="Sejajarkan garis bar (|) pada teks yang dipilih"
+            >
+              ∥ Sejajarkan Bar
+            </button>
+            <button
+              type="button"
+              onClick={handleWrap4BarsPerLine}
+              disabled={loading}
+              className="btn btn-secondary"
+              title="Pecah otomatis menjadi 4 bar per baris pada teks yang dipilih"
+            >
+              ↩ 4 Bar/Baris
+            </button>
+            <div className="song-lyrics-bar-wrap-controls">
+              <label htmlFor="bars-per-line-add-edit" className="song-lyrics-bar-wrap-label">Bar/Baris</label>
+              <select
+                id="bars-per-line-add-edit"
+                className="song-lyrics-bar-wrap-select"
+                value={barsPerLine}
+                onChange={(e) => setBarsPerLine(Number(e.target.value))}
+                disabled={loading}
+                aria-label="Pilih jumlah bar per baris"
+              >
+                <option value={2}>2</option>
+                <option value={4}>4</option>
+                <option value={6}>6</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => handleWrapBarsPerLine(barsPerLine)}
+                disabled={loading}
+                className="btn btn-secondary"
+                title="Terapkan jumlah bar per baris pada teks yang dipilih"
+              >
+                Terapkan
+              </button>
+            </div>
+          </div>
+          <SongLyricsTextarea
+            lyricsDisplayRef={lyricsTextareaRef}
+            editedLyrics={lyrics}
+            setEditedLyrics={setLyrics}
+            autoFocus={false}
           />
         </div>
 

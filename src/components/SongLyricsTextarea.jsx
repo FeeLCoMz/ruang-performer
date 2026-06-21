@@ -3,7 +3,8 @@ import React from "react";
 export default function SongLyricsTextarea({
   lyricsDisplayRef,
   editedLyrics,
-  setEditedLyrics
+  setEditedLyrics,
+  autoFocus = true
 }) {
   return (
     <textarea
@@ -11,7 +12,7 @@ export default function SongLyricsTextarea({
       value={editedLyrics}
       onChange={(e) => setEditedLyrics(e.target.value)}
       className="song-lyrics-textarea"
-      autoFocus
+      autoFocus={autoFocus}
       placeholder={
         "Masukkan lirik dan chord...\nContoh:\n[C]Amazing grace how [F]sweet the [C]sound"
       }
