@@ -33,6 +33,7 @@ export default function SongChordsLyricsToolbar({
   performanceMode,
   canEdit,
   tempo,
+  timeSignature,
   autoScrollActive,
   scrollSpeed,
   setAutoScrollActive,
@@ -83,6 +84,7 @@ export default function SongChordsLyricsToolbar({
 
           <AutoScrollBar
             tempo={parseInt(tempo) || 120}
+            timeSignature={timeSignature || '4/4'}
             active={autoScrollActive}
             speed={scrollSpeed}
             onToggle={() => setAutoScrollActive(!autoScrollActive)}

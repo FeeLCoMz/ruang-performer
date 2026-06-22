@@ -30,6 +30,7 @@ export default function SongLyricsMainSection({
   handleExportText,
   handleExportPDF,
   tempo,
+  timeSignature,
   autoScrollActive,
   scrollSpeed,
   setAutoScrollActive,
@@ -69,6 +70,7 @@ export default function SongLyricsMainSection({
             performanceMode={performanceMode}
             canEdit={canEdit}
             tempo={tempo}
+            timeSignature={timeSignature}
             autoScrollActive={autoScrollActive}
             scrollSpeed={scrollSpeed}
             setAutoScrollActive={setAutoScrollActive}
@@ -135,6 +137,7 @@ export default function SongLyricsMainSection({
               showSheetMusic={showSheetMusic}
               setShowSheetMusic={setShowSheetMusic}
               youtubeRef={youtubeRef}
+              timeSignature={timeSignature}
             />
           )}
         </>

@@ -48,6 +48,7 @@ export default function SongChordsLyricsDisplay({
   showSheetMusic,
   setShowSheetMusic,
   youtubeRef,
+  timeSignature,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
   const zoomRef = useRef(zoom);
@@ -164,6 +165,7 @@ export default function SongChordsLyricsDisplay({
       {/* Toolbar autoscroll diganti dengan AutoScrollBar di fullscreen */}
       <AutoScrollBar
         tempo={parseInt(song?.tempo) || 120}
+        timeSignature={timeSignature || song?.time_signature || '4/4'}
         active={autoScrollActive}
         speed={scrollSpeed}
         onToggle={() => setAutoScrollActive(!autoScrollActive)}

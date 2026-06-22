@@ -506,6 +506,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, setShowExportMenu)}
         handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, setShowExportMenu)}
         tempo={tempo}
+        timeSignature={timeSignature}
         autoScrollActive={autoScrollActive}
         scrollSpeed={scrollSpeed}
         setAutoScrollActive={setAutoScrollActive}

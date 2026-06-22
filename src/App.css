@@ -3675,6 +3675,15 @@ input[type="datetime-local"]:disabled {
   white-space: pre;
   margin-bottom: 4px;
   min-height: 1.5em;
+  cursor: pointer;
+}
+
+.cd-chord.cd-chord-autoscroll-active {
+  background: color-mix(in srgb, var(--primary-accent) 16%, transparent);
+  border-left: 4px solid var(--primary-accent);
+  padding-left: 8px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary-accent) 25%, transparent);
 }
 
 .cd-token {
@@ -4143,6 +4152,54 @@ body.dark-mode .cd-token {
   border-radius: var(--radius-md);
 }
 
+.auto-scroll-mode-toggle {
+  min-width: 130px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.auto-scroll-mode-toggle:hover {
+  border-color: var(--primary-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.auto-scroll-mode-toggle.active {
+  background: var(--primary-accent);
+  border-color: var(--primary-accent);
+  color: white;
+}
+
+.auto-scroll-reset-button {
+  min-width: 130px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.auto-scroll-reset-button:hover:not(:disabled) {
+  border-color: var(--warning);
+  color: var(--warning);
+  box-shadow: var(--shadow-sm);
+}
+
+.auto-scroll-reset-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .auto-scroll-tempo-input:focus {
   outline: none;
   border-color: var(--primary-accent);
@@ -4228,6 +4285,14 @@ body.dark-mode .cd-token {
   .auto-scroll-tempo {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .auto-scroll-mode-toggle {
+    width: 100%;
+  }
+
+  .auto-scroll-reset-button {
+    width: 100%;
   }
 
   .auto-scroll-beats {
