@@ -45,6 +45,8 @@ export default function SongLyricsMainSection({
   transpose,
   showChordNumbers,
   setShowChordNumbers,
+  showJazzChords,
+  setShowJazzChords,
   keySignature,
   showSheetMusic,
   setShowSheetMusic,
@@ -82,6 +84,8 @@ export default function SongLyricsMainSection({
             setZoom={setZoom}
             showChordNumbers={showChordNumbers}
             setShowChordNumbers={setShowChordNumbers}
+            showJazzChords={showJazzChords}
+            setShowJazzChords={setShowJazzChords}
             keySignature={keySignature}
             handleEditLyrics={handleEditLyrics}
             savingLyrics={savingLyrics}
@@ -127,6 +131,7 @@ export default function SongLyricsMainSection({
               zoom={zoom}
               setZoom={setZoom}
               showChordNumbers={showChordNumbers}
+              showJazzChords={showJazzChords}
               keySignature={keySignature}
               autoScrollActive={autoScrollActive}
               scrollSpeed={scrollSpeed}

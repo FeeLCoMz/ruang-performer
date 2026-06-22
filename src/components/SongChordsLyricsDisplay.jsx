@@ -38,6 +38,7 @@ export default function SongChordsLyricsDisplay({
   zoom,
   setZoom,
   showChordNumbers,
+  showJazzChords,
   keySignature,
   autoScrollActive,
   scrollSpeed,
@@ -192,6 +193,7 @@ export default function SongChordsLyricsDisplay({
         transpose={transpose}
         zoom={zoom}
         showChordNumbers={showChordNumbers}
+        showJazzChords={showJazzChords}
         keySignature={keySignature || song?.key || 'C'}
         onTimestampClick={(seconds) => {
           if (youtubeRef && youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {

@@ -20,11 +20,17 @@
 
 import React, { useState } from 'react';
 import NumberToken from './NumberToken.jsx';
-import { transposeChord, isChordLine, parseTimestampToken, parseLines, chordTextToNumberText } from '../utils/chordUtils.js';
+import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText } from '../utils/chordUtils.js';
 
 
-export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordNumbers = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
+export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordNumbers = false, showJazzChords = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const formatChordToken = (token) => {
+    if (showChordNumbers) return chordTextToNumberText(token, keySignature);
+    if (showJazzChords) return chordTextToJazzText(token);
+    return token;
+  };
 
   if (!song?.lyrics) {
     return (
@@ -58,7 +64,7 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordN
                   <span key={j} className="cd-barline-token">{t.token}</span>
                 ) : (
                   <span key={j} className="cd-token">
-                    {showChordNumbers ? chordTextToNumberText(t.token, keySignature) : t.token}
+                    {formatChordToken(t.token)}
                   </span>
                 )
               )}
@@ -76,7 +82,7 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordN
         return (
           <div key={i} className="cd-lyrics">
             {lineObj.tokens.map((t, j) => {
-              const tokenText = t.isChord && showChordNumbers ? chordTextToNumberText(t.token, keySignature) : t.token;
+              const tokenText = t.isChord ? formatChordToken(t.token) : t.token;
               const seconds = typeof tokenText === 'string' ? parseTimestampToken(tokenText) : null;
               if (seconds !== null) {
                 return (

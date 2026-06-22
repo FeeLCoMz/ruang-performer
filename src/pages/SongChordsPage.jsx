@@ -92,6 +92,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [transpose, setTranspose] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [showChordNumbers, setShowChordNumbers] = useState(false);
+  const [showJazzChords, setShowJazzChords] = useState(false);
   
   // In-place editing state
   const [isEditingLyrics, setIsEditingLyrics] = useState(false);
@@ -525,6 +526,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         loading={loading}
         showChordNumbers={showChordNumbers}
         setShowChordNumbers={setShowChordNumbers}
+        showJazzChords={showJazzChords}
+        setShowJazzChords={setShowJazzChords}
         keySignature={key || song?.key || ''}
       />
 

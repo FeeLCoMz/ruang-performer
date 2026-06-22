@@ -45,6 +45,8 @@ export default function SongChordsLyricsToolbar({
   setZoom,
   showChordNumbers,
   setShowChordNumbers,
+  showJazzChords,
+  setShowJazzChords,
   keySignature,
   handleEditLyrics,
   savingLyrics,
@@ -95,14 +97,41 @@ export default function SongChordsLyricsToolbar({
           />
 
           {!performanceMode && (
-            <button
-              className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'}`}
-              title="Toggle angka chord"
-              onClick={() => setShowChordNumbers((prev) => !prev)}
-              style={{ fontSize: '0.9em' }}
-            >
-              {showChordNumbers ? '🔢 Chord (angka)' : '🎼 Chord (tulisan)'}
-            </button>
+            <>
+              <button
+                className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'}`}
+                title="Toggle angka chord"
+                onClick={() => {
+                  setShowChordNumbers((prev) => {
+                    const next = !prev;
+                    if (next) {
+                      setShowJazzChords(false);
+                    }
+                    return next;
+                  });
+                }}
+                style={{ fontSize: '0.9em' }}
+              >
+                {showChordNumbers ? '🔢 Chord (angka)' : '🎼 Chord (tulisan)'}
+              </button>
+
+              <button
+                className={`btn ${showJazzChords ? 'btn-primary' : 'btn-secondary'}`}
+                title="Toggle reharmonisasi chord ke nuansa jazz"
+                onClick={() => {
+                  setShowJazzChords((prev) => {
+                    const next = !prev;
+                    if (next) {
+                      setShowChordNumbers(false);
+                    }
+                    return next;
+                  });
+                }}
+                style={{ fontSize: '0.9em' }}
+              >
+                {showJazzChords ? '🎷 Chord (jazz)' : '🎼 Chord (asli)'}
+              </button>
+            </>
           )}
 
           {/* 2. Zoom Controls */}

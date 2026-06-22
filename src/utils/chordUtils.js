@@ -696,6 +696,72 @@ export const chordTextToNumberText = (text, key = 'C') => {
   return replaced;
 };
 
+const formatSingleChordToJazzStyle = (chord) => {
+  if (!chord || typeof chord !== 'string') return chord;
+  if (isNoChordToken(chord)) return chord;
+
+  const match = chord.match(/^([A-G][#b]?)(.*)$/);
+  if (!match) return chord;
+
+  const [, root, suffix = ''] = match;
+  const slashIndex = suffix.indexOf('/');
+  const quality = slashIndex === -1 ? suffix : suffix.slice(0, slashIndex);
+  const bass = slashIndex === -1 ? '' : suffix.slice(slashIndex);
+  const normalizedQuality = quality.trim();
+
+  let jazzQuality = normalizedQuality;
+
+  if (!normalizedQuality) {
+    jazzQuality = 'maj7';
+  } else if (/^maj7$/i.test(normalizedQuality)) {
+    jazzQuality = 'maj9';
+  } else if (/^maj9$/i.test(normalizedQuality)) {
+    jazzQuality = 'maj9';
+  } else if (/^maj$/i.test(normalizedQuality)) {
+    jazzQuality = 'maj7';
+  } else if (/^m(?!aj)$/i.test(normalizedQuality) || /^min$/i.test(normalizedQuality)) {
+    jazzQuality = 'm7';
+  } else if (/^(m7|min7)$/i.test(normalizedQuality)) {
+    jazzQuality = 'm9';
+  } else if (/^(m9|min9)$/i.test(normalizedQuality)) {
+    jazzQuality = 'm9';
+  } else if (/^7$/i.test(normalizedQuality)) {
+    jazzQuality = '13';
+  } else if (/^9$/i.test(normalizedQuality) || /^11$/i.test(normalizedQuality) || /^13$/i.test(normalizedQuality)) {
+    jazzQuality = normalizedQuality;
+  } else if (/^6$/i.test(normalizedQuality)) {
+    jazzQuality = '6/9';
+  } else if (/^add9$/i.test(normalizedQuality)) {
+    jazzQuality = 'maj9';
+  } else if (/^sus2$/i.test(normalizedQuality)) {
+    jazzQuality = 'add9';
+  } else if (/^(sus|sus4)$/i.test(normalizedQuality)) {
+    jazzQuality = '13sus4';
+  } else if (/^dim$/i.test(normalizedQuality)) {
+    jazzQuality = 'm7b5';
+  } else if (/^aug$/i.test(normalizedQuality)) {
+    jazzQuality = '7#5';
+  }
+
+  return `${root}${jazzQuality}${bass}`;
+};
+
+export const chordTextToJazzText = (text) => {
+  if (!text || typeof text !== 'string') return text;
+
+  return text.replace(CHORD_REGEX_GLOBAL, (match) => {
+    const innerMatch = match.match(/^([\(\[\{]?)(.+?)([\)\]\}]?)$/);
+    const fullMatch = innerMatch ? innerMatch[2] : match;
+    const trailingDotsMatch = fullMatch.match(/(\.{2,})$/);
+    const trailingDots = trailingDotsMatch ? trailingDotsMatch[1] : '';
+    const sanitized = normalizeChordToken(fullMatch.replace(/\.{2,}$/, ''));
+    const jazzChord = formatSingleChordToJazzStyle(sanitized);
+    const prefix = innerMatch ? innerMatch[1] : '';
+    const suffix = innerMatch ? innerMatch[3] : '';
+    return `${prefix}${jazzChord}${suffix}${trailingDots}`;
+  });
+};
+
 // Fungsi untuk mendeteksi apakah sebuah baris adalah baris chord
 export const isChordLine = (line) => {
   if (!line.trim()) return false;

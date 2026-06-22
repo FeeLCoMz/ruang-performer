@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { chordToNumber, chordTextToNumberText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords } from "../utils/chordUtils";
+import { chordToNumber, chordTextToNumberText, chordTextToJazzText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -43,6 +43,12 @@ describe("chordUtils", () => {
   test("chordTextToNumberText converts inline chord tokens", () => {
     expect(chordTextToNumberText('C G Am F', 'C')).toBe('1 5 6m 4');
     expect(chordTextToNumberText('D.. Gm..', 'C')).toBe('2.. 5m..');
+  });
+
+  test("chordTextToJazzText reharmonizes common chord qualities into jazzier voicings", () => {
+    expect(chordTextToJazzText('C G Am F')).toBe('Cmaj7 Gmaj7 Am7 Fmaj7');
+    expect(chordTextToJazzText('Cmaj7 Gm7 Fdim Aaug')).toBe('Cmaj9 Gm9 Fm7b5 A7#5');
+    expect(chordTextToJazzText('Bbmaj9.. Cm.. D7/G')).toBe('Bbmaj9.. Cm7.. D13/G');
   });
 
   test("transposeChord handles slash bass chords", () => {
