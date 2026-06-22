@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import YouTubeViewer from "./YouTubeViewer.jsx";
 import TimeMarkers from "./TimeMarkers.jsx";
 import ExpandButton from "./ExpandButton.jsx";
@@ -19,6 +19,9 @@ export default function SongChordsMediaPanel({
   canEdit,
   handleTimeMarkerUpdate,
 }) {
+  const [ytCurrentTime, setYtCurrentTime] = useState(0);
+  const [ytDuration, setYtDuration] = useState(0);
+
   return (
     <div className="song-panel">
       <div className="media-panel-header">
@@ -42,7 +45,16 @@ export default function SongChordsMediaPanel({
             </div>
             <div className="media-section-body">
               {youtubeId ? (
-                <YouTubeViewer ref={youtubeRef} videoId={youtubeId} />
+                <YouTubeViewer
+                  ref={youtubeRef}
+                  videoId={youtubeId}
+                  onTimeUpdate={(time, duration) => {
+                    setYtCurrentTime(time);
+                    if (typeof duration === "number") {
+                      setYtDuration(duration);
+                    }
+                  }}
+                />
               ) : (
                 <div className="media-empty-state">
                   <span className="media-empty-icon">📹</span>
@@ -75,6 +87,8 @@ export default function SongChordsMediaPanel({
               <div className="media-section-body">
                 <TimeMarkers
                   timeMarkers={timeMarkers}
+                  currentTime={ytCurrentTime}
+                  duration={ytDuration}
                   readonly={performanceMode || !canEdit}
                   onUpdate={handleTimeMarkerUpdate}
                   onSeek={(time, opts) => {

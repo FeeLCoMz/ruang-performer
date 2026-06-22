@@ -110,6 +110,17 @@ export function parseTimestampToken(token) {
 }
 // Global regex untuk deteksi chord (standar, konsisten di semua fungsi)
 const CHORD_REGEX = /^[A-G][#b]?m?(aj|sus|dim|aug|add)?\d*(\/([A-G][#b]?))?$/i;
+const NO_CHORD_REGEX = /^(N\.C\.|NC|No\s*Chord|No\s*Chords?)$/i;
+
+/**
+ * Validasi apakah sebuah token adalah No Chord (N.C.).
+ * @param {string} token - Token (misal: N.C., NC, No Chord)
+ * @returns {boolean}
+ */
+const isNoChordToken = (token) => {
+  if (typeof token !== 'string') return false;
+  return NO_CHORD_REGEX.test(token.trim());
+};
 
 /**
  * Validasi apakah sebuah token adalah chord valid.
@@ -371,10 +382,16 @@ export function parseSection(line) {
       'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
       'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana'
     ];
-    if (labelLower === 'int' || structureKeywords.some(k => labelLower.includes(k))) {
+    const hasKeywordAsWholeWord = (text, keyword) => {
+      const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = escaped.replace(/\s+/g, '[\\s_-]+');
+      return new RegExp(`(^|[^a-z0-9])${pattern}($|[^a-z0-9])`, 'i').test(text);
+    };
+
+    if (labelLower === 'int' || structureKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
       return { type: 'structure', label: originalLabel };
     }
-    if (instrumentKeywords.some(k => labelLower.includes(k))) {
+    if (instrumentKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
       return { type: 'instrument', label: originalLabel };
     }
   }
@@ -411,6 +428,7 @@ const normalizeChordToken = (token) => {
 
 const isChordToken = (token) => {
   if (typeof token !== 'string') return false;
+  if (isNoChordToken(token)) return true;
   const normalized = normalizeChordToken(token);
   return CHORD_REGEX.test(normalized);
 };
@@ -422,6 +440,7 @@ const isLeadingDashChordToken = (token) => {
 
 const transposeChordToken = (token, steps) => {
   if (!token || steps === 0) return token;
+  if (isNoChordToken(token)) return token;
   const match = token.match(/^([\(\[\{]?)(.+?)([\)\]\}]?)(\.{2,})?$/);
   if (!match) return token;
 
@@ -441,6 +460,7 @@ const transposeLeadingDashChordToken = (token, steps) => {
 
 const transposeCompactChordToken = (token, steps) => {
   if (!token || (!token.includes('..') && !token.includes('-'))) return token;
+  if (isNoChordToken(token)) return token;
 
   const parts = token.split(/(\.{2,}|-)/);
   let hasChordPart = false;
@@ -696,10 +716,10 @@ export const isChordLine = (line) => {
     .filter(Boolean);
   if (!tokens.length) return false;
 
-  // Hitung jumlah token chord dan token pengisi (hanya . atau -)
+  // Hitung jumlah token chord (termasuk N.C.) dan token pengisi (hanya . atau -)
   let chordOrFiller = 0;
   for (const t of tokens) {
-    if (isChordToken(t) || /^\.*$/.test(t) || /^-+$/.test(t)) chordOrFiller++;
+    if (isChordToken(t) || /^\.*$/.test(t) || /^-+$/.test(t) || isNoChordToken(t)) chordOrFiller++;
   }
   // Jika mayoritas token adalah chord atau filler, anggap baris chord
   if (chordOrFiller > 0 && chordOrFiller >= tokens.length * 0.7) return true;

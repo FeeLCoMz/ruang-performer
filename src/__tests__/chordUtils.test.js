@@ -18,6 +18,15 @@ describe("chordUtils", () => {
     expect(parseSection('Key change: A')).toEqual({ type: 'modulation', label: 'A' });
   });
 
+  test("parseSection does not treat substring inside a word as structure", () => {
+    expect(parseSection('stuck in reverse')).toBe(null);
+  });
+
+  test("parseSection ignores other structure-like substrings inside words", () => {
+    expect(parseSection('this part is chorused')).toBe(null);
+    expect(parseSection('deep introspection tonight')).toBe(null);
+  });
+
   test("chordToNumber converts basic chords in C major", () => {
     expect(chordToNumber('C', 'C')).toBe('1');
     expect(chordToNumber('Dm', 'C')).toBe('2m');
@@ -139,5 +148,39 @@ describe("chordUtils", () => {
     };
 
     expect(getAllChords(parsedSong)).toEqual(['Am', 'C', 'F']);
+  });
+
+  test("N.C. (No Chord) is detected as a chord token", () => {
+    const parsed = parseLines(['N.C.', 'Am  G  C'], 0);
+    expect(parsed[0].type).toBe('chord');
+    expect(parsed[0].tokens[0].token).toBe('N.C.');
+    expect(parsed[0].tokens[0].isChord).toBe(true);
+  });
+
+  test("N.C. variant 'NC' is recognized", () => {
+    const parsed = parseLines(['NC'], 0);
+    expect(parsed[0].type).toBe('chord');
+    expect(parsed[0].tokens[0].isChord).toBe(true);
+  });
+
+  test("should NOT be transposed", () => {
+    const parsed = parseLines(['N.C.  Am  G'], 2);
+    const tokens = parsed[0].tokens;
+    const ncToken = tokens.find(t => t.token.includes('N.C.'));
+    const amToken = tokens.find(t => t.token === 'Bm');
+    const gToken = tokens.find(t => t.token === 'A');
+    
+    expect(ncToken.token).toBe('N.C.');
+    expect(amToken).toBeDefined();
+    expect(gToken).toBeDefined();
+  });
+
+  test("N.C. in a chord line is detected by isChordLine", () => {
+    const lines = [
+      'N.C.  |  Am  |  G  |',
+      'Some lyrics here with N.C. notation'
+    ];
+    // First line should be detected as chord line due to N.C. + chords
+    expect(parseLines(lines, 0)[0].type).toBe('chord');
   });
 });
