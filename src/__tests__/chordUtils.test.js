@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { chordToNumber, chordTextToNumberText, chordTextToJazzText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords } from "../utils/chordUtils";
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -86,6 +86,17 @@ describe("chordUtils", () => {
     expect(parsed[0].tokens).toEqual([
       { token: '-B', isChord: true }
     ]);
+  });
+
+  test("isValidChord supports complex chord formats with alterations", () => {
+    expect(isValidChord('BbMajb5')).toBe(true);
+    expect(isValidChord('C#maj7#11')).toBe(true);
+    expect(isValidChord('Cm7b5')).toBe(true);
+    expect(isValidChord('C7b9')).toBe(true);
+    expect(isValidChord('Gmaj9#11')).toBe(true);
+    expect(isValidChord('F#dim7')).toBe(true);
+    expect(isValidChord('Bbdim')).toBe(true);
+    expect(isValidChord('Eaug')).toBe(true);
   });
 
   test("recommendPianoFriendlyKey returns score breakdown", () => {

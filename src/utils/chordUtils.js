@@ -109,7 +109,8 @@ export function parseTimestampToken(token) {
   return null;
 }
 // Global regex untuk deteksi chord (standar, konsisten di semua fungsi)
-const CHORD_REGEX = /^[A-G][#b]?m?(aj|sus|dim|aug|add)?\d*(\/([A-G][#b]?))?$/i;
+// Support: C, Cm, Cmaj7, Cm7b5, C7#11, Csus4, Cadd9, BbMajb5, C#maj7#11, dll
+const CHORD_REGEX = /^[A-G][#b]?(maj|min|dim|aug|sus|add|m)?(\d+)?([#b]\d+)*(\/[A-G][#b]?)?$/i;
 const NO_CHORD_REGEX = /^(N\.C\.|NC|No\s*Chord|No\s*Chords?)$/i;
 
 /**
