@@ -81,7 +81,7 @@ export default function SongChordsLyricsToolbar({
               }
             }}
           >
-            🖥️ Fullscreen
+            🖥️
           </button>
 
           <AutoScrollBar
@@ -100,7 +100,7 @@ export default function SongChordsLyricsToolbar({
             <>
               <button
                 className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'}`}
-                title="Toggle angka chord"
+                title={showChordNumbers ? 'Chord (angka) — aktif' : 'Toggle angka chord'}
                 onClick={() => {
                   setShowChordNumbers((prev) => {
                     const next = !prev;
@@ -110,14 +110,13 @@ export default function SongChordsLyricsToolbar({
                     return next;
                   });
                 }}
-                style={{ fontSize: '0.9em' }}
               >
-                {showChordNumbers ? '🔢 Chord (angka)' : '🎼 Chord (tulisan)'}
+                🔢
               </button>
 
               <button
                 className={`btn ${showJazzChords ? 'btn-primary' : 'btn-secondary'}`}
-                title="Toggle reharmonisasi chord ke nuansa jazz"
+                title={showJazzChords ? 'Chord (jazz) — aktif' : 'Toggle chord jazz'}
                 onClick={() => {
                   setShowJazzChords((prev) => {
                     const next = !prev;
@@ -127,34 +126,13 @@ export default function SongChordsLyricsToolbar({
                     return next;
                   });
                 }}
-                style={{ fontSize: '0.9em' }}
               >
-                {showJazzChords ? '🎷 Chord (jazz)' : '🎼 Chord (asli)'}
+                🎷
               </button>
             </>
           )}
 
-          {/* 2. Zoom Controls */}
-          <div className="song-lyrics-zoom-controls">
-            <button
-              onClick={() => setZoom(Math.max(0.7, zoom - 0.1))}
-              className="btn btn-secondary"
-              title="Perkecil"
-            >
-              −
-            </button>
-            <span className="song-lyrics-zoom-display">{(zoom * 100).toFixed(0)}%</span>
-            <button
-              onClick={() => setZoom(Math.min(1.5, zoom + 0.1))}
-              className="btn btn-secondary"
-              title="Perbesar"
-            >
-              +
-            </button>
-            <button onClick={() => setZoom(1)} className="btn btn-secondary" title="Reset">
-              ⟲
-            </button>
-          </div>
+
         </>
       )}
 
@@ -167,9 +145,9 @@ export default function SongChordsLyricsToolbar({
               type="button"
               onClick={handleEditLyrics}
               className="btn btn-primary"
-              style={{ fontSize: "0.9em" }}
+              title="Edit Lirik"
             >
-              ✏️ Edit Lirik
+              ✏️
             </button>
           )}
           {/* 4. Export Menu (RIGHT) */}
@@ -179,8 +157,9 @@ export default function SongChordsLyricsToolbar({
                 type="button"
                 onClick={() => setShowExportMenu(!showExportMenu)}
                 className="btn btn-secondary"
+                title="Export"
               >
-                📥 Export
+                📥
               </button>
               <SongChordsExportMenu
                 showExportMenu={showExportMenu}

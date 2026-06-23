@@ -225,6 +225,7 @@ export default function AutoScrollBar({
   const [scrollMode, setScrollMode] = useState('snap');
   const [currentSpeed, setCurrentSpeed] = useState(speed || tempo);
   const [beat, setBeat] = useState(currentBeat || 0);
+  const [showMenu, setShowMenu] = useState(false);
   const frameRef = useRef(null);
   const beatTimeRef = useRef(null);
   const beatsInCurrentLineRef = useRef(0);
@@ -406,34 +407,26 @@ export default function AutoScrollBar({
   return (
     <div className="auto-scroll-bar">
       <div className="auto-scroll-controls">
+        {/* Play/Pause Toggle */}
         <button
           className={`auto-scroll-toggle ${scrolling ? 'active' : ''}`}
           onClick={handleToggle}
           title={scrolling ? 'Berhenti autoscroll' : 'Mulai autoscroll'}
           type="button"
         >
-          <span className="auto-scroll-icon">
-            {scrolling ? '⏸️' : '▶️'}
-          </span>
-          <span className="auto-scroll-text">
-            {scrolling ? 'Scrolling' : 'Autoscroll'}
-          </span>
+          {scrolling ? '⏸️' : '▶️'}
         </button>
 
-        <div className="auto-scroll-tempo">
-          <label className="auto-scroll-tempo-label" htmlFor="auto-scroll-speed-range">
-            <span className="auto-scroll-tempo-icon">⏱️</span>
-            <span className="auto-scroll-tempo-text">Kecepatan</span>
-          </label>
+        {/* Compact Tempo Control */}
+        <div className="auto-scroll-tempo-compact">
           <input
-            id="auto-scroll-speed-range"
             type="range"
             min={40}
             max={240}
             value={currentSpeed}
             onChange={(e) => handleSpeedChange(e.target.value)}
             className="auto-scroll-tempo-slider"
-            title="Sesuaikan kecepatan autoscroll"
+            title="Sesuaikan kecepatan (BPM)"
           />
           <input
             type="number"
@@ -441,40 +434,58 @@ export default function AutoScrollBar({
             max={240}
             value={currentSpeed}
             onChange={(e) => handleSpeedChange(e.target.value)}
-            className="auto-scroll-tempo-input"
-            title="Masukkan nilai BPM autoscroll"
+            className="auto-scroll-tempo-input-mini"
+            title="BPM"
           />
         </div>
 
-        <button
-          className={`auto-scroll-mode-toggle ${scrollMode === 'smooth' ? 'active' : ''}`}
-          type="button"
-          onClick={() => setScrollMode((mode) => (mode === 'snap' ? 'smooth' : 'snap'))}
-          title={scrollMode === 'snap' ? 'Ganti ke mode smooth continuous' : 'Ganti ke mode snap per line'}
-        >
-          {scrollMode === 'snap' ? 'Mode: Snap' : 'Mode: Smooth'}
-        </button>
+        {/* Menu Toggle (Mode & Reset) */}
+        <div className="auto-scroll-menu-container">
+          <button
+            className="auto-scroll-menu-toggle"
+            onClick={() => setShowMenu(!showMenu)}
+            title="Opsi lanjut"
+            type="button"
+          >
+            ⋮
+          </button>
 
-        <button
-          className="auto-scroll-reset-button"
-          type="button"
-          onClick={handleResetTempo}
-          disabled={isDefaultTempo}
-          title="Kembalikan autoscroll ke tempo default lagu"
-        >
-          Reset Tempo
-        </button>
+          {showMenu && (
+            <div className="auto-scroll-menu-dropdown">
+              <button
+                className={`auto-scroll-menu-item ${scrollMode === 'smooth' ? 'active' : ''}`}
+                type="button"
+                onClick={() => {
+                  setScrollMode((mode) => (mode === 'snap' ? 'smooth' : 'snap'));
+                }}
+                title={scrollMode === 'snap' ? 'Smooth: scroll gradual' : 'Snap: scroll per baris'}
+              >
+                {scrollMode === 'snap' ? '◉ Snap' : '◉ Smooth'}
+              </button>
+
+              <button
+                className="auto-scroll-menu-item auto-scroll-reset-mini"
+                type="button"
+                onClick={handleResetTempo}
+                disabled={isDefaultTempo}
+                title="Kembalikan ke tempo default"
+              >
+                Reset
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Beat Indicator - Minimized */}
       {scrolling && (
-        <div className="auto-scroll-beats">
-          <span className="auto-scroll-beats-label">Beat:</span>
+        <div className="auto-scroll-beats-minimal">
           <div className="auto-scroll-beat-dots">
             {Array.from({ length: beatsPerBar }, (_, i) => i).map((i) => (
               <span
                 key={i}
                 className={`beat-dot ${beat === i ? 'active' : ''}`}
-                aria-label={`Beat ${i + 1}${beat === i ? ' (current)' : ''}`}
+                aria-label={`Beat ${i + 1}`}
               >
                 ●
               </span>
