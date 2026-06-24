@@ -196,57 +196,79 @@ export function alignSelectedBarlines(text) {
 
   if (linesWithBars.length < 2) return text;
 
-  const barPositionsByLine = lines.map(line => {
-    const positions = [];
+  const parseBarStructure = (line) => {
+    if (!hasBarline(line)) return null;
+
+    const matches = [];
     barlineRegex.lastIndex = 0;
     let match;
     while ((match = barlineRegex.exec(line)) !== null) {
-      positions.push(match.index);
+      matches.push({
+        token: match[0],
+        start: match.index,
+        end: match.index + match[0].length,
+      });
     }
-    return positions;
-  });
 
-  const maxBarCount = Math.max(...barPositionsByLine.map(positions => positions.length), 0);
-  if (maxBarCount === 0) return text;
+    if (matches.length < 2) return null;
 
-  const targetColumns = Array.from({ length: maxBarCount }, (_, idx) => {
-    let maxCol = 0;
-    for (const positions of barPositionsByLine) {
-      if (typeof positions[idx] === 'number') {
-        maxCol = Math.max(maxCol, positions[idx]);
+    const measures = [];
+    for (let i = 0; i < matches.length - 1; i += 1) {
+      const rawMeasure = line.slice(matches[i].end, matches[i + 1].start);
+      measures.push(rawMeasure.replace(/\s+/g, ' ').trim());
+    }
+
+    return {
+      prefix: line.slice(0, matches[0].start).replace(/[ \t]+$/, ''),
+      suffix: line.slice(matches[matches.length - 1].end).replace(/^[ \t]+/, ''),
+      boundaries: matches.map((item) => item.token),
+      measures,
+    };
+  };
+
+  const structuredLines = lines.map(parseBarStructure);
+  const validStructuredLines = structuredLines.filter(Boolean);
+  if (validStructuredLines.length < 2) return text;
+
+  const maxMeasureCount = Math.max(...validStructuredLines.map((line) => line.measures.length), 0);
+  if (maxMeasureCount === 0) return text;
+
+  const measureWidths = Array.from({ length: maxMeasureCount }, (_, idx) => {
+    let maxWidth = 0;
+    for (const line of validStructuredLines) {
+      if (typeof line.measures[idx] === 'string') {
+        maxWidth = Math.max(maxWidth, line.measures[idx].length);
       }
     }
-    return maxCol;
+    return maxWidth;
   });
 
-  const alignedLines = lines.map((line) => {
-    if (!hasBarline(line)) return line;
+  const alignedLines = structuredLines.map((structure, idx) => {
+    if (!structure) return lines[idx];
+
+    const { prefix, suffix, boundaries, measures } = structure;
+    if (!measures.length) return lines[idx];
 
     let rebuilt = '';
-    let cursor = 0;
-    let barIdx = 0;
-    barlineRegex.lastIndex = 0;
-    let match;
-
-    while ((match = barlineRegex.exec(line)) !== null) {
-      const segment = line.slice(cursor, match.index);
-      const segmentTrimmedRight = segment.replace(/[ \t]+$/, '');
-
-      rebuilt += segmentTrimmedRight;
-      const needsGapBeforeBar = rebuilt.length > 0 && /[^\s|]$/.test(rebuilt);
-      const minTarget = needsGapBeforeBar ? rebuilt.length + 1 : rebuilt.length;
-      const target = Math.max(targetColumns[barIdx] ?? minTarget, minTarget);
-      if (rebuilt.length < target) {
-        rebuilt += ' '.repeat(target - rebuilt.length);
-      }
-
-      rebuilt += match[0];
-      cursor = match.index + match[0].length;
-      barIdx += 1;
+    if (prefix) {
+      rebuilt += `${prefix} `;
     }
 
-    rebuilt += line.slice(cursor);
-    return rebuilt;
+    rebuilt += boundaries[0] || '|';
+
+    for (let measureIdx = 0; measureIdx < measures.length; measureIdx += 1) {
+      const content = measures[measureIdx];
+      const width = measureWidths[measureIdx] ?? content.length;
+      const paddedContent = content.padEnd(width, ' ');
+      const rightBoundary = boundaries[measureIdx + 1] || '|';
+      rebuilt += ` ${paddedContent} ${rightBoundary}`;
+    }
+
+    if (suffix) {
+      rebuilt += ` ${suffix}`;
+    }
+
+    return rebuilt.trimEnd();
   });
 
   return alignedLines.join('\n');

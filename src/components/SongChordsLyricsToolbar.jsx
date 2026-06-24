@@ -219,16 +219,20 @@ export default function SongChordsLyricsToolbar({
             onClick={handleSaveLyrics}
             disabled={savingLyrics}
             className="btn"
+            title={savingLyrics ? "Menyimpan..." : "Simpan"}
+            aria-label={savingLyrics ? "Menyimpan" : "Simpan"}
           >
-            {savingLyrics ? "⏳ Menyimpan..." : "✓ Simpan"}
+            {savingLyrics ? "⏳" : "✓"}
           </button>
           <button
             type="button"
             onClick={handleCancelEditLyrics}
             disabled={savingLyrics}
             className="btn btn-secondary"
+            title="Batal"
+            aria-label="Batal"
           >
-            ✕ Batal
+            ✕
           </button>
         </div>
       )}

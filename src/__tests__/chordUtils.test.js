@@ -139,7 +139,37 @@ describe("chordUtils", () => {
     expect(lines[0]).not.toMatch(/[A-Za-z0-9)]\|/);
     expect(lines[0]).not.toMatch(/\|[A-Za-z0-9(]/);
     expect(lines[1]).toContain('| Dm');
-    expect(lines[1]).toContain('| C |');
+    expect(lines[1]).toMatch(/\| C\s+\|/);
+  });
+
+  test("alignSelectedBarlines aligns shared measure boundaries even with uneven bars per line", () => {
+    const input = `| Am   | E/G#   | Gm | D/F# |
+| Bb/F | C/F    | Eb/Ab |
+| Dm   | Bb/D   | Dm6 | G#dim7 |
+| C#m7 | Dsus2  | Bm | Bm/A |
+| Bm/G | G#dim7 |
+| F#   | F#/E   | F#/D | F#/C# |`;
+
+    const result = alignSelectedBarlines(input);
+    const barlinePositions = result.split('\n').map((line) => {
+      const positions = [];
+      const regex = /(\|:|:\||\|\||\|)/g;
+      let match;
+      while ((match = regex.exec(line)) !== null) {
+        positions.push(match.index);
+      }
+      return positions;
+    });
+
+    const firstMeasureBoundaries = barlinePositions
+      .filter((positions) => positions.length > 1)
+      .map((positions) => positions[1]);
+    const secondMeasureBoundaries = barlinePositions
+      .filter((positions) => positions.length > 2)
+      .map((positions) => positions[2]);
+
+    expect(new Set(firstMeasureBoundaries).size).toBe(1);
+    expect(new Set(secondMeasureBoundaries).size).toBe(1);
   });
 
   test("wrapBarsPerLine wraps chord bars into groups of four", () => {
