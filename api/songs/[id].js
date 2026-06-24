@@ -15,6 +15,14 @@ async function readJson(req) {
   });
 }
 
+async function ensureSongsColumns(client) {
+  const columnsResult = await client.execute(`PRAGMA table_info(songs)`);
+  const columns = (columnsResult.rows || []).map(row => row.name);
+  if (!columns.includes('time_signature')) {
+    await client.execute(`ALTER TABLE songs ADD COLUMN time_signature TEXT`);
+  }
+}
+
 
 export default async function handler(req, res) {
   // Support both Express (req.params) and Vercel/Next.js (req.query)
@@ -35,6 +43,7 @@ export default async function handler(req, res) {
     let client;
     try {
       client = getTursoClient();
+      await ensureSongsColumns(client);
     } catch (clientErr) {
       console.error(`[songs/[id]] Failed to get Turso client:`, clientErr.message);
       res.status(500).json({ error: 'Database connection error', details: clientErr.message });
@@ -44,9 +53,9 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       try {
         const result = await client.execute(
-          `SELECT s.id, s.title, s.artist, s.youtubeId, s.lyrics, s.key, s.tempo, s.genre, 
+            `SELECT s.id, s.title, s.artist, s.youtubeId, s.lyrics, s.key, s.tempo, s.genre, 
                   s.time_markers, s.arrangement_style, s.keyboard_patch, s.userId, s.bandId, s.createdAt, s.updatedAt,
-                  s.sheet_music_xml, b.name as bandName, u.username as contributor
+              s.sheet_music_xml, s.time_signature, b.name as bandName, u.username as contributor
            FROM songs s
            LEFT JOIN bands b ON s.bandId = b.id
            LEFT JOIN users u ON s.userId = u.id
@@ -134,6 +143,7 @@ export default async function handler(req, res) {
         tempo = COALESCE(?, tempo),
         genre = COALESCE(?, genre),
         time_markers = COALESCE(?, time_markers),
+        time_signature = COALESCE(?, time_signature),
         arrangement_style = COALESCE(?, arrangement_style),
         keyboard_patch = COALESCE(?, keyboard_patch),
         sheet_music_xml = COALESCE(?, sheet_music_xml),
@@ -154,6 +164,7 @@ export default async function handler(req, res) {
         tempoStr,
         body.genre ?? null,
         (Array.isArray(body.time_markers) ? JSON.stringify(body.time_markers) : (body.time_markers ?? null)),
+        body.time_signature ?? null,
         body.arrangementStyle ?? null,
         body.keyboardPatch ?? null,
         body.sheetMusicXml ?? null,

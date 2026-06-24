@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS songs (
   genre TEXT,  
   lyrics TEXT,
   time_markers TEXT,
+  time_signature TEXT,
   arrangement_style TEXT,
   keyboard_patch TEXT,
   sheet_music_xml TEXT,
