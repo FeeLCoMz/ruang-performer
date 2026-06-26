@@ -37,7 +37,7 @@ export default function GigPage() {
   const [viewMode, setViewMode] = useState('list'); // 'list' atau 'calendar'
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = terbaru, 'asc' = terlama
   const today = new Date();
-  const [shareMonth, setShareMonth] = useState('');
+  const [shareMonth, setShareMonth] = useState(today.getMonth());
   const [shareYear, setShareYear] = useState(today.getFullYear());
   // Pisahkan tanggal dan waktu untuk input
   const defaultDate = today.toISOString().split('T')[0];
