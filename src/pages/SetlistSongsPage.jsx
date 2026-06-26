@@ -87,6 +87,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // State untuk share modal
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [shareFormat, setShareFormat] = useState('full');
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [posterError, setPosterError] = useState('');
   const posterRef = useRef(null);
@@ -229,13 +230,20 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // Generate share text
   const shareUrl = `${window.location.origin}/setlists/${setlist.id}`;
   const bandText = setlist.bandName ? `🎸 Band: ${setlist.bandName}\n` : '';
-  const shareText = `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
-    setlistSongs.map((song, idx) => {
-      const songKey = song.key ? ` [${song.key}]` : '';
-      const songTempo = song.tempo ? ` (${song.tempo} BPM)` : '';
-      return `${idx + 1}. ${song.title}${song.artist ? ' - ' + song.artist : ''}${songKey}${songTempo}`;
-    }).join('\n') +
-    `\n\nLihat detail & chord: ${shareUrl}`;
+  const shareText =
+    shareFormat === 'title-artist-only'
+      ? setlistSongs
+          .map((song, idx) => `${idx + 1}. ${song.title}${song.artist ? ' - ' + song.artist : ''}`)
+          .join('\n')
+      : `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
+        setlistSongs
+          .map((song, idx) => {
+            const songKey = song.key ? ` [${song.key}]` : '';
+            const songTempo = song.tempo ? ` (${song.tempo} BPM)` : '';
+            return `${idx + 1}. ${song.title}${song.artist ? ' - ' + song.artist : ''}${songKey}${songTempo}`;
+          })
+          .join('\n') +
+        `\n\nLihat detail & chord: ${shareUrl}`;
 
 
   function handleCopyShare() {
@@ -760,6 +768,17 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               setlistSongs={setlistSongs}
               posterRef={posterRef}              
             />
+            <div className="filter-row">
+              <select
+                value={shareFormat}
+                onChange={(e) => setShareFormat(e.target.value)}
+                className="filter-select"
+                aria-label="Format teks bagikan"
+              >
+                <option value="full">Format lengkap (judul, penyanyi, key, tempo, link)</option>
+                <option value="title-artist-only">Hanya judul lagu + penyanyi</option>
+              </select>
+            </div>
             <textarea
               className="modal-input"
               rows={7}
