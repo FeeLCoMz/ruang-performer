@@ -2308,6 +2308,32 @@ body.dark-mode .lyrics-editor-textarea {
   background: var(--primary-bg);
 }
 
+.song-item-smart-featured {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, var(--card-bg) 24%);
+}
+
+.smart-featured-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  vertical-align: middle;
+}
+
+.smart-featured-caption {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+}
+
 .gig-item-completed {
   border-left: 4px solid #22c55e;
   background: linear-gradient(90deg, rgba(34, 197, 94, 0.12) 0%, var(--card-bg) 28%);

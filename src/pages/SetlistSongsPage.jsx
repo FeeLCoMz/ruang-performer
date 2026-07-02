@@ -74,6 +74,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [searchText, setSearchText] = useState('');
   const [filterArtist, setFilterArtist] = useState('');
   const [filterGenre, setFilterGenre] = useState('');
+  const [filterSmartOnly, setFilterSmartOnly] = useState(false);
   const [sortBy, setSortBy] = useState('custom');
   const [sortOrder, setSortOrder] = useState('asc');
 
@@ -178,7 +179,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         (song.artist || '').toLowerCase().includes(searchText.toLowerCase());
       const matchArtist = !filterArtist || song.artist === filterArtist;
       const matchGenre = !filterGenre || song.genre === filterGenre;
-      return matchSearch && matchArtist && matchGenre;
+      const matchSmart = !filterSmartOnly || setlistSongMeta?.[song.id]?.smartFeatured === true;
+      return matchSearch && matchArtist && matchGenre && matchSmart;
     });
 
     // Sort (skip when custom to preserve manual order)
@@ -221,7 +223,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
 
     return result;
-  }, [setlistSongs, searchText, filterArtist, filterGenre, sortBy, sortOrder]);
+  }, [setlistSongs, searchText, filterArtist, filterGenre, filterSmartOnly, sortBy, sortOrder, setlistSongMeta]);
 
   const hasActiveFilters = searchText || filterArtist || filterGenre;
 
@@ -233,6 +235,13 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     });
   }, [setlistSongs, smartTargetMinutes, smartStrategy]);
 
+  const featuredSongIdsFromMeta = useMemo(() => {
+    const meta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
+      ? setlist.setlistSongMeta
+      : {};
+    return (localOrder || []).filter((songId) => meta?.[songId]?.smartFeatured === true);
+  }, [setlist?.setlistSongMeta, localOrder]);
+
   // Early returns AFTER all hooks
   if (isLoading) return <div className="main-content"><div className="card"><div className="loading-skeleton" style={{height: 40, marginBottom: 16}}></div><div className="loading-skeleton" style={{height: 24, width: '60%', marginBottom: 8}}></div><div className="loading-skeleton" style={{height: 24, width: '40%', marginBottom: 8}}></div></div></div>;
   if (!setlist) return <div className="main-content error-text">Setlist tidak ditemukan atau offline cache kosong</div>;
@@ -241,6 +250,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setSearchText('');
     setFilterArtist('');
     setFilterGenre('');
+    setFilterSmartOnly(false);
   }
 
   // Generate share text
@@ -503,15 +513,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setConfirmDeleteSongId(songId);
   }
 
-  async function persistSetlistSongs(newOrder) {
+  async function persistSetlistSongs(newOrder, nextSetlistSongMeta = null) {
+    const mergedMeta = nextSetlistSongMeta || setlist.setlistSongMeta || {};
     setLocalOrder(newOrder);
     if (setSetlists) {
-      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: newOrder } : s));
+      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: newOrder, setlistSongMeta: mergedMeta } : s));
     }
     await fetch(`/api/setlists/${setlist.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
-      body: JSON.stringify({ ...setlist, songs: newOrder }),
+      body: JSON.stringify({ ...setlist, songs: newOrder, setlistSongMeta: mergedMeta }),
     });
   }
 
@@ -520,10 +531,53 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setSmartApplying(true);
     setSmartError('');
     try {
-      await persistSetlistSongs(smartPlan.orderedSongIds);
+      const currentMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
+        ? { ...setlist.setlistSongMeta }
+        : {};
+      const featuredSet = new Set(smartPlan.featuredSongIds || []);
+      const updatedMeta = { ...currentMeta };
+      for (const songId of smartPlan.orderedSongIds) {
+        const prevSongMeta = updatedMeta[songId] || {};
+        updatedMeta[songId] = {
+          ...prevSongMeta,
+          smartFeatured: featuredSet.has(songId),
+        };
+      }
+      await persistSetlistSongs(smartPlan.orderedSongIds, updatedMeta);
       setShowSmartModal(false);
     } catch (e) {
       setSmartError(e.message || 'Gagal menerapkan Smart Setlist');
+    } finally {
+      setSmartApplying(false);
+    }
+  }
+
+  async function handleClearSmartPicks() {
+    if (!canEdit) return;
+    setSmartApplying(true);
+    setSmartError('');
+    try {
+      const currentMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
+        ? { ...setlist.setlistSongMeta }
+        : {};
+
+      const updatedMeta = { ...currentMeta };
+      for (const songId of localOrder || []) {
+        const prevSongMeta = updatedMeta[songId] || {};
+        if (Object.prototype.hasOwnProperty.call(prevSongMeta, 'smartFeatured')) {
+          const { smartFeatured, ...restMeta } = prevSongMeta;
+          if (Object.keys(restMeta).length > 0) {
+            updatedMeta[songId] = restMeta;
+          } else {
+            delete updatedMeta[songId];
+          }
+        }
+      }
+
+      await persistSetlistSongs(localOrder, updatedMeta);
+      setFilterSmartOnly(false);
+    } catch (e) {
+      setSmartError(e.message || 'Gagal menghapus Smart Picks');
     } finally {
       setSmartApplying(false);
     }
@@ -555,12 +609,27 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             <div className="setlist-description">{setlist.description}</div>
           )}
           <p>{setlistSongs.length} lagu di setlist ini</p>
+          {featuredSongIdsFromMeta.length > 0 && (
+            <div className="smart-featured-caption">
+              ✨ {featuredSongIdsFromMeta.length} lagu ditandai sebagai blok show utama Smart Assistant
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {/* Sembunyikan tombol edit/tambah/bagikan saat performanceMode aktif */}
           {!performanceMode && canEdit && (
             <button className="btn" onClick={() => setShowSmartModal(true)} title="Urutkan otomatis berdasarkan key, tempo, energi, dan durasi">
               ✨ Smart Assistant
+            </button>
+          )}
+          {!performanceMode && canEdit && featuredSongIdsFromMeta.length > 0 && (
+            <button
+              className="btn btn-secondary"
+              onClick={handleClearSmartPicks}
+              title="Hapus semua badge Smart Pick dari setlist"
+              disabled={smartApplying}
+            >
+              {smartApplying ? 'Memproses...' : 'Clear Smart Picks'}
             </button>
           )}
           {!performanceMode && canEdit && (
@@ -632,6 +701,15 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             >
               {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
             </button>
+            {featuredSongIdsFromMeta.length > 0 && (
+              <button
+                onClick={() => setFilterSmartOnly(v => !v)}
+                className={`btn ${filterSmartOnly ? '' : 'btn-secondary'}`}
+                title="Filter lagu Smart Pick"
+              >
+                {filterSmartOnly ? '✨ Smart Pick Saja (Aktif)' : '✨ Smart Pick Saja'}
+              </button>
+            )}
             {hasActiveFilters && (
               <button
                 onClick={handleClearFilters}
@@ -664,10 +742,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             const keyChanged = baseSong && song.key && baseSong.key && song.key !== baseSong.key;
             const tempoChanged = baseSong && song.tempo && baseSong.tempo && song.tempo !== baseSong.tempo;
             const genreChanged = baseSong && song.genre && baseSong.genre && song.genre !== baseSong.genre;
+            const isSmartFeatured = setlistSongMeta?.[song.id]?.smartFeatured === true;
             return (
               <div
                 key={song.id}
-                className="song-item"
+                className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}`}
                 draggable={sortBy === 'custom'}
                 onDragStart={e => {
                   if (sortBy !== 'custom') return;
@@ -710,7 +789,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 {/* Song Info */}
                 <div className="song-info">
                   <div className="song-number">{idx + 1}.</div>
-                  <h3 className="song-title">{song.title}</h3>
+                  <h3 className="song-title">
+                    {song.title}
+                    {isSmartFeatured && <span className="smart-featured-badge">Smart Pick</span>}
+                  </h3>
                   <div className="song-meta">
                     {song.artist && <span>👤 {song.artist}</span>}
                     {song.key && (
