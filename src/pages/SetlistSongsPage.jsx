@@ -15,6 +15,7 @@ import { usePermission } from '../hooks/usePermission.js';
 import { canEditSetlist } from '../utils/permissionUtils.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as chordUtils from '../utils/chordUtils.js';
+import { buildSmartSetlistPlan } from '../utils/setlistSmartAssistant.js';
 
 // userBandInfo: bisa array (multi-band) atau object (single band)
 export default function SetlistSongsPage({ setlists, songs, setSetlists, setActiveSetlist, loadingSetlists, userBandInfo, performanceMode = false }) {
@@ -97,6 +98,13 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [copyName, setCopyName] = useState('');
   const [copying, setCopying] = useState(false);
   const [copyError, setCopyError] = useState('');
+
+  // State Smart Setlist Assistant
+  const [showSmartModal, setShowSmartModal] = useState(false);
+  const [smartTargetMinutes, setSmartTargetMinutes] = useState('');
+  const [smartStrategy, setSmartStrategy] = useState('balanced');
+  const [smartError, setSmartError] = useState('');
+  const [smartApplying, setSmartApplying] = useState(false);
 
   // State untuk edit lagu
   const [editSongId, setEditSongId] = useState(null);
@@ -216,6 +224,14 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   }, [setlistSongs, searchText, filterArtist, filterGenre, sortBy, sortOrder]);
 
   const hasActiveFilters = searchText || filterArtist || filterGenre;
+
+  const smartPlan = useMemo(() => {
+    if (!Array.isArray(setlistSongs) || setlistSongs.length === 0) return null;
+    return buildSmartSetlistPlan(setlistSongs, {
+      targetMinutes: smartTargetMinutes,
+      strategy: smartStrategy,
+    });
+  }, [setlistSongs, smartTargetMinutes, smartStrategy]);
 
   // Early returns AFTER all hooks
   if (isLoading) return <div className="main-content"><div className="card"><div className="loading-skeleton" style={{height: 40, marginBottom: 16}}></div><div className="loading-skeleton" style={{height: 24, width: '60%', marginBottom: 8}}></div><div className="loading-skeleton" style={{height: 24, width: '40%', marginBottom: 8}}></div></div></div>;
@@ -487,21 +503,39 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setConfirmDeleteSongId(songId);
   }
 
+  async function persistSetlistSongs(newOrder) {
+    setLocalOrder(newOrder);
+    if (setSetlists) {
+      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: newOrder } : s));
+    }
+    await fetch(`/api/setlists/${setlist.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
+      body: JSON.stringify({ ...setlist, songs: newOrder }),
+    });
+  }
+
+  async function handleApplySmartSetlist() {
+    if (!canEdit || !smartPlan || !Array.isArray(smartPlan.orderedSongIds)) return;
+    setSmartApplying(true);
+    setSmartError('');
+    try {
+      await persistSetlistSongs(smartPlan.orderedSongIds);
+      setShowSmartModal(false);
+    } catch (e) {
+      setSmartError(e.message || 'Gagal menerapkan Smart Setlist');
+    } finally {
+      setSmartApplying(false);
+    }
+  }
+
   async function confirmDeleteSong() {
     if (!confirmDeleteSongId) return;
     setDeleting(true);
     const songId = confirmDeleteSongId;
     const newOrder = localOrder.filter(id => id !== songId);
-    setLocalOrder(newOrder);
-    if (setSetlists) {
-      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: newOrder } : s));
-    }
     try {
-      await fetch(`/api/setlists/${setlist.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
-        body: JSON.stringify({ ...setlist, songs: newOrder }),
-      });
+      await persistSetlistSongs(newOrder);
     } catch (e) {
       console.error('Gagal hapus lagu dari setlist', e);
     }
@@ -524,6 +558,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {/* Sembunyikan tombol edit/tambah/bagikan saat performanceMode aktif */}
+          {!performanceMode && canEdit && (
+            <button className="btn" onClick={() => setShowSmartModal(true)} title="Urutkan otomatis berdasarkan key, tempo, energi, dan durasi">
+              ✨ Smart Assistant
+            </button>
+          )}
           {!performanceMode && canEdit && (
             <button className="btn" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
               <PlusIcon size={22} /> Tambah Lagu
@@ -843,6 +882,74 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 {copying ? 'Mencopy...' : 'Copy Setlist'}
               </button>
               <button className="btn btn-secondary" onClick={() => { setShowCopyModal(false); setCopyName(''); setCopyError(''); }} disabled={copying}>
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Smart Setlist Assistant */}
+      {showSmartModal && canEdit && !performanceMode && (
+        <div
+          className="modal-overlay"
+          aria-label="Modal smart setlist assistant"
+          onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowSmartModal(false); }}
+          tabIndex={-1}
+          onKeyDown={e => { if (e.key === 'Escape') setShowSmartModal(false); }}
+        >
+          <div
+            className="modal add-song-modal smart-setlist-modal"
+            role="dialog"
+            aria-modal="true"
+            tabIndex={0}
+          >
+            <div className="modal-title">Smart Setlist Assistant</div>
+            <p className="smart-setlist-subtitle">
+              Urutkan lagu otomatis berdasarkan transisi key, flow tempo, dan kurva energi.
+            </p>
+
+            <label>
+              Target Durasi Show (menit, opsional)
+              <input
+                type="number"
+                min="0"
+                max="300"
+                value={smartTargetMinutes}
+                onChange={(e) => setSmartTargetMinutes(e.target.value)}
+                className="modal-input"
+                placeholder="Contoh: 60"
+              />
+            </label>
+
+            <label>
+              Strategi Urutan
+              <select
+                value={smartStrategy}
+                onChange={(e) => setSmartStrategy(e.target.value)}
+                className="modal-input"
+              >
+                <option value="balanced">Balanced (default)</option>
+                <option value="smooth">Smooth transitions (key + tempo)</option>
+                <option value="energy">Energy arc (peak di tengah)</option>
+              </select>
+            </label>
+
+            {smartPlan && (
+              <div className="smart-plan-summary">
+                <div><strong>Total estimasi setlist:</strong> {smartPlan.estimatedMinutes} menit</div>
+                <div><strong>Blok show utama:</strong> {smartPlan.featuredSongIds.length} lagu (~{smartPlan.featuredMinutes} menit)</div>
+                <div className="smart-plan-note">Lagu di luar target tetap dipertahankan sebagai cadangan di urutan akhir.</div>
+              </div>
+            )}
+
+            {smartError && <div className="error-text">{smartError}</div>}
+
+            <div className="modal-actions">
+              <button className="btn" onClick={handleApplySmartSetlist} disabled={smartApplying || !smartPlan}>
+                {smartApplying ? 'Menerapkan...' : 'Terapkan Urutan Cerdas'}
+              </button>
+              <button className="btn btn-secondary" onClick={() => setShowSmartModal(false)} disabled={smartApplying}>
                 Batal
               </button>
             </div>

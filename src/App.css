@@ -2387,6 +2387,33 @@ body.dark-mode .lyrics-editor-textarea {
   margin-bottom: var(--spacing-md);
 }
 
+.smart-setlist-modal {
+  max-width: 560px;
+}
+
+.smart-setlist-subtitle {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.smart-plan-summary {
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--primary-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.smart-plan-note {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 /* Setlist-specific styles */
 .setlist-item {
   background: var(--card-bg);
