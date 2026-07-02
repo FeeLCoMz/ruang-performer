@@ -1,15 +1,13 @@
-// Global array Gemini models yang didukung (urutkan dari prioritas utama ke cadangan)
-const GEMINI_MODELS_SUPPORTED = [
+// Text-only Gemini models that support generateContent for song metadata lookup.
+// Keep multimodal/audio/image/video models out of this list to avoid 404s here.
+const GEMINI_TEXT_MODELS_SUPPORTED = [
   'gemini-2.5-flash',
   'gemini-2.5-pro',
   'gemini-2.0-flash',
   'gemini-2.0-flash-001',
-  'gemini-2.0-flash-exp-image-generation',
   'gemini-2.0-flash-lite-001',
   'gemini-2.0-flash-lite',
   'gemini-exp-1206',
-  'gemini-2.5-flash-preview-tts',
-  'gemini-2.5-pro-preview-tts',
   'gemma-3-1b-it',
   'gemma-3-4b-it',
   'gemma-3-12b-it',
@@ -20,31 +18,11 @@ const GEMINI_MODELS_SUPPORTED = [
   'gemini-flash-lite-latest',
   'gemini-pro-latest',
   'gemini-2.5-flash-lite',
-  'gemini-2.5-flash-image', // Nano Banana
   'gemini-2.5-flash-preview-09-2025',
   'gemini-2.5-flash-lite-preview-09-2025',
   'gemini-3-pro-preview',
   'gemini-3-flash-preview',
-  'gemini-3-pro-image-preview', // Nano Banana Pro
-  'nano-banana-pro-preview', // Nano Banana Pro
-  'gemini-robotics-er-1.5-preview',
-  'gemini-2.5-computer-use-preview-10-2025',
   'deep-research-pro-preview-12-2025',
-  'gemini-embedding-001',
-  'aqa',
-  'imagen-4.0-generate-preview-06-06',
-  'imagen-4.0-ultra-generate-preview-06-06',
-  'imagen-4.0-generate-001',
-  'imagen-4.0-ultra-generate-001',
-  'imagen-4.0-fast-generate-001',
-  'veo-2.0-generate-001',
-  'veo-3.0-generate-001',
-  'veo-3.0-fast-generate-001',
-  'veo-3.1-generate-preview',
-  'veo-3.1-fast-generate-preview',
-  'gemini-2.5-flash-native-audio-latest',
-  'gemini-2.5-flash-native-audio-preview-09-2025',
-  'gemini-2.5-flash-native-audio-preview-12-2025',
 ];
 // Simple in-memory cache for song info (title+artist)
 const songInfoCache = {};
@@ -87,7 +65,12 @@ async function handleListModels(req, res) {
       console.error('Gemini ListModels API error:', data);
       return res.status(resp.status).json({ error: data.error?.message || 'Gemini ListModels API gagal' });
     }
-    res.status(200).json({ models: data.models || [] });
+    const models = (data.models || []).filter(model => {
+      const modelName = model?.name?.split('/').pop();
+      const supportedMethods = Array.isArray(model?.supportedGenerationMethods) ? model.supportedGenerationMethods : [];
+      return supportedMethods.includes('generateContent') || GEMINI_TEXT_MODELS_SUPPORTED.includes(modelName);
+    });
+    res.status(200).json({ models });
   } catch (err) {
     console.error('ListModels error:', err);
     res.status(500).json({ error: 'Failed to list models', message: err.message });
@@ -266,7 +249,7 @@ async function handleSongSearch(req, res) {
       }
       let success = false;
       let lastError = null;
-      for (const modelName of GEMINI_MODELS_SUPPORTED) {
+      for (const modelName of GEMINI_TEXT_MODELS_SUPPORTED) {
         try {
           const model = genAI.getGenerativeModel({ model: modelName });
           const response = await model.generateContent(prompt);
