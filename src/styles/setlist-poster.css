@@ -89,6 +89,30 @@
   margin-bottom: 5px;
 }
 
+.setlist-poster-session-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px dashed rgba(251, 191, 36, 0.5);
+  background: rgba(251, 191, 36, 0.08);
+  margin: 4px 0 6px;
+}
+
+.setlist-poster-session-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  color: #fcd34d;
+}
+
+.setlist-poster-session-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fde68a;
+}
+
 .setlist-poster-index {
   width: 32px;
   height: 32px;

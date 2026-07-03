@@ -2291,6 +2291,39 @@ body.dark-mode .lyrics-editor-textarea {
   gap: var(--spacing-sm);
 }
 
+.setlist-session-divider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: 10px 14px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.04) 0%, rgba(15, 23, 42, 0.01) 100%);
+  transition: all var(--transition-fast);
+}
+
+.setlist-session-divider.dragging {
+  opacity: 0.6;
+}
+
+.setlist-session-divider.drag-over {
+  border-color: var(--primary-accent);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.setlist-session-divider-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.setlist-session-divider-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .song-item {
   background: var(--card-bg);
   border: 1px solid var(--border-color);

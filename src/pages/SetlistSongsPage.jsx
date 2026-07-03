@@ -17,6 +17,8 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import * as chordUtils from '../utils/chordUtils.js';
 import { buildSmartSetlistPlan } from '../utils/setlistSmartAssistant.js';
 
+const SESSION_DIVIDER_META_FIELD = 'sessionDividerName';
+
 // userBandInfo: bisa array (multi-band) atau object (single band)
 export default function SetlistSongsPage({ setlists, songs, setSetlists, setActiveSetlist, loadingSetlists, userBandInfo, performanceMode = false }) {
   const { id: setlistId } = useParams();
@@ -85,6 +87,21 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [addingSongIds, setAddingSongIds] = useState([]); // array of selected song ids
   const [isAddingSongs, setIsAddingSongs] = useState(false);
   const addSongInputRef = useRef(null);
+
+  // State untuk merge dari setlist lain
+  const [showMergeSetlistModal, setShowMergeSetlistModal] = useState(false);
+  const [mergeSetlistSearch, setMergeSetlistSearch] = useState('');
+  const [mergeSourceSetlistId, setMergeSourceSetlistId] = useState('');
+  const [mergeSetlistError, setMergeSetlistError] = useState('');
+  const [isMergingSetlist, setIsMergingSetlist] = useState(false);
+
+  // State untuk divider sesi
+  const [showSessionDividerModal, setShowSessionDividerModal] = useState(false);
+  const [sessionDividerName, setSessionDividerName] = useState('');
+  const [sessionDividerSongId, setSessionDividerSongId] = useState('');
+  const [sessionDividerError, setSessionDividerError] = useState('');
+  const [editingSessionDividerSongId, setEditingSessionDividerSongId] = useState('');
+  const [isSavingSessionDivider, setIsSavingSessionDivider] = useState(false);
 
   // State untuk share modal
   const [showShareModal, setShowShareModal] = useState(false);
@@ -242,6 +259,74 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     return (localOrder || []).filter((songId) => meta?.[songId]?.smartFeatured === true);
   }, [setlist?.setlistSongMeta, localOrder]);
 
+  const sessionDividers = useMemo(() => {
+    if (!Array.isArray(localOrder) || localOrder.length === 0) return [];
+    return localOrder
+      .map((songId) => {
+        const dividerName = (setlistSongMeta?.[songId]?.[SESSION_DIVIDER_META_FIELD] || '').trim();
+        if (!dividerName) return null;
+        return {
+          songId,
+          name: dividerName,
+        };
+      })
+      .filter(Boolean);
+  }, [localOrder, setlistSongMeta]);
+
+  const filteredSongsWithDividers = useMemo(() => {
+    if (sortBy !== 'custom') {
+      return filteredSongs.map((song) => ({ type: 'song', song }));
+    }
+
+    const rows = [];
+    for (const song of filteredSongs) {
+      const dividerName = (setlistSongMeta?.[song.id]?.[SESSION_DIVIDER_META_FIELD] || '').trim();
+      if (dividerName) {
+        rows.push({
+          type: 'divider',
+          songId: song.id,
+          name: dividerName,
+        });
+      }
+      rows.push({ type: 'song', song });
+    }
+    return rows;
+  }, [filteredSongs, setlistSongMeta, sortBy]);
+
+  const mergeCandidateSetlists = useMemo(() => {
+    if (!Array.isArray(setlists)) return [];
+    const term = mergeSetlistSearch.trim().toLowerCase();
+    return setlists
+      .filter((item) => String(item.id) !== String(setlist?.id))
+      .filter((item) => {
+        if (!term) return true;
+        return (item.name || '').toLowerCase().includes(term) || (item.bandName || '').toLowerCase().includes(term);
+      });
+  }, [setlists, setlist?.id, mergeSetlistSearch]);
+
+  const orderedSetlistRows = useMemo(() => {
+    if (!Array.isArray(localOrder) || localOrder.length === 0) {
+      return (setlistSongs || []).map((song) => ({ type: 'song', song }));
+    }
+
+    const songMap = new Map((setlistSongs || []).map((song) => [song.id, song]));
+    const rows = [];
+
+    for (const songId of localOrder) {
+      const song = songMap.get(songId);
+      if (!song) continue;
+
+      const dividerName = (setlistSongMeta?.[songId]?.[SESSION_DIVIDER_META_FIELD] || '').trim();
+      if (dividerName) {
+        rows.push({ type: 'divider', songId, name: dividerName });
+      }
+
+      rows.push({ type: 'song', song });
+    }
+
+    return rows;
+  }, [localOrder, setlistSongMeta, setlistSongs]);
+
   // Early returns AFTER all hooks
   if (isLoading) return <div className="main-content"><div className="card"><div className="loading-skeleton" style={{height: 40, marginBottom: 16}}></div><div className="loading-skeleton" style={{height: 24, width: '60%', marginBottom: 8}}></div><div className="loading-skeleton" style={{height: 24, width: '40%', marginBottom: 8}}></div></div></div>;
   if (!setlist) return <div className="main-content error-text">Setlist tidak ditemukan atau offline cache kosong</div>;
@@ -256,19 +341,39 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // Generate share text
   const shareUrl = `${window.location.origin}/setlists/${setlist.id}`;
   const bandText = setlist.bandName ? `🎸 Band: ${setlist.bandName}\n` : '';
+  const hasSessionDividerInShare = orderedSetlistRows.some((row) => row.type === 'divider');
+
+  function formatShareLines(includeSongDetails) {
+    let songNumber = 0;
+    let sessionNumber = 0;
+
+    return orderedSetlistRows
+      .map((row) => {
+        if (row.type === 'divider') {
+          sessionNumber += 1;
+          return `\n=== SESI ${sessionNumber}: ${row.name.toUpperCase()} ===`;
+        }
+
+        const song = row.song;
+        songNumber += 1;
+        if (!includeSongDetails) {
+          return `${songNumber}. ${song.title}${song.artist ? ` - ${song.artist}` : ''}`;
+        }
+
+        const songKey = song.key ? ` [${song.key}]` : '';
+        const songTempo = song.tempo ? ` (${song.tempo} BPM)` : '';
+        return `${songNumber}. ${song.title}${song.artist ? ` - ${song.artist}` : ''}${songKey}${songTempo}`;
+      })
+      .join('\n')
+      .trim();
+  }
+
   const shareText =
     shareFormat === 'title-artist-only'
-      ? setlistSongs
-          .map((song, idx) => `${idx + 1}. ${song.title}${song.artist ? ' - ' + song.artist : ''}`)
-          .join('\n')
+      ? `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
+        `${hasSessionDividerInShare ? 'Pembagian sesi:\n' : ''}${formatShareLines(false)}`
       : `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
-        setlistSongs
-          .map((song, idx) => {
-            const songKey = song.key ? ` [${song.key}]` : '';
-            const songTempo = song.tempo ? ` (${song.tempo} BPM)` : '';
-            return `${idx + 1}. ${song.title}${song.artist ? ' - ' + song.artist : ''}${songKey}${songTempo}`;
-          })
-          .join('\n') +
+        `${hasSessionDividerInShare ? 'Pembagian sesi:\n' : ''}${formatShareLines(true)}` +
         `\n\nLihat detail & chord: ${shareUrl}`;
 
 
@@ -460,6 +565,214 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
   }
 
+  function openMergeSetlistModal() {
+    setMergeSetlistError('');
+    setMergeSetlistSearch('');
+    setMergeSourceSetlistId('');
+    setShowMergeSetlistModal(true);
+  }
+
+  async function handleMergeFromSetlist() {
+    if (!canEdit) return;
+    if (!mergeSourceSetlistId) {
+      setMergeSetlistError('Pilih setlist sumber terlebih dahulu');
+      return;
+    }
+
+    const sourceSetlist = Array.isArray(setlists)
+      ? setlists.find((item) => String(item.id) === String(mergeSourceSetlistId))
+      : null;
+
+    if (!sourceSetlist) {
+      setMergeSetlistError('Setlist sumber tidak ditemukan');
+      return;
+    }
+
+    const sourceSongs = Array.isArray(sourceSetlist.songs) ? sourceSetlist.songs : [];
+    if (sourceSongs.length === 0) {
+      setMergeSetlistError('Setlist sumber tidak memiliki lagu untuk digabungkan');
+      return;
+    }
+
+    const availableSongIds = new Set((songs || []).map((song) => song.id));
+    const validSourceSongs = sourceSongs.filter((songId) => availableSongIds.has(songId));
+
+    if (validSourceSongs.length === 0) {
+      setMergeSetlistError('Semua lagu di setlist sumber sudah tidak tersedia');
+      return;
+    }
+
+    setIsMergingSetlist(true);
+    setMergeSetlistError('');
+
+    const currentOrder = Array.isArray(localOrder) ? localOrder : [];
+    const currentSongIdSet = new Set(currentOrder);
+
+    const combined = [...currentOrder, ...validSourceSongs];
+    const seen = new Set();
+    const deduped = [];
+    for (const songId of combined) {
+      if (!seen.has(songId)) {
+        seen.add(songId);
+        deduped.push(songId);
+      }
+    }
+
+    const currentMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
+      ? { ...setlist.setlistSongMeta }
+      : {};
+    const sourceMeta = typeof sourceSetlist?.setlistSongMeta === 'object' && !Array.isArray(sourceSetlist.setlistSongMeta)
+      ? sourceSetlist.setlistSongMeta
+      : {};
+
+    const mergedMeta = { ...currentMeta };
+
+    // Hanya copy meta untuk lagu yang benar-benar baru di setlist aktif.
+    for (const songId of validSourceSongs) {
+      if (currentSongIdSet.has(songId)) continue;
+      if (sourceMeta[songId] && typeof sourceMeta[songId] === 'object') {
+        mergedMeta[songId] = { ...sourceMeta[songId] };
+      }
+    }
+
+    try {
+      await persistSetlistSongs(deduped, mergedMeta);
+      setShowMergeSetlistModal(false);
+      setMergeSetlistSearch('');
+      setMergeSourceSetlistId('');
+    } catch (e) {
+      setMergeSetlistError(e.message || 'Gagal merge lagu dari setlist lain');
+    } finally {
+      setIsMergingSetlist(false);
+    }
+  }
+
+  function openAddSessionDivider() {
+    setSessionDividerError('');
+    setSessionDividerName('');
+    setEditingSessionDividerSongId('');
+    setSessionDividerSongId(localOrder[0] || '');
+    setShowSessionDividerModal(true);
+  }
+
+  function openEditSessionDivider(songId) {
+    const existingName = (setlistSongMeta?.[songId]?.[SESSION_DIVIDER_META_FIELD] || '').trim();
+    setSessionDividerError('');
+    setSessionDividerName(existingName);
+    setSessionDividerSongId(songId);
+    setEditingSessionDividerSongId(songId);
+    setShowSessionDividerModal(true);
+  }
+
+  async function handleSaveSessionDivider() {
+    if (!canEdit) return;
+    const dividerName = sessionDividerName.trim();
+    if (!dividerName) {
+      setSessionDividerError('Nama sesi tidak boleh kosong');
+      return;
+    }
+    if (!sessionDividerSongId) {
+      setSessionDividerError('Pilih lagu awal sesi');
+      return;
+    }
+
+    setIsSavingSessionDivider(true);
+    setSessionDividerError('');
+
+    const nextMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
+      ? { ...setlist.setlistSongMeta }
+      : {};
+
+    if (editingSessionDividerSongId && editingSessionDividerSongId !== sessionDividerSongId) {
+      const prevMeta = { ...(nextMeta[editingSessionDividerSongId] || {}) };
+      delete prevMeta[SESSION_DIVIDER_META_FIELD];
+      if (Object.keys(prevMeta).length > 0) {
+        nextMeta[editingSessionDividerSongId] = prevMeta;
+      } else {
+        delete nextMeta[editingSessionDividerSongId];
+      }
+    }
+
+    nextMeta[sessionDividerSongId] = {
+      ...(nextMeta[sessionDividerSongId] || {}),
+      [SESSION_DIVIDER_META_FIELD]: dividerName,
+    };
+
+    try {
+      await persistSetlistSongs(localOrder, nextMeta);
+      setShowSessionDividerModal(false);
+      setSessionDividerName('');
+      setSessionDividerSongId('');
+      setEditingSessionDividerSongId('');
+    } catch (e) {
+      setSessionDividerError(e.message || 'Gagal menyimpan divider sesi');
+    } finally {
+      setIsSavingSessionDivider(false);
+    }
+  }
+
+  async function handleDeleteSessionDivider(songId) {
+    if (!canEdit) return;
+    const nextMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
+      ? { ...setlist.setlistSongMeta }
+      : {};
+    const songMeta = { ...(nextMeta[songId] || {}) };
+    delete songMeta[SESSION_DIVIDER_META_FIELD];
+
+    if (Object.keys(songMeta).length > 0) {
+      nextMeta[songId] = songMeta;
+    } else {
+      delete nextMeta[songId];
+    }
+
+    try {
+      await persistSetlistSongs(localOrder, nextMeta);
+    } catch (e) {
+      console.error('Gagal menghapus divider sesi', e);
+    }
+  }
+
+  async function handleMoveSessionDivider(fromSongId, toSongId) {
+    if (!canEdit || !fromSongId || !toSongId || fromSongId === toSongId) return;
+
+    const nextMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
+      ? { ...setlist.setlistSongMeta }
+      : {};
+
+    const fromSongMeta = { ...(nextMeta[fromSongId] || {}) };
+    const toSongMeta = { ...(nextMeta[toSongId] || {}) };
+    const movedDividerName = (fromSongMeta[SESSION_DIVIDER_META_FIELD] || '').trim();
+    if (!movedDividerName) return;
+
+    const targetDividerName = (toSongMeta[SESSION_DIVIDER_META_FIELD] || '').trim();
+
+    delete fromSongMeta[SESSION_DIVIDER_META_FIELD];
+    if (Object.keys(fromSongMeta).length > 0) {
+      nextMeta[fromSongId] = fromSongMeta;
+    } else {
+      delete nextMeta[fromSongId];
+    }
+
+    nextMeta[toSongId] = {
+      ...toSongMeta,
+      [SESSION_DIVIDER_META_FIELD]: movedDividerName,
+    };
+
+    // Jika target sudah punya divider, lakukan swap agar divider lama tidak hilang.
+    if (targetDividerName) {
+      nextMeta[fromSongId] = {
+        ...(nextMeta[fromSongId] || {}),
+        [SESSION_DIVIDER_META_FIELD]: targetDividerName,
+      };
+    }
+
+    try {
+      await persistSetlistSongs(localOrder, nextMeta);
+    } catch (e) {
+      console.error('Gagal memindahkan divider sesi', e);
+    }
+  }
+
   // Handler edit metadata lagu di setlist
   function openEditSong(songId) {
     setEditSongId(songId);
@@ -637,6 +950,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               <PlusIcon size={22} /> Tambah Lagu
             </button>
           )}
+          {!performanceMode && canEdit && (
+            <button className="btn btn-secondary" onClick={openMergeSetlistModal} title="Merge lagu dari setlist lain">
+              🔀 Merge Setlist
+            </button>
+          )}
+          {!performanceMode && canEdit && (
+            <button className="btn btn-secondary" onClick={openAddSessionDivider} title="Tambah divider sesi">
+              🧩 Divider Sesi
+            </button>
+          )}
           {!performanceMode && (
             <button className="btn" onClick={() => setShowCopyModal(true)} title="Copy Setlist">
               📋 Copy Setlist
@@ -736,7 +1059,66 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         </div>
       ) : (
         <div className="song-list-container">
-          {filteredSongs.map((song, idx) => {
+          {filteredSongsWithDividers.map((row) => {
+            if (row.type === 'divider') {
+              return (
+                <div
+                  key={`divider-${row.songId}`}
+                  className="setlist-session-divider"
+                  draggable={sortBy === 'custom' && canEdit}
+                  onDragStart={e => {
+                    if (sortBy !== 'custom' || !canEdit) return;
+                    e.dataTransfer.setData('drag-type', 'session-divider');
+                    e.dataTransfer.setData('divider-from-song-id', String(row.songId));
+                    e.currentTarget.classList.add('dragging');
+                  }}
+                  onDragEnd={e => {
+                    e.currentTarget.classList.remove('dragging');
+                  }}
+                  onDragOver={e => {
+                    if (sortBy !== 'custom' || !canEdit) return;
+                    if (e.dataTransfer.getData('drag-type') !== 'session-divider') return;
+                    e.preventDefault();
+                    e.currentTarget.classList.add('drag-over');
+                  }}
+                  onDragLeave={e => {
+                    e.currentTarget.classList.remove('drag-over');
+                  }}
+                  onDrop={e => {
+                    if (sortBy !== 'custom' || !canEdit) return;
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('drag-over');
+                    const dragType = e.dataTransfer.getData('drag-type');
+                    if (dragType !== 'session-divider') return;
+                    const fromSongId = e.dataTransfer.getData('divider-from-song-id');
+                    handleMoveSessionDivider(fromSongId, row.songId);
+                  }}
+                >
+                  <div className="setlist-session-divider-title">🧩 {row.name}</div>
+                  {!performanceMode && canEdit && (
+                    <div className="setlist-session-divider-actions">
+                      <button
+                        onClick={() => openEditSessionDivider(row.songId)}
+                        className="btn btn-secondary"
+                        title="Edit divider sesi"
+                      >
+                        <EditIcon size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSessionDivider(row.songId)}
+                        className="btn btn-red"
+                        title="Hapus divider sesi"
+                      >
+                        <DeleteIcon size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            const song = row.song;
+            const idx = filteredSongs.findIndex(item => item.id === song.id);
             const customIdx = localOrder.indexOf(song.id);
             const baseSong = baseSongMap.get(song.id);
             const keyChanged = baseSong && song.key && baseSong.key && song.key !== baseSong.key;
@@ -768,6 +1150,12 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   if (sortBy !== 'custom') return;
                   e.preventDefault();
                   e.currentTarget.classList.remove('drag-over');
+                  const dragType = e.dataTransfer.getData('drag-type');
+                  if (dragType === 'session-divider') {
+                    const fromSongId = e.dataTransfer.getData('divider-from-song-id');
+                    handleMoveSessionDivider(fromSongId, song.id);
+                    return;
+                  }
                   const fromIdx = Number(e.dataTransfer.getData('song-idx'));
                   const toIdx = customIdx;
                   if (fromIdx !== toIdx) handleReorder(fromIdx, toIdx);
@@ -848,6 +1236,70 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         </div>
       )}
 
+      {/* Modal Divider Sesi */}
+      {showSessionDividerModal && canEdit && !performanceMode && (
+        <div
+          className="modal-overlay"
+          aria-label="Modal divider sesi"
+          onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowSessionDividerModal(false); }}
+          tabIndex={-1}
+          onKeyDown={e => { if (e.key === 'Escape') setShowSessionDividerModal(false); }}
+        >
+          <div
+            className="modal add-song-modal"
+            role="dialog"
+            aria-modal="true"
+            tabIndex={0}
+          >
+            <div className="modal-title">{editingSessionDividerSongId ? 'Edit Divider Sesi' : 'Tambah Divider Sesi'}</div>
+            <label>
+              Nama sesi
+              <input
+                type="text"
+                className="modal-input"
+                placeholder="Contoh: Sesi Akustik"
+                value={sessionDividerName}
+                onChange={(e) => setSessionDividerName(e.target.value)}
+                maxLength={50}
+              />
+            </label>
+            <label>
+              Mulai sebelum lagu
+              <select
+                className="modal-input"
+                value={sessionDividerSongId}
+                onChange={(e) => setSessionDividerSongId(e.target.value)}
+              >
+                <option value="">Pilih lagu</option>
+                {localOrder.map((songId, idx) => {
+                  const song = songs.find((s) => s.id === songId);
+                  if (!song) return null;
+                  return (
+                    <option key={songId} value={songId}>
+                      {idx + 1}. {song.title}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+            {sessionDividers.length > 0 && (
+              <div className="smart-plan-note" style={{ marginTop: 8 }}>
+                Divider aktif: {sessionDividers.map(d => d.name).join(', ')}
+              </div>
+            )}
+            {sessionDividerError && <div className="error-text" style={{ marginTop: 8 }}>{sessionDividerError}</div>}
+            <div className="modal-actions">
+              <button className="btn" onClick={handleSaveSessionDivider} disabled={isSavingSessionDivider}>
+                {isSavingSessionDivider ? 'Menyimpan...' : 'Simpan Divider'}
+              </button>
+              <button className="btn btn-secondary" onClick={() => setShowSessionDividerModal(false)} disabled={isSavingSessionDivider}>
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Konfirmasi Hapus Lagu dari Setlist */}
       {confirmDeleteSongId && (
         <div className="modal-overlay" tabIndex={-1} aria-label="Konfirmasi hapus lagu dari setlist">
@@ -887,6 +1339,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             <SetlistPoster
               setlist={setlist}
               setlistSongs={setlistSongs}
+              setlistRows={orderedSetlistRows}
               posterRef={posterRef}              
             />
             <div className="filter-row">
@@ -1093,6 +1546,73 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 {isAddingSongs ? 'Menambah...' : `Tambah ${addingSongIds.length ? `(${addingSongIds.length})` : ''}`}
               </button>
               <button className="btn" onClick={() => setShowAddSong(false)}>Batal</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Merge dari Setlist Lain */}
+      {showMergeSetlistModal && canEdit && (
+        <div
+          className="modal-overlay"
+          aria-label="Modal merge dari setlist lain"
+          onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowMergeSetlistModal(false); }}
+          tabIndex={-1}
+          onKeyDown={e => { if (e.key === 'Escape') setShowMergeSetlistModal(false); }}
+        >
+          <div
+            className="modal add-song-modal"
+            role="dialog"
+            aria-modal="true"
+            tabIndex={0}
+          >
+            <div className="modal-title">Merge Lagu dari Setlist Lain</div>
+            <div className="modal-message" style={{ marginBottom: 10 }}>
+              Lagu dari setlist sumber akan ditambahkan ke setlist ini tanpa duplikasi. Metadata lagu untuk lagu baru juga ikut disalin.
+            </div>
+
+            <input
+              type="text"
+              placeholder="Cari nama setlist atau nama band..."
+              value={mergeSetlistSearch}
+              onChange={e => setMergeSetlistSearch(e.target.value)}
+              className="modal-input"
+              style={{ marginBottom: 10 }}
+              autoFocus
+            />
+
+            <ul className="song-list song-list-scroll" style={{ marginBottom: 8 }}>
+              {mergeCandidateSetlists.length === 0 && (
+                <li className="info-text">Tidak ada setlist sumber yang cocok.</li>
+              )}
+              {mergeCandidateSetlists.map((source) => {
+                const sourceSongCount = Array.isArray(source.songs) ? source.songs.length : 0;
+                return (
+                  <li
+                    key={source.id}
+                    className={
+                      'song-list-item pointer' + (String(mergeSourceSetlistId) === String(source.id) ? ' selected' : '')
+                    }
+                    onClick={() => setMergeSourceSetlistId(source.id)}
+                    style={String(mergeSourceSetlistId) === String(source.id) ? { background: 'var(--primary-accent, #e0e7ff)' } : undefined}
+                  >
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary, #3730a3)' }}>{source.name}</span>
+                    <span style={{ color: 'var(--text-muted, #888)', marginLeft: 8 }}>
+                      {source.bandName ? `${source.bandName} • ` : ''}{sourceSongCount} lagu
+                    </span>
+                    {String(mergeSourceSetlistId) === String(source.id) && <span style={{ marginLeft: 8 }}>✔️</span>}
+                  </li>
+                );
+              })}
+            </ul>
+
+            {mergeSetlistError && <div className="error-text" style={{ marginBottom: 8 }}>{mergeSetlistError}</div>}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button className="btn btn-primary" disabled={isMergingSetlist || !mergeSourceSetlistId} onClick={handleMergeFromSetlist}>
+                {isMergingSetlist ? 'Menggabungkan...' : 'Merge Lagu'}
+              </button>
+              <button className="btn" onClick={() => setShowMergeSetlistModal(false)} disabled={isMergingSetlist}>Batal</button>
             </div>
           </div>
         </div>
