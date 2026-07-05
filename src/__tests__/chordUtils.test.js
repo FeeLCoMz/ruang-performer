@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords } from "../utils/chordUtils";
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, isMetadataLine, parseInstrumentPatchLine } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -20,6 +20,13 @@ describe("chordUtils", () => {
 
   test("parseSection does not treat substring inside a word as structure", () => {
     expect(parseSection('stuck in reverse')).toBe(null);
+  });
+
+  test("parseSection keeps section annotation metadata in the display label", () => {
+    expect(parseSection('[Intro] (Intensitas 1 - Stage Piano + Warm Pad)')).toEqual({
+      type: 'structure',
+      label: 'Intro (Intensitas 1 - Stage Piano + Warm Pad)'
+    });
   });
 
   test("parseSection ignores other structure-like substrings inside words", () => {
@@ -229,5 +236,44 @@ describe("chordUtils", () => {
     ];
     // First line should be detected as chord line due to N.C. + chords
     expect(parseLines(lines, 0)[0].type).toBe('chord');
+  });
+
+  test("isMetadataLine detects patch/layer metadata segments", () => {
+    expect(isMetadataLine('Patch: Stage Piano | Layer: Warm Pad (Volume 30%)')).toBe(true);
+    expect(isMetadataLine('Aku bilang: kamu hebat')).toBe(false);
+  });
+
+  test("parseInstrumentPatchLine extracts patch instrument fields", () => {
+    expect(parseInstrumentPatchLine('Patch: Stage Piano | Layer: Warm Pad (Volume 30%)')).toEqual({
+      type: 'instrument_patch',
+      text: 'Patch: Stage Piano | Layer: Warm Pad (Volume 30%)',
+      fields: {
+        patch: 'Stage Piano',
+        layer: 'Warm Pad (Volume 30%)',
+      },
+    });
+  });
+
+  test("parseInstrumentPatchLine does not classify plain sentence metadata", () => {
+    expect(parseInstrumentPatchLine('Catatan: intro masuk pelan')).toBe(null);
+  });
+
+  test("parseLines classifies metadata line separately from chord line", () => {
+    const parsed = parseLines([
+      '[Intro] (Intensitas 1 - Stage Piano + Warm Pad)',
+      'Patch: Stage Piano | Layer: Warm Pad (Volume 30%)',
+      'D | Bm | C | A'
+    ], 0);
+
+    expect(parsed[0]).toEqual({ type: 'structure', label: 'Intro (Intensitas 1 - Stage Piano + Warm Pad)' });
+    expect(parsed[1]).toEqual({
+      type: 'instrument_patch',
+      text: 'Patch: Stage Piano | Layer: Warm Pad (Volume 30%)',
+      fields: {
+        patch: 'Stage Piano',
+        layer: 'Warm Pad (Volume 30%)',
+      },
+    });
+    expect(parsed[2].type).toBe('chord');
   });
 });

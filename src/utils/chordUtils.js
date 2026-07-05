@@ -42,6 +42,13 @@ function parseLine(line, transpose) {
     }
     return { type: section.type, label: section.label };
   }
+  const patchLine = parseInstrumentPatchLine(line);
+  if (patchLine) {
+    return patchLine;
+  }
+  if (isMetadataLine(line)) {
+    return { type: 'metadata', text: line.trim() };
+  }
   if (isChordLine(line)) {
     return {
       type: 'chord',
@@ -386,11 +393,16 @@ export function wrapBarsPerLine(text, barsPerLine = 4) {
 
 // Fungsi untuk mendeteksi section/struktur lagu atau instrumen
 export function parseSection(line) {
+  const trimmedLine = typeof line === 'string' ? line.trim() : '';
+  if (!trimmedLine) return null;
+
   // Gabungkan deteksi [Section], Section:, [Instrumen], Instrumen: dengan satu regex
   // Contoh cocok: [Intro], Intro:, [Gitar], Gitar:
-  const match = line.trim().match(/^(?:\[)?([A-Za-z0-9 .:_\-\+&(),\/']+?)(?:\])?\s*:?\s*$/);
+  const match = trimmedLine.match(/^(?:\[)?([A-Za-z0-9 .:_\-\+&(),\/']+?)(?:\])?\s*:?\s*(?:\(([^)]+)\))?\s*$/);
   if (match) {
     const originalLabel = match[1].trim();
+    const annotation = match[2]?.trim();
+    const displayLabel = annotation ? `${originalLabel} (${annotation})` : originalLabel;
     const labelLower = originalLabel.toLowerCase();
     // Daftar kata kunci struktur lagu
     const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain', 'pre-chorus', 'solo', 'musik'];
@@ -412,15 +424,15 @@ export function parseSection(line) {
     };
 
     if (labelLower === 'int' || structureKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
-      return { type: 'structure', label: originalLabel };
+      return { type: 'structure', label: displayLabel };
     }
     if (instrumentKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
-      return { type: 'instrument', label: originalLabel };
+      return { type: 'instrument', label: displayLabel };
     }
   }
 
   // Deteksi modulasi/key change
-  const modulationMatch = line.trim().match(/^(?:modulation|key\s+change)\s*:\s*(.+)$/i);
+  const modulationMatch = trimmedLine.match(/^(?:modulation|key\s+change)\s*:\s*(.+)$/i);
   if (modulationMatch) {
     const targetKey = modulationMatch[1].trim();
     return { type: 'modulation', label: targetKey };
@@ -428,6 +440,60 @@ export function parseSection(line) {
 
   return null;
 }
+
+const METADATA_KEYS = new Set([
+  'patch', 'layer', 'intensitas', 'intensity', 'dynamics', 'dinamik', 'cue', 'notes', 'catatan',
+  'sound', 'tone', 'fx', 'effect', 'effects', 'instrument', 'instrumen', 'voicing', 'texture',
+  'split', 'zone', 'program', 'preset', 'scene', 'part', 'fill', 'groove', 'feel'
+]);
+
+const INSTRUMENT_PATCH_KEYS = new Set([
+  'patch', 'layer', 'split', 'zone', 'program', 'preset', 'scene', 'sound', 'tone', 'instrument', 'instrumen'
+]);
+
+export const parseInstrumentPatchLine = (line) => {
+  if (typeof line !== 'string') return null;
+  const trimmed = line.trim();
+  if (!trimmed || !trimmed.includes(':')) return null;
+
+  const segments = trimmed.split('|').map((segment) => segment.trim()).filter(Boolean);
+  if (!segments.length) return null;
+
+  const fields = {};
+  for (const segment of segments) {
+    const idx = segment.indexOf(':');
+    if (idx <= 0 || idx >= segment.length - 1) continue;
+
+    const rawKey = segment.slice(0, idx).trim().toLowerCase();
+    const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '');
+    if (!INSTRUMENT_PATCH_KEYS.has(key)) continue;
+
+    const fieldKey = key === 'instrumen' ? 'instrument' : key;
+    const value = segment.slice(idx + 1).trim();
+    if (value) fields[fieldKey] = value;
+  }
+
+  if (!Object.keys(fields).length) return null;
+  return { type: 'instrument_patch', text: trimmed, fields };
+};
+
+export const isMetadataLine = (line) => {
+  if (parseInstrumentPatchLine(line)) return true;
+  if (typeof line !== 'string') return false;
+  const trimmed = line.trim();
+  if (!trimmed || !trimmed.includes(':')) return false;
+
+  const segments = trimmed.split('|').map((segment) => segment.trim()).filter(Boolean);
+  if (!segments.length) return false;
+
+  return segments.some((segment) => {
+    const idx = segment.indexOf(':');
+    if (idx <= 0 || idx >= segment.length - 1) return false;
+    const rawKey = segment.slice(0, idx).trim().toLowerCase();
+    const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '');
+    return METADATA_KEYS.has(key);
+  });
+};
 /**
  * Chord Utilities - Professional Implementation
  * Transposition, ChordPro parsing, and chord analysis

@@ -3,7 +3,7 @@ import '../styles/karaoke.css';
 import AutoScrollBar from '../components/AutoScrollBar.jsx';
 import { useParams } from 'react-router-dom';
 import { getAuthHeader } from '../utils/auth.js';
-import { isChordLine, parseSection, splitSectionLabelWithChords } from '../utils/chordUtils.js';
+import { isChordLine, isMetadataLine, parseInstrumentPatchLine, parseSection, splitSectionLabelWithChords } from '../utils/chordUtils.js';
 import KaraokeSongSearch from '../components/KaraokeSongSearch.jsx';
 import * as apiClient from '../apiClient.js';
 
@@ -95,16 +95,31 @@ export default function SongLyricsPage() {
         <div className="karaoke-lyrics-text">
           {lyricOnlyLines.map((line, idx) => {
             const section = parseSection(line);
-            const isSection = section && section.type === 'structure';
+            const patchLine = parseInstrumentPatchLine(line);
+            const sectionType = section?.type || '';
+            const isSection = sectionType === 'structure';
+            const isInstrument = sectionType === 'instrument' || Boolean(patchLine);
+            const isModulation = sectionType === 'modulation';
+            const isMetadata = isMetadataLine(line) && !patchLine;
+            const displayText = section
+              ? section.label
+              : patchLine
+                ? Object.entries(patchLine.fields)
+                    .map(([key, value]) => `${key.charAt(0).toUpperCase()}${key.slice(1)}: ${value}`)
+                    .join(' | ')
+                : line;
             return (
               <div
                 key={idx}
                 className={
                   'karaoke-line' +
-                  (isSection ? ' karaoke-section' : '')
+                  (isSection ? ' karaoke-section' : '') +
+                  (isInstrument ? ' karaoke-instrument' : '') +
+                  (isModulation ? ' karaoke-modulation' : '') +
+                  (isMetadata ? ' karaoke-metadata' : '')
                 }
               >
-                {line}
+                {displayText}
               </div>
             );
           })}

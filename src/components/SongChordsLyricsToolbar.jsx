@@ -41,6 +41,8 @@ export default function SongChordsLyricsToolbar({
   lyricsDisplayRef,
   currentBeat,
   setCurrentBeat,
+  transpose,
+  setTranspose,
   zoom,
   setZoom,
   showChordNumbers,
@@ -95,6 +97,40 @@ export default function SongChordsLyricsToolbar({
             currentBeat={currentBeat}
             setCurrentBeat={setCurrentBeat}
           />
+
+          <div className="song-lyrics-transpose-controls" title="Transpose lirik/chord">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setTranspose((prev) => prev - 1)}
+              title="Transpose turun 1 semitone"
+              aria-label="Transpose turun"
+            >
+              -
+            </button>
+            <span className="song-lyrics-transpose-value" aria-live="polite">
+              Tr {transpose > 0 ? `+${transpose}` : transpose}
+            </span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setTranspose((prev) => prev + 1)}
+              title="Transpose naik 1 semitone"
+              aria-label="Transpose naik"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setTranspose(0)}
+              title="Reset transpose"
+              aria-label="Reset transpose"
+              disabled={transpose === 0}
+            >
+              0
+            </button>
+          </div>
 
           {!performanceMode && (
             <>

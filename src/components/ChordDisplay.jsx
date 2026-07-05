@@ -26,6 +26,14 @@ import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazz
 export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordNumbers = false, showJazzChords = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const formatInstrumentPatchText = (lineObj) => {
+    const entries = Object.entries(lineObj?.fields || {});
+    if (!entries.length) return lineObj?.text || '';
+    return entries
+      .map(([key, value]) => `${key.charAt(0).toUpperCase()}${key.slice(1)}: ${value}`)
+      .join(' | ');
+  };
+
   const formatChordToken = (token) => {
     if (showChordNumbers) return chordTextToNumberText(token, keySignature);
     if (showJazzChords) return chordTextToJazzText(token);
@@ -54,6 +62,10 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordN
           return <div key={i} className="cd-section-inst">{lineObj.label}</div>;
         if (lineObj.type === 'modulation')
           return <div key={i} className="cd-modulation">🔄 Modulasi ke {lineObj.label}</div>;
+        if (lineObj.type === 'instrument_patch')
+          return <div key={i} className="cd-section-inst cd-instrument-patch">{formatInstrumentPatchText(lineObj)}</div>;
+        if (lineObj.type === 'metadata')
+          return <div key={i} className="cd-metadata">{lineObj.text}</div>;
         if (lineObj.type === 'chord')
           return (
             <div key={i} className="cd-chord">

@@ -43,6 +43,7 @@ export default function SongLyricsMainSection({
   canEdit,
   song,
   transpose,
+  setTranspose,
   showChordNumbers,
   setShowChordNumbers,
   showJazzChords,
@@ -80,6 +81,8 @@ export default function SongLyricsMainSection({
             lyricsDisplayRef={lyricsDisplayRef}
             currentBeat={currentBeat}
             setCurrentBeat={setCurrentBeat}
+            transpose={transpose}
+            setTranspose={setTranspose}
             zoom={zoom}
             setZoom={setZoom}
             showChordNumbers={showChordNumbers}
@@ -128,6 +131,7 @@ export default function SongLyricsMainSection({
               lyricsDisplayRef={lyricsDisplayRef}
               song={song}
               transpose={transpose}
+              setTranspose={setTranspose}
               zoom={zoom}
               setZoom={setZoom}
               showChordNumbers={showChordNumbers}
@@ -137,8 +141,6 @@ export default function SongLyricsMainSection({
               scrollSpeed={scrollSpeed}
               setAutoScrollActive={setAutoScrollActive}
               setScrollSpeed={setScrollSpeed}
-              currentBeat={currentBeat}
-              setCurrentBeat={setCurrentBeat}
               showSheetMusic={showSheetMusic}
               setShowSheetMusic={setShowSheetMusic}
               youtubeRef={youtubeRef}

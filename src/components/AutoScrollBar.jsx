@@ -219,6 +219,8 @@ export default function AutoScrollBar({
   lyricsDisplayRef,
   currentBeat,
   setCurrentBeat,
+  hideUi = false,
+  forceSnapMode = false,
 }) {
   const normalizeSpeed = (value) => Math.max(40, Math.min(240, Number(value) || 40));
   const [scrolling, setScrolling] = useState(active);
@@ -243,6 +245,13 @@ export default function AutoScrollBar({
   useEffect(() => {
     setScrolling(active);
   }, [active]);
+
+  useEffect(() => {
+    if (forceSnapMode) {
+      setScrollMode('snap');
+      setShowMenu(false);
+    }
+  }, [forceSnapMode]);
 
   useEffect(() => {
     if (typeof currentBeat === 'number') {
@@ -405,7 +414,8 @@ export default function AutoScrollBar({
   }, [scrolling, currentSpeed, lyricsDisplayRef, setCurrentBeat, beatsPerBar, scrollMode]);
 
   return (
-    <div className="auto-scroll-bar">
+    <div className={`auto-scroll-bar ${hideUi ? 'auto-scroll-bar-hidden' : ''}`}>
+      {!hideUi && (
       <div className="auto-scroll-controls">
         {/* Play/Pause Toggle */}
         <button
@@ -476,9 +486,10 @@ export default function AutoScrollBar({
           )}
         </div>
       </div>
+      )}
 
       {/* Beat Indicator - Minimized */}
-      {scrolling && (
+      {!hideUi && scrolling && (
         <div className="auto-scroll-beats-minimal">
           <div className="auto-scroll-beat-dots">
             {Array.from({ length: beatsPerBar }, (_, i) => i).map((i) => (

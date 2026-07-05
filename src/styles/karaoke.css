@@ -98,6 +98,38 @@
   border-left: 4px solid var(--primary-accent);
 }
 
+.karaoke-metadata {
+  color: var(--text-secondary);
+  font-size: calc(var(--font-size-3xl) - 0.45rem);
+  font-style: italic;
+  letter-spacing: 0.01em;
+  opacity: 0.92;
+}
+
+.karaoke-instrument {
+  color: var(--primary-accent);
+  font-size: calc(var(--font-size-3xl) - 0.25rem);
+  font-style: italic;
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.06);
+  border-left: 3px solid var(--primary-accent);
+  border-radius: var(--radius-md);
+}
+
+.karaoke-instrument.karaoke-metadata {
+  font-style: italic;
+  opacity: 0.96;
+}
+
+.karaoke-modulation {
+  color: #92400e;
+  font-size: calc(var(--font-size-3xl) - 0.2rem);
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.16);
+  border-left: 3px solid #f59e0b;
+  border-radius: var(--radius-md);
+}
+
 /* LYRICS CONTAINER */
 .karaoke-lyrics-container {
   width: 100%;
@@ -173,4 +205,17 @@ body.dark-mode .karaoke-section {
   color: #93c5fd;
   background: rgba(59, 130, 246, 0.18);
   border-left: 4px solid #93c5fd;
+}
+body.dark-mode .karaoke-metadata {
+  color: var(--text-muted);
+}
+body.dark-mode .karaoke-instrument {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.18);
+  border-left: 3px solid #93c5fd;
+}
+body.dark-mode .karaoke-modulation {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.22);
+  border-left: 3px solid #fbbf24;
 }

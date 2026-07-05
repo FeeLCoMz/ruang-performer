@@ -520,6 +520,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         canEdit={can(PERMISSIONS.SONG_EDIT)}
         song={song}
         transpose={transpose}
+        setTranspose={setTranspose}
         showSheetMusic={showSheetMusic}
         setShowSheetMusic={setShowSheetMusic}
         youtubeRef={youtubeRef}

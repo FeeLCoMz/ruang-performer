@@ -24,6 +24,30 @@ const GEMINI_TEXT_MODELS_SUPPORTED = [
   'gemini-3-flash-preview',
   'deep-research-pro-preview-12-2025',
 ];
+
+const GEMINI_FALLBACK_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.5-pro',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+];
+
+function isGeminiProjectDeniedAccess(status, message) {
+  if (status !== 403) return false;
+  const normalized = (message || '').toString().toLowerCase();
+  return normalized.includes('denied access') || normalized.includes('project has been denied access');
+}
+
+function buildGeminiModelCandidates(requestedModel) {
+  const unique = [];
+  const seen = new Set();
+  for (const modelName of [requestedModel, ...GEMINI_FALLBACK_MODELS, ...GEMINI_TEXT_MODELS_SUPPORTED]) {
+    if (!modelName || seen.has(modelName)) continue;
+    seen.add(modelName);
+    unique.push(modelName);
+  }
+  return unique;
+}
 // Simple in-memory cache for song info (title+artist)
 const songInfoCache = {};
 
@@ -142,7 +166,6 @@ async function handleChat(req, res) {
     if (!apiKey) {
       return res.status(500).json({ error: 'GEMINI_API_KEY tidak diset' });
     }
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const body = await readJson(req);
     const prompt = (body?.prompt || '').toString();
     const context = (body?.context || '').toString();
@@ -155,19 +178,41 @@ async function handleChat(req, res) {
     if (system) contents.push({ role: 'user', parts: [{ text: `System: ${system}` }] });
     if (context) contents.push({ role: 'user', parts: [{ text: `Context:\n${context}` }] });
     contents.push({ role: 'user', parts: [{ text: prompt.trim() }] });
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents })
-    });
-    const data = await resp.json();
-    if (!resp.ok) {
-      console.error('Gemini API error:', data);
-      return res.status(resp.status).json({ error: data.error?.message || 'Gemini API gagal' });
+    let finalText = '';
+    let lastStatus = 500;
+    let lastMessage = 'Gemini API gagal';
+    const attemptedModels = [];
+
+    for (const candidateModel of buildGeminiModelCandidates(model)) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${candidateModel}:generateContent?key=${apiKey}`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents })
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        finalText = data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '';
+        return res.status(200).json({ text: finalText, modelUsed: candidateModel, attemptedModels });
+      }
+
+      const message = data?.error?.message || 'Gemini API gagal';
+      attemptedModels.push({ model: candidateModel, status: resp.status, message });
+      lastStatus = resp.status;
+      lastMessage = message;
+      console.error(`Gemini API error (model: ${candidateModel}):`, data);
+
+      const deniedAccess = isGeminiProjectDeniedAccess(resp.status, message);
+      if (!deniedAccess) {
+        break;
+      }
     }
-    const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('\n') || '';
-    return res.status(200).json({ text });
+
+    return res.status(lastStatus).json({
+      error: lastMessage,
+      attemptedModels,
+      suggestion: 'Model yang diminta ditolak untuk project ini. Gunakan model umum seperti gemini-2.5-flash atau aktifkan akses model preview di project Google Cloud.',
+    });
   } catch (err) {
     console.error('API /api/ai error:', err);
     return res.status(500).json({ error: 'Internal Server Error', message: err.message });
@@ -249,7 +294,9 @@ async function handleSongSearch(req, res) {
       }
       let success = false;
       let lastError = null;
+      const deniedModels = new Set();
       for (const modelName of GEMINI_TEXT_MODELS_SUPPORTED) {
+        if (deniedModels.has(modelName)) continue;
         try {
           const model = genAI.getGenerativeModel({ model: modelName });
           const response = await model.generateContent(prompt);
@@ -271,7 +318,10 @@ async function handleSongSearch(req, res) {
         } catch (err) {
           lastError = err;
           console.error(`Gemini API error (model: ${modelName}):`, err);
-          // Jika error quota atau error lain, lanjut ke model berikutnya
+          if (isGeminiProjectDeniedAccess(err?.status, err?.message)) {
+            deniedModels.add(modelName);
+          }
+          // Lanjut ke model berikutnya untuk toleransi akses/quota/preview restrictions
         }
       }
       if (!success) {

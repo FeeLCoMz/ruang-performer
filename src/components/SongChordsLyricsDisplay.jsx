@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import AutoScrollBar from "./AutoScrollBar.jsx";
 import SongSheetMusic from "./SongSheetMusic.jsx";
 import ChordDisplay from "./ChordDisplay.jsx";
 
@@ -35,6 +34,7 @@ export default function SongChordsLyricsDisplay({
   setEditedLyrics,
   song,
   transpose,
+  setTranspose,
   zoom,
   setZoom,
   showChordNumbers,
@@ -44,18 +44,18 @@ export default function SongChordsLyricsDisplay({
   scrollSpeed,
   setAutoScrollActive,
   setScrollSpeed,
-  currentBeat,
-  setCurrentBeat,
   showSheetMusic,
   setShowSheetMusic,
   youtubeRef,
-  timeSignature,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
   const zoomRef = useRef(zoom);
   const zoomHudTimerRef = useRef(null);
+  const controlsHideTimerRef = useRef(null);
   const [zoomHudVisible, setZoomHudVisible] = useState(false);
   const [zoomHudText, setZoomHudText] = useState(`${Math.round((zoom || 1) * 100)}%`);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
 
   useEffect(() => {
     zoomRef.current = zoom;
@@ -66,8 +66,55 @@ export default function SongChordsLyricsDisplay({
       if (zoomHudTimerRef.current) {
         clearTimeout(zoomHudTimerRef.current);
       }
+      if (controlsHideTimerRef.current) {
+        clearTimeout(controlsHideTimerRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    const el = lyricsDisplayRef?.current;
+    if (!el) return;
+
+    const checkFullscreen = () => {
+      const active = document.fullscreenElement === el
+        || document.webkitFullscreenElement === el
+        || document.msFullscreenElement === el;
+      setIsFullscreen(active);
+      if (active) {
+        setControlsVisible(true);
+      }
+    };
+
+    checkFullscreen();
+
+    document.addEventListener('fullscreenchange', checkFullscreen);
+    document.addEventListener('webkitfullscreenchange', checkFullscreen);
+    document.addEventListener('MSFullscreenChange', checkFullscreen);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', checkFullscreen);
+      document.removeEventListener('webkitfullscreenchange', checkFullscreen);
+      document.removeEventListener('MSFullscreenChange', checkFullscreen);
+    };
+  }, [lyricsDisplayRef]);
+
+  useEffect(() => {
+    if (!isFullscreen) {
+      setControlsVisible(true);
+      if (controlsHideTimerRef.current) {
+        clearTimeout(controlsHideTimerRef.current);
+      }
+      return;
+    }
+
+    if (controlsHideTimerRef.current) {
+      clearTimeout(controlsHideTimerRef.current);
+    }
+    controlsHideTimerRef.current = setTimeout(() => {
+      setControlsVisible(false);
+    }, 3000);
+  }, [isFullscreen, transpose, autoScrollActive, scrollSpeed]);
 
   useEffect(() => {
     const el = lyricsDisplayRef?.current;
@@ -147,11 +194,156 @@ export default function SongChordsLyricsDisplay({
     };
   }, [lyricsDisplayRef, setZoom]);
 
-  const normalizedBpm = Math.max(40, Math.min(240, Number(scrollSpeed) || Number(song?.tempo) || 120));
+  const normalizedBpm = Math.max(40, Math.min(240, Number(song?.tempo) || 120));
+  const normalizedScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedBpm));
   const blinkDurationMs = Math.round(60000 / normalizedBpm);
 
+  const nudgeScrollSpeed = (delta) => {
+    setScrollSpeed((prev) => {
+      const base = Number(prev) || normalizedBpm;
+      return Math.max(40, Math.min(240, base + delta));
+    });
+  };
+
+  const resetScrollSpeed = () => {
+    setScrollSpeed(normalizedBpm);
+  };
+
+  const showFullscreenControls = () => {
+    if (!isFullscreen) return;
+    setControlsVisible(true);
+    if (controlsHideTimerRef.current) {
+      clearTimeout(controlsHideTimerRef.current);
+    }
+    controlsHideTimerRef.current = setTimeout(() => {
+      setControlsVisible(false);
+    }, 3000);
+  };
+
+  const handleExitFullscreen = () => {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+      return;
+    }
+    if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+      return;
+    }
+    if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+  };
+
   return (
-    <div className="song-lyrics-display" ref={lyricsDisplayRef}>
+    <div
+      className="song-lyrics-display"
+      ref={lyricsDisplayRef}
+      onMouseMove={showFullscreenControls}
+      onTouchStart={showFullscreenControls}
+      onClick={showFullscreenControls}
+    >
+      <div
+        className={`song-lyrics-fullscreen-quick-controls${controlsVisible ? ' is-visible' : ''}`}
+        role="group"
+        aria-label="Kontrol fullscreen lirik"
+      >
+        <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Transpose">
+          <span className="song-lyrics-fullscreen-control-label">Tr</span>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setTranspose((prev) => prev - 1)}
+            aria-label="Transpose turun"
+            title="Transpose turun"
+          >
+            -
+          </button>
+          <span className="song-lyrics-fullscreen-control-value" aria-live="polite">
+            {transpose > 0 ? `+${transpose}` : transpose}
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setTranspose((prev) => prev + 1)}
+            aria-label="Transpose naik"
+            title="Transpose naik"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setTranspose(0)}
+            aria-label="Reset transpose"
+            title="Reset transpose"
+            disabled={transpose === 0}
+          >
+            0
+          </button>
+        </div>
+        <div className="song-lyrics-fullscreen-control-row song-lyrics-fullscreen-autoscroll" role="group" aria-label="Autoscroll">
+          <button
+            type="button"
+            className={`btn ${autoScrollActive ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setAutoScrollActive((prev) => !prev)}
+            aria-label={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
+            title={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
+          >
+            AS
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => nudgeScrollSpeed(-2)}
+            aria-label="Kurangi kecepatan autoscroll"
+            title="Kurangi kecepatan autoscroll"
+          >
+            -
+          </button>
+          <input
+            type="range"
+            min={40}
+            max={240}
+            step={1}
+            value={normalizedScrollSpeed}
+            onChange={(e) => setScrollSpeed(Number(e.target.value))}
+            className="song-lyrics-fullscreen-autoscroll-slider"
+            aria-label="Kecepatan autoscroll"
+            title="Atur kecepatan autoscroll"
+          />
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => nudgeScrollSpeed(2)}
+            aria-label="Tambah kecepatan autoscroll"
+            title="Tambah kecepatan autoscroll"
+          >
+            +
+          </button>
+          <span className="song-lyrics-fullscreen-control-value">{normalizedScrollSpeed}</span>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={resetScrollSpeed}
+            aria-label="Reset ke tempo lagu"
+            title="Reset ke tempo lagu"
+            disabled={normalizedScrollSpeed === normalizedBpm}
+          >
+            R
+          </button>
+        </div>
+        <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Fullscreen">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleExitFullscreen}
+            aria-label="Keluar fullscreen"
+            title="Keluar fullscreen"
+          >
+            ⤫
+          </button>
+        </div>
+      </div>
       {zoomHudVisible && (
         <div className="song-lyrics-zoom-hud" aria-live="polite">Zoom {zoomHudText}</div>
       )}
@@ -163,20 +355,8 @@ export default function SongChordsLyricsDisplay({
         />
         <span className="song-lyrics-fullscreen-tempo-led-text">Tempo {normalizedBpm} BPM</span>
       </div>
-      {/* Toolbar autoscroll diganti dengan AutoScrollBar di fullscreen */}
-      <AutoScrollBar
-        tempo={parseInt(song?.tempo) || 120}
-        timeSignature={timeSignature || song?.time_signature || '4/4'}
-        active={autoScrollActive}
-        speed={scrollSpeed}
-        onToggle={() => setAutoScrollActive(!autoScrollActive)}
-        onSpeedChange={setScrollSpeed}
-        lyricsDisplayRef={lyricsDisplayRef}
-        currentBeat={currentBeat}
-        setCurrentBeat={setCurrentBeat}
-      />
       {/* Tombol Lihat Partitur (selalu tampil jika ada MusicXML) */}
-      {song?.sheetMusicXml && (
+      {!isFullscreen && song?.sheetMusicXml && (
         <button
           className="btn btn-secondary btn-margin-bottom"
           onClick={() => setShowSheetMusic((v) => !v)}
