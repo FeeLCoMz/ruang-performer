@@ -145,6 +145,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
   // Get songs dalam setlist sesuai localOrder + apply metadata override (mapping)
   const setlistSongMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta) ? setlist.setlistSongMeta : {};
+  const completedSongs = typeof setlist?.completedSongs === 'object' && !Array.isArray(setlist.completedSongs) ? setlist.completedSongs : {};
+  const completedCount = (localOrder || []).filter((songId) => completedSongs[songId] === true).length;
+  const allSongsCompleted = localOrder.length > 0 && completedCount === localOrder.length;
   let setlistSongs;
   if (sortBy === 'custom') {
     setlistSongs = (localOrder || []).map((id) => {
@@ -826,17 +829,105 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setConfirmDeleteSongId(songId);
   }
 
-  async function persistSetlistSongs(newOrder, nextSetlistSongMeta = null) {
+  async function persistSetlistSongs(newOrder, nextSetlistSongMeta = null, nextCompletedSongs = null) {
     const mergedMeta = nextSetlistSongMeta || setlist.setlistSongMeta || {};
+    const mergedCompletedSongs = nextCompletedSongs !== null
+      ? nextCompletedSongs
+      : (typeof setlist?.completedSongs === 'object' && !Array.isArray(setlist.completedSongs) ? setlist.completedSongs : {});
     setLocalOrder(newOrder);
     if (setSetlists) {
-      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: newOrder, setlistSongMeta: mergedMeta } : s));
+      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: newOrder, setlistSongMeta: mergedMeta, completedSongs: mergedCompletedSongs } : s));
     }
     await fetch(`/api/setlists/${setlist.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
-      body: JSON.stringify({ ...setlist, songs: newOrder, setlistSongMeta: mergedMeta }),
+      body: JSON.stringify({ ...setlist, songs: newOrder, setlistSongMeta: mergedMeta, completedSongs: mergedCompletedSongs }),
     });
+  }
+
+  async function handleToggleSongCompleted(songId) {
+    if (!canEdit) return;
+
+    const currentCompletedSongs = typeof setlist?.completedSongs === 'object' && !Array.isArray(setlist.completedSongs)
+      ? { ...setlist.completedSongs }
+      : {};
+
+    const nextCompletedSongs = { ...currentCompletedSongs };
+    if (nextCompletedSongs[songId]) {
+      delete nextCompletedSongs[songId];
+    } else {
+      nextCompletedSongs[songId] = true;
+    }
+
+    if (setSetlists) {
+      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, completedSongs: nextCompletedSongs } : s));
+    }
+
+    try {
+      await fetch(`/api/setlists/${setlist.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
+        body: JSON.stringify({
+          ...setlist,
+          songs: localOrder,
+          setlistSongMeta,
+          completedSongs: nextCompletedSongs,
+        }),
+      });
+    } catch (e) {
+      console.error('Gagal update status lagu dibawakan', e);
+    }
+  }
+
+  async function handleMarkAllSongsCompleted() {
+    if (!canEdit || !localOrder.length) return;
+
+    const nextCompletedSongs = {};
+    for (const songId of localOrder) {
+      nextCompletedSongs[songId] = true;
+    }
+
+    if (setSetlists) {
+      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, completedSongs: nextCompletedSongs } : s));
+    }
+
+    try {
+      await fetch(`/api/setlists/${setlist.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
+        body: JSON.stringify({
+          ...setlist,
+          songs: localOrder,
+          setlistSongMeta,
+          completedSongs: nextCompletedSongs,
+        }),
+      });
+    } catch (e) {
+      console.error('Gagal menandai semua lagu sebagai dibawakan', e);
+    }
+  }
+
+  async function handleResetCompletedSongs() {
+    if (!canEdit || completedCount === 0) return;
+
+    if (setSetlists) {
+      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, completedSongs: {} } : s));
+    }
+
+    try {
+      await fetch(`/api/setlists/${setlist.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
+        body: JSON.stringify({
+          ...setlist,
+          songs: localOrder,
+          setlistSongMeta,
+          completedSongs: {},
+        }),
+      });
+    } catch (e) {
+      console.error('Gagal mereset status lagu dibawakan', e);
+    }
   }
 
   async function handleApplySmartSetlist() {
@@ -901,8 +992,12 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setDeleting(true);
     const songId = confirmDeleteSongId;
     const newOrder = localOrder.filter(id => id !== songId);
+    const nextCompletedSongs = typeof setlist?.completedSongs === 'object' && !Array.isArray(setlist.completedSongs)
+      ? { ...setlist.completedSongs }
+      : {};
+    delete nextCompletedSongs[songId];
     try {
-      await persistSetlistSongs(newOrder);
+      await persistSetlistSongs(newOrder, null, nextCompletedSongs);
     } catch (e) {
       console.error('Gagal hapus lagu dari setlist', e);
     }
@@ -922,6 +1017,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             <div className="setlist-description">{setlist.description}</div>
           )}
           <p>{setlistSongs.length} lagu di setlist ini</p>
+          <p>✅ {completedCount} lagu sudah dibawakan</p>
           {featuredSongIdsFromMeta.length > 0 && (
             <div className="smart-featured-caption">
               ✨ {featuredSongIdsFromMeta.length} lagu ditandai sebagai blok show utama Smart Assistant
@@ -958,6 +1054,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           {!performanceMode && canEdit && (
             <button className="btn btn-secondary" onClick={openAddSessionDivider} title="Tambah divider sesi">
               🧩 Divider Sesi
+            </button>
+          )}
+          {canEdit && localOrder.length > 0 && !allSongsCompleted && (
+            <button className="btn btn-secondary" onClick={handleMarkAllSongsCompleted} title="Tandai semua lagu sudah dibawakan">
+              ✅ Tandai Semua
+            </button>
+          )}
+          {canEdit && completedCount > 0 && (
+            <button className="btn btn-secondary" onClick={handleResetCompletedSongs} title="Reset semua status lagu dibawakan">
+              ↺ Reset Dibawakan
             </button>
           )}
           {!performanceMode && (
@@ -1125,10 +1231,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             const tempoChanged = baseSong && song.tempo && baseSong.tempo && song.tempo !== baseSong.tempo;
             const genreChanged = baseSong && song.genre && baseSong.genre && song.genre !== baseSong.genre;
             const isSmartFeatured = setlistSongMeta?.[song.id]?.smartFeatured === true;
+            const isCompleted = completedSongs?.[song.id] === true;
             return (
               <div
                 key={song.id}
-                className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}`}
+                className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}`}
                 draggable={sortBy === 'custom'}
                 onDragStart={e => {
                   if (sortBy !== 'custom') return;
@@ -1179,6 +1286,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   <div className="song-number">{idx + 1}.</div>
                   <h3 className="song-title">
                     {song.title}
+                    {isCompleted && <span className="song-completed-badge" title="Sudah dibawakan" aria-label="Sudah dibawakan">✓</span>}
                     {isSmartFeatured && <span className="smart-featured-badge">Smart Pick</span>}
                   </h3>
                   <div className="song-meta">
@@ -1205,31 +1313,38 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 </div>
 
                 {/* Actions */}
-                {!performanceMode && (
-                  <div
-                    className="song-actions"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {canEdit && (
-                      <>
-                        <button
-                          onClick={() => openEditSong(song.id)}
-                          className="btn"
-                          title="Edit detail lagu di setlist"
-                        >
-                          <EditIcon size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSongFromSetlist(song.id)}
-                          className="btn btn-red"
-                          title="Hapus dari setlist"
-                        >
-                          <DeleteIcon size={16} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
+                <div
+                  className="song-actions"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {canEdit && (
+                    <button
+                      onClick={() => handleToggleSongCompleted(song.id)}
+                      className={`btn ${isCompleted ? '' : 'btn-secondary'}`}
+                      title={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
+                    >
+                      {isCompleted ? '✅ Dibawakan' : '☑️ Tandai'}
+                    </button>
+                  )}
+                  {!performanceMode && canEdit && (
+                    <>
+                      <button
+                        onClick={() => openEditSong(song.id)}
+                        className="btn"
+                        title="Edit detail lagu di setlist"
+                      >
+                        <EditIcon size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSongFromSetlist(song.id)}
+                        className="btn btn-red"
+                        title="Hapus dari setlist"
+                      >
+                        <DeleteIcon size={16} />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             );
           })}
