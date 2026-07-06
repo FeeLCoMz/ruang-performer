@@ -55,7 +55,7 @@ export default function SongChordsLyricsDisplay({
   const [zoomHudVisible, setZoomHudVisible] = useState(false);
   const [zoomHudText, setZoomHudText] = useState(`${Math.round((zoom || 1) * 100)}%`);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [controlsVisible, setControlsVisible] = useState(true);
+  const [controlsVisible, setControlsVisible] = useState(false);
 
   useEffect(() => {
     zoomRef.current = zoom;
@@ -82,7 +82,7 @@ export default function SongChordsLyricsDisplay({
         || document.msFullscreenElement === el;
       setIsFullscreen(active);
       if (active) {
-        setControlsVisible(true);
+        setControlsVisible(false);
       }
     };
 
@@ -101,7 +101,14 @@ export default function SongChordsLyricsDisplay({
 
   useEffect(() => {
     if (!isFullscreen) {
-      setControlsVisible(true);
+      setControlsVisible(false);
+      if (controlsHideTimerRef.current) {
+        clearTimeout(controlsHideTimerRef.current);
+      }
+      return;
+    }
+
+    if (!controlsVisible) {
       if (controlsHideTimerRef.current) {
         clearTimeout(controlsHideTimerRef.current);
       }
@@ -114,7 +121,7 @@ export default function SongChordsLyricsDisplay({
     controlsHideTimerRef.current = setTimeout(() => {
       setControlsVisible(false);
     }, 3000);
-  }, [isFullscreen, transpose, autoScrollActive, scrollSpeed]);
+  }, [isFullscreen, controlsVisible, transpose, autoScrollActive, scrollSpeed]);
 
   useEffect(() => {
     const el = lyricsDisplayRef?.current;
@@ -235,13 +242,18 @@ export default function SongChordsLyricsDisplay({
   };
 
   return (
-    <div
-      className="song-lyrics-display"
-      ref={lyricsDisplayRef}
-      onMouseMove={showFullscreenControls}
-      onTouchStart={showFullscreenControls}
-      onClick={showFullscreenControls}
-    >
+    <div className="song-lyrics-display" ref={lyricsDisplayRef}>
+      {isFullscreen && (
+        <button
+          type="button"
+          className="song-lyrics-fullscreen-controls-toggle"
+          onClick={showFullscreenControls}
+          aria-label="Tampilkan kontrol perform"
+          title="Kontrol perform"
+        >
+          ⚙
+        </button>
+      )}
       <div
         className={`song-lyrics-fullscreen-quick-controls${controlsVisible ? ' is-visible' : ''}`}
         role="group"
@@ -336,6 +348,15 @@ export default function SongChordsLyricsDisplay({
           <button
             type="button"
             className="btn btn-secondary"
+            onClick={() => setControlsVisible(false)}
+            aria-label="Sembunyikan kontrol"
+            title="Sembunyikan kontrol"
+          >
+            ─
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
             onClick={handleExitFullscreen}
             aria-label="Keluar fullscreen"
             title="Keluar fullscreen"
@@ -347,13 +368,18 @@ export default function SongChordsLyricsDisplay({
       {zoomHudVisible && (
         <div className="song-lyrics-zoom-hud" aria-live="polite">Zoom {zoomHudText}</div>
       )}
-      <div className="song-lyrics-fullscreen-tempo-led-row" title={`Tempo ${normalizedBpm} BPM`}>
+      <div
+        className={`song-lyrics-fullscreen-tempo-led-row${isFullscreen ? ' song-lyrics-fullscreen-tempo-led-row-compact' : ''}`}
+        title={`Tempo ${normalizedBpm} BPM`}
+      >
         <span
           className="song-info-tempo-led"
           style={{ animationDuration: `${blinkDurationMs}ms` }}
           aria-hidden="true"
         />
-        <span className="song-lyrics-fullscreen-tempo-led-text">Tempo {normalizedBpm} BPM</span>
+        <span className={`song-lyrics-fullscreen-tempo-led-text${isFullscreen ? ' song-lyrics-fullscreen-tempo-led-text-compact' : ''}`}>
+          {isFullscreen ? `${normalizedBpm}` : `Tempo ${normalizedBpm} BPM`}
+        </span>
       </div>
       {/* Tombol Lihat Partitur (selalu tampil jika ada MusicXML) */}
       {!isFullscreen && song?.sheetMusicXml && (
