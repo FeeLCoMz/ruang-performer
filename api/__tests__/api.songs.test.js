@@ -1,8 +1,9 @@
 // __tests__/api.songs.test.js
 // Jest test for /api/songs endpoint
-require('../test-helpers/setupEnv');
+require('../test-helpers/setupEnv.cjs');
 const request = require('supertest');
-const app = require('../server');
+const serverModule = require('../server');
+const app = serverModule.default || serverModule;
 
 describe('API /api/songs', () => {
   test('should reject POST without title', async () => {

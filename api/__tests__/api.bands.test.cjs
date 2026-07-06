@@ -1,8 +1,9 @@
 // __tests__/api.bands.test.cjs
 // Jest test for /api/bands endpoint
-require('../test-helpers/setupEnv');
+require('../test-helpers/setupEnv.cjs');
 const request = require('supertest');
-const app = require('../server');
+const serverModule = require('../server');
+const app = serverModule.default || serverModule;
 
 describe('API /api/bands', () => {
   test('should reject POST without name', async () => {

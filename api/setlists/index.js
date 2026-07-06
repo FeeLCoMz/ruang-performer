@@ -15,6 +15,81 @@ async function readJson(req) {
   });
 }
 
+function dedupeSongIds(songIds = []) {
+  const seenSongIds = new Set();
+  const dedupedSongs = [];
+  for (const songId of songIds) {
+    if (!seenSongIds.has(songId)) {
+      seenSongIds.add(songId);
+      dedupedSongs.push(songId);
+    }
+  }
+  return dedupedSongs;
+}
+
+function normalizeSongMeta(metaObj) {
+  if (!metaObj || typeof metaObj !== 'object' || Array.isArray(metaObj)) {
+    return {};
+  }
+  return { ...metaObj };
+}
+
+function applyBandPreferredKey(metaObj, preferredKey) {
+  const normalizedMeta = normalizeSongMeta(metaObj);
+  if (!normalizedMeta.key && preferredKey) {
+    normalizedMeta.key = preferredKey;
+  }
+  return normalizedMeta;
+}
+
+async function getBandPreferredKeyMap(client, bandId, songIds = []) {
+  const map = new Map();
+  if (!bandId || !Array.isArray(songIds) || songIds.length === 0) {
+    return map;
+  }
+
+  const placeholders = songIds.map(() => '?').join(', ');
+  const rows = await client.execute(
+    `SELECT songId, preferredKey
+     FROM band_song_preferences
+     WHERE bandId = ? AND songId IN (${placeholders})`,
+    [bandId, ...songIds]
+  );
+
+  for (const row of rows.rows || []) {
+    if (row.songId && row.preferredKey) {
+      map.set(row.songId, row.preferredKey);
+    }
+  }
+
+  return map;
+}
+
+async function upsertBandPreferredKeys(client, bandId, setlistSongMeta, allowedSongIds = [], nowIso) {
+  if (!bandId || !setlistSongMeta || typeof setlistSongMeta !== 'object' || Array.isArray(setlistSongMeta)) {
+    return;
+  }
+
+  const allowed = new Set(Array.isArray(allowedSongIds) ? allowedSongIds : []);
+  const rows = Object.entries(setlistSongMeta)
+    .filter(([songId]) => (allowed.size === 0 ? true : allowed.has(songId)))
+    .map(([songId, metaObj]) => {
+      const preferredKey = typeof metaObj?.key === 'string' ? metaObj.key.trim() : '';
+      return { songId, preferredKey };
+    })
+    .filter(({ songId, preferredKey }) => songId && preferredKey);
+
+  for (const row of rows) {
+    await client.execute(
+      `INSERT INTO band_song_preferences (id, bandId, songId, preferredKey, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(bandId, songId)
+       DO UPDATE SET preferredKey = excluded.preferredKey, updatedAt = excluded.updatedAt`,
+      [randomUUID(), bandId, row.songId, row.preferredKey, nowIso, nowIso]
+    );
+  }
+}
+
 export default async function handler(req, res) {
   try {
     // Verify JWT token first
@@ -69,13 +144,15 @@ export default async function handler(req, res) {
             [idStr]
           );
           const songs = songRows.rows?.map(r => r.song_id) || [];
+          const preferredKeyMap = await getBandPreferredKeyMap(client, row.bandId, songs);
           // meta: { songId: metaObj }
           const songKeys = {};
           (songRows.rows || []).forEach(r => {
             try {
-              songKeys[r.song_id] = r.meta ? JSON.parse(r.meta) : {};
+              const parsedMeta = r.meta ? JSON.parse(r.meta) : {};
+              songKeys[r.song_id] = applyBandPreferredKey(parsedMeta, preferredKeyMap.get(r.song_id));
             } catch {
-              songKeys[r.song_id] = {};
+              songKeys[r.song_id] = applyBandPreferredKey({}, preferredKeyMap.get(r.song_id));
             }
           });
           res.status(200).json({
@@ -100,6 +177,17 @@ export default async function handler(req, res) {
       if (req.method === 'PUT' || req.method === 'PATCH') {
         const body = await readJson(req);
         const now = new Date().toISOString();
+        const setlistRowResult = await client.execute(
+          `SELECT bandId FROM setlists WHERE id = ? LIMIT 1`,
+          [idStr]
+        );
+        const existingSetlistRow = setlistRowResult.rows?.[0] || null;
+        if (!existingSetlistRow) {
+          res.status(404).json({ error: 'Setlist not found' });
+          return;
+        }
+        const effectiveBandId = body.bandId !== undefined ? body.bandId : existingSetlistRow.bandId;
+
         // Update setlist main fields
         await client.execute(
           `UPDATE setlists SET 
@@ -121,24 +209,22 @@ export default async function handler(req, res) {
         // Update setlist_songs: remove all then insert new
         if (Array.isArray(body.songs)) {
           await client.execute(`DELETE FROM setlist_songs WHERE setlist_id = ?`, [idStr]);
-          // Deduplicate song IDs while preserving order
-          const seenSongIds = new Set();
-          const dedupedSongs = [];
-          for (const songId of body.songs) {
-            if (!seenSongIds.has(songId)) {
-              seenSongIds.add(songId);
-              dedupedSongs.push(songId);
-            }
-          }
+          const dedupedSongs = dedupeSongIds(body.songs);
+          const preferredKeyMap = await getBandPreferredKeyMap(client, effectiveBandId, dedupedSongs);
           for (let i = 0; i < dedupedSongs.length; i++) {
             const songId = dedupedSongs[i];
-            const metaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
+            const rawMetaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
+            const metaObj = applyBandPreferredKey(rawMetaObj, preferredKeyMap.get(songId));
             await client.execute(
               `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
                VALUES (?, ?, ?, ?, ?, ?)`,
               [idStr, songId, i, JSON.stringify(metaObj), now, now]
             );
           }
+
+          await upsertBandPreferredKeys(client, effectiveBandId, body.setlistSongMeta, dedupedSongs, now);
+        } else {
+          await upsertBandPreferredKeys(client, effectiveBandId, body.setlistSongMeta, Object.keys(body.setlistSongMeta || {}), now);
         }
         res.status(200).json({ id: idStr });
         return;
@@ -233,6 +319,7 @@ export default async function handler(req, res) {
       );
       const baseRows = rows.rows ?? [];
       const setlistIds = baseRows.map(row => row.id).filter(Boolean);
+      const bandIds = [...new Set(baseRows.map(row => row.bandId).filter(Boolean))];
 
       // Avoid N+1 queries by fetching song rows in chunks and grouping in memory.
       const songRowsBySetlistId = new Map();
@@ -257,16 +344,46 @@ export default async function handler(req, res) {
         }
       }
 
+      const allSongIds = new Set();
+      for (const groupedRows of songRowsBySetlistId.values()) {
+        for (const songRow of groupedRows) {
+          if (songRow.song_id) {
+            allSongIds.add(songRow.song_id);
+          }
+        }
+      }
+
+      const preferredKeyByBandSong = new Map();
+      if (bandIds.length > 0 && allSongIds.size > 0) {
+        const bandPlaceholders = bandIds.map(() => '?').join(', ');
+        const songPlaceholders = [...allSongIds].map(() => '?').join(', ');
+        const preferredRows = await client.execute(
+          `SELECT bandId, songId, preferredKey
+           FROM band_song_preferences
+           WHERE bandId IN (${bandPlaceholders})
+             AND songId IN (${songPlaceholders})`,
+          [...bandIds, ...allSongIds]
+        );
+
+        for (const preferredRow of preferredRows.rows || []) {
+          if (preferredRow.bandId && preferredRow.songId && preferredRow.preferredKey) {
+            preferredKeyByBandSong.set(`${preferredRow.bandId}::${preferredRow.songId}`, preferredRow.preferredKey);
+          }
+        }
+      }
+
       const setlists = baseRows.map(row => {
         const groupedSongRows = songRowsBySetlistId.get(row.id) || [];
         const songs = groupedSongRows.map(r => r.song_id);
         const setlistSongMeta = {};
 
         for (const songRow of groupedSongRows) {
+          const preferredKey = row.bandId ? preferredKeyByBandSong.get(`${row.bandId}::${songRow.song_id}`) : null;
           try {
-            setlistSongMeta[songRow.song_id] = songRow.meta ? JSON.parse(songRow.meta) : {};
+            const parsedMeta = songRow.meta ? JSON.parse(songRow.meta) : {};
+            setlistSongMeta[songRow.song_id] = applyBandPreferredKey(parsedMeta, preferredKey);
           } catch {
-            setlistSongMeta[songRow.song_id] = {};
+            setlistSongMeta[songRow.song_id] = applyBandPreferredKey({}, preferredKey);
           }
         }
 
@@ -326,6 +443,8 @@ export default async function handler(req, res) {
 
       const id = body.id?.toString() || randomUUID();
       const now = new Date().toISOString();
+      const dedupedSongs = Array.isArray(body.songs) ? dedupeSongIds(body.songs) : [];
+      const preferredKeyMap = await getBandPreferredKeyMap(client, bandId, dedupedSongs);
 
       try {
         await client.execute(
@@ -343,18 +462,10 @@ export default async function handler(req, res) {
         );
         // Insert setlist_songs
         if (Array.isArray(body.songs)) {
-          // Deduplicate song IDs while preserving order
-          const seenSongIds = new Set();
-          const dedupedSongs = [];
-          for (const songId of body.songs) {
-            if (!seenSongIds.has(songId)) {
-              seenSongIds.add(songId);
-              dedupedSongs.push(songId);
-            }
-          }
           for (let i = 0; i < dedupedSongs.length; i++) {
             const songId = dedupedSongs[i];
-            const metaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
+            const rawMetaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
+            const metaObj = applyBandPreferredKey(rawMetaObj, preferredKeyMap.get(songId));
             await client.execute(
               `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
                VALUES (?, ?, ?, ?, ?, ?)`,
@@ -362,6 +473,7 @@ export default async function handler(req, res) {
             );
           }
         }
+        await upsertBandPreferredKeys(client, bandId, body.setlistSongMeta, dedupedSongs, now);
         res.status(201).json({ id });
       } catch (insertErr) {
         // Check if it's a duplicate key error
@@ -387,18 +499,10 @@ export default async function handler(req, res) {
           // Remove all old setlist_songs before re-insert
           await client.execute(`DELETE FROM setlist_songs WHERE setlist_id = ?`, [id]);
           if (Array.isArray(body.songs)) {
-            // Deduplicate song IDs while preserving order
-            const seenSongIds = new Set();
-            const dedupedSongs = [];
-            for (const songId of body.songs) {
-              if (!seenSongIds.has(songId)) {
-                seenSongIds.add(songId);
-                dedupedSongs.push(songId);
-              }
-            }
             for (let i = 0; i < dedupedSongs.length; i++) {
               const songId = dedupedSongs[i];
-              const metaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
+              const rawMetaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
+              const metaObj = applyBandPreferredKey(rawMetaObj, preferredKeyMap.get(songId));
               await client.execute(
                 `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
                  VALUES (?, ?, ?, ?, ?, ?)`,
@@ -406,6 +510,7 @@ export default async function handler(req, res) {
               );
             }
           }
+          await upsertBandPreferredKeys(client, bandId, body.setlistSongMeta, dedupedSongs, now);
           res.status(200).json({ id });
         } else {
           throw insertErr;

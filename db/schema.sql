@@ -100,6 +100,20 @@ CREATE TABLE IF NOT EXISTS setlist_songs (
 );
 
 
+-- Band-level preferred key per song (used as default when adding songs to band setlists)
+CREATE TABLE IF NOT EXISTS band_song_preferences (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  bandId TEXT NOT NULL,
+  songId TEXT NOT NULL,
+  preferredKey TEXT NOT NULL,
+  createdAt TEXT DEFAULT (datetime('now')),
+  updatedAt TEXT,
+  FOREIGN KEY (bandId) REFERENCES bands(id) ON DELETE CASCADE,
+  FOREIGN KEY (songId) REFERENCES songs(id) ON DELETE CASCADE,
+  UNIQUE(bandId, songId)
+);
+
+
 -- Practice sessions table
 CREATE TABLE IF NOT EXISTS practice_sessions (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -148,6 +162,7 @@ CREATE INDEX IF NOT EXISTS idx_band_members_bandId ON band_members(bandId);
 CREATE INDEX IF NOT EXISTS idx_band_members_userId ON band_members(userId);
 CREATE INDEX IF NOT EXISTS idx_band_members_role ON band_members(role);
 CREATE INDEX IF NOT EXISTS idx_setlist_songs_setlist_id_position ON setlist_songs(setlist_id, position);
+CREATE INDEX IF NOT EXISTS idx_band_song_preferences_bandId_songId ON band_song_preferences(bandId, songId);
 CREATE INDEX IF NOT EXISTS idx_practice_sessions_bandId ON practice_sessions(bandId);
 CREATE INDEX IF NOT EXISTS idx_gigs_bandId ON gigs(bandId);
 CREATE INDEX IF NOT EXISTS idx_gigs_status ON gigs(status);

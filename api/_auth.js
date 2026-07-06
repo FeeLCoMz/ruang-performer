@@ -12,7 +12,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 export function verifyToken(req, res) {
   // Bypass JWT auth in test environment
   if (process.env.NODE_ENV === 'test') {
-    req.user = { id: 'test-user', email: 'test@example.com', role: 'owner' };
+    req.user = { id: 'test-user', userId: 'test-user', email: 'test@example.com', role: 'owner' };
     return true;
   }
 
