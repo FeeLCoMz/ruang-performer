@@ -20,10 +20,10 @@
 
 import React, { useState } from 'react';
 import NumberToken from './NumberToken.jsx';
-import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText } from '../utils/chordUtils.js';
+import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
 
 
-export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordNumbers = false, showJazzChords = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
+export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordNumbers = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const formatInstrumentPatchText = (lineObj) => {
@@ -37,6 +37,7 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordN
   const formatChordToken = (token) => {
     if (showChordNumbers) return chordTextToNumberText(token, keySignature);
     if (showJazzChords) return chordTextToJazzText(token);
+    if (showSimpleChords) return chordTextToSimpleText(token);
     return token;
   };
 

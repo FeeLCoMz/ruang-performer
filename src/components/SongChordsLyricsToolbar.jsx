@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import AutoScrollBar from "./AutoScrollBar.jsx";
 import SongChordsExportMenu from "./SongChordsExportMenu.jsx";
 
@@ -97,6 +97,8 @@ export default function SongChordsLyricsToolbar({
   setShowChordNumbers,
   showJazzChords,
   setShowJazzChords,
+  showSimpleChords,
+  setShowSimpleChords,
   keySignature,
   handleEditLyrics,
   savingLyrics,
@@ -113,7 +115,35 @@ export default function SongChordsLyricsToolbar({
   handleExportPDF,
 }) {
   const [showMetadataHelp, setShowMetadataHelp] = useState(false);
+  const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
+  const chordStyleMenuRef = useRef(null);
   const metadataSections = useMemo(() => METADATA_HELP_ITEMS, []);
+  const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
+
+  useEffect(() => {
+    if (!showChordStyleMenu) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!chordStyleMenuRef.current?.contains(event.target)) {
+        setShowChordStyleMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+    };
+  }, [showChordStyleMenu]);
+
+  const applyChordStyle = (style) => {
+    setShowChordNumbers(false);
+    setShowJazzChords(style === 'jazz');
+    setShowSimpleChords(style === 'simple');
+    setShowChordStyleMenu(false);
+  };
 
   return (
     <>
@@ -194,6 +224,7 @@ export default function SongChordsLyricsToolbar({
                     const next = !prev;
                     if (next) {
                       setShowJazzChords(false);
+                      setShowSimpleChords(false);
                     }
                     return next;
                   });
@@ -202,21 +233,49 @@ export default function SongChordsLyricsToolbar({
                 🔢
               </button>
 
-              <button
-                className={`btn ${showJazzChords ? 'btn-primary' : 'btn-secondary'}`}
-                title={showJazzChords ? 'Chord (jazz) — aktif' : 'Toggle chord jazz'}
-                onClick={() => {
-                  setShowJazzChords((prev) => {
-                    const next = !prev;
-                    if (next) {
-                      setShowChordNumbers(false);
-                    }
-                    return next;
-                  });
-                }}
-              >
-                🎷
-              </button>
+              <div className="song-lyrics-chord-style-menu-container" ref={chordStyleMenuRef}>
+                <button
+                  className={`btn ${showJazzChords || showSimpleChords ? 'btn-primary' : 'btn-secondary'}`}
+                  title={`Style chord: ${currentChordStyleLabel}`}
+                  onClick={() => setShowChordStyleMenu((prev) => !prev)}
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={showChordStyleMenu}
+                >
+                  🎼
+                </button>
+                <span className="song-lyrics-chord-style-badge" title={`Style chord aktif: ${currentChordStyleLabel}`}>
+                  Style: {currentChordStyleLabel}
+                </span>
+                {showChordStyleMenu && (
+                  <div className="song-lyrics-chord-style-menu" role="menu" aria-label="Pilih style chord">
+                    <button
+                      type="button"
+                      className={`song-lyrics-chord-style-item${!showJazzChords && !showSimpleChords ? ' active' : ''}`}
+                      onClick={() => applyChordStyle('default')}
+                      role="menuitem"
+                    >
+                      Default
+                    </button>
+                    <button
+                      type="button"
+                      className={`song-lyrics-chord-style-item${showJazzChords ? ' active' : ''}`}
+                      onClick={() => applyChordStyle('jazz')}
+                      role="menuitem"
+                    >
+                      Jazz
+                    </button>
+                    <button
+                      type="button"
+                      className={`song-lyrics-chord-style-item${showSimpleChords ? ' active' : ''}`}
+                      onClick={() => applyChordStyle('simple')}
+                      role="menuitem"
+                    >
+                      Simple
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
 

@@ -504,7 +504,7 @@ const NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 
 
 // Regex untuk mendeteksi chord (termasuk leading dash untuk passing chord dan trailing dots untuk durasi)
 // Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F.., Am...., (Am), [C]
-const CHORD_REGEX_GLOBAL = /[\(\[\{]?-?([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?(((\.{2,}|-)([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?(\/[A-G][#b]?)?)*)(\.{2,})?[\)\]\}]?/g;
+const CHORD_REGEX_GLOBAL = /[\(\[\{]?-?([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?([#b][0-9]+)*(\/[A-G][#b]?)?(((\.{2,}|-)([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?([#b][0-9]+)*(\/[A-G][#b]?)?)*)(\.{2,})?[\)\]\}]?/g;
 
 const normalizeChordToken = (token) => {
   if (typeof token !== 'string') return token;
@@ -835,6 +835,42 @@ const formatSingleChordToJazzStyle = (chord) => {
   return `${root}${jazzQuality}${bass}`;
 };
 
+const formatSingleChordToSimpleStyle = (chord) => {
+  if (!chord || typeof chord !== 'string') return chord;
+  if (isNoChordToken(chord)) return chord;
+
+  const match = chord.match(/^([A-G][#b]?)(.*)$/);
+  if (!match) return chord;
+
+  const [, root, suffix = ''] = match;
+  const slashIndex = suffix.indexOf('/');
+  const quality = slashIndex === -1 ? suffix : suffix.slice(0, slashIndex);
+  const bass = slashIndex === -1 ? '' : suffix.slice(slashIndex);
+  const normalizedQuality = quality.trim();
+
+  let simpleQuality = normalizedQuality;
+
+  if (!normalizedQuality) {
+    simpleQuality = '';
+  } else if (/^maj(?:7|9|11|13)?$/i.test(normalizedQuality)) {
+    simpleQuality = '';
+  } else if (/^(6|6\/9|add9)$/i.test(normalizedQuality)) {
+    simpleQuality = '';
+  } else if (/^m(?!aj)(?:7|9|11|13)?$/i.test(normalizedQuality) || /^min(?:7|9|11|13)?$/i.test(normalizedQuality)) {
+    simpleQuality = 'm';
+  } else if (/^(aug|7#5)$/i.test(normalizedQuality)) {
+    simpleQuality = 'aug';
+  } else if (/^(7|9|11|13)(?:[#b]\d+)*$/i.test(normalizedQuality)) {
+    simpleQuality = '7';
+  } else if (/^(sus|sus2|sus4|13sus4)$/i.test(normalizedQuality)) {
+    simpleQuality = 'sus';
+  } else if (/^(dim|dim7|m7b5)$/i.test(normalizedQuality)) {
+    simpleQuality = 'dim';
+  }
+
+  return `${root}${simpleQuality}${bass}`;
+};
+
 export const chordTextToJazzText = (text) => {
   if (!text || typeof text !== 'string') return text;
 
@@ -848,6 +884,22 @@ export const chordTextToJazzText = (text) => {
     const prefix = innerMatch ? innerMatch[1] : '';
     const suffix = innerMatch ? innerMatch[3] : '';
     return `${prefix}${jazzChord}${suffix}${trailingDots}`;
+  });
+};
+
+export const chordTextToSimpleText = (text) => {
+  if (!text || typeof text !== 'string') return text;
+
+  return text.replace(CHORD_REGEX_GLOBAL, (match) => {
+    const innerMatch = match.match(/^([\(\[\{]?)(.+?)([\)\]\}]?)$/);
+    const fullMatch = innerMatch ? innerMatch[2] : match;
+    const trailingDotsMatch = fullMatch.match(/(\.{2,})$/);
+    const trailingDots = trailingDotsMatch ? trailingDotsMatch[1] : '';
+    const sanitized = normalizeChordToken(fullMatch.replace(/\.{2,}$/, ''));
+    const simpleChord = formatSingleChordToSimpleStyle(sanitized);
+    const prefix = innerMatch ? innerMatch[1] : '';
+    const suffix = innerMatch ? innerMatch[3] : '';
+    return `${prefix}${simpleChord}${suffix}${trailingDots}`;
   });
 };
 
