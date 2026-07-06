@@ -330,6 +330,12 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     return rows;
   }, [localOrder, setlistSongMeta, setlistSongs]);
 
+  const shareSetlistRows = useMemo(() => {
+    if (Array.isArray(filteredSongsWithDividers) && filteredSongsWithDividers.length > 0) {
+      return filteredSongsWithDividers;
+    }
+    return orderedSetlistRows;
+  }, [filteredSongsWithDividers, orderedSetlistRows]);
   // Early returns AFTER all hooks
   if (isLoading) return <div className="main-content"><div className="card"><div className="loading-skeleton" style={{height: 40, marginBottom: 16}}></div><div className="loading-skeleton" style={{height: 24, width: '60%', marginBottom: 8}}></div><div className="loading-skeleton" style={{height: 24, width: '40%', marginBottom: 8}}></div></div></div>;
   if (!setlist) return <div className="main-content error-text">Setlist tidak ditemukan atau offline cache kosong</div>;
@@ -344,13 +350,13 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // Generate share text
   const shareUrl = `${window.location.origin}/setlists/${setlist.id}`;
   const bandText = setlist.bandName ? `🎸 Band: ${setlist.bandName}\n` : '';
-  const hasSessionDividerInShare = orderedSetlistRows.some((row) => row.type === 'divider');
+  const hasSessionDividerInShare = shareSetlistRows.some((row) => row.type === 'divider');
 
   function formatShareLines(includeSongDetails) {
     let songNumber = 0;
     let sessionNumber = 0;
 
-    return orderedSetlistRows
+    return shareSetlistRows
       .map((row) => {
         if (row.type === 'divider') {
           sessionNumber += 1;
@@ -368,7 +374,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         return `${songNumber}. ${song.title}${song.artist ? ` - ${song.artist}` : ''}${songKey}${songTempo}`;
       })
       .join('\n')
-      .trim();
+        .trim();
   }
 
   const shareText =
@@ -1454,7 +1460,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             <SetlistPoster
               setlist={setlist}
               setlistSongs={setlistSongs}
-              setlistRows={orderedSetlistRows}
+              setlistRows={shareSetlistRows}
               posterRef={posterRef}              
             />
             <div className="filter-row">
