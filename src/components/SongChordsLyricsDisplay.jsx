@@ -39,6 +39,7 @@ export default function SongChordsLyricsDisplay({
   setZoom,
   showChordNumbers,
   showJazzChords,
+  showSimpleChords,
   keySignature,
   autoScrollActive,
   scrollSpeed,
@@ -204,6 +205,20 @@ export default function SongChordsLyricsDisplay({
   const normalizedBpm = Math.max(40, Math.min(240, Number(song?.tempo) || 120));
   const normalizedScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedBpm));
   const blinkDurationMs = Math.round(60000 / normalizedBpm);
+  const currentChordModeKey = showChordNumbers
+    ? 'number'
+    : showJazzChords
+      ? 'jazz'
+      : showSimpleChords
+        ? 'simple'
+        : 'default';
+  const currentChordModeLabel = showChordNumbers
+    ? 'Angka'
+    : showJazzChords
+      ? 'Jazz'
+      : showSimpleChords
+        ? 'Simple'
+        : 'Default';
 
   const nudgeScrollSpeed = (delta) => {
     setScrollSpeed((prev) => {
@@ -345,6 +360,12 @@ export default function SongChordsLyricsDisplay({
           </button>
         </div>
         <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Fullscreen">
+          <span
+            className={`song-lyrics-fullscreen-style-badge mode-${currentChordModeKey}`}
+            title={`Mode chord aktif: ${currentChordModeLabel}`}
+          >
+            Chord: {currentChordModeLabel}
+          </span>
           <button
             type="button"
             className="btn btn-secondary"
@@ -400,6 +421,7 @@ export default function SongChordsLyricsDisplay({
         zoom={zoom}
         showChordNumbers={showChordNumbers}
         showJazzChords={showJazzChords}
+        showSimpleChords={showSimpleChords}
         keySignature={keySignature || song?.key || 'C'}
         onTimestampClick={(seconds) => {
           if (youtubeRef && youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {

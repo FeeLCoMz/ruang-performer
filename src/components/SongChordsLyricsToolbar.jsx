@@ -119,6 +119,7 @@ export default function SongChordsLyricsToolbar({
   const chordStyleMenuRef = useRef(null);
   const metadataSections = useMemo(() => METADATA_HELP_ITEMS, []);
   const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
+  const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
 
   useEffect(() => {
     if (!showChordStyleMenu) return undefined;
@@ -244,7 +245,10 @@ export default function SongChordsLyricsToolbar({
                 >
                   🎼
                 </button>
-                <span className="song-lyrics-chord-style-badge" title={`Style chord aktif: ${currentChordStyleLabel}`}>
+                <span
+                  className={`song-lyrics-chord-style-badge mode-${currentChordStyleKey}`}
+                  title={`Style chord aktif: ${currentChordStyleLabel}`}
+                >
                   Style: {currentChordStyleLabel}
                 </span>
                 {showChordStyleMenu && (
