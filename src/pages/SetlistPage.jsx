@@ -15,6 +15,7 @@ export default function SetlistPage({
   setlists,
   loadingSetlists,
   errorSetlists,
+  songs = [],
   userBandInfo = [],
   showCreateSetlist,
   setShowCreateSetlist,
@@ -35,6 +36,8 @@ export default function SetlistPage({
   const [deleteSetlist, setDeleteSetlist] = React.useState(null);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState('');
+  const [autoSourceSetlists, setAutoSourceSetlists] = React.useState([]);
+  const [autoSourceLoading, setAutoSourceLoading] = React.useState(false);
   
   // Filter & Sort States
   const [search, setSearch] = React.useState('');
@@ -64,12 +67,31 @@ export default function SetlistPage({
     }
   }, []);
 
+  const loadAutoSourceSetlists = React.useCallback(async () => {
+    setAutoSourceLoading(true);
+    try {
+      const data = await fetchSetLists();
+      setAutoSourceSetlists(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load setlist auto source:', err);
+      setAutoSourceSetlists([]);
+    } finally {
+      setAutoSourceLoading(false);
+    }
+  }, []);
+
   // Load band options only when create/edit modal needs them.
   React.useEffect(() => {
     if ((showCreateSetlist || editSetlist) && bands.length === 0) {
       loadBands();
     }
   }, [showCreateSetlist, editSetlist, bands.length, loadBands]);
+
+  React.useEffect(() => {
+    if (showCreateSetlist) {
+      loadAutoSourceSetlists();
+    }
+  }, [showCreateSetlist, loadAutoSourceSetlists]);
   
   // Helper untuk refresh setlists dari API
   const refreshSetlists = async () => {
@@ -354,14 +376,47 @@ export default function SetlistPage({
             title="Buat Setlist Baru"
             initialData={{}}
             bands={bands}
+            sourceSetlists={autoSourceSetlists}
+            songs={songs}
+            loadingSourceSetlists={autoSourceLoading}
             loading={editLoading}
             error={createSetlistError}
             onCancel={() => setShowCreateSetlist(false)}
-            onSubmit={async ({ name, description, bandId }) => {
+            onSubmit={async ({ name, description, bandId, autoGenerate, previewSongIds }) => {
               setCreateSetlistError('');
               setEditLoading(true);
               try {
-                await addSetList({ name, description, bandId, userId: currentUserId });
+                let songs = [];
+                if (autoGenerate) {
+                  if (autoSourceLoading) {
+                    throw new Error('Data sumber lagu masih dimuat, coba lagi sebentar');
+                  }
+
+                  if (bandId) {
+                    const selectedBandInfo = Array.isArray(userBandInfo)
+                      ? userBandInfo.find((b) => String(b.bandId || b.id) === String(bandId))
+                      : null;
+                    const canCreateForBand = canPerformAction(
+                      { userId: String(currentUserId || '') },
+                      String(bandId || ''),
+                      selectedBandInfo
+                        ? { bandId: String(selectedBandInfo.bandId || selectedBandInfo.id), role: selectedBandInfo.role }
+                        : null,
+                      PERMISSIONS.SETLIST_CREATE
+                    );
+
+                    if (!canCreateForBand) {
+                      throw new Error('Anda tidak punya izin membuat setlist otomatis untuk band ini');
+                    }
+                  }
+
+                  if (!Array.isArray(previewSongIds) || previewSongIds.length === 0) {
+                    throw new Error('Daftar lagu otomatis belum tersedia, silakan cek pilihan sumber lagu');
+                  }
+                  songs = previewSongIds;
+                }
+
+                await addSetList({ name, description, bandId, songs, userId: currentUserId });
                 setShowCreateSetlist(false);
                 setCreateSetlistName('');
                 setCreateSetlistError('');
