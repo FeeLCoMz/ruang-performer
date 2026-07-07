@@ -2542,6 +2542,18 @@ body.dark-mode .lyrics-editor-textarea {
   justify-content: flex-end;
 }
 
+.song-list-container .song-actions .btn {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .song-action-mini {
   width: 30px;
   height: 30px;

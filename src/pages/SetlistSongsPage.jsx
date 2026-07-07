@@ -1477,10 +1477,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   {canEdit && (
                     <button
                       onClick={() => handleToggleSongCompleted(song.id)}
-                      className={`btn ${isCompleted ? '' : 'btn-secondary'}`}
+                      className={`btn song-action-mini ${isCompleted ? '' : 'btn-secondary'}`}
                       title={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
+                      aria-label={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
                     >
-                      {isCompleted ? '✅ Dibawakan' : '☑️ Tandai'}
+                      {isCompleted ? '✅' : '☑'}
                     </button>
                   )}
                   {!performanceMode && canEdit && (
