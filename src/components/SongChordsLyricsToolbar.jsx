@@ -296,6 +296,7 @@ export default function SongChordsLyricsToolbar({
             onChangeInsertNoteFormat={setInsertNoteFormat}
             insertTrailingSpace={insertTrailingSpace}
             onToggleInsertTrailingSpace={setInsertTrailingSpace}
+            keySignature={keySignature}
           />
         )}
       </div>

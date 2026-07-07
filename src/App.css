@@ -6593,6 +6593,16 @@ body.dark-mode .cd-token {
   min-width: 72px;
 }
 
+.song-lyrics-insert-key-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.song-lyrics-piano-controls .btn {
+  white-space: nowrap;
+}
+
 .song-lyrics-zoom-controls {
   display: flex;
   align-items: center;

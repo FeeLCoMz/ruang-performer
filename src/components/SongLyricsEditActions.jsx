@@ -69,6 +69,7 @@ export default function SongLyricsEditActions({
   onChangeInsertNoteFormat,
   insertTrailingSpace = false,
   onToggleInsertTrailingSpace,
+  keySignature = "",
 }) {
   const [showMetadataHelp, setShowMetadataHelp] = useState(false);
   const metadataSections = useMemo(() => METADATA_HELP_ITEMS, []);
@@ -83,7 +84,7 @@ export default function SongLyricsEditActions({
           className="btn btn-secondary"
           title="Sejajarkan garis bar (|) pada teks yang dipilih"
         >
-          ∥ Sejajarkan Bar
+          ∥ Sejajar
         </button>
         <button
           type="button"
@@ -92,7 +93,7 @@ export default function SongLyricsEditActions({
           className="btn btn-secondary"
           title="Pecah otomatis menjadi 4 bar per baris pada teks yang dipilih"
         >
-          ↩ 4 Bar/Baris
+          ↩ 4/Baris
         </button>
         <div className="song-lyrics-bar-wrap-controls">
           <label htmlFor={barsPerLineSelectId} className="song-lyrics-bar-wrap-label">Bar/Baris</label>
@@ -129,39 +130,49 @@ export default function SongLyricsEditActions({
             >
               🎹 Piano
             </button>
-            <label className="song-lyrics-insert-toggle" htmlFor="lyrics-insert-notes-toggle">
-              <input
-                id="lyrics-insert-notes-toggle"
-                type="checkbox"
-                checked={insertNotesEnabled}
-                onChange={(e) => onToggleInsertNotes?.(e.target.checked)}
-                disabled={disabled}
-              />
-              Insert not ke lirik
-            </label>
-            <label className="song-lyrics-insert-format" htmlFor="lyrics-insert-format-select">
-              Format
-              <select
-                id="lyrics-insert-format-select"
-                className="song-lyrics-bar-wrap-select"
-                value={insertNoteFormat}
-                onChange={(e) => onChangeInsertNoteFormat?.(e.target.value)}
-                disabled={disabled || !insertNotesEnabled}
-              >
-                <option value="bracket">[C]</option>
-                <option value="plain">C</option>
-              </select>
-            </label>
-            <label className="song-lyrics-insert-toggle" htmlFor="lyrics-insert-space-toggle">
-              <input
-                id="lyrics-insert-space-toggle"
-                type="checkbox"
-                checked={insertTrailingSpace}
-                onChange={(e) => onToggleInsertTrailingSpace?.(e.target.checked)}
-                disabled={disabled || !insertNotesEnabled}
-              />
-              Tambah spasi otomatis
-            </label>
+            <button
+              type="button"
+              className={`btn ${insertNotesEnabled ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => onToggleInsertNotes?.(!insertNotesEnabled)}
+              disabled={disabled}
+              title="Toggle insert not ke lirik"
+              aria-pressed={insertNotesEnabled}
+            >
+              ✍ Insert {insertNotesEnabled ? 'ON' : 'OFF'}
+            </button>
+            {insertNotesEnabled && (
+              <>
+                <label className="song-lyrics-insert-format" htmlFor="lyrics-insert-format-select">
+                  Format
+                  <select
+                    id="lyrics-insert-format-select"
+                    className="song-lyrics-bar-wrap-select"
+                    value={insertNoteFormat}
+                    onChange={(e) => onChangeInsertNoteFormat?.(e.target.value)}
+                    disabled={disabled}
+                  >
+                    <option value="bracket">[C]</option>
+                    <option value="plain">C</option>
+                    <option value="number">1-7</option>
+                  </select>
+                </label>
+                {insertNoteFormat === "number" && (
+                  <span className="song-lyrics-insert-key-hint" title="Nada dasar untuk format angka">
+                    Key: {keySignature || "C"}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className={`btn ${insertTrailingSpace ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => onToggleInsertTrailingSpace?.(!insertTrailingSpace)}
+                  disabled={disabled}
+                  title="Toggle spasi otomatis setelah insert"
+                  aria-pressed={insertTrailingSpace}
+                >
+                  ␠ Spasi {insertTrailingSpace ? 'ON' : 'OFF'}
+                </button>
+              </>
+            )}
           </div>
         )}
         {showMetadataHelpButton && (
@@ -172,7 +183,7 @@ export default function SongLyricsEditActions({
             className="btn btn-secondary"
             title="Lihat daftar metadata yang didukung"
           >
-            ❓ Help Metadata
+            ❓ Help
           </button>
         )}
         {showSaveCancelButtons && (

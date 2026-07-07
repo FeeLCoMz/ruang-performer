@@ -16,7 +16,35 @@ import { handleExportText, handleExportPDF, handleShare } from '../utils/songHan
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import { fetchSetLists } from '../apiClient.js';
-import { alignSelectedBarlines, wrapBarsPerLine } from '../utils/chordUtils.js';
+import { alignSelectedBarlines, chordToNumber, wrapBarsPerLine } from '../utils/chordUtils.js';
+
+const NOTE_NAMES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+function extractKeyRoot(inputKey) {
+  const match = String(inputKey || '').trim().match(/^([A-G](?:#|b)?)/i);
+  if (!match) return 'C';
+  const root = match[1];
+  return root[0].toUpperCase() + (root[1] || '');
+}
+
+function isMinorKey(inputKey) {
+  const normalized = String(inputKey || '').trim().toLowerCase();
+  return normalized.endsWith('m') && !normalized.includes('maj');
+}
+
+function getNumericNotationKey(inputKey) {
+  const keyRoot = extractKeyRoot(inputKey);
+  if (!isMinorKey(inputKey)) return keyRoot;
+
+  const index = NOTE_NAMES_FLAT.indexOf(keyRoot);
+  if (index === -1) return keyRoot;
+  return NOTE_NAMES_FLAT[(index + 3) % 12];
+}
+
+function toNumberNotation(note, inputKey) {
+  const baseKey = getNumericNotationKey(inputKey);
+  return chordToNumber(note, baseKey) || note;
+}
 
 /**
  * SongChordsPage
@@ -479,7 +507,11 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     if (!isEditingLyrics || !insertNotesToLyrics) return;
 
     const textarea = lyricsDisplayRef.current;
-    const noteToken = insertNoteFormat === 'plain' ? note : `[${note}]`;
+    const numericKey = getNumericNotationKey(key || song?.key || 'C');
+    const formattedNote = insertNoteFormat === 'number'
+      ? toNumberNotation(note, key || song?.key || 'C')
+      : note;
+    const noteToken = insertNoteFormat === 'bracket' ? `[${formattedNote}]` : formattedNote;
     const token = insertTrailingSpace ? `${noteToken} ` : noteToken;
 
     if (!textarea || typeof textarea.selectionStart !== 'number' || typeof textarea.selectionEnd !== 'number') {
@@ -579,6 +611,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setInsertNoteFormat={setInsertNoteFormat}
         insertTrailingSpace={insertTrailingSpace}
         setInsertTrailingSpace={setInsertTrailingSpace}
+        insertNumberKeySignature={getNumericNotationKey(key || song?.key || 'C')}
         showExportMenu={showExportMenu}
         setShowExportMenu={setShowExportMenu}
         handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, setShowExportMenu)}
@@ -615,7 +648,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         isOpen={showLyricsPiano}
         onClose={() => setShowLyricsPiano(false)}
         onKeySelect={handleLyricsPianoKeySelect}
-        helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
+        helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${getNumericNotationKey(key || song?.key || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
       />
 
       {/* Setlist Navigation (if in setlist context) */}

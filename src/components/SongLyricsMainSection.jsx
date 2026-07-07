@@ -32,6 +32,7 @@ export default function SongLyricsMainSection({
   setInsertNoteFormat,
   insertTrailingSpace,
   setInsertTrailingSpace,
+  insertNumberKeySignature,
   showExportMenu,
   setShowExportMenu,
   handleExportText,
@@ -117,6 +118,7 @@ export default function SongLyricsMainSection({
             setInsertNoteFormat={setInsertNoteFormat}
             insertTrailingSpace={insertTrailingSpace}
             setInsertTrailingSpace={setInsertTrailingSpace}
+            keySignature={insertNumberKeySignature}
             showExportMenu={showExportMenu}
             setShowExportMenu={setShowExportMenu}
             handleExportText={handleExportText}
