@@ -16,6 +16,8 @@ import { canEditSetlist } from '../utils/permissionUtils.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as chordUtils from '../utils/chordUtils.js';
 import { buildSmartSetlistPlan } from '../utils/setlistSmartAssistant.js';
+import useMetronome from '../hooks/useMetronome.js';
+import YouTubeViewer from '../components/YouTubeViewer.jsx';
 
 const SESSION_DIVIDER_META_FIELD = 'sessionDividerName';
 
@@ -134,6 +136,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // State untuk konfirmasi hapus
   const [confirmDeleteSongId, setConfirmDeleteSongId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [metronomeTempo, setMetronomeTempo] = useState(120);
+  const [metronomeSongId, setMetronomeSongId] = useState(null);
+  const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
+  const [activeVideoSong, setActiveVideoSong] = useState(null);
+  const videoRef = useRef(null);
 
   const baseSongMap = useMemo(() => {
     const map = new Map();
@@ -1011,6 +1018,81 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setConfirmDeleteSongId(null);
   }
 
+  function hasYouTubeVideo(song) {
+    return Boolean(song?.youtubeId || song?.youtube_url);
+  }
+
+  function resolveTempo(song) {
+    const parsed = parseInt(song?.tempo, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 120;
+  }
+
+  function handleToggleMetronome(song, e) {
+    e.stopPropagation();
+    if (isMetronomeActive && metronomeSongId === song.id) {
+      setIsMetronomeActive(false);
+      setMetronomeSongId(null);
+      return;
+    }
+    setMetronomeTempo(resolveTempo(song));
+    setMetronomeSongId(song.id);
+    setIsMetronomeActive(true);
+  }
+
+  function handlePlayVideo(song, e) {
+    e.stopPropagation();
+    if (!hasYouTubeVideo(song)) return;
+    setActiveVideoSong(song);
+  }
+
+  function handleCloseVideoPlayer() {
+    if (videoRef.current && typeof videoRef.current.handlePause === 'function') {
+      videoRef.current.handlePause();
+    }
+    setActiveVideoSong(null);
+  }
+
+  useEffect(() => {
+    if (!activeVideoSong) return;
+    let attempts = 0;
+    const maxAttempts = 20;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      if (videoRef.current && typeof videoRef.current.handlePlay === 'function') {
+        videoRef.current.handlePlay();
+        clearInterval(intervalId);
+        return;
+      }
+      if (attempts >= maxAttempts) {
+        clearInterval(intervalId);
+      }
+    }, 200);
+    return () => clearInterval(intervalId);
+  }, [activeVideoSong]);
+
+  useEffect(() => {
+    if (activeVideoSong && !hasYouTubeVideo(activeVideoSong)) {
+      setActiveVideoSong(null);
+    }
+  }, [activeVideoSong]);
+
+  useEffect(() => {
+    return () => {
+      setIsMetronomeActive(false);
+    };
+  }, [setIsMetronomeActive]);
+
+  const currentMetronomeSong = useMemo(() => {
+    if (!metronomeSongId) return null;
+    return (setlistSongs || []).find((song) => song.id === metronomeSongId) || null;
+  }, [metronomeSongId, setlistSongs]);
+
+  function isSongPlaying(songId) {
+    if (isMetronomeActive && metronomeSongId === songId) return true;
+    if (activeVideoSong?.id === songId) return true;
+    return false;
+  }
+
   return (
     <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}>  {/* Tambah class jika performanceMode */}
       <div className="page-header">
@@ -1158,6 +1240,56 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       )}
 
       {/* Song List dengan drag-and-drop */}
+      {(isMetronomeActive || activeVideoSong) && (
+        <div className="song-inline-player card">
+          <div className="song-inline-player-header">
+            <div>
+              <h3>Now Playing</h3>
+              {activeVideoSong ? (
+                <p>
+                  {activeVideoSong.title}
+                  {activeVideoSong.artist ? ` - ${activeVideoSong.artist}` : ''}
+                  {` | ${resolveTempo(activeVideoSong)} BPM`}
+                </p>
+              ) : (
+                <p>
+                  Metronom aktif{currentMetronomeSong?.title ? `: ${currentMetronomeSong.title}` : ''}
+                </p>
+              )}
+            </div>
+            <div className="song-inline-player-actions">
+              <button
+                className={`btn ${isMetronomeActive ? '' : 'btn-secondary'}`}
+                aria-label={isMetronomeActive ? 'Stop metronom' : 'Start metronom'}
+                onClick={() => {
+                  if (isMetronomeActive) {
+                    setIsMetronomeActive(false);
+                    setMetronomeSongId(null);
+                    return;
+                  }
+                  setIsMetronomeActive(true);
+                }}
+              >
+                {isMetronomeActive ? '⏹' : '⏱'}
+              </button>
+              {activeVideoSong && (
+                <button className="btn btn-secondary" aria-label="Tutup video" onClick={handleCloseVideoPlayer}>
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+          {activeVideoSong && (
+            <div className="song-inline-player-video">
+              <YouTubeViewer
+                ref={videoRef}
+                videoId={activeVideoSong.youtubeId || activeVideoSong.youtube_url}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {filteredSongs.length === 0 ? (
         <div className="empty-state">
           <p>
@@ -1241,7 +1373,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             return (
               <div
                 key={song.id}
-                className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}`}
+                className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
                 draggable={sortBy === 'custom'}
                 onDragStart={e => {
                   if (sortBy !== 'custom') return;
@@ -1294,6 +1426,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     {song.title}
                     {isCompleted && <span className="song-completed-badge" title="Sudah dibawakan" aria-label="Sudah dibawakan">✓</span>}
                     {isSmartFeatured && <span className="smart-featured-badge">Smart Pick</span>}
+                    {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
                   </h3>
                   <div className="song-meta">
                     {song.artist && <span>👤 {song.artist}</span>}
@@ -1323,6 +1456,24 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   className="song-actions"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <button
+                    onClick={(e) => handleToggleMetronome(song, e)}
+                    className="btn btn-secondary song-action-mini"
+                    title="Play metronom"
+                    aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
+                  >
+                    {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
+                  </button>
+                  {hasYouTubeVideo(song) && (
+                    <button
+                      onClick={(e) => handlePlayVideo(song, e)}
+                      className="btn btn-secondary song-action-mini"
+                      title="Play video"
+                      aria-label="Play video"
+                    >
+                      🎬
+                    </button>
+                  )}
                   {canEdit && (
                     <button
                       onClick={() => handleToggleSongCompleted(song.id)}

@@ -2418,6 +2418,11 @@ body.dark-mode .lyrics-editor-textarea {
   background: var(--primary-bg);
 }
 
+.song-item-playing {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 1px rgba(2, 132, 199, 0.24), 0 10px 24px rgba(2, 132, 199, 0.14);
+}
+
 .song-item-smart-featured {
   border-left: 4px solid #f59e0b;
   background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, var(--card-bg) 24%);
@@ -2533,6 +2538,59 @@ body.dark-mode .lyrics-editor-textarea {
   display: flex;
   gap: var(--spacing-sm);
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.song-action-mini {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.song-inline-player {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+}
+
+.song-inline-player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.song-inline-player-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+}
+
+.song-inline-player-header p {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.song-inline-player-actions {
+  display: inline-flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.song-inline-player-video {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
 }
 
 .empty-state {
@@ -7460,4 +7518,20 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   .black-key .piano-key-label {
     font-size: 6px;
   }
+}
+
+.song-playing-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #0c4a6e;
+  background: #cffafe;
+  border: 1px solid #67e8f9;
+  vertical-align: middle;
 }

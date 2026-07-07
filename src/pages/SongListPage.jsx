@@ -1,15 +1,17 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { canPerformAction, PERMISSIONS } from '../utils/permissionUtils.js';
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
+import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { fetchSetLists } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
+import useMetronome from '../hooks/useMetronome.js';
 
 export default function SongListPage({ songs, loading, error, onSongClick, performanceMode = false }) {
   const navigate = useNavigate();
@@ -34,6 +36,11 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
   const [filterSetlist, setFilterSetlist] = useState(persisted.filterSetlist || 'all');
   const [sortBy, setSortBy] = useState(persisted.sortBy || 'updated');
   const [sortOrder, setSortOrder] = useState(persisted.sortOrder || 'desc');
+  const [metronomeTempo, setMetronomeTempo] = useState(120);
+  const [metronomeSongId, setMetronomeSongId] = useState(null);
+  const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
+  const [activeVideoSong, setActiveVideoSong] = useState(null);
+  const videoRef = useRef(null);
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -217,6 +224,93 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
     return songSetlistCountMap[songId] || 0;
   }
 
+  function hasYouTubeVideo(song) {
+    return Boolean(song?.youtubeId || song?.youtube_url);
+  }
+
+  function resolveTempo(song) {
+    const parsed = parseInt(song?.tempo, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 120;
+  }
+
+  function handleToggleMetronome(song, e) {
+    e.stopPropagation();
+    if (isMetronomeActive && metronomeSongId === song.id) {
+      setIsMetronomeActive(false);
+      setMetronomeSongId(null);
+      return;
+    }
+    setMetronomeTempo(resolveTempo(song));
+    setMetronomeSongId(song.id);
+    setIsMetronomeActive(true);
+  }
+
+  function handlePlayVideo(song, e) {
+    e.stopPropagation();
+    if (!hasYouTubeVideo(song)) return;
+    setActiveVideoSong(song);
+  }
+
+  function isSongPlaying(songId) {
+    if (isMetronomeActive && metronomeSongId === songId) return true;
+    if (activeVideoSong?.id === songId) return true;
+    return false;
+  }
+
+  function handleCloseVideoPlayer() {
+    if (videoRef.current && typeof videoRef.current.handlePause === 'function') {
+      videoRef.current.handlePause();
+    }
+    setActiveVideoSong(null);
+  }
+
+  useEffect(() => {
+    if (!activeVideoSong) return;
+    let attempts = 0;
+    const maxAttempts = 20;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      if (videoRef.current && typeof videoRef.current.handlePlay === 'function') {
+        videoRef.current.handlePlay();
+        clearInterval(intervalId);
+        return;
+      }
+      if (attempts >= maxAttempts) {
+        clearInterval(intervalId);
+      }
+    }, 200);
+    return () => clearInterval(intervalId);
+  }, [activeVideoSong]);
+
+  useEffect(() => {
+    if (activeVideoSong && !hasYouTubeVideo(activeVideoSong)) {
+      setActiveVideoSong(null);
+    }
+  }, [activeVideoSong]);
+
+  useEffect(() => {
+    if (activeVideoSong && !isMetronomeActive && metronomeSongId === activeVideoSong.id) {
+      setMetronomeSongId(null);
+    }
+  }, [activeVideoSong, isMetronomeActive, metronomeSongId]);
+
+  useEffect(() => {
+    return () => {
+      setIsMetronomeActive(false);
+    };
+  }, [setIsMetronomeActive]);
+
+  const currentMetronomeSong = useMemo(() => {
+    if (!metronomeSongId) return null;
+    return songs.find((song) => song.id === metronomeSongId) || null;
+  }, [metronomeSongId, songs]);
+
+  const activeVideoTitle = activeVideoSong?.title || '';
+
+  const activeVideoArtist = activeVideoSong?.artist || '';
+
+  const activeVideoTempo = resolveTempo(activeVideoSong);
+
   return (
     <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}>  
       {/* Page Header */}
@@ -336,6 +430,52 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
       </div>
 
       {/* Song List */}
+      {(isMetronomeActive || activeVideoSong) && (
+        <div className="song-inline-player card">
+          <div className="song-inline-player-header">
+            <div>
+              <h3>Now Playing</h3>
+              {activeVideoSong ? (
+                <p>{activeVideoTitle}{activeVideoArtist ? ` - ${activeVideoArtist}` : ''} | {activeVideoTempo} BPM</p>
+              ) : (
+                <p>
+                  Metronom aktif{currentMetronomeSong?.title ? `: ${currentMetronomeSong.title}` : ''}
+                </p>
+              )}
+            </div>
+            <div className="song-inline-player-actions">
+              <button
+                className={`btn ${isMetronomeActive ? '' : 'btn-secondary'}`}
+                aria-label={isMetronomeActive ? 'Stop metronom' : 'Start metronom'}
+                onClick={() => {
+                  if (isMetronomeActive) {
+                    setIsMetronomeActive(false);
+                    setMetronomeSongId(null);
+                    return;
+                  }
+                  setIsMetronomeActive(true);
+                }}
+              >
+                {isMetronomeActive ? '⏹' : '⏱'}
+              </button>
+              {activeVideoSong && (
+                <button className="btn btn-secondary" aria-label="Tutup video" onClick={handleCloseVideoPlayer}>
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+          {activeVideoSong && (
+            <div className="song-inline-player-video">
+              <YouTubeViewer
+                ref={videoRef}
+                videoId={activeVideoSong.youtubeId || activeVideoSong.youtube_url}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {filteredSongs.length === 0 ? (
         <div className="empty-state">
           <p>
@@ -375,13 +515,14 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
           {filteredSongs.map(song => (
             <div
               key={song.id}
-              className="song-item"
+              className={`song-item${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
               onClick={() => navigate(`/songs/view/${song.id}`)}
             >
               {/* Song Info */}
               <div className="song-info">
                 <h3 className="song-title">
                   {song.title}
+                  {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
                 </h3>
                 <div className="song-meta">
                   {song.artist && <span>👤 {song.artist}</span>}
@@ -404,6 +545,24 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
                 onClick={(e) => e.stopPropagation()}
                 style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
               >
+                <button
+                  className="btn btn-secondary song-action-mini"
+                  title="Play metronom"
+                  aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
+                  onClick={(e) => handleToggleMetronome(song, e)}
+                >
+                  {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
+                </button>
+                {hasYouTubeVideo(song) && (
+                  <button
+                    className="btn btn-secondary song-action-mini"
+                    title="Play video"
+                    aria-label="Play video"
+                    onClick={(e) => handlePlayVideo(song, e)}
+                  >
+                    🎬
+                  </button>
+                )}
                 <button
                   className="btn btn-secondary"                  
                   title="Lihat Karaoke"

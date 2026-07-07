@@ -58,6 +58,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const setlistSongData = location.state?.setlistSong || {};
   const setlistData = location.state?.setlist || {};
   const setlistId = location.state?.setlistId;
+  const autoStartMetronome = location.state?.autoStartMetronome === true;
+  const autoPlayVideo = location.state?.autoPlayVideo === true;
 
    // =========================
   // 6. Data Lagu & Metadata
@@ -130,6 +132,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, tempo);
   const audioContextRef = useRef(null); // (optional: can be removed if not used elsewhere)
   const youtubeRef = useRef(null);
+  const autoMetronomeStartedRef = useRef(false);
+  const autoVideoPlayStartedRef = useRef(false);
 
   // AudioContext logic now handled by useMetronome
 
@@ -145,6 +149,40 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       setScrollSpeed(parseInt(tempo) || 120);
     }
   }, [tempo]);
+
+  useEffect(() => {
+    if (!autoStartMetronome || autoMetronomeStartedRef.current) return;
+    setIsMetronomeActive(true);
+    autoMetronomeStartedRef.current = true;
+  }, [autoStartMetronome, setIsMetronomeActive]);
+
+  useEffect(() => {
+    if (!autoPlayVideo || autoVideoPlayStartedRef.current || !youtubeId) return;
+
+    setMediaPanelExpanded(true);
+
+    let attempts = 0;
+    const maxAttempts = 20;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      const canPlay =
+        youtubeRef.current &&
+        typeof youtubeRef.current.handlePlay === 'function';
+
+      if (canPlay) {
+        youtubeRef.current.handlePlay();
+        autoVideoPlayStartedRef.current = true;
+        clearInterval(intervalId);
+        return;
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(intervalId);
+      }
+    }, 200);
+
+    return () => clearInterval(intervalId);
+  }, [autoPlayVideo, youtubeId]);
   // (Efek autoscroll dipindah ke komponen AutoScrollBar)
 
   // Metronome effect now handled by useMetronome hook

@@ -29,6 +29,11 @@ const YouTubeViewer = React.forwardRef(({
   // Expose currentTime and handleSeek to parent via ref
   React.useImperativeHandle(ref, () => ({
     currentTime,
+    handlePlay: () => {
+      if (player && typeof player.playVideo === 'function') {
+        player.playVideo();
+      }
+    },
     handleSeek: (time) => {
       if (player && typeof player.seekTo === 'function') {
         player.seekTo(time, true);
