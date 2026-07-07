@@ -2312,7 +2312,7 @@ body.dark-mode .lyrics-editor-textarea {
 }
 
 .stat-card:hover {
-  border-color: var(--primary-color);
+  border-color: var(--primary-accent);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
@@ -2797,6 +2797,24 @@ body.dark-mode .lyrics-editor-textarea {
   color: var(--text-primary);
 }
 
+.dashboard-inline-error {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid color-mix(in srgb, var(--error) 45%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+  color: var(--text-primary);
+}
+
+.dashboard-inline-error .btn {
+  padding: 6px 12px;
+  font-size: var(--font-size-sm);
+}
+
 .dashboard-empty {
   color: var(--text-muted);
   padding: var(--spacing-xl);
@@ -2925,7 +2943,7 @@ body.dark-mode .lyrics-editor-textarea {
 }
 
 .dashboard-band-card:hover {
-  border-color: var(--primary-color);
+  border-color: var(--primary-accent);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
@@ -3253,7 +3271,7 @@ body.dark-mode .lyrics-editor-textarea {
 
 .song-detail-edit {
   padding: 10px 20px;
-  background: var(--primary-color);
+  background: var(--primary-accent);
   color: white;
   border: none;
   border-radius: 6px;
@@ -3573,7 +3591,7 @@ body.dark-mode .lyrics-editor-textarea {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
+  background: linear-gradient(135deg, var(--primary-accent) 0%, #1e40af 100%);
   padding: 20px;
 }
 
@@ -3641,7 +3659,7 @@ body.dark-mode .lyrics-editor-textarea {
 
 .login-tab-btn.active {
   background: var(--card-bg);
-  color: var(--primary-color);
+  color: var(--primary-accent);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -3662,7 +3680,7 @@ body.dark-mode .lyrics-editor-textarea {
 
 .login-input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--primary-accent);
   background: var(--card-bg);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
@@ -3675,7 +3693,7 @@ body.dark-mode .lyrics-editor-textarea {
   padding: 14px;
   border: none;
   border-radius: 8px;
-  background: var(--primary-color);
+  background: var(--primary-accent);
   color: white;
   font-size: 1em;
   font-weight: 600;

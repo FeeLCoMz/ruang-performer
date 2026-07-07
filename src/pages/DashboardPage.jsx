@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as apiClient from '../apiClient.js';
+import { buildRecentActivities, buildUpcomingEvents } from '../utils/dashboardUtils.js';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -15,6 +16,77 @@ export default function DashboardPage() {
   const [bandsLoading, setBandsLoading] = useState(true);
   const [popularSongs, setPopularSongs] = useState([]);
   const [popularSongsLoading, setPopularSongsLoading] = useState(true);
+  const [activitiesError, setActivitiesError] = useState('');
+  const [eventsError, setEventsError] = useState('');
+  const [popularSongsError, setPopularSongsError] = useState('');
+
+  const handleRetryActivities = useCallback(async () => {
+    setStatsLoading(true);
+    setBandsLoading(true);
+    setActivitiesError('');
+
+    const [setlistsResult, bandsResult, songsResult, gigsResult] = await Promise.allSettled([
+      apiClient.fetchSetLists({ summary: true }),
+      apiClient.fetchBands(),
+      apiClient.fetchSongs(),
+      apiClient.fetchGigs(),
+    ]);
+
+    const setlistsData = setlistsResult.status === 'fulfilled' ? setlistsResult.value : [];
+    const bandsData = bandsResult.status === 'fulfilled' ? bandsResult.value : [];
+    const songsData = songsResult.status === 'fulfilled' ? songsResult.value : [];
+    const gigsData = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
+
+    if (setlistsResult.status === 'rejected' || bandsResult.status === 'rejected' || songsResult.status === 'rejected' || gigsResult.status === 'rejected') {
+      setActivitiesError('Sebagian data aktivitas gagal dimuat. Silakan coba lagi.');
+    }
+
+    setStats({
+      songs: songsData.length || 0,
+      setlists: setlistsData.length || 0,
+      bands: bandsData.length || 0,
+      gigs: gigsData.length || 0,
+    });
+    setBands(bandsData.slice(0, 5));
+    setRecentActivity(buildRecentActivities({ bandsData, setlistsData, songsData, gigsData }));
+    setStatsLoading(false);
+    setBandsLoading(false);
+  }, []);
+
+  const handleRetryEvents = useCallback(async () => {
+    setEventsLoading(true);
+    setEventsError('');
+
+    const [gigsResult, practiceResult] = await Promise.allSettled([
+      apiClient.fetchGigs(),
+      apiClient.fetchPracticeSessions(),
+    ]);
+
+    const gigsData = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
+    const practiceData = practiceResult.status === 'fulfilled' ? practiceResult.value : [];
+
+    if (gigsResult.status === 'rejected' || practiceResult.status === 'rejected') {
+      setEventsError('Upcoming events gagal dimuat. Silakan coba lagi.');
+    }
+
+    setUpcomingEvents(buildUpcomingEvents({ practiceData, gigsData }));
+    setEventsLoading(false);
+  }, []);
+
+  const handleRetryPopularSongs = useCallback(async () => {
+    setPopularSongsLoading(true);
+    setPopularSongsError('');
+
+    try {
+      const popularData = await apiClient.fetchPopularSongs();
+      setPopularSongs(popularData.youtubeSongs || popularData.songs || []);
+    } catch {
+      setPopularSongs([]);
+      setPopularSongsError('Lagu populer YouTube gagal dimuat. Silakan coba lagi.');
+    } finally {
+      setPopularSongsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -23,13 +95,23 @@ export default function DashboardPage() {
       // Wave 1: Load lightweight critical data first (setlists, bands)
       setStatsLoading(true);
       setBandsLoading(true);
+      setActivitiesError('');
+      setEventsError('');
+      setPopularSongsError('');
 
-      const [setlistsData, bandsData] = await Promise.all([
-        apiClient.fetchSetLists({ summary: true }).catch(() => []),
-        apiClient.fetchBands().catch(() => []),
+      const [setlistsResult, bandsResult] = await Promise.allSettled([
+        apiClient.fetchSetLists({ summary: true }),
+        apiClient.fetchBands(),
       ]);
 
+      const setlistsData = setlistsResult.status === 'fulfilled' ? setlistsResult.value : [];
+      const bandsData = bandsResult.status === 'fulfilled' ? bandsResult.value : [];
+
       if (!isMounted) return;
+
+      if (setlistsResult.status === 'rejected' || bandsResult.status === 'rejected') {
+        setActivitiesError('Sebagian data aktivitas gagal dimuat. Silakan coba lagi.');
+      }
 
       // Render first wave immediately
       setStats(prev => ({
@@ -40,24 +122,43 @@ export default function DashboardPage() {
       setBands(bandsData.slice(0, 5));
       setBandsLoading(false);
 
-      const now = new Date();
-      const activities = [];
-      if (bandsData.length > 0) activities.push({ icon: '🎸', text: `${bandsData.length} band terdaftar`, time: 'Recently' });
-      if (setlistsData.length > 0) activities.push({ icon: '📋', text: `${setlistsData.length} setlist tersedia`, time: 'Recently' });
+      const activities = buildRecentActivities({
+        bandsData,
+        setlistsData,
+        songsData: [],
+        gigsData: [],
+      });
       setRecentActivity(activities);
 
       // Wave 2: Load heavier data (songs, gigs, practice) in background
       setEventsLoading(true);
       setPopularSongsLoading(true);
 
-      const [songsData, gigsData, practiceData, popularData] = await Promise.all([
-        apiClient.fetchSongs().catch(() => []),
-        apiClient.fetchGigs().catch(() => []),
-        apiClient.fetchPracticeSessions().catch(() => []),
-        apiClient.fetchPopularSongs().catch(() => ({ youtubeSongs: [] })),
+      const [songsResult, gigsResult, practiceResult, popularResult] = await Promise.allSettled([
+        apiClient.fetchSongs(),
+        apiClient.fetchGigs(),
+        apiClient.fetchPracticeSessions(),
+        apiClient.fetchPopularSongs(),
       ]);
 
+      const songsData = songsResult.status === 'fulfilled' ? songsResult.value : [];
+      const gigsData = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
+      const practiceData = practiceResult.status === 'fulfilled' ? practiceResult.value : [];
+      const popularData = popularResult.status === 'fulfilled' ? popularResult.value : { youtubeSongs: [] };
+
       if (!isMounted) return;
+
+      if (songsResult.status === 'rejected' || gigsResult.status === 'rejected') {
+        setActivitiesError('Aktivitas terbaru gagal diperbarui. Silakan coba lagi.');
+      }
+
+      if (gigsResult.status === 'rejected' || practiceResult.status === 'rejected') {
+        setEventsError('Upcoming events gagal dimuat. Silakan coba lagi.');
+      }
+
+      if (popularResult.status === 'rejected') {
+        setPopularSongsError('Lagu populer YouTube gagal dimuat. Silakan coba lagi.');
+      }
 
       // Update stats with heavy data
       setStats(prev => ({
@@ -67,29 +168,10 @@ export default function DashboardPage() {
       }));
 
       // Update activities
-      const updatedActivities = [...activities];
-      if (songsData.length > 0) updatedActivities.unshift({ icon: '🎵', text: `${songsData.length} lagu dalam database`, time: 'Always' });
-      if (gigsData.length > 0) {
-        const completedGigs = gigsData.filter(g => new Date(g.date) < now).length;
-        updatedActivities.push({ icon: '🎤', text: `${completedGigs} gig telah selesai`, time: 'All time' });
-      }
-      setRecentActivity(updatedActivities.slice(0, 4));
+      setRecentActivity(buildRecentActivities({ bandsData, setlistsData, songsData, gigsData }));
 
       // Process upcoming events
-      const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const upcomingPractice = practiceData.filter(s => {
-        const sessionDate = new Date(s.date);
-        return sessionDate >= now && sessionDate <= sevenDaysLater;
-      }).map(s => ({ type: 'practice', id: s.id, title: s.bandName || 'Practice Session', date: s.date, icon: '💪' }));
-      const upcomingGigs = gigsData.filter(g => {
-        const gigDate = new Date(g.date);
-        return gigDate >= now && gigDate <= sevenDaysLater;
-      }).map(g => ({ type: 'gig', id: g.id, title: `${g.venue || 'Venue'} - ${g.bandName || 'Gig'}`, date: g.date, icon: '🎤' }));
-
-      const combined = [...upcomingPractice, ...upcomingGigs]
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
-        .slice(0, 5);
-      setUpcomingEvents(combined);
+      setUpcomingEvents(buildUpcomingEvents({ practiceData, gigsData }));
 
       setPopularSongs(popularData.youtubeSongs || popularData.songs || []);
       setPopularSongsLoading(false);
@@ -171,6 +253,14 @@ export default function DashboardPage() {
         {/* Recent Activity */}
         <div className="dashboard-card">
           <h2>📊 Aktivitas Terbaru</h2>
+          {activitiesError && (
+            <div className="dashboard-inline-error">
+              <span>{activitiesError}</span>
+              <button className="btn btn-secondary" onClick={handleRetryActivities}>
+                Coba Lagi
+              </button>
+            </div>
+          )}
           {statsLoading ? (
             <div className="dashboard-event-list">
               {[...Array(3)].map((_, idx) => (
@@ -199,6 +289,14 @@ export default function DashboardPage() {
         {/* Upcoming Events */}
         <div className="dashboard-card">
           <h2>📅 Upcoming Events</h2>
+          {eventsError && (
+            <div className="dashboard-inline-error">
+              <span>{eventsError}</span>
+              <button className="btn btn-secondary" onClick={handleRetryEvents}>
+                Coba Lagi
+              </button>
+            </div>
+          )}
           {eventsLoading ? (
             <div className="dashboard-event-list">
               {[...Array(3)].map((_, idx) => (
@@ -230,6 +328,14 @@ export default function DashboardPage() {
         {/* Popular Songs */}
         <div className="dashboard-card">
           <h2>🔥 Lagu Populer di YouTube</h2>
+          {popularSongsError && (
+            <div className="dashboard-inline-error">
+              <span>{popularSongsError}</span>
+              <button className="btn btn-secondary" onClick={handleRetryPopularSongs}>
+                Coba Lagi
+              </button>
+            </div>
+          )}
           {popularSongsLoading ? (
             <div className="dashboard-event-list">
               {[...Array(5)].map((_, idx) => (
@@ -243,7 +349,11 @@ export default function DashboardPage() {
           ) : (
             <div className="dashboard-popular-list">
               {popularSongs.slice(0, 5).map((song) => (
-                <div key={song.id} className="activity-item activity-item--clickable" onClick={() => window.open(`https://www.youtube.com/watch?v=${song.youtubeId}`, '_blank')}>
+                <div
+                  key={song.id}
+                  className="activity-item activity-item--clickable"
+                  onClick={() => window.open(`https://www.youtube.com/watch?v=${song.youtubeId}`, '_blank', 'noopener,noreferrer')}
+                >
                   <div className="activity-icon">🎵</div>
                   <div className="activity-content">
                     <div className="activity-text">{song.title}</div>
