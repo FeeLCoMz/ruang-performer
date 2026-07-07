@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 
-export default function VirtualPiano({ onKeySelect, isOpen, onClose }) {
+export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText }) {
   const audioContextRef = useRef(null);
   const [activeKeys, setActiveKeys] = useState(new Set());
 
@@ -90,7 +90,7 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose }) {
       </div>
       <div className="piano-popup-body">
         <p style={{ marginBottom: 'var(--spacing-sm)', fontSize: '0.85em', color: 'var(--text-secondary)' }}>
-          Klik piano untuk memilih key
+          {helperText || 'Klik piano untuk memilih key'}
         </p>
         <div className="virtual-piano">
           <div className="piano-keys">

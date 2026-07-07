@@ -61,6 +61,14 @@ export default function SongLyricsEditActions({
   handleSaveLyrics,
   handleCancelEditLyrics,
   barsPerLineSelectId = "bars-per-line",
+  showPianoControls = false,
+  onOpenPiano,
+  insertNotesEnabled = false,
+  onToggleInsertNotes,
+  insertNoteFormat = "bracket",
+  onChangeInsertNoteFormat,
+  insertTrailingSpace = false,
+  onToggleInsertTrailingSpace,
 }) {
   const [showMetadataHelp, setShowMetadataHelp] = useState(false);
   const metadataSections = useMemo(() => METADATA_HELP_ITEMS, []);
@@ -110,6 +118,52 @@ export default function SongLyricsEditActions({
             Terapkan
           </button>
         </div>
+        {showPianoControls && (
+          <div className="song-lyrics-piano-controls">
+            <button
+              type="button"
+              onClick={onOpenPiano}
+              disabled={disabled}
+              className="btn btn-secondary"
+              title="Buka Virtual Piano"
+            >
+              🎹 Piano
+            </button>
+            <label className="song-lyrics-insert-toggle" htmlFor="lyrics-insert-notes-toggle">
+              <input
+                id="lyrics-insert-notes-toggle"
+                type="checkbox"
+                checked={insertNotesEnabled}
+                onChange={(e) => onToggleInsertNotes?.(e.target.checked)}
+                disabled={disabled}
+              />
+              Insert not ke lirik
+            </label>
+            <label className="song-lyrics-insert-format" htmlFor="lyrics-insert-format-select">
+              Format
+              <select
+                id="lyrics-insert-format-select"
+                className="song-lyrics-bar-wrap-select"
+                value={insertNoteFormat}
+                onChange={(e) => onChangeInsertNoteFormat?.(e.target.value)}
+                disabled={disabled || !insertNotesEnabled}
+              >
+                <option value="bracket">[C]</option>
+                <option value="plain">C</option>
+              </select>
+            </label>
+            <label className="song-lyrics-insert-toggle" htmlFor="lyrics-insert-space-toggle">
+              <input
+                id="lyrics-insert-space-toggle"
+                type="checkbox"
+                checked={insertTrailingSpace}
+                onChange={(e) => onToggleInsertTrailingSpace?.(e.target.checked)}
+                disabled={disabled || !insertNotesEnabled}
+              />
+              Tambah spasi otomatis
+            </label>
+          </div>
+        )}
         {showMetadataHelpButton && (
           <button
             type="button"

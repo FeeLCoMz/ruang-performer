@@ -6,6 +6,7 @@ import SetlistSongNavigator from "../components/SetlistSongNavigator.jsx";
 import SongChordsHeader from '../components/SongChordsHeader.jsx';
 import SongChordsMediaPanel from '../components/SongChordsMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
+import VirtualPiano from "../components/VirtualPiano.jsx";
 import { getAuthHeader } from "../utils/auth.js";
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
@@ -103,6 +104,10 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [savingLyrics, setSavingLyrics] = useState(false);
   const [editError, setEditError] = useState(null);
   const [barsPerLine, setBarsPerLine] = useState(4);
+  const [showLyricsPiano, setShowLyricsPiano] = useState(false);
+  const [insertNotesToLyrics, setInsertNotesToLyrics] = useState(true);
+  const [insertNoteFormat, setInsertNoteFormat] = useState('bracket');
+  const [insertTrailingSpace, setInsertTrailingSpace] = useState(true);
 
   // Chord Analyzer state
   const [showChordAnalyzer, setShowChordAnalyzer] = useState(false);
@@ -355,6 +360,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
   const handleCancelEditLyrics = () => {
     setIsEditingLyrics(false);
+    setShowLyricsPiano(false);
     setEditedLyrics("");
     setEditError(null);
   };
@@ -395,6 +401,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       const updatedSong = await fetchRes.json();
       setFetchedSong(updatedSong);
       setIsEditingLyrics(false);
+      setShowLyricsPiano(false);
       setEditedLyrics("");
 
       // Jika ada setlist context, navigate ulang dengan state setlist agar navigator tetap muncul
@@ -467,6 +474,30 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   };
 
   const handleWrap4BarsPerLine = () => handleWrapBarsPerLine(4);
+
+  const handleLyricsPianoKeySelect = (note) => {
+    if (!isEditingLyrics || !insertNotesToLyrics) return;
+
+    const textarea = lyricsDisplayRef.current;
+    const noteToken = insertNoteFormat === 'plain' ? note : `[${note}]`;
+    const token = insertTrailingSpace ? `${noteToken} ` : noteToken;
+
+    if (!textarea || typeof textarea.selectionStart !== 'number' || typeof textarea.selectionEnd !== 'number') {
+      setEditedLyrics((prev) => `${prev}${token}`);
+      return;
+    }
+
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+
+    setEditedLyrics((prev) => `${prev.slice(0, selectionStart)}${token}${prev.slice(selectionEnd)}`);
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursor = selectionStart + token.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  };
 
   return (
     <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}> {/* Tambah class jika performanceMode */}
@@ -541,6 +572,13 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setBarsPerLine={setBarsPerLine}
         handleWrapBarsPerLine={handleWrapBarsPerLine}
         handleCancelEditLyrics={handleCancelEditLyrics}
+        onOpenPiano={() => setShowLyricsPiano(true)}
+        insertNotesToLyrics={insertNotesToLyrics}
+        setInsertNotesToLyrics={setInsertNotesToLyrics}
+        insertNoteFormat={insertNoteFormat}
+        setInsertNoteFormat={setInsertNoteFormat}
+        insertTrailingSpace={insertTrailingSpace}
+        setInsertTrailingSpace={setInsertTrailingSpace}
         showExportMenu={showExportMenu}
         setShowExportMenu={setShowExportMenu}
         handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, setShowExportMenu)}
@@ -571,6 +609,13 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         showSimpleChords={showSimpleChords}
         setShowSimpleChords={setShowSimpleChords}
         keySignature={key || song?.key || ''}
+      />
+
+      <VirtualPiano
+        isOpen={showLyricsPiano}
+        onClose={() => setShowLyricsPiano(false)}
+        onKeySelect={handleLyricsPianoKeySelect}
+        helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
       />
 
       {/* Setlist Navigation (if in setlist context) */}

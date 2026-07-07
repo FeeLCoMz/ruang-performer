@@ -25,6 +25,13 @@ export default function SongLyricsMainSection({
   setBarsPerLine,
   handleWrapBarsPerLine,
   handleCancelEditLyrics,
+  onOpenPiano,
+  insertNotesToLyrics,
+  setInsertNotesToLyrics,
+  insertNoteFormat,
+  setInsertNoteFormat,
+  insertTrailingSpace,
+  setInsertTrailingSpace,
   showExportMenu,
   setShowExportMenu,
   handleExportText,
@@ -103,6 +110,13 @@ export default function SongLyricsMainSection({
             setBarsPerLine={setBarsPerLine}
             handleWrapBarsPerLine={handleWrapBarsPerLine}
             handleCancelEditLyrics={handleCancelEditLyrics}
+            onOpenPiano={onOpenPiano}
+            insertNotesToLyrics={insertNotesToLyrics}
+            setInsertNotesToLyrics={setInsertNotesToLyrics}
+            insertNoteFormat={insertNoteFormat}
+            setInsertNoteFormat={setInsertNoteFormat}
+            insertTrailingSpace={insertTrailingSpace}
+            setInsertTrailingSpace={setInsertTrailingSpace}
             showExportMenu={showExportMenu}
             setShowExportMenu={setShowExportMenu}
             handleExportText={handleExportText}
