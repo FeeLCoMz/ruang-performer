@@ -1,54 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import AutoScrollBar from "./AutoScrollBar.jsx";
 import SongChordsExportMenu from "./SongChordsExportMenu.jsx";
-
-const METADATA_HELP_ITEMS = [
-  {
-    title: "Struktur Lagu",
-    description: "Penanda bagian lagu yang akan ditampilkan sebagai section.",
-    examples: ["[Intro]", "Verse:", "Chorus:", "Bridge:", "Outro:"],
-  },
-  {
-    title: "Label Instrumen",
-    description: "Baris nama instrumen untuk panduan pemain.",
-    examples: ["[Piano]", "Guitar:", "Brass:", "Vokal:"],
-  },
-  {
-    title: "Patch Instrumen",
-    description: "Metadata patch/layer keyboard dalam satu baris.",
-    examples: [
-      "Patch: Stage Piano | Layer: Warm Pad (Volume 30%)",
-      "Patch: EP Soft | Split: Bass",
-      "Preset: Ballad Keys | Scene: Verse",
-    ],
-  },
-  {
-    title: "Metadata Aransemen",
-    description: "Catatan perform berbasis key:value.",
-    examples: [
-      "Intensitas: 1",
-      "Cue: Drum masuk di bar 9",
-      "Notes: Main tipis di verse",
-      "FX: Hall Reverb",
-      "Feel: Half-time",
-    ],
-  },
-  {
-    title: "Modulasi",
-    description: "Perintah perubahan key di tengah lagu.",
-    examples: ["Modulation: G", "Key change: A"],
-  },
-  {
-    title: "Original Key",
-    description: "Informasi key asli lagu (tidak ikut ditranspose).",
-    examples: ["Original Key: C"],
-  },
-  {
-    title: "Timestamp",
-    description: "Penanda waktu yang bisa diklik di tampilan chord.",
-    examples: ["[01:23]", "[1:02:03]"],
-  },
-];
+import SongLyricsEditActions from "./SongLyricsEditActions.jsx";
 
 /**
  * SongChordsLyricsToolbar
@@ -114,10 +67,8 @@ export default function SongChordsLyricsToolbar({
   handleExportText,
   handleExportPDF,
 }) {
-  const [showMetadataHelp, setShowMetadataHelp] = useState(false);
   const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
   const chordStyleMenuRef = useRef(null);
-  const metadataSections = useMemo(() => METADATA_HELP_ITEMS, []);
   const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
   const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
 
@@ -139,127 +90,22 @@ export default function SongChordsLyricsToolbar({
     };
   }, [showChordStyleMenu]);
 
-  const applyChordStyle = (style) => {
-    setShowChordNumbers(false);
-    setShowJazzChords(style === 'jazz');
-    setShowSimpleChords(style === 'simple');
-    setShowChordStyleMenu(false);
-  };
-
-  return (
-    <>
-      <div className="song-lyrics-toolbar">
-        {!isEditingLyrics && (
-          <>
-          {/* Fullscreen Button */}
-          <button
-            className="btn btn-secondary"
-            title="Tampilkan lirik layar penuh"
-            onClick={() => {
-              const el = document.querySelector(".song-lyrics-display");
-              if (el && el.requestFullscreen) {
-                el.requestFullscreen();
-              } else if (el && el.webkitRequestFullscreen) {
-                el.webkitRequestFullscreen();
-              } else if (el && el.msRequestFullscreen) {
-                el.msRequestFullscreen();
-              }
-            }}
-          >
-            🖥️
-          </button>
-
-          <AutoScrollBar
-            tempo={parseInt(tempo) || 120}
-            timeSignature={timeSignature || '4/4'}
-            active={autoScrollActive}
-            speed={scrollSpeed}
-            onToggle={() => setAutoScrollActive(!autoScrollActive)}
-            onSpeedChange={setScrollSpeed}
-            lyricsDisplayRef={lyricsDisplayRef}
-            currentBeat={currentBeat}
-            setCurrentBeat={setCurrentBeat}
+          <SongLyricsEditActions
+            disabled={savingLyrics}
+            barsPerLine={barsPerLine}
+            setBarsPerLine={setBarsPerLine}
+            handleAlignSelectedBarlines={handleAlignSelectedBarlines}
+            handleWrap4BarsPerLine={handleWrap4BarsPerLine}
+            handleWrapBarsPerLine={handleWrapBarsPerLine}
+            showMetadataHelpButton={true}
+            showSaveCancelButtons={true}
+            savingLyrics={savingLyrics}
+            handleSaveLyrics={handleSaveLyrics}
+            handleCancelEditLyrics={handleCancelEditLyrics}
+            barsPerLineSelectId="bars-per-line"
           />
-
-          <div className="song-lyrics-transpose-controls" title="Transpose lirik/chord">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setTranspose((prev) => prev - 1)}
-              title="Transpose turun 1 semitone"
-              aria-label="Transpose turun"
-            >
-              -
-            </button>
-            <span className="song-lyrics-transpose-value" aria-live="polite">
-              Tr {transpose > 0 ? `+${transpose}` : transpose}
-            </span>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setTranspose((prev) => prev + 1)}
-              title="Transpose naik 1 semitone"
-              aria-label="Transpose naik"
-            >
-              +
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setTranspose(0)}
-              title="Reset transpose"
-              aria-label="Reset transpose"
-              disabled={transpose === 0}
-            >
-              0
             </button>
           </div>
-
-          {!performanceMode && (
-            <>
-              <button
-                className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'}`}
-                title={showChordNumbers ? 'Chord (angka) — aktif' : 'Toggle angka chord'}
-                onClick={() => {
-                  setShowChordNumbers((prev) => {
-                    const next = !prev;
-                    if (next) {
-                      setShowJazzChords(false);
-                      setShowSimpleChords(false);
-                    }
-                    return next;
-                  });
-                }}
-              >
-                🔢
-              </button>
-
-              <div className="song-lyrics-chord-style-menu-container" ref={chordStyleMenuRef}>
-                <button
-                  className={`btn ${showJazzChords || showSimpleChords ? 'btn-primary' : 'btn-secondary'}`}
-                  title={`Style chord: ${currentChordStyleLabel}`}
-                  onClick={() => setShowChordStyleMenu((prev) => !prev)}
-                  type="button"
-                  aria-haspopup="menu"
-                  aria-expanded={showChordStyleMenu}
-                >
-                  🎼
-                </button>
-                <span
-                  className={`song-lyrics-chord-style-badge mode-${currentChordStyleKey}`}
-                  title={`Style chord aktif: ${currentChordStyleLabel}`}
-                >
-                  Style: {currentChordStyleLabel}
-                </span>
-                {showChordStyleMenu && (
-                  <div className="song-lyrics-chord-style-menu" role="menu" aria-label="Pilih style chord">
-                    <button
-                      type="button"
-                      className={`song-lyrics-chord-style-item${!showJazzChords && !showSimpleChords ? ' active' : ''}`}
-                      onClick={() => applyChordStyle('default')}
-                      role="menuitem"
-                    >
-                      Default
                     </button>
                     <button
                       type="button"

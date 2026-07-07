@@ -9,6 +9,7 @@ import VirtualPiano from "../components/VirtualPiano";
 import AIAutofillModal from "../components/AIAutofillModal";
 import ChordLinks from "../components/ChordLinks";
 import SongLyricsTextarea from "../components/SongLyricsTextarea.jsx";
+import SongLyricsEditActions from "../components/SongLyricsEditActions.jsx";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
 import { alignSelectedBarlines, wrapBarsPerLine } from '../utils/chordUtils.js';
@@ -626,50 +627,17 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
           <div className="song-lyrics-tips">
             💡 Tips: Blok teks dulu. Pilih <b>2/4/6 Bar/Baris</b> lalu klik <b>Terapkan</b> (atau <kbd>Ctrl+Shift+4</kbd> untuk cepat 4 bar), gunakan <b>Sejajarkan Bar</b> atau <kbd>Ctrl+Shift+B</kbd>, tekan <kbd>Ctrl+S</kbd> untuk simpan form.
           </div>
-          <div className="song-lyrics-edit-actions">
-            <button
-              type="button"
-              onClick={handleAlignSelectedBarlines}
-              disabled={loading}
-              className="btn btn-secondary"
-              title="Sejajarkan garis bar (|) pada teks yang dipilih"
-            >
-              ∥ Sejajarkan Bar
-            </button>
-            <button
-              type="button"
-              onClick={handleWrap4BarsPerLine}
-              disabled={loading}
-              className="btn btn-secondary"
-              title="Pecah otomatis menjadi 4 bar per baris pada teks yang dipilih"
-            >
-              ↩ 4 Bar/Baris
-            </button>
-            <div className="song-lyrics-bar-wrap-controls">
-              <label htmlFor="bars-per-line-add-edit" className="song-lyrics-bar-wrap-label">Bar/Baris</label>
-              <select
-                id="bars-per-line-add-edit"
-                className="song-lyrics-bar-wrap-select"
-                value={barsPerLine}
-                onChange={(e) => setBarsPerLine(Number(e.target.value))}
-                disabled={loading}
-                aria-label="Pilih jumlah bar per baris"
-              >
-                <option value={2}>2</option>
-                <option value={4}>4</option>
-                <option value={6}>6</option>
-              </select>
-              <button
-                type="button"
-                onClick={() => handleWrapBarsPerLine(barsPerLine)}
-                disabled={loading}
-                className="btn btn-secondary"
-                title="Terapkan jumlah bar per baris pada teks yang dipilih"
-              >
-                Terapkan
-              </button>
-            </div>
-          </div>
+          <SongLyricsEditActions
+            disabled={loading}
+            barsPerLine={barsPerLine}
+            setBarsPerLine={setBarsPerLine}
+            handleAlignSelectedBarlines={handleAlignSelectedBarlines}
+            handleWrap4BarsPerLine={handleWrap4BarsPerLine}
+            handleWrapBarsPerLine={handleWrapBarsPerLine}
+            showMetadataHelpButton={true}
+            showSaveCancelButtons={false}
+            barsPerLineSelectId="bars-per-line-add-edit"
+          />
           <SongLyricsTextarea
             lyricsDisplayRef={lyricsTextareaRef}
             editedLyrics={lyrics}
