@@ -7005,6 +7005,61 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   color: var(--primary-accent);
 }
 
+.song-lyrics-analyzer-key-value {
+  font-family: "Courier New", monospace;
+}
+
+.song-lyrics-analyzer-stat-subvalue {
+  margin-top: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.song-lyrics-analyzer-key-alt-list {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.song-lyrics-analyzer-key-alt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.song-lyrics-analyzer-key-alt-relation {
+  font-weight: 600;
+  opacity: 0.9;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.song-lyrics-analyzer-key-alt-badge-relative {
+  background: #e6f8ec;
+  color: #1f7a43;
+  border-color: #aadfbc;
+}
+
+.song-lyrics-analyzer-key-alt-badge-parallel {
+  background: #e9f4ff;
+  color: #1c5b99;
+  border-color: #aecdff;
+}
+
+.song-lyrics-analyzer-key-alt-badge-other {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
 .song-lyrics-analyzer-chords {
   margin-top: var(--spacing-lg);
 }
@@ -7028,11 +7083,28 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
 .song-lyrics-analyzer-chord-tag {
   background: var(--primary-accent);
   color: white;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 6px 8px 6px 10px;
   border-radius: var(--radius-md);
-  font-weight: 600;
+  font-weight: 700;
   font-size: var(--font-size-sm);
   font-family: "Courier New", monospace;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.song-lyrics-analyzer-chord-name {
+  line-height: 1;
+}
+
+.song-lyrics-analyzer-chord-count {
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .song-lyrics-analyzer-piano-reco {

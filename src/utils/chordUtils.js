@@ -1206,6 +1206,148 @@ export const getAllChords = (parsedSong) => {
   return Array.from(chordSet).sort();
 };
 
+/**
+ * Hitung frekuensi penggunaan setiap chord.
+ * Return: [{ chord: 'C', count: 5 }, ...] urut dari paling sering.
+ */
+export const getChordUsageCounts = (parsedSong) => {
+  if (!parsedSong || !parsedSong.lines) return [];
+
+  const usageMap = new Map();
+
+  parsedSong.lines.forEach((line) => {
+    if (line.type !== 'line_with_chords' || !line.chords) return;
+
+    line.chords.forEach(({ chord }) => {
+      const cleanChord = normalizeChordToken((chord || '').replace(/^-/, ''));
+      if (!cleanChord) return;
+
+      usageMap.set(cleanChord, (usageMap.get(cleanChord) || 0) + 1);
+    });
+  });
+
+  return Array.from(usageMap.entries())
+    .map(([chord, count]) => ({ chord, count }))
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.chord.localeCompare(b.chord);
+    });
+};
+
+const MAJOR_SCALE_PROFILE = {
+  intervals: [0, 2, 4, 5, 7, 9, 11],
+  qualities: ['major', 'minor', 'minor', 'major', 'major', 'minor', 'diminished'],
+};
+
+const MINOR_SCALE_PROFILE = {
+  intervals: [0, 2, 3, 5, 7, 8, 10],
+  qualities: ['minor', 'diminished', 'major', 'minor', 'minor', 'major', 'major'],
+};
+
+const KEY_LABELS_SHARP = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+const getChordQualityFamily = (chord) => {
+  if (!chord || typeof chord !== 'string') return 'major';
+  const cleanChord = normalizeChordToken(chord.replace(/^-/, ''));
+  const match = cleanChord.match(/^([A-G][#b]?)(.*)$/);
+  if (!match) return 'major';
+
+  const suffix = (match[2] || '').toLowerCase();
+  if (suffix.includes('dim') || suffix.includes('m7b5')) return 'diminished';
+  if (suffix.includes('aug') || suffix.includes('#5')) return 'augmented';
+  if (/^(m|min)(?!aj)/.test(suffix)) return 'minor';
+  return 'major';
+};
+
+/**
+ * Estimasi key dari kumpulan chord berdasarkan kecocokan skala diatonik.
+ */
+export const estimateKeyFromChordUsage = (usageCounts = []) => {
+  if (!Array.isArray(usageCounts) || usageCounts.length === 0) return null;
+
+  const candidates = [];
+
+  for (let tonic = 0; tonic < 12; tonic += 1) {
+    const majorMembership = new Map();
+    MAJOR_SCALE_PROFILE.intervals.forEach((interval, idx) => {
+      majorMembership.set((tonic + interval) % 12, MAJOR_SCALE_PROFILE.qualities[idx]);
+    });
+
+    const minorMembership = new Map();
+    MINOR_SCALE_PROFILE.intervals.forEach((interval, idx) => {
+      minorMembership.set((tonic + interval) % 12, MINOR_SCALE_PROFILE.qualities[idx]);
+    });
+
+    const scoreCandidate = (mode, membership) => {
+      let score = 0;
+      let matchedWeight = 0;
+      let totalWeight = 0;
+
+      usageCounts.forEach(({ chord, count }) => {
+        const root = extractChordRoot(chord);
+        const rootIdx = getNoteIndex(root);
+        if (rootIdx == null) return;
+
+        const weight = Number(count) || 0;
+        if (weight <= 0) return;
+        totalWeight += weight;
+
+        const expectedQuality = membership.get(rootIdx);
+        if (!expectedQuality) {
+          score -= weight * 0.45;
+          return;
+        }
+
+        matchedWeight += weight;
+        score += weight * 1.4;
+
+        const actualQuality = getChordQualityFamily(chord);
+        if (actualQuality === expectedQuality) {
+          score += weight * 0.8;
+        } else if (expectedQuality === 'major' && actualQuality === 'augmented') {
+          score += weight * 0.2;
+        }
+      });
+
+      const tonicLabel = KEY_LABELS_SHARP[tonic];
+      const key = mode === 'major' ? tonicLabel : `${tonicLabel}m`;
+
+      return {
+        key,
+        mode,
+        score,
+        matchedWeight,
+        totalWeight,
+      };
+    };
+
+    candidates.push(scoreCandidate('major', majorMembership));
+    candidates.push(scoreCandidate('minor', minorMembership));
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  const best = candidates[0];
+  const alternatives = candidates
+    .slice(1)
+    .map((candidate) => candidate.key)
+    .filter((value, idx, arr) => arr.indexOf(value) === idx)
+    .slice(0, 2);
+  const second = candidates[1] || null;
+
+  if (!best) return null;
+
+  const matchRatio = best.totalWeight > 0 ? best.matchedWeight / best.totalWeight : 0;
+  const confidenceRaw = Math.min(1, Math.max(0, matchRatio * 0.75 + ((best.score - (second?.score || 0)) / 10) * 0.25));
+  const confidence = Math.round(confidenceRaw * 100);
+
+  return {
+    key: best.key,
+    mode: best.mode,
+    confidence,
+    alternatives,
+  };
+};
+
 // Mengelompokkan chord berdasarkan bar (|) pada setiap baris chord
 export const getChordsByBar = (parsedSong) => {
   if (!parsedSong || !parsedSong.lines) return [];

@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, isMetadataLine, parseInstrumentPatchLine } from "../utils/chordUtils";
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, isMetadataLine, parseInstrumentPatchLine } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -208,6 +208,40 @@ describe("chordUtils", () => {
     };
 
     expect(getAllChords(parsedSong)).toEqual(['Am', 'C', 'F']);
+  });
+
+  test("getChordUsageCounts returns descending usage frequency", () => {
+    const parsedSong = {
+      lines: [
+        { type: 'line_with_chords', chords: [{ chord: 'C' }, { chord: 'G' }, { chord: 'Am' }, { chord: 'F' }] },
+        { type: 'line_with_chords', chords: [{ chord: 'C' }, { chord: 'G' }, { chord: 'F' }, { chord: 'C' }] },
+      ],
+    };
+
+    expect(getChordUsageCounts(parsedSong)).toEqual([
+      { chord: 'C', count: 3 },
+      { chord: 'F', count: 2 },
+      { chord: 'G', count: 2 },
+      { chord: 'Am', count: 1 },
+    ]);
+  });
+
+  test("estimateKeyFromChordUsage infers C major progression", () => {
+    const estimation = estimateKeyFromChordUsage([
+      { chord: 'C', count: 6 },
+      { chord: 'G', count: 5 },
+      { chord: 'Am', count: 4 },
+      { chord: 'F', count: 4 },
+      { chord: 'Dm', count: 2 },
+    ]);
+
+    expect(estimation).toBeTruthy();
+    expect(estimation).toHaveProperty('key', 'C');
+    expect(estimation).toHaveProperty('mode', 'major');
+    expect(estimation).toHaveProperty('confidence');
+    expect(estimation).toHaveProperty('alternatives');
+    expect(Array.isArray(estimation.alternatives)).toBe(true);
+    expect(estimation.alternatives.length).toBeGreaterThan(0);
   });
 
   test("N.C. (No Chord) is detected as a chord token", () => {
