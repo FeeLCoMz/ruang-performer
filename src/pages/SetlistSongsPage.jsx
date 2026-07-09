@@ -829,7 +829,12 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       await fetch(`/api/setlists/${setlist.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
-        body: JSON.stringify({ ...setlist, setlistSongMeta: newSetlistSongMeta }),
+        body: JSON.stringify({
+          bandId: setlist.bandId,
+          setlistSongMetaPatch: {
+            [editSongId]: newSetlistSongMeta[editSongId]
+          }
+        }),
       });
       setEditSongId(null);
     } catch (e) {

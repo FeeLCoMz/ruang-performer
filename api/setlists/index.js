@@ -177,6 +177,9 @@ export default async function handler(req, res) {
       if (req.method === 'PUT' || req.method === 'PATCH') {
         const body = await readJson(req);
         const now = new Date().toISOString();
+        const normalizedMetaPatch = body?.setlistSongMetaPatch && typeof body.setlistSongMetaPatch === 'object' && !Array.isArray(body.setlistSongMetaPatch)
+          ? body.setlistSongMetaPatch
+          : null;
         const setlistRowResult = await client.execute(
           `SELECT bandId FROM setlists WHERE id = ? LIMIT 1`,
           [idStr]
@@ -223,6 +226,38 @@ export default async function handler(req, res) {
           }
 
           await upsertBandPreferredKeys(client, effectiveBandId, body.setlistSongMeta, dedupedSongs, now);
+        } else if (normalizedMetaPatch) {
+          const patchSongIds = dedupeSongIds(Object.keys(normalizedMetaPatch));
+          const preferredKeyMap = await getBandPreferredKeyMap(client, effectiveBandId, patchSongIds);
+
+          for (const songId of patchSongIds) {
+            const patchMetaObj = normalizeSongMeta(normalizedMetaPatch[songId]);
+            const existingSongRow = await client.execute(
+              `SELECT meta FROM setlist_songs WHERE setlist_id = ? AND song_id = ? LIMIT 1`,
+              [idStr, songId]
+            );
+            const existingMetaRaw = existingSongRow.rows?.[0]?.meta;
+            let existingMetaObj = {};
+            try {
+              existingMetaObj = existingMetaRaw ? JSON.parse(existingMetaRaw) : {};
+            } catch {
+              existingMetaObj = {};
+            }
+
+            const mergedMeta = applyBandPreferredKey(
+              { ...normalizeSongMeta(existingMetaObj), ...patchMetaObj },
+              preferredKeyMap.get(songId)
+            );
+
+            await client.execute(
+              `UPDATE setlist_songs
+               SET meta = ?, updatedAt = ?
+               WHERE setlist_id = ? AND song_id = ?`,
+              [JSON.stringify(mergedMeta), now, idStr, songId]
+            );
+          }
+
+          await upsertBandPreferredKeys(client, effectiveBandId, normalizedMetaPatch, patchSongIds, now);
         } else {
           await upsertBandPreferredKeys(client, effectiveBandId, body.setlistSongMeta, Object.keys(body.setlistSongMeta || {}), now);
         }
