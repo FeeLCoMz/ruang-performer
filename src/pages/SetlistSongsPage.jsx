@@ -343,6 +343,42 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
     return orderedSetlistRows;
   }, [filteredSongsWithDividers, orderedSetlistRows]);
+
+  useEffect(() => {
+    if (!activeVideoSong) return;
+    let attempts = 0;
+    const maxAttempts = 20;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      if (videoRef.current && typeof videoRef.current.handlePlay === 'function') {
+        videoRef.current.handlePlay();
+        clearInterval(intervalId);
+        return;
+      }
+      if (attempts >= maxAttempts) {
+        clearInterval(intervalId);
+      }
+    }, 200);
+    return () => clearInterval(intervalId);
+  }, [activeVideoSong]);
+
+  useEffect(() => {
+    if (activeVideoSong && !hasYouTubeVideo(activeVideoSong)) {
+      setActiveVideoSong(null);
+    }
+  }, [activeVideoSong]);
+
+  useEffect(() => {
+    return () => {
+      setIsMetronomeActive(false);
+    };
+  }, [setIsMetronomeActive]);
+
+  const currentMetronomeSong = useMemo(() => {
+    if (!metronomeSongId) return null;
+    return (setlistSongs || []).find((song) => song.id === metronomeSongId) || null;
+  }, [metronomeSongId, setlistSongs]);
+
   // Early returns AFTER all hooks
   if (isLoading) return <div className="main-content"><div className="card"><div className="loading-skeleton" style={{height: 40, marginBottom: 16}}></div><div className="loading-skeleton" style={{height: 24, width: '60%', marginBottom: 8}}></div><div className="loading-skeleton" style={{height: 24, width: '40%', marginBottom: 8}}></div></div></div>;
   if (!setlist) return <div className="main-content error-text">Setlist tidak ditemukan atau offline cache kosong</div>;
@@ -1056,41 +1092,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
     setActiveVideoSong(null);
   }
-
-  useEffect(() => {
-    if (!activeVideoSong) return;
-    let attempts = 0;
-    const maxAttempts = 20;
-    const intervalId = setInterval(() => {
-      attempts += 1;
-      if (videoRef.current && typeof videoRef.current.handlePlay === 'function') {
-        videoRef.current.handlePlay();
-        clearInterval(intervalId);
-        return;
-      }
-      if (attempts >= maxAttempts) {
-        clearInterval(intervalId);
-      }
-    }, 200);
-    return () => clearInterval(intervalId);
-  }, [activeVideoSong]);
-
-  useEffect(() => {
-    if (activeVideoSong && !hasYouTubeVideo(activeVideoSong)) {
-      setActiveVideoSong(null);
-    }
-  }, [activeVideoSong]);
-
-  useEffect(() => {
-    return () => {
-      setIsMetronomeActive(false);
-    };
-  }, [setIsMetronomeActive]);
-
-  const currentMetronomeSong = useMemo(() => {
-    if (!metronomeSongId) return null;
-    return (setlistSongs || []).find((song) => song.id === metronomeSongId) || null;
-  }, [metronomeSongId, setlistSongs]);
 
   function isSongPlaying(songId) {
     if (isMetronomeActive && metronomeSongId === songId) return true;
