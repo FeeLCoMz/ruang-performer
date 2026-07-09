@@ -14,6 +14,7 @@ import { extractYouTubeId } from "../utils/youtubeUtils";
 import { alignSelectedBarlines, wrapBarsPerLine } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
+import { buildAddEditEditorActions } from '../utils/editorActionsUtils.js';
 
 function buildNewVersionTitle(sourceTitle) {
   const baseTitle = (sourceTitle || "").trim() || "Tanpa Judul";
@@ -663,23 +664,21 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             setLyricsValue={setLyrics}
             error={lyricsEditError}
             disabled={loading}
-            barsPerLine={barsPerLine}
-            setBarsPerLine={setBarsPerLine}
-            handleAlignSelectedBarlines={handleAlignSelectedBarlines}
-            handleWrap4BarsPerLine={handleWrap4BarsPerLine}
-            handleWrapBarsPerLine={handleWrapBarsPerLine}
-            showMetadataHelpButton={true}
-            showSaveCancelButtons={false}
-            barsPerLineSelectId="bars-per-line-add-edit"
-            showPianoControls={true}
-            onOpenPiano={() => setShowLyricsPiano(true)}
-            insertNotesEnabled={insertNotesToLyrics}
-            onToggleInsertNotes={setInsertNotesToLyrics}
-            insertNoteFormat={insertNoteFormat}
-            onChangeInsertNoteFormat={setInsertNoteFormat}
-            insertTrailingSpace={insertTrailingSpace}
-            onToggleInsertTrailingSpace={setInsertTrailingSpace}
-            keySignature={getNumericNotationKey(songKey || 'C')}
+            editorActions={buildAddEditEditorActions({
+              barsPerLine,
+              setBarsPerLine,
+              handleAlignSelectedBarlines,
+              handleWrap4BarsPerLine,
+              handleWrapBarsPerLine,
+              onOpenPiano: () => setShowLyricsPiano(true),
+              insertNotesToLyrics,
+              setInsertNotesToLyrics,
+              insertNoteFormat,
+              setInsertNoteFormat,
+              insertTrailingSpace,
+              setInsertTrailingSpace,
+              keySignature: getNumericNotationKey(songKey || 'C'),
+            })}
             autoFocus={false}
             showTips={true}
             tipsText={

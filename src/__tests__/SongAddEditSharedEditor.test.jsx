@@ -18,6 +18,41 @@ describe('SongAddEditPage shared lyrics editor', () => {
 
   beforeEach(() => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    class MockAudioContext {
+      constructor() {
+        this.state = 'running';
+        this.currentTime = 0;
+        this.destination = {};
+      }
+
+      resume() {
+        this.state = 'running';
+        return Promise.resolve();
+      }
+
+      createOscillator() {
+        return {
+          type: 'sine',
+          frequency: { setValueAtTime: () => {} },
+          connect: () => {},
+          start: () => {},
+          stop: () => {},
+        };
+      }
+
+      createGain() {
+        return {
+          gain: {
+            setValueAtTime: () => {},
+            exponentialRampToValueAtTime: () => {},
+          },
+          connect: () => {},
+        };
+      }
+    }
+
+    window.AudioContext = MockAudioContext;
+    window.webkitAudioContext = MockAudioContext;
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -74,5 +109,32 @@ describe('SongAddEditPage shared lyrics editor', () => {
 
     const formatSelect = container.querySelector('#lyrics-insert-format-select');
     expect(formatSelect).toBeFalsy();
+  });
+
+  test('Given add mode, When piano note is selected, Then note token is inserted into lyrics textarea', async () => {
+    await act(async () => {
+      root.render(<SongAddEditPage />);
+    });
+
+    const textarea = container.querySelector('.song-lyrics-textarea');
+    expect(textarea).toBeTruthy();
+
+    const pianoButton = container.querySelector('.song-lyrics-piano-controls button');
+    expect(pianoButton).toBeTruthy();
+
+    await act(async () => {
+      pianoButton.click();
+    });
+
+    const noteButton = Array.from(container.querySelectorAll('.piano-key')).find((btn) =>
+      btn.textContent?.trim() === 'C'
+    );
+    expect(noteButton).toBeTruthy();
+
+    await act(async () => {
+      noteButton.click();
+    });
+
+    expect(textarea.value).toBe('[C] ');
   });
 });

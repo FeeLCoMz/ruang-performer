@@ -3,6 +3,7 @@ import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
 import ExpandButton from './ExpandButton.jsx';
 import SongLyricsEditorPanel from './SongLyricsEditorPanel.jsx';
+import { buildSongViewEditorActions } from '../utils/editorActionsUtils.js';
 
 /**
  * SongLyricsMainSection
@@ -141,26 +142,24 @@ export default function SongLyricsMainSection({
               setLyricsValue={setEditedLyrics}
               error={editError}
               disabled={savingLyrics}
-              barsPerLine={barsPerLine}
-              setBarsPerLine={setBarsPerLine}
-              handleAlignSelectedBarlines={handleAlignSelectedBarlines}
-              handleWrap4BarsPerLine={handleWrap4BarsPerLine}
-              handleWrapBarsPerLine={handleWrapBarsPerLine}
-              showMetadataHelpButton={true}
-              showSaveCancelButtons={true}
-              savingLyrics={savingLyrics}
-              handleSaveLyrics={handleSaveLyrics}
-              handleCancelEditLyrics={handleCancelEditLyrics}
-              barsPerLineSelectId="bars-per-line"
-              showPianoControls={true}
-              onOpenPiano={onOpenPiano}
-              insertNotesEnabled={insertNotesToLyrics}
-              onToggleInsertNotes={setInsertNotesToLyrics}
-              insertNoteFormat={insertNoteFormat}
-              onChangeInsertNoteFormat={setInsertNoteFormat}
-              insertTrailingSpace={insertTrailingSpace}
-              onToggleInsertTrailingSpace={setInsertTrailingSpace}
-              keySignature={insertNumberKeySignature}
+              editorActions={buildSongViewEditorActions({
+                barsPerLine,
+                setBarsPerLine,
+                handleAlignSelectedBarlines,
+                handleWrap4BarsPerLine,
+                handleWrapBarsPerLine,
+                savingLyrics,
+                handleSaveLyrics,
+                handleCancelEditLyrics,
+                onOpenPiano,
+                insertNotesToLyrics,
+                setInsertNotesToLyrics,
+                insertNoteFormat,
+                setInsertNoteFormat,
+                insertTrailingSpace,
+                setInsertTrailingSpace,
+                insertNumberKeySignature,
+              })}
               autoFocus={true}
               showTips={true}
               showActions={true}
