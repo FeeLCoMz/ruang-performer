@@ -2,9 +2,7 @@ import React, { useState } from "react";
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
 import ExpandButton from './ExpandButton.jsx';
-import SongLyricsError from './SongLyricsError.jsx';
-import SongLyricsTips from './SongLyricsTips.jsx';
-import SongLyricsTextarea from './SongLyricsTextarea.jsx';
+import SongLyricsEditorPanel from './SongLyricsEditorPanel.jsx';
 
 /**
  * SongLyricsMainSection
@@ -101,7 +99,6 @@ export default function SongLyricsMainSection({
             setShowJazzChords={setShowJazzChords}
             showSimpleChords={showSimpleChords}
             setShowSimpleChords={setShowSimpleChords}
-            keySignature={keySignature}
             handleEditLyrics={handleEditLyrics}
             savingLyrics={savingLyrics}
             handleSaveLyrics={handleSaveLyrics}
@@ -129,8 +126,6 @@ export default function SongLyricsMainSection({
 
       {lyricsPanelExpanded && (
         <>
-          <SongLyricsError error={editError} />
-          <SongLyricsTips isEditing={isEditingLyrics} />
           {loading ? (
             <div className="lyrics-loading-skeleton">
               <div className="skeleton-line" style={{ width: '80%' }} />
@@ -140,10 +135,35 @@ export default function SongLyricsMainSection({
               <div className="skeleton-line" style={{ width: '85%' }} />
             </div>
           ) : isEditingLyrics ? (
-            <SongLyricsTextarea
-              lyricsDisplayRef={lyricsDisplayRef}
-              editedLyrics={editedLyrics}
-              setEditedLyrics={setEditedLyrics}
+            <SongLyricsEditorPanel
+              lyricsRef={lyricsDisplayRef}
+              lyricsValue={editedLyrics}
+              setLyricsValue={setEditedLyrics}
+              error={editError}
+              disabled={savingLyrics}
+              barsPerLine={barsPerLine}
+              setBarsPerLine={setBarsPerLine}
+              handleAlignSelectedBarlines={handleAlignSelectedBarlines}
+              handleWrap4BarsPerLine={handleWrap4BarsPerLine}
+              handleWrapBarsPerLine={handleWrapBarsPerLine}
+              showMetadataHelpButton={true}
+              showSaveCancelButtons={true}
+              savingLyrics={savingLyrics}
+              handleSaveLyrics={handleSaveLyrics}
+              handleCancelEditLyrics={handleCancelEditLyrics}
+              barsPerLineSelectId="bars-per-line"
+              showPianoControls={true}
+              onOpenPiano={onOpenPiano}
+              insertNotesEnabled={insertNotesToLyrics}
+              onToggleInsertNotes={setInsertNotesToLyrics}
+              insertNoteFormat={insertNoteFormat}
+              onChangeInsertNoteFormat={setInsertNoteFormat}
+              insertTrailingSpace={insertTrailingSpace}
+              onToggleInsertTrailingSpace={setInsertTrailingSpace}
+              keySignature={insertNumberKeySignature}
+              autoFocus={true}
+              showTips={true}
+              showActions={true}
             />
           ) : (
             <SongChordsLyricsDisplay

@@ -8,11 +8,12 @@ import TapTempo from "../components/TapTempo";
 import VirtualPiano from "../components/VirtualPiano";
 import AIAutofillModal from "../components/AIAutofillModal";
 import ChordLinks from "../components/ChordLinks";
-import SongLyricsTextarea from "../components/SongLyricsTextarea.jsx";
-import SongLyricsEditActions from "../components/SongLyricsEditActions.jsx";
+import SongLyricsEditorPanel from "../components/SongLyricsEditorPanel.jsx";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
 import { alignSelectedBarlines, wrapBarsPerLine } from '../utils/chordUtils.js';
+import { getNumericNotationKey } from '../utils/notationUtils.js';
+import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 
 function buildNewVersionTitle(sourceTitle) {
   const baseTitle = (sourceTitle || "").trim() || "Tanpa Judul";
@@ -58,7 +59,10 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [chordLinksExpanded, setChordLinksExpanded] = useState(false);
   const [partiturExpanded, setPartiturExpanded] = useState(false);
   const [showPiano, setShowPiano] = useState(false);
-  const [transpose, setTranspose] = useState(0);
+  const [showLyricsPiano, setShowLyricsPiano] = useState(false);
+  const [insertNotesToLyrics, setInsertNotesToLyrics] = useState(true);
+  const [insertNoteFormat, setInsertNoteFormat] = useState('bracket');
+  const [insertTrailingSpace, setInsertTrailingSpace] = useState(true);
   const [barsPerLine, setBarsPerLine] = useState(4);
   const [lyricsEditError, setLyricsEditError] = useState("");
 
@@ -348,6 +352,36 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
   const handleWrap4BarsPerLine = () => handleWrapBarsPerLine(4);
 
+  const handleLyricsPianoKeySelect = (note) => {
+    if (!insertNotesToLyrics) return;
+
+    const textarea = lyricsTextareaRef.current;
+    const token = buildInsertNoteToken({
+      note,
+      keySignature: songKey || 'C',
+      insertNoteFormat,
+      insertTrailingSpace,
+    });
+    const selectionStart = textarea?.selectionStart;
+    const selectionEnd = textarea?.selectionEnd;
+
+    setLyrics((prev) => replaceSelectionWithToken({
+      text: prev,
+      selectionStart,
+      selectionEnd,
+      token,
+    }).nextText);
+
+    requestAnimationFrame(() => {
+      if (!textarea || typeof textarea.selectionStart !== 'number' || typeof textarea.selectionEnd !== 'number') {
+        return;
+      }
+      textarea.focus();
+      const cursor = selectionStart + token.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  };
+
   if (loadingData) {
     return (
       <div className="page-container">
@@ -623,11 +657,11 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         {/* Lyrics Section */}
         <div className="song-section-card">
           <h3 className="song-section-title">🎤 Lirik & Chord</h3>
-          {lyricsEditError && <div className="song-lyrics-error">{lyricsEditError}</div>}
-          <div className="song-lyrics-tips">
-            💡 Tips: Blok teks dulu. Pilih <b>2/4/6 Bar/Baris</b> lalu klik <b>Terapkan</b> (atau <kbd>Ctrl+Shift+4</kbd> untuk cepat 4 bar), gunakan <b>Sejajarkan Bar</b> atau <kbd>Ctrl+Shift+B</kbd>, tekan <kbd>Ctrl+S</kbd> untuk simpan form.
-          </div>
-          <SongLyricsEditActions
+          <SongLyricsEditorPanel
+            lyricsRef={lyricsTextareaRef}
+            lyricsValue={lyrics}
+            setLyricsValue={setLyrics}
+            error={lyricsEditError}
             disabled={loading}
             barsPerLine={barsPerLine}
             setBarsPerLine={setBarsPerLine}
@@ -637,12 +671,22 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             showMetadataHelpButton={true}
             showSaveCancelButtons={false}
             barsPerLineSelectId="bars-per-line-add-edit"
-          />
-          <SongLyricsTextarea
-            lyricsDisplayRef={lyricsTextareaRef}
-            editedLyrics={lyrics}
-            setEditedLyrics={setLyrics}
+            showPianoControls={true}
+            onOpenPiano={() => setShowLyricsPiano(true)}
+            insertNotesEnabled={insertNotesToLyrics}
+            onToggleInsertNotes={setInsertNotesToLyrics}
+            insertNoteFormat={insertNoteFormat}
+            onChangeInsertNoteFormat={setInsertNoteFormat}
+            insertTrailingSpace={insertTrailingSpace}
+            onToggleInsertTrailingSpace={setInsertTrailingSpace}
+            keySignature={getNumericNotationKey(songKey || 'C')}
             autoFocus={false}
+            showTips={true}
+            tipsText={
+              <>
+                💡 Tips: Blok teks dulu. Pilih <b>2/4/6 Bar/Baris</b> lalu klik <b>Terapkan</b> (atau <kbd>Ctrl+Shift+4</kbd> untuk cepat 4 bar), gunakan <b>Sejajarkan Bar</b> atau <kbd>Ctrl+Shift+B</kbd>, tekan <kbd>Ctrl+S</kbd> untuk simpan form.
+              </>
+            }
           />
         </div>
 
@@ -690,6 +734,13 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         isOpen={showPiano}
         onClose={() => setShowPiano(false)}
         onKeySelect={(key) => setSongKey(key)}
+      />
+
+      <VirtualPiano
+        isOpen={showLyricsPiano}
+        onClose={() => setShowLyricsPiano(false)}
+        onKeySelect={handleLyricsPianoKeySelect}
+        helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${getNumericNotationKey(songKey || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
       />
 
       {/* AI Autofill Modal */}

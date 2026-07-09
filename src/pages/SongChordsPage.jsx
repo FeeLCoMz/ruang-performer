@@ -16,35 +16,9 @@ import { handleExportText, handleExportPDF, handleShare } from '../utils/songHan
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import { fetchSetLists } from '../apiClient.js';
-import { alignSelectedBarlines, chordToNumber, wrapBarsPerLine } from '../utils/chordUtils.js';
-
-const NOTE_NAMES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-
-function extractKeyRoot(inputKey) {
-  const match = String(inputKey || '').trim().match(/^([A-G](?:#|b)?)/i);
-  if (!match) return 'C';
-  const root = match[1];
-  return root[0].toUpperCase() + (root[1] || '');
-}
-
-function isMinorKey(inputKey) {
-  const normalized = String(inputKey || '').trim().toLowerCase();
-  return normalized.endsWith('m') && !normalized.includes('maj');
-}
-
-function getNumericNotationKey(inputKey) {
-  const keyRoot = extractKeyRoot(inputKey);
-  if (!isMinorKey(inputKey)) return keyRoot;
-
-  const index = NOTE_NAMES_FLAT.indexOf(keyRoot);
-  if (index === -1) return keyRoot;
-  return NOTE_NAMES_FLAT[(index + 3) % 12];
-}
-
-function toNumberNotation(note, inputKey) {
-  const baseKey = getNumericNotationKey(inputKey);
-  return chordToNumber(note, baseKey) || note;
-}
+import { alignSelectedBarlines, wrapBarsPerLine } from '../utils/chordUtils.js';
+import { getNumericNotationKey } from '../utils/notationUtils.js';
+import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 
 /**
  * SongChordsPage
@@ -507,24 +481,27 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     if (!isEditingLyrics || !insertNotesToLyrics) return;
 
     const textarea = lyricsDisplayRef.current;
-    const numericKey = getNumericNotationKey(key || song?.key || 'C');
-    const formattedNote = insertNoteFormat === 'number'
-      ? toNumberNotation(note, key || song?.key || 'C')
-      : note;
-    const noteToken = insertNoteFormat === 'bracket' ? `[${formattedNote}]` : formattedNote;
-    const token = insertTrailingSpace ? `${noteToken} ` : noteToken;
+    const token = buildInsertNoteToken({
+      note,
+      keySignature: key || song?.key || 'C',
+      insertNoteFormat,
+      insertTrailingSpace,
+    });
 
-    if (!textarea || typeof textarea.selectionStart !== 'number' || typeof textarea.selectionEnd !== 'number') {
-      setEditedLyrics((prev) => `${prev}${token}`);
-      return;
-    }
+    const selectionStart = textarea?.selectionStart;
+    const selectionEnd = textarea?.selectionEnd;
 
-    const selectionStart = textarea.selectionStart;
-    const selectionEnd = textarea.selectionEnd;
-
-    setEditedLyrics((prev) => `${prev.slice(0, selectionStart)}${token}${prev.slice(selectionEnd)}`);
+    setEditedLyrics((prev) => replaceSelectionWithToken({
+      text: prev,
+      selectionStart,
+      selectionEnd,
+      token,
+    }).nextText);
 
     requestAnimationFrame(() => {
+      if (!textarea || typeof textarea.selectionStart !== 'number' || typeof textarea.selectionEnd !== 'number') {
+        return;
+      }
       textarea.focus();
       const cursor = selectionStart + token.length;
       textarea.setSelectionRange(cursor, cursor);

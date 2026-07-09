@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import AutoScrollBar from "./AutoScrollBar.jsx";
 import SongChordsExportMenu from "./SongChordsExportMenu.jsx";
-import SongLyricsEditActions from "./SongLyricsEditActions.jsx";
 
 /**
  * SongChordsLyricsToolbar
@@ -242,7 +241,7 @@ export default function SongChordsLyricsToolbar({
           </>
         )}
 
-        {!isEditingLyrics ? (
+        {!isEditingLyrics && (
           <>
             {!performanceMode && canEdit && (
               <button
@@ -274,30 +273,6 @@ export default function SongChordsLyricsToolbar({
               </div>
             )}
           </>
-        ) : (
-          <SongLyricsEditActions
-            disabled={savingLyrics}
-            barsPerLine={barsPerLine}
-            setBarsPerLine={setBarsPerLine}
-            handleAlignSelectedBarlines={handleAlignSelectedBarlines}
-            handleWrap4BarsPerLine={handleWrap4BarsPerLine}
-            handleWrapBarsPerLine={handleWrapBarsPerLine}
-            showMetadataHelpButton={true}
-            showSaveCancelButtons={true}
-            savingLyrics={savingLyrics}
-            handleSaveLyrics={handleSaveLyrics}
-            handleCancelEditLyrics={handleCancelEditLyrics}
-            barsPerLineSelectId="bars-per-line"
-            showPianoControls={true}
-            onOpenPiano={onOpenPiano}
-            insertNotesEnabled={insertNotesToLyrics}
-            onToggleInsertNotes={setInsertNotesToLyrics}
-            insertNoteFormat={insertNoteFormat}
-            onChangeInsertNoteFormat={setInsertNoteFormat}
-            insertTrailingSpace={insertTrailingSpace}
-            onToggleInsertTrailingSpace={setInsertTrailingSpace}
-            keySignature={keySignature}
-          />
         )}
       </div>
     </>
