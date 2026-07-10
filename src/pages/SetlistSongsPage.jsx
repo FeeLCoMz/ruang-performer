@@ -141,6 +141,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
   const [activeVideoSong, setActiveVideoSong] = useState(null);
   const videoRef = useRef(null);
+  const activeInlinePlayerRef = useRef(null);
 
   const baseSongMap = useMemo(() => {
     const map = new Map();
@@ -360,6 +361,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       }
     }, 200);
     return () => clearInterval(intervalId);
+  }, [activeVideoSong]);
+
+  useEffect(() => {
+    if (!activeVideoSong) return;
+    const rafId = window.requestAnimationFrame(() => {
+      if (activeInlinePlayerRef.current) {
+        activeInlinePlayerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+    return () => window.cancelAnimationFrame(rafId);
   }, [activeVideoSong]);
 
   useEffect(() => {
@@ -1245,57 +1256,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         </div>
       )}
 
-      {/* Song List dengan drag-and-drop */}
-      {(isMetronomeActive || activeVideoSong) && (
-        <div className="song-inline-player card">
-          <div className="song-inline-player-header">
-            <div>
-              <h3>Now Playing</h3>
-              {activeVideoSong ? (
-                <p>
-                  {activeVideoSong.title}
-                  {activeVideoSong.artist ? ` - ${activeVideoSong.artist}` : ''}
-                  {` | ${resolveTempo(activeVideoSong)} BPM`}
-                </p>
-              ) : (
-                <p>
-                  Metronom aktif{currentMetronomeSong?.title ? `: ${currentMetronomeSong.title}` : ''}
-                </p>
-              )}
-            </div>
-            <div className="song-inline-player-actions">
-              <button
-                className={`btn ${isMetronomeActive ? '' : 'btn-secondary'}`}
-                aria-label={isMetronomeActive ? 'Stop metronom' : 'Start metronom'}
-                onClick={() => {
-                  if (isMetronomeActive) {
-                    setIsMetronomeActive(false);
-                    setMetronomeSongId(null);
-                    return;
-                  }
-                  setIsMetronomeActive(true);
-                }}
-              >
-                {isMetronomeActive ? '⏹' : '⏱'}
-              </button>
-              {activeVideoSong && (
-                <button className="btn btn-secondary" aria-label="Tutup video" onClick={handleCloseVideoPlayer}>
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-          {activeVideoSong && (
-            <div className="song-inline-player-video">
-              <YouTubeViewer
-                ref={videoRef}
-                videoId={activeVideoSong.youtubeId || activeVideoSong.youtube_url}
-              />
-            </div>
-          )}
-        </div>
-      )}
-
       {filteredSongs.length === 0 ? (
         <div className="empty-state">
           <p>
@@ -1376,140 +1336,188 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             const genreChanged = baseSong && song.genre && baseSong.genre && song.genre !== baseSong.genre;
             const isSmartFeatured = setlistSongMeta?.[song.id]?.smartFeatured === true;
             const isCompleted = completedSongs?.[song.id] === true;
+            const isInlinePlayerSong = (activeVideoSong?.id === song.id) || (isMetronomeActive && metronomeSongId === song.id);
             return (
-              <div
-                key={song.id}
-                className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
-                draggable={sortBy === 'custom'}
-                onDragStart={e => {
-                  if (sortBy !== 'custom') return;
-                  e.dataTransfer.setData('song-idx', String(customIdx));
-                  e.currentTarget.classList.add('dragging');
-                }}
-                onDragEnd={e => {
-                  e.currentTarget.classList.remove('dragging');
-                }}
-                onDragOver={e => {
-                  if (sortBy !== 'custom') return;
-                  e.preventDefault();
-                  e.currentTarget.classList.add('drag-over');
-                }}
-                onDragLeave={e => {
-                  e.currentTarget.classList.remove('drag-over');
-                }}
-                onDrop={e => {
-                  if (sortBy !== 'custom') return;
-                  e.preventDefault();
-                  e.currentTarget.classList.remove('drag-over');
-                  const dragType = e.dataTransfer.getData('drag-type');
-                  if (dragType === 'session-divider') {
-                    const fromSongId = e.dataTransfer.getData('divider-from-song-id');
-                    handleMoveSessionDivider(fromSongId, song.id);
-                    return;
-                  }
-                  const fromIdx = Number(e.dataTransfer.getData('song-idx'));
-                  const toIdx = customIdx;
-                  if (fromIdx !== toIdx) handleReorder(fromIdx, toIdx);
-                }}
-                onClick={() => navigate(`/setlists/${setlist.id}/songs/${song.id}`, {
-                  state: {
-                    setlistId: setlist.id,
-                    setlist: { ...setlist, songs: setlistSongs },
-                    setlistSong: song
-                  }
-                })}
-              >
-                {/* Drag handle icon */}
-                {sortBy === 'custom' && (
-                  <span className="drag-handle-icon" title="Seret untuk mengatur urutan">
-                    <DragHandleIcon size={18} />
-                  </span>
-                )}
-                {/* Song Info */}
-                <div className="song-info">
-                  <div className="song-number">{idx + 1}.</div>
-                  <h3 className="song-title">
-                    {song.title}
-                    {isCompleted && <span className="song-completed-badge" title="Sudah dibawakan" aria-label="Sudah dibawakan">✓</span>}
-                    {isSmartFeatured && <span className="smart-featured-badge">Smart Pick</span>}
-                    {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
-                  </h3>
-                  <div className="song-meta">
-                    {song.artist && <span>👤 {song.artist}</span>}
-                    {song.key && (
-                      <span>
-                        🎹 {song.key}
-                        {keyChanged && baseSong?.key ? ` (${baseSong.key})` : ''}
-                      </span>
+              <React.Fragment key={song.id}>
+                <div
+                  className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
+                  draggable={sortBy === 'custom'}
+                  onDragStart={e => {
+                    if (sortBy !== 'custom') return;
+                    e.dataTransfer.setData('song-idx', String(customIdx));
+                    e.currentTarget.classList.add('dragging');
+                  }}
+                  onDragEnd={e => {
+                    e.currentTarget.classList.remove('dragging');
+                  }}
+                  onDragOver={e => {
+                    if (sortBy !== 'custom') return;
+                    e.preventDefault();
+                    e.currentTarget.classList.add('drag-over');
+                  }}
+                  onDragLeave={e => {
+                    e.currentTarget.classList.remove('drag-over');
+                  }}
+                  onDrop={e => {
+                    if (sortBy !== 'custom') return;
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('drag-over');
+                    const dragType = e.dataTransfer.getData('drag-type');
+                    if (dragType === 'session-divider') {
+                      const fromSongId = e.dataTransfer.getData('divider-from-song-id');
+                      handleMoveSessionDivider(fromSongId, song.id);
+                      return;
+                    }
+                    const fromIdx = Number(e.dataTransfer.getData('song-idx'));
+                    const toIdx = customIdx;
+                    if (fromIdx !== toIdx) handleReorder(fromIdx, toIdx);
+                  }}
+                  onClick={() => navigate(`/setlists/${setlist.id}/songs/${song.id}`, {
+                    state: {
+                      setlistId: setlist.id,
+                      setlist: { ...setlist, songs: setlistSongs },
+                      setlistSong: song
+                    }
+                  })}
+                >
+                  {/* Drag handle icon */}
+                  {sortBy === 'custom' && (
+                    <span className="drag-handle-icon" title="Seret untuk mengatur urutan">
+                      <DragHandleIcon size={18} />
+                    </span>
+                  )}
+                  {/* Song Info */}
+                  <div className="song-info">
+                    <div className="song-number">{idx + 1}.</div>
+                    <h3 className="song-title">
+                      {song.title}
+                      {isCompleted && <span className="song-completed-badge" title="Sudah dibawakan" aria-label="Sudah dibawakan">✓</span>}
+                      {isSmartFeatured && <span className="smart-featured-badge">Smart Pick</span>}
+                      {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
+                    </h3>
+                    <div className="song-meta">
+                      {song.artist && <span>👤 {song.artist}</span>}
+                      {song.key && (
+                        <span>
+                          🎹 {song.key}
+                          {keyChanged && baseSong?.key ? ` (${baseSong.key})` : ''}
+                        </span>
+                      )}
+                      {song.tempo && (
+                        <span>
+                          ⏱️ {song.tempo} BPM
+                          {tempoChanged && baseSong?.tempo ? ` (${baseSong.tempo} BPM)` : ''}
+                        </span>
+                      )}
+                      {song.genre && (
+                        <span>
+                          🎸 {song.genre}
+                          {genreChanged && baseSong?.genre ? ` (${baseSong.genre})` : ''}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div
+                    className="song-actions"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={(e) => handleToggleMetronome(song, e)}
+                      className="btn btn-secondary song-action-mini"
+                      title="Play metronom"
+                      aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
+                    >
+                      {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
+                    </button>
+                    {hasYouTubeVideo(song) && (
+                      <button
+                        onClick={(e) => handlePlayVideo(song, e)}
+                        className="btn btn-secondary song-action-mini"
+                        title="Play video"
+                        aria-label="Play video"
+                      >
+                        🎬
+                      </button>
                     )}
-                    {song.tempo && (
-                      <span>
-                        ⏱️ {song.tempo} BPM
-                        {tempoChanged && baseSong?.tempo ? ` (${baseSong.tempo} BPM)` : ''}
-                      </span>
+                    {canEdit && (
+                      <button
+                        onClick={() => handleToggleSongCompleted(song.id)}
+                        className={`btn song-action-mini ${isCompleted ? '' : 'btn-secondary'}`}
+                        title={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
+                        aria-label={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
+                      >
+                        {isCompleted ? '✅' : '☑'}
+                      </button>
                     )}
-                    {song.genre && (
-                      <span>
-                        🎸 {song.genre}
-                        {genreChanged && baseSong?.genre ? ` (${baseSong.genre})` : ''}
-                      </span>
+                    {!performanceMode && canEdit && (
+                      <>
+                        <button
+                          onClick={() => openEditSong(song.id)}
+                          className="btn"
+                          title="Edit detail lagu di setlist"
+                        >
+                          <EditIcon size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSongFromSetlist(song.id)}
+                          className="btn btn-red"
+                          title="Hapus dari setlist"
+                        >
+                          <DeleteIcon size={16} />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div
-                  className="song-actions"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    onClick={(e) => handleToggleMetronome(song, e)}
-                    className="btn btn-secondary song-action-mini"
-                    title="Play metronom"
-                    aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
+                {isInlinePlayerSong && (
+                  <div
+                    ref={activeVideoSong?.id === song.id ? activeInlinePlayerRef : null}
+                    className="song-inline-player card song-inline-player-inline"
                   >
-                    {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
-                  </button>
-                  {hasYouTubeVideo(song) && (
-                    <button
-                      onClick={(e) => handlePlayVideo(song, e)}
-                      className="btn btn-secondary song-action-mini"
-                      title="Play video"
-                      aria-label="Play video"
-                    >
-                      🎬
-                    </button>
-                  )}
-                  {canEdit && (
-                    <button
-                      onClick={() => handleToggleSongCompleted(song.id)}
-                      className={`btn song-action-mini ${isCompleted ? '' : 'btn-secondary'}`}
-                      title={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
-                      aria-label={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
-                    >
-                      {isCompleted ? '✅' : '☑'}
-                    </button>
-                  )}
-                  {!performanceMode && canEdit && (
-                    <>
-                      <button
-                        onClick={() => openEditSong(song.id)}
-                        className="btn"
-                        title="Edit detail lagu di setlist"
-                      >
-                        <EditIcon size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteSongFromSetlist(song.id)}
-                        className="btn btn-red"
-                        title="Hapus dari setlist"
-                      >
-                        <DeleteIcon size={16} />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
+                    <div className="song-inline-player-header">
+                      <div>
+                        <h3>Now Playing</h3>
+                        {activeVideoSong?.id === song.id ? (
+                          <p>
+                            {song.title}
+                            {song.artist ? ` - ${song.artist}` : ''}
+                            {` | ${resolveTempo(song)} BPM`}
+                          </p>
+                        ) : (
+                          <p>
+                            Metronom aktif: {song.title}
+                          </p>
+                        )}
+                      </div>
+                      <div className="song-inline-player-actions">
+                        <button
+                          className={`btn ${isMetronomeActive && metronomeSongId === song.id ? '' : 'btn-secondary'}`}
+                          aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
+                          onClick={(e) => handleToggleMetronome(song, e)}
+                        >
+                          {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
+                        </button>
+                        {activeVideoSong?.id === song.id && (
+                          <button className="btn btn-secondary" aria-label="Tutup video" onClick={handleCloseVideoPlayer}>
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {activeVideoSong?.id === song.id && (
+                      <div className="song-inline-player-video">
+                        <YouTubeViewer
+                          ref={videoRef}
+                          videoId={song.youtubeId || song.youtube_url}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
         </div>

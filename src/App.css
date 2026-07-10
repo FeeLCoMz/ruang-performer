@@ -2572,6 +2572,12 @@ body.dark-mode .lyrics-editor-textarea {
   padding: var(--spacing-md);
 }
 
+.song-inline-player-inline {
+  margin-top: calc(var(--spacing-sm) * -1);
+  margin-bottom: var(--spacing-sm);
+  scroll-margin-top: var(--spacing-lg);
+}
+
 .song-inline-player-header {
   display: flex;
   justify-content: space-between;
