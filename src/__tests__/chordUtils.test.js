@@ -93,6 +93,14 @@ describe("chordUtils", () => {
     ]);
   });
 
+  test("transpose compact slash chord token with hyphen separators", () => {
+    const parsed = parseLines(['B-F#/A#'], 2);
+    expect(parsed[0].type).toBe('chord');
+    expect(parsed[0].tokens).toEqual([
+      { token: 'C#-G#/C', isChord: true }
+    ]);
+  });
+
   test("transpose leading dash chord token", () => {
     const parsed = parseLines(['-A'], 2);
     expect(parsed[0].type).toBe('chord');

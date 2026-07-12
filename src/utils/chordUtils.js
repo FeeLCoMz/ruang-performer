@@ -61,7 +61,7 @@ function parseLine(line, transpose) {
         if (isLeadingDashChordToken(token)) {
           return { token: transpose ? transposeLeadingDashChordToken(token, transpose) : token, isChord: true };
         }
-        if (token.includes('..')) {
+        if (token.includes('..') || token.includes('-')) {
           return { token: transposeCompactChordToken(token, transpose), isChord: true };
         }
         return { token, isChord: true };
