@@ -151,6 +151,21 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     return map;
   }, [songs]);
 
+  const songUsageCountMap = useMemo(() => {
+    const map = new Map();
+    if (!Array.isArray(setlists)) return map;
+
+    setlists.forEach((item) => {
+      if (!Array.isArray(item?.songs)) return;
+      const uniqueSongIds = new Set(item.songs);
+      uniqueSongIds.forEach((songId) => {
+        map.set(songId, (map.get(songId) || 0) + 1);
+      });
+    });
+
+    return map;
+  }, [setlists]);
+
   // Get songs dalam setlist sesuai localOrder + apply metadata override (mapping)
   const setlistSongMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta) ? setlist.setlistSongMeta : {};
   const completedSongs = typeof setlist?.completedSongs === 'object' && !Array.isArray(setlist.completedSongs) ? setlist.completedSongs : {};
@@ -1416,6 +1431,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                           {genreChanged && baseSong?.genre ? ` (${baseSong.genre})` : ''}
                         </span>
                       )}
+                      <span>📋 {songUsageCountMap.get(song.id) || 0} setlist</span>
                     </div>
                   </div>
 
