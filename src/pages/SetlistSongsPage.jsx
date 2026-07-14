@@ -419,13 +419,14 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
         const song = row.song;
         songNumber += 1;
+        const completedPrefix = completedSongs?.[song.id] === true ? '✅ ' : '';
         if (!includeSongDetails) {
-          return `${songNumber}. ${song.title}${song.artist ? ` - ${song.artist}` : ''}`;
+          return `${songNumber}. ${completedPrefix}${song.title}${song.artist ? ` - ${song.artist}` : ''}`;
         }
 
         const songKey = song.key ? ` [${song.key}]` : '';
         const songTempo = song.tempo ? ` (${song.tempo} BPM)` : '';
-        return `${songNumber}. ${song.title}${song.artist ? ` - ${song.artist}` : ''}${songKey}${songTempo}`;
+        return `${songNumber}. ${completedPrefix}${song.title}${song.artist ? ` - ${song.artist}` : ''}${songKey}${songTempo}`;
       })
       .join('\n')
         .trim();

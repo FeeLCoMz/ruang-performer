@@ -8,6 +8,9 @@ export default function SetlistPoster({ setlist, setlistSongs, setlistRows, post
   const posterKicker = 'LIVE PERFORMANCE SETLIST';
   const posterTitle = setlist?.bandName || 'Band';
   const posterSubtitle = setlist?.name || 'Setlist';
+  const completedSongs = typeof setlist?.completedSongs === 'object' && !Array.isArray(setlist.completedSongs)
+    ? setlist.completedSongs
+    : {};
 
   const normalizedRows = Array.isArray(setlistRows) && setlistRows.length > 0
     ? setlistRows
@@ -37,11 +40,19 @@ export default function SetlistPoster({ setlist, setlistSongs, setlistRows, post
     }
 
     const song = row.song;
+    const isCompleted = completedSongs?.[song.id] === true;
     return (
       <div className="setlist-poster-item" key={`${song.id}-${songNumber}`}>
         <div className="setlist-poster-index">{songNumber}</div>
         <div className="setlist-poster-info">
-          <div className="setlist-poster-song">{song.title}</div>
+          <div className="setlist-poster-song">
+            {song.title}
+            {isCompleted && (
+              <span className="setlist-poster-completed-badge" title="Sudah dibawakan" aria-label="Sudah dibawakan">
+                ✓
+              </span>
+            )}
+          </div>
           <div className="setlist-poster-artist">{song.artist || '—'}</div>
         </div>
         <div className="setlist-poster-extra">
