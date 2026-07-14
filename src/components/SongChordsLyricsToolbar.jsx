@@ -76,9 +76,20 @@ export default function SongChordsLyricsToolbar({
   youtubeRef,
 }) {
   const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
+  const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
   const chordStyleMenuRef = useRef(null);
   const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
   const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
+
+  // Sync YouTube playing state
+  useEffect(() => {
+    if (!youtubeRef?.current) return;
+    const interval = setInterval(() => {
+      const state = youtubeRef.current?.getPlayerState?.();
+      setIsYoutubePlaying(state === 1);
+    }, 500);
+    return () => clearInterval(interval);
+  }, [youtubeRef]);
 
   useEffect(() => {
     if (!showChordStyleMenu) return undefined;
@@ -128,17 +139,39 @@ export default function SongChordsLyricsToolbar({
             </button>
 
             {youtubeId && youtubeRef && (
-              <button
-                className="btn btn-secondary"
-                title="Putar YouTube"
-                onClick={() => {
-                  if (youtubeRef.current && typeof youtubeRef.current.handlePlay === 'function') {
-                    youtubeRef.current.handlePlay();
-                  }
-                }}
-              >
-                ▶️ YouTube
-              </button>
+              <>
+                <button
+                  className="btn btn-secondary"
+                  title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
+                  onClick={() => {
+                    if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
+                      youtubeRef.current.handleTogglePlayPause();
+                      // Update state setelah toggle
+                      setTimeout(() => {
+                        const state = youtubeRef.current?.getPlayerState?.();
+                        setIsYoutubePlaying(state === 1);
+                      }, 50);
+                    }
+                  }}
+                >
+                  {isYoutubePlaying ? '⏸️ Pause' : '▶️ Play'}
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  title="Putar dari awal"
+                  onClick={() => {
+                    if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
+                      youtubeRef.current.handleSeek(0);
+                      setTimeout(() => {
+                        const state = youtubeRef.current?.getPlayerState?.();
+                        setIsYoutubePlaying(state === 1);
+                      }, 50);
+                    }
+                  }}
+                >
+                  ⏮️ Restart
+                </button>
+              </>
             )}
 
             <AutoScrollBar

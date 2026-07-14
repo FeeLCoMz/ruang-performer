@@ -34,17 +34,34 @@ const YouTubeViewer = React.forwardRef(({
         player.playVideo();
       }
     },
+    handlePause: () => {
+      if (player && typeof player.pauseVideo === 'function') {
+        player.pauseVideo();
+      }
+    },
+    handleTogglePlayPause: () => {
+      if (player && typeof player.getPlayerState === 'function') {
+        const state = player.getPlayerState();
+        // state: 1 = PLAYING, 2 = PAUSED
+        if (state === 1) {
+          player.pauseVideo();
+        } else if (state === 2 || state === 0 || state === 5) {
+          player.playVideo();
+        }
+      }
+    },
+    getPlayerState: () => {
+      if (player && typeof player.getPlayerState === 'function') {
+        return player.getPlayerState();
+      }
+      return -1; // uninitialized
+    },
     handleSeek: (time) => {
       if (player && typeof player.seekTo === 'function') {
         player.seekTo(time, true);
         if (typeof player.playVideo === 'function') {
           player.playVideo();
         }
-      }
-    },
-    handlePause: () => {
-      if (player && typeof player.pauseVideo === 'function') {
-        player.pauseVideo();
       }
     }
   }), [currentTime, player]);

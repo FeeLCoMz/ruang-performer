@@ -58,10 +58,21 @@ export default function SongChordsLyricsDisplay({
   const [zoomHudText, setZoomHudText] = useState(`${Math.round((zoom || 1) * 100)}%`);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(false);
+  const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
 
   useEffect(() => {
     zoomRef.current = zoom;
   }, [zoom]);
+
+  // Sync YouTube playing state
+  useEffect(() => {
+    if (!youtubeRef?.current) return;
+    const interval = setInterval(() => {
+      const state = youtubeRef.current?.getPlayerState?.();
+      setIsYoutubePlaying(state === 1);
+    }, 500);
+    return () => clearInterval(interval);
+  }, [youtubeRef]);
 
   useEffect(() => {
     return () => {
@@ -366,14 +377,36 @@ export default function SongChordsLyricsDisplay({
               type="button"
               className="btn btn-secondary"
               onClick={() => {
-                if (youtubeRef.current && typeof youtubeRef.current.handlePlay === 'function') {
-                  youtubeRef.current.handlePlay();
+                if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
+                  youtubeRef.current.handleTogglePlayPause();
+                  // Update state setelah toggle
+                  setTimeout(() => {
+                    const state = youtubeRef.current?.getPlayerState?.();
+                    setIsYoutubePlaying(state === 1);
+                  }, 50);
                 }
               }}
-              aria-label="Putar YouTube"
-              title="Putar YouTube"
+              aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
+              title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
             >
-              ▶️ YouTube
+              {isYoutubePlaying ? '⏸️ Pause' : '▶️ Play'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
+                  youtubeRef.current.handleSeek(0);
+                  setTimeout(() => {
+                    const state = youtubeRef.current?.getPlayerState?.();
+                    setIsYoutubePlaying(state === 1);
+                  }, 50);
+                }
+              }}
+              aria-label="Putar dari awal"
+              title="Putar dari awal"
+            >
+              ⏮️ Restart
             </button>
           </div>
         )}
