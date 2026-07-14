@@ -26,17 +26,6 @@ export default function TimeMarkers({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [readonly]);
 
-  // Auto-fill editTime with YouTube time when edit form is opened
-  useEffect(() => {
-    if (editingId && typeof getCurrentYouTubeTime === 'function') {
-      const ytTime = getCurrentYouTubeTime();
-      if (typeof ytTime === 'number' && !isNaN(ytTime)) {
-        setEditTime(formatTime(ytTime));
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingId]);
-
   const formatTime = (seconds) => {
     const sec = Math.max(0, Math.floor(seconds || 0));
     const m = Math.floor(sec / 60);
