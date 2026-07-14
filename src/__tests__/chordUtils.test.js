@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, isMetadataLine, parseInstrumentPatchLine } from "../utils/chordUtils";
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, isMetadataLine, parseInstrumentPatchLine, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -323,5 +323,30 @@ describe("chordUtils", () => {
       },
     });
     expect(parsed[2].type).toBe('chord');
+  });
+
+  test("extractTimestampSeconds finds unique sorted timestamps from lyrics and chord lines", () => {
+    const text = `
+[Intro]
+[00:12]
+C  G  Am  F [01:30]
+Repeat [00:12] then [1:02:03]
+`;
+
+    expect(extractTimestampSeconds(text)).toEqual([12, 90, 3723]);
+  });
+
+  test("mergeDetectedTimestampsIntoMarkers appends missing timestamps and preserves existing labels", () => {
+    const lyrics = 'Verse [00:30]\nChorus [01:00]';
+    const existing = [
+      { time: 30, label: 'Intro cue' },
+      { time: '90', label: 'Bridge cue' },
+    ];
+
+    expect(mergeDetectedTimestampsIntoMarkers(lyrics, existing)).toEqual([
+      { time: 30, label: 'Intro cue' },
+      { time: 60, label: 'Timestamp 1:00' },
+      { time: 90, label: 'Bridge cue' },
+    ]);
   });
 });

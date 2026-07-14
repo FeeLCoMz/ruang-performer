@@ -16,7 +16,7 @@ import { handleExportText, handleExportPDF, handleShare } from '../utils/songHan
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import { fetchSetLists } from '../apiClient.js';
-import { alignSelectedBarlines, wrapBarsPerLine } from '../utils/chordUtils.js';
+import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 
@@ -374,6 +374,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     setEditError(null);
 
     try {
+      const mergedTimeMarkers = mergeDetectedTimestampsIntoMarkers(editedLyrics, timeMarkers);
+
       const res = await fetch(`/api/songs/${song.id}`, {
         method: "PUT",
         headers: {
@@ -383,6 +385,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         body: JSON.stringify({
           ...song,
           lyrics: editedLyrics,
+          time_markers: mergedTimeMarkers,
         }),
       });
 

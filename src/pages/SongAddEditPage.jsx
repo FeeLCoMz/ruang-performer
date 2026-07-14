@@ -11,7 +11,7 @@ import ChordLinks from "../components/ChordLinks";
 import SongLyricsEditorPanel from "../components/SongLyricsEditorPanel.jsx";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
-import { alignSelectedBarlines, wrapBarsPerLine } from '../utils/chordUtils.js';
+import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 import { buildAddEditEditorActions } from '../utils/editorActionsUtils.js';
@@ -73,6 +73,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const lyricsTextareaRef = useRef(null);
   const [ytCurrentTime, setYtCurrentTime] = useState(0);
   const [ytDuration, setYtDuration] = useState(0);
+
+  const areMarkersEqual = (first = [], second = []) => JSON.stringify(first) === JSON.stringify(second);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -144,6 +146,13 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       setLoadingData(false);
     }
   }, [newVersionMode, id]);
+
+  useEffect(() => {
+    const mergedMarkers = mergeDetectedTimestampsIntoMarkers(lyrics, timeMarkers);
+    if (!areMarkersEqual(mergedMarkers, timeMarkers)) {
+      setTimeMarkers(mergedMarkers);
+    }
+  }, [lyrics, timeMarkers]);
 
   const handleAIAutofill = async () => {
     if (!title.trim()) {
@@ -220,6 +229,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     setLoading(true);
     setError("");
 
+    const mergedMarkers = mergeDetectedTimestampsIntoMarkers(lyrics.trim(), timeMarkers);
+
     const payload = {
       title: title.trim(),
       artist: artist.trim(),
@@ -231,7 +242,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       youtubeId: extractYouTubeId(youtubeId),
       arrangementStyle: arrangementStyle.trim(),
       keyboardPatch: keyboardPatch.trim(),
-      time_markers: timeMarkers,
+      time_markers: mergedMarkers,
       sheetMusicXml: sheetMusicXml,
     };
 

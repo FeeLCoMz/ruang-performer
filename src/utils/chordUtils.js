@@ -115,6 +115,96 @@ export function parseTimestampToken(token) {
   }
   return null;
 }
+
+const TIMESTAMP_INLINE_REGEX = /\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]/g;
+
+function formatMarkerTime(seconds) {
+  const total = Math.max(0, Math.floor(seconds || 0));
+  const hh = Math.floor(total / 3600);
+  const mm = Math.floor((total % 3600) / 60);
+  const ss = total % 60;
+
+  if (hh > 0) {
+    return `${hh}:${mm.toString().padStart(2, '0')}:${ss.toString().padStart(2, '0')}`;
+  }
+  return `${mm}:${ss.toString().padStart(2, '0')}`;
+}
+
+function normalizeMarkerTime(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.floor(value));
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    if (/^\d{1,2}:\d{2}(?::\d{2})?$/.test(trimmed)) {
+      return parseTimestampToken(`[${trimmed}]`);
+    }
+
+    const numeric = Number(trimmed);
+    if (Number.isFinite(numeric)) {
+      return Math.max(0, Math.floor(numeric));
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Ekstrak semua timestamp [mm:ss] / [hh:mm:ss] dari teks lirik/chord.
+ * Return unik, terurut naik (dalam detik).
+ */
+export function extractTimestampSeconds(text) {
+  if (typeof text !== 'string' || !text.trim()) return [];
+
+  const found = new Set();
+  TIMESTAMP_INLINE_REGEX.lastIndex = 0;
+
+  let match;
+  while ((match = TIMESTAMP_INLINE_REGEX.exec(text)) !== null) {
+    const token = `[${match[1]}:${match[2]}${match[3] ? `:${match[3]}` : ''}]`;
+    const seconds = parseTimestampToken(token);
+    if (seconds !== null) {
+      found.add(seconds);
+    }
+  }
+
+  return Array.from(found).sort((a, b) => a - b);
+}
+
+/**
+ * Gabungkan marker existing dengan timestamp yang terdeteksi di lirik/chord.
+ * Marker existing dipertahankan, timestamp baru ditambahkan jika belum ada.
+ */
+export function mergeDetectedTimestampsIntoMarkers(lyricsText, existingMarkers = []) {
+  const normalizedExisting = Array.isArray(existingMarkers)
+    ? existingMarkers
+        .map((marker) => {
+          const normalizedTime = normalizeMarkerTime(marker?.time);
+          if (normalizedTime === null) return null;
+
+          return {
+            ...(marker || {}),
+            time: normalizedTime,
+          };
+        })
+        .filter(Boolean)
+    : [];
+
+  const seenTimes = new Set(normalizedExisting.map((marker) => marker.time));
+  const detectedTimes = extractTimestampSeconds(lyricsText);
+
+  const appended = detectedTimes
+    .filter((time) => !seenTimes.has(time))
+    .map((time) => ({
+      time,
+      label: `Timestamp ${formatMarkerTime(time)}`,
+    }));
+
+  return [...normalizedExisting, ...appended].sort((a, b) => a.time - b.time);
+}
 // Global regex untuk deteksi chord (standar, konsisten di semua fungsi)
 // Support: C, Cm, Cmaj7, Cm7b5, C7#11, Csus4, Cadd9, BbMajb5, C#maj7#11, dll
 const CHORD_REGEX = /^[A-G][#b]?(maj|min|dim|aug|sus|add|m)?(\d+)?([#b]\d+)*(\/[A-G][#b]?)?$/i;
