@@ -614,6 +614,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         showSheetMusic={showSheetMusic}
         setShowSheetMusic={setShowSheetMusic}
         youtubeRef={youtubeRef}
+        youtubeId={youtubeId}
         loading={loading}
         showChordNumbers={showChordNumbers}
         setShowChordNumbers={setShowChordNumbers}

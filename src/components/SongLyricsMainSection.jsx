@@ -61,6 +61,7 @@ export default function SongLyricsMainSection({
   showSheetMusic,
   setShowSheetMusic,
   youtubeRef,
+  youtubeId,
   loading = false
 }) {
   // Expand/collapse state for lyrics panel
@@ -121,6 +122,8 @@ export default function SongLyricsMainSection({
             setShowExportMenu={setShowExportMenu}
             handleExportText={handleExportText}
             handleExportPDF={handleExportPDF}
+            youtubeId={youtubeId}
+            youtubeRef={youtubeRef}
           />
         )}
       </div>
@@ -184,6 +187,7 @@ export default function SongLyricsMainSection({
               showSheetMusic={showSheetMusic}
               setShowSheetMusic={setShowSheetMusic}
               youtubeRef={youtubeRef}
+              youtubeId={youtubeId}
               timeSignature={timeSignature}
             />
           )}

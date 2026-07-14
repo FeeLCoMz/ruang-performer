@@ -48,6 +48,7 @@ export default function SongChordsLyricsDisplay({
   showSheetMusic,
   setShowSheetMusic,
   youtubeRef,
+  youtubeId,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
   const zoomRef = useRef(zoom);
@@ -359,6 +360,23 @@ export default function SongChordsLyricsDisplay({
             R
           </button>
         </div>
+        {youtubeId && youtubeRef && (
+          <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="YouTube">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                if (youtubeRef.current && typeof youtubeRef.current.handlePlay === 'function') {
+                  youtubeRef.current.handlePlay();
+                }
+              }}
+              aria-label="Putar YouTube"
+              title="Putar YouTube"
+            >
+              ▶️ YouTube
+            </button>
+          </div>
+        )}
         <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Fullscreen">
           <span
             className={`song-lyrics-fullscreen-style-badge mode-${currentChordModeKey}`}

@@ -72,6 +72,13 @@ export default function SongChordsLyricsToolbar({
   setShowExportMenu,
   handleExportText,
   handleExportPDF,
+  youtubeId,
+  youtubeRef,
+}) {
+  showExportMenu,
+  setShowExportMenu,
+  handleExportText,
+  handleExportPDF,
 }) {
   const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
   const chordStyleMenuRef = useRef(null);
@@ -124,6 +131,20 @@ export default function SongChordsLyricsToolbar({
             >
               🖥️
             </button>
+
+            {youtubeId && youtubeRef && (
+              <button
+                className="btn btn-secondary"
+                title="Putar YouTube"
+                onClick={() => {
+                  if (youtubeRef.current && typeof youtubeRef.current.handlePlay === 'function') {
+                    youtubeRef.current.handlePlay();
+                  }
+                }}
+              >
+                ▶️ YouTube
+              </button>
+            )}
 
             <AutoScrollBar
               tempo={parseInt(tempo, 10) || 120}
