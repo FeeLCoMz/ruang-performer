@@ -75,11 +75,6 @@ export default function SongChordsLyricsToolbar({
   youtubeId,
   youtubeRef,
 }) {
-  showExportMenu,
-  setShowExportMenu,
-  handleExportText,
-  handleExportPDF,
-}) {
   const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
   const chordStyleMenuRef = useRef(null);
   const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
