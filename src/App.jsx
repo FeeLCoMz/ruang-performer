@@ -254,6 +254,16 @@ function AppContent() {
                       loading={loadingSongs}
                       error={errorSongs}
                       performanceMode={performanceMode}
+                      onSongMasteryUpdated={(songId, payload) => {
+                        setSongs((prevSongs) => (prevSongs || []).map((song) => {
+                          if (String(song.id) !== String(songId)) return song;
+                          return {
+                            ...song,
+                            masteredBy: Array.isArray(payload?.masteredBy) ? payload.masteredBy : [],
+                            isMasteredByCurrentUser: Boolean(payload?.isMasteredByCurrentUser),
+                          };
+                        }));
+                      }}
                       onSongClick={(action, id) => {
                         const from = location.pathname;
                         if (action === "add") navigate("/songs/add", { state: { from } });

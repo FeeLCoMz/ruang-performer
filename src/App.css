@@ -2551,6 +2551,11 @@ body.dark-mode .lyrics-editor-textarea {
   flex-wrap: wrap;
 }
 
+.song-mastery-summary {
+  color: var(--primary-accent);
+  font-weight: 600;
+}
+
 .song-actions {
   display: flex;
   gap: var(--spacing-sm);
@@ -5857,6 +5862,32 @@ body.dark-mode .cd-token {
   font-family: "Courier New", monospace;
 }
 
+.song-info-mastery-block {
+  grid-column: span 2;
+}
+
+.song-info-mastery-count {
+  color: var(--primary-accent);
+}
+
+.song-info-mastery-members {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.song-info-mastery-btn {
+  margin-top: var(--spacing-xs);
+  width: fit-content;
+}
+
+.song-info-mastery-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
 /* Responsive - Song Info Compact */
 @media (max-width: 768px) {
   .song-info-compact {
@@ -5869,6 +5900,10 @@ body.dark-mode .cd-token {
   }
 
   .song-info-key {
+    grid-column: span 2;
+  }
+
+  .song-info-mastery-block {
     grid-column: span 2;
   }
 
@@ -5891,6 +5926,10 @@ body.dark-mode .cd-token {
   }
 
   .song-info-key {
+    grid-column: span 1;
+  }
+
+  .song-info-mastery-block {
     grid-column: span 1;
   }
 }

@@ -30,10 +30,12 @@ CREATE TABLE IF NOT EXISTS songs (
   keyboard_patch TEXT,
   sheet_music_xml TEXT,
   userId TEXT,
+  bandId TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   updatedAt TEXT,
   deletedAt TEXT,
-  FOREIGN KEY (userId) REFERENCES users(id)
+  FOREIGN KEY (userId) REFERENCES users(id),
+  FOREIGN KEY (bandId) REFERENCES bands(id) ON DELETE SET NULL
 );
 
 
@@ -114,6 +116,21 @@ CREATE TABLE IF NOT EXISTS band_song_preferences (
 );
 
 
+-- Song mastery status per user
+CREATE TABLE IF NOT EXISTS song_user_mastery (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  songId TEXT NOT NULL,
+  userId TEXT NOT NULL,
+  mastered INTEGER NOT NULL DEFAULT 1,
+  masteredAt TEXT,
+  createdAt TEXT DEFAULT (datetime('now')),
+  updatedAt TEXT,
+  FOREIGN KEY (songId) REFERENCES songs(id) ON DELETE CASCADE,
+  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(songId, userId)
+);
+
+
 -- Practice sessions table
 CREATE TABLE IF NOT EXISTS practice_sessions (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -163,6 +180,8 @@ CREATE INDEX IF NOT EXISTS idx_band_members_userId ON band_members(userId);
 CREATE INDEX IF NOT EXISTS idx_band_members_role ON band_members(role);
 CREATE INDEX IF NOT EXISTS idx_setlist_songs_setlist_id_position ON setlist_songs(setlist_id, position);
 CREATE INDEX IF NOT EXISTS idx_band_song_preferences_bandId_songId ON band_song_preferences(bandId, songId);
+CREATE INDEX IF NOT EXISTS idx_song_user_mastery_songId ON song_user_mastery(songId);
+CREATE INDEX IF NOT EXISTS idx_song_user_mastery_userId ON song_user_mastery(userId);
 CREATE INDEX IF NOT EXISTS idx_practice_sessions_bandId ON practice_sessions(bandId);
 CREATE INDEX IF NOT EXISTS idx_gigs_bandId ON gigs(bandId);
 CREATE INDEX IF NOT EXISTS idx_gigs_status ON gigs(status);

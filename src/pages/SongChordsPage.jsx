@@ -15,7 +15,7 @@ import { useSongFetch } from '../hooks/useSongFetch.js';
 import { handleExportText, handleExportPDF, handleShare } from '../utils/songHandlers.js';
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
-import { fetchSetLists } from '../apiClient.js';
+import { fetchSetLists, updateSongMastery } from '../apiClient.js';
 import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
@@ -127,6 +127,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
   // Share state
   const [shareMessage, setShareMessage] = useState("");
+  const [updatingMastery, setUpdatingMastery] = useState(false);
 
 
   // Media panel collapse state (default: collapsed)
@@ -360,6 +361,25 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     setEditError(null);
   };
 
+  const handleToggleMastery = async () => {
+    if (!song?.id || !song?.canMarkMastery || updatingMastery) return;
+
+    const nextMasteredState = !song.isMasteredByCurrentUser;
+    try {
+      setUpdatingMastery(true);
+      const payload = await updateSongMastery(song.id, nextMasteredState);
+      setFetchedSong((prev) => ({
+        ...(prev || song),
+        masteredBy: Array.isArray(payload.masteredBy) ? payload.masteredBy : [],
+        isMasteredByCurrentUser: Boolean(payload.isMasteredByCurrentUser),
+      }));
+    } catch (err) {
+      setEditError(err?.message || 'Gagal memperbarui status penguasaan lagu');
+    } finally {
+      setUpdatingMastery(false);
+    }
+  };
+
   const handleCancelEditLyrics = () => {
     setIsEditingLyrics(false);
     setShowLyricsPiano(false);
@@ -544,6 +564,11 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         artist={artist}
         contributor={song.contributor}
         performanceMode={performanceMode}
+        masteredBy={song.masteredBy}
+        canMarkMastery={song.canMarkMastery}
+        isMasteredByCurrentUser={song.isMasteredByCurrentUser}
+        onToggleMastery={handleToggleMastery}
+        masteryUpdating={updatingMastery}
       />
 
       <SongChordsAnalyzer

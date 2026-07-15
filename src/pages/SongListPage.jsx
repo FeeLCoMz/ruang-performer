@@ -8,7 +8,7 @@ import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
-import { fetchSetLists } from '../apiClient.js';
+import { fetchSetLists, updateSongMastery } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
@@ -31,7 +31,7 @@ function VirtualSongRow({ index, style, ariaAttributes, songs, renderSongItem })
   );
 }
 
-export default function SongListPage({ songs, loading, error, onSongClick, performanceMode = false }) {
+export default function SongListPage({ songs, loading, error, onSongClick, onSongMasteryUpdated, performanceMode = false }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id;
@@ -60,6 +60,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
   const [metronomeSongId, setMetronomeSongId] = useState(null);
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
   const [activeVideoSong, setActiveVideoSong] = useState(null);
+  const [updatingMasterySongId, setUpdatingMasterySongId] = useState(null);
   const [visibleCount, setVisibleCount] = useState(pageSize);
   const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -414,6 +415,27 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
     : (performanceMode ? 136 : 156);
   const displayedSongCount = shouldVirtualize ? filteredSongs.length : visibleSongs.length;
 
+  async function handleToggleMastery(song, event) {
+    event.stopPropagation();
+    if (!song?.id || !song?.canMarkMastery || updatingMasterySongId === song.id) return;
+
+    const nextMasteredState = !song.isMasteredByCurrentUser;
+    try {
+      setUpdatingMasterySongId(song.id);
+      const result = await updateSongMastery(song.id, nextMasteredState);
+      if (typeof onSongMasteryUpdated === 'function') {
+        onSongMasteryUpdated(song.id, {
+          masteredBy: Array.isArray(result.masteredBy) ? result.masteredBy : [],
+          isMasteredByCurrentUser: Boolean(result.isMasteredByCurrentUser),
+        });
+      }
+    } catch (err) {
+      alert(err?.message || 'Gagal memperbarui status penguasaan lagu');
+    } finally {
+      setUpdatingMasterySongId(null);
+    }
+  }
+
   function renderSongItem(song, style) {
     return (
       <div
@@ -437,6 +459,12 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
             </span>
             <span style={{ color: 'var(--text-secondary)', marginLeft: 8, fontSize: '0.95em' }}>
               ✍️ {song.contributorName || song.contributorUsername || '-'}
+            </span>
+            <span className="song-mastery-summary">
+              ✅ Dikuasai: {Array.isArray(song.masteredBy) ? song.masteredBy.length : 0}
+              {Array.isArray(song.masteredBy) && song.masteredBy.length > 0
+                ? ` (${song.masteredBy.map((entry) => entry.username || '-').join(', ')})`
+                : ''}
             </span>
           </div>
         </div>
@@ -471,6 +499,22 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
           >
             Lirik
           </button>
+          {
+            <button
+              className={`btn ${song.isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
+              title={song.canMarkMastery
+                ? (song.isMasteredByCurrentUser ? 'Batalkan status sudah dikuasai' : 'Tandai lagu ini sudah dikuasai')
+                : 'Anda belum bisa menandai lagu ini'}
+              onClick={(e) => handleToggleMastery(song, e)}
+              disabled={!song.canMarkMastery || updatingMasterySongId === song.id}
+            >
+              {updatingMasterySongId === song.id
+                ? 'Menyimpan...'
+                : (song.canMarkMastery
+                  ? (song.isMasteredByCurrentUser ? 'Sudah Dikuasai' : 'Saya Kuasai')
+                  : 'Belum Bisa Tandai')}
+            </button>
+          }
           {!performanceMode && (() => {
             const permission = permissionsBySongId[song.id] || {};
             const canEdit = Boolean(permission.canEdit);

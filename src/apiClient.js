@@ -234,6 +234,19 @@ export async function updateSong(id, song) {
   return await res.json();
 }
 
+export async function updateSongMastery(id, mastered = true) {
+  const res = await fetch(`${API_BASE}/songs/${id}/mastery`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify({ mastered })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to update song mastery');
+  }
+  return await res.json();
+}
+
 export async function deleteSong(id) {
   const res = await fetch(`${API_BASE}/songs/${id}`, {
     method: 'DELETE',

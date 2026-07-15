@@ -30,8 +30,18 @@ export default function SongChordsInfo({
   title,
   artist,
   contributor,
-  performanceMode
+  performanceMode,
+  masteredBy = [],
+  canMarkMastery = false,
+  isMasteredByCurrentUser = false,
+  onToggleMastery,
+  masteryUpdating = false,
 }) {
+  const masteredNames = (Array.isArray(masteredBy) ? masteredBy : [])
+    .map((entry) => entry?.username)
+    .filter(Boolean)
+    .join(', ');
+
   return (
     <div className="song-panel">
       {/* Judul dan artis selalu di atas info lain */}
@@ -112,6 +122,33 @@ export default function SongChordsInfo({
               <span className="song-info-value">{keyboardPatch}</span>
             </div>
           )}
+          <div className="song-info-item song-info-mastery-block">
+            <span className="song-info-label">✅ Penguasaan Personil</span>
+            <span className="song-info-value song-info-mastery-count">
+              {Array.isArray(masteredBy) ? masteredBy.length : 0} personil
+            </span>
+            {masteredNames && (
+              <p className="song-info-mastery-members">{masteredNames}</p>
+            )}
+            <button
+              type="button"
+              className={`btn song-info-mastery-btn ${isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
+              onClick={onToggleMastery}
+              disabled={!canMarkMastery || masteryUpdating}
+              title={canMarkMastery ? 'Tandai status penguasaan lagu Anda' : 'Anda belum terdaftar sebagai member aktif band ini'}
+            >
+              {masteryUpdating
+                ? 'Menyimpan...'
+                : (canMarkMastery
+                  ? (isMasteredByCurrentUser ? 'Sudah Dikuasai' : 'Saya Kuasai')
+                  : 'Belum Bisa Tandai')}
+            </button>
+            {!canMarkMastery && (
+              <p className="song-info-mastery-note">
+                Tombol aktif saat akun Anda memiliki akses menandai lagu.
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

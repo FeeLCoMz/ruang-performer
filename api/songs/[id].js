@@ -18,8 +18,47 @@ async function readJson(req) {
 async function ensureSongsColumns(client) {
   const columnsResult = await client.execute(`PRAGMA table_info(songs)`);
   const columns = (columnsResult.rows || []).map(row => row.name);
+  if (!columns.includes('bandId')) {
+    await client.execute(`ALTER TABLE songs ADD COLUMN bandId TEXT`);
+  }
   if (!columns.includes('time_signature')) {
     await client.execute(`ALTER TABLE songs ADD COLUMN time_signature TEXT`);
+  }
+}
+
+async function ensureSongMasteryTable(client) {
+  await client.execute(
+    `CREATE TABLE IF NOT EXISTS song_user_mastery (
+      id TEXT PRIMARY KEY,
+      songId TEXT NOT NULL,
+      userId TEXT NOT NULL,
+      mastered INTEGER NOT NULL DEFAULT 1,
+      masteredAt TEXT,
+      createdAt TEXT DEFAULT (datetime('now')),
+      updatedAt TEXT,
+      FOREIGN KEY (songId) REFERENCES songs(id) ON DELETE CASCADE,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE(songId, userId)
+    )`
+  );
+
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_song_user_mastery_songId ON song_user_mastery(songId)`
+  );
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_song_user_mastery_userId ON song_user_mastery(userId)`
+  );
+
+  // Backfill from legacy table if it exists, so previous marks are preserved.
+  const legacyTable = await client.execute(
+    `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'song_member_mastery' LIMIT 1`
+  );
+  if (legacyTable.rows?.length) {
+    await client.execute(
+      `INSERT OR IGNORE INTO song_user_mastery (id, songId, userId, mastered, masteredAt, createdAt, updatedAt)
+       SELECT id, songId, userId, mastered, masteredAt, createdAt, updatedAt
+       FROM song_member_mastery`
+    );
   }
 }
 
@@ -44,6 +83,7 @@ export default async function handler(req, res) {
     try {
       client = getTursoClient();
       await ensureSongsColumns(client);
+      await ensureSongMasteryTable(client);
     } catch (clientErr) {
       console.error(`[songs/[id]] Failed to get Turso client:`, clientErr.message);
       res.status(500).json({ error: 'Database connection error', details: clientErr.message });
@@ -67,12 +107,33 @@ export default async function handler(req, res) {
           res.status(404).json({ error: 'Song not found' });
           return;
         }
+
+        const userId = req.user?.userId;
+        const masteredRows = await client.execute(
+          `SELECT sm.userId, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
+           FROM song_user_mastery sm
+           LEFT JOIN users u ON u.id = sm.userId
+           WHERE sm.songId = ? AND sm.mastered = 1
+           ORDER BY datetime(COALESCE(sm.masteredAt, sm.updatedAt, sm.createdAt)) DESC`,
+          [idStr]
+        );
+        const masteredBy = (masteredRows.rows || []).map((entry) => ({
+          userId: entry.userId,
+          username: entry.username || '-',
+          masteredAt: entry.masteredAt || entry.updatedAt || entry.createdAt || null,
+        }));
+
+        const canMarkMastery = Boolean(userId);
+
         res.status(200).json({
           ...row,
           time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
           arrangementStyle: row.arrangement_style || '',
           keyboardPatch: row.keyboard_patch || '',
           sheetMusicXml: row.sheet_music_xml || '',
+          masteredBy,
+          canMarkMastery,
+          isMasteredByCurrentUser: masteredBy.some((entry) => entry.userId === userId),
         });
         return;
       } catch (queryErr) {

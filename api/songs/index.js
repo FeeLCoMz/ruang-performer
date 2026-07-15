@@ -22,9 +22,125 @@ async function ensureSongsColumns(client) {
   if (!columns.includes('userId')) {
     await client.execute(`ALTER TABLE songs ADD COLUMN userId TEXT`);
   }
+  if (!columns.includes('bandId')) {
+    await client.execute(`ALTER TABLE songs ADD COLUMN bandId TEXT`);
+  }
   if (!columns.includes('time_signature')) {
     await client.execute(`ALTER TABLE songs ADD COLUMN time_signature TEXT`);
   }
+}
+
+async function ensureSongMasteryTable(client) {
+  await client.execute(
+    `CREATE TABLE IF NOT EXISTS song_user_mastery (
+      id TEXT PRIMARY KEY,
+      songId TEXT NOT NULL,
+      userId TEXT NOT NULL,
+      mastered INTEGER NOT NULL DEFAULT 1,
+      masteredAt TEXT,
+      createdAt TEXT DEFAULT (datetime('now')),
+      updatedAt TEXT,
+      FOREIGN KEY (songId) REFERENCES songs(id) ON DELETE CASCADE,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE(songId, userId)
+    )`
+  );
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_song_user_mastery_songId ON song_user_mastery(songId)`
+  );
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_song_user_mastery_userId ON song_user_mastery(userId)`
+  );
+
+  // Backfill from legacy table if it exists, so previous marks are preserved.
+  const legacyTable = await client.execute(
+    `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'song_member_mastery' LIMIT 1`
+  );
+  if (legacyTable.rows?.length) {
+    await client.execute(
+      `INSERT OR IGNORE INTO song_user_mastery (id, songId, userId, mastered, masteredAt, createdAt, updatedAt)
+       SELECT id, songId, userId, mastered, masteredAt, createdAt, updatedAt
+       FROM song_member_mastery`
+    );
+  }
+}
+
+function toMasteryRows(rows) {
+  return (rows?.rows || []).map((row) => ({
+    userId: row.userId,
+    username: row.username || '-',
+    masteredAt: row.masteredAt || row.updatedAt || row.createdAt || null,
+  }));
+}
+
+async function getSongMasteryList(client, songId) {
+  const rows = await client.execute(
+    `SELECT sm.userId, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
+     FROM song_user_mastery sm
+     LEFT JOIN users u ON u.id = sm.userId
+     WHERE sm.songId = ? AND sm.mastered = 1
+     ORDER BY datetime(COALESCE(sm.masteredAt, sm.updatedAt, sm.createdAt)) DESC`,
+    [songId]
+  );
+  return toMasteryRows(rows);
+}
+
+async function handleSongMastery(req, res, client, songId) {
+  const userId = req.user?.userId;
+  if (!userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const songResult = await client.execute(
+    `SELECT id FROM songs WHERE id = ? LIMIT 1`,
+    [songId]
+  );
+  const song = songResult.rows?.[0];
+  if (!song) {
+    res.status(404).json({ error: 'Song not found' });
+    return;
+  }
+
+  if (req.method === 'GET') {
+    const masteredBy = await getSongMasteryList(client, songId);
+    res.status(200).json({ songId, masteredBy, isMasteredByCurrentUser: masteredBy.some((entry) => entry.userId === userId) });
+    return;
+  }
+
+  if (req.method === 'PUT' || req.method === 'PATCH') {
+    const body = await readJson(req);
+    const mastered = body?.mastered !== false;
+    if (mastered) {
+      const now = new Date().toISOString();
+      await client.execute(
+        `INSERT INTO song_user_mastery (id, songId, userId, mastered, masteredAt, createdAt, updatedAt)
+         VALUES (?, ?, ?, 1, ?, ?, ?)
+         ON CONFLICT(songId, userId) DO UPDATE SET
+           mastered = 1,
+           masteredAt = excluded.masteredAt,
+           updatedAt = excluded.updatedAt`,
+        [randomUUID(), songId, userId, now, now, now]
+      );
+    } else {
+      await client.execute(
+        `DELETE FROM song_user_mastery WHERE songId = ? AND userId = ?`,
+        [songId, userId]
+      );
+    }
+
+    const masteredBy = await getSongMasteryList(client, songId);
+    res.status(200).json({
+      songId,
+      mastered,
+      masteredBy,
+      isMasteredByCurrentUser: masteredBy.some((entry) => entry.userId === userId),
+    });
+    return;
+  }
+
+  res.setHeader('Allow', 'GET, PUT, PATCH');
+  res.status(405).json({ error: 'Method not allowed' });
 }
 
 export default async function handler(req, res) {
@@ -37,7 +153,14 @@ export default async function handler(req, res) {
     // Check if this is a request for a specific song ID
     const path = req.path || req.url.split('?')[0];
     const relativePath = path.replace(/^\/api\/songs\/?/, '').replace(/^\//, '');
-    
+    const pathSegments = relativePath ? relativePath.split('/').filter(Boolean) : [];
+    if (pathSegments.length === 2 && pathSegments[1] === 'mastery') {
+      const client = getTursoClient();
+      await ensureSongsColumns(client);
+      await ensureSongMasteryTable(client);
+      return handleSongMastery(req, res, client, pathSegments[0]);
+    }
+
     if (relativePath && (req.method === 'GET' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE')) {
       // Delegate to [id].js handler
       req.params = { ...req.params, id: relativePath };
@@ -65,20 +188,43 @@ export default async function handler(req, res) {
       )`
     );
     await ensureSongsColumns(client);
+    await ensureSongMasteryTable(client);
 
     if (req.method === 'GET') {
+      const userId = req.user?.userId;
+
       // Join ke tabel users untuk ambil nama kontributor
       const rows = await client.execute(
-        `SELECT songs.id, songs.title, songs.artist, songs.youtubeId, songs.lyrics, songs.key, songs.tempo, songs.genre, songs.time_markers, songs.time_signature, songs.userId, songs.createdAt, songs.updatedAt, songs.sheet_music_xml, users.username AS contributorUsername
+        `SELECT songs.id, songs.title, songs.artist, songs.youtubeId, songs.lyrics, songs.key, songs.tempo, songs.genre, songs.time_markers, songs.time_signature, songs.userId, songs.bandId, songs.createdAt, songs.updatedAt, songs.sheet_music_xml, users.username AS contributorUsername
          FROM songs
          LEFT JOIN users ON users.id = songs.userId
          ORDER BY (songs.updatedAt IS NULL) ASC, datetime(songs.updatedAt) DESC, datetime(songs.createdAt) DESC`
       );
+
+      const masteryRows = await client.execute(
+        `SELECT sm.songId, sm.userId, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
+        FROM song_user_mastery sm
+         LEFT JOIN users u ON u.id = sm.userId
+         WHERE sm.mastered = 1`
+      );
+      const masteryMap = {};
+      for (const row of masteryRows.rows || []) {
+        if (!masteryMap[row.songId]) masteryMap[row.songId] = [];
+        masteryMap[row.songId].push({
+          userId: row.userId,
+          username: row.username || '-',
+          masteredAt: row.masteredAt || row.updatedAt || row.createdAt || null,
+        });
+      }
+
       const list = (rows.rows ?? []).map(row => ({
         ...row,
         contributorName: row.contributorUsername, // alias agar frontend tetap pakai contributorName
         time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
         sheetMusicXml: row.sheet_music_xml || '',
+        masteredBy: masteryMap[row.id] || [],
+        canMarkMastery: true,
+        isMasteredByCurrentUser: Boolean((masteryMap[row.id] || []).some((entry) => entry.userId === userId)),
       }));
       res.status(200).json(list);
       return;
@@ -113,8 +259,8 @@ export default async function handler(req, res) {
         }
         const id = item.id?.toString() || randomUUID();
         await client.execute(
-          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, genre, time_markers, time_signature, arrangement_style, keyboard_patch, sheet_music_xml, userId, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, genre, time_markers, time_signature, arrangement_style, keyboard_patch, sheet_music_xml, userId, bandId, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title,
              artist = excluded.artist,
@@ -128,6 +274,7 @@ export default async function handler(req, res) {
              arrangement_style = excluded.arrangement_style,
              keyboard_patch = excluded.keyboard_patch,
              sheet_music_xml = excluded.sheet_music_xml,
+             bandId = excluded.bandId,
              updatedAt = excluded.updatedAt`,
           [
             id,
@@ -144,6 +291,7 @@ export default async function handler(req, res) {
             item.keyboardPatch || null,
             item.sheetMusicXml || null,
             userId,
+            item.bandId || null,
             item.createdAt || now,
             now
           ]
