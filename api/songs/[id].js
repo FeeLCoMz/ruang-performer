@@ -62,6 +62,39 @@ async function ensureSongMasteryTable(client) {
   }
 }
 
+async function getActiveBandMemberSet(client, bandId) {
+  const members = await client.execute(
+    `SELECT userId FROM band_members
+     WHERE bandId = ?
+       AND (
+         status IS NULL
+         OR lower(status) IN ('active', 'accepted', 'member')
+       )`,
+    [bandId]
+  );
+  return new Set((members.rows || []).map((row) => String(row.userId)));
+}
+
+async function filterMasteryForViewer(client, songBandId, masteryList, viewerUserId) {
+  const normalizedViewerId = String(viewerUserId || '');
+  if (!normalizedViewerId) return [];
+
+  if (!songBandId) {
+    return masteryList.filter((entry) => String(entry.userId) === normalizedViewerId);
+  }
+
+  const bandMembers = await getActiveBandMemberSet(client, songBandId);
+  const isViewerInBand = bandMembers.has(normalizedViewerId);
+  if (!isViewerInBand) {
+    return masteryList.filter((entry) => String(entry.userId) === normalizedViewerId);
+  }
+
+  return masteryList.filter((entry) => {
+    const entryUserId = String(entry.userId || '');
+    return bandMembers.has(entryUserId) || entryUserId === normalizedViewerId;
+  });
+}
+
 
 export default async function handler(req, res) {
   // Support both Express (req.params) and Vercel/Next.js (req.query)
@@ -123,6 +156,7 @@ export default async function handler(req, res) {
           masteredAt: entry.masteredAt || entry.updatedAt || entry.createdAt || null,
         }));
 
+        const visibleMasteredBy = await filterMasteryForViewer(client, row.bandId || null, masteredBy, userId);
         const canMarkMastery = Boolean(userId);
 
         res.status(200).json({
@@ -131,9 +165,9 @@ export default async function handler(req, res) {
           arrangementStyle: row.arrangement_style || '',
           keyboardPatch: row.keyboard_patch || '',
           sheetMusicXml: row.sheet_music_xml || '',
-          masteredBy,
+          masteredBy: visibleMasteredBy,
           canMarkMastery,
-          isMasteredByCurrentUser: masteredBy.some((entry) => entry.userId === userId),
+          isMasteredByCurrentUser: masteredBy.some((entry) => String(entry.userId) === String(userId)),
         });
         return;
       } catch (queryErr) {

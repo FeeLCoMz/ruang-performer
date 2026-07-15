@@ -85,6 +85,42 @@ async function getSongMasteryList(client, songId) {
   return toMasteryRows(rows);
 }
 
+async function getActiveBandMemberSet(client, bandId) {
+  const members = await client.execute(
+    `SELECT userId FROM band_members
+     WHERE bandId = ?
+       AND (
+         status IS NULL
+         OR lower(status) IN ('active', 'accepted', 'member')
+       )`,
+    [bandId]
+  );
+  return new Set((members.rows || []).map((row) => String(row.userId)));
+}
+
+async function filterMasteryForViewer(client, songBandId, masteryList, viewerUserId) {
+  const normalizedViewerId = String(viewerUserId || '');
+  if (!normalizedViewerId) return [];
+
+  // Non-band songs: only show current user's own status.
+  if (!songBandId) {
+    return masteryList.filter((entry) => String(entry.userId) === normalizedViewerId);
+  }
+
+  const bandMembers = await getActiveBandMemberSet(client, songBandId);
+  const isViewerInBand = bandMembers.has(normalizedViewerId);
+  if (!isViewerInBand) {
+    // Outside band: only own status is visible.
+    return masteryList.filter((entry) => String(entry.userId) === normalizedViewerId);
+  }
+
+  // Same band: can see fellow band members plus own status.
+  return masteryList.filter((entry) => {
+    const entryUserId = String(entry.userId || '');
+    return bandMembers.has(entryUserId) || entryUserId === normalizedViewerId;
+  });
+}
+
 async function handleSongMastery(req, res, client, songId) {
   const userId = req.user?.userId;
   if (!userId) {
@@ -103,8 +139,9 @@ async function handleSongMastery(req, res, client, songId) {
   }
 
   if (req.method === 'GET') {
-    const masteredBy = await getSongMasteryList(client, songId);
-    res.status(200).json({ songId, masteredBy, isMasteredByCurrentUser: masteredBy.some((entry) => entry.userId === userId) });
+    const masteredByAll = await getSongMasteryList(client, songId);
+    const masteredBy = await filterMasteryForViewer(client, song.bandId || null, masteredByAll, userId);
+    res.status(200).json({ songId, masteredBy, isMasteredByCurrentUser: masteredByAll.some((entry) => String(entry.userId) === String(userId)) });
     return;
   }
 
@@ -129,12 +166,13 @@ async function handleSongMastery(req, res, client, songId) {
       );
     }
 
-    const masteredBy = await getSongMasteryList(client, songId);
+    const masteredByAll = await getSongMasteryList(client, songId);
+    const masteredBy = await filterMasteryForViewer(client, song.bandId || null, masteredByAll, userId);
     res.status(200).json({
       songId,
       mastered,
       masteredBy,
-      isMasteredByCurrentUser: masteredBy.some((entry) => entry.userId === userId),
+      isMasteredByCurrentUser: masteredByAll.some((entry) => String(entry.userId) === String(userId)),
     });
     return;
   }
@@ -192,6 +230,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
       const userId = req.user?.userId;
+      const viewerId = String(userId || '');
 
       // Join ke tabel users untuk ambil nama kontributor
       const rows = await client.execute(
@@ -217,14 +256,72 @@ export default async function handler(req, res) {
         });
       }
 
+      const songBandIds = Array.from(new Set(
+        (rows.rows || [])
+          .map((row) => row.bandId)
+          .filter((bandId) => bandId)
+          .map((bandId) => String(bandId))
+      ));
+
+      const viewerBandsRows = await client.execute(
+        `SELECT bandId FROM band_members
+         WHERE userId = ?
+           AND (
+             status IS NULL
+             OR lower(status) IN ('active', 'accepted', 'member')
+           )`,
+        [viewerId]
+      );
+      const viewerBandSet = new Set((viewerBandsRows.rows || []).map((row) => String(row.bandId)));
+
+      const bandMemberMap = {};
+      if (songBandIds.length > 0) {
+        const placeholders = songBandIds.map(() => '?').join(', ');
+        const membersRows = await client.execute(
+          `SELECT bandId, userId FROM band_members
+           WHERE bandId IN (${placeholders})
+             AND (
+               status IS NULL
+               OR lower(status) IN ('active', 'accepted', 'member')
+             )`,
+          songBandIds
+        );
+
+        for (const member of membersRows.rows || []) {
+          const bandKey = String(member.bandId);
+          if (!bandMemberMap[bandKey]) bandMemberMap[bandKey] = new Set();
+          bandMemberMap[bandKey].add(String(member.userId));
+        }
+      }
+
       const list = (rows.rows ?? []).map(row => ({
+        ...(() => {
+          const rawMasteredBy = masteryMap[row.id] || [];
+          const rowBandId = row.bandId ? String(row.bandId) : null;
+          let visibleMasteredBy = [];
+
+          if (!rowBandId) {
+            visibleMasteredBy = rawMasteredBy.filter((entry) => String(entry.userId) === viewerId);
+          } else if (viewerBandSet.has(rowBandId)) {
+            const allowedUsers = bandMemberMap[rowBandId] || new Set();
+            visibleMasteredBy = rawMasteredBy.filter((entry) => {
+              const entryUserId = String(entry.userId || '');
+              return allowedUsers.has(entryUserId) || entryUserId === viewerId;
+            });
+          } else {
+            visibleMasteredBy = rawMasteredBy.filter((entry) => String(entry.userId) === viewerId);
+          }
+
+          return {
+            masteredBy: visibleMasteredBy,
+            isMasteredByCurrentUser: rawMasteredBy.some((entry) => String(entry.userId) === viewerId),
+          };
+        })(),
         ...row,
         contributorName: row.contributorUsername, // alias agar frontend tetap pakai contributorName
         time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
         sheetMusicXml: row.sheet_music_xml || '',
-        masteredBy: masteryMap[row.id] || [],
         canMarkMastery: true,
-        isMasteredByCurrentUser: Boolean((masteryMap[row.id] || []).some((entry) => entry.userId === userId)),
       }));
       res.status(200).json(list);
       return;
