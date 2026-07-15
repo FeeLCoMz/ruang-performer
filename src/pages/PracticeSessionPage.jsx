@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { PERMISSIONS, hasPermission } from '../utils/permissionUtils.js';
 import { usePermission } from '../hooks/usePermission.js';
@@ -10,6 +11,7 @@ import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 
 export default function PracticeSessionPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id;
   const getPersistedState = () => {
@@ -48,6 +50,7 @@ export default function PracticeSessionPage() {
   const [sessionDateFilter, setSessionDateFilter] = useState(persistedState.sessionDateFilter || 'all');
   const [customDateFrom, setCustomDateFrom] = useState(persistedState.customDateFrom || '');
   const [customDateTo, setCustomDateTo] = useState(persistedState.customDateTo || '');
+  const [draggedSelectedSongId, setDraggedSelectedSongId] = useState(null);
   const [formError, setFormError] = useState('');
 
   useEffect(() => {
@@ -340,6 +343,56 @@ export default function PracticeSessionPage() {
     ));
   };
 
+  const getSongById = (songId) => songs.find((item) => String(item.id) === String(songId));
+
+  const getSongTitleById = (songId) => {
+    const song = getSongById(songId);
+    if (!song) return 'Lagu tidak ditemukan';
+    return song.artist ? `${song.title} - ${song.artist}` : song.title;
+  };
+
+  const moveSelectedSong = (songId, direction) => {
+    const currentIndex = formData.songs.findIndex((id) => String(id) === String(songId));
+    if (currentIndex === -1) return;
+
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= formData.songs.length) return;
+
+    const nextSongs = [...formData.songs];
+    const [movedSong] = nextSongs.splice(currentIndex, 1);
+    nextSongs.splice(targetIndex, 0, movedSong);
+    setFormData({ ...formData, songs: nextSongs });
+  };
+
+  const removeSelectedSong = (songId) => {
+    setFormData({
+      ...formData,
+      songs: formData.songs.filter((id) => String(id) !== String(songId))
+    });
+  };
+
+  const handleSelectedSongDrop = (targetSongId) => {
+    if (!draggedSelectedSongId || String(draggedSelectedSongId) === String(targetSongId)) {
+      setDraggedSelectedSongId(null);
+      return;
+    }
+
+    const sourceIndex = formData.songs.findIndex((id) => String(id) === String(draggedSelectedSongId));
+    const targetIndex = formData.songs.findIndex((id) => String(id) === String(targetSongId));
+
+    if (sourceIndex < 0 || targetIndex < 0) {
+      setDraggedSelectedSongId(null);
+      return;
+    }
+
+    const reorderedSongs = [...formData.songs];
+    const [movedSong] = reorderedSongs.splice(sourceIndex, 1);
+    reorderedSongs.splice(targetIndex, 0, movedSong);
+
+    setFormData({ ...formData, songs: reorderedSongs });
+    setDraggedSelectedSongId(null);
+  };
+
   return (
     <div className="page-container">
       {/* Page Header */}
@@ -445,6 +498,7 @@ export default function PracticeSessionPage() {
                           checked={formData.songs.includes(song.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
+                              if (formData.songs.includes(song.id)) return;
                               setFormData({ ...formData, songs: [...formData.songs, song.id] });
                             } else {
                               setFormData({ ...formData, songs: formData.songs.filter(id => id !== song.id) });
@@ -463,6 +517,69 @@ export default function PracticeSessionPage() {
                         </span>
                       </label>
                     ))
+                  )}
+                </div>
+
+                <div style={{ marginTop: '10px' }}>
+                  <label className="form-label">Urutan Lagu Sesi</label>
+                  {formData.songs.length === 0 ? (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>Belum ada lagu dipilih</div>
+                  ) : (
+                    <div style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px' }}>
+                      {formData.songs.map((songId, index) => (
+                        <div
+                          key={`selected-${songId}-${index}`}
+                          draggable
+                          onDragStart={() => setDraggedSelectedSongId(songId)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => handleSelectedSongDrop(songId)}
+                          onDragEnd={() => setDraggedSelectedSongId(null)}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr auto',
+                            gap: '8px',
+                            alignItems: 'center',
+                            padding: '6px 0',
+                            borderBottom: index < formData.songs.length - 1 ? '1px solid var(--border)' : 'none',
+                            opacity: String(draggedSelectedSongId) === String(songId) ? 0.55 : 1,
+                            cursor: 'grab'
+                          }}
+                        >
+                          <div style={{ fontSize: '0.9em' }}>
+                            <span style={{ color: 'var(--text-muted)', marginRight: '6px' }} title="Geser untuk ubah urutan">⋮⋮</span>
+                            {index + 1}. {getSongTitleById(songId)}
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              onClick={() => moveSelectedSong(songId, 'up')}
+                              disabled={index === 0}
+                              title="Naik"
+                            >
+                              ↑
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              onClick={() => moveSelectedSong(songId, 'down')}
+                              disabled={index === formData.songs.length - 1}
+                              title="Turun"
+                            >
+                              ↓
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-red"
+                              onClick={() => removeSelectedSong(songId)}
+                              title="Hapus dari sesi"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -649,9 +766,42 @@ export default function PracticeSessionPage() {
                 )}
 
                 {session.songs?.length > 0 && (
-                  <div style={{ fontSize: '0.9em', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                    🎵 {session.songs.length} lagu dilatih
-                  </div>
+                  <>
+                    <div style={{ fontSize: '0.9em', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                      🎵 {session.songs.length} lagu dilatih
+                    </div>
+                    <div style={{ marginBottom: '8px', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 10px', backgroundColor: 'var(--primary-bg)' }}>
+                      <ol style={{ margin: 0, paddingLeft: '20px', display: 'grid', gap: '6px' }}>
+                        {session.songs.map((songId) => {
+                          const song = getSongById(songId);
+
+                          return (
+                            <li key={`${session.id}-${songId}`} style={{ lineHeight: 1.35 }}>
+                              {song ? (
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/songs/view/${songId}`)}
+                                  className="btn"
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    padding: 0,
+                                    color: 'var(--text-primary)',
+                                    textAlign: 'left',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  {getSongTitleById(songId)}
+                                </button>
+                              ) : (
+                                <span style={{ color: 'var(--text-muted)' }}>{getSongTitleById(songId)}</span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </div>
+                  </>
                 )}
 
                 {session.notes && (
@@ -663,6 +813,15 @@ export default function PracticeSessionPage() {
 
               <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
                 {/* Permission for edit/delete per session (pure function, not hook) */}
+                {canSession(session, PERMISSIONS.SETLIST_VIEW) && (
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => navigate(`/practice/${session.id}`)}
+                    title="Lihat detail"
+                  >
+                    Detail
+                  </button>
+                )}
                 {canSession(session, PERMISSIONS.SETLIST_EDIT) && (
                   <button
                     className="btn btn-secondary"
