@@ -91,25 +91,13 @@ export function verifyToken(req, res, next) {
 }
 
 // Wrap handler functions so this file can be used for local Express dev
-app.post('/api/auth/register', 
-  createRateLimiter({ 
-    maxRequests: RATE_LIMITS.AUTH_REGISTER.maxRequests,
-    windowMs: RATE_LIMITS.AUTH_REGISTER.windowMs
-  }),
-  (req, res, next) => {
-    Promise.resolve(authRegisterHandler(req, res)).catch(next);
-  }
-);
+app.post('/api/auth/register', (req, res, next) => {
+  Promise.resolve(authRegisterHandler(req, res)).catch(next);
+});
 
-app.post('/api/auth/login', 
-  createRateLimiter({ 
-    maxRequests: RATE_LIMITS.AUTH_LOGIN.maxRequests,
-    windowMs: RATE_LIMITS.AUTH_LOGIN.windowMs
-  }),
-  (req, res, next) => {
-    Promise.resolve(authLoginHandler(req, res)).catch(next);
-  }
-);
+app.post('/api/auth/login', (req, res, next) => {
+  Promise.resolve(authLoginHandler(req, res)).catch(next);
+});
 
 
 // GET profile
@@ -133,49 +121,21 @@ app.post('/api/auth/change-password', verifyToken, (req, res, next) => {
   Promise.resolve(changePasswordHandler(req, res)).catch(next);
 });
 
-app.post('/api/auth/forgot-password',
-  createRateLimiter({ 
-    maxRequests: RATE_LIMITS.AUTH_FORGOT.maxRequests,
-    windowMs: RATE_LIMITS.AUTH_FORGOT.windowMs
-  }),
-  (req, res, next) => {
-    Promise.resolve(authForgotHandler(req, res)).catch(next);
-  }
-);
+app.post('/api/auth/forgot-password', (req, res, next) => {
+  Promise.resolve(authForgotHandler(req, res)).catch(next);
+});
 
-app.post('/api/auth/reset-password',
-  createRateLimiter({ 
-    maxRequests: RATE_LIMITS.AUTH_RESET.maxRequests,
-    windowMs: RATE_LIMITS.AUTH_RESET.windowMs
-  }),
-  (req, res, next) => {
-    Promise.resolve(authResetHandler(req, res)).catch(next);
-  }
-);
+app.post('/api/auth/reset-password', (req, res, next) => {
+  Promise.resolve(authResetHandler(req, res)).catch(next);
+});
 
-app.get('/api/auth/2fa/setup', 
-  verifyToken,
-  createRateLimiter({ 
-    maxRequests: RATE_LIMITS.AUTH_2FA.maxRequests,
-    windowMs: RATE_LIMITS.AUTH_2FA.windowMs,
-    keyGenerator: userKeyGenerator
-  }),
-  (req, res, next) => {
-    Promise.resolve(auth2FASetupHandler(req, res)).catch(next);
-  }
-);
+app.get('/api/auth/2fa/setup', verifyToken, (req, res, next) => {
+  Promise.resolve(auth2FASetupHandler(req, res)).catch(next);
+});
 
-app.post('/api/auth/2fa/verify',
-  verifyToken,
-  createRateLimiter({ 
-    maxRequests: RATE_LIMITS.AUTH_2FA.maxRequests,
-    windowMs: RATE_LIMITS.AUTH_2FA.windowMs,
-    keyGenerator: userKeyGenerator
-  }),
-  (req, res, next) => {
-    Promise.resolve(auth2FAVerifyHandler(req, res)).catch(next);
-  }
-);
+app.post('/api/auth/2fa/verify', verifyToken, (req, res, next) => {
+  Promise.resolve(auth2FAVerifyHandler(req, res)).catch(next);
+});
 
 app.use('/api/songs', verifyToken, (req, res, next) => {
   Promise.resolve(songsHandler(req, res)).catch(next);

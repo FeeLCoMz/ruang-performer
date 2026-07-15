@@ -21,6 +21,7 @@ async function readJson(req) {
 const rateLimiter = createRateLimiter({ ...RATE_LIMITS.AUTH_REGISTER });
 export default async function handler(req, res) {
   await rateLimiter(req, res, () => {});
+  if (res.headersSent) return;
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
@@ -96,6 +97,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Register handler error:', error);
+    if (res.headersSent) return;
     res.status(500).json({ error: error.message || 'Registration failed' });
   }
 }
