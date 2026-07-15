@@ -31,9 +31,18 @@ export default function PracticeSessionPage() {
     notes: ''
   });
   const [songSearchQuery, setSongSearchQuery] = useState('');
+  const [debouncedSongSearchQuery, setDebouncedSongSearchQuery] = useState('');
   const [formError, setFormError] = useState('');
 
-  const normalizedSongSearchQuery = songSearchQuery.trim().toLowerCase();
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSongSearchQuery(songSearchQuery);
+    }, 200);
+
+    return () => clearTimeout(timeoutId);
+  }, [songSearchQuery]);
+
+  const normalizedSongSearchQuery = debouncedSongSearchQuery.trim().toLowerCase();
   const filteredSongs = normalizedSongSearchQuery
     ? songs.filter(song => {
       const songSearchText = `${song.title || ''} ${song.artist || ''}`.toLowerCase();
@@ -166,6 +175,24 @@ export default function PracticeSessionPage() {
     return `${mins}m`;
   };
 
+  const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  const renderHighlightedText = (text, query) => {
+    if (!query) return text;
+
+    const source = text || '';
+    const escapedQuery = escapeRegExp(query);
+    const regex = new RegExp(`(${escapedQuery})`, 'ig');
+    const parts = source.split(regex);
+    const normalizedQuery = query.toLowerCase();
+
+    return parts.map((part, idx) => (
+      part.toLowerCase() === normalizedQuery
+        ? <mark key={`${part}-${idx}`}>{part}</mark>
+        : <React.Fragment key={`${part}-${idx}`}>{part}</React.Fragment>
+    ));
+  };
+
   return (
     <div className="page-container">
       {/* Page Header */}
@@ -267,7 +294,15 @@ export default function PracticeSessionPage() {
                           }}
                           style={{ marginRight: '8px', cursor: 'pointer' }}
                         />
-                        <span style={{ fontSize: '0.9em' }}>{song.title} {song.artist ? `- ${song.artist}` : ''}</span>
+                        <span style={{ fontSize: '0.9em' }}>
+                          {renderHighlightedText(song.title || '', normalizedSongSearchQuery)}
+                          {song.artist ? (
+                            <>
+                              {' - '}
+                              {renderHighlightedText(song.artist, normalizedSongSearchQuery)}
+                            </>
+                          ) : ''}
+                        </span>
                       </label>
                     ))
                   )}
