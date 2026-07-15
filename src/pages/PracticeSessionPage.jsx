@@ -30,7 +30,16 @@ export default function PracticeSessionPage() {
     songs: [],
     notes: ''
   });
+  const [songSearchQuery, setSongSearchQuery] = useState('');
   const [formError, setFormError] = useState('');
+
+  const normalizedSongSearchQuery = songSearchQuery.trim().toLowerCase();
+  const filteredSongs = normalizedSongSearchQuery
+    ? songs.filter(song => {
+      const songSearchText = `${song.title || ''} ${song.artist || ''}`.toLowerCase();
+      return songSearchText.includes(normalizedSongSearchQuery);
+    })
+    : songs;
 
   // Helper: get userBandInfo for a bandId
   const getUserBandInfo = (bandId) => {
@@ -107,6 +116,7 @@ export default function PracticeSessionPage() {
       
       setShowForm(false);
       setEditSession(null);
+      setSongSearchQuery('');
       setFormData({
         bandId: '',
         date: new Date().toISOString().split('T')[0],
@@ -128,6 +138,7 @@ export default function PracticeSessionPage() {
       songs: session.songs || [],
       notes: session.notes || ''
     });
+    setSongSearchQuery('');
     setShowForm(true);
     setFormError('');
   };
@@ -174,6 +185,7 @@ export default function PracticeSessionPage() {
               songs: [],
               notes: ''
             });
+            setSongSearchQuery('');
             setFormError('');
           }}>
             <PlusIcon size={18} /> Buat Sesi
@@ -183,7 +195,7 @@ export default function PracticeSessionPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="modal-overlay" onClick={() => { setShowForm(false); setEditSession(null); }}>
+        <div className="modal-overlay" onClick={() => { setShowForm(false); setEditSession(null); setSongSearchQuery(''); }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>{editSession ? 'Edit Sesi Latihan' : 'Buat Sesi Latihan Baru'}</h2>
             <form onSubmit={handleSubmit} className="form-section">
@@ -226,11 +238,22 @@ export default function PracticeSessionPage() {
 
               <div>
                 <label className="form-label">Lagu yang Dilatih</label>
+                <input
+                  type="text"
+                  value={songSearchQuery}
+                  onChange={(e) => setSongSearchQuery(e.target.value)}
+                  className="modal-input"
+                  placeholder="Cari lagu atau artis..."
+                />
                 <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px', backgroundColor: 'var(--primary-bg)' }}>
                   {songs.length === 0 ? (
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.9em', padding: '8px' }}>Tidak ada lagu</div>
+                  ) : filteredSongs.length === 0 ? (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9em', padding: '8px' }}>
+                      Lagu tidak ditemukan
+                    </div>
                   ) : (
-                    songs.map(song => (
+                    filteredSongs.map(song => (
                       <label key={song.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', cursor: 'pointer' }}>
                         <input
                           type="checkbox"
@@ -268,7 +291,11 @@ export default function PracticeSessionPage() {
                 <button
                   type="button"
                   className="btn"
-                  onClick={() => { setShowForm(false); setEditSession(null); }}
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditSession(null);
+                    setSongSearchQuery('');
+                  }}
                 >
                   Batal
                 </button>
