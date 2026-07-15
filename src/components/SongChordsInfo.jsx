@@ -123,9 +123,9 @@ export default function SongChordsInfo({
             </div>
           )}
           <div className="song-info-item song-info-mastery-block">
-            <span className="song-info-label">✅ Penguasaan Personil</span>
+            <span className="song-info-label">✅ Yang Sudah</span>
             <span className="song-info-value song-info-mastery-count">
-              {Array.isArray(masteredBy) ? masteredBy.length : 0} personil
+              {Array.isArray(masteredBy) ? masteredBy.length : 0} orang
             </span>
             {masteredNames && (
               <p className="song-info-mastery-members">{masteredNames}</p>
@@ -135,17 +135,17 @@ export default function SongChordsInfo({
               className={`btn song-info-mastery-btn ${isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
               onClick={onToggleMastery}
               disabled={!canMarkMastery || masteryUpdating}
-              title={canMarkMastery ? 'Tandai status penguasaan lagu Anda' : 'Anda belum terdaftar sebagai member aktif band ini'}
+              title={canMarkMastery ? 'Tandai lagu ini sudah' : 'Anda belum bisa menandai lagu ini'}
             >
               {masteryUpdating
                 ? 'Menyimpan...'
                 : (canMarkMastery
-                  ? (isMasteredByCurrentUser ? 'Sudah Dikuasai' : 'Saya Kuasai')
+                  ? (isMasteredByCurrentUser ? 'Sudah' : 'Belum')
                   : 'Belum Bisa Tandai')}
             </button>
             {!canMarkMastery && (
               <p className="song-info-mastery-note">
-                Tombol aktif saat akun Anda memiliki akses menandai lagu.
+                Tombol aktif saat Anda bisa menandai lagu.
               </p>
             )}
           </div>

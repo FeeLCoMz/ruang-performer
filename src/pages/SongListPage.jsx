@@ -461,7 +461,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               ✍️ {song.contributorName || song.contributorUsername || '-'}
             </span>
             <span className="song-mastery-summary">
-              ✅ Dikuasai: {Array.isArray(song.masteredBy) ? song.masteredBy.length : 0}
+              ✅ Sudah: {Array.isArray(song.masteredBy) ? song.masteredBy.length : 0}
               {Array.isArray(song.masteredBy) && song.masteredBy.length > 0
                 ? ` (${song.masteredBy.map((entry) => entry.username || '-').join(', ')})`
                 : ''}
@@ -503,7 +503,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
             <button
               className={`btn ${song.isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
               title={song.canMarkMastery
-                ? (song.isMasteredByCurrentUser ? 'Batalkan status sudah dikuasai' : 'Tandai lagu ini sudah dikuasai')
+                ? (song.isMasteredByCurrentUser ? 'Batalkan status sudah' : 'Tandai lagu ini sudah')
                 : 'Anda belum bisa menandai lagu ini'}
               onClick={(e) => handleToggleMastery(song, e)}
               disabled={!song.canMarkMastery || updatingMasterySongId === song.id}
@@ -511,7 +511,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               {updatingMasterySongId === song.id
                 ? 'Menyimpan...'
                 : (song.canMarkMastery
-                  ? (song.isMasteredByCurrentUser ? 'Sudah Dikuasai' : 'Saya Kuasai')
+                  ? (song.isMasteredByCurrentUser ? 'Sudah' : 'Belum')
                   : 'Belum Bisa Tandai')}
             </button>
           }
