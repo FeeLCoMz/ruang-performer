@@ -12,11 +12,30 @@ import { fetchSetLists } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
+import { List as VirtualList } from 'react-window';
+
+function VirtualSongRow({ index, style, ariaAttributes, songs, renderSongItem }) {
+  const song = songs[index];
+  if (!song) return null;
+
+  return (
+    <div
+      style={{ ...style, boxSizing: 'border-box', paddingBottom: '8px' }}
+      {...ariaAttributes}
+    >
+      {renderSongItem(song, {
+        height: '100%',
+        margin: 0,
+      })}
+    </div>
+  );
+}
 
 export default function SongListPage({ songs, loading, error, onSongClick, performanceMode = false }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id;
+  const pageSize = performanceMode ? 120 : 60;
   // Restore state from localStorage
   const getPersistedState = () => {
     try {
@@ -28,6 +47,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
   };
   const persisted = getPersistedState();
   const [search, setSearch] = useState(persisted.search || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(persisted.search || '');
   const [setlists, setSetlists] = useState([]);
   const [setlistsLoading, setSetlistsLoading] = useState(true);
   const [filterArtist, setFilterArtist] = useState(persisted.filterArtist || 'all');
@@ -40,7 +60,34 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
   const [metronomeSongId, setMetronomeSongId] = useState(null);
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
   const [activeVideoSong, setActiveVideoSong] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(pageSize);
+  const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768;
+  });
   const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const onResize = () => {
+      setIsNarrowViewport(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setVisibleCount(pageSize);
+  }, [pageSize]);
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -98,8 +145,8 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
     let result = [...songs];
 
     // Apply search
-    if (search.trim()) {
-      const searchLower = search.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const searchLower = debouncedSearch.toLowerCase();
       result = result.filter(song =>
         song.title?.toLowerCase().includes(searchLower) ||
         song.artist?.toLowerCase().includes(searchLower) ||
@@ -167,7 +214,11 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
     });
 
     return result;
-  }, [songs, search, filterArtist, filterKey, filterGenre, filterSetlist, setlists, sortBy, sortOrder]);
+  }, [songs, debouncedSearch, filterArtist, filterKey, filterGenre, filterSetlist, setlists, sortBy, sortOrder]);
+
+  useEffect(() => {
+    setVisibleCount(pageSize);
+  }, [debouncedSearch, filterArtist, filterKey, filterGenre, filterSetlist, sortBy, sortOrder, pageSize]);
 
   const handleClearFilters = () => {
     setSearch('');
@@ -180,6 +231,73 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
   };
 
   const hasActiveFilters = search || filterArtist !== 'all' || filterKey !== 'all' || filterGenre !== 'all' || filterSetlist !== 'all';
+
+  // Optimized: Build a map of songId -> count of setlists using it
+  const songSetlistCountMap = useMemo(() => {
+    const map = {};
+    if (Array.isArray(setlists)) {
+      setlists.forEach(sl => {
+        if (Array.isArray(sl.songs)) {
+          sl.songs.forEach(songId => {
+            map[songId] = (map[songId] || 0) + 1;
+          });
+        }
+      });
+    }
+    return map;
+  }, [setlists]);
+
+  // Helper: get count from map
+  function getSetlistCount(songId) {
+    return songSetlistCountMap[songId] || 0;
+  }
+
+  const permissionsBySongId = useMemo(() => {
+    const map = {};
+    filteredSongs.forEach((song) => {
+      if (!song?.id) return;
+
+      let canEdit = false;
+      let canDelete = false;
+      let canDuplicate = false;
+
+      if (song.userId) {
+        canEdit = canPerformAction(
+          user,
+          song.bandId || null,
+          { role: user?.role || 'member', bandId: song.bandId || null },
+          PERMISSIONS.SONG_EDIT
+        ) || song.userId === currentUserId;
+
+        canDuplicate = canPerformAction(
+          user,
+          song.bandId || null,
+          { role: user?.role || 'member', bandId: song.bandId || null },
+          PERMISSIONS.SONG_CREATE
+        ) || canEdit;
+
+        const isContributor = song.userId === currentUserId;
+        const notInAnySetlist = getSetlistCount(song.id) === 0;
+        canDelete = (
+          canPerformAction(
+            user,
+            song.bandId || null,
+            { role: user?.role || 'member', bandId: song.bandId || null },
+            PERMISSIONS.SONG_DELETE
+          ) && isContributor
+        ) || (isContributor && notInAnySetlist);
+      }
+
+      map[song.id] = { canEdit, canDelete, canDuplicate };
+    });
+    return map;
+  }, [filteredSongs, user, currentUserId, songSetlistCountMap]);
+
+  const visibleSongs = useMemo(() => {
+    return filteredSongs.slice(0, visibleCount);
+  }, [filteredSongs, visibleCount]);
+
+  const hiddenSongsCount = Math.max(filteredSongs.length - visibleSongs.length, 0);
 
   if (loading) {
     return (
@@ -201,27 +319,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
         <div className="error-text">{error}</div>
       </div>
     );
-  }
-
-
-  // Optimized: Build a map of songId -> count of setlists using it
-  const songSetlistCountMap = useMemo(() => {
-    const map = {};
-    if (Array.isArray(setlists)) {
-      setlists.forEach(sl => {
-        if (Array.isArray(sl.songs)) {
-          sl.songs.forEach(songId => {
-            map[songId] = (map[songId] || 0) + 1;
-          });
-        }
-      });
-    }
-    return map;
-  }, [setlists]);
-
-  // Helper: get count from map
-  function getSetlistCount(songId) {
-    return songSetlistCountMap[songId] || 0;
   }
 
   function hasYouTubeVideo(song) {
@@ -311,13 +408,119 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
 
   const activeVideoTempo = resolveTempo(activeVideoSong);
 
+  const shouldVirtualize = filteredSongs.length >= (performanceMode ? 120 : 180);
+  const virtualRowHeight = isNarrowViewport
+    ? (performanceMode ? 210 : 230)
+    : (performanceMode ? 136 : 156);
+  const displayedSongCount = shouldVirtualize ? filteredSongs.length : visibleSongs.length;
+
+  function renderSongItem(song, style) {
+    return (
+      <div
+        key={song.id}
+        className={`song-item${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
+        onClick={() => navigate(`/songs/view/${song.id}`)}
+        style={style}
+      >
+        <div className="song-info">
+          <h3 className="song-title">
+            {song.title}
+            {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
+          </h3>
+          <div className="song-meta">
+            {song.artist && <span>👤 {song.artist}</span>}
+            {song.key && <span>🎹 {song.key}</span>}
+            {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
+            {song.genre && <span>🎸 {song.genre}</span>}
+            <span style={{ color: 'var(--primary-accent)', marginLeft: 8, fontSize: '0.95em' }}>
+              {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
+            </span>
+            <span style={{ color: 'var(--text-secondary)', marginLeft: 8, fontSize: '0.95em' }}>
+              ✍️ {song.contributorName || song.contributorUsername || '-'}
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="song-actions"
+          onClick={(e) => e.stopPropagation()}
+          style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
+        >
+          <button
+            className="btn btn-secondary song-action-mini"
+            title="Play metronom"
+            aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
+            onClick={(e) => handleToggleMetronome(song, e)}
+          >
+            {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
+          </button>
+          {hasYouTubeVideo(song) && (
+            <button
+              className="btn btn-secondary song-action-mini"
+              title="Play video"
+              aria-label="Play video"
+              onClick={(e) => handlePlayVideo(song, e)}
+            >
+              🎬
+            </button>
+          )}
+          <button
+            className="btn btn-secondary"
+            title="Lihat Karaoke"
+            onClick={() => navigate(`/karaoke/${song.id}`)}
+          >
+            Lirik
+          </button>
+          {!performanceMode && (() => {
+            const permission = permissionsBySongId[song.id] || {};
+            const canEdit = Boolean(permission.canEdit);
+            const canDelete = Boolean(permission.canDelete);
+            const canDuplicate = Boolean(permission.canDuplicate);
+            if (!canEdit && !canDelete && !canDuplicate) return null;
+            return (
+              <>
+                {canDuplicate && (
+                  <button
+                    onClick={() => onSongClick('newVersion', song.id)}
+                    className="btn btn-secondary"
+                    title="Buat versi baru"
+                  >
+                    Versi Baru
+                  </button>
+                )}
+                {canEdit && (
+                  <button
+                    onClick={() => onSongClick('edit', song.id)}
+                    className="btn"
+                    title="Edit"
+                  >
+                    <EditIcon size={16} />
+                  </button>
+                )}
+                {canDelete && (
+                  <button
+                    onClick={() => onSongClick('delete', song.id)}
+                    className="btn btn-red"
+                    title="Hapus"
+                  >
+                    <DeleteIcon size={16} />
+                  </button>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}>  
       {/* Page Header */}
       <div className="page-header">
         <div>
           <h1>🎵 Lagu Saya</h1>
-          <p>{filteredSongs.length} dari {songs.length} lagu</p>
+          <p>{displayedSongCount} ditampilkan dari {filteredSongs.length} hasil ({songs.length} total)</p>
         </div>
         {!performanceMode && (
           <button className="btn" onClick={() => onSongClick('add')}>
@@ -511,132 +714,35 @@ export default function SongListPage({ songs, loading, error, onSongClick, perfo
           )}
         </div>
       ) : (
-        <div className="song-list-container">
-          {filteredSongs.map(song => (
-            <div
-              key={song.id}
-              className={`song-item${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
-              onClick={() => navigate(`/songs/view/${song.id}`)}
-            >
-              {/* Song Info */}
-              <div className="song-info">
-                <h3 className="song-title">
-                  {song.title}
-                  {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
-                </h3>
-                <div className="song-meta">
-                  {song.artist && <span>👤 {song.artist}</span>}
-                  {song.key && <span>🎹 {song.key}</span>}
-                  {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
-                  {song.genre && <span>🎸 {song.genre}</span>}
-                  <span style={{ color: 'var(--primary-accent)', marginLeft: 8, fontSize: '0.95em' }}>
-                    {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
-                  </span>
-                  {/* Nama kontributor */}
-                  <span style={{ color: 'var(--text-secondary)', marginLeft: 8, fontSize: '0.95em' }}>
-                    ✍️ {song.contributorName || song.contributorUsername || '-'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div
-                className="song-actions"
-                onClick={(e) => e.stopPropagation()}
-                style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
-              >
-                <button
-                  className="btn btn-secondary song-action-mini"
-                  title="Play metronom"
-                  aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
-                  onClick={(e) => handleToggleMetronome(song, e)}
-                >
-                  {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
-                </button>
-                {hasYouTubeVideo(song) && (
-                  <button
-                    className="btn btn-secondary song-action-mini"
-                    title="Play video"
-                    aria-label="Play video"
-                    onClick={(e) => handlePlayVideo(song, e)}
-                  >
-                    🎬
-                  </button>
-                )}
-                <button
-                  className="btn btn-secondary"                  
-                  title="Lihat Karaoke"
-                  onClick={() => navigate(`/karaoke/${song.id}`)}
-                >
-                  Lirik
-                </button>
-                {!performanceMode && (() => {
-                  // Permission logic: allow edit/delete if user is creator OR has global permission
-                  let canEdit = false;
-                  let canDelete = false;
-                  let canDuplicate = false;
-                  if (song.userId) {
-                    canEdit = canPerformAction(
-                      user,
-                      song.bandId || null,
-                      { role: user?.role || 'member', bandId: song.bandId || null },
-                      PERMISSIONS.SONG_EDIT
-                    ) || song.userId === currentUserId;
-                    canDuplicate = canPerformAction(
-                      user,
-                      song.bandId || null,
-                      { role: user?.role || 'member', bandId: song.bandId || null },
-                      PERMISSIONS.SONG_CREATE
-                    ) || canEdit;
-                    // Allow delete if user has permission OR is the contributor and song is not in any setlist
-                    const isContributor = song.userId === currentUserId;
-                    const notInAnySetlist = getSetlistCount(song.id) === 0;
-                    canDelete = (
-                      canPerformAction(
-                        user,
-                        song.bandId || null,
-                        { role: user?.role || 'member', bandId: song.bandId || null },
-                        PERMISSIONS.SONG_DELETE
-                      ) && isContributor
-                    ) || (isContributor && notInAnySetlist);
-                  }
-                  if (!canEdit && !canDelete && !canDuplicate) return null;
-                  return (
-                    <>
-                      {canDuplicate && (
-                        <button
-                          onClick={() => onSongClick('newVersion', song.id)}
-                          className="btn btn-secondary"
-                          title="Buat versi baru"
-                        >
-                          Versi Baru
-                        </button>
-                      )}
-                      {canEdit && (
-                        <button
-                          onClick={() => onSongClick('edit', song.id)}
-                          className="btn"                          
-                          title="Edit"
-                        >
-                          <EditIcon size={16} />
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button
-                          onClick={() => onSongClick('delete', song.id)}
-                          className="btn btn-red"
-                          title="Hapus"
-                        >
-                          <DeleteIcon size={16} />
-                        </button>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
+        <>
+          {shouldVirtualize ? (
+            <div className="song-list-virtual-shell">
+              <VirtualList
+                className="song-list-container song-list-virtualized"
+                rowComponent={VirtualSongRow}
+                rowCount={filteredSongs.length}
+                rowHeight={virtualRowHeight}
+                rowProps={{ songs: filteredSongs, renderSongItem }}
+                overscanCount={6}
+                style={{ height: 'min(68vh, 760px)', width: '100%' }}
+              />
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="song-list-container">
+              {visibleSongs.map(song => renderSongItem(song))}
+            </div>
+          )}
+          {!shouldVirtualize && hiddenSongsCount > 0 && (
+            <div className="song-list-load-more">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setVisibleCount(prev => prev + pageSize)}
+              >
+                Muat lebih banyak ({hiddenSongsCount} lagu lagi)
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

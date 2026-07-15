@@ -2368,6 +2368,23 @@ body.dark-mode .lyrics-editor-textarea {
   gap: var(--spacing-sm);
 }
 
+.song-list-load-more {
+  margin-top: var(--spacing-md);
+  display: flex;
+  justify-content: center;
+}
+
+.song-list-virtual-shell {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--primary-bg);
+  padding: var(--spacing-sm);
+}
+
+.song-list-virtualized {
+  scrollbar-gutter: stable;
+}
+
 .setlist-session-divider {
   display: flex;
   align-items: center;

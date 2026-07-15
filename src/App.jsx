@@ -83,7 +83,6 @@ function AppContent() {
   const [createSetlistError, setCreateSetlistError] = useState("");
   const [songs, setSongs] = useState([]);
   const [setlists, setSetlists] = useState([]);
-  const [search, setSearch] = useState("");
   const [loadingSongs, setLoadingSongs] = useState(true);
   const [loadingSetlists, setLoadingSetlists] = useState(false);
   const [errorSongs, setErrorSongs] = useState(null);
@@ -193,12 +192,6 @@ function AppContent() {
       (song.artist || "").toLowerCase().includes(addSongSearch.toLowerCase()),
   );
 
-  const filteredSongs = songs.filter(
-    (song) =>
-      (song.title || "").toLowerCase().includes(search.toLowerCase()) ||
-      (song.artist || "").toLowerCase().includes(search.toLowerCase()),
-  );
-
   return (
     <ErrorBoundary>
       <>
@@ -257,11 +250,9 @@ function AppContent() {
                     <div className="error-text">{errorSongs}</div>
                   ) : (
                     <SongListPage
-                      songs={filteredSongs}
+                      songs={songs}
                       loading={loadingSongs}
                       error={errorSongs}
-                      search={search}
-                      setSearch={setSearch}
                       performanceMode={performanceMode}
                       onSongClick={(action, id) => {
                         const from = location.pathname;
