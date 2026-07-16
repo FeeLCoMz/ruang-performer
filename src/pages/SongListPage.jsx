@@ -409,7 +409,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
 
   const activeVideoTempo = resolveTempo(activeVideoSong);
 
-  const shouldVirtualize = filteredSongs.length >= (performanceMode ? 120 : 180);
+  const shouldVirtualize = !isNarrowViewport && filteredSongs.length >= (performanceMode ? 120 : 180);
   const virtualRowHeight = isNarrowViewport
     ? (performanceMode ? 210 : 230)
     : (performanceMode ? 136 : 156);
