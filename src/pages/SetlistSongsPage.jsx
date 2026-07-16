@@ -94,7 +94,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // State untuk merge dari setlist lain
   const [showMergeSetlistModal, setShowMergeSetlistModal] = useState(false);
   const [mergeSetlistSearch, setMergeSetlistSearch] = useState('');
-  const [mergeSourceSetlistId, setMergeSourceSetlistId] = useState('');
+  const [mergeSourceSetlistIds, setMergeSourceSetlistIds] = useState([]);
   const [mergeSetlistError, setMergeSetlistError] = useState('');
   const [isMergingSetlist, setIsMergingSetlist] = useState(false);
 
@@ -654,47 +654,66 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   function openMergeSetlistModal() {
     setMergeSetlistError('');
     setMergeSetlistSearch('');
-    setMergeSourceSetlistId('');
+    setMergeSourceSetlistIds([]);
     setShowMergeSetlistModal(true);
   }
 
   async function handleMergeFromSetlist() {
     if (!canEdit) return;
-    if (!mergeSourceSetlistId) {
-      setMergeSetlistError('Pilih setlist sumber terlebih dahulu');
+    if (!mergeSourceSetlistIds.length) {
+      setMergeSetlistError('Pilih minimal satu setlist sumber terlebih dahulu');
       return;
     }
 
-    const sourceSetlist = Array.isArray(setlists)
-      ? setlists.find((item) => String(item.id) === String(mergeSourceSetlistId))
-      : null;
+    const sourceSetlists = Array.isArray(setlists)
+      ? mergeSourceSetlistIds
+        .map((sourceId) => setlists.find((item) => String(item.id) === String(sourceId)))
+        .filter(Boolean)
+      : [];
 
-    if (!sourceSetlist) {
+    if (sourceSetlists.length === 0) {
       setMergeSetlistError('Setlist sumber tidak ditemukan');
       return;
     }
 
-    const sourceSongs = Array.isArray(sourceSetlist.songs) ? sourceSetlist.songs : [];
-    if (sourceSongs.length === 0) {
-      setMergeSetlistError('Setlist sumber tidak memiliki lagu untuk digabungkan');
-      return;
-    }
-
     const availableSongIds = new Set((songs || []).map((song) => song.id));
-    const validSourceSongs = sourceSongs.filter((songId) => availableSongIds.has(songId));
-
-    if (validSourceSongs.length === 0) {
-      setMergeSetlistError('Semua lagu di setlist sumber sudah tidak tersedia');
-      return;
-    }
 
     setIsMergingSetlist(true);
     setMergeSetlistError('');
 
     const currentOrder = Array.isArray(localOrder) ? localOrder : [];
     const currentSongIdSet = new Set(currentOrder);
+    const currentMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
+      ? { ...setlist.setlistSongMeta }
+      : {};
+    const mergedMeta = { ...currentMeta };
+    const mergedSourceSongs = [];
 
-    const combined = [...currentOrder, ...validSourceSongs];
+    for (const sourceSetlist of sourceSetlists) {
+      const sourceSongs = Array.isArray(sourceSetlist.songs) ? sourceSetlist.songs : [];
+      const sourceMeta = typeof sourceSetlist?.setlistSongMeta === 'object' && !Array.isArray(sourceSetlist.setlistSongMeta)
+        ? sourceSetlist.setlistSongMeta
+        : {};
+
+      for (const songId of sourceSongs) {
+        if (!availableSongIds.has(songId)) continue;
+        mergedSourceSongs.push(songId);
+
+        if (currentSongIdSet.has(songId) || mergedMeta[songId] || !sourceMeta[songId] || typeof sourceMeta[songId] !== 'object') {
+          continue;
+        }
+
+        mergedMeta[songId] = { ...sourceMeta[songId] };
+      }
+    }
+
+    if (mergedSourceSongs.length === 0) {
+      setMergeSetlistError('Setlist sumber yang dipilih tidak memiliki lagu tersedia untuk digabungkan');
+      setIsMergingSetlist(false);
+      return;
+    }
+
+    const combined = [...currentOrder, ...mergedSourceSongs];
     const seen = new Set();
     const deduped = [];
     for (const songId of combined) {
@@ -704,28 +723,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       }
     }
 
-    const currentMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
-      ? { ...setlist.setlistSongMeta }
-      : {};
-    const sourceMeta = typeof sourceSetlist?.setlistSongMeta === 'object' && !Array.isArray(sourceSetlist.setlistSongMeta)
-      ? sourceSetlist.setlistSongMeta
-      : {};
-
-    const mergedMeta = { ...currentMeta };
-
-    // Hanya copy meta untuk lagu yang benar-benar baru di setlist aktif.
-    for (const songId of validSourceSongs) {
-      if (currentSongIdSet.has(songId)) continue;
-      if (sourceMeta[songId] && typeof sourceMeta[songId] === 'object') {
-        mergedMeta[songId] = { ...sourceMeta[songId] };
-      }
-    }
-
     try {
       await persistSetlistSongs(deduped, mergedMeta);
       setShowMergeSetlistModal(false);
       setMergeSetlistSearch('');
-      setMergeSourceSetlistId('');
+      setMergeSourceSetlistIds([]);
     } catch (e) {
       setMergeSetlistError(e.message || 'Gagal merge lagu dari setlist lain');
     } finally {
@@ -1889,7 +1891,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           >
             <div className="modal-title">Merge Lagu dari Setlist Lain</div>
             <div className="modal-message" style={{ marginBottom: 10 }}>
-              Lagu dari setlist sumber akan ditambahkan ke setlist ini tanpa duplikasi. Metadata lagu untuk lagu baru juga ikut disalin.
+              Pilih satu atau beberapa setlist sumber. Lagu akan ditambahkan ke setlist ini tanpa duplikasi, dan metadata lagu baru juga ikut disalin.
             </div>
 
             <input
@@ -1908,30 +1910,41 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               )}
               {mergeCandidateSetlists.map((source) => {
                 const sourceSongCount = Array.isArray(source.songs) ? source.songs.length : 0;
+                const isSelected = mergeSourceSetlistIds.includes(source.id);
                 return (
                   <li
                     key={source.id}
                     className={
-                      'song-list-item pointer' + (String(mergeSourceSetlistId) === String(source.id) ? ' selected' : '')
+                      'song-list-item pointer' + (isSelected ? ' selected' : '')
                     }
-                    onClick={() => setMergeSourceSetlistId(source.id)}
-                    style={String(mergeSourceSetlistId) === String(source.id) ? { background: 'var(--primary-accent, #e0e7ff)' } : undefined}
+                    onClick={() => {
+                      setMergeSourceSetlistIds((ids) => ids.includes(source.id)
+                        ? ids.filter((id) => id !== source.id)
+                        : [...ids, source.id]);
+                    }}
+                    style={isSelected ? { background: 'var(--primary-accent, #e0e7ff)' } : undefined}
                   >
                     <span style={{ fontWeight: 700, color: 'var(--text-primary, #3730a3)' }}>{source.name}</span>
                     <span style={{ color: 'var(--text-muted, #888)', marginLeft: 8 }}>
                       {source.bandName ? `${source.bandName} • ` : ''}{sourceSongCount} lagu
                     </span>
-                    {String(mergeSourceSetlistId) === String(source.id) && <span style={{ marginLeft: 8 }}>✔️</span>}
+                    {isSelected && <span style={{ marginLeft: 8 }}>✔️</span>}
                   </li>
                 );
               })}
             </ul>
 
+            {mergeSourceSetlistIds.length > 0 && (
+              <div className="smart-plan-note" style={{ marginBottom: 8 }}>
+                {mergeSourceSetlistIds.length} setlist dipilih untuk digabungkan.
+              </div>
+            )}
+
             {mergeSetlistError && <div className="error-text" style={{ marginBottom: 8 }}>{mergeSetlistError}</div>}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              <button className="btn btn-primary" disabled={isMergingSetlist || !mergeSourceSetlistId} onClick={handleMergeFromSetlist}>
-                {isMergingSetlist ? 'Menggabungkan...' : 'Merge Lagu'}
+              <button className="btn btn-primary" disabled={isMergingSetlist || !mergeSourceSetlistIds.length} onClick={handleMergeFromSetlist}>
+                {isMergingSetlist ? 'Menggabungkan...' : `Merge Lagu${mergeSourceSetlistIds.length ? ` (${mergeSourceSetlistIds.length})` : ''}`}
               </button>
               <button className="btn" onClick={() => setShowMergeSetlistModal(false)} disabled={isMergingSetlist}>Batal</button>
             </div>
