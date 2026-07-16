@@ -42,17 +42,17 @@ export default function TimeMarkers({
   };
 
   const [playingMarker, setPlayingMarker] = useState(null);
-  const handleTogglePlay = (timestamp) => {
-    if (playingMarker === timestamp) {
-      setPlayingMarker(null);
-      if (onSeek && typeof onSeek === 'function') {
-        onSeek(null, { pause: true });
-      }
-    } else {
-      setPlayingMarker(timestamp);
-      if (onSeek && typeof onSeek === 'function') {
-        onSeek(timestamp);
-      }
+  const handleSeekMarker = (timestamp) => {
+    setPlayingMarker(timestamp);
+    if (onSeek && typeof onSeek === 'function') {
+      onSeek(timestamp);
+    }
+  };
+
+  const handlePauseMarker = () => {
+    setPlayingMarker(null);
+    if (onSeek && typeof onSeek === 'function') {
+      onSeek(null, { pause: true });
     }
   };
 
@@ -127,51 +127,48 @@ export default function TimeMarkers({
   };
 
   const sortedMarkers = [...timeMarkers].sort((a, b) => a.time - b.time);
+  const isCompactReadonly = readonly;
 
   return (
     <div className="time-markers">
-      {/* Header */}
-      <div className="time-markers-header">
-        <span className="time-markers-title">⏲️ Time Markers</span>
-        {sortedMarkers.length > 0 && (
-          <span className="time-markers-badge">{sortedMarkers.length}</span>
-        )}
-        {duration > 0 && (
-          <span className="time-markers-time">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
-        )}
-      </div>
       <div className="time-markers-content">
-        {/* Add New Marker (moved above list) */}
+        {duration > 0 && (
+          <div className="time-markers-progress">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </div>
+        )}
+
+        {sortedMarkers.length > 0 && (
+          <div className="time-markers-hint" aria-live="polite">
+            <span className="time-markers-hint-desktop">Klik marker untuk seek. Double-click untuk pause.</span>
+            <span className="time-markers-hint-mobile">Tap: seek | 2x tap: pause</span>
+          </div>
+        )}
+
         {!readonly && (
-          <div className="time-marker-add" style={{ marginBottom: '16px' }}>
-            <div className="time-marker-add-title">
-              ➕ Tambah Timestamp Baru
-            </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div className="time-marker-add">
+            <div className="time-marker-add-row">
               <input
                 type="text"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
-                placeholder="mm:ss (contoh: 1:30)"
+                placeholder="mm:ss"
                 className="time-marker-input"
-                style={{ flex: 1 }}
               />
               <button
                 type="button"
                 title="Ambil waktu dari YouTube"
                 onClick={handleFillNewTimeFromYouTube}
                 className="btn btn-secondary"
-                >
-                 <span role="img" aria-label="Ambil waktu dari YouTube">⏱️</span>
-               </button>
+              >
+                ⏱️
+              </button>
             </div>
             <input
               type="text"
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
-              placeholder="Label (opsional)"
+              placeholder="Label"
               className="time-marker-input"
             />
             <button
@@ -180,17 +177,19 @@ export default function TimeMarkers({
               disabled={!newTime}
               className="btn"
             >
-              ➕ Tambah Timestamp
+              Tambah Timestamp
             </button>
           </div>
         )}
 
-        {/* Marker List */}
         {sortedMarkers.length > 0 ? (
-          <div className="time-markers-list">
+          <div className={`time-markers-list ${isCompactReadonly ? 'time-markers-list-compact' : ''}`}>
             {sortedMarkers.map((marker, idx) => {
               const markerId = marker.id || marker.time;
               const isEditing = editingId === markerId;
+              const defaultLabel = `Marker ${idx + 1}`;
+              const markerLabel = marker.label || defaultLabel;
+              const showLabel = !isCompactReadonly || markerLabel !== defaultLabel;
 
               if (isEditing) {
                 return (
@@ -198,23 +197,22 @@ export default function TimeMarkers({
                     key={markerId}
                     className="time-marker-item time-marker-item-editing"
                   >
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div className="time-marker-add-row">
                       <input
                         type="text"
                         value={editTime}
                         onChange={(e) => setEditTime(e.target.value)}
                         placeholder="mm:ss"
                         className="time-marker-input"
-                        style={{ flex: 1 }}
                       />
                       <button
                         type="button"
                         title="Ambil waktu dari YouTube"
                         onClick={handleFillEditTimeFromYouTube}
                         className="btn btn-secondary"
-                        >
-                         <span role="img" aria-label="Ambil waktu dari YouTube">⏱️</span>
-                       </button>
+                      >
+                        ⏱️
+                      </button>
                     </div>
                     <input
                       type="text"
@@ -246,19 +244,26 @@ export default function TimeMarkers({
               return (
                 <div
                   key={markerId}
-                  className="time-marker-item"
+                  className={`time-marker-item ${isCompactReadonly ? 'time-marker-item-readonly' : ''}`}
                 >
                   <button
                     type="button"
-                    onClick={() => handleTogglePlay(marker.time)}
-                    className="btn"
-                    style={{ minWidth: 60 }}
+                    onClick={() => handleSeekMarker(marker.time)}
+                    onDoubleClick={handlePauseMarker}
+                    className="btn btn-secondary time-marker-play-btn"
+                    aria-label={`Seek marker ${formatTime(marker.time)}. Double-click to pause.`}
+                    title="Seek | Double-click pause"
                   >
-                    {playingMarker === marker.time ? '⏸️ Pause' : '▶️ Play'} {formatTime(marker.time)}
+                    {playingMarker === marker.time ? '⏸️' : '▶️'}
                   </button>
-                  <div className="time-marker-label">
-                    {marker.label || `Marker ${idx + 1}`}
+                  <div className="time-marker-time">
+                    {formatTime(marker.time)}
                   </div>
+                  {showLabel && (
+                    <div className="time-marker-label">
+                      {markerLabel}
+                    </div>
+                  )}
                   {!readonly && (
                     <div className="time-marker-actions">
                       <button

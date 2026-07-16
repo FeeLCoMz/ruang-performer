@@ -133,9 +133,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // Media panel collapse state (default: collapsed)
   const [mediaPanelExpanded, setMediaPanelExpanded] = useState(false);
 
-  // State untuk menampilkan/menyembunyikan time marker panel (default: hidden)
-  const [showTimeMarkers, setShowTimeMarkers] = useState(false);
-
   // Metronome state for quick access
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, tempo);
   const audioContextRef = useRef(null); // (optional: can be removed if not used elsewhere)
@@ -586,8 +583,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         youtubeId={youtubeId}
         youtubeRef={youtubeRef}
         timeMarkers={timeMarkers}
-        showTimeMarkers={showTimeMarkers}
-        setShowTimeMarkers={setShowTimeMarkers}
         performanceMode={performanceMode}
         canEdit={can(PERMISSIONS.SONG_EDIT)}
         handleTimeMarkerUpdate={handleTimeMarkerUpdate}

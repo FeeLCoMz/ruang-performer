@@ -13,14 +13,13 @@ export default function SongChordsMediaPanel({
   youtubeId,
   youtubeRef,
   timeMarkers,
-  showTimeMarkers,
-  setShowTimeMarkers,
   performanceMode,
   canEdit,
   handleTimeMarkerUpdate,
 }) {
   const [ytCurrentTime, setYtCurrentTime] = useState(0);
   const [ytDuration, setYtDuration] = useState(0);
+  const hasYouTube = Boolean(youtubeId);
 
   return (
     <div className="song-panel">
@@ -35,7 +34,10 @@ export default function SongChordsMediaPanel({
           />
         </div>
       </div>
-      <div className="media-panel-content media-panel-grid" style={{ display: mediaPanelExpanded ? 'grid' : 'none' }}>
+      <div
+        className={`media-panel-content media-panel-grid ${hasYouTube ? '' : 'media-panel-grid-single'}`}
+        style={{ display: mediaPanelExpanded ? 'grid' : 'none' }}
+      >
         {/* YouTube Video Section - Left */}
         <div className="media-section media-video-section">
           <div className="media-section-header">
@@ -43,7 +45,7 @@ export default function SongChordsMediaPanel({
             <span className="media-section-label">YouTube Video</span>
           </div>
           <div className="media-section-body">
-            {youtubeId ? (
+            {hasYouTube ? (
               <YouTubeViewer
                 ref={youtubeRef}
                 videoId={youtubeId}
@@ -64,25 +66,15 @@ export default function SongChordsMediaPanel({
           </div>
         </div>
         {/* Time Markers Section - Right */}
-        <div className="media-section media-markers-section">
-          <div className="media-section-header media-section-header-flex">
-            <div>
+        {hasYouTube && (
+          <div className="media-section media-markers-section">
+            <div className="media-section-header">
               <span className="media-section-icon">⏱️</span>
               <span className="media-section-label">Time Markers</span>
               {timeMarkers.length > 0 && (
                 <span className="media-section-badge">{timeMarkers.length}</span>
               )}
             </div>
-            <ExpandButton
-              isExpanded={showTimeMarkers}
-              setIsExpanded={setShowTimeMarkers}
-              icon="⏱️"
-              label="Time Marker"
-              badge={timeMarkers.length > 0 ? timeMarkers.length : null}
-              ariaLabel={showTimeMarkers ? "Sembunyikan time marker" : "Tampilkan time marker"}
-            />
-          </div>
-          {showTimeMarkers && (
             <div className="media-section-body">
               <TimeMarkers
                 timeMarkers={timeMarkers}
@@ -116,8 +108,8 @@ export default function SongChordsMediaPanel({
                 }}
               />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
