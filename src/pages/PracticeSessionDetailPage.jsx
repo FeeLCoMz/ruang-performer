@@ -8,6 +8,7 @@ export default function PracticeSessionDetailPage() {
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [songs, setSongs] = useState([]);
+  const [setlists, setSetlists] = useState([]);
   const [bands, setBands] = useState([]);
   const [songSearch, setSongSearch] = useState('');
   const [addSongSearch, setAddSongSearch] = useState('');
@@ -38,10 +39,11 @@ export default function PracticeSessionDetailPage() {
     (async () => {
       setLoading(true);
       try {
-        const [sessionData, songsData, bandsData] = await Promise.all([
+        const [sessionData, songsData, bandsData, setlistsData] = await Promise.all([
           apiClient.fetchPracticeSessionById(id),
           apiClient.fetchSongs(),
           apiClient.fetchBands(),
+          apiClient.fetchSetLists(),
         ]);
         const normalizedSongIds = Array.isArray(sessionData?.songs)
           ? sessionData.songs.map((songId) => String(songId))
@@ -55,10 +57,12 @@ export default function PracticeSessionDetailPage() {
         setSession(normalizedSession);
         setSongs(Array.isArray(songsData) ? songsData : []);
         setBands(Array.isArray(bandsData) ? bandsData : []);
+        setSetlists(Array.isArray(setlistsData) ? setlistsData : []);
         setError('');
       } catch (err) {
         setSession(null);
         setSongs([]);
+        setSetlists([]);
         setBands([]);
         setError(err?.message || 'Gagal memuat detail sesi latihan');
       }
@@ -230,6 +234,18 @@ export default function PracticeSessionDetailPage() {
     return map;
   }, [session?.songs]);
 
+  const songSetlistCountMap = useMemo(() => {
+    const map = {};
+    (setlists || []).forEach((setlist) => {
+      if (!Array.isArray(setlist?.songs)) return;
+      setlist.songs.forEach((songId) => {
+        const key = String(songId);
+        map[key] = (map[key] || 0) + 1;
+      });
+    });
+    return map;
+  }, [setlists]);
+
   const songExists = (songId) => songs.some((item) => String(item.id) === String(songId));
 
   if (loading) return <div className="page-container"><span className="loading-skeleton" style={{width:120,height:32}} /></div>;
@@ -333,6 +349,10 @@ export default function PracticeSessionDetailPage() {
                     </h3>
                     <div className="song-meta">
                       {song?.artist && <span>👤 {song.artist}</span>}
+                      {song?.key && <span>🎹 {song.key}</span>}
+                      {song?.tempo && <span>⏱️ {song.tempo} BPM</span>}
+                      {song?.genre && <span>🎸 {song.genre}</span>}
+                      <span>📋 {songSetlistCountMap[String(songId)] || 0} setlist</span>
                       <span>{meta.practiced ? '✅ Sudah dilatih' : '⏳ Belum dilatih'}</span>
                       {Number.isInteger(meta.rating) && <span>⭐ {meta.rating}</span>}
                     </div>
