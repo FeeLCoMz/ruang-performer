@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { usePermission } from '../hooks/usePermission.js';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as apiClient from '../apiClient.js';
 import { updatePageMeta } from '../utils/metaTagsUtil.js';
 import PlusIcon from '../components/PlusIcon.jsx';
-import DeleteIcon from '../components/DeleteIcon.jsx';
 import BandListItem from '../components/BandListItem.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 
@@ -40,11 +38,12 @@ export default function BandManagementPage() {
   const [filterGenre, setFilterGenre] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   useEffect(() => {
     updatePageMeta({
-      title: 'Band Management | Ruang Performer',
-      description: 'Create and manage your bands'
+      title: 'Manajemen Band | Ruang Performer',
+      description: 'Buat dan kelola band Anda'
     });
   }, []);
 
@@ -146,24 +145,13 @@ export default function BandManagementPage() {
     }
   };
 
-  const handleDeleteBand = async (id) => {
-    if (!window.confirm('Yakin ingin menghapus band ini?')) return;
-    try {
-      await apiClient.deleteBand(id);
-      setBands(bands.filter(b => b.id !== id));
-      setError(null);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   const hasActiveFilters = search || filterGenre !== 'all';
 
   if (loading) {
     return (
       <div className="page-container">
         <div className="page-header">
-          <h1>🎸 Band Management</h1>
+          <h1>🎸 Manajemen Band</h1>
         </div>
         <ListSkeleton count={6} />
       </div>
@@ -175,7 +163,7 @@ export default function BandManagementPage() {
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1>🎸 Band Management</h1>
+          <h1>🎸 Manajemen Band</h1>
           <p>{filteredBands.length} dari {bands.length} band</p>
         </div>
         {/* Permission: Only show if user can create a band */}
@@ -186,67 +174,77 @@ export default function BandManagementPage() {
         )}
       </div>
 
-      {error && <div className="error-message" style={{ marginBottom: '20px' }}>{error}</div>}
+      {error && <div className="error-message form-error">{error}</div>}
 
       {/* Filters & Search */}
-      <div className="filter-container" style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }}>
+      <div className="filter-container band-filter-panel">
         {/* Search Bar */}
-        <input
-          type="text"
-          placeholder="🔍 Cari nama band, deskripsi, atau genre..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="search-input-main"
-        />
-
-        {/* Filters Row */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '12px'
-        }}>
-          <select
-            value={filterGenre}
-            onChange={(e) => setFilterGenre(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">Semua Genre</option>
-            {genreOptions.map(genre => (
-              <option key={genre} value={genre}>{genre}</option>
-            ))}
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="filter-select"
-          >
-            <option value="name">Urutkan: Nama</option>
-            <option value="genre">Urutkan: Genre</option>
-            <option value="created">Urutkan: Tanggal</option>
-          </select>
-
+        <div className="band-filter-main-row">
+          <input
+            type="text"
+            placeholder="🔍 Cari nama band, deskripsi, atau genre..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="search-input-main"
+          />
           <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
             className="btn btn-secondary"
-            title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
+            type="button"
+            onClick={() => setShowAdvancedFilters((prev) => !prev)}
           >
-            {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+            {showAdvancedFilters ? 'Sembunyikan Filter' : 'Filter Lanjutan'}
           </button>
-
-          {hasActiveFilters && (
-            <button
-              onClick={handleClearFilters}
-              className="btn btn-secondary"
-            >
-              ✕ Reset
-            </button>
-          )}
         </div>
+
+        {showAdvancedFilters && (
+          <div className="band-filter-grid">
+            <select
+              value={filterGenre}
+              onChange={(e) => setFilterGenre(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">Semua Genre</option>
+              {genreOptions.map(genre => (
+                <option key={genre} value={genre}>{genre}</option>
+              ))}
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select"
+            >
+              <option value="name">Urutkan: Nama</option>
+              <option value="genre">Urutkan: Genre</option>
+              <option value="created">Urutkan: Tanggal</option>
+            </select>
+
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="btn btn-secondary"
+              title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
+              type="button"
+            >
+              {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+            </button>
+
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearFilters}
+                className="btn btn-secondary"
+                type="button"
+              >
+                ✕ Reset
+              </button>
+            )}
+          </div>
+        )}
+
+        {hasActiveFilters && !showAdvancedFilters && (
+          <div className="band-filter-hint">
+            Filter aktif. Buka Filter Lanjutan untuk mengubah atau reset.
+          </div>
+        )}
       </div>
 
       {/* Band List */}
@@ -256,7 +254,7 @@ export default function BandManagementPage() {
             {hasActiveFilters ? 'Tidak ada band yang cocok dengan filter' : 'Belum ada band'}
           </p>
           {!hasActiveFilters && (
-            <button className="btn" onClick={() => setShowCreateForm(true)} style={{ marginTop: '12px' }}>
+            <button className="btn band-empty-cta" onClick={() => setShowCreateForm(true)}>
               <PlusIcon size={18} /> Buat Band Pertama
             </button>
           )}
@@ -270,7 +268,6 @@ export default function BandManagementPage() {
                 key={band.id}
                 band={band}
                 userBandInfo={userBandInfo}
-                onDelete={handleDeleteBand}
                 navigate={navigate}
               />
             );
@@ -306,15 +303,14 @@ export default function BandManagementPage() {
                 onChange={e => setFormData({ ...formData, genre: e.target.value })}
                 className="modal-input"
               />
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="band-modal-actions">
                 <button type="submit" disabled={submitting} className="btn">
                   {submitting ? 'Membuat...' : 'Buat Band'}
                 </button>
                 <button 
                   type="button" 
                   onClick={() => setShowCreateForm(false)}
-                  className="btn"
-                  style={{ background: 'var(--card-bg)', color: 'var(--text-muted)' }}
+                  className="btn btn-secondary"
                 >
                   Batal
                 </button>

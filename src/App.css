@@ -3691,12 +3691,56 @@ body.dark-mode .lyrics-editor-textarea {
 .band-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.band-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.band-reveal {
+  animation: bandFadeUp 0.45s ease-out both;
+}
+
+.band-reveal-1 {
+  animation-delay: 0.04s;
+}
+
+.band-reveal-2 {
+  animation-delay: 0.1s;
+}
+
+.band-reveal-3 {
+  animation-delay: 0.16s;
+}
+
+.band-reveal-4 {
+  animation-delay: 0.22s;
+}
+
+.band-hero {
+  margin-bottom: 0;
+}
+
+.band-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.band-back-btn {
+  font-size: 0.9em;
 }
 
 .band-info-bar {
   display: flex;
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 0;
   flex-wrap: wrap;
 }
 
@@ -3718,10 +3762,273 @@ body.dark-mode .lyrics-editor-textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 12px;
   background: var(--secondary-bg);
   border-radius: 6px;
   border: 1px solid var(--border-color);
+}
+
+.band-row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.band-section-card {
+  margin-bottom: 0;
+}
+
+.band-section-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.band-linked-item {
+  background-color: var(--primary-bg);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.band-linked-item:hover {
+  border-color: var(--primary-accent);
+  box-shadow: var(--shadow-md);
+}
+
+.band-linked-item-title {
+  font-weight: 600;
+}
+
+.band-linked-item-subtitle {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.band-modal-card {
+  min-width: 320px;
+}
+
+.band-modal-caption {
+  margin-bottom: 12px;
+}
+
+.band-modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.band-modal-actions-wrap {
+  flex-wrap: wrap;
+}
+
+.band-share-caption {
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.band-share-textarea {
+  width: 100%;
+  min-height: 220px;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg, var(--primary-bg));
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.band-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.band-filter-main-row {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  gap: 12px;
+}
+
+.band-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.band-filter-hint {
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+.band-empty-cta {
+  margin-top: 12px;
+}
+
+.band-list-item {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.band-list-item-info {
+  min-width: 0;
+}
+
+.band-list-item-title {
+  font-size: 1.05em;
+}
+
+.band-list-item-description {
+  margin: 8px 0 0 0;
+  color: var(--text-muted);
+  font-size: 0.88em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.band-list-item-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.band-list-role-badge {
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.78em;
+  color: var(--text-secondary);
+  background: var(--primary-bg);
+}
+
+.band-list-role-badge.owner {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.band-list-role-badge.admin {
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.band-list-item-cta {
+  font-size: 0.78em;
+  color: var(--text-muted);
+}
+
+.band-list-item:focus-visible,
+.band-linked-item[role="button"]:focus-visible {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
+.band-expand-enter {
+  animation: bandExpandIn 0.22s ease-out both;
+}
+
+.band-expand-exit {
+  animation: bandExpandOut 0.24s ease-in both;
+}
+
+.band-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.band-skeleton-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.loading-skeleton-pill {
+  width: 90px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+.band-skeleton-list {
+  display: grid;
+  gap: 10px;
+}
+
+@keyframes bandFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bandExpandIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bandExpandOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 1024px) {
+  .band-title {
+    font-size: 1.75em;
+  }
+
+  .band-description {
+    font-size: 0.9em;
+  }
+
+  .band-hero {
+    padding: 18px;
+  }
+
+  .band-info-bar {
+    gap: 10px;
+  }
+
+  .band-section-card {
+    padding: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .band-reveal,
+  .band-expand-enter,
+  .band-expand-exit {
+    animation: none !important;
+  }
+
+  .band-linked-item,
+  .band-list-item,
+  .member-item {
+    transition: none !important;
+  }
 }
 
 .member-name {
@@ -3742,6 +4049,75 @@ body.dark-mode .lyrics-editor-textarea {
 .grid-gap {
   display: grid;
   gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .band-filter-main-row {
+    grid-template-columns: 1fr;
+  }
+
+  .band-row-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .band-modal-actions {
+    flex-wrap: wrap;
+  }
+
+  .band-actions {
+    width: 100%;
+  }
+
+  .band-badge {
+    padding: 6px 10px;
+    font-size: 0.82em;
+  }
+
+  .band-list-item {
+    gap: 10px;
+  }
+
+  .band-list-item-side {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .band-detail-page {
+    gap: 12px;
+  }
+
+  .band-hero {
+    padding: 14px;
+  }
+
+  .band-title {
+    font-size: 1.5em;
+  }
+
+  .member-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .band-row-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .band-linked-item {
+    padding: 10px 12px;
+  }
+
+  .band-section-actions {
+    width: 100%;
+  }
+
+  .band-section-actions .btn {
+    flex: 1;
+    min-width: 140px;
+  }
 }
 
 /* INVITATION PAGE */

@@ -9,22 +9,34 @@ import React from 'react';
  *   - band: object band (id, name, genre, description, ...)
  *   - navigate: function untuk navigasi ke detail band
  */
-export default function BandListItem({ band, navigate }) {
+export default function BandListItem({ band, navigate, userBandInfo }) {
+  const role = userBandInfo?.role || (band?.isOwner ? 'owner' : band?.userRole || 'member');
+  const roleLabel = role === 'owner' ? 'Pemilik' : role === 'admin' ? 'Admin' : 'Anggota';
+
   return (
     <div
-      className="setlist-item"
+      className="setlist-item band-list-item"
       onClick={() => navigate(`/bands/${band.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navigate(`/bands/${band.id}`);
+        }
+      }}
       tabIndex={0}
       role="button"
       aria-label={`Lihat detail band ${band.name}`}
-      style={{ cursor: 'pointer' }}
     >
-      <div className="setlist-info">
-        <h3 className="setlist-title">{band.name}</h3>
+      <div className="setlist-info band-list-item-info">
+        <h3 className="setlist-title band-list-item-title">{band.name}</h3>
         <div className="setlist-meta">
           {band.genre && <span>🎵 {band.genre}</span>}
-          {band.description && <span>{band.description}</span>}
         </div>
+        {band.description && <p className="band-list-item-description">{band.description}</p>}
+      </div>
+      <div className="band-list-item-side">
+        <span className={`band-list-role-badge ${role}`}>{roleLabel}</span>
+        <span className="band-list-item-cta">Lihat Detail →</span>
       </div>
     </div>
   );

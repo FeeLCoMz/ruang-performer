@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import * as apiClient from '../apiClient.js';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
 import { usePermission } from '../hooks/usePermission.js';
-import { PERMISSIONS, canPerformAction } from '../utils/permissionUtils.js';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import { PERMISSIONS } from '../utils/permissionUtils.js';
 import {
   createGigScheduleText,
   createGigCalendar,
@@ -14,16 +13,12 @@ import {
 } from '../utils/scheduleShareUtils.js';
 
 export default function BandDetailPage() {
-    // State untuk invite member
-    const [showInviteModal, setShowInviteModal] = useState(false);
-    const [inviteEmail, setInviteEmail] = useState('');
-    const [inviteRole, setInviteRole] = useState('member');
-    const [inviteError, setInviteError] = useState(null);
-    const [inviteLoading, setInviteLoading] = useState(false);
-    // State for form submission
-    const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
-  const currentUserId = user?.userId || user?.id;
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('member');
+  const [inviteError, setInviteError] = useState(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
   const [band, setBand] = useState(null);
@@ -40,15 +35,27 @@ export default function BandDetailPage() {
   const [gigs, setGigs] = useState([]);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [showAllMembers, setShowAllMembers] = useState(false);
+  const [showAllSetlists, setShowAllSetlists] = useState(false);
+  const [showAllGigs, setShowAllGigs] = useState(false);
+  const [isCollapsingMembers, setIsCollapsingMembers] = useState(false);
+  const [isCollapsingSetlists, setIsCollapsingSetlists] = useState(false);
+  const [isCollapsingGigs, setIsCollapsingGigs] = useState(false);
+  const collapseTimersRef = useRef([]);
 
-  // --- Permission hooks (top-level, not inside JSX) ---
-  // Default userBandInfo, will be updated after band loaded
   const userBandInfo = band ? { role: band.userRole || (band.isOwner ? 'owner' : 'member') } : { role: 'member' };
   const { can } = usePermission(id, userBandInfo);
+  const canManageMembers = can('manage_members') || band?.isOwner || band?.userRole === 'admin';
 
   useEffect(() => {
     loadBand();
   }, [id]);
+
+  useEffect(() => {
+    return () => {
+      collapseTimersRef.current.forEach((timerId) => clearTimeout(timerId));
+    };
+  }, []);
 
   const loadBand = async () => {
     try {
@@ -67,7 +74,7 @@ export default function BandDetailPage() {
         apiClient.fetchGigs(id).catch(() => [])
       ]);
       
-      setSetlists((setlistsData || []).filter(s => s.bandId === id));
+      setSetlists((setlistsData || []).filter((s) => String(s.bandId) === String(id)));
       setGigs(gigsData || []);
     } catch (err) {
       setError(err.message);
@@ -91,13 +98,12 @@ export default function BandDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Yakin ingin menghapus band ini? Semua data terkait akan hilang.')) return;
+    if (!window.confirm('Yakin ingin menghapus band ini? Semua data terkait akan hilang.')) return;
     try {
       await apiClient.deleteBand(id);
       navigate('/bands');
     } catch (err) {
       setError(err.message);
-      setInviting(false);
     }
   };
 
@@ -127,71 +133,109 @@ export default function BandDetailPage() {
     downloadCalendarFile(`${band?.name || 'jadwal-konser'}.ics`, calendarContent);
   };
 
-  if (loading) return <div className="page-container"><div className="loading-container">Memuat data band...</div></div>;
+  const allMembers = band?.members || [];
+  const previewCount = 3;
+  const isMembersExpanded = showAllMembers || isCollapsingMembers;
+  const isSetlistsExpanded = showAllSetlists || isCollapsingSetlists;
+  const isGigsExpanded = showAllGigs || isCollapsingGigs;
+  const visibleMembers = isMembersExpanded ? allMembers : allMembers.slice(0, previewCount);
+  const visibleSetlists = isSetlistsExpanded ? setlists : setlists.slice(0, previewCount);
+  const visibleGigs = isGigsExpanded ? gigs : gigs.slice(0, previewCount);
+
+  const toggleSection = (expanded, setExpanded, setCollapsing) => {
+    if (!expanded) {
+      setCollapsing(false);
+      setExpanded(true);
+      return;
+    }
+
+    setCollapsing(true);
+    const timerId = setTimeout(() => {
+      setExpanded(false);
+      setCollapsing(false);
+    }, 240);
+    collapseTimersRef.current.push(timerId);
+  };
+
+  const getExpandableClass = (index, expanded, collapsing) => {
+    if (index < previewCount) return '';
+    if (expanded) return 'band-expand-enter';
+    if (collapsing) return 'band-expand-exit';
+    return '';
+  };
+
+  if (loading) return <BandDetailSkeleton />;
   if (error) return <div className="page-container"><div className="error-text">{error}</div></div>;
   if (!band) return <div className="page-container"><div className="error-text">Band tidak ditemukan</div></div>;
 
   return (
-    <div className="page-container">
-      <div className="band-header">
-        <button className="btn" onClick={() => navigate('/bands')} style={{ padding: '8px 16px', fontSize: '0.9em' }}>
-          ← Kembali
-        </button>
-        <div className="band-header-info">
-          <h1 className="band-title">🎸 {band.name}</h1>
-          {band.description && (
-            <p className="band-description">{band.description}</p>
-          )}
+    <div className="page-container band-detail-page">
+      <div className="band-hero dashboard-card band-reveal band-reveal-1">
+        <div className="band-hero-top">
+          <button className="btn btn-secondary band-back-btn" onClick={() => navigate('/bands')}>
+            ← Kembali
+          </button>
+          <div className="band-actions">
+            {can(PERMISSIONS.BAND_EDIT) && (
+              <button className="btn btn-primary" onClick={() => setShowEditModal(true)} title="Edit Band">
+                <EditIcon size={18} /> Edit Band
+              </button>
+            )}
+            {gigs.length > 0 && (
+              <button className="btn btn-secondary" onClick={() => setShowShareModal(true)}>
+                📤 Bagikan Jadwal
+              </button>
+            )}
+            {can(PERMISSIONS.BAND_DELETE) && (
+              <button className="btn danger" onClick={handleDelete} title="Hapus Band">
+                <DeleteIcon size={18} /> Hapus
+              </button>
+            )}
+          </div>
         </div>
-        {/* --- Permission logic: allow edit/delete/manage roles --- */}
-        <div className="band-actions">
-          {can(PERMISSIONS.BAND_EDIT) && (
-            <button className="btn btn-primary" onClick={() => setShowEditModal(true)} title="Edit Band">
-              <EditIcon size={18} /> Edit Band
-            </button>
-          )}
-          {can(PERMISSIONS.BAND_DELETE) && (
-            <button className="btn danger" onClick={handleDelete} title="Hapus Band" style={{marginLeft: '12px'}}>
-              <DeleteIcon size={18} /> Hapus Band
-            </button>
-          )}
-          {gigs.length > 0 && (
-            <button className="btn btn-secondary" onClick={() => setShowShareModal(true)} style={{ marginLeft: '12px' }}>
-              📤 Bagikan Jadwal
-            </button>
-          )}
+
+        <h1 className="band-title">🎸 {band.name}</h1>
+        {band.description && <p className="band-description">{band.description}</p>}
+
+        <div className="band-info-bar">
+          {band.genre && <div className="band-badge">🎵 {band.genre}</div>}
+          <div className="band-badge">
+            {band.isOwner ? '👑 Owner' : `🎸 ${band.userRole || 'Member'}`}
+          </div>
+          <div className="band-badge">👥 {allMembers.length} anggota</div>
+          <div className="band-badge">📋 {setlists.length} setlist</div>
+          <div className="band-badge">🎤 {gigs.length} jadwal</div>
         </div>
       </div>
 
-      {/* Info Bar */}
-      <div className="band-info-bar">
-        {band.genre && <div className="band-badge">🎵 {band.genre}</div>}
-        <div className="band-badge">
-          {band.isOwner ? '👑 Owner' : `🎸 ${band.userRole || 'Member'}`}
-        </div>
-      </div>
-
-      {/* Members Section */}
-      <div className="dashboard-card" style={{ marginBottom: '24px' }}>
-        <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 className="card-title">👥 Anggota Band ({band.members?.length || 0})</h2>
-          {(can('manage_members') || band.isOwner || band.userRole === 'admin') && (
+      <div className="dashboard-card band-section-card band-reveal band-reveal-2">
+        <div className="card-header">
+          <h2 className="card-title">👥 Anggota Band ({allMembers.length})</h2>
+          <div className="band-section-actions">
+            {allMembers.length > previewCount && (
+              <button
+                className="btn btn-secondary"
+                onClick={() => toggleSection(showAllMembers, setShowAllMembers, setIsCollapsingMembers)}
+                type="button"
+              >
+                {showAllMembers ? 'Ringkas Anggota' : 'Lihat Semua Anggota'}
+              </button>
+            )}
+          {canManageMembers && (
             <button className="btn" onClick={() => setShowInviteModal(true)}>
               + Tambah Anggota
             </button>
           )}
-        </div>
-        {!band.members || band.members.length === 0 ? (
-          <div className="empty-state">
-            Belum ada anggota band
           </div>
+        </div>
+        {allMembers.length === 0 ? (
+          <div className="empty-state">Belum ada anggota band</div>
         ) : (
           <div className="grid-gap">
-            {band.members.map(member => (
+            {visibleMembers.map((member, index) => (
               <div
                 key={member.id || member.userId}
-                className="member-item"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                className={`member-item ${getExpandableClass(index, showAllMembers, isCollapsingMembers)}`}
               >
                 <div>
                   <div className="member-name">{member.username}</div>
@@ -202,12 +246,10 @@ export default function BandDetailPage() {
                     )}
                   </div>
                 </div>
-                {/* Permission: Only show edit/delete for non-owner if can manage_members */}
-                {(can('manage_members') || band.isOwner || band.userRole === 'admin') && !member.isOwner && (
-                  <div style={{ display: 'flex', gap: 4 }}>
+                {canManageMembers && !member.isOwner && (
+                  <div className="band-row-actions">
                     <button
                       className="btn"
-                      style={{ marginLeft: 8 }}
                       title="Edit Member Role"
                       onClick={() => {
                         setEditMember(member);
@@ -219,7 +261,6 @@ export default function BandDetailPage() {
                     </button>
                     <button
                       className="btn danger"
-                      style={{ marginLeft: 4 }}
                       title="Hapus Member"
                       onClick={async () => {
                         if (window.confirm(`Yakin ingin menghapus ${member.username} dari band?`)) {
@@ -238,60 +279,145 @@ export default function BandDetailPage() {
                 )}
               </div>
             ))}
-                {/* Edit Member Modal */}
-                {editMember && (
-                  <div className="modal-overlay" onClick={() => setEditMember(null)}>
-                    <div className="modal-card" onClick={e => e.stopPropagation()} style={{ minWidth: 320 }}>
-                      <h2>Edit Peran Anggota</h2>
-                      <div style={{ marginBottom: 12 }}>
-                        <b>{editMember.username}</b> ({editMember.email})
-                      </div>
-                      <form
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          setEditLoading(true);
-                          setEditError(null);
-                          try {
-                            await apiClient.updateMemberRole(id, editMember.userId || editMember.id, editRole);
-                            setEditMember(null);
-                            await loadBand();
-                          } catch (err) {
-                            setEditError(err.message);
-                          } finally {
-                            setEditLoading(false);
-                          }
-                        }}
-                      >
-                        <select
-                          value={editRole}
-                          onChange={e => setEditRole(e.target.value)}
-                          className="modal-input"
-                          style={{ marginBottom: 12 }}
-                        >
-                          <option value="member">Member</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                        {editError && <div className="error-message" style={{ marginBottom: 8 }}>{editError}</div>}
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button type="submit" className="btn" disabled={editLoading}>
-                            {editLoading ? 'Menyimpan...' : 'Simpan'}
-                          </button>
-                          <button type="button" className="btn" onClick={() => setEditMember(null)}>
-                            Batal
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                )}
           </div>
         )}
       </div>
 
-      {/* Invite Modal */}
+      <div className="dashboard-card band-section-card band-reveal band-reveal-3">
+        <h2 className="card-title">📋 Setlist Band ({setlists.length})</h2>
+        {setlists.length === 0 ? (
+          <div className="empty-state">Belum ada setlist untuk band ini</div>
+        ) : (
+          <div className="grid-gap">
+            {visibleSetlists.map((setlist, index) => (
+              <div
+                key={setlist.id}
+                className={`band-linked-item hover-lift ${getExpandableClass(index, showAllSetlists, isCollapsingSetlists)}`}
+                onClick={() => navigate(`/setlists/${setlist.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/setlists/${setlist.id}`);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Buka setlist ${setlist.name}`}
+              >
+                <div className="band-linked-item-title">{setlist.name}</div>
+                {setlist.description && (
+                  <div className="band-linked-item-subtitle">
+                    {setlist.description}
+                  </div>
+                )}
+                <div className="band-linked-item-subtitle">
+                  🎵 {setlist.songs?.length || 0} lagu
+                </div>
+              </div>
+            ))}
+            {setlists.length > previewCount && (
+              <button
+                className="btn btn-secondary"
+                onClick={() => toggleSection(showAllSetlists, setShowAllSetlists, setIsCollapsingSetlists)}
+              >
+                {showAllSetlists ? 'Ringkas Setlist' : 'Lihat Semua Setlist Band'}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="dashboard-card band-section-card band-reveal band-reveal-4">
+        <h2 className="card-title">🎤 Jadwal Konser ({gigs.length})</h2>
+        {gigs.length === 0 ? (
+          <div className="empty-state">Belum ada jadwal konser</div>
+        ) : (
+          <div className="grid-gap">
+            {visibleGigs.map((gig, index) => (
+              <div
+                key={gig.id}
+                className={`band-linked-item ${getExpandableClass(index, showAllGigs, isCollapsingGigs)}`}
+              >
+                <div className="band-linked-item-title">
+                  🎤 {new Date(gig.date).toLocaleDateString('id-ID')}
+                </div>
+                {(gig.venue || gig.city) && (
+                  <div className="band-linked-item-subtitle">
+                    📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}
+                  </div>
+                )}
+                {gig.fee && (
+                  <div className="band-linked-item-subtitle">
+                    💰 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(gig.fee)}
+                  </div>
+                )}
+                {gig.setlistName && (
+                  <div className="band-linked-item-subtitle">
+                    🎵 Setlist: {gig.setlistName}
+                  </div>
+                )}
+              </div>
+            ))}
+            {gigs.length > previewCount && (
+              <button
+                className="btn btn-secondary"
+                onClick={() => toggleSection(showAllGigs, setShowAllGigs, setIsCollapsingGigs)}
+              >
+                {showAllGigs ? 'Ringkas Jadwal' : 'Lihat Semua Jadwal Konser'}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {editMember && (
+        <div className="modal-overlay" onClick={() => setEditMember(null)}>
+          <div className="modal-card band-modal-card" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Peran Anggota</h2>
+            <div className="band-modal-caption">
+              <b>{editMember.username}</b> ({editMember.email})
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setEditLoading(true);
+                setEditError(null);
+                try {
+                  await apiClient.updateMemberRole(id, editMember.userId || editMember.id, editRole);
+                  setEditMember(null);
+                  await loadBand();
+                } catch (err) {
+                  setEditError(err.message);
+                } finally {
+                  setEditLoading(false);
+                }
+              }}
+            >
+              <select
+                value={editRole}
+                onChange={(e) => setEditRole(e.target.value)}
+                className="modal-input"
+              >
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+              </select>
+              {editError && <div className="error-message form-error">{editError}</div>}
+              <div className="band-modal-actions">
+                <button type="submit" className="btn" disabled={editLoading}>
+                  {editLoading ? 'Menyimpan...' : 'Simpan'}
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => setEditMember(null)}>
+                  Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showInviteModal && (
         <div className="modal-overlay" onClick={() => setShowInviteModal(false)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ minWidth: 320 }}>
+          <div className="modal-card band-modal-card" onClick={(e) => e.stopPropagation()}>
             <h2>Tambah Anggota Band</h2>
             <form
               onSubmit={async (e) => {
@@ -315,26 +441,25 @@ export default function BandDetailPage() {
                 type="email"
                 placeholder="Email anggota"
                 value={inviteEmail}
-                onChange={e => setInviteEmail(e.target.value)}
+                onChange={(e) => setInviteEmail(e.target.value)}
                 required
                 className="modal-input"
                 autoFocus
               />
               <select
                 value={inviteRole}
-                onChange={e => setInviteRole(e.target.value)}
+                onChange={(e) => setInviteRole(e.target.value)}
                 className="modal-input"
-                style={{ marginTop: 8 }}
               >
                 <option value="member">Member</option>
                 <option value="admin">Admin</option>
               </select>
-              {inviteError && <div className="error-message" style={{ marginTop: 8 }}>{inviteError}</div>}
-              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              {inviteError && <div className="error-message form-error">{inviteError}</div>}
+              <div className="band-modal-actions">
                 <button type="submit" className="btn" disabled={inviteLoading}>
                   {inviteLoading ? 'Menambah...' : 'Tambah'}
                 </button>
-                <button type="button" className="btn" onClick={() => setShowInviteModal(false)}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowInviteModal(false)}>
                   Batal
                 </button>
               </div>
@@ -343,7 +468,6 @@ export default function BandDetailPage() {
         </div>
       )}
 
-      {/* Edit Modal */}
       {showEditModal && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -371,11 +495,11 @@ export default function BandDetailPage() {
                 onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
                 className="modal-input"
               />
-              <div className="form-actions" style={{ marginTop: '20px' }}>
+              <div className="form-actions">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="btn"
+                  className="btn btn-secondary"
                   disabled={isSubmitting}
                 >
                   Batal
@@ -393,57 +517,19 @@ export default function BandDetailPage() {
         </div>
       )}
 
-      {/* Setlist Band */}
-      <div className="dashboard-card" style={{ marginBottom: '24px' }}>
-        <h2 className="card-title">📋 Setlist Band ({setlists.length})</h2>
-        {setlists.length === 0 ? (
-          <div className="empty-state">
-            Belum ada setlist untuk band ini
-          </div>
-        ) : (
-          <div className="grid-gap">
-            {setlists.map(setlist => (
-              <div
-                key={setlist.id}
-                style={{
-                  backgroundColor: 'var(--primary-bg)',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  border: '1px solid var(--border)',
-                  transition: 'all 0.2s'
-                }}
-                className="hover-lift"
-                onClick={() => navigate(`/setlists/${setlist.id}`)}
-              >
-                <div style={{ fontWeight: '500' }}>{setlist.name}</div>
-                {setlist.description && (
-                  <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    {setlist.description}
-                  </div>
-                )}
-                <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  🎵 {setlist.songs?.length || 0} lagu
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       {showShareModal && (
         <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Bagikan Jadwal Konser</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>
+            <p className="band-share-caption">
               Salin teks jadwal atau unduh file kalender untuk dibagikan ke anggota band dan penggemar.
             </p>
             <textarea
               readOnly
               value={scheduleText}
-              style={{ width: '100%', minHeight: '220px', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontFamily: 'inherit' }}
+              className="band-share-textarea"
             />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '16px' }}>
+            <div className="band-modal-actions band-modal-actions-wrap">
               <button className="btn" onClick={handleCopyScheduleText}>
                 {shareCopied ? '✅ Tersalin!' : 'Salin Teks'}
               </button>
@@ -460,98 +546,49 @@ export default function BandDetailPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Upcoming Gigs */}
-      <div className="dashboard-card" style={{ marginBottom: '24px' }}>
-        <h2 className="card-title">🎤 Jadwal Konser ({gigs.length})</h2>
-        {gigs.length === 0 ? (
-          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            Belum ada jadwal konser
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gap: '12px' }}>
-            {gigs.map(gig => (
-              <div
-                key={gig.id}
-                style={{
-                  backgroundColor: 'var(--primary-bg)',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border)'
-                }}
-              >
-                <div style={{ fontWeight: '500' }}>
-                  🎤 {new Date(gig.date).toLocaleDateString('id-ID')}
-                </div>
-                {(gig.venue || gig.city) && (
-                  <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}
-                  </div>
-                )}
-                {gig.fee && (
-                  <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    💰 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(gig.fee)}
-                  </div>
-                )}
-                {gig.setlistName && (
-                  <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    🎵 Setlist: {gig.setlistName}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+function BandDetailSkeleton() {
+  return (
+    <div className="page-container band-detail-page">
+      <div className="dashboard-card band-hero band-skeleton-card">
+        <div className="loading-skeleton loading-skeleton-medium" />
+        <div className="loading-skeleton loading-skeleton-full" />
+        <div className="band-skeleton-badges">
+          <span className="loading-skeleton loading-skeleton-pill" />
+          <span className="loading-skeleton loading-skeleton-pill" />
+          <span className="loading-skeleton loading-skeleton-pill" />
+        </div>
       </div>
 
-      {showEditModal && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Edit Band</h3>
-            <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <input
-                type="text"
-                placeholder="Nama Band *"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                className="search-input"
-              />
-              <textarea
-                placeholder="Deskripsi (opsional)"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="search-input"
-                rows="3"
-              />
-              <input
-                type="text"
-                placeholder="Genre (opsional)"
-                value={formData.genre}
-                onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                className="search-input"
-              />
-              <div className="form-actions" style={{ marginTop: '20px' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="btn"
-                  disabled={isSubmitting}
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Menyimpan...' : 'Simpan'}
-                </button>
-              </div>
-            </form>
-          </div>
+      <div className="dashboard-card band-skeleton-card">
+        <div className="loading-skeleton loading-skeleton-medium" />
+        <div className="band-skeleton-list">
+          <div className="loading-skeleton loading-skeleton-block" />
+          <div className="loading-skeleton loading-skeleton-block" />
+          <div className="loading-skeleton loading-skeleton-block" />
         </div>
-      )}
+      </div>
+
+      <div className="dashboard-card band-skeleton-card">
+        <div className="loading-skeleton loading-skeleton-medium" />
+        <div className="band-skeleton-list">
+          <div className="loading-skeleton loading-skeleton-block" />
+          <div className="loading-skeleton loading-skeleton-block" />
+          <div className="loading-skeleton loading-skeleton-block" />
+        </div>
+      </div>
+
+      <div className="dashboard-card band-skeleton-card">
+        <div className="loading-skeleton loading-skeleton-medium" />
+        <div className="band-skeleton-list">
+          <div className="loading-skeleton loading-skeleton-block" />
+          <div className="loading-skeleton loading-skeleton-block" />
+          <div className="loading-skeleton loading-skeleton-block" />
+        </div>
+      </div>
     </div>
   );
 }
