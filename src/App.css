@@ -2616,6 +2616,31 @@ body.dark-mode .lyrics-editor-textarea {
   font-weight: 600;
 }
 
+.song-mastery-overview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.song-mastery-overview-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  font-weight: 700;
+}
+
+.song-mastery-overview-text {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 .song-actions {
   display: flex;
   gap: var(--spacing-sm);

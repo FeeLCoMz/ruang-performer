@@ -56,6 +56,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   const [filterSetlist, setFilterSetlist] = useState(persisted.filterSetlist || 'all');
   const [sortBy, setSortBy] = useState(persisted.sortBy || 'updated');
   const [sortOrder, setSortOrder] = useState(persisted.sortOrder || 'desc');
+  const [masteryFilter, setMasteryFilter] = useState(persisted.masteryFilter || (persisted.showOnlyMastered ? 'mastered' : 'all'));
   const [metronomeTempo, setMetronomeTempo] = useState(120);
   const [metronomeSongId, setMetronomeSongId] = useState(null);
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
@@ -100,9 +101,10 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       filterSetlist,
       sortBy,
       sortOrder,
+      masteryFilter,
     };
     localStorage.setItem('songListPageState', JSON.stringify(state));
-  }, [search, filterArtist, filterKey, filterGenre, filterSetlist, sortBy, sortOrder]);
+  }, [search, filterArtist, filterKey, filterGenre, filterSetlist, sortBy, sortOrder, masteryFilter]);
 
   useEffect(() => {
     updatePageMeta(pageMetadata.songs);
@@ -176,6 +178,12 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       }
     }
 
+    if (masteryFilter === 'mastered') {
+      result = result.filter((song) => Boolean(song?.isMasteredByCurrentUser));
+    } else if (masteryFilter === 'unmastered') {
+      result = result.filter((song) => !song?.isMasteredByCurrentUser);
+    }
+
     // Apply sorting
     result.sort((a, b) => {
       let aVal, bVal;
@@ -215,11 +223,11 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     });
 
     return result;
-  }, [songs, debouncedSearch, filterArtist, filterKey, filterGenre, filterSetlist, setlists, sortBy, sortOrder]);
+  }, [songs, debouncedSearch, filterArtist, filterKey, filterGenre, filterSetlist, setlists, masteryFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     setVisibleCount(pageSize);
-  }, [debouncedSearch, filterArtist, filterKey, filterGenre, filterSetlist, sortBy, sortOrder, pageSize]);
+  }, [debouncedSearch, filterArtist, filterKey, filterGenre, filterSetlist, masteryFilter, sortBy, sortOrder, pageSize]);
 
   const handleClearFilters = () => {
     setSearch('');
@@ -229,9 +237,10 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     setFilterSetlist('all');
     setSortBy('updated');
     setSortOrder('desc');
+    setMasteryFilter('all');
   };
 
-  const hasActiveFilters = search || filterArtist !== 'all' || filterKey !== 'all' || filterGenre !== 'all' || filterSetlist !== 'all';
+  const hasActiveFilters = search || filterArtist !== 'all' || filterKey !== 'all' || filterGenre !== 'all' || filterSetlist !== 'all' || masteryFilter !== 'all';
 
   // Optimized: Build a map of songId -> count of setlists using it
   const songSetlistCountMap = useMemo(() => {
@@ -299,6 +308,21 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   }, [filteredSongs, visibleCount]);
 
   const hiddenSongsCount = Math.max(filteredSongs.length - visibleSongs.length, 0);
+
+  const masteredStats = useMemo(() => {
+    const masteredAllCount = songs.filter((song) => Boolean(song?.isMasteredByCurrentUser)).length;
+    const masteredFilteredCount = filteredSongs.filter((song) => Boolean(song?.isMasteredByCurrentUser)).length;
+
+    const totalSongs = songs.length;
+    const masteredPercent = totalSongs > 0 ? Math.round((masteredAllCount / totalSongs) * 100) : 0;
+
+    return {
+      masteredAllCount,
+      masteredFilteredCount,
+      totalSongs,
+      masteredPercent,
+    };
+  }, [songs, filteredSongs]);
 
   if (loading) {
     return (
@@ -565,6 +589,13 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
         <div>
           <h1>🎵 Lagu Saya</h1>
           <p>{displayedSongCount} ditampilkan dari {filteredSongs.length} hasil ({songs.length} total)</p>
+          <div className="song-mastery-overview" aria-live="polite">
+            <span className="song-mastery-overview-badge">✅ Dikuasai Saya: {masteredStats.masteredAllCount}/{masteredStats.totalSongs}</span>
+            <span className="song-mastery-overview-text">({masteredStats.masteredPercent}%)</span>
+            {filteredSongs.length !== songs.length && (
+              <span className="song-mastery-overview-text">• Di hasil filter: {masteredStats.masteredFilteredCount}/{filteredSongs.length}</span>
+            )}
+          </div>
         </div>
         {!performanceMode && (
           <button className="btn" onClick={() => onSongClick('add')}>
@@ -656,13 +687,17 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               <option value="updated">Urutkan: Tanggal diupdate</option>
             </select>
 
-            <button
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="btn btn-secondary"
-              title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
+            <select
+              value={masteryFilter}
+              onChange={(e) => setMasteryFilter(e.target.value)}
+              className="filter-select"
+              title="Filter status penguasaan lagu"
+              aria-label="Filter status penguasaan lagu"
             >
-              {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
-            </button>
+              <option value="all">Status: Semua Lagu</option>
+              <option value="mastered">Status: Dikuasai</option>
+              <option value="unmastered">Status: Belum Dikuasai</option>
+            </select>
 
             {hasActiveFilters && (
               <button
@@ -672,6 +707,14 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
                 ✕ Reset
               </button>
             )}
+
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="btn btn-secondary"
+              title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
+            >
+              {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+            </button>
           </div>
         )}
       </div>
