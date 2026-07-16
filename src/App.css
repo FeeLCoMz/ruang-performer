@@ -7,8 +7,17 @@
 }
 /* ===== Song Title & Artist Modern ===== */
 .song-title-artist-block {
+  position: relative;
   text-align: center;
   margin-bottom: 18px;
+}
+
+.song-title-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: var(--spacing-sm);
 }
 .song-title-main {
   font-size: 2.2em;
@@ -26,6 +35,13 @@
   letter-spacing: 0.02em;
 }
 @media (max-width: 600px) {
+  .song-title-actions {
+    position: static;
+    justify-content: center;
+    margin-bottom: var(--spacing-sm);
+    flex-wrap: wrap;
+  }
+
   .song-title-main {
     font-size: 1.35em;
   }
@@ -332,6 +348,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.song-info-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.song-info-share-message {
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
 }
 
 .song-info-original-key {
@@ -5727,6 +5754,11 @@ body.dark-mode .cd-token {
   grid-column: span 2;
 }
 
+.song-info-tempo-item {
+  grid-column: span 2;
+  min-width: 0;
+}
+
 .song-info-key-controls {
   display: flex;
   align-items: center;
@@ -5824,6 +5856,7 @@ body.dark-mode .cd-token {
 .song-info-tempo-controls {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-sm);
   margin-top: var(--spacing-xs);
 }
@@ -5869,7 +5902,8 @@ body.dark-mode .cd-token {
 }
 
 .song-info-tempo-display {
-  flex: 1;
+  flex: 1 1 92px;
+  min-width: 0;
   display: flex;
   align-items: baseline;
   justify-content: center;

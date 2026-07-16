@@ -31,6 +31,10 @@ export default function SongChordsInfo({
   artist,
   contributor,
   performanceMode,
+  canEdit = false,
+  onEdit,
+  onShare,
+  shareMessage,
   masteredBy = [],
   canMarkMastery = false,
   isMasteredByCurrentUser = false,
@@ -45,8 +49,20 @@ export default function SongChordsInfo({
   return (
     <div className="song-panel">
       {/* Judul dan artis selalu di atas info lain */}
-      {(title || artist || contributor) && (
+      {(title || artist || contributor || !performanceMode) && (
         <div className="song-title-artist-block">
+          {!performanceMode && (
+            <div className="song-title-actions">
+              {canEdit && (
+                <button type="button" onClick={onEdit} className="btn btn-secondary" title="Edit lagu">
+                  ✏️ Edit
+                </button>
+              )}
+              <button type="button" onClick={onShare} className="btn btn-secondary" title="Bagikan lagu">
+                🔗 Bagikan
+              </button>
+            </div>
+          )}
           {title && (
             <h1 className="song-title-main">{title}</h1>
           )}
@@ -55,6 +71,9 @@ export default function SongChordsInfo({
           )}
           {contributor && !performanceMode && (
             <div className="song-contributor-main">Kontributor: {contributor}</div>
+          )}
+          {!performanceMode && shareMessage && (
+            <div className="info-text song-info-share-message">{shareMessage}</div>
           )}
         </div>
       )}
@@ -93,7 +112,7 @@ export default function SongChordsInfo({
             </div>
           )}
           {tempo && (
-            <div className="song-info-item">
+            <div className="song-info-item song-info-tempo-item">
               <span className="song-info-label">⏱️ Tempo</span>
               <TempoControl
                 tempo={tempo}

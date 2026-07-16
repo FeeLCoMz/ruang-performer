@@ -3,7 +3,6 @@ import SongChordsAnalyzer from '../components/SongChordsAnalyzer.jsx';
 import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import SetlistSongNavigator from "../components/SetlistSongNavigator.jsx";
-import SongChordsHeader from '../components/SongChordsHeader.jsx';
 import SongChordsMediaPanel from '../components/SongChordsMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import VirtualPiano from "../components/VirtualPiano.jsx";
@@ -530,16 +529,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
   return (
     <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}> {/* Tambah class jika performanceMode */}
-      <SongChordsHeader
-        song={song}
-        performanceMode={performanceMode}
-        canEdit={can(PERMISSIONS.SONG_EDIT)}
-        onEdit={handleEdit}
-        onShare={() => handleShare(song, artist, setShareMessage)}
-        shareMessage={shareMessage}
-        onBack={handleBack}
-      />
-
       <SongChordsInfo
         originalKey={song?.key || key || ''}
         targetKey={key || song?.key || ''}
@@ -561,6 +550,10 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         artist={artist}
         contributor={song.contributor}
         performanceMode={performanceMode}
+        canEdit={can(PERMISSIONS.SONG_EDIT)}
+        onEdit={handleEdit}
+        onShare={() => handleShare(song, artist, setShareMessage)}
+        shareMessage={shareMessage}
         masteredBy={song.masteredBy}
         canMarkMastery={song.canMarkMastery}
         isMasteredByCurrentUser={song.isMasteredByCurrentUser}
