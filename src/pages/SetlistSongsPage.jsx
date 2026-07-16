@@ -78,6 +78,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [searchText, setSearchText] = useState('');
   const [filterArtist, setFilterArtist] = useState('');
   const [filterGenre, setFilterGenre] = useState('');
+  const [filterCompletionStatus, setFilterCompletionStatus] = useState('all');
   const [filterSmartOnly, setFilterSmartOnly] = useState(false);
   const [sortBy, setSortBy] = useState('custom');
   const [sortOrder, setSortOrder] = useState('asc');
@@ -217,13 +218,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // Filter dan sort lagu
   const filteredSongs = useMemo(() => {
     let result = setlistSongs.filter(song => {
+      const isCompleted = completedSongs?.[song.id] === true;
       const matchSearch = !searchText || 
         (song.title || '').toLowerCase().includes(searchText.toLowerCase()) ||
         (song.artist || '').toLowerCase().includes(searchText.toLowerCase());
       const matchArtist = !filterArtist || song.artist === filterArtist;
       const matchGenre = !filterGenre || song.genre === filterGenre;
+      const matchCompletion = filterCompletionStatus === 'all'
+        || (filterCompletionStatus === 'completed' ? isCompleted : !isCompleted);
       const matchSmart = !filterSmartOnly || setlistSongMeta?.[song.id]?.smartFeatured === true;
-      return matchSearch && matchArtist && matchGenre && matchSmart;
+      return matchSearch && matchArtist && matchGenre && matchCompletion && matchSmart;
     });
 
     // Sort (skip when custom to preserve manual order)
@@ -266,9 +270,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
 
     return result;
-  }, [setlistSongs, searchText, filterArtist, filterGenre, filterSmartOnly, sortBy, sortOrder, setlistSongMeta]);
+  }, [setlistSongs, completedSongs, searchText, filterArtist, filterGenre, filterCompletionStatus, filterSmartOnly, sortBy, sortOrder, setlistSongMeta]);
 
-  const hasActiveFilters = searchText || filterArtist || filterGenre;
+  const hasActiveFilters = Boolean(
+    searchText || filterArtist || filterGenre || filterSmartOnly || filterCompletionStatus !== 'all'
+  );
 
   const smartPlan = useMemo(() => {
     if (!Array.isArray(setlistSongs) || setlistSongs.length === 0) return null;
@@ -413,6 +419,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setSearchText('');
     setFilterArtist('');
     setFilterGenre('');
+    setFilterCompletionStatus('all');
     setFilterSmartOnly(false);
   }
 
@@ -1231,6 +1238,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               {uniqueGenres.map(genre => (
                 <option key={genre} value={genre}>{genre}</option>
               ))}
+            </select>
+            <select
+              value={filterCompletionStatus}
+              onChange={(e) => setFilterCompletionStatus(e.target.value)}
+              className="filter-select"
+              aria-label="Filter status dibawakan"
+            >
+              <option value="all">Dibawakan: Semua</option>
+              <option value="completed">Dibawakan: Sudah</option>
+              <option value="pending">Dibawakan: Belum</option>
             </select>
             <select
               value={sortBy}
