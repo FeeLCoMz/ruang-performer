@@ -21,21 +21,8 @@ export function buildRecentActivities({ bandsData = [], setlistsData = [], songs
   return activities.slice(0, 4);
 }
 
-export function buildUpcomingEvents({ practiceData = [], gigsData = [], now = new Date() }) {
+export function buildUpcomingEvents({ gigsData = [], now = new Date() }) {
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-  const upcomingPractice = practiceData
-    .filter(s => {
-      const sessionDate = new Date(s.date);
-      return sessionDate >= now && sessionDate <= sevenDaysLater;
-    })
-    .map(s => ({
-      type: 'practice',
-      id: s.id,
-      title: s.bandName || 'Practice Session',
-      date: s.date,
-      icon: '💪',
-    }));
 
   const upcomingGigs = gigsData
     .filter(g => {
@@ -50,7 +37,7 @@ export function buildUpcomingEvents({ practiceData = [], gigsData = [], now = ne
       icon: '🎤',
     }));
 
-  return [...upcomingPractice, ...upcomingGigs]
+  return upcomingGigs
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(0, 5);
 }

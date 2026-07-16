@@ -1,6 +1,5 @@
 import ToolsPage from "./pages/ToolsPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
-import PracticeSessionDetailPage from "./pages/PracticeSessionDetailPage.jsx";
 import GigDetailPage from "./pages/GigDetailPage.jsx";
 import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from "react-router-dom";
@@ -25,7 +24,6 @@ const SetlistPage = lazy(() => import("./pages/SetlistPage.jsx"));
 const SetlistSongsPage = lazy(() => import("./pages/SetlistSongsPage.jsx"));
 const BandDetailPage = lazy(() => import("./pages/BandDetailPage.jsx"));
 const BandManagementPage = lazy(() => import("./pages/BandManagementPage.jsx"));
-const PracticeSessionPage = lazy(() => import("./pages/PracticeSessionPage.jsx"));
 const GigPage = lazy(() => import("./pages/GigPage.jsx"));
 const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx"));
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage.jsx"));
@@ -414,8 +412,6 @@ function AppContent() {
                   />
                 }
               />
-              <Route path="/practice" element={<PracticeSessionPage />} />
-              <Route path="/practice/:id" element={<PracticeSessionDetailPage />} />
               <Route path="/gigs" element={<GigPage />} />
               <Route path="/gigs/:id" element={<GigDetailPage />} />
               <Route path="/youtube-trending" element={<YouTubeTrendingPage performanceMode={performanceMode} />} />

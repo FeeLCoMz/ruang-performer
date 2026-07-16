@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.0.10",
   "type": "module",
-  "description": "PerformerHub - Band Management, Setlist, Practice Sessions, and Gig Tracking",
+  "description": "PerformerHub - Band Management, Setlist, and Gig Tracking",
   "author": "PerformerHub",
   "license": "MIT",
   "scripts": {

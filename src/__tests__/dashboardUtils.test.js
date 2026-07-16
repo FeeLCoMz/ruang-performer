@@ -26,22 +26,15 @@ describe('dashboardUtils', () => {
   test('buildUpcomingEvents returns sorted events within seven days', () => {
     const now = new Date('2026-07-07T00:00:00.000Z');
 
-    const practiceData = [
-      { id: 'p1', date: '2026-07-08T10:00:00.000Z', bandName: 'Band A' },
-      { id: 'p2', date: '2026-07-20T10:00:00.000Z', bandName: 'Band B' },
-    ];
-
     const gigsData = [
       { id: 'g1', date: '2026-07-09T10:00:00.000Z', venue: 'Hall', bandName: 'Band C' },
       { id: 'g2', date: '2026-07-05T10:00:00.000Z', venue: 'Past', bandName: 'Band D' },
     ];
 
-    const result = buildUpcomingEvents({ practiceData, gigsData, now });
+    const result = buildUpcomingEvents({ gigsData, now });
 
-    expect(result).toHaveLength(2);
-    expect(result[0].type).toBe('practice');
-    expect(result[0].id).toBe('p1');
-    expect(result[1].type).toBe('gig');
-    expect(result[1].id).toBe('g1');
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe('gig');
+    expect(result[0].id).toBe('g1');
   });
 });

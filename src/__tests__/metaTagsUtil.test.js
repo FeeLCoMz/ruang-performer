@@ -44,7 +44,6 @@ describe('metaTagsUtil', () => {
     expect(pageMetadata).toHaveProperty('songs');
     expect(pageMetadata).toHaveProperty('setlists');
     expect(pageMetadata).toHaveProperty('bands');
-    expect(pageMetadata).toHaveProperty('practice');
     expect(pageMetadata).toHaveProperty('gigs');
   });
 

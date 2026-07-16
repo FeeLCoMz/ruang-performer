@@ -418,27 +418,6 @@ export async function deleteBand(id) {
   return await res.json();
 }
 
-// Practice Sessions API
-export async function fetchPracticeSessions(bandId = null) {
-  let url = `${API_BASE}/events/practice`;
-  if (bandId) {
-    url += `?bandId=${encodeURIComponent(bandId)}`;
-  }
-  const res = await fetch(url, {
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch practice sessions');
-  return await res.json();
-}
-
-export async function fetchPracticeSessionById(id) {
-  const res = await fetch(`${API_BASE}/events/practice/${id}`, {
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch practice session');
-  return await res.json();
-}
-
 export async function fetchYoutubeTrending() {
   const res = await fetch(`${API_BASE}/youtube/trending`, {
     headers: getHeaders()
@@ -447,47 +426,6 @@ export async function fetchYoutubeTrending() {
     let err;
     try { err = await res.json(); } catch {}
     throw new Error(err?.error || 'Failed to fetch YouTube trending');
-  }
-  return await res.json();
-}
-
-export async function createPracticeSession(session) {
-  const res = await fetch(`${API_BASE}/events/practice`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify(session)
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to create practice session');
-  }
-  return await res.json();
-}
-
-export async function updatePracticeSession(id, session) {
-  const res = await fetch(`${API_BASE}/events/practice/${id}`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(session)
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to update practice session');
-  }
-  return await res.json();
-}
-
-export async function deletePracticeSession(id) {
-  const res = await fetch(`${API_BASE}/events/practice/${id}`, {
-    method: 'DELETE',
-    headers: getHeaders()
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to delete practice session');
   }
   return await res.json();
 }

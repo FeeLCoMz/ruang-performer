@@ -14,7 +14,7 @@ __tests__/      # Unit test (Vitest/Jest)
 ```
 
 ## Fitur Utama
-- Manajemen lagu, setlist, band, gigs, dan latihan
+- Manajemen lagu, setlist, band, dan gigs
 - Sistem permission role-based (owner, admin, member, guest)
 - Backup & restore database ke file SQL (dump) dan JSON
 - Otentikasi JWT, 2FA, audit log, analytics

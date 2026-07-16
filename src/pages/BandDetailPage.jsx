@@ -37,7 +37,6 @@ export default function BandDetailPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '', genre: '' });
   const [setlists, setSetlists] = useState([]);
-  const [practiceSessions, setPracticeSessions] = useState([]);
   const [gigs, setGigs] = useState([]);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -63,14 +62,12 @@ export default function BandDetailPage() {
       });
       
       // Load related data
-      const [setlistsData, sessionsData, gigsData] = await Promise.all([
+      const [setlistsData, gigsData] = await Promise.all([
         apiClient.fetchSetLists().catch(() => []),
-        apiClient.fetchPracticeSessions(id).catch(() => []),
         apiClient.fetchGigs(id).catch(() => [])
       ]);
       
       setSetlists((setlistsData || []).filter(s => s.bandId === id));
-      setPracticeSessions(sessionsData || []);
       setGigs(gigsData || []);
     } catch (err) {
       setError(err.message);
@@ -430,49 +427,6 @@ export default function BandDetailPage() {
                 </div>
               </div>
             ))}
-          </div>
-        )}
-      </div>
-
-      {/* Practice Sessions */}
-      <div className="dashboard-card" style={{ marginBottom: '24px' }}>
-        <h2 className="card-title">🎯 Sesi Latihan ({practiceSessions.length})</h2>
-        {practiceSessions.length === 0 ? (
-          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            Belum ada sesi latihan
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gap: '12px' }}>
-            {practiceSessions.slice(0, 5).map(session => (
-              <div
-                key={session.id}
-                style={{
-                  backgroundColor: 'var(--primary-bg)',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border)'
-                }}
-              >
-                <div style={{ fontWeight: '500' }}>
-                  📅 {new Date(session.date).toLocaleDateString('id-ID')}
-                </div>
-                {session.duration && (
-                  <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    ⏱️ {Math.floor(session.duration / 60)}h {session.duration % 60}m
-                  </div>
-                )}
-                {session.songs?.length > 0 && (
-                  <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    🎵 {session.songs.length} lagu dilatih
-                  </div>
-                )}
-              </div>
-            ))}
-            {practiceSessions.length > 5 && (
-              <div style={{ marginTop: '8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9em' }}>
-                +{practiceSessions.length - 5} sesi lainnya
-              </div>
-            )}
           </div>
         )}
       </div>

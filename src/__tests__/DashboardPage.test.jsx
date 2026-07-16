@@ -26,7 +26,6 @@ vi.mock('../apiClient.js', () => ({
   fetchBands: vi.fn(),
   fetchSongs: vi.fn(),
   fetchGigs: vi.fn(),
-  fetchPracticeSessions: vi.fn(),
   fetchPopularSongs: vi.fn(),
 }));
 

@@ -17,14 +17,12 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
   const userBandInfo = user && user.role ? { role: user.role } : null;
   const { can } = usePermission(null, userBandInfo);
 
-  // Urutan menu: Dashboard, Songs, Setlists, Bands, Gigs, Practice, YouTube (supplementary), Settings/Profile, Audit Log (admin)
   const navItems = [
     { path: '/', label: 'Dashboard', icon: '🏠' },
     { path: '/songs', label: 'Lagu', icon: '🎵' },
     { path: '/setlists', label: 'Setlist', icon: '📋' },
     { path: '/bands/manage', label: 'Band', icon: '🎸' },
     { path: '/gigs', label: 'Konser', icon: '🎤' },
-    { path: '/practice', label: 'Latihan', icon: '💪' },
     { path: '/youtube-trending', label: 'Trending YouTube', icon: '📺' },
     // Profile (Settings/Akun) hanya jika login
     ...(user ? [{ path: '/profile', label: 'Profil', icon: '👤' }] : []),

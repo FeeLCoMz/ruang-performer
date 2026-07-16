@@ -5,7 +5,7 @@
 
 export function updatePageMeta({
   title = 'Ruang Performer',
-  description = 'Ruang Performer - Manajemen band, setlist, latihan, dan konser dalam satu platform.',
+  description = 'Ruang Performer - Manajemen band, setlist, dan konser dalam satu platform.',
   image = '/favicon.svg',
   url = window.location.href,
   type = 'website'
@@ -41,7 +41,7 @@ function updateMetaTag(name, content, type = 'name') {
 export const pageMetadata = {
   home: {
     title: 'Beranda',
-    description: 'Dashboard utama Ruang Performer - Kelola band, setlist, latihan, dan konser Anda'
+    description: 'Dashboard utama Ruang Performer - Kelola band, setlist, dan konser Anda'
   },
   songs: {
     title: 'Lagu Saya',
@@ -49,15 +49,11 @@ export const pageMetadata = {
   },
   setlists: {
     title: 'Setlist',
-    description: 'Buat dan kelola setlist untuk pertunjukan dan latihan band Anda'
+    description: 'Buat dan kelola setlist untuk pertunjukan band Anda'
   },
   bands: {
     title: 'Band',
     description: 'Kelola band, anggota, dan informasi band Anda'
-  },
-  practice: {
-    title: 'Latihan',
-    description: 'Kelola jadwal latihan dan sesi praktik band'
   },
   gigs: {
     title: 'Konser',

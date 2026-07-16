@@ -57,19 +57,17 @@ export default function DashboardPage() {
     setEventsLoading(true);
     setEventsError('');
 
-    const [gigsResult, practiceResult] = await Promise.allSettled([
-      apiClient.fetchGigs(),
-      apiClient.fetchPracticeSessions(),
-    ]);
+    const gigsResult = await apiClient.fetchGigs()
+      .then((data) => ({ status: 'fulfilled', value: data }))
+      .catch((error) => ({ status: 'rejected', reason: error }));
 
     const gigsData = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
-    const practiceData = practiceResult.status === 'fulfilled' ? practiceResult.value : [];
 
-    if (gigsResult.status === 'rejected' || practiceResult.status === 'rejected') {
+    if (gigsResult.status === 'rejected') {
       setEventsError('Upcoming events gagal dimuat. Silakan coba lagi.');
     }
 
-    setUpcomingEvents(buildUpcomingEvents({ practiceData, gigsData }));
+    setUpcomingEvents(buildUpcomingEvents({ gigsData }));
     setEventsLoading(false);
   }, []);
 
@@ -130,20 +128,18 @@ export default function DashboardPage() {
       });
       setRecentActivity(activities);
 
-      // Wave 2: Load heavier data (songs, gigs, practice) in background
+      // Wave 2: Load heavier data (songs, gigs) in background
       setEventsLoading(true);
       setPopularSongsLoading(true);
 
-      const [songsResult, gigsResult, practiceResult, popularResult] = await Promise.allSettled([
+      const [songsResult, gigsResult, popularResult] = await Promise.allSettled([
         apiClient.fetchSongs(),
         apiClient.fetchGigs(),
-        apiClient.fetchPracticeSessions(),
         apiClient.fetchPopularSongs(),
       ]);
 
       const songsData = songsResult.status === 'fulfilled' ? songsResult.value : [];
       const gigsData = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
-      const practiceData = practiceResult.status === 'fulfilled' ? practiceResult.value : [];
       const popularData = popularResult.status === 'fulfilled' ? popularResult.value : { youtubeSongs: [] };
 
       if (!isMounted) return;
@@ -152,7 +148,7 @@ export default function DashboardPage() {
         setActivitiesError('Aktivitas terbaru gagal diperbarui. Silakan coba lagi.');
       }
 
-      if (gigsResult.status === 'rejected' || practiceResult.status === 'rejected') {
+      if (gigsResult.status === 'rejected') {
         setEventsError('Upcoming events gagal dimuat. Silakan coba lagi.');
       }
 
@@ -171,7 +167,7 @@ export default function DashboardPage() {
       setRecentActivity(buildRecentActivities({ bandsData, setlistsData, songsData, gigsData }));
 
       // Process upcoming events
-      setUpcomingEvents(buildUpcomingEvents({ practiceData, gigsData }));
+      setUpcomingEvents(buildUpcomingEvents({ gigsData }));
 
       setPopularSongs(popularData.youtubeSongs || popularData.songs || []);
       setPopularSongsLoading(false);
@@ -208,7 +204,7 @@ export default function DashboardPage() {
       <div className="dashboard-welcome">
         <div>
           <h1>👋 Selamat datang, {user?.username || 'Musician'}!</h1>
-          <p>Kelola lagu, setlist, latihan, dan konser dalam satu platform</p>
+            <p>Kelola lagu, setlist, dan konser dalam satu platform</p>
         </div>
         <div>
           <button className="btn" onClick={() => navigate('/songs/add')}>
@@ -311,8 +307,7 @@ export default function DashboardPage() {
             <div className="dashboard-event-list">
               {upcomingEvents.map((event, idx) => (
                 <div key={event.id} className="activity-item activity-item--clickable" onClick={() => {
-                  if (event.type === 'practice') navigate(`/practice/${event.id}`);
-                  else if (event.type === 'gig') navigate(`/gigs/${event.id}`);
+                  if (event.type === 'gig') navigate(`/gigs/${event.id}`);
                 }}>
                   <div className="activity-icon">{event.icon}</div>
                   <div className="activity-content">

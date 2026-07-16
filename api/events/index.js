@@ -1,4 +1,4 @@
-// Unified endpoint for gigs (konser) and practice (latihan)
+// Unified endpoint for gigs (konser)
 import { getTursoClient } from '../_turso.js';
 import { randomUUID } from 'crypto';
 import { verifyToken } from '../_auth.js';
@@ -19,10 +19,9 @@ async function readJson(req) {
   });
 }
 
-// type: 'gig' | 'practice'
+// type: 'gig'
 function getTable(type) {
   if (type === 'gig') return 'gigs';
-  if (type === 'practice') return 'practice_sessions';
   throw new Error('Invalid type');
 }
 
@@ -250,13 +249,13 @@ export default async function handler(req, res) {
   // Fallback: parse type from URL if not present (for Vercel)
   if (!type) {
     // Improved: match id with dashes (UUID)
-    const match = req.url.match(/\/api\/events\/(gig|practice)(?:\/([^/?]+))?/);
+    const match = req.url.match(/\/api\/events\/(gig)(?:\/([^/?]+))?/);
     if (match) {
       type = match[1];
       id = match[2] || null;
     }
   }
-  if (!type || (type !== 'gig' && type !== 'practice')) {
+  if (!type || type !== 'gig') {
     res.status(400).json({ error: 'Invalid route' });
     return;
   }
@@ -266,11 +265,6 @@ export default async function handler(req, res) {
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    if (type === 'practice') {
-      await ensurePracticeSchema(client);
-      await ensurePracticeStatsTable(client);
-    }
-
     if (id) {
       // GET single
       if (req.method === 'GET') {
@@ -282,24 +276,6 @@ export default async function handler(req, res) {
           const row = result.rows?.[0] || null;
           if (!row) return res.status(404).json({ error: 'Gig not found' });
           res.status(200).json({ ...row });
-          return;
-        } else {
-          const result = await client.execute(
-            `SELECT ps.id, ps.bandId, ps.date, ps.duration, ps.songs, ps.songMeta, ps.notes, ps.createdAt, ps.updatedAt, b.name as bandName
-             FROM practice_sessions ps
-             LEFT JOIN bands b ON ps.bandId = b.id
-             WHERE ps.id = ?
-               AND ps.bandId IN (
-                 SELECT bandId FROM band_members
-                 WHERE userId = ?
-                   AND (status IS NULL OR lower(status) IN ('active', 'accepted', 'member'))
-               )
-             LIMIT 1`,
-            [id, userId]
-          );
-          const row = result.rows?.[0] || null;
-          if (!row) return res.status(404).json({ error: 'Practice session not found' });
-          res.status(200).json(parsePracticeRow(row));
           return;
         }
       }
@@ -322,48 +298,6 @@ export default async function handler(req, res) {
           await client.execute(`UPDATE gigs SET bandId = COALESCE(?, bandId), date = COALESCE(?, date), venue = COALESCE(?, venue), city = COALESCE(?, city), fee = COALESCE(?, fee), setlistId = COALESCE(?, setlistId), notes = COALESCE(?, notes), updatedAt = ? WHERE id = ?`, [body.bandId ?? null, body.date ?? null, body.venue ?? null, body.city ?? null, body.fee ?? null, body.setlistId ?? null, body.notes ?? null, now, id]);
           res.status(200).json({ id });
           return;
-        } else {
-          const sessionResult = await client.execute(
-            `SELECT id, bandId, date, duration, songs, songMeta, notes FROM practice_sessions WHERE id = ? LIMIT 1`,
-            [id]
-          );
-          const existing = sessionResult.rows?.[0];
-          if (!existing) return res.status(404).json({ error: 'Practice session not found' });
-
-          const canEdit = await requireBandPermission(client, res, {
-            bandId: existing.bandId,
-            userId,
-            permission: PERMISSIONS.SETLIST_EDIT,
-          });
-          if (!canEdit) return;
-
-          const existingParsed = parsePracticeRow(existing);
-          const nextSongs = body.songs !== undefined
-            ? normalizeSongIds(body.songs)
-            : existingParsed.songs;
-          const sourceSongMeta = body.songMeta !== undefined
-            ? body.songMeta
-            : existingParsed.songMeta;
-          const nextSongMeta = normalizeSongMeta(sourceSongMeta, nextSongs);
-
-          await client.execute(
-            `UPDATE practice_sessions
-             SET date = ?, duration = ?, songs = ?, songMeta = ?, notes = ?, updatedAt = ?
-             WHERE id = ?`,
-            [
-              body.date ?? existing.date,
-              body.duration ?? existing.duration,
-              JSON.stringify(nextSongs),
-              JSON.stringify(nextSongMeta),
-              body.notes ?? existing.notes,
-              now,
-              id,
-            ]
-          );
-
-          await rebuildBandSongPracticeStats(client, existing.bandId);
-          res.status(200).json({ success: true });
-          return;
         }
       }
       // DELETE single
@@ -381,25 +315,6 @@ export default async function handler(req, res) {
           if (!canDelete) return res.status(403).json({ error: 'Forbidden - insufficient permission to delete gig' });
           await client.execute(`DELETE FROM gigs WHERE id = ?`, [id]);
           res.status(204).end();
-          return;
-        } else {
-          const sessionResult = await client.execute(
-            `SELECT id, bandId FROM practice_sessions WHERE id = ? LIMIT 1`,
-            [id]
-          );
-          const existing = sessionResult.rows?.[0];
-          if (!existing) return res.status(404).json({ error: 'Practice session not found' });
-
-          const canDelete = await requireBandPermission(client, res, {
-            bandId: existing.bandId,
-            userId,
-            permission: PERMISSIONS.SETLIST_DELETE,
-          });
-          if (!canDelete) return;
-
-          await client.execute(`DELETE FROM practice_sessions WHERE id = ?`, [id]);
-          await rebuildBandSongPracticeStats(client, existing.bandId);
-          res.status(200).json({ success: true });
           return;
         }
       }
@@ -419,22 +334,6 @@ export default async function handler(req, res) {
         const result = await client.execute(query, params);
         res.status(200).json(result.rows || []);
         return;
-      } else {
-        let query = `SELECT ps.id, ps.bandId, ps.date, ps.duration, ps.songs, ps.songMeta, ps.notes, ps.createdAt, ps.updatedAt, b.name as bandName
-                     FROM practice_sessions ps
-                     LEFT JOIN bands b ON ps.bandId = b.id
-                     WHERE ps.bandId IN (
-                       SELECT bandId FROM band_members
-                       WHERE userId = ?
-                         AND (status IS NULL OR lower(status) IN ('active', 'accepted', 'member'))
-                     )`;
-        const params = [userId];
-        if (bandId) { query += ' AND ps.bandId = ?'; params.push(bandId); }
-        query += ' ORDER BY datetime(ps.date) DESC';
-        const result = await client.execute(query, params);
-        const sessions = (result.rows || []).map((row) => parsePracticeRow(row));
-        res.status(200).json(sessions);
-        return;
       }
     }
     // POST create
@@ -444,45 +343,6 @@ export default async function handler(req, res) {
       if (type === 'gig') {
         const id = randomUUID();
         await client.execute(`INSERT INTO gigs (id, bandId, userId, date, venue, city, fee, setlistId, notes, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [id, body.bandId ?? null, userId, body.date ?? null, body.venue ?? '', body.city ?? '', body.fee ?? null, body.setlistId ?? null, body.notes ?? '', now, now]);
-        res.status(201).json({ id });
-        return;
-      } else {
-        if (!body.bandId) return res.status(400).json({ error: 'Band is required' });
-        if (!body.date) return res.status(400).json({ error: 'Date is required' });
-
-        const canCreate = await requireBandPermission(client, res, {
-          bandId: body.bandId,
-          userId,
-          permission: PERMISSIONS.SETLIST_CREATE,
-        });
-        if (!canCreate) return;
-
-        const id = randomUUID();
-        const practiceColumns = await client.execute(`PRAGMA table_info(practice_sessions)`);
-        const columnNames = new Set((practiceColumns.rows || []).map((row) => row.name));
-        const creatorColumn = columnNames.has('createdBy') ? 'createdBy' : 'userId';
-
-        const songs = normalizeSongIds(body.songs);
-        const songMeta = normalizeSongMeta(body.songMeta, songs);
-
-        await client.execute(
-          `INSERT INTO practice_sessions (id, bandId, ${creatorColumn}, date, duration, songs, songMeta, notes, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            id,
-            body.bandId,
-            userId,
-            body.date,
-            body.duration || null,
-            JSON.stringify(songs),
-            JSON.stringify(songMeta),
-            body.notes || '',
-            now,
-            now,
-          ]
-        );
-
-        await rebuildBandSongPracticeStats(client, body.bandId);
         res.status(201).json({ id });
         return;
       }
