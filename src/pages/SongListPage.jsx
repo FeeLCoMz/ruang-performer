@@ -8,7 +8,7 @@ import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
-import { fetchSetLists, updateSongMastery } from '../apiClient.js';
+import { fetchSetLists, fetchBands, updateSongMastery } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
@@ -49,6 +49,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   const [search, setSearch] = useState(persisted.search || '');
   const [debouncedSearch, setDebouncedSearch] = useState(persisted.search || '');
   const [setlists, setSetlists] = useState([]);
+  const [bands, setBands] = useState([]);
   const [setlistsLoading, setSetlistsLoading] = useState(true);
   const [filterArtist, setFilterArtist] = useState(persisted.filterArtist || 'all');
   const [filterKey, setFilterKey] = useState(persisted.filterKey || 'all');
@@ -112,12 +113,25 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
 
   useEffect(() => {
     updatePageMeta(pageMetadata.songs);
-    // Fetch setlists for song usage count
+    // Fetch setlists for song usage count and fetch bands for filter options.
     let mounted = true;
     setSetlistsLoading(true);
-    fetchSetLists()
-      .then(data => { if (mounted) setSetlists(data || []); })
-      .catch(() => { if (mounted) setSetlists([]); })
+    Promise.allSettled([fetchSetLists(), fetchBands()])
+      .then(([setlistsResult, bandsResult]) => {
+        if (!mounted) return;
+
+        if (setlistsResult.status === 'fulfilled') {
+          setSetlists(setlistsResult.value || []);
+        } else {
+          setSetlists([]);
+        }
+
+        if (bandsResult.status === 'fulfilled') {
+          setBands(Array.isArray(bandsResult.value) ? bandsResult.value : []);
+        } else {
+          setBands([]);
+        }
+      })
       .finally(() => { if (mounted) setSetlistsLoading(false); });
     return () => { mounted = false; };
   }, []);
@@ -143,16 +157,24 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
 
   const bandOptions = useMemo(() => {
     const map = new Map();
+
+    bands.forEach((band) => {
+      if (!band?.id) return;
+      map.set(String(band.id), band.name || `Band ${band.id}`);
+    });
+
     songs.forEach((song) => {
       if (!song?.bandId) return;
-      if (!map.has(song.bandId)) {
-        map.set(song.bandId, song.bandName || `Band ${song.bandId}`);
+      const songBandId = String(song.bandId);
+      if (!map.has(songBandId)) {
+        map.set(songBandId, song.bandName || `Band ${song.bandId}`);
       }
     });
+
     return Array.from(map.entries())
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [songs]);
+  }, [bands, songs]);
 
   // Extract setlist options for filter
   const setlistOptions = useMemo(() => {
