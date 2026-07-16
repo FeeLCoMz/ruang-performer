@@ -35,6 +35,16 @@ export default function PracticeSessionDetailPage() {
 
   const songExists = (songId) => songs.some((item) => String(item.id) === String(songId));
 
+  const getSongMeta = (songId) => {
+    const source = session?.songMeta && typeof session.songMeta === 'object' ? session.songMeta : {};
+    const item = source[String(songId)] || {};
+    const parsedRating = Number.parseInt(item.rating, 10);
+    return {
+      practiced: item.practiced === true,
+      rating: Number.isInteger(parsedRating) ? parsedRating : null,
+    };
+  };
+
   if (loading) return <div className="page-container"><span className="loading-skeleton" style={{width:120,height:32}} /></div>;
   if (!session) return <div className="page-container"><h2>Practice session tidak ditemukan</h2></div>;
 
@@ -76,6 +86,10 @@ export default function PracticeSessionDetailPage() {
                   ) : (
                     <span style={{ color: 'var(--text-muted)' }}>{getSongLabelById(songId)}</span>
                   )}
+                  <span style={{ marginLeft: '8px', color: 'var(--text-muted)', fontSize: '0.85em' }}>
+                    {getSongMeta(songId).practiced ? '✅' : '⏳'}
+                    {Number.isInteger(getSongMeta(songId).rating) ? ` • ⭐ ${getSongMeta(songId).rating}` : ''}
+                  </span>
                 </li>
               ))}
             </ol>

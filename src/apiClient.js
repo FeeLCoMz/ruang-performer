@@ -198,8 +198,15 @@ export async function verify2FA(secret, token, backupCodes) {
   return await res.json();
 }
 
-export async function fetchSongs() {
-  const res = await fetch(`${API_BASE}/songs`, {
+export async function fetchSongs(options = {}) {
+  const params = new URLSearchParams();
+  if (options.bandId) {
+    params.set('bandId', options.bandId);
+  }
+  const query = params.toString();
+  const url = query ? `${API_BASE}/songs?${query}` : `${API_BASE}/songs`;
+
+  const res = await fetch(url, {
     headers: getHeaders()
   });
   if (!res.ok) throw new Error('Failed to fetch songs');

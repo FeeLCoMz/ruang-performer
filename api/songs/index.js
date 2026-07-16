@@ -122,7 +122,7 @@ async function filterMasteryForViewer(client, songBandId, masteryList, viewerUse
 }
 
 async function handleSongMastery(req, res, client, songId) {
-  const userId = req.user?.userId;
+  const userId = req.user?.userId || req.user?.id;
   if (!userId) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
@@ -196,6 +196,7 @@ export default async function handler(req, res) {
       const client = getTursoClient();
       await ensureSongsColumns(client);
       await ensureSongMasteryTable(client);
+      await ensureBandSongPracticeStatsTable(client);
       return handleSongMastery(req, res, client, pathSegments[0]);
     }
 
@@ -227,18 +228,64 @@ export default async function handler(req, res) {
     );
     await ensureSongsColumns(client);
     await ensureSongMasteryTable(client);
+    await ensureBandSongPracticeStatsTable(client);
 
     if (req.method === 'GET') {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId || req.user?.id;
       const viewerId = String(userId || '');
+      const requestedBandId = req.query?.bandId ? String(req.query.bandId) : null;
+
+      if (requestedBandId) {
+        const membership = await client.execute(
+          `SELECT 1 FROM band_members
+           WHERE bandId = ? AND userId = ?
+             AND (status IS NULL OR lower(status) IN ('active', 'accepted', 'member'))
+           LIMIT 1`,
+          [requestedBandId, viewerId]
+        );
+        if (!membership.rows?.length) {
+          res.status(403).json({ error: 'Forbidden - band access required' });
+          return;
+        }
+      }
 
       // Join ke tabel users untuk ambil nama kontributor
-      const rows = await client.execute(
-        `SELECT songs.id, songs.title, songs.artist, songs.youtubeId, songs.lyrics, songs.key, songs.tempo, songs.genre, songs.time_markers, songs.time_signature, songs.userId, songs.bandId, songs.createdAt, songs.updatedAt, songs.sheet_music_xml, users.username AS contributorUsername
+      let songsQuery =
+        `SELECT songs.id,
+                songs.title,
+                songs.artist,
+                songs.youtubeId,
+                songs.lyrics,
+                songs.key,
+                songs.tempo,
+                songs.genre,
+                songs.time_markers,
+                songs.time_signature,
+                songs.userId,
+                songs.bandId,
+                songs.createdAt,
+                songs.updatedAt,
+                songs.sheet_music_xml,
+                users.username AS contributorUsername,
+                  bands.name AS bandName,
+                bps.sessionCount AS practiceSessionCount,
+                bps.practicedCount AS practiceMarkedCount,
+                bps.ratingAvg AS practiceRatingAvg,
+                bps.lastPracticedAt AS lastPracticedAt,
+                bps.lastRating AS lastPracticeRating
          FROM songs
          LEFT JOIN users ON users.id = songs.userId
-         ORDER BY (songs.updatedAt IS NULL) ASC, datetime(songs.updatedAt) DESC, datetime(songs.createdAt) DESC`
-      );
+                LEFT JOIN bands ON bands.id = songs.bandId
+         LEFT JOIN band_song_practice_stats bps
+           ON bps.songId = songs.id
+          AND bps.bandId = songs.bandId`;
+      const songQueryParams = [];
+      if (requestedBandId) {
+        songsQuery += ` WHERE songs.bandId = ?`;
+        songQueryParams.push(requestedBandId);
+      }
+      songsQuery += ` ORDER BY (songs.updatedAt IS NULL) ASC, datetime(songs.updatedAt) DESC, datetime(songs.createdAt) DESC`;
+      const rows = await client.execute(songsQuery, songQueryParams);
 
       const masteryRows = await client.execute(
         `SELECT sm.songId, sm.userId, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
@@ -322,6 +369,13 @@ export default async function handler(req, res) {
         time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
         sheetMusicXml: row.sheet_music_xml || '',
         canMarkMastery: true,
+        practiceStats: {
+          sessionCount: Number(row.practiceSessionCount || 0),
+          markedCount: Number(row.practiceMarkedCount || 0),
+          ratingAvg: row.practiceRatingAvg == null ? null : Number(row.practiceRatingAvg),
+          lastPracticedAt: row.lastPracticedAt || null,
+          lastRating: row.lastPracticeRating == null ? null : Number(row.lastPracticeRating),
+        },
       }));
       res.status(200).json(list);
       return;
@@ -419,4 +473,27 @@ export default async function handler(req, res) {
     console.error('API /api/songs error:', err);
     res.status(500).json({ error: 'Internal Server Error', message: err.message, details: process.env.NODE_ENV === 'development' ? err.stack : undefined });
   }
+}
+
+async function ensureBandSongPracticeStatsTable(client) {
+  await client.execute(
+    `CREATE TABLE IF NOT EXISTS band_song_practice_stats (
+      id TEXT PRIMARY KEY,
+      bandId TEXT NOT NULL,
+      songId TEXT NOT NULL,
+      sessionCount INTEGER NOT NULL DEFAULT 0,
+      practicedCount INTEGER NOT NULL DEFAULT 0,
+      ratingAvg REAL,
+      lastPracticedAt TEXT,
+      lastRating INTEGER,
+      updatedAt TEXT,
+      FOREIGN KEY (bandId) REFERENCES bands(id) ON DELETE CASCADE,
+      FOREIGN KEY (songId) REFERENCES songs(id) ON DELETE CASCADE,
+      UNIQUE(bandId, songId)
+    )`
+  );
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_band_song_practice_stats_band_song
+     ON band_song_practice_stats(bandId, songId)`
+  );
 }

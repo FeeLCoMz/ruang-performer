@@ -2,6 +2,9 @@
 import { getTursoClient } from '../_turso.js';
 import { randomUUID } from 'crypto';
 import { verifyToken } from '../_auth.js';
+import { PERMISSIONS, hasPermission } from '../../src/utils/permissionUtils.js';
+
+const ACTIVE_MEMBER_STATUSES = ['active', 'accepted', 'member'];
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -21,6 +24,220 @@ function getTable(type) {
   if (type === 'gig') return 'gigs';
   if (type === 'practice') return 'practice_sessions';
   throw new Error('Invalid type');
+}
+
+function parseJsonSafe(value, fallback) {
+  try {
+    if (value == null || value === '') return fallback;
+    if (typeof value === 'string') return JSON.parse(value);
+    return value;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeSongIds(rawSongs) {
+  if (!Array.isArray(rawSongs)) return [];
+  const seen = new Set();
+  const normalized = [];
+
+  for (const rawItem of rawSongs) {
+    const rawId = rawItem?.songId ?? rawItem?.id ?? rawItem;
+    if (rawId == null || rawId === '') continue;
+    const songId = String(rawId);
+    if (seen.has(songId)) continue;
+    seen.add(songId);
+    normalized.push(songId);
+  }
+
+  return normalized;
+}
+
+function normalizeSongMeta(rawSongMeta, songIds) {
+  const source = rawSongMeta && typeof rawSongMeta === 'object' && !Array.isArray(rawSongMeta)
+    ? rawSongMeta
+    : {};
+
+  const nextMeta = {};
+  for (const songId of songIds) {
+    const item = source[songId] || {};
+    const practiced = item.practiced === true;
+    const parsedRating = Number.parseInt(item.rating, 10);
+    const rating = Number.isInteger(parsedRating) && parsedRating >= 1 && parsedRating <= 5
+      ? parsedRating
+      : null;
+    nextMeta[songId] = { practiced, rating };
+  }
+
+  return nextMeta;
+}
+
+function parsePracticeRow(row) {
+  const songs = normalizeSongIds(parseJsonSafe(row?.songs, []));
+  const songMeta = normalizeSongMeta(parseJsonSafe(row?.songMeta, {}), songs);
+  return {
+    ...row,
+    songs,
+    songMeta,
+  };
+}
+
+async function ensurePracticeSchema(client) {
+  await client.execute(
+    `CREATE TABLE IF NOT EXISTS practice_sessions (
+      id TEXT PRIMARY KEY,
+      bandId TEXT NOT NULL,
+      date TEXT NOT NULL,
+      duration INTEGER,
+      songs TEXT,
+      songMeta TEXT,
+      notes TEXT,
+      createdBy TEXT,
+      createdAt TEXT DEFAULT (datetime('now')),
+      updatedAt TEXT,
+      deletedAt TEXT,
+      FOREIGN KEY (bandId) REFERENCES bands(id) ON DELETE CASCADE,
+      FOREIGN KEY (createdBy) REFERENCES users(id)
+    )`
+  );
+
+  const columnsResult = await client.execute(`PRAGMA table_info(practice_sessions)`);
+  const columns = new Set((columnsResult.rows || []).map((row) => String(row.name)));
+
+  if (!columns.has('songMeta')) {
+    await client.execute(`ALTER TABLE practice_sessions ADD COLUMN songMeta TEXT`);
+    columns.add('songMeta');
+  }
+
+  if (!columns.has('createdBy') && !columns.has('userId')) {
+    await client.execute(`ALTER TABLE practice_sessions ADD COLUMN createdBy TEXT`);
+    columns.add('createdBy');
+  }
+
+  return columns;
+}
+
+async function ensurePracticeStatsTable(client) {
+  await client.execute(
+    `CREATE TABLE IF NOT EXISTS band_song_practice_stats (
+      id TEXT PRIMARY KEY,
+      bandId TEXT NOT NULL,
+      songId TEXT NOT NULL,
+      sessionCount INTEGER NOT NULL DEFAULT 0,
+      practicedCount INTEGER NOT NULL DEFAULT 0,
+      ratingAvg REAL,
+      lastPracticedAt TEXT,
+      lastRating INTEGER,
+      updatedAt TEXT,
+      FOREIGN KEY (bandId) REFERENCES bands(id) ON DELETE CASCADE,
+      FOREIGN KEY (songId) REFERENCES songs(id) ON DELETE CASCADE,
+      UNIQUE(bandId, songId)
+    )`
+  );
+
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_band_song_practice_stats_band_song
+     ON band_song_practice_stats(bandId, songId)`
+  );
+}
+
+async function getBandRole(client, bandId, userId) {
+  const result = await client.execute(
+    `SELECT role, status FROM band_members WHERE bandId = ? AND userId = ? LIMIT 1`,
+    [bandId, userId]
+  );
+  const row = result.rows?.[0];
+  if (!row) return null;
+
+  const normalizedStatus = String(row.status || 'active').toLowerCase();
+  if (!ACTIVE_MEMBER_STATUSES.includes(normalizedStatus)) return null;
+
+  return row.role || 'member';
+}
+
+async function requireBandPermission(client, res, { bandId, userId, permission }) {
+  const role = await getBandRole(client, bandId, userId);
+  if (!role) {
+    res.status(403).json({ error: 'Forbidden - band membership required' });
+    return false;
+  }
+  if (!hasPermission(role, permission)) {
+    res.status(403).json({ error: 'Forbidden - insufficient permission' });
+    return false;
+  }
+  return true;
+}
+
+async function rebuildBandSongPracticeStats(client, bandId) {
+  const sessionsResult = await client.execute(
+    `SELECT songs, songMeta, date
+     FROM practice_sessions
+     WHERE bandId = ?
+     ORDER BY datetime(date) ASC, date ASC`,
+    [bandId]
+  );
+
+  const aggregateBySong = new Map();
+
+  for (const row of sessionsResult.rows || []) {
+    const parsed = parsePracticeRow(row);
+    const sessionDate = parsed.date || null;
+
+    for (const songId of parsed.songs) {
+      const current = aggregateBySong.get(songId) || {
+        sessionCount: 0,
+        practicedCount: 0,
+        ratingTotal: 0,
+        ratedCount: 0,
+        lastPracticedAt: null,
+        lastRating: null,
+      };
+
+      current.sessionCount += 1;
+
+      const meta = parsed.songMeta?.[songId] || {};
+      const isPracticed = meta.practiced === true;
+      const hasRating = Number.isInteger(meta.rating);
+
+      if (isPracticed) {
+        current.practicedCount += 1;
+        if (!current.lastPracticedAt || (sessionDate && sessionDate >= current.lastPracticedAt)) {
+          current.lastPracticedAt = sessionDate;
+          current.lastRating = hasRating ? meta.rating : current.lastRating;
+        }
+      }
+
+      if (hasRating) {
+        current.ratingTotal += meta.rating;
+        current.ratedCount += 1;
+      }
+
+      aggregateBySong.set(songId, current);
+    }
+  }
+
+  await client.execute(`DELETE FROM band_song_practice_stats WHERE bandId = ?`, [bandId]);
+
+  const now = new Date().toISOString();
+  for (const [songId, stat] of aggregateBySong.entries()) {
+    const ratingAvg = stat.ratedCount > 0 ? Number((stat.ratingTotal / stat.ratedCount).toFixed(2)) : null;
+    await client.execute(
+      `INSERT INTO band_song_practice_stats (
+        id, bandId, songId, sessionCount, practicedCount, ratingAvg, lastPracticedAt, lastRating, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        randomUUID(),
+        bandId,
+        songId,
+        stat.sessionCount,
+        stat.practicedCount,
+        ratingAvg,
+        stat.lastPracticedAt,
+        stat.lastRating,
+        now,
+      ]
+    );
+  }
 }
 
 export default async function handler(req, res) {
@@ -45,10 +262,15 @@ export default async function handler(req, res) {
   }
   const table = getTable(type);
   const client = getTursoClient();
-  const userId = req.user?.userId;
+  const userId = req.user?.userId || req.user?.id;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
+    if (type === 'practice') {
+      await ensurePracticeSchema(client);
+      await ensurePracticeStatsTable(client);
+    }
+
     if (id) {
       // GET single
       if (req.method === 'GET') {
@@ -63,12 +285,21 @@ export default async function handler(req, res) {
           return;
         } else {
           const result = await client.execute(
-            `SELECT ps.id, ps.bandId, ps.date, ps.duration, ps.songs, ps.notes, ps.createdAt, ps.updatedAt, b.name as bandName FROM practice_sessions ps LEFT JOIN bands b ON ps.bandId = b.id WHERE ps.id = ? AND ps.bandId IN (SELECT bandId FROM band_members WHERE userId = ?) LIMIT 1`,
+            `SELECT ps.id, ps.bandId, ps.date, ps.duration, ps.songs, ps.songMeta, ps.notes, ps.createdAt, ps.updatedAt, b.name as bandName
+             FROM practice_sessions ps
+             LEFT JOIN bands b ON ps.bandId = b.id
+             WHERE ps.id = ?
+               AND ps.bandId IN (
+                 SELECT bandId FROM band_members
+                 WHERE userId = ?
+                   AND (status IS NULL OR lower(status) IN ('active', 'accepted', 'member'))
+               )
+             LIMIT 1`,
             [id, userId]
           );
           const row = result.rows?.[0] || null;
           if (!row) return res.status(404).json({ error: 'Practice session not found' });
-          res.status(200).json({ ...row, songs: (() => { try { return row.songs ? JSON.parse(row.songs) : []; } catch { return []; } })() });
+          res.status(200).json(parsePracticeRow(row));
           return;
         }
       }
@@ -92,9 +323,45 @@ export default async function handler(req, res) {
           res.status(200).json({ id });
           return;
         } else {
-          const songsJson = JSON.stringify(body.songs || []);
-          const result = await client.execute(`UPDATE practice_sessions SET date = COALESCE(?, date), duration = COALESCE(?, duration), songs = COALESCE(?, songs), notes = COALESCE(?, notes), updatedAt = ? WHERE id = ? AND bandId IN (SELECT bandId FROM band_members WHERE userId = ?)`, [body.date, body.duration, songsJson, body.notes, now, id, userId]);
-          if (result.rowsAffected === 0) return res.status(404).json({ error: 'Practice session not found or no permission' });
+          const sessionResult = await client.execute(
+            `SELECT id, bandId, date, duration, songs, songMeta, notes FROM practice_sessions WHERE id = ? LIMIT 1`,
+            [id]
+          );
+          const existing = sessionResult.rows?.[0];
+          if (!existing) return res.status(404).json({ error: 'Practice session not found' });
+
+          const canEdit = await requireBandPermission(client, res, {
+            bandId: existing.bandId,
+            userId,
+            permission: PERMISSIONS.SETLIST_EDIT,
+          });
+          if (!canEdit) return;
+
+          const existingParsed = parsePracticeRow(existing);
+          const nextSongs = body.songs !== undefined
+            ? normalizeSongIds(body.songs)
+            : existingParsed.songs;
+          const sourceSongMeta = body.songMeta !== undefined
+            ? body.songMeta
+            : existingParsed.songMeta;
+          const nextSongMeta = normalizeSongMeta(sourceSongMeta, nextSongs);
+
+          await client.execute(
+            `UPDATE practice_sessions
+             SET date = ?, duration = ?, songs = ?, songMeta = ?, notes = ?, updatedAt = ?
+             WHERE id = ?`,
+            [
+              body.date ?? existing.date,
+              body.duration ?? existing.duration,
+              JSON.stringify(nextSongs),
+              JSON.stringify(nextSongMeta),
+              body.notes ?? existing.notes,
+              now,
+              id,
+            ]
+          );
+
+          await rebuildBandSongPracticeStats(client, existing.bandId);
           res.status(200).json({ success: true });
           return;
         }
@@ -116,8 +383,22 @@ export default async function handler(req, res) {
           res.status(204).end();
           return;
         } else {
-          const result = await client.execute(`DELETE FROM practice_sessions WHERE id = ? AND bandId IN (SELECT bandId FROM band_members WHERE userId = ?)`, [id, userId]);
-          if (result.rowsAffected === 0) return res.status(404).json({ error: 'Practice session not found or no permission' });
+          const sessionResult = await client.execute(
+            `SELECT id, bandId FROM practice_sessions WHERE id = ? LIMIT 1`,
+            [id]
+          );
+          const existing = sessionResult.rows?.[0];
+          if (!existing) return res.status(404).json({ error: 'Practice session not found' });
+
+          const canDelete = await requireBandPermission(client, res, {
+            bandId: existing.bandId,
+            userId,
+            permission: PERMISSIONS.SETLIST_DELETE,
+          });
+          if (!canDelete) return;
+
+          await client.execute(`DELETE FROM practice_sessions WHERE id = ?`, [id]);
+          await rebuildBandSongPracticeStats(client, existing.bandId);
           res.status(200).json({ success: true });
           return;
         }
@@ -139,12 +420,19 @@ export default async function handler(req, res) {
         res.status(200).json(result.rows || []);
         return;
       } else {
-        let query = `SELECT ps.id, ps.bandId, ps.date, ps.duration, ps.songs, ps.notes, ps.createdAt, ps.updatedAt, b.name as bandName FROM practice_sessions ps LEFT JOIN bands b ON ps.bandId = b.id WHERE ps.bandId IN (SELECT bandId FROM band_members WHERE userId = ?)`;
+        let query = `SELECT ps.id, ps.bandId, ps.date, ps.duration, ps.songs, ps.songMeta, ps.notes, ps.createdAt, ps.updatedAt, b.name as bandName
+                     FROM practice_sessions ps
+                     LEFT JOIN bands b ON ps.bandId = b.id
+                     WHERE ps.bandId IN (
+                       SELECT bandId FROM band_members
+                       WHERE userId = ?
+                         AND (status IS NULL OR lower(status) IN ('active', 'accepted', 'member'))
+                     )`;
         const params = [userId];
         if (bandId) { query += ' AND ps.bandId = ?'; params.push(bandId); }
         query += ' ORDER BY datetime(ps.date) DESC';
         const result = await client.execute(query, params);
-        const sessions = (result.rows || []).map(row => ({ ...row, songs: (() => { try { return row.songs ? JSON.parse(row.songs) : []; } catch { return []; } })() }));
+        const sessions = (result.rows || []).map((row) => parsePracticeRow(row));
         res.status(200).json(sessions);
         return;
       }
@@ -159,10 +447,42 @@ export default async function handler(req, res) {
         res.status(201).json({ id });
         return;
       } else {
+        if (!body.bandId) return res.status(400).json({ error: 'Band is required' });
         if (!body.date) return res.status(400).json({ error: 'Date is required' });
+
+        const canCreate = await requireBandPermission(client, res, {
+          bandId: body.bandId,
+          userId,
+          permission: PERMISSIONS.SETLIST_CREATE,
+        });
+        if (!canCreate) return;
+
         const id = randomUUID();
-        const songsJson = JSON.stringify(body.songs || []);
-        await client.execute(`INSERT INTO practice_sessions (id, bandId, userId, date, duration, songs, notes, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [id, body.bandId || null, userId, body.date, body.duration || null, songsJson, body.notes || '', now, now]);
+        const practiceColumns = await client.execute(`PRAGMA table_info(practice_sessions)`);
+        const columnNames = new Set((practiceColumns.rows || []).map((row) => row.name));
+        const creatorColumn = columnNames.has('createdBy') ? 'createdBy' : 'userId';
+
+        const songs = normalizeSongIds(body.songs);
+        const songMeta = normalizeSongMeta(body.songMeta, songs);
+
+        await client.execute(
+          `INSERT INTO practice_sessions (id, bandId, ${creatorColumn}, date, duration, songs, songMeta, notes, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id,
+            body.bandId,
+            userId,
+            body.date,
+            body.duration || null,
+            JSON.stringify(songs),
+            JSON.stringify(songMeta),
+            body.notes || '',
+            now,
+            now,
+          ]
+        );
+
+        await rebuildBandSongPracticeStats(client, body.bandId);
         res.status(201).json({ id });
         return;
       }

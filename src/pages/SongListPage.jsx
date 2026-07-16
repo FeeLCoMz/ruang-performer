@@ -53,10 +53,12 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   const [filterArtist, setFilterArtist] = useState(persisted.filterArtist || 'all');
   const [filterKey, setFilterKey] = useState(persisted.filterKey || 'all');
   const [filterGenre, setFilterGenre] = useState(persisted.filterGenre || 'all');
+  const [filterBand, setFilterBand] = useState(persisted.filterBand || 'all');
   const [filterSetlist, setFilterSetlist] = useState(persisted.filterSetlist || 'all');
   const [sortBy, setSortBy] = useState(persisted.sortBy || 'updated');
   const [sortOrder, setSortOrder] = useState(persisted.sortOrder || 'desc');
   const [masteryFilter, setMasteryFilter] = useState(persisted.masteryFilter || (persisted.showOnlyMastered ? 'mastered' : 'all'));
+  const [practiceFilter, setPracticeFilter] = useState(persisted.practiceFilter || 'all');
   const [metronomeTempo, setMetronomeTempo] = useState(120);
   const [metronomeSongId, setMetronomeSongId] = useState(null);
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
@@ -98,13 +100,15 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       filterArtist,
       filterKey,
       filterGenre,
+      filterBand,
       filterSetlist,
       sortBy,
       sortOrder,
       masteryFilter,
+      practiceFilter,
     };
     localStorage.setItem('songListPageState', JSON.stringify(state));
-  }, [search, filterArtist, filterKey, filterGenre, filterSetlist, sortBy, sortOrder, masteryFilter]);
+  }, [search, filterArtist, filterKey, filterGenre, filterBand, filterSetlist, sortBy, sortOrder, masteryFilter, practiceFilter]);
 
   useEffect(() => {
     updatePageMeta(pageMetadata.songs);
@@ -137,6 +141,19 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     };
   }, [songs]);
 
+  const bandOptions = useMemo(() => {
+    const map = new Map();
+    songs.forEach((song) => {
+      if (!song?.bandId) return;
+      if (!map.has(song.bandId)) {
+        map.set(song.bandId, song.bandName || `Band ${song.bandId}`);
+      }
+    });
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [songs]);
+
   // Extract setlist options for filter
   const setlistOptions = useMemo(() => {
     if (!Array.isArray(setlists)) return [];
@@ -167,6 +184,9 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     if (filterGenre !== 'all') {
       result = result.filter(song => song.genre === filterGenre);
     }
+    if (filterBand !== 'all') {
+      result = result.filter(song => String(song.bandId || '') === String(filterBand));
+    }
     if (filterSetlist !== 'all') {
       // Cari setlist yang dipilih
       const selectedSetlist = setlists.find(sl => String(sl.id) === String(filterSetlist));
@@ -182,6 +202,12 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       result = result.filter((song) => Boolean(song?.isMasteredByCurrentUser));
     } else if (masteryFilter === 'unmastered') {
       result = result.filter((song) => !song?.isMasteredByCurrentUser);
+    }
+
+    if (practiceFilter === 'practiced') {
+      result = result.filter((song) => Number(song?.practiceStats?.markedCount || 0) > 0);
+    } else if (practiceFilter === 'not-practiced') {
+      result = result.filter((song) => Number(song?.practiceStats?.markedCount || 0) === 0);
     }
 
     // Apply sorting
@@ -223,24 +249,26 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     });
 
     return result;
-  }, [songs, debouncedSearch, filterArtist, filterKey, filterGenre, filterSetlist, setlists, masteryFilter, sortBy, sortOrder]);
+  }, [songs, debouncedSearch, filterArtist, filterKey, filterGenre, filterBand, filterSetlist, setlists, masteryFilter, practiceFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     setVisibleCount(pageSize);
-  }, [debouncedSearch, filterArtist, filterKey, filterGenre, filterSetlist, masteryFilter, sortBy, sortOrder, pageSize]);
+  }, [debouncedSearch, filterArtist, filterKey, filterGenre, filterBand, filterSetlist, masteryFilter, practiceFilter, sortBy, sortOrder, pageSize]);
 
   const handleClearFilters = () => {
     setSearch('');
     setFilterArtist('all');
     setFilterKey('all');
     setFilterGenre('all');
+    setFilterBand('all');
     setFilterSetlist('all');
     setSortBy('updated');
     setSortOrder('desc');
     setMasteryFilter('all');
+    setPracticeFilter('all');
   };
 
-  const hasActiveFilters = search || filterArtist !== 'all' || filterKey !== 'all' || filterGenre !== 'all' || filterSetlist !== 'all' || masteryFilter !== 'all';
+  const hasActiveFilters = search || filterArtist !== 'all' || filterKey !== 'all' || filterGenre !== 'all' || filterBand !== 'all' || filterSetlist !== 'all' || masteryFilter !== 'all' || practiceFilter !== 'all';
 
   // Optimized: Build a map of songId -> count of setlists using it
   const songSetlistCountMap = useMemo(() => {
@@ -478,6 +506,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
             {song.key && <span>🎹 {song.key}</span>}
             {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
             {song.genre && <span>🎸 {song.genre}</span>}
+            {song.bandId && <span>🎤 Band: {song.bandName || '-'}</span>}
             <span style={{ color: 'var(--primary-accent)', marginLeft: 8, fontSize: '0.95em' }}>
               {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
             </span>
@@ -490,6 +519,13 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
                 ? ` (${song.masteredBy.map((entry) => entry.username || '-').join(', ')})`
                 : ''}
             </span>
+            {song.bandId && Number(song?.practiceStats?.markedCount || 0) > 0 && (
+              <span className="song-mastery-summary">
+                🎯 Latihan: {song.practiceStats.markedCount}x
+                {song.practiceStats.ratingAvg != null ? ` • ⭐ ${Number(song.practiceStats.ratingAvg).toFixed(1)}` : ''}
+                {song.practiceStats.lastPracticedAt ? ` • Terakhir ${new Date(song.practiceStats.lastPracticedAt).toLocaleDateString('id-ID')}` : ''}
+              </span>
+            )}
           </div>
         </div>
 
@@ -632,6 +668,17 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
           }}>
             {/* Filter by Setlist */}
             <select
+              value={filterBand}
+              onChange={(e) => setFilterBand(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">Semua Band</option>
+              {bandOptions.map((band) => (
+                <option key={band.id} value={band.id}>{band.name}</option>
+              ))}
+            </select>
+
+            <select
               value={filterSetlist}
               onChange={e => setFilterSetlist(e.target.value)}
               className="filter-select"
@@ -697,6 +744,18 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               <option value="all">Status: Semua Lagu</option>
               <option value="mastered">Status: Dikuasai</option>
               <option value="unmastered">Status: Belum Dikuasai</option>
+            </select>
+
+            <select
+              value={practiceFilter}
+              onChange={(e) => setPracticeFilter(e.target.value)}
+              className="filter-select"
+              title="Filter status latihan lagu"
+              aria-label="Filter status latihan lagu"
+            >
+              <option value="all">Latihan: Semua Lagu</option>
+              <option value="practiced">Latihan: Sudah Ditandai</option>
+              <option value="not-practiced">Latihan: Belum Ditandai</option>
             </select>
 
             {hasActiveFilters && (

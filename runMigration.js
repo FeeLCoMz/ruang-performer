@@ -66,7 +66,8 @@ async function runMigration(migrationFile) {
         // Ignore common non-fatal errors
         if (
           error.message.includes('no such column') ||
-          error.message.includes('already exists')
+          error.message.includes('already exists') ||
+          error.message.includes('duplicate column name')
         ) {
           console.log(`⚠️  Skipped (${error.message.substring(0, 40)}...)\n`);
         } else {

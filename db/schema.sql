@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS practice_sessions (
   date TEXT NOT NULL,
   duration INTEGER,
   songs TEXT,
+  songMeta TEXT,
   notes TEXT,
   createdBy TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
@@ -145,6 +146,23 @@ CREATE TABLE IF NOT EXISTS practice_sessions (
   deletedAt TEXT,
   FOREIGN KEY (bandId) REFERENCES bands(id) ON DELETE CASCADE,
   FOREIGN KEY (createdBy) REFERENCES users(id)
+);
+
+
+-- Aggregated practice metadata per band song
+CREATE TABLE IF NOT EXISTS band_song_practice_stats (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  bandId TEXT NOT NULL,
+  songId TEXT NOT NULL,
+  sessionCount INTEGER NOT NULL DEFAULT 0,
+  practicedCount INTEGER NOT NULL DEFAULT 0,
+  ratingAvg REAL,
+  lastPracticedAt TEXT,
+  lastRating INTEGER,
+  updatedAt TEXT,
+  FOREIGN KEY (bandId) REFERENCES bands(id) ON DELETE CASCADE,
+  FOREIGN KEY (songId) REFERENCES songs(id) ON DELETE CASCADE,
+  UNIQUE(bandId, songId)
 );
 
 
@@ -183,6 +201,7 @@ CREATE INDEX IF NOT EXISTS idx_band_song_preferences_bandId_songId ON band_song_
 CREATE INDEX IF NOT EXISTS idx_song_user_mastery_songId ON song_user_mastery(songId);
 CREATE INDEX IF NOT EXISTS idx_song_user_mastery_userId ON song_user_mastery(userId);
 CREATE INDEX IF NOT EXISTS idx_practice_sessions_bandId ON practice_sessions(bandId);
+CREATE INDEX IF NOT EXISTS idx_band_song_practice_stats_band_song ON band_song_practice_stats(bandId, songId);
 CREATE INDEX IF NOT EXISTS idx_gigs_bandId ON gigs(bandId);
 CREATE INDEX IF NOT EXISTS idx_gigs_status ON gigs(status);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);

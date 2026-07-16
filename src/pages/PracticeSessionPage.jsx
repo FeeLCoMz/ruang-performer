@@ -37,10 +37,10 @@ export default function PracticeSessionPage() {
 
   // Form state
   const [formData, setFormData] = useState({
-    bandId: '',
     date: new Date().toISOString().split('T')[0],
     duration: '',
     songs: [],
+    songMeta: {},
     notes: ''
   });
   const [songSearchQuery, setSongSearchQuery] = useState('');
@@ -52,6 +52,28 @@ export default function PracticeSessionPage() {
   const [customDateTo, setCustomDateTo] = useState(persistedState.customDateTo || '');
   const [draggedSelectedSongId, setDraggedSelectedSongId] = useState(null);
   const [formError, setFormError] = useState('');
+
+  const normalizeSongMeta = (songIds, rawSongMeta) => {
+    const source = rawSongMeta && typeof rawSongMeta === 'object' && !Array.isArray(rawSongMeta)
+      ? rawSongMeta
+      : {};
+
+    const nextMeta = {};
+    songIds.forEach((songId) => {
+      const item = source[songId] || {};
+      const parsedRating = Number.parseInt(item.rating, 10);
+      nextMeta[songId] = {
+        practiced: item.practiced === true,
+        rating: Number.isInteger(parsedRating) && parsedRating >= 1 && parsedRating <= 5 ? parsedRating : null,
+      };
+    });
+    return nextMeta;
+  };
+
+  const getSessionSongMeta = (session) => {
+    const songIds = Array.isArray(session?.songs) ? session.songs.map((songId) => String(songId)) : [];
+    return normalizeSongMeta(songIds, session?.songMeta);
+  };
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -202,7 +224,7 @@ export default function PracticeSessionPage() {
   const getUserBandInfo = (bandId) => {
     if (!bandId) return { role: user?.role || 'member' };
     const band = bands.find(b => b.id === bandId);
-    return band ? { role: band.role || (band.isOwner ? 'owner' : 'member') } : { role: user?.role || 'member' };
+    return band ? { role: band.userRole || band.role || (band.isOwner ? 'owner' : 'member') } : { role: user?.role || 'member' };
   };
 
   // Permission hook for selected band (for create)
@@ -222,12 +244,8 @@ export default function PracticeSessionPage() {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const [bandsData, songsData] = await Promise.all([
-          fetchBands(),
-          fetchSongs()
-        ]);
+        const bandsData = await fetchBands();
         setBands(bandsData || []);
-        setSongs(songsData || []);
       } catch (err) {
         console.error('Failed to load data:', err);
       }
@@ -235,12 +253,42 @@ export default function PracticeSessionPage() {
     loadInitialData();
   }, []);
 
+  useEffect(() => {
+    const loadBandSongs = async () => {
+      if (!selectedBandId) {
+        setSongs([]);
+        return;
+      }
+      try {
+        const songsData = await fetchSongs();
+        const allSongs = Array.isArray(songsData) ? songsData : [];
+        const scopedSongs = allSongs.filter((song) => {
+          if (!song) return false;
+          const songBandId = song.bandId ? String(song.bandId) : '';
+          return songBandId === String(selectedBandId) || !songBandId;
+        });
+        setSongs(scopedSongs);
+        setError('');
+      } catch (err) {
+        console.error('Failed to load songs:', err);
+        setSongs([]);
+        setError(err.message || 'Gagal memuat lagu band');
+      }
+    };
+    loadBandSongs();
+  }, [selectedBandId]);
+
   // Fetch practice sessions
   useEffect(() => {
     const loadSessions = async () => {
+      if (!selectedBandId) {
+        setSessions([]);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
-        const data = await fetchPracticeSessions(selectedBandId || null);
+        const data = await fetchPracticeSessions(selectedBandId);
         setSessions(Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err.message || 'Failed to load sessions');
@@ -255,20 +303,37 @@ export default function PracticeSessionPage() {
     e.preventDefault();
     setFormError('');
 
+    if (!selectedBandId) {
+      setFormError('Pilih band terlebih dahulu');
+      return;
+    }
+
     if (!formData.date) {
       setFormError('Tanggal diperlukan');
       return;
     }
 
+    if (!Array.isArray(formData.songs) || formData.songs.length === 0) {
+      setFormError('Pilih minimal 1 lagu untuk sesi latihan');
+      return;
+    }
+
+    const payload = {
+      ...formData,
+      bandId: selectedBandId,
+      songs: formData.songs,
+      songMeta: normalizeSongMeta(formData.songs, formData.songMeta),
+    };
+
     try {
       if (editSession) {
-        await updatePracticeSession(editSession.id, formData);
+        await updatePracticeSession(editSession.id, payload);
       } else {
-        await createPracticeSession(formData);
+        await createPracticeSession(payload);
       }
       
       // Refresh sessions
-      const data = await fetchPracticeSessions(selectedBandId || null);
+      const data = await fetchPracticeSessions(selectedBandId);
       setSessions(Array.isArray(data) ? data : []);
       
       setShowForm(false);
@@ -276,10 +341,10 @@ export default function PracticeSessionPage() {
       setSongSearchQuery('');
       setSongMasteryFilter('all');
       setFormData({
-        bandId: '',
         date: new Date().toISOString().split('T')[0],
         duration: '',
         songs: [],
+        songMeta: {},
         notes: ''
       });
     } catch (err) {
@@ -289,11 +354,12 @@ export default function PracticeSessionPage() {
 
   const handleEdit = (session) => {
     setEditSession(session);
+    const songIds = Array.isArray(session.songs) ? session.songs.map((songId) => String(songId)) : [];
     setFormData({
-      bandId: session.bandId || '',
       date: session.date,
       duration: session.duration || '',
-      songs: session.songs || [],
+      songs: songIds,
+      songMeta: getSessionSongMeta(session),
       notes: session.notes || ''
     });
     setSongSearchQuery('');
@@ -307,7 +373,7 @@ export default function PracticeSessionPage() {
     
     try {
       await deletePracticeSession(deleteSession.id);
-      const data = await fetchPracticeSessions(selectedBandId || null);
+      const data = await fetchPracticeSessions(selectedBandId);
       setSessions(Array.isArray(data) ? data : []);
       setDeleteSession(null);
     } catch (err) {
@@ -393,6 +459,29 @@ export default function PracticeSessionPage() {
     setDraggedSelectedSongId(null);
   };
 
+  const getSessionPracticeSummary = (session) => {
+    const songIds = Array.isArray(session?.songs) ? session.songs.map((songId) => String(songId)) : [];
+    const songMeta = normalizeSongMeta(songIds, session?.songMeta);
+    let practicedCount = 0;
+    let ratedCount = 0;
+    let ratingTotal = 0;
+
+    songIds.forEach((songId) => {
+      const meta = songMeta[songId] || {};
+      if (meta.practiced === true) practicedCount += 1;
+      if (Number.isInteger(meta.rating)) {
+        ratedCount += 1;
+        ratingTotal += meta.rating;
+      }
+    });
+
+    return {
+      practicedCount,
+      ratedCount,
+      ratingAvg: ratedCount > 0 ? (ratingTotal / ratedCount).toFixed(1) : null,
+    };
+  };
+
   return (
     <div className="page-container">
       {/* Page Header */}
@@ -401,15 +490,15 @@ export default function PracticeSessionPage() {
           <h1>🎯 Sesi Latihan</h1>
           <p>Kelola latihan band mu</p>
         </div>
-        {canSelectedBand(PERMISSIONS.SETLIST_CREATE) && (
+        {selectedBandId && canSelectedBand(PERMISSIONS.SETLIST_CREATE) && (
           <button className="btn" onClick={() => {
             setShowForm(true);
             setEditSession(null);
             setFormData({
-              bandId: selectedBandId || '',
               date: new Date().toISOString().split('T')[0],
               duration: '',
               songs: [],
+              songMeta: {},
               notes: ''
             });
             setSongSearchQuery('');
@@ -428,17 +517,10 @@ export default function PracticeSessionPage() {
             <h2>{editSession ? 'Edit Sesi Latihan' : 'Buat Sesi Latihan Baru'}</h2>
             <form onSubmit={handleSubmit} className="form-section">
               <div>
-                <label className="form-label">Band (opsional)</label>
-                <select
-                  value={formData.bandId}
-                  onChange={(e) => setFormData({ ...formData, bandId: e.target.value })}
-                  className="modal-input"
-                >
-                  <option value="">-- Pilih Band --</option>
-                  {bands.map(band => (
-                    <option key={band.id} value={band.id}>{band.name}</option>
-                  ))}
-                </select>
+                <label className="form-label">Band</label>
+                <div className="modal-input" style={{ display: 'flex', alignItems: 'center' }}>
+                  {bands.find((band) => String(band.id) === String(selectedBandId))?.name || '-'}
+                </div>
               </div>
 
               <div>
@@ -495,13 +577,25 @@ export default function PracticeSessionPage() {
                       <label key={song.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', cursor: 'pointer' }}>
                         <input
                           type="checkbox"
-                          checked={formData.songs.includes(song.id)}
+                          checked={formData.songs.includes(String(song.id))}
                           onChange={(e) => {
+                            const songId = String(song.id);
                             if (e.target.checked) {
-                              if (formData.songs.includes(song.id)) return;
-                              setFormData({ ...formData, songs: [...formData.songs, song.id] });
+                              if (formData.songs.includes(songId)) return;
+                              const nextSongs = [...formData.songs, songId];
+                              setFormData({
+                                ...formData,
+                                songs: nextSongs,
+                                songMeta: {
+                                  ...formData.songMeta,
+                                  [songId]: formData.songMeta?.[songId] || { practiced: false, rating: null },
+                                },
+                              });
                             } else {
-                              setFormData({ ...formData, songs: formData.songs.filter(id => id !== song.id) });
+                              const nextSongs = formData.songs.filter(id => String(id) !== songId);
+                              const nextMeta = { ...(formData.songMeta || {}) };
+                              delete nextMeta[songId];
+                              setFormData({ ...formData, songs: nextSongs, songMeta: nextMeta });
                             }
                           }}
                           style={{ marginRight: '8px', cursor: 'pointer' }}
@@ -548,8 +642,59 @@ export default function PracticeSessionPage() {
                           <div style={{ fontSize: '0.9em' }}>
                             <span style={{ color: 'var(--text-muted)', marginRight: '6px' }} title="Geser untuk ubah urutan">⋮⋮</span>
                             {index + 1}. {getSongTitleById(songId)}
+                            <span style={{ marginLeft: '10px', color: 'var(--text-muted)', fontSize: '0.9em' }}>
+                              {formData.songMeta?.[songId]?.practiced ? '✅ Sudah dilatih' : '⏳ Belum ditandai'}
+                            </span>
                           </div>
-                          <div style={{ display: 'flex', gap: '6px' }}>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <input
+                                type="checkbox"
+                                checked={formData.songMeta?.[songId]?.practiced === true}
+                                onChange={(e) => {
+                                  const practiced = e.target.checked;
+                                  const previous = formData.songMeta?.[songId] || { practiced: false, rating: null };
+                                  setFormData({
+                                    ...formData,
+                                    songMeta: {
+                                      ...formData.songMeta,
+                                      [songId]: {
+                                        practiced,
+                                        rating: practiced ? previous.rating : null,
+                                      },
+                                    },
+                                  });
+                                }}
+                              />
+                              Dilatih
+                            </label>
+                            <select
+                              className="modal-input"
+                              style={{ minWidth: '120px' }}
+                              disabled={formData.songMeta?.[songId]?.practiced !== true}
+                              value={formData.songMeta?.[songId]?.rating ?? ''}
+                              onChange={(e) => {
+                                const rating = e.target.value ? Number.parseInt(e.target.value, 10) : null;
+                                const previous = formData.songMeta?.[songId] || { practiced: false, rating: null };
+                                setFormData({
+                                  ...formData,
+                                  songMeta: {
+                                    ...formData.songMeta,
+                                    [songId]: {
+                                      practiced: previous.practiced === true,
+                                      rating,
+                                    },
+                                  },
+                                });
+                              }}
+                            >
+                              <option value="">Rating</option>
+                              <option value="1">1</option>
+                              <option value="2">2</option>
+                              <option value="3">3</option>
+                              <option value="4">4</option>
+                              <option value="5">5</option>
+                            </select>
                             <button
                               type="button"
                               className="btn btn-secondary"
@@ -674,7 +819,7 @@ export default function PracticeSessionPage() {
           className="modal-input"
           style={{ maxWidth: '300px' }}
         >
-          <option value="">-- Semua Band --</option>
+          <option value="">-- Pilih Band --</option>
           {bands.map(band => (
             <option key={band.id} value={band.id}>{band.name}</option>
           ))}
@@ -726,13 +871,19 @@ export default function PracticeSessionPage() {
       {/* Content */}
       {loading && <ListSkeleton count={5} />}
       {error && <div className="error-text">{error}</div>}
+
+      {!selectedBandId && !loading && (
+        <div style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--text-muted)' }}>
+          Pilih band terlebih dahulu untuk mengatur jadwal latihan.
+        </div>
+      )}
       
-      {!loading && sortedSessions.length === 0 ? (
+      {selectedBandId && !loading && sortedSessions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
           Belum ada sesi latihan
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: '12px' }}>
+        selectedBandId && <div style={{ display: 'grid', gap: '12px' }}>
           {sortedSessions.map(session => (
             <div
               key={session.id}
@@ -767,12 +918,22 @@ export default function PracticeSessionPage() {
 
                 {session.songs?.length > 0 && (
                   <>
+                    {(() => {
+                      const summary = getSessionPracticeSummary(session);
+                      return (
+                        <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                          ✅ Ditandai dilatih: {summary.practicedCount}/{session.songs.length}
+                          {summary.ratingAvg ? ` • ⭐ Rata-rata rating: ${summary.ratingAvg}` : ''}
+                        </div>
+                      );
+                    })()}
                     <div style={{ fontSize: '0.9em', color: 'var(--text-muted)', marginBottom: '6px' }}>
                       🎵 {session.songs.length} lagu dilatih
                     </div>
                     <div style={{ marginBottom: '8px', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 10px', backgroundColor: 'var(--primary-bg)' }}>
                       <ol style={{ margin: 0, paddingLeft: '20px', display: 'grid', gap: '6px' }}>
                         {session.songs.map((songId) => {
+                          const meta = normalizeSongMeta([String(songId)], session.songMeta || {})[String(songId)] || {};
                           const song = getSongById(songId);
 
                           return (
@@ -796,6 +957,10 @@ export default function PracticeSessionPage() {
                               ) : (
                                 <span style={{ color: 'var(--text-muted)' }}>{getSongTitleById(songId)}</span>
                               )}
+                              <span style={{ marginLeft: '8px', color: 'var(--text-muted)', fontSize: '0.85em' }}>
+                                {meta.practiced ? '✅' : '⏳'}
+                                {Number.isInteger(meta.rating) ? ` • ⭐ ${meta.rating}` : ''}
+                              </span>
                             </li>
                           );
                         })}
