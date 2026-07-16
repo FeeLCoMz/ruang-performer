@@ -243,6 +243,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             aVal = a.artist || '';
             bVal = b.artist || '';
             break;
+          case 'setlistCount':
+            aVal = songUsageCountMap.get(a.id) || 0;
+            bVal = songUsageCountMap.get(b.id) || 0;
+            break;
           case 'key':
             aVal = a.key || '';
             bVal = b.key || '';
@@ -270,7 +274,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
 
     return result;
-  }, [setlistSongs, completedSongs, searchText, filterArtist, filterGenre, filterCompletionStatus, filterSmartOnly, sortBy, sortOrder, setlistSongMeta]);
+  }, [setlistSongs, songUsageCountMap, completedSongs, searchText, filterArtist, filterGenre, filterCompletionStatus, filterSmartOnly, sortBy, sortOrder, setlistSongMeta]);
 
   const hasActiveFilters = Boolean(
     searchText || filterArtist || filterGenre || filterSmartOnly || filterCompletionStatus !== 'all'
@@ -1259,6 +1263,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               <option value="custom">Urutkan: Custom</option>
               <option value="title">Urutkan: Judul</option>
               <option value="artist">Urutkan: Artis</option>
+              <option value="setlistCount">Urutkan: Jumlah Setlist</option>
               <option value="key">Urutkan: Kunci</option>
               <option value="tempo">Urutkan: Tempo</option>
               <option value="created">Urutkan: Tanggal</option>
