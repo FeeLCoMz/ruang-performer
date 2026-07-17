@@ -372,4 +372,39 @@ describe('SetlistSongsPage', () => {
     expect(shareTextarea.value).toContain('Encore Two');
     expect(shareTextarea.value).not.toContain('Opening Song');
   });
+
+  test('groups songs by artist when grouping option is selected', async () => {
+    const props = buildProps({
+      setlists: [
+        {
+          id: 'setlist-1',
+          name: 'Setlist Grup Artis',
+          userId: 'user-1',
+          songs: ['song-1', 'song-2', 'song-3'],
+          completedSongs: {},
+          setlistSongMeta: {},
+        },
+      ],
+      songs: [
+        { id: 'song-1', title: 'Alpha', artist: 'Artist B', key: 'C', tempo: '120', genre: 'Pop' },
+        { id: 'song-2', title: 'Beta', artist: 'Artist A', key: 'G', tempo: '110', genre: 'Rock' },
+        { id: 'song-3', title: 'Gamma', artist: 'Artist A', key: 'D', tempo: '100', genre: 'Rock' },
+      ],
+    });
+
+    await renderPage(root, props);
+
+    const groupSelect = container.querySelector('select[aria-label="Kelompokkan daftar lagu"]');
+    expect(groupSelect).toBeTruthy();
+
+    await act(async () => {
+      groupSelect.value = 'artist';
+      groupSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      await flushPromises();
+    });
+
+    const groupHeaders = Array.from(container.querySelectorAll('.setlist-group-header')).map((el) => el.textContent || '');
+    expect(groupHeaders.some((text) => text.includes('Artist A'))).toBe(true);
+    expect(groupHeaders.some((text) => text.includes('Artist B'))).toBe(true);
+  });
 });

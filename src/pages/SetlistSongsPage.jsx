@@ -82,6 +82,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [filterSmartOnly, setFilterSmartOnly] = useState(false);
   const [sortBy, setSortBy] = useState('custom');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [groupBy, setGroupBy] = useState('none');
 
   // State untuk modal tambah lagu (multi-select)
   const [showAddSong, setShowAddSong] = useState(false);
@@ -278,6 +279,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             aVal = songUsageCountMap.get(a.id) || 0;
             bVal = songUsageCountMap.get(b.id) || 0;
             break;
+          case 'completedStatus':
+            // Prioritaskan lagu yang sudah dibawakan saat urut naik.
+            aVal = completedSongs?.[a.id] === true ? 0 : 1;
+            bVal = completedSongs?.[b.id] === true ? 0 : 1;
+            break;
           case 'key':
             aVal = a.key || '';
             bVal = b.key || '';
@@ -359,6 +365,49 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
     return rows;
   }, [filteredSongs, setlistSongMeta, sortBy]);
+
+  const displayedSongRows = useMemo(() => {
+    if (groupBy === 'none') return filteredSongsWithDividers;
+
+    const getGroupLabel = (song) => {
+      if (groupBy === 'artist') return (song.artist || '').trim() || 'Tanpa Artis';
+      if (groupBy === 'genre') return (song.genre || '').trim() || 'Tanpa Genre';
+      if (groupBy === 'key') return (song.key || '').trim() || 'Tanpa Key';
+      if (groupBy === 'completion') return completedSongs?.[song.id] === true ? 'Sudah Dibawakan' : 'Belum Dibawakan';
+      return 'Lainnya';
+    };
+
+    const groups = new Map();
+    filteredSongs.forEach((song) => {
+      const label = getGroupLabel(song);
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label).push(song);
+    });
+
+    let labels = Array.from(groups.keys());
+    if (groupBy === 'completion') {
+      const desired = sortOrder === 'asc'
+        ? ['Sudah Dibawakan', 'Belum Dibawakan']
+        : ['Belum Dibawakan', 'Sudah Dibawakan'];
+      labels = desired.filter((label) => groups.has(label));
+    } else {
+      labels = labels.sort((a, b) => sortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a));
+    }
+
+    const rows = [];
+    labels.forEach((label) => {
+      const songsInGroup = groups.get(label) || [];
+      rows.push({
+        type: 'group',
+        key: `${groupBy}-${label}`,
+        label,
+        count: songsInGroup.length,
+      });
+      songsInGroup.forEach((song) => rows.push({ type: 'song', song }));
+    });
+
+    return rows;
+  }, [groupBy, filteredSongsWithDividers, filteredSongs, completedSongs, sortOrder]);
 
   const mergeCandidateSetlists = useMemo(() => {
     if (!Array.isArray(setlists)) return [];
@@ -1497,17 +1546,36 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               <option value="custom">Urutkan: Custom</option>
               <option value="title">Urutkan: Judul</option>
               <option value="artist">Urutkan: Artis</option>
+              <option value="completedStatus">Urutkan: Sudah Dibawakan</option>
               <option value="setlistCount">Urutkan: Jumlah Setlist</option>
               <option value="key">Urutkan: Kunci</option>
               <option value="tempo">Urutkan: Tempo</option>
               <option value="created">Urutkan: Tanggal</option>
             </select>
+            <select
+              value={groupBy}
+              onChange={(e) => setGroupBy(e.target.value)}
+              className="filter-select"
+              aria-label="Kelompokkan daftar lagu"
+            >
+              <option value="none">Kelompokkan: Tidak</option>
+              <option value="artist">Kelompokkan: Artis</option>
+              <option value="genre">Kelompokkan: Genre</option>
+              <option value="key">Kelompokkan: Key</option>
+              <option value="completion">Kelompokkan: Dibawakan</option>
+            </select>
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
               className="btn btn-secondary"
-              title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
+              title={
+                sortBy === 'completedStatus'
+                  ? (sortOrder === 'asc' ? 'Sudah ke Belum' : 'Belum ke Sudah')
+                  : (sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun')
+              }
             >
-              {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+              {sortBy === 'completedStatus'
+                ? (sortOrder === 'asc' ? '↑ Sudah→Belum' : '↓ Belum→Sudah')
+                : (sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A')}
             </button>
             {featuredSongIdsFromMeta.length > 0 && (
               <button
@@ -1543,15 +1611,24 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         </div>
       ) : (
         <div className="song-list-container">
-          {filteredSongsWithDividers.map((row) => {
+          {displayedSongRows.map((row) => {
+            if (row.type === 'group') {
+              return (
+                <div key={row.key} className="setlist-group-header">
+                  <span className="setlist-group-title">{row.label}</span>
+                  <span className="setlist-group-count">{row.count} lagu</span>
+                </div>
+              );
+            }
+
             if (row.type === 'divider') {
               return (
                 <div
                   key={`divider-${row.songId}`}
                   className="setlist-session-divider"
-                  draggable={sortBy === 'custom' && canEdit}
+                  draggable={sortBy === 'custom' && groupBy === 'none' && canEdit}
                   onDragStart={e => {
-                    if (sortBy !== 'custom' || !canEdit) return;
+                    if (sortBy !== 'custom' || groupBy !== 'none' || !canEdit) return;
                     e.dataTransfer.setData('drag-type', 'session-divider');
                     e.dataTransfer.setData('divider-from-song-id', String(row.songId));
                     e.currentTarget.classList.add('dragging');
@@ -1560,7 +1637,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     e.currentTarget.classList.remove('dragging');
                   }}
                   onDragOver={e => {
-                    if (sortBy !== 'custom' || !canEdit) return;
+                    if (sortBy !== 'custom' || groupBy !== 'none' || !canEdit) return;
                     if (e.dataTransfer.getData('drag-type') !== 'session-divider') return;
                     e.preventDefault();
                     e.currentTarget.classList.add('drag-over');
@@ -1569,7 +1646,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     e.currentTarget.classList.remove('drag-over');
                   }}
                   onDrop={e => {
-                    if (sortBy !== 'custom' || !canEdit) return;
+                    if (sortBy !== 'custom' || groupBy !== 'none' || !canEdit) return;
                     e.preventDefault();
                     e.currentTarget.classList.remove('drag-over');
                     const dragType = e.dataTransfer.getData('drag-type');
@@ -1615,9 +1692,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               <React.Fragment key={song.id}>
                 <div
                   className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
-                  draggable={sortBy === 'custom'}
+                  draggable={sortBy === 'custom' && groupBy === 'none'}
                   onDragStart={e => {
-                    if (sortBy !== 'custom') return;
+                    if (sortBy !== 'custom' || groupBy !== 'none') return;
                     e.dataTransfer.setData('song-idx', String(customIdx));
                     e.currentTarget.classList.add('dragging');
                   }}
@@ -1625,7 +1702,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     e.currentTarget.classList.remove('dragging');
                   }}
                   onDragOver={e => {
-                    if (sortBy !== 'custom') return;
+                    if (sortBy !== 'custom' || groupBy !== 'none') return;
                     e.preventDefault();
                     e.currentTarget.classList.add('drag-over');
                   }}
@@ -1633,7 +1710,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     e.currentTarget.classList.remove('drag-over');
                   }}
                   onDrop={e => {
-                    if (sortBy !== 'custom') return;
+                    if (sortBy !== 'custom' || groupBy !== 'none') return;
                     e.preventDefault();
                     e.currentTarget.classList.remove('drag-over');
                     const dragType = e.dataTransfer.getData('drag-type');
@@ -1655,7 +1732,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   })}
                 >
                   {/* Drag handle icon */}
-                  {sortBy === 'custom' && (
+                  {sortBy === 'custom' && groupBy === 'none' && (
                     <span className="drag-handle-icon" title="Seret untuk mengatur urutan">
                       <DragHandleIcon size={18} />
                     </span>
