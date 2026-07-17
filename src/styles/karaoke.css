@@ -55,6 +55,27 @@
   margin-bottom: var(--spacing-md);
 }
 
+.karaoke-setlist-nav {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: center;
+  justify-content: center;
+  margin: var(--spacing-md) auto var(--spacing-sm);
+}
+
+.karaoke-setlist-nav-info {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
 /* Lirik utama */
 .karaoke-lyrics-text {
   font-size: var(--font-size-3xl);
@@ -172,6 +193,18 @@
   }
   .karaoke-lyrics-page {
     padding: 0;
+  }
+
+  .karaoke-setlist-nav {
+    justify-content: stretch;
+    padding: 0 8px;
+  }
+
+  .karaoke-setlist-nav .btn,
+  .karaoke-setlist-nav-info {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
   }
 }
 

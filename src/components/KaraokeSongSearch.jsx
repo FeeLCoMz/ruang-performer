@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function KaraokeSongSearch({ songs }) {
+export default function KaraokeSongSearch({ songs, setlistId = null, setlistName = '', setlistSongIds = [] }) {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
@@ -9,6 +9,20 @@ export default function KaraokeSongSearch({ songs }) {
     song.title?.toLowerCase().includes(query.toLowerCase()) ||
     song.artist?.toLowerCase().includes(query.toLowerCase())
   );
+
+  function handlePickSong(song) {
+    const querySuffix = setlistId ? `?setlistId=${encodeURIComponent(setlistId)}` : '';
+    navigate(`/karaoke/${song.id}${querySuffix}`, {
+      state: setlistId
+        ? {
+            setlistId,
+            setlistName,
+            setlistSongIds,
+            fromSetlist: true,
+          }
+        : undefined,
+    });
+  }
 
   return (
     <div className="karaoke-song-search">
@@ -29,7 +43,7 @@ export default function KaraokeSongSearch({ songs }) {
               <div
                 key={song.id}
                 className="karaoke-search-item"
-                onClick={() => navigate(`/karaoke/${song.id}`)}
+                onClick={() => handlePickSong(song)}
                 style={{ cursor: 'pointer', padding: '8px 0', borderBottom: '1px solid #eee' }}
               >
                 <b>{song.title}</b> <span style={{ color: '#888' }}>({song.artist})</span>

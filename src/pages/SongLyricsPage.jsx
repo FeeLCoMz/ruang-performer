@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/karaoke.css';
 import AutoScrollBar from '../components/AutoScrollBar.jsx';
-import { useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { getAuthHeader } from '../utils/auth.js';
 import { isChordLine, isMetadataLine, parseInstrumentPatchLine, parseSection, splitSectionLabelWithChords } from '../utils/chordUtils.js';
 import KaraokeSongSearch from '../components/KaraokeSongSearch.jsx';
@@ -10,11 +10,20 @@ import * as apiClient from '../apiClient.js';
 // SongLyricsPage: Penampil lirik fullscreen untuk penyanyi/karaoke
 export default function SongLyricsPage() {
   const { id } = useParams();
+  const location = useLocation();
   const [song, setSong] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [songs, setSongs] = useState([]);
   const [loadingSongs, setLoadingSongs] = useState(true);
+  const [setlistContext, setSetlistContext] = useState(null);
+
+  const queryParams = new URLSearchParams(location.search || '');
+  const setlistId = queryParams.get('setlistId') || location.state?.setlistId || null;
+
+  const initialSetlistSongIds = Array.isArray(location.state?.setlistSongIds)
+    ? location.state.setlistSongIds.filter(Boolean)
+    : [];
 
   // Fetch song data by ID
   useEffect(() => {
@@ -42,6 +51,68 @@ export default function SongLyricsPage() {
       .catch(() => setLoadingSongs(false));
   }, []);
 
+  useEffect(() => {
+    if (!setlistId) {
+      if (initialSetlistSongIds.length > 0) {
+        setSetlistContext({
+          id: null,
+          name: location.state?.setlistName || '',
+          songs: initialSetlistSongIds,
+        });
+      } else {
+        setSetlistContext(null);
+      }
+      return;
+    }
+
+    if (initialSetlistSongIds.length > 0) {
+      setSetlistContext({
+        id: setlistId,
+        name: location.state?.setlistName || '',
+        songs: initialSetlistSongIds,
+      });
+    }
+
+    fetch(`/api/setlists/${setlistId}`, { headers: getAuthHeader() })
+      .then((res) => res.ok ? res.json() : Promise.reject('Gagal memuat setlist'))
+      .then((data) => {
+        setSetlistContext({
+          id: setlistId,
+          name: data?.name || location.state?.setlistName || '',
+          songs: Array.isArray(data?.songs) ? data.songs.filter(Boolean) : initialSetlistSongIds,
+        });
+      })
+      .catch(() => {
+        if (initialSetlistSongIds.length > 0) {
+          setSetlistContext((prev) => prev || {
+            id: setlistId,
+            name: location.state?.setlistName || '',
+            songs: initialSetlistSongIds,
+          });
+        }
+      });
+  }, [setlistId, location.state?.setlistName, initialSetlistSongIds]);
+
+  const setlistSongIds = Array.isArray(setlistContext?.songs) ? setlistContext.songs : [];
+  const currentSongIndex = setlistSongIds.findIndex((songId) => String(songId) === String(id));
+  const hasSetlistNavigation = Boolean(setlistId && setlistSongIds.length > 0 && currentSongIndex >= 0);
+  const prevSongId = hasSetlistNavigation && currentSongIndex > 0 ? setlistSongIds[currentSongIndex - 1] : null;
+  const nextSongId = hasSetlistNavigation && currentSongIndex < setlistSongIds.length - 1 ? setlistSongIds[currentSongIndex + 1] : null;
+
+  function buildSetlistSongLink(targetSongId) {
+    if (!targetSongId || !setlistId) return null;
+    return {
+      to: `/karaoke/${targetSongId}?setlistId=${encodeURIComponent(setlistId)}`,
+      state: {
+        ...(location.state || {}),
+        setlistId,
+        setlistName: setlistContext?.name || location.state?.setlistName || '',
+        setlistSongIds,
+        fromSetlist: true,
+      },
+    };
+  }
+
   // Ref untuk root halaman
   const pageScrollRef = useRef(null);
   // Split lyrics into lines
@@ -58,9 +129,71 @@ export default function SongLyricsPage() {
 
   return (
     <div className="karaoke-lyrics-page" ref={pageScrollRef}>
+      {setlistId && (
+        <div className="karaoke-setlist-nav">
+          <Link
+            className="btn btn-secondary"
+            to={`/setlists/${setlistId}`}
+            title="Kembali ke setlist aktif"
+          >
+            ← Kembali ke Setlist
+          </Link>
+
+          {hasSetlistNavigation && (
+            <>
+              {prevSongId ? (
+                <Link
+                  className="btn btn-secondary"
+                  to={buildSetlistSongLink(prevSongId).to}
+                  state={buildSetlistSongLink(prevSongId).state}
+                  title="Lagu sebelumnya"
+                >
+                  ⏮ Prev
+                </Link>
+              ) : (
+                <button
+                  className="btn btn-secondary disabled"
+                  disabled
+                  title="Lagu sebelumnya"
+                >
+                  ⏮ Prev
+                </button>
+              )}
+              <div className="karaoke-setlist-nav-info">
+                {setlistContext?.name ? `${setlistContext.name} • ` : ''}
+                Lagu {currentSongIndex + 1} / {setlistSongIds.length}
+              </div>
+              {nextSongId ? (
+                <Link
+                  className="btn btn-secondary"
+                  to={buildSetlistSongLink(nextSongId).to}
+                  state={buildSetlistSongLink(nextSongId).state}
+                  title="Lagu selanjutnya"
+                >
+                  Next ⏭
+                </Link>
+              ) : (
+                <button
+                  className="btn btn-secondary disabled"
+                  disabled
+                  title="Lagu selanjutnya"
+                >
+                  Next ⏭
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* KaraokeSongSearch di paling atas */}
       <div style={{ display: 'flex', justifyContent: 'center', margin: '24px 0' }}>
-        <KaraokeSongSearch songs={songs} />
+        <KaraokeSongSearch
+          songs={songs}
+          setlistId={setlistId}
+          setlistName={setlistContext?.name || location.state?.setlistName || ''}
+          setlistSongIds={setlistSongIds}
+        />
       </div>
       <div className="karaoke-header">
         <div className="karaoke-card">
