@@ -111,10 +111,9 @@ function ShareModal({ isOpen, video, onClose }) {
               className="youtube-share-textarea"
             />
             <button
-              className="btn btn-secondary"
+              className="btn btn-secondary youtube-share-copy-text-btn"
               onClick={handleCopyText}
               title="Salin teks"
-              style={{ marginTop: '8px' }}
             >
               {copied ? '✓ Disalin' : 'Salin Teks'}
             </button>
@@ -167,8 +166,7 @@ function ShareModal({ isOpen, video, onClose }) {
               href={youtubeUrl}
               target="_blank"
               rel="noreferrer"
-              className="btn btn-primary"
-              style={{ width: '100%', textAlign: 'center' }}
+              className="btn btn-primary youtube-share-watch-btn"
             >
               ▶️ Tonton di YouTube
             </a>

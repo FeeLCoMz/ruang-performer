@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import * as apiClient from '../apiClient';
 import '../App.css';
 
 export default function ResetPasswordPage() {
@@ -81,8 +80,7 @@ export default function ResetPasswordPage() {
           </p>
           <button 
             onClick={() => navigate('/login')}
-            className="btn"
-            style={{ background: 'var(--primary-color)', color: 'white' }}
+            className="btn btn-primary"
           >
             Back to Login
           </button>
@@ -108,12 +106,12 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="auth-container" style={{ padding: '20px' }}>
+    <div className="auth-container reset-password-container">
       <div className="auth-card">
         <h1 className="auth-title">
           Reset Password
         </h1>
-        <p className="auth-subtitle" style={{ marginBottom: '30px' }}>
+        <p className="auth-subtitle reset-password-subtitle">
           Enter your new password below
         </p>
 
@@ -154,29 +152,15 @@ export default function ResetPasswordPage() {
 
           <button
             type="submit"
-            className="btn"
-            style={{
-              background: 'var(--primary-color)',
-              color: 'white',
-              padding: '12px',
-              fontWeight: '600',
-              marginTop: '10px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.6 : 1
-            }}
+            className={`btn reset-password-submit-btn${loading ? ' is-loading' : ''}`}
             disabled={loading}
           >
             {loading ? 'Resetting Password...' : 'Reset Password'}
           </button>
         </form>
 
-        <p style={{ 
-          textAlign: 'center', 
-          color: 'var(--text-secondary)', 
-          fontSize: '0.9em',
-          marginTop: '20px'
-        }}>
-          Remember your password? <a href="/login" style={{ color: 'var(--primary-color)' }}>Back to login</a>
+        <p className="reset-password-footnote">
+          Remember your password? <a href="/login" className="reset-password-login-link">Back to login</a>
         </p>
       </div>
     </div>

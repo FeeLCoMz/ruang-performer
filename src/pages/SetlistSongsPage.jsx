@@ -581,8 +581,34 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     return (setlistSongs || []).find((song) => song.id === metronomeSongId) || null;
   }, [metronomeSongId, setlistSongs]);
 
+  const createOverlayDismissHandler = (onClose) => (e) => {
+    if (e.target.classList.contains('modal-overlay')) onClose();
+  };
+
+  const createEscapeDismissHandler = (onClose) => (e) => {
+    if (e.key === 'Escape') onClose();
+  };
+
+  const closeSessionDividerModal = () => setShowSessionDividerModal(false);
+  const closeShareModal = () => setShowShareModal(false);
+  const closeCopyModal = () => setShowCopyModal(false);
+  const closeSmartModal = () => setShowSmartModal(false);
+  const closeAddSongModal = () => setShowAddSong(false);
+  const closeMergeSetlistModal = () => setShowMergeSetlistModal(false);
+  const closeEditSongModal = () => setEditSongId(null);
+
   // Early returns AFTER all hooks
-  if (isLoading) return <div className="main-content"><div className="card"><div className="loading-skeleton" style={{height: 40, marginBottom: 16}}></div><div className="loading-skeleton" style={{height: 24, width: '60%', marginBottom: 8}}></div><div className="loading-skeleton" style={{height: 24, width: '40%', marginBottom: 8}}></div></div></div>;
+  if (isLoading) {
+    return (
+      <div className="main-content">
+        <div className="card">
+          <div className="loading-skeleton setlist-loading-skeleton-title" />
+          <div className="loading-skeleton setlist-loading-skeleton-line-60" />
+          <div className="loading-skeleton setlist-loading-skeleton-line-40" />
+        </div>
+      </div>
+    );
+  }
   if (!setlist) return <div className="main-content error-text">Setlist tidak ditemukan atau offline cache kosong</div>;
 
   function handleClearFilters() {
@@ -1604,7 +1630,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             {hasActiveFilters ? 'Tidak ada lagu yang cocok dengan filter' : 'Setlist ini belum berisi lagu'}
           </p>
           {!performanceMode && !hasActiveFilters && setlistSongs.length === 0 && (
-            <button className="btn" onClick={() => setShowAddSong(true)} style={{ marginTop: '12px' }}>
+            <button className="btn setlist-empty-add-btn" onClick={() => setShowAddSong(true)}>
               <PlusIcon size={18} /> Tambah Lagu Pertama
             </button>
           )}
@@ -1880,9 +1906,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         <div
           className="modal-overlay"
           aria-label="Modal divider sesi"
-          onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowSessionDividerModal(false); }}
+          onClick={createOverlayDismissHandler(closeSessionDividerModal)}
           tabIndex={-1}
-          onKeyDown={e => { if (e.key === 'Escape') setShowSessionDividerModal(false); }}
+          onKeyDown={createEscapeDismissHandler(closeSessionDividerModal)}
         >
           <div
             className="modal add-song-modal"
@@ -1922,16 +1948,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               </select>
             </label>
             {sessionDividers.length > 0 && (
-              <div className="smart-plan-note" style={{ marginTop: 8 }}>
+              <div className="smart-plan-note modal-note-top">
                 Divider aktif: {sessionDividers.map(d => d.name).join(', ')}
               </div>
             )}
-            {sessionDividerError && <div className="error-text" style={{ marginTop: 8 }}>{sessionDividerError}</div>}
+            {sessionDividerError && <div className="error-text modal-error-top">{sessionDividerError}</div>}
             <div className="modal-actions">
               <button className="btn" onClick={handleSaveSessionDivider} disabled={isSavingSessionDivider}>
                 {isSavingSessionDivider ? 'Menyimpan...' : 'Simpan Divider'}
               </button>
-              <button className="btn btn-secondary" onClick={() => setShowSessionDividerModal(false)} disabled={isSavingSessionDivider}>
+              <button className="btn btn-secondary" onClick={closeSessionDividerModal} disabled={isSavingSessionDivider}>
                 Batal
               </button>
             </div>
@@ -1964,9 +1990,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         <div
           className="modal-overlay"
           aria-label="Modal bagikan setlist"
-          onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowShareModal(false); }}
+          onClick={createOverlayDismissHandler(closeShareModal)}
           tabIndex={-1}
-          onKeyDown={e => { if (e.key === 'Escape') setShowShareModal(false); }}
+          onKeyDown={createEscapeDismissHandler(closeShareModal)}
         >
           <div
             className="modal add-song-modal"
@@ -2015,7 +2041,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             />
             {posterError && <div className="error-text setlist-poster-error">{posterError}</div>}
             <div className="setlist-share-actions">
-              <button className="btn " onClick={handleCopyShare}>
+              <button className="btn" onClick={handleCopyShare}>
                 {shareCopied ? '✅ Tersalin!' : 'Salin Teks'}
               </button>
               <button
@@ -2032,7 +2058,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               >
                 {isGeneratingPoster ? 'Membuat PDF...' : 'Download PDF'}
               </button>
-              <button className="btn btn-secondary" onClick={() => setShowShareModal(false)}>Tutup</button>
+              <button className="btn btn-secondary" onClick={closeShareModal}>Tutup</button>
             </div>
           </div>
         </div>
@@ -2043,9 +2069,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         <div
           className="modal-overlay"
           aria-label="Modal copy setlist"
-          onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowCopyModal(false); }}
+          onClick={createOverlayDismissHandler(closeCopyModal)}
           tabIndex={-1}
-          onKeyDown={e => { if (e.key === 'Escape') setShowCopyModal(false); }}
+          onKeyDown={createEscapeDismissHandler(closeCopyModal)}
         >
           <div
             className="modal add-song-modal"
@@ -2083,9 +2109,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         <div
           className="modal-overlay"
           aria-label="Modal smart setlist assistant"
-          onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowSmartModal(false); }}
+          onClick={createOverlayDismissHandler(closeSmartModal)}
           tabIndex={-1}
-          onKeyDown={e => { if (e.key === 'Escape') setShowSmartModal(false); }}
+          onKeyDown={createEscapeDismissHandler(closeSmartModal)}
         >
           <div
             className="modal add-song-modal smart-setlist-modal"
@@ -2138,7 +2164,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               <button className="btn" onClick={handleApplySmartSetlist} disabled={smartApplying || !smartPlan}>
                 {smartApplying ? 'Menerapkan...' : 'Terapkan Urutan Cerdas'}
               </button>
-              <button className="btn btn-secondary" onClick={() => setShowSmartModal(false)} disabled={smartApplying}>
+              <button className="btn btn-secondary" onClick={closeSmartModal} disabled={smartApplying}>
                 Batal
               </button>
             </div>
@@ -2151,9 +2177,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         <div
           className="modal-overlay"
           aria-label="Modal tambah lagu ke setlist"
-          onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowAddSong(false); }}
+          onClick={createOverlayDismissHandler(closeAddSongModal)}
           tabIndex={-1}
-          onKeyDown={e => { if (e.key === 'Escape') setShowAddSong(false); }}
+          onKeyDown={createEscapeDismissHandler(closeAddSongModal)}
         >
           <div
             className="modal add-song-modal"
@@ -2168,11 +2194,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               placeholder="Cari judul atau artist..."
               value={addSongSearch}
               onChange={e => setAddSongSearch(e.target.value)}
-              className="modal-input"
-              style={{ marginBottom: 12 }}
+              className="modal-input modal-input-spaced"
               autoFocus
             />
-            <ul className="song-list song-list-scroll" style={{ marginBottom: 8 }}>
+            <ul className="song-list song-list-scroll modal-list-spaced">
               {filteredAvailableSongs.length === 0 && (
                 <li className="info-text">Tidak ada lagu tersedia.</li>
               )}
@@ -2187,17 +2212,17 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                       ? ids.filter(id => id !== song.id)
                       : [...ids, song.id]);
                   }}
-                  style={addingSongIds.includes(song.id) ? { background: 'var(--primary-accent, #e0e7ff)' } : undefined}
                 >
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary, #3730a3)' }}>{song.title}</span> <span style={{ color: 'var(--text-muted, #888)', marginLeft: 8 }}>{song.artist}</span>
-                  {addingSongIds.includes(song.id) && <span style={{ marginLeft: 8 }}>✔️</span>}
+                  <span className="modal-item-title">{song.title}</span>
+                  <span className="modal-item-meta">{song.artist}</span>
+                  {addingSongIds.includes(song.id) && <span className="modal-item-check">✔️</span>}
                 </li>
               ))}
             </ul>
             {filteredAvailableSongs.length === 0 && canShowQuickAddSong && (
-              <div className="smart-plan-note" style={{ marginBottom: 8 }}>
+              <div className="smart-plan-note modal-note-bottom">
                 Lagu "{quickAddTitleCandidate}" belum ada di daftar.
-                <div style={{ marginTop: 8 }}>
+                <div className="modal-note-action-wrap">
                   <button
                     className="btn btn-secondary"
                     onClick={handleQuickAddSongFromSetlist}
@@ -2208,12 +2233,12 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 </div>
               </div>
             )}
-            {addSongError && <div className="error-text" style={{ marginBottom: 8 }}>{addSongError}</div>}
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            {addSongError && <div className="error-text modal-error-bottom">{addSongError}</div>}
+            <div className="modal-inline-actions">
               <button className="btn btn-primary" disabled={isAddingSongs || !addingSongIds.length} onClick={handleAddSongsToSetlist}>
                 {isAddingSongs ? 'Menambah...' : `Tambah ${addingSongIds.length ? `(${addingSongIds.length})` : ''}`}
               </button>
-              <button className="btn" onClick={() => setShowAddSong(false)}>Batal</button>
+              <button className="btn" onClick={closeAddSongModal}>Batal</button>
             </div>
           </div>
         </div>
@@ -2224,9 +2249,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         <div
           className="modal-overlay"
           aria-label="Modal merge dari setlist lain"
-          onClick={e => { if (e.target.classList.contains('modal-overlay')) setShowMergeSetlistModal(false); }}
+          onClick={createOverlayDismissHandler(closeMergeSetlistModal)}
           tabIndex={-1}
-          onKeyDown={e => { if (e.key === 'Escape') setShowMergeSetlistModal(false); }}
+          onKeyDown={createEscapeDismissHandler(closeMergeSetlistModal)}
         >
           <div
             className="modal add-song-modal"
@@ -2235,7 +2260,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             tabIndex={0}
           >
             <div className="modal-title">Merge Lagu dari Setlist Lain</div>
-            <div className="modal-message" style={{ marginBottom: 10 }}>
+            <div className="modal-message modal-message-spaced">
               Pilih satu atau beberapa setlist sumber. Lagu akan ditambahkan ke setlist ini tanpa duplikasi, dan metadata lagu baru juga ikut disalin.
             </div>
 
@@ -2244,12 +2269,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               placeholder="Cari nama setlist atau nama band..."
               value={mergeSetlistSearch}
               onChange={e => setMergeSetlistSearch(e.target.value)}
-              className="modal-input"
-              style={{ marginBottom: 10 }}
+              className="modal-input modal-input-spaced"
               autoFocus
             />
 
-            <ul className="song-list song-list-scroll" style={{ marginBottom: 8 }}>
+            <ul className="song-list song-list-scroll modal-list-spaced">
               {mergeCandidateSetlists.length === 0 && (
                 <li className="info-text">Tidak ada setlist sumber yang cocok.</li>
               )}
@@ -2267,31 +2291,30 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                         ? ids.filter((id) => id !== source.id)
                         : [...ids, source.id]);
                     }}
-                    style={isSelected ? { background: 'var(--primary-accent, #e0e7ff)' } : undefined}
                   >
-                    <span style={{ fontWeight: 700, color: 'var(--text-primary, #3730a3)' }}>{source.name}</span>
-                    <span style={{ color: 'var(--text-muted, #888)', marginLeft: 8 }}>
+                    <span className="modal-item-title">{source.name}</span>
+                    <span className="modal-item-meta">
                       {source.bandName ? `${source.bandName} • ` : ''}{sourceSongCount} lagu
                     </span>
-                    {isSelected && <span style={{ marginLeft: 8 }}>✔️</span>}
+                    {isSelected && <span className="modal-item-check">✔️</span>}
                   </li>
                 );
               })}
             </ul>
 
             {mergeSourceSetlistIds.length > 0 && (
-              <div className="smart-plan-note" style={{ marginBottom: 8 }}>
+              <div className="smart-plan-note modal-note-bottom">
                 {mergeSourceSetlistIds.length} setlist dipilih untuk digabungkan.
               </div>
             )}
 
-            {mergeSetlistError && <div className="error-text" style={{ marginBottom: 8 }}>{mergeSetlistError}</div>}
+            {mergeSetlistError && <div className="error-text modal-error-bottom">{mergeSetlistError}</div>}
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <div className="modal-inline-actions">
               <button className="btn btn-primary" disabled={isMergingSetlist || !mergeSourceSetlistIds.length} onClick={handleMergeFromSetlist}>
                 {isMergingSetlist ? 'Menggabungkan...' : `Merge Lagu${mergeSourceSetlistIds.length ? ` (${mergeSourceSetlistIds.length})` : ''}`}
               </button>
-              <button className="btn" onClick={() => setShowMergeSetlistModal(false)} disabled={isMergingSetlist}>Batal</button>
+              <button className="btn" onClick={closeMergeSetlistModal} disabled={isMergingSetlist}>Batal</button>
             </div>
           </div>
         </div>
@@ -2301,9 +2324,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       {editSongId != null && canEdit && (
         <div
           className="modal-overlay"
-          onClick={e => { if (e.target.classList.contains('modal-overlay')) setEditSongId(null); }}
+          onClick={createOverlayDismissHandler(closeEditSongModal)}
           tabIndex={-1}
-          onKeyDown={e => { if (e.key === 'Escape') setEditSongId(null); }}
+          onKeyDown={createEscapeDismissHandler(closeEditSongModal)}
         >
           <div
             className="modal add-song-modal"
@@ -2313,17 +2336,17 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           >
             <div className="modal-title">Edit Detail Lagu di Setlist</div>
             <label>Key
-              <input type="text" value={editSongKey} onChange={e => setEditSongKey(e.target.value)} className="modal-input" style={{ marginBottom: 8 }} />
+              <input type="text" value={editSongKey} onChange={e => setEditSongKey(e.target.value)} className="modal-input modal-input-tight" />
             </label>
-            {editSongKeyError && <div className="error-text" style={{ marginBottom: 8 }}>{editSongKeyError}</div>}
+            {editSongKeyError && <div className="error-text modal-error-bottom">{editSongKeyError}</div>}
             <label>Tempo
-              <input type="text" value={editSongTempo} onChange={e => setEditSongTempo(e.target.value)} className="modal-input" style={{ marginBottom: 8 }} />
+              <input type="text" value={editSongTempo} onChange={e => setEditSongTempo(e.target.value)} className="modal-input modal-input-tight" />
             </label>
             <label>Genre
-              <input type="text" value={editSongStyle} onChange={e => setEditSongStyle(e.target.value)} className="modal-input" style={{ marginBottom: 8 }} />
+              <input type="text" value={editSongStyle} onChange={e => setEditSongStyle(e.target.value)} className="modal-input modal-input-tight" />
             </label>
-            <button className="btn " style={{ marginBottom: 8 }} onClick={handleEditSongSave}>Simpan</button>
-            <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={() => setEditSongId(null)}>Batal</button>
+            <button className="btn modal-btn-bottom" onClick={handleEditSongSave}>Simpan</button>
+            <button className="btn btn-secondary" onClick={closeEditSongModal}>Batal</button>
           </div>
         </div>
       )}

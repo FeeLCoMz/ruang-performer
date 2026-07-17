@@ -94,6 +94,70 @@
   color: var(--text-primary);
 }
 
+.profile-loading-card {
+  text-align: center;
+  padding: 40px;
+}
+
+.profile-delete-warning {
+  color: #ef4444;
+  margin-bottom: 16px;
+}
+
+.profile-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.profile-avatar-image {
+  object-fit: cover;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3px solid var(--primary-accent);
+  box-shadow: 0 2px 8px #0001;
+}
+
+.profile-avatar-fallback {
+  width: 96px;
+  height: 96px;
+  font-size: 40px;
+  border: 3px solid var(--primary-accent);
+  box-shadow: 0 2px 8px #0001;
+}
+
+.profile-bands-row {
+  margin-top: 12px;
+}
+
+.profile-bands-list {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.profile-band-name {
+  font-weight: 500;
+}
+
+.profile-band-genre {
+  color: #888;
+  margin-left: 8px;
+}
+
+.profile-band-role {
+  color: #555;
+  margin-left: 8px;
+}
+
+.profile-action-icon {
+  margin-right: 6px;
+}
+
+.profile-section-card {
+  margin-top: 24px;
+}
+
 /* ===== Statistik Card ===== */
 .statistik-grid {
   display: flex;
@@ -190,6 +254,173 @@
   border-radius: 6px;
   padding: 2px 8px;
   font-weight: 600;
+}
+
+.audit-loading-title {
+  color: var(--text-color);
+}
+
+.audit-view-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.audit-view-button {
+  background: var(--border-color);
+  color: var(--text-color);
+}
+
+.audit-view-button.is-active {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.audit-empty-state {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 20px;
+}
+
+.audit-action-name {
+  font-weight: 600;
+}
+
+.audit-severity-badge.audit-severity-low,
+.timeline-marker.audit-severity-low,
+.audit-severity-row.audit-severity-low {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.audit-severity-badge.audit-severity-medium,
+.timeline-marker.audit-severity-medium,
+.audit-severity-row.audit-severity-medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.audit-severity-badge.audit-severity-high,
+.timeline-marker.audit-severity-high,
+.audit-severity-row.audit-severity-high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.audit-severity-badge.audit-severity-critical,
+.timeline-marker.audit-severity-critical,
+.audit-severity-row.audit-severity-critical {
+  background: #fecaca;
+  color: #7f1d1d;
+}
+
+.audit-severity-badge {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--text-secondary);
+}
+
+.audit-category-badge {
+  background: color-mix(in srgb, var(--primary-color) 20%, transparent);
+  color: var(--primary-color);
+}
+
+.audit-failed-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.audit-meta-line {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+}
+
+.audit-meta-line-user {
+  margin: 8px 0 0;
+}
+
+.audit-meta-line-band {
+  margin: 4px 0 0;
+}
+
+.audit-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.audit-stats-list,
+.audit-category-list,
+.audit-severity-list,
+.audit-suspicious-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.audit-stats-list,
+.audit-suspicious-list {
+  gap: 12px;
+}
+
+.audit-category-list,
+.audit-severity-list {
+  gap: 8px;
+}
+
+.audit-stats-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.audit-stats-total {
+  font-size: 1.2em;
+}
+
+.audit-severity-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.audit-severity-name {
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.audit-severity-value {
+  color: currentColor;
+}
+
+.audit-suspicious-card {
+  grid-column: 1 / -1;
+  border-left: 4px solid #ef4444;
+}
+
+.audit-suspicious-title {
+  color: #ef4444;
+}
+
+.audit-suspicious-item {
+  padding: 12px;
+  background: #fee2e2;
+  border-radius: 6px;
+}
+
+.audit-suspicious-action {
+  margin: 0 0 4px;
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.audit-suspicious-reason {
+  margin: 0;
+  font-size: 0.9em;
+  color: #7f1d1d;
+}
+
+.audit-suspicious-time {
+  margin: 4px 0 0;
+  font-size: 0.8em;
+  color: #9ca3af;
 }
 
 /* ===== Modal Improvements ===== */
@@ -1312,6 +1543,11 @@ body {
   margin-top: 8px;
 }
 
+.youtube-share-watch-btn {
+  width: 100%;
+  text-align: center;
+}
+
 .youtube-share-social-buttons {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -2395,6 +2631,18 @@ body.dark-mode .lyrics-editor-textarea {
   margin-bottom: var(--spacing-xl);
 }
 
+.setlist-filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setlist-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
 .search-input-main {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-md);
@@ -2426,6 +2674,61 @@ body.dark-mode .lyrics-editor-textarea {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+}
+
+.song-virtual-row {
+  box-sizing: border-box;
+  padding-bottom: 8px;
+}
+
+.song-setlist-count-meta {
+  color: var(--primary-accent);
+  margin-left: 8px;
+  font-size: 0.95em;
+}
+
+.song-contributor-meta {
+  color: var(--text-secondary);
+  margin-left: 8px;
+  font-size: 0.95em;
+}
+
+.song-filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.song-search-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.song-search-row .search-input-main {
+  width: 100%;
+}
+
+.song-search-voice-wrap {
+  align-items: center;
+  height: 100%;
+}
+
+.song-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.song-empty-search-tools {
+  margin-top: 12px;
+}
+
+.song-empty-search-links {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .song-group-header {
@@ -2471,6 +2774,115 @@ body.dark-mode .lyrics-editor-textarea {
   color: var(--text-muted);
 }
 
+.gig-loading-skeleton-title {
+  width: 120px;
+  height: 32px;
+}
+
+.gig-action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+
+.gig-poster-error {
+  color: var(--danger, #ef4444);
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+.setlist-loading-skeleton-title {
+  height: 40px;
+  margin-bottom: 16px;
+}
+
+.setlist-loading-skeleton-line-60 {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 8px;
+}
+
+.setlist-loading-skeleton-line-40 {
+  height: 24px;
+  width: 40%;
+  margin-bottom: 8px;
+}
+
+.setlist-empty-add-btn {
+  margin-top: 12px;
+}
+
+.modal-note-top {
+  margin-top: 8px;
+}
+
+.modal-note-bottom {
+  margin-bottom: 8px;
+}
+
+.modal-note-action-wrap {
+  margin-top: 8px;
+}
+
+.modal-error-top {
+  margin-top: 8px;
+}
+
+.modal-error-bottom {
+  margin-bottom: 8px;
+}
+
+.modal-message-spaced {
+  margin-bottom: 10px;
+}
+
+.modal-input-spaced {
+  margin-bottom: 12px;
+}
+
+.modal-input-tight {
+  margin-bottom: 8px;
+}
+
+.modal-list-spaced {
+  margin-bottom: 8px;
+}
+
+.modal-inline-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.modal-btn-bottom {
+  margin-bottom: 8px;
+}
+
+.modal-item-title {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modal-item-meta {
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.modal-item-check {
+  margin-left: 8px;
+}
+
+.modal.add-song-modal .song-list-item.selected {
+  background: var(--primary-accent);
+  color: #fff;
+}
+
+.modal.add-song-modal .song-list-item.selected .modal-item-title,
+.modal.add-song-modal .song-list-item.selected .modal-item-meta {
+  color: #fff;
+}
+
 .song-list-load-more {
   margin-top: var(--spacing-md);
   display: flex;
@@ -2485,6 +2897,7 @@ body.dark-mode .lyrics-editor-textarea {
 }
 
 .song-list-virtualized {
+  width: 100%;
   scrollbar-gutter: stable;
 }
 
@@ -2752,6 +3165,184 @@ body.dark-mode .lyrics-editor-textarea {
   color: #1e3a8a;
   background: #dbeafe;
   border: 1px solid #93c5fd;
+}
+
+.gig-share-trigger-btn {
+  margin-left: 12px;
+}
+
+.gig-form-row {
+  display: flex;
+  gap: 8px;
+}
+
+.gig-form-col-flex {
+  flex: 1;
+}
+
+.gig-form-col-time {
+  width: 120px;
+}
+
+.gig-submit-btn {
+  background: #4f8cff;
+  color: #fff;
+  font-weight: 600;
+}
+
+.gig-delete-title {
+  color: var(--error);
+}
+
+.gig-delete-message {
+  color: var(--text-muted);
+}
+
+.gig-delete-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.gig-delete-btn {
+  background-color: var(--error);
+  color: #fff;
+}
+
+.gig-share-note {
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.gig-share-month-summary {
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  font-size: 0.9em;
+}
+
+.gig-share-poster-wrap {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.gig-share-poster-card {
+  max-width: 540px;
+  width: 100%;
+}
+
+.gig-poster-headline-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.gig-poster-band-name {
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.gig-poster-empty-item {
+  justify-content: center;
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+.gig-poster-footer {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.gig-toolbar {
+  margin-bottom: 24px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.gig-band-filter {
+  max-width: 300px;
+}
+
+.gig-toolbar-date-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.gig-month-filter {
+  max-width: 190px;
+}
+
+.gig-year-filter {
+  max-width: 110px;
+}
+
+.gig-toolbar-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.gig-view-toggle-btn {
+  padding: 6px 12px;
+  font-size: 0.9em;
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-color);
+}
+
+.gig-view-toggle-btn.is-active {
+  background-color: #4f8cff;
+  color: #fff;
+  border: none;
+}
+
+.gig-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.karaoke-search-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.karaoke-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.karaoke-title-icon {
+  font-size: 2.2rem;
+}
+
+.karaoke-song-title-hero {
+  font-weight: 700;
+  font-size: 2rem;
+}
+
+.karaoke-artist-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.karaoke-artist-icon {
+  font-size: 1.5rem;
+}
+
+.karaoke-song-artist-hero {
+  color: var(--text-secondary);
+  font-size: 1.2rem;
 }
 
 .song-info {
@@ -3037,6 +3628,34 @@ body.dark-mode .lyrics-editor-textarea {
   display: flex;
   gap: var(--spacing-sm);
   flex-shrink: 0;
+}
+
+.setlist-action-edit-btn {
+  padding: 6px 12px;
+  font-size: 0.85em;
+}
+
+.setlist-error-box {
+  padding: 20px;
+}
+
+.setlist-delete-title {
+  color: var(--error);
+}
+
+.setlist-delete-message {
+  margin-bottom: 20px;
+  color: var(--text-muted);
+}
+
+.setlist-delete-error {
+  margin-bottom: 16px;
+}
+
+.setlist-delete-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
 }
 
 .setlist-form-title {
@@ -3718,6 +4337,103 @@ body.dark-mode .lyrics-editor-textarea {
   margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-md);
   border-bottom: 2px solid var(--border-color);
+}
+
+.song-edit-error-banner {
+  margin-top: 12px;
+  margin-bottom: 0;
+  font-weight: 700;
+  color: #c00;
+  font-size: 16px;
+}
+
+.song-new-version-note {
+  margin-bottom: 16px;
+}
+
+.song-ai-autofill-row {
+  margin-top: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.song-ai-autofill-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.song-ai-autofill-loading {
+  margin-left: 6px;
+}
+
+.song-ai-autofill-help {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.song-key-input-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.song-key-input {
+  flex: 1;
+}
+
+.song-key-piano-btn {
+  white-space: nowrap;
+}
+
+.song-tempo-row {
+  flex-direction: row;
+}
+
+.song-tempo-input {
+  flex: 1;
+}
+
+.song-media-panel-header-content {
+  align-items: center;
+}
+
+.song-media-panel-toggle {
+  margin-right: 16px;
+}
+
+.song-media-panel-title-wrap {
+  flex: 1;
+}
+
+.song-media-panel-youtube-row {
+  margin-bottom: var(--spacing-lg);
+}
+
+.song-section-toggle-row {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.song-section-title-inline {
+  flex: 1;
+  margin: 0;
+}
+
+.song-section-toggle-btn {
+  margin-left: 8px;
+}
+
+.song-section-toggle-content {
+  margin-top: 8px;
+}
+
+.song-sheetmusic-textarea {
+  font-family: monospace;
+  resize: vertical;
 }
 
 .form-input-field {
@@ -4422,6 +5138,10 @@ body.dark-mode .lyrics-editor-textarea {
   font-size: 0.9em;
 }
 
+.setup-header-subtitle {
+  margin-top: 8px;
+}
+
 .setup-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -4435,6 +5155,14 @@ body.dark-mode .lyrics-editor-textarea {
 .setup-step-text {
   font-size: 0.9em;
   color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.setup-step-text-small {
+  font-size: 0.85em;
+}
+
+.setup-form-group {
   margin-bottom: 16px;
 }
 
@@ -4476,6 +5204,185 @@ body.dark-mode .lyrics-editor-textarea {
   color: var(--text-secondary);
 }
 
+.user-management-error-card {
+  color: #dc3545;
+}
+
+.user-management-success-banner {
+  padding: 12px;
+  margin-bottom: 16px;
+  background-color: #d4edda;
+  color: #155724;
+  border-radius: 6px;
+  border: 1px solid #c3e6cb;
+}
+
+.user-management-banner-close {
+  float: right;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.user-management-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-management-table-head-row {
+  border-bottom: 2px solid var(--border-color);
+}
+
+.user-management-table th,
+.user-management-table td {
+  padding: 12px 8px;
+  text-align: left;
+}
+
+.user-management-table-row {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.user-management-cell-center {
+  text-align: center !important;
+}
+
+.user-management-role-select {
+  padding: 4px 8px;
+}
+
+.user-management-role-label {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.user-management-role-owner {
+  color: #dc3545;
+}
+
+.user-management-role-admin {
+  color: #d97706;
+}
+
+.user-management-status-btn {
+  padding: 4px 12px;
+  font-size: 0.85em;
+  color: #fff;
+  border: none;
+}
+
+.user-management-status-btn.is-active {
+  background-color: #28a745;
+}
+
+.user-management-status-btn.is-inactive {
+  background-color: #dc3545;
+}
+
+.user-management-small-cell {
+  font-size: 0.85em;
+}
+
+.user-management-band-role {
+  color: #888;
+}
+
+.user-management-muted {
+  color: #999;
+}
+
+.user-management-action-btn {
+  padding: 4px 8px;
+  font-size: 0.8em;
+  margin-right: 4px;
+}
+
+.user-management-delete-btn {
+  padding: 4px 8px;
+  font-size: 0.8em;
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+}
+
+.user-management-empty-state {
+  padding: 24px;
+  text-align: center;
+  color: #999;
+}
+
+.user-management-reset-modal {
+  max-width: 400px;
+}
+
+.user-management-modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.tool-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 24px 18px 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.tool-card h2 {
+  margin-top: 0;
+  font-size: 1.2em;
+}
+
+.tool-card p {
+  flex: 1;
+  color: var(--text-secondary);
+}
+
+.tool-card .btn {
+  margin-top: 12px;
+}
+
+.tools-hidden-input {
+  display: none;
+}
+
+.tools-feedback {
+  margin-top: 8px;
+}
+
+.tools-feedback-error {
+  color: #dc3545;
+}
+
+.tools-feedback-success {
+  color: #198754;
+}
+
+.tools-models-wrap {
+  margin-top: 12px;
+  max-height: 200px;
+  overflow: auto;
+  font-size: 13px;
+}
+
+.tools-models-list {
+  padding-left: 18px;
+}
+
+.tools-model-name {
+  color: #888;
+}
+
 .token-input {
   width: 100%;
   text-align: center;
@@ -4483,6 +5390,75 @@ body.dark-mode .lyrics-editor-textarea {
   letter-spacing: 0.5em;
   padding: 12px;
   font-family: "Courier New", monospace;
+}
+
+.setup-submit-btn {
+  width: 100%;
+}
+
+.setup-card-spaced {
+  margin-top: 24px;
+}
+
+.backup-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.backup-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.backup-help-text {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.backup-code-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.backup-code-item {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  text-align: center;
+  font-size: 0.95em;
+  transform: scale(1);
+  background: var(--surface-color);
+  color: var(--text-color);
+}
+
+.backup-code-item.copied {
+  transform: scale(0.98);
+  background: var(--success-bg);
+  color: var(--success-color);
+}
+
+.backup-warning-box {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-color);
+  border-radius: 4px;
+  color: var(--warning-color);
+  font-size: 0.9em;
 }
 
 .backup-grid {
@@ -4543,6 +5519,40 @@ body.dark-mode .lyrics-editor-textarea {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.reset-password-container {
+  padding: 20px;
+}
+
+.reset-password-subtitle {
+  margin-bottom: 30px;
+}
+
+.reset-password-submit-btn {
+  background: var(--primary-color);
+  color: #fff;
+  padding: 12px;
+  font-weight: 600;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.reset-password-submit-btn.is-loading,
+.reset-password-submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.reset-password-footnote {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  margin-top: 20px;
+}
+
+.reset-password-login-link {
+  color: var(--primary-color);
 }
 
 /* LOGIN PAGE */

@@ -66,7 +66,13 @@ export default function GigDetailPage() {
       });
   };
 
-  if (loading) return <div className="page-container"><span className="loading-skeleton" style={{width:120,height:32}} /></div>;
+  if (loading) {
+    return (
+      <div className="page-container">
+        <span className="loading-skeleton gig-loading-skeleton-title" />
+      </div>
+    );
+  }
   if (!gig) return <div className="page-container"><h2>Gig tidak ditemukan</h2></div>;
 
   return (
@@ -77,14 +83,13 @@ export default function GigDetailPage() {
         {can && can('gig:edit') && (
           <button
             className="btn btn-primary"
-            style={{ marginLeft: 8 }}
             onClick={() => navigate(`/gigs/edit/${gig.id}`)}
           >
             ✏️ Edit Gig
           </button>
         )}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0 8px 0' }}>
+      <div className="gig-action-row">
         <button
           className="btn btn-primary"
           onClick={handleDownloadPoster}
@@ -93,7 +98,7 @@ export default function GigDetailPage() {
           {isGeneratingPoster ? 'Mengunduh...' : 'Download E-Flyer'}
         </button>
         {posterError && (
-          <span style={{ color: 'var(--danger, #ef4444)', marginLeft: 8, fontWeight: 500 }}>{posterError}</span>
+          <span className="gig-poster-error">{posterError}</span>
         )}
       </div>
       <EflyerPoster gig={gig} setlist={setlist} posterRef={posterRef} />

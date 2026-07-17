@@ -111,7 +111,7 @@ export default function UserManagementPage() {
     return (
       <div className="page-container">
         <div className="page-header"><h1>User Management</h1></div>
-        <div className="card" style={{ color: 'red' }}>{error}</div>
+        <div className="card user-management-error-card">{error}</div>
       </div>
     );
   }
@@ -124,109 +124,89 @@ export default function UserManagementPage() {
       </div>
 
       {successMessage && (
-        <div style={{ 
-          padding: 12, 
-          marginBottom: 16, 
-          backgroundColor: '#d4edda', 
-          color: '#155724', 
-          borderRadius: 6,
-          border: '1px solid #c3e6cb'
-        }}>
+        <div className="user-management-success-banner">
           {successMessage}
-          <button 
-            style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}
+          <button
+            className="user-management-banner-close"
             onClick={() => setSuccessMessage(null)}
           >×</button>
         </div>
       )}
 
       <div className="card">
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className="user-management-table">
           <thead>
-            <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-              <th style={{ padding: '12px 8px', textAlign: 'left' }}>Email</th>
-              <th style={{ padding: '12px 8px', textAlign: 'left' }}>Username</th>
-              <th style={{ padding: '12px 8px', textAlign: 'left' }}>Role</th>
-              <th style={{ padding: '12px 8px', textAlign: 'center' }}>Status</th>
-              <th style={{ padding: '12px 8px', textAlign: 'left' }}>Bands</th>
-              <th style={{ padding: '12px 8px', textAlign: 'left' }}>Dibuat</th>
-              <th style={{ padding: '12px 8px', textAlign: 'center' }}>Actions</th>
+            <tr className="user-management-table-head-row">
+              <th>Email</th>
+              <th>Username</th>
+              <th>Role</th>
+              <th className="user-management-cell-center">Status</th>
+              <th>Bands</th>
+              <th>Dibuat</th>
+              <th className="user-management-cell-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
-              <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                <td style={{ padding: '12px 8px' }}>{u.email}</td>
-                <td style={{ padding: '12px 8px' }}>{u.username}</td>
-                <td style={{ padding: '12px 8px' }}>
+              <tr key={u.id} className="user-management-table-row">
+                <td>{u.email}</td>
+                <td>{u.username}</td>
+                <td>
                   {editingUser === u.id ? (
-                    <select 
+                    <select
+                      className="user-management-role-select"
                       value={u.role} 
                       onChange={(e) => handleChangeRole(u.id, e.target.value)}
                       disabled={actionLoading}
-                      style={{ padding: '4px 8px' }}
                     >
                       <option value="member">member</option>
                       <option value="admin">admin</option>
                       <option value="owner">owner</option>
                     </select>
                   ) : (
-                    <span 
-                      style={{ 
-                        cursor: 'pointer', 
-                        textDecoration: 'underline',
-                        color: u.role === 'owner' ? 'red' : u.role === 'admin' ? 'orange' : 'inherit'
-                      }}
+                    <span
+                      className={`user-management-role-label user-management-role-${u.role}`}
                       onClick={() => setEditingUser(u.id)}
                     >
                       {u.role}
                     </span>
                   )}
                 </td>
-                <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                <td className="user-management-cell-center">
                   <button
-                    className="btn btn-secondary"
-                    style={{ 
-                      padding: '4px 12px', 
-                      fontSize: '0.85em',
-                      backgroundColor: u.isActive ? '#28a745' : '#dc3545',
-                      color: '#fff',
-                      border: 'none'
-                    }}
+                    className={`btn btn-secondary user-management-status-btn ${u.isActive ? 'is-active' : 'is-inactive'}`}
                     onClick={() => handleToggleActive(u.id, u.isActive)}
                     disabled={actionLoading || u.id === user.userId}
                   >
                     {u.isActive ? 'Aktif' : 'Nonaktif'}
                   </button>
                 </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.85em' }}>
+                <td className="user-management-small-cell">
                   {u.bands && u.bands.length > 0 ? (
                     <div>
                       {u.bands.map((b) => (
                         <div key={b.bandId}>
-                          {b.bandName} <span style={{ color: '#888' }}>({b.role})</span>
+                          {b.bandName} <span className="user-management-band-role">({b.role})</span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <span style={{ color: '#999' }}>-</span>
+                    <span className="user-management-muted">-</span>
                   )}
                 </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.85em' }}>
+                <td className="user-management-small-cell">
                   {new Date(u.createdAt).toLocaleDateString('id-ID')}
                 </td>
-                <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                <td className="user-management-cell-center">
                   <button
-                    className="btn btn-secondary"
-                    style={{ padding: '4px 8px', fontSize: '0.8em', marginRight: 4 }}
+                    className="btn btn-secondary user-management-action-btn"
                     onClick={() => setResetPasswordModal(u)}
                     disabled={actionLoading}
                   >
                     Reset Password
                   </button>
                   <button
-                    className="btn btn-secondary"
-                    style={{ padding: '4px 8px', fontSize: '0.8em', backgroundColor: '#dc3545', color: '#fff', border: 'none' }}
+                    className="btn btn-secondary user-management-delete-btn"
                     onClick={() => handleDeleteUser(u.id)}
                     disabled={actionLoading || u.id === user.userId}
                   >
@@ -238,7 +218,7 @@ export default function UserManagementPage() {
           </tbody>
         </table>
         {users.length === 0 && (
-          <div style={{ padding: 24, textAlign: 'center', color: '#999' }}>
+          <div className="user-management-empty-state">
             Tidak ada users
           </div>
         )}
@@ -247,7 +227,7 @@ export default function UserManagementPage() {
       {/* Reset Password Modal */}
       {resetPasswordModal && (
         <div className="modal-overlay" onClick={() => setResetPasswordModal(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+          <div className="modal user-management-reset-modal" onClick={(e) => e.stopPropagation()}>
             <h2>Reset Password</h2>
             <p>Reset password untuk: <b>{resetPasswordModal.email}</b></p>
             <input
@@ -258,16 +238,16 @@ export default function UserManagementPage() {
               onChange={(e) => setNewPassword(e.target.value)}
               disabled={actionLoading}
             />
-            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-              <button 
-                className="btn btn-primary" 
+            <div className="user-management-modal-actions">
+              <button
+                className="btn btn-primary"
                 onClick={() => handleResetPassword(resetPasswordModal.id)}
                 disabled={actionLoading || !newPassword}
               >
                 {actionLoading ? 'Processing...' : 'Reset Password'}
               </button>
-              <button 
-                className="btn btn-secondary" 
+              <button
+                className="btn btn-secondary"
                 onClick={() => {
                   setResetPasswordModal(null);
                   setNewPassword('');

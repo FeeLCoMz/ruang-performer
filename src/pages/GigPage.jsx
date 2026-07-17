@@ -304,7 +304,7 @@ export default function GigPage() {
                   <PlusIcon size={18} /> Buat Konser
                 </button>
                 {gigs.length > 0 && (
-                  <button className="btn btn-secondary" style={{ marginLeft: 12 }} onClick={() => setShowShareModal(true)}>
+                  <button className="btn btn-secondary gig-share-trigger-btn" onClick={() => setShowShareModal(true)}>
                     📤 Bagikan Jadwal
                   </button>
                 )}
@@ -332,7 +332,7 @@ export default function GigPage() {
                   <PlusIcon size={18} /> Buat Konser
                 </button>
                 {gigs.length > 0 && (
-                  <button className="btn btn-secondary" style={{ marginLeft: 12 }} onClick={() => setShowShareModal(true)}>
+                  <button className="btn btn-secondary gig-share-trigger-btn" onClick={() => setShowShareModal(true)}>
                     📤 Bagikan Jadwal
                   </button>
                 )}
@@ -363,8 +363,8 @@ export default function GigPage() {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div style={{ flex: 1 }}>
+              <div className="gig-form-row">
+                <div className="gig-form-col-flex">
                   <label className="form-label">Tanggal *</label>
                   <input
                     type="date"
@@ -374,7 +374,7 @@ export default function GigPage() {
                     required
                   />
                 </div>
-                <div style={{ width: 120 }}>
+                <div className="gig-form-col-time">
                   <label className="form-label">Waktu</label>
                   <input
                     type="time"
@@ -458,8 +458,7 @@ export default function GigPage() {
                 </button>
                 <button
                   type="submit"
-                  className="btn "
-                  style={{ background: '#4f8cff', color: '#fff', fontWeight: 600 }}
+                  className="btn gig-submit-btn"
                 >
                   {editGig ? 'Simpan Perubahan' : 'Buat Jadwal'}
                 </button>
@@ -473,15 +472,14 @@ export default function GigPage() {
       {deleteConfirm && (
         <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ color: 'var(--error)' }}>Hapus Jadwal Konser?</h2>
-            <p style={{ color: 'var(--text-muted)' }}>
+            <h2 className="gig-delete-title">Hapus Jadwal Konser?</h2>
+            <p className="gig-delete-message">
               Yakin ingin menghapus konser di <b>{deleteConfirm.venue || deleteConfirm.city || 'lokasi ini'}</b> tanggal <b>{new Date(deleteConfirm.date).toLocaleDateString('id-ID')}</b>?
             </p>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+            <div className="gig-delete-actions">
               <button className="btn" onClick={() => setDeleteConfirm(null)}>Batal</button>
               <button
-                className="btn"
-                style={{ backgroundColor: 'var(--error)', color: 'white' }}
+                className="btn gig-delete-btn"
                 onClick={handleDelete}
               >
                 Hapus
@@ -495,16 +493,16 @@ export default function GigPage() {
         <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
           <div className="modal add-song-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Bagikan Jadwal Konser</div>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>
+            <p className="gig-share-note">
               Gunakan bulan dan tahun yang dipilih untuk daftar dan kalender.
             </p>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '12px', fontSize: '0.9em' }}>
+            <p className="gig-share-month-summary">
               📅 <strong>{monthName}</strong> - {filteredGigs.length} konser
             </p>
 
             {/* Poster preview for sharing */}
-            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
-              <div className="calendar-export-card schedule-poster-card" ref={posterRef} style={{ maxWidth: 540, width: '100%' }}>
+            <div className="gig-share-poster-wrap">
+              <div className="calendar-export-card schedule-poster-card gig-share-poster-card" ref={posterRef}>
                 <div className="schedule-poster-header">
                   <div>
                     <div className="schedule-poster-kicker">Jadwal Konser</div>
@@ -518,8 +516,8 @@ export default function GigPage() {
                     sortedGigs.map((g, idx) => (
                       <div key={g.id} className="schedule-poster-item">
                         <div className="schedule-poster-item-main">
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-                            <div style={{ fontWeight: 700, color: '#f8fafc' }}>{idx + 1}. {g.bandName || 'Band Tamu'}</div>
+                          <div className="gig-poster-headline-row">
+                            <div className="gig-poster-band-name">{idx + 1}. {g.bandName || 'Band Tamu'}</div>
                             {g.date && (
                               <div className="schedule-poster-meta">
                                 {new Date(g.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
@@ -538,12 +536,12 @@ export default function GigPage() {
                       </div>
                     ))
                   ) : (
-                    <div className="schedule-poster-item" style={{ justifyContent: 'center', color: '#cbd5e1', fontStyle: 'italic' }}>
+                    <div className="schedule-poster-item gig-poster-empty-item">
                       Tidak ada konser di bulan ini
                     </div>
                   )}
                 </div>
-                <div className="setlist-poster-footer" style={{ marginTop: 12, textAlign: 'center' }}>
+                <div className="setlist-poster-footer gig-poster-footer">
                   <div className="setlist-poster-brand">Ruang Performer</div>
                 </div>
               </div>
@@ -581,27 +579,25 @@ export default function GigPage() {
       )}
 
       {/* Filter & View Mode Toggle */}
-      <div style={{ marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="gig-toolbar">
         <select
           value={selectedBandId}
           onChange={(e) => setSelectedBandId(e.target.value)}
-          className="modal-input"
-          style={{ maxWidth: '300px' }}
+          className="modal-input gig-band-filter"
         >
           <option value="">-- Semua Band --</option>
           {bands.map(band => (
             <option key={band.id} value={band.id}>{band.name}</option>
           ))}
         </select>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="gig-toolbar-date-group">
           <select
             value={shareMonth}
             onChange={(e) => {
               const value = e.target.value;
               setShareMonth(value === '' ? '' : parseInt(value, 10));
             }}
-            className="modal-input"
-            style={{ maxWidth: '190px' }}
+            className="modal-input gig-month-filter"
           >
             <option value="">Semua bulan</option>
             {Array.from({ length: 12 }, (_, i) => (
@@ -613,8 +609,7 @@ export default function GigPage() {
           <select
             value={shareYear}
             onChange={(e) => setShareYear(parseInt(e.target.value))}
-            className="modal-input"
-            style={{ maxWidth: '110px' }}
+            className="modal-input gig-year-filter"
           >
             {Array.from({ length: 5 }, (_, i) => {
               const year = new Date().getFullYear() - 2 + i;
@@ -626,7 +621,7 @@ export default function GigPage() {
             })}
           </select>
         </div>
-        <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+        <div className="gig-toolbar-actions">
           <button
             className="btn btn-secondary"
             onClick={() => setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
@@ -635,28 +630,14 @@ export default function GigPage() {
             {sortOrder === 'desc' ? '⬇️ Terbaru' : '⬆️ Terlama'}
           </button>
           <button
-            className={`btn ${viewMode === 'list' ? 'btn-primary' : ''}`}
+            className={`btn gig-view-toggle-btn ${viewMode === 'list' ? 'is-active' : ''}`}
             onClick={() => setViewMode('list')}
-            style={{
-              padding: '6px 12px',
-              fontSize: '0.9em',
-              backgroundColor: viewMode === 'list' ? '#4f8cff' : 'transparent',
-              color: viewMode === 'list' ? '#fff' : 'var(--text-primary)',
-              border: viewMode === 'list' ? 'none' : '1.5px solid var(--border-color)'
-            }}
           >
             📋 List
           </button>
           <button
-            className={`btn ${viewMode === 'calendar' ? 'btn-primary' : ''}`}
+            className={`btn gig-view-toggle-btn ${viewMode === 'calendar' ? 'is-active' : ''}`}
             onClick={() => setViewMode('calendar')}
-            style={{
-              padding: '6px 12px',
-              fontSize: '0.9em',
-              backgroundColor: viewMode === 'calendar' ? '#4f8cff' : 'transparent',
-              color: viewMode === 'calendar' ? '#fff' : 'var(--text-primary)',
-              border: viewMode === 'calendar' ? 'none' : '1.5px solid var(--border-color)'
-            }}
           >
             📅 Kalender
           </button>
@@ -668,7 +649,7 @@ export default function GigPage() {
       {error && <div className="error-text">{error}</div>}
       
       {!loading && sortedGigs.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+        <div className="gig-empty-state">
           Belum ada jadwal konser untuk {monthName}
         </div>
       ) : !loading && viewMode === 'calendar' ? (

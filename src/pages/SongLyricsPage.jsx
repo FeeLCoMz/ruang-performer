@@ -187,7 +187,7 @@ export default function SongLyricsPage() {
       )}
 
       {/* KaraokeSongSearch di paling atas */}
-      <div style={{ display: 'flex', justifyContent: 'center', margin: '24px 0' }}>
+      <div className="karaoke-search-wrap">
         <KaraokeSongSearch
           songs={songs}
           setlistId={setlistId}
@@ -197,27 +197,27 @@ export default function SongLyricsPage() {
       </div>
       <div className="karaoke-header">
         <div className="karaoke-card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '8px' }}>
+          <div className="karaoke-title-row">
             <span
               role="img"
               aria-label="music"
-              style={{ fontSize: '2.2rem' }}
+              className="karaoke-title-icon"
             >
               🎵
             </span>
-            <span className="karaoke-song-title" style={{ fontWeight: 'bold', fontSize: '2rem' }}>
+            <span className="karaoke-song-title karaoke-song-title-hero">
               {song.title}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <div className="karaoke-artist-row">
             <span
               role="img"
               aria-label="artist"
-              style={{ fontSize: '1.5rem' }}
+              className="karaoke-artist-icon"
             >
               👤
             </span>
-            <span className="karaoke-song-artist" style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>
+            <span className="karaoke-song-artist karaoke-song-artist-hero">
               {song.artist}
             </span>
           </div>

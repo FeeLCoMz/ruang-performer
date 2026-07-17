@@ -20,7 +20,8 @@ function VirtualSongRow({ index, style, ariaAttributes, songs, renderSongItem })
 
   return (
     <div
-      style={{ ...style, boxSizing: 'border-box', paddingBottom: '8px' }}
+      style={style}
+      className="song-virtual-row"
       {...ariaAttributes}
     >
       {renderSongItem(song, {
@@ -566,10 +567,10 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
               {song.genre && <span>🎸 {song.genre}</span>}
               {song.bandId && <span>🎤 Band: {song.bandName || '-'}</span>}
-              <span style={{ color: 'var(--primary-accent)', marginLeft: 8, fontSize: '0.95em' }}>
+              <span className="song-setlist-count-meta">
                 {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
               </span>
-              <span style={{ color: 'var(--text-secondary)', marginLeft: 8, fontSize: '0.95em' }}>
+              <span className="song-contributor-meta">
                 ✍️ {song.contributorName || song.contributorUsername || '-'}
               </span>
               <span className="song-mastery-summary">
@@ -584,7 +585,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
           <div
             className="song-actions"
             onClick={(e) => e.stopPropagation()}
-            style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
           >
             <button
               className="btn btn-secondary song-action-mini"
@@ -721,17 +721,16 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
 
       {/* Filters & Search */}
       {/* Search Bar + Voice Search: Selalu tampil */}
-      <div className="filter-container" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 4 }}>
+      <div className="filter-container song-filter-container">
+        <div className="song-search-row">
           <input
             type="text"
             placeholder="🔍 Cari judul, artis, atau genre..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="search-input-main"
-            style={{ width: '100%' }}
           />
-          <div style={{ alignItems: 'center', height: '100%' }}>
+          <div className="song-search-voice-wrap">
             <VoiceSearchButton
               onResult={text => setSearch(text)}
               disabled={loading}
@@ -740,11 +739,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
         </div>
         {/* Filter dan sort hanya jika !performanceMode */}
         {!performanceMode && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: '12px'
-          }}>
+          <div className="song-filter-grid">
             {/* Filter by Setlist */}
             <select
               value={filterBand}
@@ -895,9 +890,9 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
             {hasActiveFilters ? 'Tidak ada lagu yang cocok dengan filter' : 'Belum ada lagu'}
           </p>
           {hasActiveFilters && search.trim() && (
-            <div style={{ marginTop: '12px' }}>
+            <div className="song-empty-search-tools">
               <p>Tidak menemukan lagu? Cari di Google:</p>
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <div className="song-empty-search-links">
                 <a
                   href={`https://www.google.com/search?q=chord+${encodeURIComponent(search)}`}
                   target="_blank"
@@ -934,7 +929,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
                 rowHeight={virtualRowHeight}
                 rowProps={{ songs: filteredSongs, renderSongItem }}
                 overscanCount={6}
-                style={{ height: 'min(68vh, 760px)', width: '100%' }}
+                style={{ height: 'min(68vh, 760px)' }}
               />
             </div>
           ) : (

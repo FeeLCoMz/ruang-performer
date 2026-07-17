@@ -136,7 +136,7 @@ export default function TwoFactorSetupPage() {
     <div className="page-container">
       <div className="page-header">
         <h1>Set Up Two-Factor Authentication</h1>
-        <p className="secondary-text" style={{ marginTop: '8px' }}>
+        <p className="secondary-text setup-header-subtitle">
           Enhance your account security with two-factor authentication
         </p>
       </div>
@@ -163,7 +163,7 @@ export default function TwoFactorSetupPage() {
               />
             </div>
           )}
-          <p className="setup-step-text" style={{ fontSize: '0.85em' }}>
+          <p className="setup-step-text setup-step-text-small">
             Or enter this code manually if the QR code doesn't work:
           </p>
           <div className="manual-code">
@@ -178,7 +178,7 @@ export default function TwoFactorSetupPage() {
             Enter the 6-digit code from your authenticator app to confirm the setup:
           </p>
           <form onSubmit={handleVerify}>
-            <div style={{ marginBottom: '16px' }}>
+            <div className="setup-form-group">
               <input
                 type="text"
                 className="modal-input token-input"
@@ -188,19 +188,12 @@ export default function TwoFactorSetupPage() {
                 maxLength="6"
                 pattern="\d{6}"
                 autoComplete="off"
-                style={{
-                  fontSize: '1.5em',
-                  letterSpacing: '0.5em',
-                  textAlign: 'center',
-                  fontFamily: 'monospace'
-                }}
                 disabled={verifying}
               />
             </div>
             <button
               type="submit"
-              className="btn"
-              style={{ width: '100%' }}
+              className="btn setup-submit-btn"
               disabled={verifying || !verificationToken || verificationToken.length !== 6}
             >
               {verifying ? 'Verifying...' : 'Verify & Enable 2FA'}
@@ -210,53 +203,27 @@ export default function TwoFactorSetupPage() {
       </div>
 
       {/* Backup Codes Section */}
-      <div className="card" style={{ marginTop: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div className="card setup-card-spaced">
+        <div className="backup-header-row">
           <h3>Step 3: Save Backup Codes</h3>
           <button
             onClick={() => setShowBackupCodes(!showBackupCodes)}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-color)',
-              padding: '6px 12px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.9em'
-            }}
+            className="backup-toggle-btn"
           >
             {showBackupCodes ? 'Hide' : 'Show'} Backup Codes
           </button>
         </div>
-        <p style={{ fontSize: '0.9em', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+        <p className="backup-help-text">
           Save these backup codes in a safe place. You can use them to access your account if you lose your authenticator app:
         </p>
         
         {showBackupCodes && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: '12px',
-            marginTop: '16px'
-          }}>
+          <div className="backup-code-grid">
             {backupCodes.map((code, index) => (
               <div
                 key={index}
                 onClick={() => copyBackupCode(code, index)}
-                style={{
-                  padding: '12px',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  fontFamily: 'monospace',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  transition: 'all 0.2s ease',
-                  textAlign: 'center',
-                  fontSize: '0.95em',
-                  transform: copiedCode === index ? 'scale(0.98)' : 'scale(1)',
-                  background: copiedCode === index ? 'var(--success-bg)' : 'var(--surface-color)',
-                  color: copiedCode === index ? 'var(--success-color)' : 'var(--text-color)'
-                }}
+                className={`backup-code-item ${copiedCode === index ? 'copied' : ''}`}
                 title="Click to copy"
               >
                 {copiedCode === index ? '✓ Copied!' : code}
@@ -265,23 +232,15 @@ export default function TwoFactorSetupPage() {
           </div>
         )}
         
-        <div style={{
-          marginTop: '16px',
-          padding: '12px',
-          background: 'var(--warning-bg)',
-          border: '1px solid var(--warning-color)',
-          borderRadius: '4px',
-          color: 'var(--warning-color)',
-          fontSize: '0.9em'
-        }}>
+        <div className="backup-warning-box">
           <strong>⚠️ Important:</strong> Store these codes securely. Each code can only be used once and cannot be recovered if lost.
         </div>
       </div>
 
       {/* Info Box */}
-      <div className="card" style={{ marginTop: '24px', background: 'var(--info-bg)', borderLeft: '3px solid var(--info-color)' }}>
-        <h4 style={{ color: 'var(--info-color)', marginBottom: '8px' }}>About Two-Factor Authentication</h4>
-        <ul style={{ fontSize: '0.9em', marginLeft: '20px', color: 'var(--text-secondary)' }}>
+      <div className="card info-card">
+        <h4 className="info-title">About Two-Factor Authentication</h4>
+        <ul className="info-list">
           <li>You'll need your authenticator app to sign in to your account</li>
           <li>Backup codes can be used if you lose access to your authenticator app</li>
           <li>Each backup code can only be used once</li>

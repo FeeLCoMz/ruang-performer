@@ -410,11 +410,11 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       <div className="page-header">
         <h1>{isEditMode ? "Edit Lagu" : newVersionMode ? "Buat Versi Baru Lagu" : "Tambah Lagu Baru"}</h1>
         {error && (
-          <div className="error-message" style={{marginTop: 12, marginBottom: 0, fontWeight: 'bold', color: '#c00', fontSize: 16}}>{error}</div>
+          <div className="error-message song-edit-error-banner">{error}</div>
         )}
       </div>
       {newVersionMode && (
-        <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card song-new-version-note">
           Form ini membuat versi baru dari lagu yang sudah ada. Ubah judul, aransemen, atau detail lain seperlunya sebelum menyimpan.
         </div>
       )}
@@ -448,26 +448,17 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
           </div>
 
           {/* AI Autofill Button */}
-          <div
-            style={{
-              marginTop: 12,
-              marginBottom: 8,
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
+          <div className="song-ai-autofill-row">
             <button
               type="button"
-              className="btn btn-secondary"
               onClick={handleAIAutofill}
               disabled={aiLoading}
-              style={{ display: "flex", alignItems: "center", gap: 6 }}
+              className="btn btn-secondary song-ai-autofill-btn"
             >
               🤖 AI Autofill
-              {aiLoading && <span style={{ marginLeft: 6 }}>⏳</span>}
+              {aiLoading && <span className="song-ai-autofill-loading">⏳</span>}
             </button>
-            <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+            <span className="song-ai-autofill-help">
               Otomatis isi data lagu dari AI (judul wajib diisi)
             </span>
           </div>
@@ -475,20 +466,18 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
           <div className="form-grid-2col">
             <div>
               <label className="form-label-required">🎹 Key</label>
-              <div style={{ display: "flex", gap: "var(--spacing-sm)", alignItems: "center" }}>
+              <div className="song-key-input-row">
                 <input
                   type="text"
                   value={songKey}
                   onChange={(e) => setSongKey(e.target.value)}
                   placeholder="C, D, E, dll"
-                  className="form-input-field"
-                  style={{ flex: 1 }}
+                  className="form-input-field song-key-input"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPiano(true)}
-                  className="btn btn-secondary"
-                  style={{ whiteSpace: "nowrap" }}
+                  className="btn btn-secondary song-key-piano-btn"
                   title="Buka Piano Virtual"
                 >
                   🎹 Piano
@@ -498,7 +487,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
             <div>
               <label className="form-label-required">⏱️ Tempo (BPM)</label>
-              <div className="form-section" style={{ flexDirection: "row" }}>
+              <div className="form-section song-tempo-row">
                 <input
                   type="number"
                   value={tempo}
@@ -506,8 +495,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   placeholder="120"
                   min="40"
                   max="240"
-                  className="form-input-field"
-                  style={{ flex: 1 }}
+                  className="form-input-field song-tempo-input"
                 />
                 <TapTempo onTempo={setTempo} initialTempo={tempo} label="Tap" />
               </div>
@@ -564,19 +552,17 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         <div className="media-panel">
           <div className="media-panel-header">
             <div
-              className="media-panel-header-content"
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+              className="media-panel-header-content song-media-panel-header-content"
             >
               <button
                 type="button"
-                className="media-panel-toggle"
                 onClick={() => setMediaPanelExpanded(!mediaPanelExpanded)}
                 aria-label={mediaPanelExpanded ? "Sembunyikan panel" : "Tampilkan panel"}
-                style={{ marginRight: 16 }}
+                className="media-panel-toggle song-media-panel-toggle"
               >
                 {mediaPanelExpanded ? "▼" : "▶"}
               </button>
-              <div style={{ flex: 1 }}>
+              <div className="song-media-panel-title-wrap">
                 <h3 className="media-panel-title">
                   <span className="media-panel-icon">📺</span>
                   Video & Time Markers
@@ -588,7 +574,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
           {mediaPanelExpanded && (
             <div className="media-panel-content">
-              <div style={{ marginBottom: "var(--spacing-lg)" }}>
+              <div className="song-media-panel-youtube-row">
                 <label className="form-label-required">YouTube URL atau ID</label>
                 <input
                   type="text"
@@ -652,14 +638,14 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
         {/* Chord Links Panel - Collapsible */}
         <div className="song-section-card">
-          <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => setChordLinksExpanded(v => !v)}>
-            <h3 className="song-section-title" style={{ flex: 1, margin: 0 }}>🔗 Chord Links</h3>
-            <button type="button" className="media-panel-toggle" style={{ marginLeft: 8 }} tabIndex={-1}>
+          <div className="song-section-toggle-row" onClick={() => setChordLinksExpanded(v => !v)}>
+            <h3 className="song-section-title song-section-title-inline">🔗 Chord Links</h3>
+            <button type="button" className="media-panel-toggle song-section-toggle-btn" tabIndex={-1}>
               {chordLinksExpanded ? "▼" : "▶"}
             </button>
           </div>
           {chordLinksExpanded && (
-            <div style={{ marginTop: 8 }}>
+            <div className="song-section-toggle-content">
               <ChordLinks searchQuery={[title, artist].filter(Boolean).join(" - ")} />
             </div>
           )}
@@ -702,9 +688,9 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
         {/* Sheet Music Section - Collapsible */}
         <div className="song-section-card">
-          <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => setPartiturExpanded(v => !v)}>
-            <h3 className="song-section-title" style={{ flex: 1, margin: 0 }}>🎼 Partitur (MusicXML)</h3>
-            <button type="button" className="media-panel-toggle" style={{ marginLeft: 8 }} tabIndex={-1}>
+          <div className="song-section-toggle-row" onClick={() => setPartiturExpanded(v => !v)}>
+            <h3 className="song-section-title song-section-title-inline">🎼 Partitur (MusicXML)</h3>
+            <button type="button" className="media-panel-toggle song-section-toggle-btn" tabIndex={-1}>
               {partiturExpanded ? "▼" : "▶"}
             </button>
           </div>
@@ -715,8 +701,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 onChange={(e) => setSheetMusicXml(e.target.value)}
                 placeholder="Paste MusicXML di sini..."
                 rows={10}
-                className="form-input-field"
-                style={{ fontFamily: "monospace", resize: "vertical" }}
+                className="form-input-field song-sheetmusic-textarea"
               />
               <div className="form-hint">
                 Hanya format MusicXML. Gunakan software notasi musik untuk ekspor MusicXML.

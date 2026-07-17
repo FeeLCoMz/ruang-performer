@@ -3,9 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   filterAuditLogs, 
   generateAuditReport, 
-  formatAuditLog,
-  formatActionName,
-  getSeverityColor 
+  formatActionName 
 } from '../utils/auditLogger';
 import '../styles/AuditLog.css';
 
@@ -23,6 +21,8 @@ export default function AuditLogPage() {
   });
   const [report, setReport] = useState(null);
   const [view, setView] = useState('timeline'); // timeline or stats
+
+  const getSeverityClass = (severity) => `audit-severity-${String(severity || 'low').toLowerCase()}`;
 
   useEffect(() => {
     fetchAuditLogs();
@@ -64,7 +64,7 @@ export default function AuditLogPage() {
   if (loading) {
     return (
       <div className="page-container">
-        <h1 style={{ color: 'var(--text-color)' }}>Loading...</h1>
+        <h1 className="audit-loading-title">Loading...</h1>
       </div>
     );
   }
@@ -73,24 +73,16 @@ export default function AuditLogPage() {
     <div className="page-container">
       <div className="page-header">
         <h1>Audit Log & Activity</h1>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="audit-view-actions">
           <button 
-            className={`btn ${view === 'timeline' ? 'active' : ''}`}
+            className={`btn audit-view-button ${view === 'timeline' ? 'is-active' : ''}`}
             onClick={() => setView('timeline')}
-            style={{ 
-              background: view === 'timeline' ? 'var(--primary-color)' : 'var(--border-color)',
-              color: view === 'timeline' ? 'white' : 'var(--text-color)'
-            }}
           >
             Timeline
           </button>
           <button 
-            className={`btn ${view === 'stats' ? 'active' : ''}`}
+            className={`btn audit-view-button ${view === 'stats' ? 'is-active' : ''}`}
             onClick={() => setView('stats')}
-            style={{ 
-              background: view === 'stats' ? 'var(--primary-color)' : 'var(--border-color)',
-              color: view === 'stats' ? 'white' : 'var(--text-color)'
-            }}
           >
             Statistics
           </button>
@@ -173,8 +165,7 @@ export default function AuditLogPage() {
               </button>
               <button 
                 onClick={fetchAuditLogs}
-                className="btn"
-                style={{ background: 'var(--primary-color)', color: 'white' }}
+                className="btn btn-primary"
               >
                 Refresh
               </button>
@@ -186,19 +177,16 @@ export default function AuditLogPage() {
             <h2>Activity Timeline ({filteredLogs.length} events)</h2>
             <div className="activity-timeline">
               {filteredLogs.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>
+                <p className="audit-empty-state">
                   No events found
                 </p>
               ) : (
                 filteredLogs.map((log) => (
                   <div key={log.id} className="timeline-item">
-                    <div 
-                      className="timeline-marker"
-                      style={{ background: getSeverityColor(log.severity) }}
-                    />
+                    <div className={`timeline-marker ${getSeverityClass(log.severity)}`} />
                     <div className="timeline-content">
                       <div className="timeline-header">
-                        <span className="action-name" style={{ fontWeight: '600' }}>
+                        <span className="action-name audit-action-name">
                           {formatActionName(log.action)}
                         </span>
                         <span className="timeline-time">
@@ -206,34 +194,25 @@ export default function AuditLogPage() {
                         </span>
                       </div>
                       <div className="timeline-meta">
-                        <span className="badge" style={{ 
-                          background: `${getSeverityColor(log.severity)}20`,
-                          color: getSeverityColor(log.severity)
-                        }}>
+                        <span className={`badge audit-severity-badge ${getSeverityClass(log.severity)}`}>
                           {log.severity}
                         </span>
-                        <span className="badge" style={{ 
-                          background: `var(--primary-color)20`,
-                          color: 'var(--primary-color)'
-                        }}>
+                        <span className="badge audit-category-badge">
                           {log.category}
                         </span>
                         {log.status === 'failed' && (
-                          <span className="badge" style={{ 
-                            background: '#ef444420',
-                            color: '#ef4444'
-                          }}>
+                          <span className="badge audit-failed-badge">
                             Failed
                           </span>
                         )}
                       </div>
                       {log.user && (
-                        <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)', fontSize: '0.9em' }}>
+                        <p className="audit-meta-line audit-meta-line-user">
                           <strong>User:</strong> {log.user}
                         </p>
                       )}
                       {log.band && (
-                        <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '0.9em' }}>
+                        <p className="audit-meta-line audit-meta-line-band">
                           <strong>Band:</strong> {log.band}
                         </p>
                       )}
@@ -246,24 +225,24 @@ export default function AuditLogPage() {
         </>
       ) : (
         /* Statistics View */
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+        <div className="audit-stats-grid">
           {/* Summary Stats */}
           <div className="card">
             <h3>Summary</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="audit-stats-list">
+              <div className="audit-stats-row">
                 <span>Total Events</span>
-                <strong style={{ fontSize: '1.2em' }}>{report?.totalEvents || 0}</strong>
+                <strong className="audit-stats-total">{report?.totalEvents || 0}</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div className="audit-stats-row">
                 <span>Today</span>
                 <strong>{report?.timeline?.today || 0}</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div className="audit-stats-row">
                 <span>This Week</span>
                 <strong>{report?.timeline?.thisWeek || 0}</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div className="audit-stats-row">
                 <span>This Month</span>
                 <strong>{report?.timeline?.thisMonth || 0}</strong>
               </div>
@@ -273,9 +252,9 @@ export default function AuditLogPage() {
           {/* By Category */}
           <div className="card">
             <h3>By Category</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="audit-category-list">
               {Object.entries(report?.byCategory || {}).map(([category, count]) => (
-                <div key={category} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div key={category} className="audit-stats-row">
                   <span>{category}</span>
                   <strong>{count}</strong>
                 </div>
@@ -286,23 +265,13 @@ export default function AuditLogPage() {
           {/* By Severity */}
           <div className="card">
             <h3>By Severity</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="audit-severity-list">
               {Object.entries(report?.bySeverity || {}).map(([severity, count]) => (
-                <div key={severity} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  padding: '8px',
-                  background: `${getSeverityColor(severity)}10`,
-                  borderRadius: '4px'
-                }}>
-                  <span style={{ 
-                    textTransform: 'capitalize',
-                    color: getSeverityColor(severity),
-                    fontWeight: '500'
-                  }}>
+                <div key={severity} className={`audit-severity-row ${getSeverityClass(severity)}`}>
+                  <span className="audit-severity-name">
                     {severity}
                   </span>
-                  <strong style={{ color: getSeverityColor(severity) }}>{count}</strong>
+                  <strong className="audit-severity-value">{count}</strong>
                 </div>
               ))}
             </div>
@@ -310,18 +279,18 @@ export default function AuditLogPage() {
 
           {/* Suspicious Activity */}
           {(report?.suspiciousActivity || []).length > 0 && (
-            <div className="card" style={{ gridColumn: '1 / -1', borderLeft: '4px solid #ef4444' }}>
-              <h3 style={{ color: '#ef4444' }}>⚠️ Suspicious Activity ({report.suspiciousActivity.length})</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="card audit-suspicious-card">
+              <h3 className="audit-suspicious-title">⚠️ Suspicious Activity ({report.suspiciousActivity.length})</h3>
+              <div className="audit-suspicious-list">
                 {report.suspiciousActivity.slice(0, 5).map((item, idx) => (
-                  <div key={idx} style={{ padding: '12px', background: '#fee2e2', borderRadius: '6px' }}>
-                    <p style={{ margin: '0 0 4px', fontWeight: '600', color: '#991b1b' }}>
+                  <div key={idx} className="audit-suspicious-item">
+                    <p className="audit-suspicious-action">
                       {formatActionName(item.log.action)}
                     </p>
-                    <p style={{ margin: '0', fontSize: '0.9em', color: '#7f1d1d' }}>
+                    <p className="audit-suspicious-reason">
                       {item.reason}
                     </p>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.8em', color: '#9ca3af' }}>
+                    <p className="audit-suspicious-time">
                       {new Date(item.log.createdAt).toLocaleString()}
                     </p>
                   </div>

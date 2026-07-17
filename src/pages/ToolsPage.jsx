@@ -168,10 +168,10 @@ export default function ToolsPage() {
                 <div className="tool-card">
                   <h2>Restore Database SQL</h2>
                   <p>Restore database dari file SQL backup. <b>Seluruh data lama akan dihapus!</b></p>
-                  <input type="file" accept=".sql,text/sql" style={{ display: 'none' }} ref={sqlInputRef} onChange={handleRestore} disabled={restoring} />
+                  <input type="file" accept=".sql,text/sql" className="tools-hidden-input" ref={sqlInputRef} onChange={handleRestore} disabled={restoring} />
                   <button className="btn btn-primary" onClick={() => sqlInputRef.current && sqlInputRef.current.click()} disabled={restoring}>{restoring ? 'Restoring...' : 'Restore SQL'}</button>
-                  {restoreError && <div style={{ color: 'red', marginTop: 8 }}>{restoreError}</div>}
-                  {restoreSuccess && <div style={{ color: 'green', marginTop: 8 }}>{restoreSuccess}</div>}
+                  {restoreError && <div className="tools-feedback tools-feedback-error">{restoreError}</div>}
+                  {restoreSuccess && <div className="tools-feedback tools-feedback-success">{restoreSuccess}</div>}
                 </div>
         <div className="tool-card">
           <h2>Export Data</h2>
@@ -182,16 +182,16 @@ export default function ToolsPage() {
           <h2>Backup Database</h2>
           <p>Backup seluruh database ke file SQL (dump). Cocok untuk restore manual atau migrasi ke server lain.</p>
           <button className="btn btn-primary" onClick={handleBackup} disabled={backingUp}>{backingUp ? 'Backing up...' : 'Backup SQL'}</button>
-          {backupError && <div style={{ color: 'red', marginTop: 8 }}>{backupError}</div>}
-          {backupSuccess && <div style={{ color: 'green', marginTop: 8 }}>{backupSuccess}</div>}
+          {backupError && <div className="tools-feedback tools-feedback-error">{backupError}</div>}
+          {backupSuccess && <div className="tools-feedback tools-feedback-success">{backupSuccess}</div>}
         </div>
         <div className="tool-card">
           <h2>Import Data</h2>
           <p>Impor data dari file JSON untuk restore atau migrasi data.<br/><b>Seluruh data lama akan dihapus!</b></p>
-          <input type="file" accept="application/json" style={{ display: 'none' }} ref={fileInputRef} onChange={handleImport} disabled={importing} />
+          <input type="file" accept="application/json" className="tools-hidden-input" ref={fileInputRef} onChange={handleImport} disabled={importing} />
           <button className="btn btn-secondary" onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={importing}>{importing ? 'Importing...' : 'Import JSON'}</button>
-          {importError && <div style={{ color: 'red', marginTop: 8 }}>{importError}</div>}
-          {importSuccess && <div style={{ color: 'green', marginTop: 8 }}>{importSuccess}</div>}
+          {importError && <div className="tools-feedback tools-feedback-error">{importError}</div>}
+          {importSuccess && <div className="tools-feedback tools-feedback-success">{importSuccess}</div>}
         </div>
         <div className="tool-card">
           <h2>Reset Cache / Refresh Data</h2>
@@ -229,47 +229,19 @@ export default function ToolsPage() {
           <button className="btn btn-secondary" onClick={handleFetchModels} disabled={loadingModels}>
             {loadingModels ? 'Loading...' : 'List Models'}
           </button>
-          {modelsError && <div style={{ color: 'red', marginTop: 8 }}>{modelsError}</div>}
+          {modelsError && <div className="tools-feedback tools-feedback-error">{modelsError}</div>}
           {models && (
-            <div style={{ marginTop: 12, maxHeight: 200, overflow: 'auto', fontSize: 13 }}>
+            <div className="tools-models-wrap">
               <b>Models:</b>
-              <ul style={{ paddingLeft: 18 }}>
+              <ul className="tools-models-list">
                 {models.map((m) => (
-                  <li key={m.name}><b>{m.displayName || m.name}</b> <span style={{ color: '#888' }}>({m.name})</span></li>
+                  <li key={m.name}><b>{m.displayName || m.name}</b> <span className="tools-model-name">({m.name})</span></li>
                 ))}
               </ul>
             </div>
           )}
         </div>
       </div>
-      <style>{`
-        .tools-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-          gap: 24px;
-        }
-        .tool-card {
-          background: var(--card-bg, #fff);
-          border: 1px solid var(--border-color, #ddd);
-          border-radius: 10px;
-          padding: 24px 18px 18px 18px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-        }
-        .tool-card h2 {
-          margin-top: 0;
-          font-size: 1.2em;
-        }
-        .tool-card p {
-          flex: 1;
-          color: var(--text-secondary, #666);
-        }
-        .tool-card .btn {
-          margin-top: 12px;
-        }
-      `}</style>
     </div>
   );
 }

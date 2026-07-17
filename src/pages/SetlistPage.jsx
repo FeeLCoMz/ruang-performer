@@ -198,7 +198,7 @@ export default function SetlistPage({
         <div className="page-header">
           <h1>🎵 Setlist</h1>
         </div>
-        <div className="error-text" style={{ padding: '20px' }}>{errorSetlists}</div>
+        <div className="error-text setlist-error-box">{errorSetlists}</div>
       </div>
     );
   }
@@ -228,11 +228,7 @@ export default function SetlistPage({
 
       {/* Filters & Search */}
       {!isPerformanceMode && (
-        <div className="filter-container" style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px'
-        }}>
+        <div className="filter-container setlist-filter-container">
           {/* Search Bar */}
           <input
             type="text"
@@ -243,11 +239,7 @@ export default function SetlistPage({
           />
 
           {/* Filters Row */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: '12px'
-          }}>
+          <div className="setlist-filter-grid">
             <select
               value={filterBand}
               onChange={(e) => setFilterBand(e.target.value)}
@@ -299,7 +291,7 @@ export default function SetlistPage({
             {hasActiveFilters ? 'Tidak ada setlist yang cocok dengan filter' : 'Belum ada setlist'}
           </p>
           {!hasActiveFilters && !isPerformanceMode && (
-            <button className="btn" onClick={() => setShowCreateSetlist(true)} style={{ marginTop: '12px' }}>
+            <button className="btn setlist-empty-add-btn" onClick={() => setShowCreateSetlist(true)}>
               <PlusIcon size={18} /> Buat Setlist Pertama
             </button>
           )}
@@ -337,8 +329,7 @@ export default function SetlistPage({
                     {canEdit && (
                       <button
                         onClick={() => setEditSetlist(setlist)}
-                        className="btn"
-                        style={{ padding: '6px 12px', fontSize: '0.85em' }}
+                        className="btn setlist-action-edit-btn"
                         title="Edit"
                       >
                         <EditIcon size={16} />
@@ -477,12 +468,12 @@ export default function SetlistPage({
           onKeyDown={e => { if (e.key === 'Escape') setDeleteSetlist(null); }}
         >
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2 style={{ color: 'var(--error)' }}>Hapus Setlist?</h2>
-            <p style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>
+            <h2 className="setlist-delete-title">Hapus Setlist?</h2>
+            <p className="setlist-delete-message">
               Yakin ingin menghapus setlist <b>{deleteSetlist.name}</b>? Tindakan ini tidak dapat dibatalkan.
             </p>
-            {deleteError && <div className="error-text" style={{ marginBottom: '16px' }}>{deleteError}</div>}
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+            {deleteError && <div className="error-text setlist-delete-error">{deleteError}</div>}
+            <div className="setlist-delete-actions">
               <button className="btn" onClick={() => setDeleteSetlist(null)}>
                 Batal
               </button>

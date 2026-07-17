@@ -100,7 +100,7 @@ export default function ProfilePage() {
   if (authLoading || profile === null) {
     return (
       <div className="page-container">
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+        <div className="card profile-loading-card">
           <div className="spinner" aria-label="Memuat profil..." />
         </div>
       </div>
@@ -143,12 +143,12 @@ export default function ProfilePage() {
     <div className="modal-overlay" onClick={() => setShowDelete(false)}>
       <div className="modal danger-modal" onClick={(e) => e.stopPropagation()}>
         <h2>Konfirmasi Hapus Akun</h2>
-        <p style={{ color: "#ef4444", marginBottom: 16 }}>
+        <p className="profile-delete-warning">
           Apakah Anda yakin ingin menghapus akun? Semua data Anda akan hilang dan tidak bisa
           dikembalikan.
         </p>
         {deleteError && <div className="error-text">{deleteError}</div>}
-        <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+        <div className="profile-modal-actions">
           <button
             className="btn btn-danger"
             type="button"
@@ -279,7 +279,7 @@ export default function ProfilePage() {
             </label>
             {error && <div className="error-text">{error}</div>}
             {success && <div className="success-text">{success}</div>}
-            <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+            <div className="profile-modal-actions">
               <button className="btn btn-primary" type="submit" disabled={loading}>
                 {loading ? "Menyimpan..." : "Simpan"}
               </button>
@@ -376,7 +376,7 @@ export default function ProfilePage() {
             </label>
             {error && <div className="error-text">{error}</div>}
             {success && <div className="success-text">{success}</div>}
-            <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+            <div className="profile-modal-actions">
               <button className="btn btn-primary" type="submit" disabled={loading}>
                 {loading ? "Menyimpan..." : "Simpan"}
               </button>
@@ -407,11 +407,10 @@ export default function ProfilePage() {
               <img
                 src={profile.profilePicture}
                 alt={profile.displayName || "Avatar"}
-                className="avatar-circle"
-                style={{ objectFit: "cover", width: 96, height: 96, borderRadius: "50%", border: '3px solid var(--primary-accent)', boxShadow: '0 2px 8px #0001' }}
+                className="avatar-circle profile-avatar-image"
               />
             ) : (
-              <div className="avatar-circle" style={{ width: 96, height: 96, fontSize: 40, border: '3px solid var(--primary-accent)', boxShadow: '0 2px 8px #0001' }}>
+              <div className="avatar-circle profile-avatar-fallback">
                 {profile.displayName ? profile.displayName[0].toUpperCase() : "?"}
               </div>
             )}
@@ -448,17 +447,17 @@ export default function ProfilePage() {
               </span>
             </div>
             {Array.isArray(profile.bands) && profile.bands.length > 0 && (
-              <div className="profile-row" style={{ marginTop: 12 }}>
+              <div className="profile-row profile-bands-row">
                 <span className="text-secondary">Daftar Band:</span>
-                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                <ul className="profile-bands-list">
                   {profile.bands.map((band) => (
                     <li key={band.id}>
-                      <span style={{ fontWeight: 500 }}>{band.name}</span>
+                      <span className="profile-band-name">{band.name}</span>
                       {band.genre && (
-                        <span style={{ color: "#888", marginLeft: 8 }}>({band.genre})</span>
+                        <span className="profile-band-genre">({band.genre})</span>
                       )}
                       {band.role && (
-                        <span style={{ color: "#555", marginLeft: 8 }}>- {band.role}</span>
+                        <span className="profile-band-role">- {band.role}</span>
                       )}
                     </li>
                   ))}
@@ -470,25 +469,25 @@ export default function ProfilePage() {
         {/* Tombol aksi diatur grid 2 kolom di desktop, 1 kolom di mobile */}
         <div className="profile-actions">
           <button className="btn btn-primary" type="button" onClick={() => { setEditModalKey(k => k+1); setShowEdit(true); }}>
-            <span role="img" aria-label="Edit" style={{marginRight: 6}}>✏️</span> Edit Profil
+            <span role="img" aria-label="Edit" className="profile-action-icon">✏️</span> Edit Profil
           </button>
           <button className="btn btn-secondary" type="button" onClick={() => setShowPassword(true)}>
-            <span role="img" aria-label="Password" style={{marginRight: 6}}>🔒</span> Ubah Password
+            <span role="img" aria-label="Password" className="profile-action-icon">🔒</span> Ubah Password
           </button>
           <button className="btn" type="button" onClick={handleLogout}>
-            <span role="img" aria-label="Logout" style={{marginRight: 6}}>🚪</span> Logout
+            <span role="img" aria-label="Logout" className="profile-action-icon">🚪</span> Logout
           </button>
           <button
             className="btn btn-danger"
             type="button"
             onClick={() => setShowDelete(true)}
           >
-            <span role="img" aria-label="Delete" style={{marginRight: 6}}>🗑️</span> Hapus Akun
+            <span role="img" aria-label="Delete" className="profile-action-icon">🗑️</span> Hapus Akun
           </button>
         </div>
       </div>
       {/* Statistik Aktivitas User */}
-      <div className="card" style={{ marginTop: 24 }}>
+      <div className="card profile-section-card">
         <h2>Statistik Aktivitas</h2>
         {activityLoading ? (
           <div>Loading...</div>
@@ -550,7 +549,7 @@ export default function ProfilePage() {
         )}
       </div>
       {/* Audit Log User */}
-      <div className="card" style={{ marginTop: 24 }}>
+      <div className="card profile-section-card">
         <h2>Riwayat Aktivitas (Audit Log)</h2>
         {auditLoading ? (
           <div>Loading...</div>
