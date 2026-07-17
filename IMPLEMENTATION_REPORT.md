@@ -289,7 +289,6 @@ npm run build
 - ⚠️ Implement refresh token mechanism
 - ⚠️ Add email verification on registration
 - ⚠️ Implement password reset flow
-- ⚠️ Add 2FA support (TOTP)
 - ⚠️ Log authentication events
 - ⚠️ Add session management (multiple devices)
 
@@ -356,7 +355,6 @@ npm run build
 
 ### Phase 5 - Security Hardening
 - Rate limiting
-- 2FA (Two-Factor Authentication)
 - IP whitelisting
 - Session invalidation
 
@@ -755,7 +753,6 @@ npm run build
 - ⚠️ Implement refresh token mechanism
 - ⚠️ Add email verification on registration
 - ⚠️ Implement password reset flow
-- ⚠️ Add 2FA support (TOTP)
 - ⚠️ Log authentication events
 - ⚠️ Add session management (multiple devices)
 
@@ -822,7 +819,6 @@ npm run build
 
 ### Phase 5 - Security Hardening
 - Rate limiting
-- 2FA (Two-Factor Authentication)
 - IP whitelisting
 - Session invalidation
 

@@ -13,7 +13,6 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
 
   // Ambil info band dan role user jika ada (untuk permission)
   // Di sidebar global, kita asumsikan role global (user.role) untuk audit log
-  // dan user login saja untuk 2FA
   const userBandInfo = user && user.role ? { role: user.role } : null;
   const { can } = usePermission(null, userBandInfo);
 
@@ -96,16 +95,6 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
                 )}
               </button>
             ))}
-            {/* Menu Pengaturan 2FA, hanya tampil jika user login */}
-            {user && (
-              <button
-                className={`sidebar-nav-item ${isActive('/settings/2fa') ? 'active' : ''}`}
-                onClick={() => handleNavClick('/settings/2fa')}
-              >
-                <span className="sidebar-nav-icon">🔒</span>
-                <span className="sidebar-nav-label">Keamanan 2FA</span>
-              </button>
-            )}
           </div>
         </nav>
 

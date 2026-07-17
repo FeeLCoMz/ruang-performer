@@ -263,7 +263,6 @@ DATABASE_AUTH_TOKEN=your-turso-auth-token
 - Implement permission checking middleware
 - Audit logging (who did what, when)
 - Session management (multiple devices)
-- Two-factor authentication (2FA)
 - IP whitelisting for bands
 ## Files Modified
 | File | Changes |

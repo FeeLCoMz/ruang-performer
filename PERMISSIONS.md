@@ -546,7 +546,6 @@ if (!songTitle || songTitle.length < 1 || songTitle.length > 200) {
 - [ ] Session management
 
 ### Phase 5: Security
-- [ ] Two-factor authentication (2FA)
 - [ ] OAuth integration
 - [ ] IP whitelisting
 - [ ] Activity monitoring

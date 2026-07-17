@@ -9,7 +9,7 @@
 - Untuk dev lokal, Express harus punya route khusus `/api/tools/backup` sebelum `/api/tools` agar backup SQL berjalan benar
 
 ### Fitur Utama yang Didukung
-- ✅ Auth (login, register, reset, 2FA)
+- ✅ Auth (login, register, reset)
 - ✅ Manajemen lagu, setlist, band, gigs, latihan
 - ✅ Backup & restore database (SQL & JSON)
 - ✅ AI autofill, permission, audit log, rate limit

@@ -28,8 +28,6 @@ import authLoginHandler from './auth/login.js';
 import authMeHandler from './auth/me.js';
 import authForgotHandler from './auth/forgot-password.js';
 import authResetHandler from './auth/reset-password.js';
-import auth2FASetupHandler from './auth/2fa-setup.js';
-import auth2FAVerifyHandler from './auth/2fa-verify.js';
 // Tools handler (export/import)
 import toolsHandler from './tools/index.js';
 import toolsBackupHandler from './tools/backup.js';
@@ -127,14 +125,6 @@ app.post('/api/auth/forgot-password', (req, res, next) => {
 
 app.post('/api/auth/reset-password', (req, res, next) => {
   Promise.resolve(authResetHandler(req, res)).catch(next);
-});
-
-app.get('/api/auth/2fa/setup', verifyToken, (req, res, next) => {
-  Promise.resolve(auth2FASetupHandler(req, res)).catch(next);
-});
-
-app.post('/api/auth/2fa/verify', verifyToken, (req, res, next) => {
-  Promise.resolve(auth2FAVerifyHandler(req, res)).catch(next);
 });
 
 app.use('/api/songs', verifyToken, (req, res, next) => {

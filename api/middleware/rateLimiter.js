@@ -11,7 +11,6 @@ export const RATE_LIMITS = {
   AUTH_REGISTER: { maxRequests: 3, windowMs: 60 * 60 * 1000 },   // 3 per hour
   AUTH_FORGOT: { maxRequests: 3, windowMs: 60 * 60 * 1000 },     // 3 per hour
   AUTH_RESET: { maxRequests: 3, windowMs: 60 * 60 * 1000 },      // 3 per hour
-  AUTH_2FA: { maxRequests: 5, windowMs: 15 * 60 * 1000 },        // 5 per 15 min
 
   // API endpoints (standard)
   API_READ: { maxRequests: 100, windowMs: 60 * 1000 },           // 100 per min

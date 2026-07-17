@@ -324,19 +324,6 @@ try {
 }
 ```
 
-### Two-Factor Authentication (Future)
-
-```
-1. User enables 2FA
-2. App generates QR code
-3. User scans with authenticator app
-4. On login:
-   - User enters password
-   - System sends 2FA code to app
-   - User enters code
-   - Access granted
-```
-
 ---
 
 ## 🔔 Notifications
@@ -555,7 +542,6 @@ POST /api/users/me/delete-request
 
 ### Phase 5: Features
 - [ ] Email notifications
-- [ ] Two-factor authentication (2FA)
 - [ ] Session management
 - [ ] Activity logging
 - [ ] User suspension/ban

@@ -7,7 +7,6 @@ import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from "re
 // Eager load critical pages
 import LoginPage from "./pages/LoginPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
-import TwoFactorSetupPage from "./pages/TwoFactorSetupPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import NotFound from "./components/NotFound.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
@@ -421,7 +420,6 @@ function AppContent() {
               {/* Performance Mode routes */}
               {/* Performance Mode routes removed */}
               {/* InvitationPage and PendingInvitationsPage removed */}
-              <Route path="/settings/2fa" element={<TwoFactorSetupPage />} />
               <Route path="/audit-logs" element={<AuditLogPage />} />
               <Route path="/tools" element={<ToolsPage />} />
               <Route path="/user-management" element={<UserManagementPage />} />

@@ -170,34 +170,6 @@ export async function resetPassword(token, email, newPassword) {
   return await res.json();
 }
 
-// Two-Factor Authentication endpoints
-export async function setup2FA() {
-  const res = await fetch(`${API_BASE}/auth/2fa/setup`, {
-    method: 'GET',
-    headers: getHeaders()
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to setup 2FA');
-  }
-  return await res.json();
-}
-
-export async function verify2FA(secret, token, backupCodes) {
-  const res = await fetch(`${API_BASE}/auth/2fa/verify`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ secret, token, backupCodes })
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to verify 2FA');
-  }
-  return await res.json();
-}
-
 export async function fetchSongs(options = {}) {
   const params = new URLSearchParams();
   if (options.bandId) {

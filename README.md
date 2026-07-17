@@ -17,7 +17,7 @@ __tests__/      # Unit test (Vitest/Jest)
 - Manajemen lagu, setlist, band, dan gigs
 - Sistem permission role-based (owner, admin, member, guest)
 - Backup & restore database ke file SQL (dump) dan JSON
-- Otentikasi JWT, 2FA, audit log, analytics
+- Otentikasi JWT, audit log, analytics
 - UI responsif, dark mode, dan komponen custom
 
 ## Instalasi

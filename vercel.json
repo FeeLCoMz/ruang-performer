@@ -15,7 +15,7 @@
       "dest": "/api/auth/user-audit-logs.js"
     },
     {
-      "src": "/api/auth/(login|register|forgot-password|reset-password|2fa-setup|2fa-verify)",
+      "src": "/api/auth/(login|register|forgot-password|reset-password)",
       "dest": "/api/auth/index.js"
     },
     {

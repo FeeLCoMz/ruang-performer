@@ -156,7 +156,6 @@ router.post('/songs', requirePermission('create_song'), handler);
 - [ ] Role management UI
 
 ### Phase 5: Security (Weeks 9-10)
-- [ ] 2FA setup
 - [ ] Session management
 - [ ] Activity monitoring
 
