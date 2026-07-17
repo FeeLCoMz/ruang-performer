@@ -70,6 +70,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     return window.innerWidth < 768;
   });
   const videoRef = useRef(null);
+  const activeInlinePlayerRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -452,6 +453,16 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   }, [activeVideoSong]);
 
   useEffect(() => {
+    if (!activeVideoSong) return;
+    const rafId = window.requestAnimationFrame(() => {
+      if (activeInlinePlayerRef.current) {
+        activeInlinePlayerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [activeVideoSong]);
+
+  useEffect(() => {
     if (activeVideoSong && !isMetronomeActive && metronomeSongId === activeVideoSong.id) {
       setMetronomeSongId(null);
     }
@@ -468,13 +479,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     return songs.find((song) => song.id === metronomeSongId) || null;
   }, [metronomeSongId, songs]);
 
-  const activeVideoTitle = activeVideoSong?.title || '';
-
-  const activeVideoArtist = activeVideoSong?.artist || '';
-
-  const activeVideoTempo = resolveTempo(activeVideoSong);
-
-  const shouldVirtualize = !isNarrowViewport && filteredSongs.length >= (performanceMode ? 120 : 180);
+  const shouldVirtualize = !activeVideoSong && !isNarrowViewport && filteredSongs.length >= (performanceMode ? 120 : 180);
   const virtualRowHeight = isNarrowViewport
     ? (performanceMode ? 210 : 230)
     : (performanceMode ? 136 : 156);
@@ -502,125 +507,154 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   }
 
   function renderSongItem(song, style) {
+    const isInlineVideoSong = activeVideoSong?.id === song.id;
+
     return (
-      <div
-        key={song.id}
-        className={`song-item${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
-        onClick={() => navigate(`/songs/view/${song.id}`)}
-        style={style}
-      >
-        <div className="song-info">
-          <h3 className="song-title">
-            {song.title}
-            {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
-          </h3>
-          <div className="song-meta">
-            {song.artist && <span>👤 {song.artist}</span>}
-            {song.key && <span>🎹 {song.key}</span>}
-            {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
-            {song.genre && <span>🎸 {song.genre}</span>}
-            {song.bandId && <span>🎤 Band: {song.bandName || '-'}</span>}
-            <span style={{ color: 'var(--primary-accent)', marginLeft: 8, fontSize: '0.95em' }}>
-              {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
-            </span>
-            <span style={{ color: 'var(--text-secondary)', marginLeft: 8, fontSize: '0.95em' }}>
-              ✍️ {song.contributorName || song.contributorUsername || '-'}
-            </span>
-            <span className="song-mastery-summary">
-              ✅ Selesai: {Array.isArray(song.masteredBy) ? song.masteredBy.length : 0}
-              {Array.isArray(song.masteredBy) && song.masteredBy.length > 0
-                ? ` (${song.masteredBy.map((entry) => entry.username || '-').join(', ')})`
-                : ''}
-            </span>
+      <React.Fragment key={song.id}>
+        <div
+          className={`song-item${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
+          onClick={() => navigate(`/songs/view/${song.id}`)}
+          style={style}
+        >
+          <div className="song-info">
+            <h3 className="song-title">
+              {song.title}
+              {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
+            </h3>
+            <div className="song-meta">
+              {song.artist && <span>👤 {song.artist}</span>}
+              {song.key && <span>🎹 {song.key}</span>}
+              {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
+              {song.genre && <span>🎸 {song.genre}</span>}
+              {song.bandId && <span>🎤 Band: {song.bandName || '-'}</span>}
+              <span style={{ color: 'var(--primary-accent)', marginLeft: 8, fontSize: '0.95em' }}>
+                {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
+              </span>
+              <span style={{ color: 'var(--text-secondary)', marginLeft: 8, fontSize: '0.95em' }}>
+                ✍️ {song.contributorName || song.contributorUsername || '-'}
+              </span>
+              <span className="song-mastery-summary">
+                ✅ Selesai: {Array.isArray(song.masteredBy) ? song.masteredBy.length : 0}
+                {Array.isArray(song.masteredBy) && song.masteredBy.length > 0
+                  ? ` (${song.masteredBy.map((entry) => entry.username || '-').join(', ')})`
+                  : ''}
+              </span>
+            </div>
+          </div>
+
+          <div
+            className="song-actions"
+            onClick={(e) => e.stopPropagation()}
+            style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
+          >
+            <button
+              className="btn btn-secondary song-action-mini"
+              title="Play metronom"
+              aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
+              onClick={(e) => handleToggleMetronome(song, e)}
+            >
+              {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
+            </button>
+            {hasYouTubeVideo(song) && (
+              <button
+                className="btn btn-secondary song-action-mini"
+                title="Play video"
+                aria-label="Play video"
+                onClick={(e) => handlePlayVideo(song, e)}
+              >
+                🎬
+              </button>
+            )}
+            <button
+              className="btn btn-secondary"
+              title="Lihat Karaoke"
+              onClick={() => navigate(`/karaoke/${song.id}`)}
+            >
+              Lirik
+            </button>
+            {
+              <button
+                className={`btn ${song.isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
+                title={song.canMarkMastery
+                  ? (song.isMasteredByCurrentUser ? 'Batalkan status selesai' : 'Tandai lagu ini selesai')
+                  : 'Anda belum bisa menandai lagu ini'}
+                onClick={(e) => handleToggleMastery(song, e)}
+                disabled={!song.canMarkMastery || updatingMasterySongId === song.id}
+              >
+                {updatingMasterySongId === song.id
+                  ? 'Menyimpan...'
+                  : (song.canMarkMastery
+                    ? (song.isMasteredByCurrentUser ? 'Selesai' : 'Belum')
+                    : 'Belum Bisa Tandai')}
+              </button>
+            }
+            {!performanceMode && (() => {
+              const permission = permissionsBySongId[song.id] || {};
+              const canEdit = Boolean(permission.canEdit);
+              const canDelete = Boolean(permission.canDelete);
+              const canDuplicate = Boolean(permission.canDuplicate);
+              if (!canEdit && !canDelete && !canDuplicate) return null;
+              return (
+                <>
+                  {canDuplicate && (
+                    <button
+                      onClick={() => onSongClick('newVersion', song.id)}
+                      className="btn btn-secondary"
+                      title="Buat versi baru"
+                    >
+                      Versi Baru
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button
+                      onClick={() => onSongClick('edit', song.id)}
+                      className="btn"
+                      title="Edit"
+                    >
+                      <EditIcon size={16} />
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={() => onSongClick('delete', song.id)}
+                      className="btn btn-red"
+                      title="Hapus"
+                    >
+                      <DeleteIcon size={16} />
+                    </button>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
 
-        <div
-          className="song-actions"
-          onClick={(e) => e.stopPropagation()}
-          style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
-        >
-          <button
-            className="btn btn-secondary song-action-mini"
-            title="Play metronom"
-            aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
-            onClick={(e) => handleToggleMetronome(song, e)}
-          >
-            {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
-          </button>
-          {hasYouTubeVideo(song) && (
-            <button
-              className="btn btn-secondary song-action-mini"
-              title="Play video"
-              aria-label="Play video"
-              onClick={(e) => handlePlayVideo(song, e)}
-            >
-              🎬
-            </button>
-          )}
-          <button
-            className="btn btn-secondary"
-            title="Lihat Karaoke"
-            onClick={() => navigate(`/karaoke/${song.id}`)}
-          >
-            Lirik
-          </button>
-          {
-            <button
-              className={`btn ${song.isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
-              title={song.canMarkMastery
-                ? (song.isMasteredByCurrentUser ? 'Batalkan status selesai' : 'Tandai lagu ini selesai')
-                : 'Anda belum bisa menandai lagu ini'}
-              onClick={(e) => handleToggleMastery(song, e)}
-              disabled={!song.canMarkMastery || updatingMasterySongId === song.id}
-            >
-              {updatingMasterySongId === song.id
-                ? 'Menyimpan...'
-                : (song.canMarkMastery
-                  ? (song.isMasteredByCurrentUser ? 'Selesai' : 'Belum')
-                  : 'Belum Bisa Tandai')}
-            </button>
-          }
-          {!performanceMode && (() => {
-            const permission = permissionsBySongId[song.id] || {};
-            const canEdit = Boolean(permission.canEdit);
-            const canDelete = Boolean(permission.canDelete);
-            const canDuplicate = Boolean(permission.canDuplicate);
-            if (!canEdit && !canDelete && !canDuplicate) return null;
-            return (
-              <>
-                {canDuplicate && (
-                  <button
-                    onClick={() => onSongClick('newVersion', song.id)}
-                    className="btn btn-secondary"
-                    title="Buat versi baru"
-                  >
-                    Versi Baru
-                  </button>
-                )}
-                {canEdit && (
-                  <button
-                    onClick={() => onSongClick('edit', song.id)}
-                    className="btn"
-                    title="Edit"
-                  >
-                    <EditIcon size={16} />
-                  </button>
-                )}
-                {canDelete && (
-                  <button
-                    onClick={() => onSongClick('delete', song.id)}
-                    className="btn btn-red"
-                    title="Hapus"
-                  >
-                    <DeleteIcon size={16} />
-                  </button>
-                )}
-              </>
-            );
-          })()}
-        </div>
-      </div>
+        {isInlineVideoSong && (
+          <div ref={activeInlinePlayerRef} className="song-inline-player card song-inline-player-inline">
+            <div className="song-inline-player-header">
+              <div>
+                <h3>Now Playing</h3>
+                <p>
+                  {song.title}
+                  {song.artist ? ` - ${song.artist}` : ''}
+                  {` | ${resolveTempo(song)} BPM`}
+                </p>
+              </div>
+              <div className="song-inline-player-actions">
+                <button className="btn btn-secondary" aria-label="Tutup video" onClick={handleCloseVideoPlayer}>
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="song-inline-player-video">
+              <YouTubeViewer
+                ref={videoRef}
+                videoId={song.youtubeId || song.youtube_url}
+              />
+            </div>
+          </div>
+        )}
+      </React.Fragment>
     );
   }
 
@@ -773,18 +807,14 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       </div>
 
       {/* Song List */}
-      {(isMetronomeActive || activeVideoSong) && (
+      {isMetronomeActive && !activeVideoSong && (
         <div className="song-inline-player card">
           <div className="song-inline-player-header">
             <div>
               <h3>Now Playing</h3>
-              {activeVideoSong ? (
-                <p>{activeVideoTitle}{activeVideoArtist ? ` - ${activeVideoArtist}` : ''} | {activeVideoTempo} BPM</p>
-              ) : (
-                <p>
-                  Metronom aktif{currentMetronomeSong?.title ? `: ${currentMetronomeSong.title}` : ''}
-                </p>
-              )}
+              <p>
+                Metronom aktif{currentMetronomeSong?.title ? `: ${currentMetronomeSong.title}` : ''}
+              </p>
             </div>
             <div className="song-inline-player-actions">
               <button
@@ -801,21 +831,8 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               >
                 {isMetronomeActive ? '⏹' : '⏱'}
               </button>
-              {activeVideoSong && (
-                <button className="btn btn-secondary" aria-label="Tutup video" onClick={handleCloseVideoPlayer}>
-                  ✕
-                </button>
-              )}
             </div>
           </div>
-          {activeVideoSong && (
-            <div className="song-inline-player-video">
-              <YouTubeViewer
-                ref={videoRef}
-                videoId={activeVideoSong.youtubeId || activeVideoSong.youtube_url}
-              />
-            </div>
-          )}
         </div>
       )}
 
