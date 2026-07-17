@@ -1355,74 +1355,94 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             </div>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {/* Sembunyikan tombol edit/tambah/bagikan saat performanceMode aktif */}
-          {!performanceMode && canEdit && (
-            <button className="btn" onClick={() => setShowSmartModal(true)} title="Urutkan otomatis berdasarkan key, tempo, energi, dan durasi">
-              ✨ Smart Assistant
-            </button>
-          )}
-          {!performanceMode && canEdit && featuredSongIdsFromMeta.length > 0 && (
-            <button
-              className="btn btn-secondary"
-              onClick={handleClearSmartPicks}
-              title="Hapus semua badge Smart Pick dari setlist"
-              disabled={smartApplying}
-            >
-              {smartApplying ? 'Memproses...' : 'Clear Smart Picks'}
-            </button>
-          )}
-          {!performanceMode && canEdit && (
-            <button className="btn" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
-              <PlusIcon size={22} /> Tambah Lagu
-            </button>
-          )}
-          {!performanceMode && canEdit && (
-            <button className="btn btn-secondary" onClick={openMergeSetlistModal} title="Merge lagu dari setlist lain">
-              🔀 Merge Setlist
-            </button>
-          )}
-          {!performanceMode && canEdit && (
-            <button className="btn btn-secondary" onClick={openAddSessionDivider} title="Tambah divider sesi">
-              🧩 Divider Sesi
-            </button>
-          )}
-          {canEdit && localOrder.length > 0 && !allSongsCompleted && (
-            <button className="btn btn-secondary" onClick={handleMarkAllSongsCompleted} title="Tandai semua lagu sudah dibawakan">
-              ✅ Tandai Semua
-            </button>
-          )}
-          {canEdit && completedCount > 0 && (
-            <button className="btn btn-secondary" onClick={handleResetCompletedSongs} title="Reset semua status lagu dibawakan">
-              ↺ Reset Dibawakan
-            </button>
-          )}
-          {canEdit && uncompletedCount > 0 && (
-            <button
-              className="btn btn-red"
-              onClick={handleDeleteUncompletedSongs}
-              title="Hapus lagu yang belum ditandai dibawakan dari setlist ini saja"
-              disabled={deletingUncompleted}
-            >
-              {deletingUncompleted ? 'Menghapus...' : '🗑 Hapus Belum Dibawakan'}
-            </button>
-          )}
+        <div className="setlist-header-actions setlist-header-actions-compact">
           {!performanceMode && (
-            <button className="btn" onClick={() => setShowCopyModal(true)} title="Copy Setlist">
-              📋 Copy Setlist
-            </button>
+            <div className="setlist-header-action-group setlist-header-primary-group" aria-label="Aksi utama setlist">
+              {canEdit && (
+                <button className="btn setlist-btn-primary" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
+                  <span className="setlist-btn-icon" aria-hidden="true"><PlusIcon size={22} /></span>
+                  <span className="setlist-btn-label">Tambah Lagu</span>
+                </button>
+              )}
+              {canEdit && (
+                <button className="btn btn-secondary setlist-btn-secondary setlist-btn-mobile-icon" onClick={openMergeSetlistModal} title="Merge lagu dari setlist lain">
+                  <span className="setlist-btn-icon" aria-hidden="true">🔀</span>
+                  <span className="setlist-btn-label">Merge Setlist</span>
+                </button>
+              )}
+              <button
+                className="btn setlist-btn-secondary setlist-btn-mobile-icon"
+                onClick={() => {
+                  setShareSessionFilter('all');
+                  setShowShareModal(true);
+                }}
+                title="Bagikan Setlist"
+              >
+                <span className="setlist-btn-icon" aria-hidden="true">📤</span>
+                <span className="setlist-btn-label">Bagikan</span>
+              </button>
+            </div>
           )}
+
+          {canEdit && (
+            <div className="setlist-header-action-group setlist-header-progress-group" aria-label="Aksi progres performa">
+              {localOrder.length > 0 && !allSongsCompleted && (
+                <button className="btn btn-secondary setlist-btn-ghost" onClick={handleMarkAllSongsCompleted} title="Tandai semua lagu sudah dibawakan">
+                  ✅ Tandai Semua
+                </button>
+              )}
+              {completedCount > 0 && (
+                <button className="btn btn-secondary setlist-btn-ghost" onClick={handleResetCompletedSongs} title="Reset semua status lagu dibawakan">
+                  ↺ Reset Dibawakan
+                </button>
+              )}
+              {uncompletedCount > 0 && (
+                <details className="setlist-inline-more" aria-label="Aksi progres tambahan">
+                  <summary className="btn btn-secondary setlist-btn-ghost">⋯</summary>
+                  <div className="setlist-inline-more-menu">
+                    <button
+                      className="btn btn-red setlist-btn-danger"
+                      onClick={handleDeleteUncompletedSongs}
+                      title="Hapus lagu yang belum ditandai dibawakan dari setlist ini saja"
+                      disabled={deletingUncompleted}
+                    >
+                      {deletingUncompleted ? 'Menghapus...' : '🗑 Hapus Belum Dibawakan'}
+                    </button>
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
+
           {!performanceMode && (
-            <button
-              className="btn"
-              onClick={() => {
-                setShareSessionFilter('all');
-                setShowShareModal(true);
-              }}
-              title="Bagikan Setlist"
-            >
-              📤 Bagikan
-            </button>
+            <details className="setlist-header-more" aria-label="Aksi tambahan setlist">
+              <summary className="btn btn-secondary">⚙ Aksi Lainnya</summary>
+              <div className="setlist-header-more-menu">
+                {canEdit && (
+                  <button className="btn setlist-btn-ghost" onClick={() => setShowSmartModal(true)} title="Urutkan otomatis berdasarkan key, tempo, energi, dan durasi">
+                    ✨ Smart Assistant
+                  </button>
+                )}
+                {canEdit && featuredSongIdsFromMeta.length > 0 && (
+                  <button
+                    className="btn btn-secondary setlist-btn-ghost"
+                    onClick={handleClearSmartPicks}
+                    title="Hapus semua badge Smart Pick dari setlist"
+                    disabled={smartApplying}
+                  >
+                    {smartApplying ? 'Memproses...' : 'Clear Smart Picks'}
+                  </button>
+                )}
+                {canEdit && (
+                  <button className="btn btn-secondary setlist-btn-ghost" onClick={openAddSessionDivider} title="Tambah divider sesi">
+                    🧩 Divider Sesi
+                  </button>
+                )}
+                <button className="btn setlist-btn-ghost" onClick={() => setShowCopyModal(true)} title="Copy Setlist">
+                  📋 Copy Setlist
+                </button>
+              </div>
+            </details>
           )}
         </div>
       </div>
