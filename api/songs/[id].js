@@ -2,6 +2,10 @@ import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { PERMISSIONS, hasPermission } from '../../src/utils/permissionUtils.js';
 
+// Module-level flags: schema checks run only once per server instance
+let _schemaEnsured = false;
+let _schemaEnsurePromise = null;
+
 async function readJson(req) {
   if (req.body) return req.body;
   return await new Promise((resolve, reject) => {
@@ -115,8 +119,16 @@ export default async function handler(req, res) {
     let client;
     try {
       client = getTursoClient();
-      await ensureSongsColumns(client);
-      await ensureSongMasteryTable(client);
+      if (!_schemaEnsured) {
+        if (!_schemaEnsurePromise) {
+          _schemaEnsurePromise = (async () => {
+            await ensureSongsColumns(client);
+            await ensureSongMasteryTable(client);
+            _schemaEnsured = true;
+          })();
+        }
+        await _schemaEnsurePromise;
+      }
     } catch (clientErr) {
       console.error(`[songs/[id]] Failed to get Turso client:`, clientErr.message);
       res.status(500).json({ error: 'Database connection error', details: clientErr.message });

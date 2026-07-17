@@ -3,6 +3,23 @@ import { verifyToken } from '../_auth.js';
 import { randomUUID } from 'crypto';
 import songIdHandler from './[id].js';
 
+// Module-level flags: schema checks run only once per server instance
+let _schemaEnsured = false;
+let _schemaEnsurePromise = null;
+
+async function ensureSchema(client) {
+  if (_schemaEnsured) return;
+  if (!_schemaEnsurePromise) {
+    _schemaEnsurePromise = (async () => {
+      await ensureSongsColumns(client);
+      await ensureSongMasteryTable(client);
+      await ensureBandSongPracticeStatsTable(client);
+      _schemaEnsured = true;
+    })();
+  }
+  await _schemaEnsurePromise;
+}
+
 async function readJson(req) {
   if (req.body) return req.body;
   return await new Promise((resolve, reject) => {
@@ -194,9 +211,7 @@ export default async function handler(req, res) {
     const pathSegments = relativePath ? relativePath.split('/').filter(Boolean) : [];
     if (pathSegments.length === 2 && pathSegments[1] === 'mastery') {
       const client = getTursoClient();
-      await ensureSongsColumns(client);
-      await ensureSongMasteryTable(client);
-      await ensureBandSongPracticeStatsTable(client);
+      await ensureSchema(client);
       return handleSongMastery(req, res, client, pathSegments[0]);
     }
 
@@ -226,9 +241,7 @@ export default async function handler(req, res) {
         updatedAt TEXT
       )`
     );
-    await ensureSongsColumns(client);
-    await ensureSongMasteryTable(client);
-    await ensureBandSongPracticeStatsTable(client);
+    await ensureSchema(client);
 
     if (req.method === 'GET') {
       const userId = req.user?.userId || req.user?.id;

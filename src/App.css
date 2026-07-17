@@ -7645,6 +7645,34 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   border-color: #d1d5db;
 }
 
+.song-lyrics-analyzer-modulation-yes {
+  color: #1f7a43;
+}
+
+.song-lyrics-analyzer-modulation-no {
+  color: #6b7280;
+}
+
+.song-lyrics-analyzer-modulation-list {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.song-lyrics-analyzer-modulation-item {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  background: #fff7e6;
+  color: #9a6700;
+  border: 1px solid #f2c77f;
+}
+
 .song-lyrics-analyzer-chords {
   margin-top: var(--spacing-lg);
 }

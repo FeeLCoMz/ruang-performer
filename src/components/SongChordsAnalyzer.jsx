@@ -102,6 +102,16 @@ export default function SongChordsAnalyzer({
       if (relationPriorityDiff !== 0) return relationPriorityDiff;
       return a.key.localeCompare(b.key);
     });
+  const modulationInfo = chordStats?.modulation || { hasModulation: false, modulationCount: 0, transitions: [] };
+  const displayedModulationTransitions = (modulationInfo.transitions || []).map((transition) => {
+    const fromKey = transpose !== 0 ? transposeChord(transition.fromKey, transpose) : transition.fromKey;
+    const toKey = transpose !== 0 ? transposeChord(transition.toKey, transpose) : transition.toKey;
+    return {
+      ...transition,
+      fromKey,
+      toKey,
+    };
+  });
 
   const pianoRecommendation = recommendPianoFriendlyKey({
     chords: chordStats.chords,
@@ -109,35 +119,6 @@ export default function SongChordsAnalyzer({
     transpose,
   });
   const [applyNotice, setApplyNotice] = useState("");
-
-  const getDifficultyLevel = (score = 0) => {
-    if (score <= 2) return { label: "Sangat Mudah", tone: "very-easy" };
-    if (score <= 5) return { label: "Mudah", tone: "easy" };
-    if (score <= 8) return { label: "Sedang", tone: "medium" };
-    return { label: "Menantang", tone: "hard" };
-  };
-
-  const difficultyLevel = pianoRecommendation ? getDifficultyLevel(pianoRecommendation.score) : null;
-  const currentScore = pianoRecommendation ? pianoRecommendation.score + pianoRecommendation.improvement : null;
-  const currentDifficulty = currentScore !== null ? getDifficultyLevel(currentScore) : null;
-  const difficultyRank = {
-    "very-easy": 1,
-    easy: 2,
-    medium: 3,
-    hard: 4,
-  };
-  const levelShift = difficultyLevel && currentDifficulty
-    ? difficultyRank[currentDifficulty.tone] - difficultyRank[difficultyLevel.tone]
-    : 0;
-  const comparisonMessage = levelShift > 0
-    ? `Lebih mudah ${levelShift} level dari key saat ini (${currentDifficulty.label}).`
-    : levelShift < 0
-      ? `Lebih menantang ${Math.abs(levelShift)} level dari key saat ini (${currentDifficulty.label}).`
-      : `Setara dengan key saat ini (${currentDifficulty ? currentDifficulty.label : "-"}).`;
-  const comparisonTone = levelShift > 0 ? "improved" : levelShift < 0 ? "harder" : "same";
-  const difficultyReason = pianoRecommendation
-    ? `${pianoRecommendation.accidentalChordCount}/${pianoRecommendation.totalChords} chord mengandung accidental (#/b), key signature ${pianoRecommendation.keyAccidentalCount} accidental.`
-    : "";
 
   useEffect(() => {
     if (!applyNotice) return undefined;
@@ -202,6 +183,28 @@ export default function SongChordsAnalyzer({
                 </>
               )}
             </div>
+            <div className="song-lyrics-analyzer-stat">
+              <div className="song-lyrics-analyzer-stat-label">Modulasi</div>
+              <div className={`song-lyrics-analyzer-stat-value ${modulationInfo.hasModulation ? 'song-lyrics-analyzer-modulation-yes' : 'song-lyrics-analyzer-modulation-no'}`}>
+                {modulationInfo.hasModulation ? `Ya (${modulationInfo.modulationCount}x)` : 'Tidak'}
+              </div>
+              {displayedModulationTransitions.length > 0 && (
+                <div className="song-lyrics-analyzer-modulation-list" aria-label="Daftar modulasi terdeteksi">
+                  {displayedModulationTransitions.map((item, idx) => (
+                    <span
+                      key={`${item.fromKey}-${item.toKey}-${item.startLine}-${idx}`}
+                      className="song-lyrics-analyzer-modulation-item"
+                      title={`Akurasi deteksi ${item.confidence}%`}
+                    >
+                      {item.fromKey} {"->"} {item.toKey} (L{item.startLine})
+                    </span>
+                  ))}
+                </div>
+              )}
+              {!displayedModulationTransitions.length && modulationInfo.hasModulation && (
+                <div className="song-lyrics-analyzer-stat-subvalue">Terdeteksi dari perubahan key antar bagian chord.</div>
+              )}
+            </div>
           </div>
           <div className="song-lyrics-analyzer-chords">
             <label className="song-lyrics-analyzer-chords-label">Chord yang Digunakan:</label>
@@ -220,25 +223,12 @@ export default function SongChordsAnalyzer({
           </div>
           {pianoRecommendation && pianoRecommendation.recommendedKey && (
             <div className="song-lyrics-analyzer-piano-reco">
-              <div className="song-lyrics-analyzer-piano-reco-title">Rekomendasi Nada Dasar Piano</div>
-              {difficultyLevel && (
-                <div className={`song-lyrics-analyzer-piano-reco-difficulty song-lyrics-analyzer-piano-reco-difficulty-${difficultyLevel.tone}`}>
-                  Tingkat Kesulitan: {difficultyLevel.label}
-                  <span
-                    className="song-lyrics-analyzer-piano-reco-help"
-                    tabIndex={0}
-                    aria-label={`Alasan level kesulitan: ${difficultyReason}`}
-                  >
-                    i
-                    <span className="song-lyrics-analyzer-piano-reco-tooltip">{difficultyReason}</span>
-                  </span>
-                </div>
-              )}
+              <div className="song-lyrics-analyzer-piano-reco-title">Rekomendasi Nada Dasar Piano/Keyboard</div>
               <div className="song-lyrics-analyzer-piano-reco-key">{pianoRecommendation.recommendedKey}</div>
               <div className="song-lyrics-analyzer-piano-reco-note">
                 {pianoRecommendation.transposeFromCurrent === 0
-                  ? "Nada dasar saat ini sudah termasuk yang mudah untuk piano."
-                  : `Coba transpose ${pianoRecommendation.transposeFromCurrent > 0 ? `+${pianoRecommendation.transposeFromCurrent}` : pianoRecommendation.transposeFromCurrent} semitone dari posisi sekarang untuk voicing yang lebih nyaman.`}
+                  ? "Nada dasar saat ini sudah cocok dimainkan."
+                  : `Saran transpose ${pianoRecommendation.transposeFromCurrent > 0 ? `+${pianoRecommendation.transposeFromCurrent}` : pianoRecommendation.transposeFromCurrent} semitone dari posisi sekarang.`}
               </div>
               {typeof onApplyRecommendedTranspose === "function" && (
                 <div className="song-lyrics-analyzer-piano-reco-actions">
@@ -253,9 +243,6 @@ export default function SongChordsAnalyzer({
                   {applyNotice && <div className="song-lyrics-analyzer-piano-reco-notice">{applyNotice}</div>}
                 </div>
               )}
-              <div className={`song-lyrics-analyzer-piano-reco-compare song-lyrics-analyzer-piano-reco-compare-${comparisonTone}`}>
-                {comparisonMessage}
-              </div>
             </div>
           )}
         </>

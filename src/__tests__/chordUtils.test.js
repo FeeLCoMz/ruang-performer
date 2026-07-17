@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, isMetadataLine, parseInstrumentPatchLine, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -250,6 +250,67 @@ describe("chordUtils", () => {
     expect(estimation).toHaveProperty('alternatives');
     expect(Array.isArray(estimation.alternatives)).toBe(true);
     expect(estimation.alternatives.length).toBeGreaterThan(0);
+  });
+
+  test("detectChordModulations identifies key shift between sections", () => {
+    const parsedSong = {
+      lines: [
+        {
+          type: 'line_with_chords',
+          sourceLine: 2,
+          chords: [{ chord: 'C' }, { chord: 'G' }, { chord: 'Am' }, { chord: 'F' }],
+        },
+        {
+          type: 'line_with_chords',
+          sourceLine: 4,
+          chords: [{ chord: 'C' }, { chord: 'G' }, { chord: 'F' }, { chord: 'Dm' }],
+        },
+        {
+          type: 'line_with_chords',
+          sourceLine: 8,
+          chords: [{ chord: 'D' }, { chord: 'A' }, { chord: 'Bm' }, { chord: 'G' }],
+        },
+        {
+          type: 'line_with_chords',
+          sourceLine: 10,
+          chords: [{ chord: 'D' }, { chord: 'A' }, { chord: 'G' }, { chord: 'Em' }],
+        },
+      ],
+    };
+
+    const modulation = detectChordModulations(parsedSong, { lineWindow: 1, minSegmentLines: 2, minDetectedConfidence: 45 });
+    expect(modulation.hasModulation).toBe(true);
+    expect(modulation.modulationCount).toBeGreaterThanOrEqual(1);
+    expect(modulation.transitions[0]).toHaveProperty('fromKey', 'C');
+    expect(modulation.transitions[0]).toHaveProperty('toKey', 'D');
+    expect(modulation.transitions[0]).toHaveProperty('startLine', 8);
+  });
+
+  test("detectChordModulations does not report modulation for stable key", () => {
+    const parsedSong = {
+      lines: [
+        {
+          type: 'line_with_chords',
+          sourceLine: 1,
+          chords: [{ chord: 'C' }, { chord: 'G' }, { chord: 'Am' }, { chord: 'F' }],
+        },
+        {
+          type: 'line_with_chords',
+          sourceLine: 3,
+          chords: [{ chord: 'C' }, { chord: 'Dm' }, { chord: 'G' }, { chord: 'F' }],
+        },
+        {
+          type: 'line_with_chords',
+          sourceLine: 5,
+          chords: [{ chord: 'Am' }, { chord: 'F' }, { chord: 'C' }, { chord: 'G' }],
+        },
+      ],
+    };
+
+    const modulation = detectChordModulations(parsedSong, { lineWindow: 1, minSegmentLines: 2, minDetectedConfidence: 45 });
+    expect(modulation.hasModulation).toBe(false);
+    expect(modulation.modulationCount).toBe(0);
+    expect(modulation.transitions).toEqual([]);
   });
 
   test("N.C. (No Chord) is detected as a chord token", () => {

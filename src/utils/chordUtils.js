@@ -1143,7 +1143,8 @@ const parseStandardFormat = (lines) => {
           type: 'line_with_chords',
           chords,
           text: lyricText,
-          barText: expandedChords // Preserve bars and chord spacing source
+          barText: expandedChords, // Preserve bars and chord spacing source
+          sourceLine: i + 1,
         });
         continue;
       }
@@ -1196,7 +1197,8 @@ const parseStandardFormat = (lines) => {
           type: 'line_with_chords',
           chords,
           text: nextLine,
-          barText: expandedLine // Keep expanded chord line for bar detection
+          barText: expandedLine, // Keep expanded chord line for bar detection
+          sourceLine: i + 1,
         });
 
         i++; // Skip next line karena sudah diproses
@@ -1212,7 +1214,8 @@ const parseStandardFormat = (lines) => {
           type: 'line_with_chords',
           chords,
           text: '',
-          barText: expandedLine // Use bar markers from expanded chord line
+          barText: expandedLine, // Use bar markers from expanded chord line
+          sourceLine: i + 1,
         });
       }
     } else {
@@ -1314,6 +1317,24 @@ export const getChordUsageCounts = (parsedSong) => {
 
       usageMap.set(cleanChord, (usageMap.get(cleanChord) || 0) + 1);
     });
+  });
+
+  return Array.from(usageMap.entries())
+    .map(([chord, count]) => ({ chord, count }))
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.chord.localeCompare(b.chord);
+    });
+};
+
+const buildUsageCountsFromChordList = (chords = []) => {
+  if (!Array.isArray(chords) || chords.length === 0) return [];
+
+  const usageMap = new Map();
+  chords.forEach((chord) => {
+    const cleanChord = normalizeChordToken(String(chord || '').replace(/^-/, ''));
+    if (!cleanChord) return;
+    usageMap.set(cleanChord, (usageMap.get(cleanChord) || 0) + 1);
   });
 
   return Array.from(usageMap.entries())
@@ -1435,6 +1456,124 @@ export const estimateKeyFromChordUsage = (usageCounts = []) => {
     mode: best.mode,
     confidence,
     alternatives,
+  };
+};
+
+/**
+ * Deteksi modulasi berdasarkan pergeseran estimasi key antar blok chord berurutan.
+ */
+export const detectChordModulations = (parsedSong, options = {}) => {
+  if (!parsedSong || !Array.isArray(parsedSong.lines)) {
+    return { hasModulation: false, modulationCount: 0, transitions: [], timeline: [] };
+  }
+
+  const {
+    lineWindow = 2,
+    minDetectedConfidence = 48,
+    minSegmentLines = 2,
+  } = options;
+
+  const chordLines = parsedSong.lines
+    .map((line, index) => ({ ...line, _analysisIndex: index }))
+    .filter((line) => line.type === 'line_with_chords' && Array.isArray(line.chords) && line.chords.length > 0)
+    .map((line) => {
+      const lineChords = line.chords
+        .map(({ chord }) => normalizeChordToken(String(chord || '').replace(/^-/, '')))
+        .filter(Boolean);
+      return {
+        analysisIndex: line._analysisIndex,
+        sourceLine: Number(line.sourceLine) > 0 ? Number(line.sourceLine) : line._analysisIndex + 1,
+        chords: lineChords,
+      };
+    })
+    .filter((line) => line.chords.length > 0);
+
+  if (chordLines.length < lineWindow + 1) {
+    return { hasModulation: false, modulationCount: 0, transitions: [], timeline: [] };
+  }
+
+  const keyPerLine = chordLines.map((line, idx) => {
+    const windowStart = Math.max(0, idx - lineWindow + 1);
+    const windowChords = [];
+    for (let i = windowStart; i <= idx; i += 1) {
+      windowChords.push(...chordLines[i].chords);
+    }
+
+    const usageCounts = buildUsageCountsFromChordList(windowChords);
+    const estimation = estimateKeyFromChordUsage(usageCounts);
+    return {
+      ...line,
+      detectedKey: estimation && estimation.confidence >= minDetectedConfidence ? estimation : null,
+    };
+  });
+
+  const timeline = [];
+  keyPerLine.forEach((line) => {
+    const key = line.detectedKey?.key || null;
+    const confidence = line.detectedKey?.confidence || 0;
+
+    const lastSegment = timeline[timeline.length - 1];
+    if (!key) {
+      if (lastSegment) {
+        lastSegment.endSourceLine = line.sourceLine;
+      }
+      return;
+    }
+
+    if (!lastSegment || lastSegment.key !== key) {
+      timeline.push({
+        key,
+        startSourceLine: line.sourceLine,
+        endSourceLine: line.sourceLine,
+        lineCount: 1,
+        confidenceSum: confidence,
+      });
+      return;
+    }
+
+    lastSegment.endSourceLine = line.sourceLine;
+    lastSegment.lineCount += 1;
+    lastSegment.confidenceSum += confidence;
+  });
+
+  const normalizedTimeline = timeline.map((segment) => ({
+    key: segment.key,
+    startSourceLine: segment.startSourceLine,
+    endSourceLine: segment.endSourceLine,
+    lineCount: segment.lineCount,
+    confidence: Math.round(segment.confidenceSum / Math.max(1, segment.lineCount)),
+  }));
+
+  const stableSegments = normalizedTimeline.filter((segment) => segment.lineCount >= minSegmentLines);
+  if (stableSegments.length < 2) {
+    return {
+      hasModulation: false,
+      modulationCount: 0,
+      transitions: [],
+      timeline: normalizedTimeline,
+    };
+  }
+
+  const transitions = [];
+  for (let i = 1; i < stableSegments.length; i += 1) {
+    const prev = stableSegments[i - 1];
+    const next = stableSegments[i];
+    if (!prev.key || !next.key || prev.key === next.key) continue;
+
+    transitions.push({
+      fromKey: prev.key,
+      toKey: next.key,
+      startLine: next.startSourceLine,
+      endLine: next.endSourceLine,
+      confidence: Math.round((prev.confidence + next.confidence) / 2),
+    });
+  }
+
+  return {
+    hasModulation: transitions.length > 0,
+    modulationCount: transitions.length,
+    transitions,
+    timeline: normalizedTimeline,
   };
 };
 
