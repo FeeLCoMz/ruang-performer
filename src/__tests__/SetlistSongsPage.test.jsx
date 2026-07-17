@@ -324,4 +324,52 @@ describe('SetlistSongsPage', () => {
     const addToSetlistButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Tambah (1)'));
     expect(addToSetlistButton).toBeTruthy();
   });
+
+  test('share modal supports sharing a specific session only', async () => {
+    const props = buildProps({
+      setlists: [
+        {
+          id: 'setlist-1',
+          name: 'Setlist Konser',
+          userId: 'user-1',
+          songs: ['song-1', 'song-2', 'song-3'],
+          completedSongs: {},
+          setlistSongMeta: {
+            'song-2': { sessionDividerName: 'Encore' },
+          },
+        },
+      ],
+      songs: [
+        { id: 'song-1', title: 'Opening Song', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop' },
+        { id: 'song-2', title: 'Encore One', artist: 'Artist B', key: 'G', tempo: '110', genre: 'Rock' },
+        { id: 'song-3', title: 'Encore Two', artist: 'Artist C', key: 'A', tempo: '100', genre: 'Jazz' },
+      ],
+    });
+
+    await renderPage(root, props);
+
+    const openShareButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Bagikan'));
+    expect(openShareButton).toBeTruthy();
+
+    await act(async () => {
+      openShareButton.click();
+      await flushPromises();
+    });
+
+    const sessionSelect = container.querySelector('select[aria-label="Pilih sesi bagikan"]');
+    expect(sessionSelect).toBeTruthy();
+
+    await act(async () => {
+      sessionSelect.value = 'song-2';
+      sessionSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      await flushPromises();
+    });
+
+    const shareTextarea = container.querySelector('textarea.modal-input');
+    expect(shareTextarea).toBeTruthy();
+    expect(shareTextarea.value).toContain('📌 Sesi: Encore');
+    expect(shareTextarea.value).toContain('Encore One');
+    expect(shareTextarea.value).toContain('Encore Two');
+    expect(shareTextarea.value).not.toContain('Opening Song');
+  });
 });

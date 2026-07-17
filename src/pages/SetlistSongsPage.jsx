@@ -112,6 +112,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [shareFormat, setShareFormat] = useState('full');
+  const [shareSessionFilter, setShareSessionFilter] = useState('all');
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [posterError, setPosterError] = useState('');
   const posterRef = useRef(null);
@@ -400,6 +401,92 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     return orderedSetlistRows;
   }, [filteredSongsWithDividers, orderedSetlistRows]);
 
+  const shareSessionOptions = useMemo(() => {
+    if (!Array.isArray(shareSetlistRows) || shareSetlistRows.length === 0) return [];
+
+    const options = [];
+    let hasSongsBeforeFirstDivider = false;
+    let hasEncounteredDivider = false;
+
+    for (const row of shareSetlistRows) {
+      if (row.type === 'divider') {
+        hasEncounteredDivider = true;
+        options.push({
+          value: String(row.songId),
+          label: row.name,
+        });
+        continue;
+      }
+
+      if (!hasEncounteredDivider) {
+        hasSongsBeforeFirstDivider = true;
+      }
+    }
+
+    if (hasSongsBeforeFirstDivider && options.length > 0) {
+      options.unshift({ value: '__no_divider__', label: 'Tanpa Divider' });
+    }
+
+    return options;
+  }, [shareSetlistRows]);
+
+  const shareRowsForSelectedSession = useMemo(() => {
+    if (shareSessionFilter === 'all') return shareSetlistRows;
+    if (!Array.isArray(shareSetlistRows) || shareSetlistRows.length === 0) return [];
+
+    if (shareSessionFilter === '__no_divider__') {
+      const rows = [];
+      for (const row of shareSetlistRows) {
+        if (row.type === 'divider') break;
+        rows.push(row);
+      }
+      return rows.filter((row) => row.type === 'song');
+    }
+
+    const rows = [];
+    let inSelectedSession = false;
+    let sessionClosed = false;
+
+    for (const row of shareSetlistRows) {
+      if (sessionClosed) break;
+
+      if (row.type === 'divider') {
+        if (inSelectedSession) {
+          sessionClosed = true;
+          break;
+        }
+
+        if (String(row.songId) === String(shareSessionFilter)) {
+          inSelectedSession = true;
+          rows.push(row);
+        }
+        continue;
+      }
+
+      if (inSelectedSession) {
+        rows.push(row);
+      }
+    }
+
+    return rows;
+  }, [shareSetlistRows, shareSessionFilter]);
+
+  const activeShareRows = useMemo(() => {
+    if (shareSessionFilter === 'all') return shareSetlistRows;
+    if (Array.isArray(shareRowsForSelectedSession) && shareRowsForSelectedSession.length > 0) {
+      return shareRowsForSelectedSession;
+    }
+    return shareSetlistRows;
+  }, [shareRowsForSelectedSession, shareSessionFilter, shareSetlistRows]);
+
+  useEffect(() => {
+    if (shareSessionFilter === 'all') return;
+    const stillExists = shareSessionOptions.some((option) => option.value === shareSessionFilter);
+    if (!stillExists) {
+      setShareSessionFilter('all');
+    }
+  }, [shareSessionFilter, shareSessionOptions]);
+
   useEffect(() => {
     if (!activeVideoSong) return;
     let attempts = 0;
@@ -460,13 +547,17 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // Generate share text
   const shareUrl = `${window.location.origin}/setlists/${setlist.id}`;
   const bandText = setlist.bandName ? `🎸 Band: ${setlist.bandName}\n` : '';
-  const hasSessionDividerInShare = shareSetlistRows.some((row) => row.type === 'divider');
+  const selectedSessionOption = shareSessionOptions.find((option) => option.value === shareSessionFilter) || null;
+  const sessionTitleText = selectedSessionOption && shareSessionFilter !== 'all'
+    ? `📌 Sesi: ${selectedSessionOption.label}\n`
+    : '';
+  const hasSessionDividerInShare = activeShareRows.some((row) => row.type === 'divider');
 
   function formatShareLines(includeSongDetails) {
     let songNumber = 0;
     let sessionNumber = 0;
 
-    return shareSetlistRows
+    return activeShareRows
       .map((row) => {
         if (row.type === 'divider') {
           sessionNumber += 1;
@@ -491,8 +582,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const shareText =
     shareFormat === 'title-artist-only'
       ? `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
+        `${sessionTitleText}` +
         `${hasSessionDividerInShare ? 'Pembagian sesi:\n' : ''}${formatShareLines(false)}`
       : `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
+        `${sessionTitleText}` +
         `${hasSessionDividerInShare ? 'Pembagian sesi:\n' : ''}${formatShareLines(true)}` +
         `\n\nLihat detail & chord: ${shareUrl}`;
 
@@ -1320,7 +1413,14 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             </button>
           )}
           {!performanceMode && (
-            <button className="btn" onClick={() => setShowShareModal(true)} title="Bagikan Setlist">
+            <button
+              className="btn"
+              onClick={() => {
+                setShareSessionFilter('all');
+                setShowShareModal(true);
+              }}
+              title="Bagikan Setlist"
+            >
               📤 Bagikan
             </button>
           )}
@@ -1781,7 +1881,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             <SetlistPoster
               setlist={setlist}
               setlistSongs={setlistSongs}
-              setlistRows={shareSetlistRows}
+              setlistRows={activeShareRows}
               posterRef={posterRef}              
             />
             <div className="filter-row">
@@ -1794,6 +1894,21 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 <option value="full">Format lengkap (judul, penyanyi, key, tempo, link)</option>
                 <option value="title-artist-only">Hanya judul lagu + penyanyi</option>
               </select>
+              {shareSessionOptions.length > 0 && (
+                <select
+                  value={shareSessionFilter}
+                  onChange={(e) => setShareSessionFilter(e.target.value)}
+                  className="filter-select"
+                  aria-label="Pilih sesi bagikan"
+                >
+                  <option value="all">Sesi: Semua</option>
+                  {shareSessionOptions.map((sessionOption) => (
+                    <option key={sessionOption.value} value={sessionOption.value}>
+                      Sesi: {sessionOption.label}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             <textarea
               className="modal-input"
