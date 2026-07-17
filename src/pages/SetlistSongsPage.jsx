@@ -12,7 +12,7 @@ import jsPDF from 'jspdf';
 import * as authUtils from '../utils/auth.js';
 import { cacheSetlist, getSetlist as getSetlistOffline } from '../utils/offlineCache.js';
 import { usePermission } from '../hooks/usePermission.js';
-import { canEditSetlist } from '../utils/permissionUtils.js';
+import { PERMISSIONS, canEditSetlist } from '../utils/permissionUtils.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as chordUtils from '../utils/chordUtils.js';
 import { buildSmartSetlistPlan } from '../utils/setlistSmartAssistant.js';
@@ -40,7 +40,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     currentUserBandInfo = { role: 'owner', bandId: null };
   }
   const { user: userFromAuth } = useAuth();
-  const { user } = usePermission(bandId, currentUserBandInfo);
+  const { user, can } = usePermission(bandId, currentUserBandInfo);
   // For personal setlist, fallback to userFromAuth if user is undefined
   const effectiveUser = user || userFromAuth;
   // Permission logic DRY: helper
@@ -89,6 +89,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [addSongError, setAddSongError] = useState('');
   const [addingSongIds, setAddingSongIds] = useState([]); // array of selected song ids
   const [isAddingSongs, setIsAddingSongs] = useState(false);
+  const [isQuickAddingSong, setIsQuickAddingSong] = useState(false);
+  const [quickCreatedSongs, setQuickCreatedSongs] = useState([]);
   const addSongInputRef = useRef(null);
 
   // State untuk merge dari setlist lain
@@ -137,6 +139,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // State untuk konfirmasi hapus
   const [confirmDeleteSongId, setConfirmDeleteSongId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [deletingUncompleted, setDeletingUncompleted] = useState(false);
   const [metronomeTempo, setMetronomeTempo] = useState(120);
   const [metronomeSongId, setMetronomeSongId] = useState(null);
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
@@ -149,8 +152,33 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     songs.forEach(song => {
       map.set(song.id, song);
     });
+    quickCreatedSongs.forEach(song => {
+      if (!map.has(song.id)) {
+        map.set(song.id, song);
+      }
+    });
     return map;
-  }, [songs]);
+  }, [songs, quickCreatedSongs]);
+
+  const availableSongsPool = useMemo(() => {
+    return Array.from(baseSongMap.values());
+  }, [baseSongMap]);
+
+  const canQuickCreateSong = useMemo(() => {
+    if (!canEdit) return false;
+    if (!bandId) return Boolean(effectiveUser);
+    return can(PERMISSIONS.SONG_CREATE);
+  }, [canEdit, bandId, effectiveUser, can]);
+
+  const quickAddTitleCandidate = useMemo(() => addSongSearch.trim(), [addSongSearch]);
+
+  const canShowQuickAddSong = useMemo(() => {
+    if (!canQuickCreateSong) return false;
+    if (!quickAddTitleCandidate) return false;
+    return !availableSongsPool.some((song) =>
+      (song.title || '').toLowerCase() === quickAddTitleCandidate.toLowerCase()
+    );
+  }, [canQuickCreateSong, quickAddTitleCandidate, availableSongsPool]);
 
   const songUsageCountMap = useMemo(() => {
     const map = new Map();
@@ -171,11 +199,13 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const setlistSongMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta) ? setlist.setlistSongMeta : {};
   const completedSongs = typeof setlist?.completedSongs === 'object' && !Array.isArray(setlist.completedSongs) ? setlist.completedSongs : {};
   const completedCount = (localOrder || []).filter((songId) => completedSongs[songId] === true).length;
+  const uncompletedSongIds = (localOrder || []).filter((songId) => completedSongs[songId] !== true);
+  const uncompletedCount = uncompletedSongIds.length;
   const allSongsCompleted = localOrder.length > 0 && completedCount === localOrder.length;
   let setlistSongs;
   if (sortBy === 'custom') {
     setlistSongs = (localOrder || []).map((id) => {
-      const song = songs.find(item => item.id === id);
+      const song = availableSongsPool.find(item => item.id === id);
       const meta = setlistSongMeta[id];
       if (song) {
         if (meta) {
@@ -201,7 +231,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       }
     });
   } else {
-    setlistSongs = songs.filter(song => (localOrder || []).includes(song.id));
+    setlistSongs = availableSongsPool.filter(song => (localOrder || []).includes(song.id));
   }
 
   // Extract unique values untuk filter
@@ -591,11 +621,51 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   }
 
   // Lagu yang belum ada di setlist
-  const availableSongs = songs.filter(song => !(localOrder || []).includes(song.id));
+  const availableSongs = availableSongsPool.filter(song => !(localOrder || []).includes(song.id));
   const filteredAvailableSongs = availableSongs.filter(song =>
     (song.title || '').toLowerCase().includes(addSongSearch.toLowerCase()) ||
     (song.artist || '').toLowerCase().includes(addSongSearch.toLowerCase())
   );
+
+  async function handleQuickAddSongFromSetlist() {
+    const title = quickAddTitleCandidate;
+    if (!title || !canQuickCreateSong) return;
+
+    setIsQuickAddingSong(true);
+    setAddSongError('');
+    try {
+      const response = await fetch('/api/songs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
+        body: JSON.stringify({
+          title,
+          bandId: setlist?.bandId || null,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.id) {
+        throw new Error(data?.error || 'Gagal menambahkan lagu cepat');
+      }
+
+      const quickSong = {
+        id: data.id,
+        title,
+        artist: '',
+        key: '',
+        tempo: '',
+        genre: '',
+        bandId: setlist?.bandId || null,
+      };
+
+      setQuickCreatedSongs((prev) => prev.some((song) => song.id === quickSong.id) ? prev : [quickSong, ...prev]);
+      setAddingSongIds((ids) => ids.includes(quickSong.id) ? ids : [...ids, quickSong.id]);
+      setAddSongSearch('');
+    } catch (e) {
+      setAddSongError(e.message || 'Gagal menambahkan lagu cepat');
+    } finally {
+      setIsQuickAddingSong(false);
+    }
+  }
 
   // Handler drag and drop
   async function handleReorder(fromIdx, toIdx) {
@@ -868,7 +938,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // Handler edit metadata lagu di setlist
   function openEditSong(songId) {
     setEditSongId(songId);
-    const baseSong = songs.find(s => s.id === songId);
+    const baseSong = availableSongsPool.find(s => s.id === songId);
     const meta = setlistSongMeta[songId];
     if (meta) {
       setEditSongKey(meta.key || baseSong?.key || '');
@@ -1021,6 +1091,40 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       });
     } catch (e) {
       console.error('Gagal mereset status lagu dibawakan', e);
+    }
+  }
+
+  async function handleDeleteUncompletedSongs() {
+    if (!canEdit || uncompletedCount === 0) return;
+
+    const confirmed = window.confirm(`Hapus ${uncompletedCount} lagu yang belum ditandai dibawakan dari setlist ini? Lagu hanya dihapus dari setlist, tidak dari daftar lagu.`);
+    if (!confirmed) return;
+
+    setDeletingUncompleted(true);
+    try {
+      const keepSongIdSet = new Set((localOrder || []).filter((songId) => completedSongs[songId] === true));
+      const newOrder = (localOrder || []).filter((songId) => keepSongIdSet.has(songId));
+
+      const currentMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
+        ? setlist.setlistSongMeta
+        : {};
+      const nextMeta = {};
+      for (const songId of newOrder) {
+        if (currentMeta[songId] && typeof currentMeta[songId] === 'object') {
+          nextMeta[songId] = { ...currentMeta[songId] };
+        }
+      }
+
+      const nextCompletedSongs = {};
+      for (const songId of newOrder) {
+        nextCompletedSongs[songId] = true;
+      }
+
+      await persistSetlistSongs(newOrder, nextMeta, nextCompletedSongs);
+    } catch (e) {
+      console.error('Gagal menghapus lagu yang belum dibawakan', e);
+    } finally {
+      setDeletingUncompleted(false);
     }
   }
 
@@ -1198,6 +1302,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           {canEdit && completedCount > 0 && (
             <button className="btn btn-secondary" onClick={handleResetCompletedSongs} title="Reset semua status lagu dibawakan">
               ↺ Reset Dibawakan
+            </button>
+          )}
+          {canEdit && uncompletedCount > 0 && (
+            <button
+              className="btn btn-red"
+              onClick={handleDeleteUncompletedSongs}
+              title="Hapus lagu yang belum ditandai dibawakan dari setlist ini saja"
+              disabled={deletingUncompleted}
+            >
+              {deletingUncompleted ? 'Menghapus...' : '🗑 Hapus Belum Dibawakan'}
             </button>
           )}
           {!performanceMode && (
@@ -1600,7 +1714,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               >
                 <option value="">Pilih lagu</option>
                 {localOrder.map((songId, idx) => {
-                  const song = songs.find((s) => s.id === songId);
+                  const song = availableSongsPool.find((s) => s.id === songId);
                   if (!song) return null;
                   return (
                     <option key={songId} value={songId}>
@@ -1868,6 +1982,20 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 </li>
               ))}
             </ul>
+            {filteredAvailableSongs.length === 0 && canShowQuickAddSong && (
+              <div className="smart-plan-note" style={{ marginBottom: 8 }}>
+                Lagu "{quickAddTitleCandidate}" belum ada di daftar.
+                <div style={{ marginTop: 8 }}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleQuickAddSongFromSetlist}
+                    disabled={isQuickAddingSong}
+                  >
+                    {isQuickAddingSong ? 'Menambahkan...' : `+ Tambah cepat "${quickAddTitleCandidate}"`}
+                  </button>
+                </div>
+              </div>
+            )}
             {addSongError && <div className="error-text" style={{ marginBottom: 8 }}>{addSongError}</div>}
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
               <button className="btn btn-primary" disabled={isAddingSongs || !addingSongIds.length} onClick={handleAddSongsToSetlist}>

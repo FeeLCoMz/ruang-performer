@@ -47,6 +47,7 @@ describe('SetlistSongsPage', () => {
   let container;
   let root;
   let fetchSpy;
+  let confirmSpy;
 
   beforeEach(() => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -55,6 +56,7 @@ describe('SetlistSongsPage', () => {
     root = createRoot(container);
     mockNavigate.mockReset();
     fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => ({}) });
+    confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -63,6 +65,7 @@ describe('SetlistSongsPage', () => {
     });
     document.body.removeChild(container);
     fetchSpy.mockRestore();
+    confirmSpy.mockRestore();
   });
 
   function buildProps(overrides = {}) {
@@ -200,5 +203,125 @@ describe('SetlistSongsPage', () => {
       '/api/setlists/setlist-1',
       expect.objectContaining({ method: 'PUT' })
     );
+  });
+
+  test('deletes songs that are not marked completed', async () => {
+    const setSetlists = vi.fn();
+    const props = buildProps({
+      setSetlists,
+      setlists: [
+        {
+          id: 'setlist-1',
+          name: 'Setlist Malam Ini',
+          userId: 'user-1',
+          songs: ['song-1', 'song-2', 'song-3'],
+          completedSongs: { 'song-1': true },
+          setlistSongMeta: {
+            'song-1': { key: 'C' },
+            'song-2': { key: 'G' },
+            'song-3': { key: 'A' },
+          },
+        },
+      ],
+      songs: [
+        { id: 'song-1', title: 'Lagu Jadi', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop' },
+        { id: 'song-2', title: 'Lagu Cadangan 1', artist: 'Artist B', key: 'G', tempo: '110', genre: 'Rock' },
+        { id: 'song-3', title: 'Lagu Cadangan 2', artist: 'Artist C', key: 'A', tempo: '100', genre: 'Jazz' },
+      ],
+    });
+
+    await renderPage(root, props);
+
+    const deleteButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Hapus Belum Dibawakan'));
+    expect(deleteButton).toBeTruthy();
+
+    await act(async () => {
+      deleteButton.click();
+      await flushPromises();
+    });
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(setSetlists).toHaveBeenCalled();
+
+    const updater = setSetlists.mock.calls[0][0];
+    const updatedSetlists = updater(props.setlists);
+    expect(updatedSetlists[0].songs).toEqual(['song-1']);
+    expect(updatedSetlists[0].completedSongs).toEqual({ 'song-1': true });
+    expect(updatedSetlists[0].setlistSongMeta).toEqual({ 'song-1': { key: 'C' } });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      '/api/setlists/setlist-1',
+      expect.objectContaining({ method: 'PUT' })
+    );
+    expect(
+      fetchSpy.mock.calls.some(([url]) => String(url).includes('/api/songs'))
+    ).toBe(false);
+  });
+
+  test('quick add creates a missing song from add-to-setlist modal', async () => {
+    const props = buildProps({
+      setlists: [
+        {
+          id: 'setlist-1',
+          name: 'Setlist Malam Ini',
+          userId: 'user-1',
+          songs: ['song-1', 'song-2'],
+          completedSongs: {},
+          setlistSongMeta: {},
+        },
+      ],
+      songs: [
+        { id: 'song-1', title: 'Lagu Lama 1', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop' },
+        { id: 'song-2', title: 'Lagu Lama 2', artist: 'Artist B', key: 'G', tempo: '110', genre: 'Rock' },
+      ],
+    });
+
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 'song-quick-1' }),
+    });
+
+    await renderPage(root, props);
+
+    const openAddButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Tambah Lagu'));
+    expect(openAddButton).toBeTruthy();
+
+    await act(async () => {
+      openAddButton.click();
+      await flushPromises();
+    });
+
+    const searchInput = container.querySelector('input[placeholder="Cari judul atau artist..."]');
+    expect(searchInput).toBeTruthy();
+
+    await act(async () => {
+      const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      nativeSetter.call(searchInput, 'Lagu Quick Baru');
+      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      await flushPromises();
+      await flushPromises();
+    });
+
+    const quickAddButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Tambah cepat'));
+    expect(quickAddButton).toBeTruthy();
+
+    await act(async () => {
+      quickAddButton.click();
+      await flushPromises();
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      '/api/songs',
+      expect.objectContaining({ method: 'POST' })
+    );
+
+    const createSongRequest = fetchSpy.mock.calls.find(([url]) => url === '/api/songs');
+    expect(createSongRequest).toBeTruthy();
+    expect(JSON.parse(createSongRequest[1].body)).toEqual(
+      expect.objectContaining({ title: 'Lagu Quick Baru' })
+    );
+
+    const addToSetlistButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Tambah (1)'));
+    expect(addToSetlistButton).toBeTruthy();
   });
 });
