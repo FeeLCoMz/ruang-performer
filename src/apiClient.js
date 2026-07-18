@@ -113,46 +113,6 @@ function getHeaders(additionalHeaders = {}) {
   };
 }
 
-async function cacheFullSongDetailsInBackground(songs = []) {
-  const uniqueIds = Array.from(
-    new Set(
-      (songs || [])
-        .map((song) => song?.id)
-        .filter(Boolean)
-    )
-  );
-
-  if (uniqueIds.length === 0 || typeof navigator === 'undefined' || navigator.onLine === false) {
-    return;
-  }
-
-  const CONCURRENCY = 4;
-  let currentIndex = 0;
-
-  const workers = Array.from({ length: Math.min(CONCURRENCY, uniqueIds.length) }, async () => {
-    while (currentIndex < uniqueIds.length) {
-      const id = uniqueIds[currentIndex];
-      currentIndex += 1;
-
-      try {
-        const detailRes = await fetch(`${API_BASE}/songs/${id}`, {
-          headers: getHeaders(),
-        });
-        if (!detailRes.ok) {
-          continue;
-        }
-
-        const detailSong = await detailRes.json();
-        await cacheSong(detailSong);
-      } catch {
-        // Ignore background cache sync errors to keep UI responsive.
-      }
-    }
-  });
-
-  Promise.allSettled(workers).catch(() => {});
-}
-
 // Auth endpoints
 export async function register(email, username, password) {
   const res = await fetch(`${API_BASE}/auth/register`, {
@@ -237,7 +197,6 @@ export async function fetchSongs(options = {}) {
     const songs = await res.json();
     if (Array.isArray(songs)) {
       await cacheSongs(songs).catch(() => {});
-      cacheFullSongDetailsInBackground(songs);
     }
 
     return songs;
@@ -269,41 +228,42 @@ export async function fetchSongById(id) {
     if (cachedSong) {
       return cachedSong;
     }
+
     throw error;
   }
 }
 
 export async function addSong(song) {
-  const res = await fetch(`${API_BASE}/songs`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify(song)
-  });
-  if (!res.ok) throw new Error('Failed to add song');
-  return await res.json();
+    const res = await fetch(`${API_BASE}/songs`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(song)
+    });
+    if (!res.ok) throw new Error('Failed to add song');
+    return await res.json();
 }
 
 export async function updateSong(id, song) {
-  const res = await fetch(`${API_BASE}/songs/${id}`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(song)
-  });
-  if (!res.ok) throw new Error('Failed to update song');
-  return await res.json();
+    const res = await fetch(`${API_BASE}/songs/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(song)
+    });
+    if (!res.ok) throw new Error('Failed to update song');
+    return await res.json();
 }
 
 export async function updateSongMastery(id, mastered = true) {
-  const res = await fetch(`${API_BASE}/songs/${id}/mastery`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify({ mastered })
-  });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to update song mastery');
-  }
-  return await res.json();
+    const res = await fetch(`${API_BASE}/songs/${id}/mastery`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ mastered })
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to update song mastery');
+    }
+    return await res.json();
 }
 
 export async function deleteSong(id) {
@@ -312,10 +272,10 @@ export async function deleteSong(id) {
     headers: getHeaders()
   });
   if (!res.ok) {
-    if (res.status === 204) return; // No content is success
+    if (res.status === 204) return;
     throw new Error('Failed to delete song');
   }
-  if (res.status === 204) return; // No content response
+  if (res.status === 204) return;
   return await res.json();
 }
 
