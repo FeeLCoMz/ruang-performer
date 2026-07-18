@@ -27,7 +27,7 @@ import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyrics
  * Props:
  *   - song: (optional) data lagu yang diterima dari parent
  */
-export default function SongChordsPage({ song: songProp, performanceMode = false }) {
+export default function SongChordsPage({ song: songProp, performanceMode = false, vocalMode = false }) {
   // State untuk toggle tampilan partitur
   const [showSheetMusic, setShowSheetMusic] = useState(false);
   // =========================
@@ -95,9 +95,14 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // Transpose state
   const [transpose, setTranspose] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [showChords, setShowChords] = useState(!vocalMode);
   const [showChordNumbers, setShowChordNumbers] = useState(false);
   const [showJazzChords, setShowJazzChords] = useState(false);
   const [showSimpleChords, setShowSimpleChords] = useState(false);
+
+  useEffect(() => {
+    setShowChords(!vocalMode);
+  }, [vocalMode]);
   
   // In-place editing state
   const [isEditingLyrics, setIsEditingLyrics] = useState(false);
@@ -528,7 +533,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   };
 
   return (
-    <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}> {/* Tambah class jika performanceMode */}
+    <div className={`page-container${performanceMode ? ' performance-mode' : ''}${vocalMode ? ' vocal-mode' : ''}`}> {/* Tambah class jika performanceMode */}
       <SongChordsInfo
         originalKey={song?.key || key || ''}
         targetKey={key || song?.key || ''}
@@ -620,10 +625,13 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         zoom={zoom}
         setZoom={setZoom}
         performanceMode={performanceMode}
+        vocalMode={vocalMode}
         canEdit={can(PERMISSIONS.SONG_EDIT)}
         song={song}
         transpose={transpose}
         setTranspose={setTranspose}
+        showChords={showChords}
+        setShowChords={setShowChords}
         showSheetMusic={showSheetMusic}
         setShowSheetMusic={setShowSheetMusic}
         youtubeRef={youtubeRef}

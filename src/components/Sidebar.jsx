@@ -5,7 +5,7 @@ import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
 import * as apiClient from '../apiClient.js';
 
-export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceMode, setPerformanceMode }) {
+export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceMode, setPerformanceMode, vocalMode, setVocalMode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
@@ -74,6 +74,14 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
               aria-label="Toggle performance mode"
             >
               {performanceMode ? '🎤 Performance' : '🎶 Normal'}
+            </button>
+            <button
+              className={`btn btn-secondary ${vocalMode ? ' active' : ''}`}
+              onClick={() => setVocalMode(v => !v)}
+              title={vocalMode ? 'Nonaktifkan Vocal Mode' : 'Aktifkan Vocal Mode'}
+              aria-label="Toggle vocal mode"
+            >
+              {vocalMode ? '🗣️ Vocal' : '🎙️ Vocal'}
             </button>
           </div>
         </div>

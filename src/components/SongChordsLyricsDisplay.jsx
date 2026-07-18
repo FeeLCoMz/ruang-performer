@@ -35,6 +35,7 @@ export default function SongChordsLyricsDisplay({
   song,
   transpose,
   setTranspose,
+  showChords,
   zoom,
   setZoom,
   showChordNumbers,
@@ -217,14 +218,18 @@ export default function SongChordsLyricsDisplay({
   const normalizedBpm = Math.max(40, Math.min(240, Number(song?.tempo) || 120));
   const normalizedScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedBpm));
   const blinkDurationMs = Math.round(60000 / normalizedBpm);
-  const currentChordModeKey = showChordNumbers
+  const currentChordModeKey = !showChords
+    ? 'hidden'
+    : showChordNumbers
     ? 'number'
     : showJazzChords
       ? 'jazz'
       : showSimpleChords
         ? 'simple'
         : 'default';
-  const currentChordModeLabel = showChordNumbers
+  const currentChordModeLabel = !showChords
+    ? 'Off'
+    : showChordNumbers
     ? 'Angka'
     : showJazzChords
       ? 'Jazz'
@@ -470,6 +475,7 @@ export default function SongChordsLyricsDisplay({
         song={song}
         transpose={transpose}
         zoom={zoom}
+        showChords={showChords}
         showChordNumbers={showChordNumbers}
         showJazzChords={showJazzChords}
         showSimpleChords={showSimpleChords}

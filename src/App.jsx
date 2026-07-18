@@ -100,6 +100,12 @@ function AppContent() {
     }
     return false;
   });
+  const [vocalMode, setVocalMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ruangperformer_vocal_mode") === "true";
+    }
+    return false;
+  });
   const hasPrefetchedPerformanceDataRef = useRef(false);
 
   useEffect(() => {
@@ -110,6 +116,15 @@ function AppContent() {
       document.body.classList.remove("performance-mode");
     }
   }, [performanceMode]);
+
+  useEffect(() => {
+    localStorage.setItem("ruangperformer_vocal_mode", vocalMode ? "true" : "false");
+    if (vocalMode) {
+      document.body.classList.add("vocal-mode");
+    } else {
+      document.body.classList.remove("vocal-mode");
+    }
+  }, [vocalMode]);
 
   // ALL HOOKS MUST BE HERE - BEFORE ANY CONDITIONAL LOGIC
   useEffect(() => {
@@ -223,6 +238,8 @@ function AppContent() {
           setTheme={setTheme}
           performanceMode={performanceMode}
           setPerformanceMode={setPerformanceMode}
+          vocalMode={vocalMode}
+          setVocalMode={setVocalMode}
         />
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
 
@@ -253,6 +270,13 @@ function AppContent() {
                 }
               >
                 {performanceMode ? "🎤 Performance" : "🎶 Normal"}
+              </button>
+              <button
+                className={`btn btn-secondary ${vocalMode ? " active" : ""}`}
+                onClick={() => setVocalMode((v) => !v)}
+                title={vocalMode ? "Nonaktifkan Vocal Mode" : "Aktifkan Vocal Mode"}
+              >
+                {vocalMode ? "🗣️ Vocal" : "🎙️ Vocal"}
               </button>
             </div>
           </header>
@@ -372,7 +396,7 @@ function AppContent() {
               />
               <Route
                 path="/songs/view/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} vocalMode={vocalMode} />}
               />
               <Route
                 path="/karaoke/:id"
@@ -395,7 +419,7 @@ function AppContent() {
               />
               <Route
                 path="/setlists/:setlistId/songs/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} vocalMode={vocalMode} />}
               />
               <Route
                 path="/setlists"
@@ -473,10 +497,10 @@ function EditSongRoute({ onSongUpdated }) {
 }
 
 // SongLyricsRoute component
-function SongLyricsRoute({ songs, activeSetlist, performanceMode }) {
+function SongLyricsRoute({ songs, activeSetlist, performanceMode, vocalMode }) {
   const { id } = useParams();
   const song = Array.isArray(songs) ? songs.find((s) => String(s.id) === String(id)) : null;
-  return <SongChordsPage song={song} activeSetlist={activeSetlist} performanceMode={performanceMode} />;
+  return <SongChordsPage song={song} activeSetlist={activeSetlist} performanceMode={performanceMode} vocalMode={vocalMode} />;
 }
 
 export default App;

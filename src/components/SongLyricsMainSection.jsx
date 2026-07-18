@@ -47,10 +47,13 @@ export default function SongLyricsMainSection({
   zoom,
   setZoom,
   performanceMode,
+  vocalMode,
   canEdit,
   song,
   transpose,
   setTranspose,
+  showChords,
+  setShowChords,
   showChordNumbers,
   setShowChordNumbers,
   showJazzChords,
@@ -81,6 +84,7 @@ export default function SongLyricsMainSection({
           <SongChordsLyricsToolbar
             isEditingLyrics={isEditingLyrics}
             performanceMode={performanceMode}
+            vocalMode={vocalMode}
             canEdit={canEdit}
             tempo={tempo}
             timeSignature={timeSignature}
@@ -93,6 +97,8 @@ export default function SongLyricsMainSection({
             setCurrentBeat={setCurrentBeat}
             transpose={transpose}
             setTranspose={setTranspose}
+            showChords={showChords}
+            setShowChords={setShowChords}
             zoom={zoom}
             setZoom={setZoom}
             showChordNumbers={showChordNumbers}
@@ -174,6 +180,7 @@ export default function SongLyricsMainSection({
               song={song}
               transpose={transpose}
               setTranspose={setTranspose}
+              showChords={showChords}
               zoom={zoom}
               setZoom={setZoom}
               showChordNumbers={showChordNumbers}

@@ -23,7 +23,7 @@ import NumberToken from './NumberToken.jsx';
 import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
 
 
-export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordNumbers = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
+export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const formatInstrumentPatchText = (lineObj) => {
@@ -67,7 +67,7 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordN
           return <div key={i} className="cd-section-inst cd-instrument-patch">{formatInstrumentPatchText(lineObj)}</div>;
         if (lineObj.type === 'metadata')
           return <div key={i} className="cd-metadata">{lineObj.text}</div>;
-        if (lineObj.type === 'chord')
+        if (lineObj.type === 'chord' && showChords)
           return (
             <div key={i} className="cd-chord">
               {lineObj.tokens.map((t, j) =>
@@ -83,6 +83,9 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordN
               )}
             </div>
           );
+        if (lineObj.type === 'chord' && !showChords) {
+          return null;
+        }
         if (lineObj.type === 'number')
           return (
             <div key={i} className="cd-number">
@@ -95,6 +98,9 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChordN
         return (
           <div key={i} className="cd-lyrics">
             {lineObj.tokens.map((t, j) => {
+              if (t.isChord && !showChords) {
+                return null;
+              }
               const tokenText = t.isChord ? formatChordToken(t.token) : t.token;
               const seconds = typeof tokenText === 'string' ? parseTimestampToken(tokenText) : null;
               if (seconds !== null) {
