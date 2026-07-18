@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/karaoke.css';
 import AutoScrollBar from '../components/AutoScrollBar.jsx';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { isChordLine, isMetadataLine, parseInstrumentPatchLine, parseSection, splitSectionLabelWithChords } from '../utils/chordUtils.js';
 import KaraokeSongSearch from '../components/KaraokeSongSearch.jsx';
 import * as apiClient from '../apiClient.js';
@@ -10,6 +10,7 @@ import * as apiClient from '../apiClient.js';
 export default function SongLyricsPage() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [song, setSong] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -95,6 +96,15 @@ export default function SongLyricsPage() {
   const hasSetlistNavigation = Boolean(setlistId && setlistSongIds.length > 0 && currentSongIndex >= 0);
   const prevSongId = hasSetlistNavigation && currentSongIndex > 0 ? setlistSongIds[currentSongIndex - 1] : null;
   const nextSongId = hasSetlistNavigation && currentSongIndex < setlistSongIds.length - 1 ? setlistSongIds[currentSongIndex + 1] : null;
+  const fallbackBackPath = setlistId ? `/setlists/${setlistId}` : '/songs';
+
+  function handleGoBack() {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate(fallbackBackPath);
+  }
 
   function buildSetlistSongLink(targetSongId) {
     if (!targetSongId || !setlistId) return null;
@@ -126,6 +136,17 @@ export default function SongLyricsPage() {
 
   return (
     <div className="karaoke-lyrics-page" ref={pageScrollRef}>
+      <div className="karaoke-top-nav">
+        <button
+          className="btn btn-secondary"
+          onClick={handleGoBack}
+          title="Kembali ke halaman sebelumnya"
+          aria-label="Kembali"
+        >
+          ← Kembali
+        </button>
+      </div>
+
       {setlistId && (
         <div className="karaoke-setlist-nav">
           <Link
