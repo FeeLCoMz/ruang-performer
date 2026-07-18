@@ -856,6 +856,36 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
   }
 
+  async function handleEditSongOrder(songId) {
+    if (!canEdit) return;
+    if (sortBy !== 'custom' || groupBy !== 'none') {
+      window.alert('Ubah urutan ke mode Custom dan nonaktifkan Group terlebih dahulu.');
+      return;
+    }
+
+    const fromIdx = localOrder.indexOf(songId);
+    if (fromIdx < 0) return;
+
+    const songTitle = availableSongsPool.find((song) => song.id === songId)?.title || 'Lagu ini';
+    const input = window.prompt(
+      `Pindahkan "${songTitle}" ke urutan berapa? (1-${localOrder.length})`,
+      String(fromIdx + 1)
+    );
+
+    if (input === null) return;
+
+    const parsedTarget = Number.parseInt(String(input).trim(), 10);
+    if (!Number.isFinite(parsedTarget) || parsedTarget < 1 || parsedTarget > localOrder.length) {
+      window.alert(`Nomor urutan harus antara 1 sampai ${localOrder.length}.`);
+      return;
+    }
+
+    const toIdx = parsedTarget - 1;
+    if (toIdx === fromIdx) return;
+
+    await handleReorder(fromIdx, toIdx);
+  }
+
   // Handler tambah lagu ke setlist
   // Handler batch tambah lagu ke setlist
   async function handleAddSongsToSetlist() {
@@ -1713,6 +1743,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             const song = row.song;
             const idx = filteredSongs.findIndex(item => item.id === song.id);
             const customIdx = localOrder.indexOf(song.id);
+            const displayOrderNumber = customIdx >= 0 ? customIdx + 1 : idx + 1;
             const baseSong = baseSongMap.get(song.id);
             const keyChanged = baseSong && song.key && baseSong.key && song.key !== baseSong.key;
             const tempoChanged = baseSong && song.tempo && baseSong.tempo && song.tempo !== baseSong.tempo;
@@ -1771,7 +1802,22 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   )}
                   {/* Song Info */}
                   <div className="song-info">
-                    <div className="song-number">{idx + 1}.</div>
+                    <div className="song-number-wrap">
+                      <div className="song-number">{displayOrderNumber}.</div>
+                      {canEdit && !performanceMode && sortBy === 'custom' && groupBy === 'none' && (
+                        <button
+                          className="btn btn-secondary song-order-edit-btn"
+                          title="Edit nomor urutan lagu"
+                          aria-label={`Edit nomor urutan ${song.title}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditSongOrder(song.id);
+                          }}
+                        >
+                          #
+                        </button>
+                      )}
+                    </div>
                     <h3 className="song-title">
                       {song.title}
                       {isCompleted && <span className="song-completed-badge" title="Sudah dibawakan" aria-label="Sudah dibawakan">✓</span>}

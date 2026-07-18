@@ -48,6 +48,7 @@ describe('SetlistSongsPage', () => {
   let root;
   let fetchSpy;
   let confirmSpy;
+  let promptSpy;
 
   beforeEach(() => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -57,6 +58,7 @@ describe('SetlistSongsPage', () => {
     mockNavigate.mockReset();
     fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => ({}) });
     confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('1');
   });
 
   afterEach(() => {
@@ -66,6 +68,7 @@ describe('SetlistSongsPage', () => {
     document.body.removeChild(container);
     fetchSpy.mockRestore();
     confirmSpy.mockRestore();
+    promptSpy.mockRestore();
   });
 
   function buildProps(overrides = {}) {
@@ -406,5 +409,53 @@ describe('SetlistSongsPage', () => {
     const groupHeaders = Array.from(container.querySelectorAll('.setlist-group-header')).map((el) => el.textContent || '');
     expect(groupHeaders.some((text) => text.includes('Artist A'))).toBe(true);
     expect(groupHeaders.some((text) => text.includes('Artist B'))).toBe(true);
+  });
+
+  test('edits song order number and persists new custom order', async () => {
+    const setSetlists = vi.fn();
+    const props = buildProps({
+      setSetlists,
+      setlists: [
+        {
+          id: 'setlist-1',
+          name: 'Setlist Reorder',
+          userId: 'user-1',
+          songs: ['song-1', 'song-2', 'song-3'],
+          completedSongs: {},
+          setlistSongMeta: {},
+        },
+      ],
+      songs: [
+        { id: 'song-1', title: 'Lagu Satu', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop' },
+        { id: 'song-2', title: 'Lagu Dua', artist: 'Artist B', key: 'G', tempo: '110', genre: 'Rock' },
+        { id: 'song-3', title: 'Lagu Tiga', artist: 'Artist C', key: 'D', tempo: '105', genre: 'Jazz' },
+      ],
+    });
+
+    promptSpy.mockReturnValueOnce('1');
+
+    await renderPage(root, props);
+
+    const songRows = container.querySelectorAll('.song-item');
+    expect(songRows.length).toBe(3);
+
+    const secondSongOrderButton = songRows[1].querySelector('.song-order-edit-btn');
+    expect(secondSongOrderButton).toBeTruthy();
+
+    await act(async () => {
+      secondSongOrderButton.click();
+      await flushPromises();
+    });
+
+    expect(window.prompt).toHaveBeenCalled();
+    expect(setSetlists).toHaveBeenCalled();
+
+    const updater = setSetlists.mock.calls[0][0];
+    const updatedSetlists = updater(props.setlists);
+    expect(updatedSetlists[0].songs).toEqual(['song-2', 'song-1', 'song-3']);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      '/api/setlists/setlist-1',
+      expect.objectContaining({ method: 'PUT' })
+    );
   });
 });
