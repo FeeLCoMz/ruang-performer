@@ -88,7 +88,12 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const result = await client.execute(`
         SELECT DISTINCT b.id, b.name, b.description, b.genre, b.createdBy, b.createdAt,
-               bm.role, bm.joinedAt
+               bm.role, bm.joinedAt,
+               (
+                 SELECT COUNT(*)
+                 FROM band_members mb
+                 WHERE mb.bandId = b.id AND mb.status = 'active'
+               ) AS memberCount
         FROM bands b
         LEFT JOIN band_members bm ON b.id = bm.bandId AND bm.userId = ?
         WHERE b.createdBy = ? OR bm.userId = ?
@@ -104,6 +109,7 @@ export default async function handler(req, res) {
         role: row.role || (row.createdBy === userId ? 'owner' : null),
         joinedAt: row.joinedAt,
         createdAt: row.createdAt,
+        memberCount: Number(row.memberCount || 0),
         isOwner: row.createdBy === userId
       }));
 
@@ -147,6 +153,7 @@ export default async function handler(req, res) {
         createdBy: userId,
         role: 'owner',
         createdAt: now,
+        memberCount: 1,
         isOwner: true
       });
     }

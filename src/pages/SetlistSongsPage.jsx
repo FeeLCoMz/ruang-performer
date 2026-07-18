@@ -1466,23 +1466,29 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   ✅ Tandai Semua
                 </button>
               )}
-              {completedCount > 0 && (
-                <button className="btn btn-secondary setlist-btn-ghost" onClick={handleResetCompletedSongs} title="Reset semua status lagu dibawakan">
-                  ↺ Reset Dibawakan
-                </button>
-              )}
-              {uncompletedCount > 0 && (
+              {(completedCount > 0 || uncompletedCount > 0) && (
                 <details className="setlist-inline-more" aria-label="Aksi progres tambahan">
                   <summary className="btn btn-secondary setlist-btn-ghost">⋯</summary>
                   <div className="setlist-inline-more-menu">
-                    <button
-                      className="btn btn-red setlist-btn-danger"
-                      onClick={handleDeleteUncompletedSongs}
-                      title="Hapus lagu yang belum ditandai dibawakan dari setlist ini saja"
-                      disabled={deletingUncompleted}
-                    >
-                      {deletingUncompleted ? 'Menghapus...' : '🗑 Hapus Belum Dibawakan'}
-                    </button>
+                    {completedCount > 0 && (
+                      <button
+                        className="btn btn-secondary setlist-btn-ghost"
+                        onClick={handleResetCompletedSongs}
+                        title="Reset semua status lagu dibawakan"
+                      >
+                        ↺ Reset Dibawakan
+                      </button>
+                    )}
+                    {uncompletedCount > 0 && (
+                      <button
+                        className="btn btn-red setlist-btn-danger"
+                        onClick={handleDeleteUncompletedSongs}
+                        title="Hapus lagu yang belum ditandai dibawakan dari setlist ini saja"
+                        disabled={deletingUncompleted}
+                      >
+                        {deletingUncompleted ? 'Menghapus...' : '🗑 Hapus Belum Dibawakan'}
+                      </button>
+                    )}
                   </div>
                 </details>
               )}

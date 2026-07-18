@@ -4820,7 +4820,7 @@ body.dark-mode .lyrics-editor-textarea {
   cursor: pointer;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 14px;
 }
 
@@ -4830,6 +4830,30 @@ body.dark-mode .lyrics-editor-textarea {
 
 .band-list-item-title {
   font-size: 1.05em;
+}
+
+.band-list-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.band-list-item-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.8em;
+  max-width: 100%;
+}
+
+.band-list-item-meta-icon {
+  flex-shrink: 0;
 }
 
 .band-list-item-description {
@@ -4848,6 +4872,7 @@ body.dark-mode .lyrics-editor-textarea {
   gap: 8px;
   align-items: flex-end;
   flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .band-list-role-badge {
@@ -4878,6 +4903,23 @@ body.dark-mode .lyrics-editor-textarea {
 .band-linked-item[role="button"]:focus-visible {
   outline: 2px solid var(--primary-accent);
   outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .band-list-item {
+    flex-direction: column;
+  }
+
+  .band-list-item-side {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .band-list-item-meta-chip {
+    font-size: 0.75em;
+  }
 }
 
 .band-expand-enter {
