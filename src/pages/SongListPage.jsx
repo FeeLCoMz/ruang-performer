@@ -361,7 +361,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       if (groupBy === 'genre') return (song.genre || '').trim() || 'Tanpa Genre';
       if (groupBy === 'key') return (song.key || '').trim() || 'Tanpa Kunci';
       if (groupBy === 'band') return song.bandName || (song.bandId ? `Band ${song.bandId}` : 'Personal');
-      if (groupBy === 'mastery') return song.isMasteredByCurrentUser ? 'Dikuasai' : 'Belum Dikuasai';
+      if (groupBy === 'mastery') return song.isMasteredByCurrentUser ? 'Sudah Dikuasai' : 'Belum Kuasai';
       return 'Lainnya';
     };
 
@@ -374,7 +374,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
 
     let labels = Array.from(groups.keys());
     if (groupBy === 'mastery') {
-      const desired = sortOrder === 'asc' ? ['Dikuasai', 'Belum Dikuasai'] : ['Belum Dikuasai', 'Dikuasai'];
+      const desired = sortOrder === 'asc' ? ['Sudah Dikuasai', 'Belum Kuasai'] : ['Belum Kuasai', 'Sudah Dikuasai'];
       labels = desired.filter((label) => groups.has(label));
     } else {
       labels = labels.sort((a, b) => sortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a));
@@ -615,7 +615,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               <button
                 className={`btn ${song.isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
                 title={song.canMarkMastery
-                  ? (song.isMasteredByCurrentUser ? 'Batalkan status selesai' : 'Tandai lagu ini selesai')
+                  ? (song.isMasteredByCurrentUser ? 'Batalkan penguasaan lagu' : 'Tandai lagu ini sudah dikuasai')
                   : 'Anda belum bisa menandai lagu ini'}
                 onClick={(e) => handleToggleMastery(song, e)}
                 disabled={!song.canMarkMastery || updatingMasterySongId === song.id}
@@ -623,7 +623,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
                 {updatingMasterySongId === song.id
                   ? 'Menyimpan...'
                   : (song.canMarkMastery
-                    ? (song.isMasteredByCurrentUser ? 'Selesai' : 'Belum')
+                    ? (song.isMasteredByCurrentUser ? 'Sudah Kuasai' : 'Belum Kuasai')
                     : 'Belum Bisa Tandai')}
               </button>
             }
@@ -705,7 +705,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
           <h1>🎵 Lagu Saya</h1>
           <p>{displayedSongCount} ditampilkan dari {filteredSongs.length} hasil ({songs.length} total)</p>
           <div className="song-mastery-overview" aria-live="polite">
-            <span className="song-mastery-overview-badge">✅ Dikuasai Saya: {masteredStats.masteredAllCount}/{masteredStats.totalSongs}</span>
+            <span className="song-mastery-overview-badge">✅ Sudah Dikuasai Saya: {masteredStats.masteredAllCount}/{masteredStats.totalSongs}</span>
             <span className="song-mastery-overview-text">({masteredStats.masteredPercent}%)</span>
             {filteredSongs.length !== songs.length && (
               <span className="song-mastery-overview-text">• Di hasil filter: {masteredStats.masteredFilteredCount}/{filteredSongs.length}</span>
@@ -816,8 +816,8 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               aria-label="Filter status penguasaan lagu"
             >
               <option value="all">Status: Semua Lagu</option>
-              <option value="mastered">Status: Dikuasai</option>
-              <option value="unmastered">Status: Belum Dikuasai</option>
+              <option value="mastered">Status: Sudah Dikuasai</option>
+              <option value="unmastered">Status: Belum Kuasai</option>
             </select>
 
             <select

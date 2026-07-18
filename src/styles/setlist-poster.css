@@ -136,9 +136,11 @@
   font-size: 1.2rem;
   font-weight: 700;
   color: #f8fafc;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  word-break: break-word;
+  word-wrap: break-word;
+  white-space: normal;
+  line-height: 1.3;
 }
 
 .setlist-poster-completed-badge {

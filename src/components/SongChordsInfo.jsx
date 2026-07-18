@@ -142,7 +142,7 @@ export default function SongChordsInfo({
             </div>
           )}
           <div className="song-info-item song-info-mastery-block">
-            <span className="song-info-label">✅ Yang Selesai</span>
+            <span className="song-info-label">✅ Sudah Dikuasai</span>
             <span className="song-info-value song-info-mastery-count">
               {Array.isArray(masteredBy) ? masteredBy.length : 0} orang
             </span>
@@ -154,12 +154,12 @@ export default function SongChordsInfo({
               className={`btn song-info-mastery-btn ${isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
               onClick={onToggleMastery}
               disabled={!canMarkMastery || masteryUpdating}
-              title={canMarkMastery ? 'Tandai lagu ini selesai' : 'Anda belum bisa menandai lagu ini'}
+              title={canMarkMastery ? 'Tandai lagu ini sudah dikuasai' : 'Anda belum bisa menandai lagu ini'}
             >
               {masteryUpdating
                 ? 'Menyimpan...'
                 : (canMarkMastery
-                  ? (isMasteredByCurrentUser ? 'Selesai' : 'Belum')
+                  ? (isMasteredByCurrentUser ? 'Sudah Kuasai' : 'Belum Kuasai')
                   : 'Belum Bisa Tandai')}
             </button>
             {!canMarkMastery && (
