@@ -43,6 +43,10 @@
       "dest": "/api/songs/[id].js?id=$1"
     },
     {
+      "src": "/api/songs/([^/]+)/mastery$",
+      "dest": "/api/songs/index.js?id=$1&path=mastery"
+    },
+    {
       "src": "/api/setlists/([^/]+)$",
       "dest": "/api/setlists/index.js?id=$1"
     },    

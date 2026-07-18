@@ -209,10 +209,19 @@ export default async function handler(req, res) {
     const path = req.path || req.url.split('?')[0];
     const relativePath = path.replace(/^\/api\/songs\/?/, '').replace(/^\//, '');
     const pathSegments = relativePath ? relativePath.split('/').filter(Boolean) : [];
+    const rewrittenMasterySongId = req.query?.id || req.query?.songId;
+    const rewrittenPathMarker = req.query?.path || req.query?.endpoint;
+
     if (pathSegments.length === 2 && pathSegments[1] === 'mastery') {
       const client = getTursoClient();
       await ensureSchema(client);
       return handleSongMastery(req, res, client, pathSegments[0]);
+    }
+
+    if (rewrittenMasterySongId && rewrittenPathMarker === 'mastery') {
+      const client = getTursoClient();
+      await ensureSchema(client);
+      return handleSongMastery(req, res, client, rewrittenMasterySongId);
     }
 
     if (relativePath && (req.method === 'GET' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE')) {
