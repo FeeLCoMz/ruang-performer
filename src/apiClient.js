@@ -92,6 +92,16 @@ export async function importAllData({ songs, setlists, bands, users }) {
 }
 // Simple API client for Turso backend
 import * as authUtils from './utils/auth.js';
+import {
+  cacheSong,
+  cacheSongs,
+  getAllSongs,
+  getSong as getCachedSong,
+  cacheSetlist,
+  cacheSetlists,
+  getAllSetlists,
+  getSetlist as getCachedSetlist,
+} from './utils/offlineCache.js';
 
 const API_BASE = '/api';
 
@@ -101,6 +111,46 @@ function getHeaders(additionalHeaders = {}) {
     ...authUtils.getAuthHeader(),
     ...additionalHeaders
   };
+}
+
+async function cacheFullSongDetailsInBackground(songs = []) {
+  const uniqueIds = Array.from(
+    new Set(
+      (songs || [])
+        .map((song) => song?.id)
+        .filter(Boolean)
+    )
+  );
+
+  if (uniqueIds.length === 0 || typeof navigator === 'undefined' || navigator.onLine === false) {
+    return;
+  }
+
+  const CONCURRENCY = 4;
+  let currentIndex = 0;
+
+  const workers = Array.from({ length: Math.min(CONCURRENCY, uniqueIds.length) }, async () => {
+    while (currentIndex < uniqueIds.length) {
+      const id = uniqueIds[currentIndex];
+      currentIndex += 1;
+
+      try {
+        const detailRes = await fetch(`${API_BASE}/songs/${id}`, {
+          headers: getHeaders(),
+        });
+        if (!detailRes.ok) {
+          continue;
+        }
+
+        const detailSong = await detailRes.json();
+        await cacheSong(detailSong);
+      } catch {
+        // Ignore background cache sync errors to keep UI responsive.
+      }
+    }
+  });
+
+  Promise.allSettled(workers).catch(() => {});
 }
 
 // Auth endpoints
@@ -178,19 +228,49 @@ export async function fetchSongs(options = {}) {
   const query = params.toString();
   const url = query ? `${API_BASE}/songs?${query}` : `${API_BASE}/songs`;
 
-  const res = await fetch(url, {
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch songs');
-  return await res.json();
+  try {
+    const res = await fetch(url, {
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to fetch songs');
+
+    const songs = await res.json();
+    if (Array.isArray(songs)) {
+      await cacheSongs(songs).catch(() => {});
+      cacheFullSongDetailsInBackground(songs);
+    }
+
+    return songs;
+  } catch (error) {
+    const cachedSongs = await getAllSongs().catch(() => []);
+    if (Array.isArray(cachedSongs) && cachedSongs.length > 0) {
+      if (options.bandId) {
+        return cachedSongs.filter((song) => String(song?.bandId || '') === String(options.bandId));
+      }
+      return cachedSongs;
+    }
+
+    throw error;
+  }
 }
 
 export async function fetchSongById(id) {
-  const res = await fetch(`${API_BASE}/songs/${id}`, {
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch song');
-  return await res.json();
+  try {
+    const res = await fetch(`${API_BASE}/songs/${id}`, {
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to fetch song');
+
+    const song = await res.json();
+    await cacheSong(song).catch(() => {});
+    return song;
+  } catch (error) {
+    const cachedSong = await getCachedSong(id).catch(() => null);
+    if (cachedSong) {
+      return cachedSong;
+    }
+    throw error;
+  }
 }
 
 export async function addSong(song) {
@@ -244,11 +324,102 @@ export async function fetchSetLists(options = {}) {
   if (options.summary) params.set('summary', '1');
   const url = params.toString() ? `${API_BASE}/setlists?${params.toString()}` : `${API_BASE}/setlists`;
 
-  const res = await fetch(url, {
-    headers: getHeaders()
+  try {
+    const res = await fetch(url, {
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to fetch setlists');
+
+    const setlists = await res.json();
+    if (Array.isArray(setlists) && !options.summary) {
+      await cacheSetlists(setlists).catch(() => {});
+    }
+
+    return setlists;
+  } catch (error) {
+    if (options.summary) {
+      throw error;
+    }
+
+    const cachedSetlists = await getAllSetlists().catch(() => []);
+    if (Array.isArray(cachedSetlists) && cachedSetlists.length > 0) {
+      return cachedSetlists;
+    }
+
+    throw error;
+  }
+}
+
+export async function fetchSetListById(id) {
+  try {
+    const res = await fetch(`${API_BASE}/setlists/${id}`, {
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to fetch setlist');
+
+    const setlist = await res.json();
+    await cacheSetlist(setlist).catch(() => {});
+    return setlist;
+  } catch (error) {
+    const cachedSetlist = await getCachedSetlist(id).catch(() => null);
+    if (cachedSetlist) {
+      return cachedSetlist;
+    }
+
+    throw error;
+  }
+}
+
+export async function prefetchPerformanceData() {
+  const setlists = await fetchSetLists();
+
+  // Fetch detail for each setlist so songs order, metadata, and completion state are cached.
+  const uniqueSetlistIds = Array.from(
+    new Set(
+      (setlists || [])
+        .map((setlist) => setlist?.id)
+        .filter(Boolean)
+    )
+  );
+
+  const detailedSetlists = await Promise.all(
+    uniqueSetlistIds.map(async (setlistId) => {
+      try {
+        return await fetchSetListById(setlistId);
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  const availableSetlists = detailedSetlists.filter(Boolean);
+  if (availableSetlists.length > 0) {
+    await cacheSetlists(availableSetlists).catch(() => {});
+  }
+
+  const songIds = new Set();
+  availableSetlists.forEach((setlist) => {
+    (setlist?.songs || []).forEach((songId) => {
+      if (songId) {
+        songIds.add(songId);
+      }
+    });
   });
-  if (!res.ok) throw new Error('Failed to fetch setlists');
-  return await res.json();
+
+  await Promise.all(
+    Array.from(songIds).map(async (songId) => {
+      try {
+        await fetchSongById(songId);
+      } catch {
+        // Skip unavailable songs and continue prefetch for the rest.
+      }
+    })
+  );
+
+  return {
+    setlists: availableSetlists.length,
+    songs: songIds.size,
+  };
 }
 
 export async function addSetList(setList) {

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import '../styles/karaoke.css';
 import AutoScrollBar from '../components/AutoScrollBar.jsx';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { getAuthHeader } from '../utils/auth.js';
 import { isChordLine, isMetadataLine, parseInstrumentPatchLine, parseSection, splitSectionLabelWithChords } from '../utils/chordUtils.js';
 import KaraokeSongSearch from '../components/KaraokeSongSearch.jsx';
 import * as apiClient from '../apiClient.js';
@@ -29,8 +28,7 @@ export default function SongLyricsPage() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`/api/songs/${id}`, { headers: getAuthHeader() })
-      .then(res => res.ok ? res.json() : Promise.reject('Gagal memuat lagu'))
+    apiClient.fetchSongById(id)
       .then(data => {
         setSong(data);
         setLoading(false);
@@ -73,8 +71,7 @@ export default function SongLyricsPage() {
       });
     }
 
-    fetch(`/api/setlists/${setlistId}`, { headers: getAuthHeader() })
-      .then((res) => res.ok ? res.json() : Promise.reject('Gagal memuat setlist'))
+    apiClient.fetchSetListById(setlistId)
       .then((data) => {
         setSetlistContext({
           id: setlistId,

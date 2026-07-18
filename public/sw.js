@@ -3,10 +3,10 @@
  * Advanced caching strategy for different resource types
  */
 
-const CACHE_NAME = 'ruangperformer-v1';
-const STATIC_CACHE = 'ruangperformer-static-v1';
-const DYNAMIC_CACHE = 'ruangperformer-dynamic-v1';
-const API_CACHE = 'ruangperformer-api-v1';
+const CACHE_NAME = 'ruangperformer-v2';
+const STATIC_CACHE = 'ruangperformer-static-v2';
+const DYNAMIC_CACHE = 'ruangperformer-dynamic-v2';
+const API_CACHE = 'ruangperformer-api-v2';
 
 const STATIC_URLS = [
   '/',
@@ -15,6 +15,8 @@ const STATIC_URLS = [
   '/manifest.json',
   '/sw.js'
 ];
+
+const INDEX_HTML_URL = '/index.html';
 
 // Install event - cache essential files with multiple strategies
 self.addEventListener('install', (event) => {
@@ -68,20 +70,26 @@ self.addEventListener('fetch', (event) => {
 
   const { pathname } = new URL(event.request.url);
 
-  // API calls - Network first with API cache fallback
-  if (pathname.includes('/api/')) {
-    event.respondWith(networkFirstWithCache(event.request, API_CACHE));
+  // SPA navigation requests - always serve cached app shell when offline.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(networkFirstNavigation(event.request));
     return;
   }
 
-  // Static assets (CSS, JS, fonts, images) - Cache first
-  if (pathname.match(/\.(js|css|woff|woff2|ttf|eot|svg)$/i)) {
-    event.respondWith(cacheFirstWithNetwork(event.request, STATIC_CACHE));
+  // API calls - Network first with API cache fallback
+  if (pathname.includes('/api/')) {
+    event.respondWith(networkFirstApi(event.request, API_CACHE));
+    return;
+  }
+
+  // Static assets (CSS, JS, fonts, images) - stale while revalidate.
+  if (event.request.destination.match(/^(script|style|font|image|worker)$/)) {
+    event.respondWith(staleWhileRevalidate(event.request, STATIC_CACHE));
     return;
   }
 
   // HTML pages - Network first for freshness
-  if (pathname.endsWith('.html') || pathname === '/') {
+  if (pathname.endsWith('.html') || pathname === '/' || pathname === INDEX_HTML_URL) {
     event.respondWith(networkFirstWithCache(event.request, CACHE_NAME));
     return;
   }
@@ -102,6 +110,35 @@ self.addEventListener('fetch', (event) => {
   // Default - Network first with dynamic cache
   event.respondWith(networkFirstWithCache(event.request, DYNAMIC_CACHE));
 });
+
+function networkFirstNavigation(request) {
+  return fetch(request)
+    .then((response) => {
+      if (response && response.status === 200) {
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(request, responseToCache).catch((err) => {
+            console.warn('[ServiceWorker] Navigation cache put failed:', err);
+          });
+        });
+      }
+
+      return response;
+    })
+    .catch(async () => {
+      const cachedRoute = await caches.match(request);
+      if (cachedRoute) {
+        return cachedRoute;
+      }
+
+      const cachedIndex = await caches.match(INDEX_HTML_URL);
+      if (cachedIndex) {
+        return cachedIndex;
+      }
+
+      return caches.match('/') || new Response('Offline', { status: 503, statusText: 'Offline' });
+    });
+}
 
 /**
  * Cache-first strategy
@@ -134,6 +171,37 @@ function cacheFirstWithNetwork(request, cacheName) {
 }
 
 /**
+ * Stale-while-revalidate strategy
+ * Return cache quickly and update in background
+ */
+function staleWhileRevalidate(request, cacheName) {
+  return caches.match(request).then((cachedResponse) => {
+    const fetchPromise = fetch(request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(cacheName).then((cache) => {
+            cache.put(request, responseToCache).catch((err) => {
+              console.warn('[ServiceWorker] Cache put failed:', err);
+            });
+          });
+        }
+
+        return networkResponse;
+      })
+      .catch(() => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        return new Response('Offline', { status: 503, statusText: 'Offline' });
+      });
+
+    return cachedResponse || fetchPromise;
+  });
+}
+
+/**
  * Network-first strategy
  * Fetch from network first, fallback to cache
  */
@@ -162,6 +230,40 @@ function networkFirstWithCache(request, cacheName) {
         }
         // Return offline page
         return caches.match('/') || new Response('Offline');
+      });
+    });
+}
+
+function networkFirstApi(request, cacheName) {
+  return fetch(request)
+    .then((response) => {
+      if (response && response.status === 200) {
+        const responseToCache = response.clone();
+        caches.open(cacheName).then((cache) => {
+          cache.put(request, responseToCache).catch((err) => {
+            console.warn('[ServiceWorker] API cache put failed:', err);
+          });
+        });
+      }
+
+      return response;
+    })
+    .catch(() => {
+      return caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        return new Response(
+          JSON.stringify({
+            offline: true,
+            message: 'Tidak ada koneksi internet. Data API tidak tersedia.',
+          }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       });
     });
 }
