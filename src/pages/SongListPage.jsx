@@ -713,8 +713,8 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
           </div>
         </div>
         {!performanceMode && (
-          <button className="btn" onClick={() => onSongClick('add')}>
-            <PlusIcon size={18} /> Tambah Lagu
+          <button className="btn" onClick={() => onSongClick('add')} title="Tambah lagu baru">
+            + Tambah
           </button>
         )}
       </div>
