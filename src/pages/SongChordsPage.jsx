@@ -567,25 +567,29 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         masteryUpdating={updatingMastery}
       />
 
-      <SongChordsAnalyzer
-        showChordAnalyzer={showChordAnalyzer}
-        setShowChordAnalyzer={setShowChordAnalyzer}
-        chordStats={chordStats}
-        transpose={transpose}
-        songKey={key}
-        onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-      />
+      {!vocalMode && (
+        <SongChordsAnalyzer
+          showChordAnalyzer={showChordAnalyzer}
+          setShowChordAnalyzer={setShowChordAnalyzer}
+          chordStats={chordStats}
+          transpose={transpose}
+          songKey={key}
+          onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+        />
+      )}
 
-      <SongChordsMediaPanel
-        mediaPanelExpanded={mediaPanelExpanded}
-        setMediaPanelExpanded={setMediaPanelExpanded}
-        youtubeId={youtubeId}
-        youtubeRef={youtubeRef}
-        timeMarkers={timeMarkers}
-        performanceMode={performanceMode}
-        canEdit={can(PERMISSIONS.SONG_EDIT)}
-        handleTimeMarkerUpdate={handleTimeMarkerUpdate}
-      />
+      {!vocalMode && (
+        <SongChordsMediaPanel
+          mediaPanelExpanded={mediaPanelExpanded}
+          setMediaPanelExpanded={setMediaPanelExpanded}
+          youtubeId={youtubeId}
+          youtubeRef={youtubeRef}
+          timeMarkers={timeMarkers}
+          performanceMode={performanceMode}
+          canEdit={can(PERMISSIONS.SONG_EDIT)}
+          handleTimeMarkerUpdate={handleTimeMarkerUpdate}
+        />
+      )}
 
       {/* Lyrics Main Section */}
       <SongLyricsMainSection
@@ -687,12 +691,13 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
               totalSongs={totalSongs}
               onPrev={handlePrev}
               onNext={handleNext}
+              compact={vocalMode}
             />
           );
         })()}
 
       {/* Setlists containing this song */}
-      {!performanceMode && song.id && !loadingSetlists && setlists.length > 0 && (() => {
+      {!performanceMode && !vocalMode && song.id && !loadingSetlists && setlists.length > 0 && (() => {
         const containingSetlists = setlists.filter(setlist =>
           Array.isArray(setlist.songs) && setlist.songs.includes(song.id)
         );

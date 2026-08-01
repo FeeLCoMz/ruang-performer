@@ -52,7 +52,7 @@ export default function SongChordsInfo({
       {/* Judul dan artis selalu di atas info lain */}
       {(title || artist || contributor || !performanceMode) && (
         <div className="song-title-artist-block">
-          {!performanceMode && (
+          {!performanceMode && !vocalMode && (
             <div className="song-title-actions">
               {canEdit && (
                 <button type="button" onClick={onEdit} className="btn btn-secondary" title="Edit lagu">

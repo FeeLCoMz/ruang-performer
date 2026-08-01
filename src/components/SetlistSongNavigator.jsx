@@ -1,22 +1,22 @@
 import React from 'react';
 
-export default function SetlistSongNavigator({ navPrev, navNext, songNumber, totalSongs, onPrev, onNext }) {
+export default function SetlistSongNavigator({ navPrev, navNext, songNumber, totalSongs, onPrev, onNext, compact = false }) {
   return (
-    <div className="setlist-song-navigator">
+    <div className={`setlist-song-navigator${compact ? ' setlist-song-navigator-compact' : ''}`}>
       <button
         className={`btn setlist-nav-btn${!navPrev ? ' disabled' : ''}`}
         disabled={!navPrev}
         title="Previous song"
         onClick={onPrev}
       >
-        ← Previous
+        {compact ? '←' : '← Previous'}
       </button>
       
       {songNumber && totalSongs && (
         <div className="setlist-song-info">
-          <span className="setlist-song-info-label">Song</span>
+          <span className="setlist-song-info-label">{compact ? '' : 'Song'}</span>
           <span className="setlist-song-info-number">{songNumber}</span>
-          <span className="setlist-song-info-label">of</span>
+          <span className="setlist-song-info-label">{compact ? '/' : 'of'}</span>
           <span className="setlist-song-info-total">{totalSongs}</span>
         </div>
       )}
@@ -27,7 +27,7 @@ export default function SetlistSongNavigator({ navPrev, navNext, songNumber, tot
         title="Next song"
         onClick={onNext}
       >
-        Next →
+        {compact ? '→' : 'Next →'}
       </button>
     </div>
   );

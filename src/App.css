@@ -529,6 +529,25 @@
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 24px;
 }
+
+.setlist-song-navigator-compact {
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-bottom: none;
+  border-radius: 999px;
+  background: var(--secondary-bg);
+}
+
+.setlist-song-navigator-compact .setlist-nav-btn {
+  padding: 6px 10px;
+}
+
+.setlist-song-navigator-compact .setlist-song-info {
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
 .setlist-nav-btn {
   padding: 8px 16px;
   transition:

@@ -5,6 +5,7 @@ import { act } from 'react';
 import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
+import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import VirtualPiano from '../components/VirtualPiano.jsx';
 
 function noop() {}
@@ -250,6 +251,30 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     expect(container.querySelector('.song-lyrics-edit-actions')).toBeFalsy();
+  });
+
+  test('Given vocal mode is active, Then non-essential song actions are hidden', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          contributor="Contributor"
+          performanceMode={false}
+          vocalMode={true}
+          canEdit={true}
+          onEdit={noop}
+          onShare={noop}
+          shareMessage="Shared"
+          showSongInfo={true}
+          setShowSongInfo={noop}
+        />
+      );
+    });
+
+    expect(container.querySelector('.song-title-actions')).toBeFalsy();
+    expect(container.textContent).toContain('Song A');
+    expect(container.textContent).toContain('Artist A');
   });
 
   test('Given chord display is hidden in vocal mode, Then chord-only tokens are not rendered', async () => {
