@@ -43,7 +43,7 @@ export default function BandDetailPage() {
   const [isCollapsingGigs, setIsCollapsingGigs] = useState(false);
   const collapseTimersRef = useRef([]);
 
-  const userBandInfo = band ? { role: band.userRole || (band.isOwner ? 'owner' : 'member') } : { role: 'member' };
+  const userBandInfo = band ? { role: band.role || band.userRole || (band.isOwner ? 'owner' : 'member') } : { role: 'member' };
   const { can } = usePermission(id, userBandInfo);
   const canManageMembers = can('manage_members') || band?.isOwner || band?.userRole === 'admin';
 

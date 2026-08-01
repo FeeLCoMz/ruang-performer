@@ -60,9 +60,16 @@ function AppContent() {
     if (!isLoading && isAuthenticated) {
       apiClient.fetchBands()
         .then((bands) => {
-          // Map to array of { bandId, role }
+          // Map to array of { bandId, role, joinedAt, ... }
           if (Array.isArray(bands)) {
-            setUserBandInfo(bands.map(b => ({ bandId: b.id, role: b.userRole || (b.isOwner ? 'owner' : 'member') })));
+            setUserBandInfo(bands.map((band) => ({
+              bandId: band.id,
+              role: band.role || band.userRole || (band.isOwner ? 'owner' : 'member'),
+              joinedAt: band.joinedAt,
+              id: band.id,
+              name: band.name,
+              ...band
+            })));
           } else {
             setUserBandInfo([]);
           }

@@ -139,8 +139,8 @@ export default function GigPage() {
   const getUserBandInfo = React.useCallback((bandId) => {
     if (!user) return null;
     const band = bands.find(b => b.id === bandId);
-    if (band && band.userRole) {
-      return { role: band.userRole, bandId };
+    if (band && (band.role || band.userRole)) {
+      return { role: band.role || band.userRole, bandId };
     }
     if (band && band.isOwner) {
       return { role: 'owner', bandId };

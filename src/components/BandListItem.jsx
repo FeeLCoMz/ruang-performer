@@ -10,7 +10,7 @@ import React from 'react';
  *   - navigate: function untuk navigasi ke detail band
  */
 export default function BandListItem({ band, navigate, userBandInfo }) {
-  const role = userBandInfo?.role || (band?.isOwner ? 'owner' : band?.userRole || 'member');
+  const role = userBandInfo?.role || band?.role || (band?.isOwner ? 'owner' : band?.userRole || 'member');
   const roleLabel = role === 'owner' ? 'Pemilik' : role === 'admin' ? 'Admin' : 'Anggota';
   const formatDate = (value) => {
     if (!value) return null;
