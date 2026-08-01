@@ -42,20 +42,18 @@ export default function AIAutofillModal({
               � Cari chord di Google:
             </div>
             <ul className="ai-autofill-chordlinks-list">
-              {aiResult.chordLinks
-                .filter((cl) => !/chordify/i.test(cl.title || cl.site || ''))
-                .map((cl, idx) => (
-                  <li key={idx} className="ai-autofill-chordlinks-item">
-                    <a
-                      href={cl.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ai-autofill-chordlinks-link"
-                    >
-                      {cl.title || cl.site}
-                    </a>
-                  </li>
-                ))}
+              {aiResult.chordLinks.map((cl, idx) => (
+                <li key={idx} className="ai-autofill-chordlinks-item">
+                  <a
+                    href={cl.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ai-autofill-chordlinks-link"
+                  >
+                    {cl.title || cl.site}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         )}

@@ -18,7 +18,7 @@ describe('AIAutofillModal', () => {
     expect(markup).not.toContain('Lirik');
   });
 
-  it('does not render chordify links and keeps google search links', () => {
+  it('renders chordify links alongside google search links', () => {
     const markup = renderToStaticMarkup(
       <AIAutofillModal
         aiResult={{
@@ -35,7 +35,7 @@ describe('AIAutofillModal', () => {
       />,
     );
 
-    expect(markup).not.toContain('Chordify');
+    expect(markup).toContain('Chordify');
     expect(markup).toContain('Google Search');
   });
 });
