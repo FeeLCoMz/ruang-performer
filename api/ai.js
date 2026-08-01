@@ -280,7 +280,7 @@ async function handleSongSearch(req, res) {
     results.chordLinks = [
       { title: 'Chordtela', site: 'chordtela.com', url: `https://www.chordtela.com/chord-kunci-gitar-dasar-hasil-pencarian?q=${encodeURIComponent(`${title} ${artist}`)}` },
       { title: 'Ultimate Guitar', site: 'ultimate-guitar.com', url: `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(`${title} ${artist}`)}` },
-      { title: 'Chordify', site: 'chordify.net', url: `https://www.chordify.net/search?q=${encodeURIComponent(`${title} ${artist}`)}` }
+      { title: 'Google Search', site: 'google.com', url: `https://www.google.com/search?q=${encodeURIComponent(`${title} ${artist} chord`)}` }
     ];
     // Gemini song info
     if (process.env.GEMINI_API_KEY) {
@@ -347,8 +347,7 @@ async function handleSongSearch(req, res) {
     results.chordLinks = results.chordLinks || [
       { title: 'Chordtela', site: 'chordtela.com', url: `https://www.chordtela.com/chord-kunci-gitar-dasar-hasil-pencarian?q=${encodeURIComponent(`${title} ${artist || results.artist || ''}`)}` },
       { title: 'Ultimate Guitar', site: 'ultimate-guitar.com', url: `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(`${title} ${artist || results.artist || ''}`)}` },
-      { title: 'Chordify', site: 'chordify.net', url: `https://www.chordify.net/search?q=${encodeURIComponent(`${title} ${artist || results.artist || ''}`)}` },
-      { title: 'Google Lirik', site: 'google.com', url: `https://www.google.com/search?q=${encodeURIComponent(`${title} ${artist || results.artist || ''} lirik`)}` }
+      { title: 'Google Search', site: 'google.com', url: `https://www.google.com/search?q=${encodeURIComponent(`${title} ${artist || results.artist || ''} chord`)}` }
     ];
     // Save to cache before returning
     songInfoCache[cacheKey] = results;

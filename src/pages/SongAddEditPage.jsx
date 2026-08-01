@@ -184,9 +184,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         artist: !!data.artist,
         key: !!data.key,
         tempo: !!data.tempo,
-        genre: !!data.genre,        
+        genre: !!data.genre,
         youtubeId: !!data.youtubeId,
-        lyrics: !!data.lyrics,
         arrangementStyle: !!data.arrangementStyle,
         keyboardPatch: !!data.keyboardPatch,
       });
@@ -203,9 +202,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     if (aiConfirmFields.artist && aiResult.artist) setArtist(aiResult.artist);
     if (aiConfirmFields.key && aiResult.key) setSongKey(aiResult.key);
     if (aiConfirmFields.tempo && aiResult.tempo) setTempo(aiResult.tempo.toString());
-    if (aiConfirmFields.genre && aiResult.genre) setGenre(aiResult.genre);    
+    if (aiConfirmFields.genre && aiResult.genre) setGenre(aiResult.genre);
     if (aiConfirmFields.youtubeId && aiResult.youtubeId) setYoutubeId(aiResult.youtubeId);
-    if (aiConfirmFields.lyrics && aiResult.lyrics) setLyrics(aiResult.lyrics);
     if (aiConfirmFields.arrangementStyle && aiResult.arrangementStyle)
       setArrangementStyle(aiResult.arrangementStyle);
     if (aiConfirmFields.keyboardPatch && aiResult.keyboardPatch)

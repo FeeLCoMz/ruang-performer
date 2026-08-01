@@ -39,21 +39,23 @@ export default function AIAutofillModal({
         {Array.isArray(aiResult.chordLinks) && aiResult.chordLinks.length > 0 && (
           <div className="ai-autofill-chordlinks">
             <div className="ai-autofill-chordlinks-label">
-              📚 Sumber Chord:
+              � Cari chord di Google:
             </div>
             <ul className="ai-autofill-chordlinks-list">
-              {aiResult.chordLinks.map((cl, idx) => (
-                <li key={idx} className="ai-autofill-chordlinks-item">
-                  <a
-                    href={cl.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ai-autofill-chordlinks-link"
-                  >
-                    {cl.title || cl.site}
-                  </a>
-                </li>
-              ))}
+              {aiResult.chordLinks
+                .filter((cl) => !/chordify/i.test(cl.title || cl.site || ''))
+                .map((cl, idx) => (
+                  <li key={idx} className="ai-autofill-chordlinks-item">
+                    <a
+                      href={cl.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ai-autofill-chordlinks-link"
+                    >
+                      {cl.title || cl.site}
+                    </a>
+                  </li>
+                ))}
             </ul>
           </div>
         )}
@@ -156,21 +158,6 @@ export default function AIAutofillModal({
                 />
                 <span className="ai-autofill-field-label">
                   🎬 YouTube ID: <span className="ai-autofill-field-value ai-autofill-youtubeid">{aiResult.youtubeId}</span>
-                </span>
-              </label>
-            )}
-            {aiResult.lyrics && (
-              <label className="ai-autofill-field ai-autofill-field-lyrics">
-                <input
-                  type="checkbox"
-                  checked={aiConfirmFields.lyrics || false}
-                  onChange={e => setAiConfirmFields(f => ({...f, lyrics: e.target.checked}))}
-                  className="ai-autofill-checkbox ai-autofill-checkbox-lyrics"
-                />
-                <span className="ai-autofill-field-label">
-                  🎤 Lirik: <span className="ai-autofill-field-value ai-autofill-lyrics-value">
-                    {aiResult.lyrics.slice(0, 80)}{aiResult.lyrics.length > 80 ? '...' : ''}
-                  </span>
                 </span>
               </label>
             )}
