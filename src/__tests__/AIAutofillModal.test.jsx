@@ -38,4 +38,18 @@ describe('AIAutofillModal', () => {
     expect(markup).toContain('Chordify');
     expect(markup).toContain('Google Search');
   });
+
+  it('shows a cleaned up section title for selectable fields', () => {
+    const markup = renderToStaticMarkup(
+      <AIAutofillModal
+        aiResult={{ artist: 'Artist', key: 'G' }}
+        aiConfirmFields={{}}
+        setAiConfirmFields={() => {}}
+        onApply={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(markup).toContain('Data yang bisa diisi');
+  });
 });

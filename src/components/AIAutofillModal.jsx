@@ -33,13 +33,13 @@ export default function AIAutofillModal({
           🤖 Konfirmasi AI Autofill
         </h3>
         <p className="ai-autofill-modal-desc">
-          Pilih field yang ingin diisi otomatis dari hasil AI:
+          Pilih data yang ingin Anda isi otomatis dari hasil AI. Informasi yang tidak dipilih akan tetap aman.
         </p>
         {/* Chord Links */}
         {Array.isArray(aiResult.chordLinks) && aiResult.chordLinks.length > 0 && (
           <div className="ai-autofill-chordlinks">
             <div className="ai-autofill-chordlinks-label">
-              � Cari chord di Google:
+              🔎 Referensi chord:
             </div>
             <ul className="ai-autofill-chordlinks-list">
               {aiResult.chordLinks.map((cl, idx) => (
@@ -58,7 +58,9 @@ export default function AIAutofillModal({
           </div>
         )}
         <form onSubmit={handleSubmit}>
-          <div className="ai-autofill-fields">
+          <div className="ai-autofill-section">
+            <div className="ai-autofill-section-title">📋 Data yang bisa diisi</div>
+            <div className="ai-autofill-fields">
             {/* Artist */}
             {aiResult.artist && (
               <label className="ai-autofill-field">
@@ -160,6 +162,7 @@ export default function AIAutofillModal({
               </label>
             )}
             {/* Tambahkan field lain sesuai kebutuhan */}
+            </div>
           </div>
           <div className="ai-autofill-modal-actions">
             <button

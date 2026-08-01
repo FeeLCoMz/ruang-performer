@@ -934,14 +934,31 @@
 .ai-autofill-modal-desc {
   font-size: 0.95em;
   color: var(--text-muted);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.ai-autofill-section {
   margin-bottom: 20px;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--secondary-bg);
+}
+
+.ai-autofill-section-title {
+  font-size: 0.95em;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
 }
 
 .ai-autofill-chordlinks {
-  margin-bottom: 20px;
-  padding: 12px;
-  background: var(--secondary-bg);
-  border-radius: 6px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
 }
 .ai-autofill-chordlinks-label {
   font-weight: 600;
@@ -950,11 +967,13 @@
   font-size: 0.95em;
 }
 .ai-autofill-chordlinks-list {
-  padding-left: 20px;
+  padding-left: 18px;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .ai-autofill-chordlinks-item {
-  margin-bottom: 4px;
   font-size: 0.9em;
 }
 .ai-autofill-chordlinks-link {
@@ -965,17 +984,22 @@
 .ai-autofill-fields {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 10px;
 }
 .ai-autofill-field {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px;
-  background: var(--secondary-bg);
-  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: border-color var(--transition), background-color var(--transition);
+}
+.ai-autofill-field:hover {
+  border-color: var(--primary-accent);
+  background: rgba(255, 255, 255, 0.04);
 }
 .ai-autofill-field-lyrics {
   align-items: flex-start;
