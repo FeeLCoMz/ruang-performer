@@ -5,7 +5,8 @@ import {
   hasAnyPermission,
   getPermissionsForRole,
   isValidRole,
-  getAllRoles
+  getAllRoles,
+  resolveUserBandRole
 } from '../utils/permissionUtils.js';
 
 
@@ -20,7 +21,7 @@ import {
  */
 export function usePermission(bandId, userBandInfo) {
   const { user } = useAuth();
-  const role = userBandInfo?.role || null;
+  const role = resolveUserBandRole(userBandInfo, bandId);
 
   return {
     /**

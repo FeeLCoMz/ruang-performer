@@ -5,26 +5,40 @@
  * @param {object} [user] - Optional, user object (untuk setlist pribadi)
  * @returns {boolean}
  */
+export function resolveUserBandRole(userBandInfo, bandId = null) {
+  if (!userBandInfo) return null;
+
+  if (Array.isArray(userBandInfo)) {
+    const match = userBandInfo.find((entry) => {
+      const candidateBandId = entry?.bandId || entry?.id;
+      if (!candidateBandId) return false;
+      return bandId ? String(candidateBandId) === String(bandId) : true;
+    });
+    return match?.role || null;
+  }
+
+  if (bandId) {
+    const candidateBandId = userBandInfo?.bandId || userBandInfo?.id;
+    if (candidateBandId && String(candidateBandId) !== String(bandId)) {
+      return null;
+    }
+  }
+
+  return userBandInfo?.role || null;
+}
+
 export function canDeleteSetlist(setlist, userBandInfo, user) {
   if (!setlist) return false;
   if (setlist.bandId) {
-    // Setlist band: cek permission band
-    let info = null;
-    if (Array.isArray(userBandInfo)) {
-      info = userBandInfo.find(b => String(b.bandId || b.id) === String(setlist.bandId));
-    } else if (userBandInfo && (userBandInfo.bandId || userBandInfo.id) && String(userBandInfo.bandId || userBandInfo.id) === String(setlist.bandId)) {
-      info = userBandInfo;
-    }
-    // Only allow delete if user has permission and is owner/admin or setlist creator
-    if (!info) return false;
-    const hasDeletePerm = hasPermission(info.role, PERMISSIONS.SETLIST_DELETE);
+    const role = resolveUserBandRole(userBandInfo, setlist.bandId);
+    if (!role) return false;
+    const hasDeletePerm = hasPermission(role, PERMISSIONS.SETLIST_DELETE);
     if (!hasDeletePerm) return false;
     if (!user) return false;
-    // Only allow if user is setlist creator or owner/admin
     return (
       String(setlist.userId) === String(user.userId || user.id) ||
-      info.role === 'owner' ||
-      info.role === 'admin'
+      role === 'owner' ||
+      role === 'admin'
     );
   } else {
     // Setlist pribadi: hanya owner (userId) yang boleh delete
@@ -42,14 +56,8 @@ export function canDeleteSetlist(setlist, userBandInfo, user) {
 export function canEditSetlist(setlist, userBandInfo, user) {
   if (!setlist) return false;
   if (setlist.bandId) {
-    // Setlist band: cek permission band
-    let info = null;
-    if (Array.isArray(userBandInfo)) {
-      info = userBandInfo.find(b => String(b.bandId || b.id) === String(setlist.bandId));
-    } else if (userBandInfo && (userBandInfo.bandId || userBandInfo.id) && String(userBandInfo.bandId || userBandInfo.id) === String(setlist.bandId)) {
-      info = userBandInfo;
-    }
-    return info && hasPermission(info.role, PERMISSIONS.SETLIST_EDIT);
+    const role = resolveUserBandRole(userBandInfo, setlist.bandId);
+    return Boolean(role && hasPermission(role, PERMISSIONS.SETLIST_EDIT));
   } else {
     // Setlist pribadi: hanya owner (userId) yang boleh edit
     if (!user) return false;
@@ -227,14 +235,14 @@ export function canPerformAction(user, bandId, userBandInfo, permission) {
   if (!user || !user.userId) {
     return false;
   }
-  
-  // User must be part of the band
-  if (!userBandInfo || userBandInfo.bandId !== bandId) {
+
+  const role = resolveUserBandRole(userBandInfo, bandId);
+  if (!role) {
     return false;
   }
-  
+
   // Check permission for user's role in band
-  return hasPermission(userBandInfo.role, permission);
+  return hasPermission(role, permission);
 }
 
 /**

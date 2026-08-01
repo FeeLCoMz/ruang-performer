@@ -6,7 +6,8 @@ import {
   hasAllPermissions,
   hasAnyPermission,
   isRoleHigherThan,
-  getPermissionsForRole
+  getPermissionsForRole,
+  resolveUserBandRole
 } from '../utils/permissionUtils.js';
 
 describe('permissionUtils', () => {
@@ -35,5 +36,17 @@ describe('permissionUtils', () => {
     expect(isRoleHigherThan('owner', 'admin')).toBe(true);
     expect(isRoleHigherThan('admin', 'member')).toBe(true);
     expect(isRoleHigherThan('member', 'owner')).toBe(false);
+  });
+
+  it('should resolve admin role from multi-band membership for setlist management', () => {
+    const memberships = [
+      { bandId: 'band-1', role: 'member' },
+      { bandId: 'band-2', role: 'admin' }
+    ];
+
+    const role = resolveUserBandRole(memberships, 'band-2');
+    expect(role).toBe('admin');
+    expect(hasPermission(role, PERMISSIONS.SETLIST_EDIT)).toBe(true);
+    expect(hasPermission(role, PERMISSIONS.SETLIST_CREATE)).toBe(true);
   });
 });

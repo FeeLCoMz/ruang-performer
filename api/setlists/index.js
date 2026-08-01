@@ -1,6 +1,7 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { randomUUID } from 'crypto';
+import { PERMISSIONS, hasPermission as hasPermissionUtil } from '../../src/utils/permissionUtils.js';
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -32,6 +33,37 @@ function normalizeSongMeta(metaObj) {
     return {};
   }
   return { ...metaObj };
+}
+
+async function getUserBandRole(client, bandId, userId) {
+  if (!client || !bandId || !userId) return null;
+  const result = await client.execute(
+    `SELECT role FROM band_members WHERE bandId = ? AND userId = ? LIMIT 1`,
+    [bandId, userId]
+  );
+  return result.rows?.[0]?.role || null;
+}
+
+async function ensureSetlistPermission(client, userId, bandId, requiredPermission, setlistOwnerUserId = null) {
+  if (!userId) return { allowed: false, reason: 'Unauthenticated' };
+
+  if (!bandId) {
+    return {
+      allowed: String(setlistOwnerUserId || '') === String(userId),
+      reason: 'Personal setlist requires owner access'
+    };
+  }
+
+  const role = await getUserBandRole(client, bandId, userId);
+  if (!role) {
+    return { allowed: false, reason: 'User is not a member of this band' };
+  }
+
+  return {
+    allowed: hasPermissionUtil(role, requiredPermission),
+    reason: 'Insufficient permissions for this band setlist',
+    role
+  };
 }
 
 function applyBandPreferredKey(metaObj, preferredKey) {
@@ -191,6 +223,18 @@ export default async function handler(req, res) {
         }
         const effectiveBandId = body.bandId !== undefined ? body.bandId : existingSetlistRow.bandId;
 
+        const permissionCheck = await ensureSetlistPermission(
+          client,
+          userId,
+          effectiveBandId,
+          PERMISSIONS.SETLIST_EDIT,
+          existingSetlistRow.userId
+        );
+        if (!permissionCheck.allowed) {
+          res.status(403).json({ error: permissionCheck.reason });
+          return;
+        }
+
         // Update setlist main fields
         await client.execute(
           `UPDATE setlists SET 
@@ -266,23 +310,28 @@ export default async function handler(req, res) {
       }
       if (req.method === 'DELETE') {
         // Permission constants (ESM compatible)
-        const permUtils = await import('../../src/utils/permissionUtils.js');
-        const SETLIST_DELETE = permUtils.PERMISSIONS.SETLIST_DELETE;
-        const hasPermission = permUtils.hasPermission;
-        const userRole = req.user?.role;
-        if (!hasPermission(userRole, SETLIST_DELETE)) {
-          res.status(403).json({ error: 'You do not have permission to delete setlists' });
-          return;
-        }
-        // Check if user is band member or owner for this setlist
-        const checkResult = await client.execute(
-          `SELECT s.id FROM setlists s\n         WHERE s.id = ? \n         AND (s.bandId IS NULL OR EXISTS (\n           SELECT 1 FROM band_members WHERE bandId = s.bandId AND userId = ?\n         ))\n         LIMIT 1`,
-          [idStr, userId]
+        const setlistLookup = await client.execute(
+          `SELECT s.id, s.bandId, s.userId FROM setlists s WHERE s.id = ? LIMIT 1`,
+          [idStr]
         );
-        if (!checkResult.rows || checkResult.rows.length === 0) {
-          res.status(403).json({ error: 'Access denied' });
+        const targetSetlist = setlistLookup.rows?.[0] || null;
+        if (!targetSetlist) {
+          res.status(404).json({ error: 'Setlist not found' });
           return;
         }
+
+        const permissionCheck = await ensureSetlistPermission(
+          client,
+          userId,
+          targetSetlist.bandId,
+          PERMISSIONS.SETLIST_DELETE,
+          targetSetlist.userId
+        );
+        if (!permissionCheck.allowed) {
+          res.status(403).json({ error: permissionCheck.reason });
+          return;
+        }
+
         await client.execute(`DELETE FROM setlists WHERE id = ?`, [idStr]);
         res.status(204).end();
         return;
@@ -466,12 +515,9 @@ export default async function handler(req, res) {
       let bandId = body.bandId || null;
       if (bandId) {
         bandId = sanitize(bandId, 50);
-        const bandCheck = await client.execute(
-          `SELECT 1 FROM band_members WHERE bandId = ? AND userId = ?`,
-          [bandId, userId]
-        );
-        if (!bandCheck.rows || bandCheck.rows.length === 0) {
-          res.status(403).json({ error: 'You are not a member of this band' });
+        const permissionCheck = await ensureSetlistPermission(client, userId, bandId, PERMISSIONS.SETLIST_CREATE);
+        if (!permissionCheck.allowed) {
+          res.status(403).json({ error: permissionCheck.reason });
           return;
         }
       }
