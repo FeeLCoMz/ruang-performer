@@ -261,7 +261,7 @@ function AppContent() {
               ☰
             </button>
             <h1 className="header-title">Ruang Performer</h1>
-            <div className="header-actions">
+            <div className="header-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
               <button
                 className={`btn btn-secondary ${theme === "dark" ? "dark" : "light"}`}
                 onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}

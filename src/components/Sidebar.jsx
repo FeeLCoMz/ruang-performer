@@ -58,7 +58,7 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
             <span className="sidebar-logo-text">Ruang Performer</span>
           </div>
           {/* Theme & Performance Mode toggle buttons for desktop */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', marginTop: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', marginTop: 4, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '100%' }}>
             <button
               className={`btn btn-secondary ${theme === 'dark' ? 'dark' : 'light'}`}
               onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
