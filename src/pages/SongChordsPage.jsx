@@ -555,6 +555,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         artist={artist}
         contributor={song.contributor}
         performanceMode={performanceMode}
+        vocalMode={vocalMode}
         canEdit={can(PERMISSIONS.SONG_EDIT)}
         onEdit={handleEdit}
         onShare={() => handleShare(song, artist, setShareMessage)}

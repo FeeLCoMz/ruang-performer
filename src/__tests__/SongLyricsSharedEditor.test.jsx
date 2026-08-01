@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
+import ChordDisplay from '../components/ChordDisplay.jsx';
 import VirtualPiano from '../components/VirtualPiano.jsx';
 
 function noop() {}
@@ -249,6 +250,16 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     expect(container.querySelector('.song-lyrics-edit-actions')).toBeFalsy();
+  });
+
+  test('Given chord display is hidden in vocal mode, Then chord-only tokens are not rendered', async () => {
+    await act(async () => {
+      root.render(<ChordDisplay song={{ lyrics: '[C]Hello\n[D]World' }} showChords={false} />);
+    });
+
+    expect(container.querySelector('.cd-chord')).toBeFalsy();
+    expect(container.textContent).toContain('Hello');
+    expect(container.textContent).toContain('World');
   });
 
   test('Given song view edit mode, When piano note is selected, Then lyrics state receives note token', async () => {

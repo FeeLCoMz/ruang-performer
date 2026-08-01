@@ -31,6 +31,7 @@ export default function SongChordsInfo({
   artist,
   contributor,
   performanceMode,
+  vocalMode = false,
   canEdit = false,
   onEdit,
   onShare,
@@ -86,7 +87,7 @@ export default function SongChordsInfo({
           ariaLabel={showSongInfo ? 'Sembunyikan info lagu' : 'Tampilkan info lagu'}
         />
       </div>
-      {showSongInfo && (
+      {showSongInfo && !vocalMode && (
         <div className="song-info-compact-grid">
           {(originalKey || targetKey) && (
             <div className="song-info-item song-info-priority song-info-key">
