@@ -53,10 +53,7 @@ const countMeasuresFromLineText = (lineText) => {
 
 const getScrollContainer = (lyricsDisplayRef) => {
   if (!lyricsDisplayRef?.current) return null;
-  if (
-    lyricsDisplayRef.current === document.body
-    || lyricsDisplayRef.current.classList?.contains('karaoke-lyrics-page')
-  ) {
+  if (lyricsDisplayRef.current === document.body) {
     return window;
   }
   return lyricsDisplayRef.current;

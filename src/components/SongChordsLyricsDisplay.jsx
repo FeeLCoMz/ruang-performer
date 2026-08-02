@@ -38,6 +38,7 @@ export default function SongChordsLyricsDisplay({
   showChords,
   zoom,
   setZoom,
+  lyricsMode = false,
   showChordNumbers,
   showJazzChords,
   showSimpleChords,
@@ -218,7 +219,8 @@ export default function SongChordsLyricsDisplay({
   const normalizedBpm = Math.max(40, Math.min(240, Number(song?.tempo) || 120));
   const normalizedScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedBpm));
   const blinkDurationMs = Math.round(60000 / normalizedBpm);
-  const currentChordModeKey = !showChords
+  const effectiveShowChords = lyricsMode ? false : showChords;
+  const currentChordModeKey = !effectiveShowChords
     ? 'hidden'
     : showChordNumbers
     ? 'number'
@@ -227,7 +229,7 @@ export default function SongChordsLyricsDisplay({
       : showSimpleChords
         ? 'simple'
         : 'default';
-  const currentChordModeLabel = !showChords
+  const currentChordModeLabel = !effectiveShowChords
     ? 'Off'
     : showChordNumbers
     ? 'Angka'
@@ -291,40 +293,42 @@ export default function SongChordsLyricsDisplay({
         role="group"
         aria-label="Kontrol fullscreen lirik"
       >
-        <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Transpose">
-          <span className="song-lyrics-fullscreen-control-label">Tr</span>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setTranspose((prev) => prev - 1)}
-            aria-label="Transpose turun"
-            title="Transpose turun"
-          >
-            -
-          </button>
-          <span className="song-lyrics-fullscreen-control-value" aria-live="polite">
-            {transpose > 0 ? `+${transpose}` : transpose}
-          </span>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setTranspose((prev) => prev + 1)}
-            aria-label="Transpose naik"
-            title="Transpose naik"
-          >
-            +
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setTranspose(0)}
-            aria-label="Reset transpose"
-            title="Reset transpose"
-            disabled={transpose === 0}
-          >
-            0
-          </button>
-        </div>
+        {!lyricsMode && (
+          <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Transpose">
+            <span className="song-lyrics-fullscreen-control-label">Tr</span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setTranspose((prev) => prev - 1)}
+              aria-label="Transpose turun"
+              title="Transpose turun"
+            >
+              -
+            </button>
+            <span className="song-lyrics-fullscreen-control-value" aria-live="polite">
+              {transpose > 0 ? `+${transpose}` : transpose}
+            </span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setTranspose((prev) => prev + 1)}
+              aria-label="Transpose naik"
+              title="Transpose naik"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setTranspose(0)}
+              aria-label="Reset transpose"
+              title="Reset transpose"
+              disabled={transpose === 0}
+            >
+              0
+            </button>
+          </div>
+        )}
         <div className="song-lyrics-fullscreen-control-row song-lyrics-fullscreen-autoscroll" role="group" aria-label="Autoscroll">
           <button
             type="button"
@@ -416,12 +420,22 @@ export default function SongChordsLyricsDisplay({
           </div>
         )}
         <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Fullscreen">
-          <span
-            className={`song-lyrics-fullscreen-style-badge mode-${currentChordModeKey}`}
-            title={`Mode chord aktif: ${currentChordModeLabel}`}
-          >
-            Chord: {currentChordModeLabel}
-          </span>
+          {!lyricsMode && (
+            <span
+              className={`song-lyrics-fullscreen-style-badge mode-${currentChordModeKey}`}
+              title={`Mode chord aktif: ${currentChordModeLabel}`}
+            >
+              Chord: {currentChordModeLabel}
+            </span>
+          )}
+          {lyricsMode && (
+            <span
+              className="song-lyrics-fullscreen-style-badge mode-hidden"
+              title="Lirik Mode aktif"
+            >
+              Lirik Saja
+            </span>
+          )}
           <button
             type="button"
             className="btn btn-secondary"
@@ -459,7 +473,7 @@ export default function SongChordsLyricsDisplay({
         </span>
       </div>
       {/* Tombol Lihat Partitur (selalu tampil jika ada MusicXML) */}
-      {!isFullscreen && song?.sheetMusicXml && (
+      {!isFullscreen && !lyricsMode && song?.sheetMusicXml && (
         <button
           className="btn btn-secondary btn-margin-bottom"
           onClick={() => setShowSheetMusic((v) => !v)}
@@ -468,14 +482,14 @@ export default function SongChordsLyricsDisplay({
         </button>
       )}
       {/* Tampilkan partitur jika diaktifkan */}
-      {showSheetMusic && song?.sheetMusicXml && (
+      {!lyricsMode && showSheetMusic && song?.sheetMusicXml && (
         <SongSheetMusic sheetMusicXml={song.sheetMusicXml} />
       )}
       <ChordDisplay
         song={song}
         transpose={transpose}
         zoom={zoom}
-        showChords={showChords}
+        showChords={effectiveShowChords}
         showChordNumbers={showChordNumbers}
         showJazzChords={showJazzChords}
         showSimpleChords={showSimpleChords}

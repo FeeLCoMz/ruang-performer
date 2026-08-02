@@ -3461,45 +3461,6 @@ body.dark-mode .lyrics-editor-textarea {
   color: var(--text-muted);
 }
 
-.karaoke-search-wrap {
-  display: flex;
-  justify-content: center;
-  margin: 24px 0;
-}
-
-.karaoke-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.karaoke-title-icon {
-  font-size: 2.2rem;
-}
-
-.karaoke-song-title-hero {
-  font-weight: 700;
-  font-size: 2rem;
-}
-
-.karaoke-artist-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.karaoke-artist-icon {
-  font-size: 1.5rem;
-}
-
-.karaoke-song-artist-hero {
-  color: var(--text-secondary);
-  font-size: 1.2rem;
-}
-
 .song-info {
   flex: 1;
   min-width: 0;
@@ -8499,51 +8460,51 @@ body.dark-mode .cd-token {
   background: var(--secondary-bg);
 }
 
-body.vocal-mode .song-lyrics-main {
+body.lyrics-mode .song-lyrics-main {
   border-color: var(--primary-accent);
   box-shadow: 0 8px 24px rgba(37, 99, 235, 0.16);
 }
 
-body.vocal-mode .song-lyrics-display {
+body.lyrics-mode .song-lyrics-display {
   min-height: 420px;
   padding: var(--spacing-xl);
   font-size: 1.08rem;
   line-height: 1.8;
 }
 
-body.vocal-mode .song-lyrics-display .cd-lyrics,
-body.vocal-mode .song-lyrics-display .cd-section-struct,
-body.vocal-mode .song-lyrics-display .cd-section-inst,
-body.vocal-mode .song-lyrics-display .cd-metadata {
+body.lyrics-mode .song-lyrics-display .cd-lyrics,
+body.lyrics-mode .song-lyrics-display .cd-section-struct,
+body.lyrics-mode .song-lyrics-display .cd-section-inst,
+body.lyrics-mode .song-lyrics-display .cd-metadata {
   font-size: 1.12rem;
   line-height: 1.8;
 }
 
-body.vocal-mode .song-lyrics-toolbar {
+body.lyrics-mode .song-lyrics-toolbar {
   gap: var(--spacing-sm);
 }
 
-body.vocal-mode .song-lyrics-toolbar-group-chords {
+body.lyrics-mode .song-lyrics-toolbar-group-chords {
   order: 1;
 }
 
-body.vocal-mode .song-lyrics-toolbar-group-autoscroll {
+body.lyrics-mode .song-lyrics-toolbar-group-autoscroll {
   order: 2;
 }
 
-body.vocal-mode .song-lyrics-toolbar-group-view {
+body.lyrics-mode .song-lyrics-toolbar-group-view {
   order: 3;
 }
 
-body.vocal-mode .song-lyrics-toolbar-group-actions {
+body.lyrics-mode .song-lyrics-toolbar-group-actions {
   order: 4;
 }
 
-body.vocal-mode .song-lyrics-transpose-controls {
+body.lyrics-mode .song-lyrics-transpose-controls {
   padding: 0 var(--spacing-md);
 }
 
-body.vocal-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
+body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   border-color: rgba(245, 158, 11, 0.45);
   background: rgba(245, 158, 11, 0.16);
   color: #b45309;
@@ -9551,25 +9512,25 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
     justify-content: space-between;
   }
 
-  body.vocal-mode .song-lyrics-toolbar-group-chords {
+  body.lyrics-mode .song-lyrics-toolbar-group-chords {
     order: 1;
     justify-content: flex-start;
   }
 
-  body.vocal-mode .song-lyrics-toolbar-group-chords .song-lyrics-transpose-controls {
+  body.lyrics-mode .song-lyrics-toolbar-group-chords .song-lyrics-transpose-controls {
     width: 100%;
     justify-content: space-between;
   }
 
-  body.vocal-mode .song-lyrics-toolbar-group-autoscroll {
+  body.lyrics-mode .song-lyrics-toolbar-group-autoscroll {
     order: 2;
   }
 
-  body.vocal-mode .song-lyrics-toolbar-group-view {
+  body.lyrics-mode .song-lyrics-toolbar-group-view {
     order: 3;
   }
 
-  body.vocal-mode .song-lyrics-toolbar-group-actions {
+  body.lyrics-mode .song-lyrics-toolbar-group-actions {
     order: 4;
   }
 

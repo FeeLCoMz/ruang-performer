@@ -674,13 +674,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
                 🎬
               </button>
             )}
-            <button
-              className="btn btn-secondary"
-              title="Lihat Karaoke"
-              onClick={() => navigate(`/karaoke/${song.id}`)}
-            >
-              Lirik
-            </button>
             {
               <button
                 className={`btn ${song.isMasteredByCurrentUser ? '' : 'btn-secondary'}`}

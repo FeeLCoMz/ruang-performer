@@ -31,7 +31,7 @@ export default function SongChordsInfo({
   artist,
   contributor,
   performanceMode,
-  vocalMode = false,
+  lyricsMode = false,
   canEdit = false,
   onEdit,
   onShare,
@@ -52,7 +52,7 @@ export default function SongChordsInfo({
       {/* Judul dan artis selalu di atas info lain */}
       {(title || artist || contributor || !performanceMode) && (
         <div className="song-title-artist-block">
-          {!performanceMode && !vocalMode && (
+          {!performanceMode && !lyricsMode && (
             <div className="song-title-actions">
               {canEdit && (
                 <button type="button" onClick={onEdit} className="btn btn-secondary" title="Edit lagu">
@@ -87,7 +87,7 @@ export default function SongChordsInfo({
           ariaLabel={showSongInfo ? 'Sembunyikan info lagu' : 'Tampilkan info lagu'}
         />
       </div>
-      {showSongInfo && !vocalMode && (
+      {showSongInfo && !lyricsMode && (
         <div className="song-info-compact-grid">
           {(originalKey || targetKey) && (
             <div className="song-info-item song-info-priority song-info-key">

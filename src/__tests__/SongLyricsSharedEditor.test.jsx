@@ -253,7 +253,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-edit-actions')).toBeFalsy();
   });
 
-  test('Given vocal mode is active, Then non-essential song actions are hidden', async () => {
+  test('Given lirik mode is active, Then non-essential song actions are hidden', async () => {
     await act(async () => {
       root.render(
         <SongChordsInfo
@@ -261,7 +261,7 @@ describe('Song lyrics shared editor rendering', () => {
           artist="Artist A"
           contributor="Contributor"
           performanceMode={false}
-          vocalMode={true}
+          lyricsMode={true}
           canEdit={true}
           onEdit={noop}
           onShare={noop}
@@ -277,7 +277,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('Artist A');
   });
 
-  test('Given chord display is hidden in vocal mode, Then chord-only tokens are not rendered', async () => {
+  test('Given chord display is hidden in lirik mode, Then chord-only tokens are not rendered', async () => {
     await act(async () => {
       root.render(<ChordDisplay song={{ lyrics: '[C]Hello\n[D]World' }} showChords={false} />);
     });

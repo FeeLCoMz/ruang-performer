@@ -27,7 +27,7 @@ import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyrics
  * Props:
  *   - song: (optional) data lagu yang diterima dari parent
  */
-export default function SongChordsPage({ song: songProp, performanceMode = false, vocalMode = false }) {
+export default function SongChordsPage({ song: songProp, performanceMode = false, lyricsMode = false }) {
   // State untuk toggle tampilan partitur
   const [showSheetMusic, setShowSheetMusic] = useState(false);
   // =========================
@@ -95,14 +95,14 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // Transpose state
   const [transpose, setTranspose] = useState(0);
   const [zoom, setZoom] = useState(1);
-  const [showChords, setShowChords] = useState(!vocalMode);
+  const [showChords, setShowChords] = useState(!lyricsMode);
   const [showChordNumbers, setShowChordNumbers] = useState(false);
   const [showJazzChords, setShowJazzChords] = useState(false);
   const [showSimpleChords, setShowSimpleChords] = useState(false);
 
   useEffect(() => {
-    setShowChords(!vocalMode);
-  }, [vocalMode]);
+    setShowChords(!lyricsMode);
+  }, [lyricsMode]);
   
   // In-place editing state
   const [isEditingLyrics, setIsEditingLyrics] = useState(false);
@@ -533,7 +533,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   };
 
   return (
-    <div className={`page-container${performanceMode ? ' performance-mode' : ''}${vocalMode ? ' vocal-mode' : ''}`}> {/* Tambah class jika performanceMode */}
+    <div className={`page-container${performanceMode ? ' performance-mode' : ''}${lyricsMode ? ' lyrics-mode' : ''}`}> {/* Tambah class jika performanceMode */}
       <SongChordsInfo
         originalKey={song?.key || key || ''}
         targetKey={key || song?.key || ''}
@@ -555,7 +555,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         artist={artist}
         contributor={song.contributor}
         performanceMode={performanceMode}
-        vocalMode={vocalMode}
+        lyricsMode={lyricsMode}
         canEdit={can(PERMISSIONS.SONG_EDIT)}
         onEdit={handleEdit}
         onShare={() => handleShare(song, artist, setShareMessage)}
@@ -567,7 +567,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         masteryUpdating={updatingMastery}
       />
 
-      {!vocalMode && (
+      {!lyricsMode && (
         <SongChordsAnalyzer
           showChordAnalyzer={showChordAnalyzer}
           setShowChordAnalyzer={setShowChordAnalyzer}
@@ -578,7 +578,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         />
       )}
 
-      {!vocalMode && (
+      {!lyricsMode && (
         <SongChordsMediaPanel
           mediaPanelExpanded={mediaPanelExpanded}
           setMediaPanelExpanded={setMediaPanelExpanded}
@@ -630,7 +630,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         zoom={zoom}
         setZoom={setZoom}
         performanceMode={performanceMode}
-        vocalMode={vocalMode}
+        lyricsMode={lyricsMode}
         canEdit={can(PERMISSIONS.SONG_EDIT)}
         song={song}
         transpose={transpose}
@@ -691,13 +691,13 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
               totalSongs={totalSongs}
               onPrev={handlePrev}
               onNext={handleNext}
-              compact={vocalMode}
+              compact={lyricsMode}
             />
           );
         })()}
 
       {/* Setlists containing this song */}
-      {!performanceMode && !vocalMode && song.id && !loadingSetlists && setlists.length > 0 && (() => {
+      {!performanceMode && !lyricsMode && song.id && !loadingSetlists && setlists.length > 0 && (() => {
         const containingSetlists = setlists.filter(setlist =>
           Array.isArray(setlist.songs) && setlist.songs.includes(song.id)
         );

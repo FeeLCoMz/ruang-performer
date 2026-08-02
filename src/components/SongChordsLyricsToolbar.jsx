@@ -31,7 +31,7 @@ import SongChordsExportMenu from "./SongChordsExportMenu.jsx";
 export default function SongChordsLyricsToolbar({
   isEditingLyrics,
   performanceMode,
-  vocalMode,
+  lyricsMode,
   canEdit,
   tempo,
   timeSignature,
@@ -44,8 +44,6 @@ export default function SongChordsLyricsToolbar({
   setCurrentBeat,
   transpose,
   setTranspose,
-  showChords,
-  setShowChords,
   zoom,
   setZoom,
   showChordNumbers,
@@ -229,20 +227,9 @@ export default function SongChordsLyricsToolbar({
           </div>
         )}
 
-        {!isEditingLyrics && (
+        {!isEditingLyrics && !lyricsMode && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">
             <div className="song-lyrics-transpose-controls" title="Transpose lirik/chord">
-              {vocalMode && (
-                <button
-                  type="button"
-                  className={`btn ${showChords ? 'btn-secondary' : 'btn-primary'}`}
-                  onClick={() => setShowChords((prev) => !prev)}
-                  title={showChords ? 'Sembunyikan chord untuk fokus lirik' : 'Tampilkan chord'}
-                  aria-label={showChords ? 'Sembunyikan chord' : 'Tampilkan chord'}
-                >
-                  {showChords ? '🙈 Chord' : '👀 Chord'}
-                </button>
-              )}
               <button
                 type="button"
                 className="btn btn-secondary"

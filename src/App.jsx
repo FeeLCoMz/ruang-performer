@@ -26,7 +26,6 @@ const BandManagementPage = lazy(() => import("./pages/BandManagementPage.jsx"));
 const GigPage = lazy(() => import("./pages/GigPage.jsx"));
 const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx"));
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage.jsx"));
-const SongLyricsPage = lazy(() => import("./pages/SongLyricsPage.jsx"));
 const UserManagementPage = lazy(() => import("./pages/UserManagementPage.jsx"));
 
 // Loading fallback component
@@ -108,8 +107,13 @@ function AppContent() {
     }
     return false;
   });
-  const [vocalMode, setVocalMode] = useState(() => {
+  const [lyricsMode, setLyricsMode] = useState(() => {
     if (typeof window !== "undefined") {
+      const lyricsModeRaw = localStorage.getItem("ruangperformer_lyrics_mode");
+      if (lyricsModeRaw !== null) {
+        return lyricsModeRaw === "true";
+      }
+
       return localStorage.getItem("ruangperformer_vocal_mode") === "true";
     }
     return false;
@@ -126,13 +130,14 @@ function AppContent() {
   }, [performanceMode]);
 
   useEffect(() => {
-    localStorage.setItem("ruangperformer_vocal_mode", vocalMode ? "true" : "false");
-    if (vocalMode) {
-      document.body.classList.add("vocal-mode");
+    localStorage.setItem("ruangperformer_lyrics_mode", lyricsMode ? "true" : "false");
+    localStorage.removeItem("ruangperformer_vocal_mode");
+    if (lyricsMode) {
+      document.body.classList.add("lyrics-mode");
     } else {
-      document.body.classList.remove("vocal-mode");
+      document.body.classList.remove("lyrics-mode");
     }
-  }, [vocalMode]);
+  }, [lyricsMode]);
 
   // ALL HOOKS MUST BE HERE - BEFORE ANY CONDITIONAL LOGIC
   useEffect(() => {
@@ -248,8 +253,8 @@ function AppContent() {
           setTheme={setTheme}
           performanceMode={performanceMode}
           setPerformanceMode={setPerformanceMode}
-          vocalMode={vocalMode}
-          setVocalMode={setVocalMode}
+          lyricsMode={lyricsMode}
+          setLyricsMode={setLyricsMode}
         />
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
 
@@ -282,11 +287,11 @@ function AppContent() {
                 {performanceMode ? "🎤 Performance" : "🎶 Normal"}
               </button>
               <button
-                className={`btn btn-secondary ${vocalMode ? " active" : ""}`}
-                onClick={() => setVocalMode((v) => !v)}
-                title={vocalMode ? "Nonaktifkan Vocal Mode" : "Aktifkan Vocal Mode"}
+                className={`btn btn-secondary ${lyricsMode ? " active" : ""}`}
+                onClick={() => setLyricsMode((v) => !v)}
+                title={lyricsMode ? "Nonaktifkan Lirik Mode" : "Aktifkan Lirik Mode"}
               >
-                {vocalMode ? "🗣️ Vocal" : "🎙️ Vocal"}
+                {lyricsMode ? "📝 Lirik" : "🎙️ Lirik"}
               </button>
             </div>
           </header>
@@ -418,11 +423,7 @@ function AppContent() {
               />
               <Route
                 path="/songs/view/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} vocalMode={vocalMode} />}
-              />
-              <Route
-                path="/karaoke/:id"
-                element={<SongLyricsPage />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} lyricsMode={lyricsMode} />}
               />
               <Route
                 path="/setlists/:id"
@@ -441,7 +442,7 @@ function AppContent() {
               />
               <Route
                 path="/setlists/:setlistId/songs/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} vocalMode={vocalMode} />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} lyricsMode={lyricsMode} />}
               />
               <Route
                 path="/setlists"
@@ -519,10 +520,10 @@ function EditSongRoute({ onSongUpdated }) {
 }
 
 // SongLyricsRoute component
-function SongLyricsRoute({ songs, activeSetlist, performanceMode, vocalMode }) {
+function SongLyricsRoute({ songs, activeSetlist, performanceMode, lyricsMode }) {
   const { id } = useParams();
   const song = Array.isArray(songs) ? songs.find((s) => String(s.id) === String(id)) : null;
-  return <SongChordsPage song={song} activeSetlist={activeSetlist} performanceMode={performanceMode} vocalMode={vocalMode} />;
+  return <SongChordsPage song={song} activeSetlist={activeSetlist} performanceMode={performanceMode} lyricsMode={lyricsMode} />;
 }
 
 export default App;
