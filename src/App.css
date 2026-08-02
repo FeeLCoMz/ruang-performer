@@ -1518,6 +1518,18 @@ body {
   background: var(--card-bg);
 }
 
+.youtube-trending-inline-item-added {
+  border-color: var(--primary-accent);
+  background: rgba(76, 175, 80, 0.08);
+}
+
+.youtube-trending-inline-added {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--primary-accent);
+  font-weight: 600;
+}
+
 .youtube-trending-inline-content {
   flex: 1;
   min-width: 0;
@@ -1528,6 +1540,16 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   margin-left: auto;
+}
+
+.youtube-trending-inline-feedback {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(76, 175, 80, 0.12);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  border: 1px solid rgba(76, 175, 80, 0.25);
 }
 
 .youtube-trending-inline-btn {

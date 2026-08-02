@@ -82,7 +82,15 @@ describe('SongListPage trending actions', () => {
       await flushPromises();
     });
 
-    const openButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Buka YouTube'));
+    const toggleButton = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'Buka panel trending');
+    expect(toggleButton).toBeTruthy();
+
+    await act(async () => {
+      toggleButton.click();
+      await flushPromises();
+    });
+
+    const openButton = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'Buka video YouTube: Trending Song');
     expect(openButton).toBeTruthy();
 
     await act(async () => {
@@ -92,7 +100,7 @@ describe('SongListPage trending actions', () => {
 
     expect(window.open).toHaveBeenCalledWith('https://www.youtube.com/watch?v=abc123', '_blank', 'noopener,noreferrer');
 
-    const addButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Tambah ke daftar'));
+    const addButton = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'Tambah ke daftar: Trending Song');
     expect(addButton).toBeTruthy();
 
     await act(async () => {
@@ -106,5 +114,36 @@ describe('SongListPage trending actions', () => {
       artist: 'Test Channel',
       youtubeId: 'abc123',
     }));
+    expect(container.textContent).toContain('Lagu berhasil ditambahkan');
+  });
+
+  test('marks trending songs that already exist in the song list', async () => {
+    await act(async () => {
+      root.render(
+        <SongListPage
+          songs={[
+            { id: 'existing-song', title: 'Trending Song', artist: 'Test Channel', youtubeId: 'abc123' },
+          ]}
+          loading={false}
+          error={null}
+          onSongClick={() => {}}
+          onSongMasteryUpdated={() => {}}
+          trendingSongs={[
+            { videoId: 'abc123', title: 'Trending Song', channelTitle: 'Test Channel' },
+          ]}
+        />
+      );
+      await flushPromises();
+    });
+
+    const toggleButton = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'Buka panel trending');
+    expect(toggleButton).toBeTruthy();
+
+    await act(async () => {
+      toggleButton.click();
+      await flushPromises();
+    });
+
+    expect(container.textContent).toContain('Sudah ada');
   });
 });

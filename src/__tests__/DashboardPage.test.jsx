@@ -39,6 +39,16 @@ async function renderDashboard(root) {
   });
 }
 
+function createDeferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 describe('DashboardPage', () => {
   let container;
   let root;
@@ -139,5 +149,30 @@ describe('DashboardPage', () => {
       '_blank',
       'noopener,noreferrer'
     );
+  });
+
+  test('Given slow background requests, When dashboard loads, Then summary stats render immediately', async () => {
+    const deferredSetlists = createDeferred();
+    const deferredBands = createDeferred();
+
+    apiClient.fetchSetLists.mockImplementation(() => deferredSetlists.promise);
+    apiClient.fetchBands.mockImplementation(() => deferredBands.promise);
+    apiClient.fetchSongs.mockResolvedValue({ songs: [], trending: [] });
+    apiClient.fetchGigs.mockResolvedValue([]);
+
+    const renderPromise = act(async () => {
+      root.render(<DashboardPage />);
+      await flushPromises();
+    });
+
+    await renderPromise;
+
+    expect(findElementByText(container, '0')).toBeTruthy();
+
+    deferredSetlists.resolve([]);
+    deferredBands.resolve([]);
+    await act(async () => {
+      await flushPromises();
+    });
   });
 });

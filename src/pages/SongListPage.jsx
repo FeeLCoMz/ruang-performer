@@ -67,6 +67,8 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   const [activeVideoSong, setActiveVideoSong] = useState(null);
   const [updatingMasterySongId, setUpdatingMasterySongId] = useState(null);
   const [visibleCount, setVisibleCount] = useState(pageSize);
+  const [isTrendingCollapsed, setIsTrendingCollapsed] = useState(true);
+  const [trendingActionMessage, setTrendingActionMessage] = useState('');
   const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.innerWidth < 768;
@@ -95,6 +97,12 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   useEffect(() => {
     setVisibleCount(pageSize);
   }, [pageSize]);
+
+  useEffect(() => {
+    if (!trendingActionMessage) return undefined;
+    const timer = setTimeout(() => setTrendingActionMessage(''), 3000);
+    return () => clearTimeout(timer);
+  }, [trendingActionMessage]);
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -432,6 +440,28 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     return Boolean(song?.youtubeId || song?.youtube_url);
   }
 
+  function isTrendingSongAlreadyAdded(item) {
+    const videoId = item?.videoId || '';
+    const title = (item?.title || '').trim().toLowerCase();
+    const artist = (item?.channelTitle || '').trim().toLowerCase();
+
+    return songs.some((song) => {
+      const songTitle = (song?.title || '').trim().toLowerCase();
+      const songArtist = (song?.artist || '').trim().toLowerCase();
+      const songVideoId = (song?.youtubeId || song?.youtube_url || '').trim();
+
+      if (videoId && songVideoId && songVideoId === videoId) {
+        return true;
+      }
+
+      if (title && songTitle && title === songTitle) {
+        return artist ? songArtist && artist === songArtist : true;
+      }
+
+      return false;
+    });
+  }
+
   function resolveTempo(song) {
     const parsed = parseInt(song?.tempo, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 120;
@@ -482,6 +512,8 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       } else if (typeof onSongClick === 'function') {
         onSongClick('add');
       }
+
+      setTrendingActionMessage(`Lagu berhasil ditambahkan: ${title}`);
     } catch (err) {
       alert(err?.message || 'Gagal menambahkan lagu dari trending');
     }
@@ -760,36 +792,65 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       {Array.isArray(trendingSongs) && trendingSongs.length > 0 && !performanceMode && (
         <div className="card youtube-trending-inline-panel">
           <div className="youtube-trending-inline-header">
-            <h3>📺 Trending YouTube</h3>
-            <span>{trendingSongs.length} lagu</span>
+            <div>
+              <h3>📺 Trending YouTube</h3>
+              <span>{trendingSongs.length} lagu</span>
+            </div>
+            <button
+              className="btn btn-secondary youtube-trending-inline-toggle"
+              type="button"
+              onClick={() => setIsTrendingCollapsed((prev) => !prev)}
+              aria-expanded={!isTrendingCollapsed}
+              aria-label={isTrendingCollapsed ? 'Buka panel trending' : 'Tutup panel trending'}
+              title={isTrendingCollapsed ? 'Buka panel trending' : 'Tutup panel trending'}
+            >
+              {isTrendingCollapsed ? '▸' : '▾'}
+            </button>
           </div>
-          <div className="youtube-trending-inline-list">
-            {trendingSongs.slice(0, 4).map((item, index) => (
-              <div key={item.videoId || `${item.title}-${index}`} className="youtube-trending-inline-item">
-                <span className="youtube-trending-inline-rank">#{index + 1}</span>
-                <div className="youtube-trending-inline-content">
-                  <div className="youtube-trending-inline-title">{item.title}</div>
-                  <div className="youtube-trending-inline-meta">{item.channelTitle}</div>
+          {!isTrendingCollapsed && (
+            <>
+              {trendingActionMessage && (
+                <div className="youtube-trending-inline-feedback" role="status" aria-live="polite">
+                  {trendingActionMessage}
                 </div>
-                <div className="youtube-trending-inline-actions">
-                  <button
-                    className="btn btn-secondary youtube-trending-inline-btn"
-                    type="button"
-                    onClick={() => handleOpenTrendingVideo(item)}
-                  >
-                    Buka YouTube
-                  </button>
-                  <button
-                    className="btn youtube-trending-inline-btn"
-                    type="button"
-                    onClick={() => handleAddTrendingSong(item)}
-                  >
-                    Tambah ke daftar
-                  </button>
-                </div>
+              )}
+              <div className="youtube-trending-inline-list">
+                {trendingSongs.map((item, index) => {
+                  const alreadyAdded = isTrendingSongAlreadyAdded(item);
+                  return (
+                    <div key={item.videoId || `${item.title}-${index}`} className={`youtube-trending-inline-item${alreadyAdded ? ' youtube-trending-inline-item-added' : ''}`}>
+                      <span className="youtube-trending-inline-rank">#{index + 1}</span>
+                      <div className="youtube-trending-inline-content">
+                        <div className="youtube-trending-inline-title">{item.title}</div>
+                        <div className="youtube-trending-inline-meta">{item.channelTitle}</div>
+                        {alreadyAdded && <div className="youtube-trending-inline-added">✅ Sudah ada</div>}
+                      </div>
+                      <div className="youtube-trending-inline-actions">
+                        <button
+                          className="btn btn-secondary youtube-trending-inline-btn"
+                          type="button"
+                          onClick={() => handleOpenTrendingVideo(item)}
+                          aria-label={`Buka video YouTube: ${item.title}`}
+                          title={`Buka video YouTube: ${item.title}`}
+                        >
+                          ▶
+                        </button>
+                        <button
+                          className="btn youtube-trending-inline-btn"
+                          type="button"
+                          onClick={() => handleAddTrendingSong(item)}
+                          aria-label={`Tambah ke daftar: ${item.title}`}
+                          title={`Tambah ke daftar: ${item.title}`}
+                        >
+                          ＋
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
       )}
 

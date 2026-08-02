@@ -171,33 +171,33 @@ function AppContent() {
         })
         .catch((err) => {
           setErrorSetlists(err.message || "Gagal mengambil data setlist");
-
-    useEffect(() => {
-      if (isLoading || !isAuthenticated || !performanceMode) {
-        return;
-      }
-
-      if (hasPrefetchedPerformanceDataRef.current) {
-        return;
-      }
-
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-        return;
-      }
-
-      hasPrefetchedPerformanceDataRef.current = true;
-      apiClient.prefetchPerformanceData()
-        .then(({ setlists: totalSetlists = 0, songs: totalSongs = 0 } = {}) => {
-          setToastMessage(`Mode perform siap offline: ${totalSetlists} setlist, ${totalSongs} lagu disimpan.`);
-        })
-        .catch(() => {
-          hasPrefetchedPerformanceDataRef.current = false;
-        });
-    }, [isLoading, isAuthenticated, performanceMode]);
           setLoadingSetlists(false);
         });
     }
   }, [location.pathname, isLoading, isAuthenticated]);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || !performanceMode) {
+      return;
+    }
+
+    if (hasPrefetchedPerformanceDataRef.current) {
+      return;
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      return;
+    }
+
+    hasPrefetchedPerformanceDataRef.current = true;
+    apiClient.prefetchPerformanceData()
+      .then(({ setlists: totalSetlists = 0, songs: totalSongs = 0 } = {}) => {
+        setToastMessage(`Mode perform siap offline: ${totalSetlists} setlist, ${totalSongs} lagu disimpan.`);
+      })
+      .catch(() => {
+        hasPrefetchedPerformanceDataRef.current = false;
+      });
+  }, [isLoading, isAuthenticated, performanceMode]);
 
   // CONDITIONAL LOGIC AFTER ALL HOOKS
   if (isLoading) {
