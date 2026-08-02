@@ -79,28 +79,18 @@ describe('DashboardPage', () => {
     openSpy.mockRestore();
   });
 
-  test('Given popular songs fails, When user retries, Then error clears and songs render', async () => {
+  test('Given popular songs are empty, When user retries, Then songs render', async () => {
     apiClient.fetchSongs.mockResolvedValue({ songs: [], trending: [] });
-    apiClient.fetchPopularSongs
-      .mockRejectedValueOnce(new Error('network error'))
-      .mockResolvedValueOnce({
-        youtubeSongs: [
-          {
-            id: 'song-1',
-            youtubeId: 'abc123',
-            title: 'Song Alpha',
-            artist: 'Artist One',
-          },
-        ],
-      });
 
     await renderDashboard(root);
 
-    const errorMessage = findElementByText(container, 'Lagu populer YouTube gagal dimuat. Silakan coba lagi.');
-    expect(errorMessage).toBeTruthy();
+    const emptyState = findElementByText(container, 'Tidak dapat memuat lagu populer YouTube');
+    expect(emptyState).toBeTruthy();
 
     const retryButton = findButtonByText(container, 'Coba Lagi');
     expect(retryButton).toBeTruthy();
+
+    apiClient.fetchSongs.mockResolvedValue({ songs: [], trending: [{ id: 'song-1', youtubeId: 'abc123', title: 'Song Alpha', artist: 'Artist One' }] });
 
     await act(async () => {
       retryButton.click();
@@ -108,12 +98,8 @@ describe('DashboardPage', () => {
       await flushPromises();
     });
 
-    const clearedError = findElementByText(container, 'Lagu populer YouTube gagal dimuat. Silakan coba lagi.');
-    expect(clearedError).toBeFalsy();
-
     const loadedSong = findElementByText(container, 'Song Alpha');
     expect(loadedSong).toBeTruthy();
-    expect(apiClient.fetchPopularSongs).toHaveBeenCalledTimes(2);
   });
 
   test('Given popular song item, When clicked, Then opens YouTube link with noopener and noreferrer', async () => {

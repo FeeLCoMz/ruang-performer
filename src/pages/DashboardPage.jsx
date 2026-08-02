@@ -77,8 +77,17 @@ export default function DashboardPage() {
     setPopularSongsError('');
 
     try {
-      const popularData = await apiClient.fetchPopularSongs();
-      setPopularSongs(popularData.youtubeSongs || popularData.songs || []);
+      const payload = await apiClient.fetchSongs({ includeTrending: true });
+      const trendingData = Array.isArray(payload?.trending) ? payload.trending : [];
+      setPopularSongs(trendingData.map((item) => ({
+        id: item.videoId || item.id || item.youtubeId || item.title,
+        youtubeId: item.videoId || item.youtubeId || item.id || null,
+        title: item.title || item.snippet?.title || '',
+        artist: item.channelTitle || item.artist || item.snippet?.channelTitle || '',
+        thumbnail: item.thumbnailUrl || item.thumbnail || item.snippet?.thumbnails?.high?.url || null,
+        viewCount: item.viewCount || null,
+        publishedAt: item.publishedAt || null,
+      })));
     } catch {
       setPopularSongs([]);
       setPopularSongsError('Lagu populer YouTube gagal dimuat. Silakan coba lagi.');
@@ -133,16 +142,15 @@ export default function DashboardPage() {
       setEventsLoading(true);
       setPopularSongsLoading(true);
 
-      const [songsResult, gigsResult, popularResult] = await Promise.allSettled([
+      const [songsResult, gigsResult] = await Promise.allSettled([
         apiClient.fetchSongs({ includeTrending: true }),
         apiClient.fetchGigs(),
-        apiClient.fetchPopularSongs(),
       ]);
 
       const songsPayload = songsResult.status === 'fulfilled' ? songsResult.value : [];
       const gigsData = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
-      const popularData = popularResult.status === 'fulfilled' ? popularResult.value : { youtubeSongs: [] };
       const songsData = Array.isArray(songsPayload) ? songsPayload : Array.isArray(songsPayload?.songs) ? songsPayload.songs : [];
+      const trendingData = Array.isArray(songsPayload?.trending) ? songsPayload.trending : [];
 
       if (!isMounted) return;
 
@@ -154,7 +162,7 @@ export default function DashboardPage() {
         setEventsError('Upcoming events gagal dimuat. Silakan coba lagi.');
       }
 
-      if (popularResult.status === 'rejected') {
+      if (songsResult.status === 'rejected') {
         setPopularSongsError('Lagu populer YouTube gagal dimuat. Silakan coba lagi.');
       }
 
@@ -171,7 +179,15 @@ export default function DashboardPage() {
       // Process upcoming events
       setUpcomingEvents(buildUpcomingEvents({ gigsData }));
 
-      setPopularSongs(popularData.youtubeSongs || popularData.songs || []);
+      setPopularSongs(trendingData.map((item) => ({
+        id: item.videoId || item.id || item.youtubeId || item.title,
+        youtubeId: item.videoId || item.youtubeId || item.id || null,
+        title: item.title || item.snippet?.title || '',
+        artist: item.channelTitle || item.artist || item.snippet?.channelTitle || '',
+        thumbnail: item.thumbnailUrl || item.thumbnail || item.snippet?.thumbnails?.high?.url || null,
+        viewCount: item.viewCount || null,
+        publishedAt: item.publishedAt || null,
+      })));
       setPopularSongsLoading(false);
 
       setStatsLoading(false);
@@ -342,7 +358,12 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : popularSongs.length === 0 ? (
-            <div className="dashboard-empty">Tidak dapat memuat lagu populer YouTube</div>
+            <div className="dashboard-empty">
+              <div>Tidak dapat memuat lagu populer YouTube</div>
+              <button className="btn btn-secondary" onClick={handleRetryPopularSongs}>
+                Coba Lagi
+              </button>
+            </div>
           ) : (
             <div className="dashboard-popular-list">
               {popularSongs.slice(0, 5).map((song) => (

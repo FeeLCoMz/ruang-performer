@@ -748,8 +748,17 @@ export async function fetchPopularSongs() {
     return { youtubeSongs: [] };
   }
 
-  return {
-    youtubeSongs: Array.isArray(payload?.trending) ? payload.trending : []
-  };
+  const trending = Array.isArray(payload?.trending) ? payload.trending : [];
+  const youtubeSongs = trending.map((item) => ({
+    id: item.videoId || item.id || item.youtubeId || item.title,
+    youtubeId: item.videoId || item.youtubeId || item.id || null,
+    title: item.title || item.snippet?.title || '',
+    artist: item.channelTitle || item.artist || item.snippet?.channelTitle || '',
+    thumbnail: item.thumbnailUrl || item.thumbnail || item.snippet?.thumbnails?.high?.url || null,
+    viewCount: item.viewCount || null,
+    publishedAt: item.publishedAt || null,
+  }));
+
+  return { youtubeSongs };
 }
 
