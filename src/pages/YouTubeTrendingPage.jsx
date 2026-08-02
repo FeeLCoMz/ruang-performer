@@ -289,7 +289,7 @@ export default function YouTubeTrendingPage({ performanceMode }) {
       .fetchYoutubeTrending()
       .then((data) => {
         if (cancelled) return;
-        setTrending(Array.isArray(data.trending) ? data.trending : []);
+        setTrending(Array.isArray(data?.trending) ? data.trending : []);
       })
       .catch((err) => {
         if (cancelled) return;

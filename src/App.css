@@ -1480,6 +1480,78 @@ body {
   display: none;
 }
 
+/* Inline trending panel on Songs page */
+.youtube-trending-inline-panel {
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.youtube-trending-inline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.youtube-trending-inline-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.youtube-trending-inline-header span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.youtube-trending-inline-list {
+  display: grid;
+  gap: 8px;
+}
+
+.youtube-trending-inline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+
+.youtube-trending-inline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.youtube-trending-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.youtube-trending-inline-btn {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+
+.youtube-trending-inline-rank {
+  color: var(--primary-accent);
+  font-weight: 700;
+  min-width: 28px;
+}
+
+.youtube-trending-inline-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.youtube-trending-inline-meta {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
 /* YouTube Trending Card Wrapper & Share Button */
 .youtube-trending-card-wrapper {
   position: relative;

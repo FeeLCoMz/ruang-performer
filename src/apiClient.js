@@ -185,6 +185,9 @@ export async function fetchSongs(options = {}) {
   if (options.bandId) {
     params.set('bandId', options.bandId);
   }
+  if (options.includeTrending) {
+    params.set('include', 'trending');
+  }
   const query = params.toString();
   const url = query ? `${API_BASE}/songs?${query}` : `${API_BASE}/songs`;
 
@@ -194,19 +197,22 @@ export async function fetchSongs(options = {}) {
     });
     if (!res.ok) throw new Error('Failed to fetch songs');
 
-    const songs = await res.json();
+    const payload = await res.json();
+    const songs = Array.isArray(payload) ? payload : Array.isArray(payload?.songs) ? payload.songs : [];
+    const trending = Array.isArray(payload?.trending) ? payload.trending : [];
+
     if (Array.isArray(songs)) {
       await cacheSongs(songs).catch(() => {});
     }
 
-    return songs;
+    return { songs, trending };
   } catch (error) {
     const cachedSongs = await getAllSongs().catch(() => []);
     if (Array.isArray(cachedSongs) && cachedSongs.length > 0) {
-      if (options.bandId) {
-        return cachedSongs.filter((song) => String(song?.bandId || '') === String(options.bandId));
-      }
-      return cachedSongs;
+      const songs = options.bandId
+        ? cachedSongs.filter((song) => String(song?.bandId || '') === String(options.bandId))
+        : cachedSongs;
+      return { songs, trending: [] };
     }
 
     throw error;
@@ -522,7 +528,7 @@ export async function deleteBand(id) {
 }
 
 export async function fetchYoutubeTrending() {
-  const res = await fetch(`${API_BASE}/youtube/trending`, {
+  const res = await fetch(`${API_BASE}/songs?include=trending`, {
     headers: getHeaders()
   });
   if (!res.ok) {
@@ -530,7 +536,10 @@ export async function fetchYoutubeTrending() {
     try { err = await res.json(); } catch {}
     throw new Error(err?.error || 'Failed to fetch YouTube trending');
   }
-  return await res.json();
+  const data = await res.json();
+  return {
+    trending: Array.isArray(data?.trending) ? data.trending : []
+  };
 }
 
 // Gigs API

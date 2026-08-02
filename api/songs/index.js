@@ -138,6 +138,48 @@ async function filterMasteryForViewer(client, songBandId, masteryList, viewerUse
   });
 }
 
+async function fetchYouTubeTrending() {
+  const apiKey = process.env.VITE_YOUTUBE_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  try {
+    const url = new URL('https://www.googleapis.com/youtube/v3/videos');
+    url.searchParams.set('part', 'snippet,statistics');
+    url.searchParams.set('chart', 'mostPopular');
+    url.searchParams.set('maxResults', '12');
+    url.searchParams.set('videoCategoryId', '10');
+    url.searchParams.set('regionCode', 'ID');
+    url.searchParams.set('key', apiKey);
+
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || response.statusText);
+    }
+
+    const data = await response.json();
+    return (data.items || []).map((item) => {
+      const snippet = item.snippet || {};
+      const thumbnails = snippet.thumbnails || {};
+      const thumbnail = thumbnails.high || thumbnails.medium || thumbnails.default || {};
+      return {
+        videoId: item.id,
+        title: snippet.title || '',
+        channelTitle: snippet.channelTitle || '',
+        publishedAt: snippet.publishedAt || '',
+        viewCount: item.statistics?.viewCount || null,
+        thumbnailUrl: thumbnail.url || '',
+        description: snippet.description || ''
+      };
+    });
+  } catch (error) {
+    console.error('YouTube trending error:', error);
+    return null;
+  }
+}
+
 async function handleSongMastery(req, res, client, songId) {
   const userId = req.user?.userId || req.user?.id;
   if (!userId) {
@@ -256,6 +298,7 @@ export default async function handler(req, res) {
       const userId = req.user?.userId || req.user?.id;
       const viewerId = String(userId || '');
       const requestedBandId = req.query?.bandId ? String(req.query.bandId) : null;
+      const includeTrending = String(req.query?.include || '').split(',').map((value) => value.trim()).filter(Boolean).includes('trending');
 
       if (requestedBandId) {
         const membership = await client.execute(
@@ -399,6 +442,12 @@ export default async function handler(req, res) {
           lastRating: row.lastPracticeRating == null ? null : Number(row.lastPracticeRating),
         },
       }));
+      if (includeTrending) {
+        const trending = await fetchYouTubeTrending();
+        res.status(200).json({ songs: list, trending: trending || [] });
+        return;
+      }
+
       res.status(200).json(list);
       return;
     }

@@ -8,7 +8,7 @@ import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
-import { fetchSetLists, fetchBands, updateSongMastery } from '../apiClient.js';
+import { fetchSetLists, fetchBands, updateSongMastery, addSong } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
@@ -32,7 +32,7 @@ function VirtualSongRow({ index, style, ariaAttributes, songs, renderSongItem })
   );
 }
 
-export default function SongListPage({ songs, loading, error, onSongClick, onSongMasteryUpdated, performanceMode = false }) {
+export default function SongListPage({ songs, loading, error, onSongClick, onSongMasteryUpdated, performanceMode = false, trendingSongs = [], onTrendingSongAdded }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id;
@@ -455,6 +455,44 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     setActiveVideoSong(song);
   }
 
+  async function handleAddTrendingSong(item) {
+    const title = item?.title || '';
+    const artist = item?.channelTitle || '';
+    const youtubeId = item?.videoId || '';
+
+    if (!title) return;
+
+    try {
+      const result = await addSong({ title, artist, youtubeId });
+      const createdSong = {
+        id: result?.id || `trending-${Date.now()}`,
+        title,
+        artist,
+        youtubeId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        contributorName: 'You',
+        canMarkMastery: true,
+        isMasteredByCurrentUser: false,
+        masteredBy: [],
+      };
+
+      if (typeof onTrendingSongAdded === 'function') {
+        onTrendingSongAdded(createdSong);
+      } else if (typeof onSongClick === 'function') {
+        onSongClick('add');
+      }
+    } catch (err) {
+      alert(err?.message || 'Gagal menambahkan lagu dari trending');
+    }
+  }
+
+  function handleOpenTrendingVideo(item) {
+    const videoId = item?.videoId || '';
+    if (!videoId) return;
+    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank', 'noopener,noreferrer');
+  }
+
   function isSongPlaying(songId) {
     if (isMetronomeActive && metronomeSongId === songId) return true;
     if (activeVideoSong?.id === songId) return true;
@@ -718,6 +756,42 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
           </button>
         )}
       </div>
+
+      {Array.isArray(trendingSongs) && trendingSongs.length > 0 && !performanceMode && (
+        <div className="card youtube-trending-inline-panel">
+          <div className="youtube-trending-inline-header">
+            <h3>📺 Trending YouTube</h3>
+            <span>{trendingSongs.length} lagu</span>
+          </div>
+          <div className="youtube-trending-inline-list">
+            {trendingSongs.slice(0, 4).map((item, index) => (
+              <div key={item.videoId || `${item.title}-${index}`} className="youtube-trending-inline-item">
+                <span className="youtube-trending-inline-rank">#{index + 1}</span>
+                <div className="youtube-trending-inline-content">
+                  <div className="youtube-trending-inline-title">{item.title}</div>
+                  <div className="youtube-trending-inline-meta">{item.channelTitle}</div>
+                </div>
+                <div className="youtube-trending-inline-actions">
+                  <button
+                    className="btn btn-secondary youtube-trending-inline-btn"
+                    type="button"
+                    onClick={() => handleOpenTrendingVideo(item)}
+                  >
+                    Buka YouTube
+                  </button>
+                  <button
+                    className="btn youtube-trending-inline-btn"
+                    type="button"
+                    onClick={() => handleAddTrendingSong(item)}
+                  >
+                    Tambah ke daftar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filters & Search */}
       {/* Search Bar + Voice Search: Selalu tampil */}
