@@ -34,8 +34,9 @@ export default function DashboardPage() {
 
     const setlistsData = setlistsResult.status === 'fulfilled' ? setlistsResult.value : [];
     const bandsData = bandsResult.status === 'fulfilled' ? bandsResult.value : [];
-    const songsData = songsResult.status === 'fulfilled' ? songsResult.value : [];
+    const songsPayload = songsResult.status === 'fulfilled' ? songsResult.value : [];
     const gigsData = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
+    const songsData = Array.isArray(songsPayload) ? songsPayload : Array.isArray(songsPayload?.songs) ? songsPayload.songs : [];
 
     if (setlistsResult.status === 'rejected' || bandsResult.status === 'rejected' || songsResult.status === 'rejected' || gigsResult.status === 'rejected') {
       setActivitiesError('Sebagian data aktivitas gagal dimuat. Silakan coba lagi.');
@@ -138,9 +139,10 @@ export default function DashboardPage() {
         apiClient.fetchPopularSongs(),
       ]);
 
-      const songsData = songsResult.status === 'fulfilled' ? songsResult.value : [];
+      const songsPayload = songsResult.status === 'fulfilled' ? songsResult.value : [];
       const gigsData = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
       const popularData = popularResult.status === 'fulfilled' ? popularResult.value : { youtubeSongs: [] };
+      const songsData = Array.isArray(songsPayload) ? songsPayload : Array.isArray(songsPayload?.songs) ? songsPayload.songs : [];
 
       if (!isMounted) return;
 

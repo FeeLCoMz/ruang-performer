@@ -205,14 +205,14 @@ export async function fetchSongs(options = {}) {
       await cacheSongs(songs).catch(() => {});
     }
 
-    return { songs, trending };
+    return options.includeTrending ? { songs, trending } : songs;
   } catch (error) {
     const cachedSongs = await getAllSongs().catch(() => []);
     if (Array.isArray(cachedSongs) && cachedSongs.length > 0) {
       const songs = options.bandId
         ? cachedSongs.filter((song) => String(song?.bandId || '') === String(options.bandId))
         : cachedSongs;
-      return { songs, trending: [] };
+      return options.includeTrending ? { songs, trending: [] } : songs;
     }
 
     throw error;

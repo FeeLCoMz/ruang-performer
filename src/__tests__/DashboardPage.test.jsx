@@ -44,6 +44,19 @@ describe('DashboardPage', () => {
   let root;
   let openSpy;
 
+  test('Given songs payload is an object, When dashboard loads, Then total songs count uses the songs array', async () => {
+    apiClient.fetchSongs.mockResolvedValue({ songs: [{ id: '1' }, { id: '2' }], trending: [] });
+    apiClient.fetchSetLists.mockResolvedValue([]);
+    apiClient.fetchBands.mockResolvedValue([]);
+    apiClient.fetchGigs.mockResolvedValue([]);
+    apiClient.fetchPopularSongs.mockResolvedValue({ youtubeSongs: [] });
+
+    await renderDashboard(root);
+
+    const songCount = findElementByText(container, '2');
+    expect(songCount).toBeTruthy();
+  });
+
   beforeEach(() => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
