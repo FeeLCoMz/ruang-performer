@@ -123,7 +123,41 @@ export default function SongChordsLyricsToolbar({
     <>
       <div className="song-lyrics-toolbar">
         {!isEditingLyrics && (
-          <>
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-actions">
+            {!performanceMode && canEdit && (
+              <button
+                type="button"
+                onClick={handleEditLyrics}
+                className="btn btn-primary"
+                title="Edit Lirik"
+              >
+                ✏️
+              </button>
+            )}
+
+            {!performanceMode && (
+              <div className="song-lyrics-export-menu-container">
+                <button
+                  type="button"
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="btn btn-secondary"
+                  title="Export"
+                >
+                  📥
+                </button>
+                <SongChordsExportMenu
+                  showExportMenu={showExportMenu}
+                  setShowExportMenu={setShowExportMenu}
+                  handleExportText={handleExportText}
+                  handleExportPDF={handleExportPDF}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isEditingLyrics && (
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-view">
             <button
               className="btn btn-secondary"
               title="Tampilkan lirik layar penuh"
@@ -176,7 +210,11 @@ export default function SongChordsLyricsToolbar({
                 </button>
               </>
             )}
+          </div>
+        )}
 
+        {!isEditingLyrics && (
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-autoscroll">
             <AutoScrollBar
               tempo={parseInt(tempo, 10) || 120}
               timeSignature={timeSignature || '4/4'}
@@ -188,7 +226,11 @@ export default function SongChordsLyricsToolbar({
               currentBeat={currentBeat}
               setCurrentBeat={setCurrentBeat}
             />
+          </div>
+        )}
 
+        {!isEditingLyrics && (
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">
             <div className="song-lyrics-transpose-controls" title="Transpose lirik/chord">
               {vocalMode && (
                 <button
@@ -301,41 +343,7 @@ export default function SongChordsLyricsToolbar({
                 </div>
               </>
             )}
-          </>
-        )}
-
-        {!isEditingLyrics && (
-          <>
-            {!performanceMode && canEdit && (
-              <button
-                type="button"
-                onClick={handleEditLyrics}
-                className="btn btn-primary"
-                title="Edit Lirik"
-              >
-                ✏️
-              </button>
-            )}
-
-            {!performanceMode && (
-              <div className="song-lyrics-export-menu-container">
-                <button
-                  type="button"
-                  onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="btn btn-secondary"
-                  title="Export"
-                >
-                  📥
-                </button>
-                <SongChordsExportMenu
-                  showExportMenu={showExportMenu}
-                  setShowExportMenu={setShowExportMenu}
-                  handleExportText={handleExportText}
-                  handleExportPDF={handleExportPDF}
-                />
-              </div>
-            )}
-          </>
+          </div>
         )}
       </div>
     </>
