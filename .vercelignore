@@ -7,8 +7,6 @@ api/__tests__/
 api/ai.js
 api/index.js
 api/server.js
-api/auth/2fa-setup.js
-api/auth/2fa-verify.js
 api/auth/change-password.js
 api/auth/delete-account.js
 api/auth/forgot-password.js
@@ -17,7 +15,7 @@ api/auth/user-audit-logs.js
 api/test-helpers/
 api/tools/
 api/users/
-api/youtube/
+#api/youtube/
 
 temp-inspect-file.js
 temp-parse.js
@@ -47,4 +45,3 @@ vite.config.js
 .DS_Store
 
 # === Project docs & misc ===
-
