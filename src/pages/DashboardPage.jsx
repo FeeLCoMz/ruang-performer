@@ -134,7 +134,7 @@ export default function DashboardPage() {
       setPopularSongsLoading(true);
 
       const [songsResult, gigsResult, popularResult] = await Promise.allSettled([
-        apiClient.fetchSongs(),
+        apiClient.fetchSongs({ includeTrending: true }),
         apiClient.fetchGigs(),
         apiClient.fetchPopularSongs(),
       ]);

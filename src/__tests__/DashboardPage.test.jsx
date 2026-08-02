@@ -80,6 +80,7 @@ describe('DashboardPage', () => {
   });
 
   test('Given popular songs fails, When user retries, Then error clears and songs render', async () => {
+    apiClient.fetchSongs.mockResolvedValue({ songs: [], trending: [] });
     apiClient.fetchPopularSongs
       .mockRejectedValueOnce(new Error('network error'))
       .mockResolvedValueOnce({
@@ -116,6 +117,17 @@ describe('DashboardPage', () => {
   });
 
   test('Given popular song item, When clicked, Then opens YouTube link with noopener and noreferrer', async () => {
+    apiClient.fetchSongs.mockResolvedValue({
+      songs: [],
+      trending: [
+        {
+          id: 'song-2',
+          youtubeId: 'safe123',
+          title: 'Safe Song',
+          artist: 'Secure Artist',
+        },
+      ],
+    });
     apiClient.fetchPopularSongs.mockResolvedValue({
       youtubeSongs: [
         {

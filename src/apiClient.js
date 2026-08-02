@@ -742,10 +742,14 @@ export async function resetUserPassword(userId, newPassword) {
 
 // Popular Songs API
 export async function fetchPopularSongs() {
-  const res = await fetch(`${API_BASE}/ai/popular-songs`, {
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch popular songs');
-  return await res.json();
+  const payload = await fetchSongs({ includeTrending: true });
+
+  if (Array.isArray(payload)) {
+    return { youtubeSongs: [] };
+  }
+
+  return {
+    youtubeSongs: Array.isArray(payload?.trending) ? payload.trending : []
+  };
 }
 

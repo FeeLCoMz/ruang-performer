@@ -70,7 +70,11 @@ async function readJson(req) {
 export default async function handler(req, res) {
   const url = req.url || '';
   if (url.startsWith('/song-search')) return await handleSongSearch(req, res);
-  if (url.startsWith('/popular-songs')) return await handlePopularSongs(req, res);
+  if (url.startsWith('/popular-songs')) {
+    return res.status(404).json({
+      error: 'Endpoint ini tidak digunakan lagi. Gunakan /api/songs?include=trending untuk data trending YouTube.'
+    });
+  }
   if (url.startsWith('/transcribe')) return await handleTranscribe(req, res);
   if (url.startsWith('/recommend-setlist')) return await handleRecommendSetlist(req, res);
   if (url.startsWith('/list-models')) return await handleListModels(req, res);
@@ -361,50 +365,7 @@ async function handleSongSearch(req, res) {
 }
 
 // --- Spotify helpers ---
-// Spotify integration removed: feature deprecated. Only YouTube popular tracks are returned now.
-
-// --- Popular Songs handler ---
-async function handlePopularSongs(req, res) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const youtubeApiKey = process.env.VITE_YOUTUBE_API_KEY;
-  const debug = {};
-  const youtubeSongs = [];
-
-  // Only fetch YouTube most popular tracks. Spotify integration removed.
-  if (youtubeApiKey) {
-    try {
-      const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&videoCategoryId=10&regionCode=ID&maxResults=10&key=${youtubeApiKey}`;
-      const response = await fetch(url);
-      if (!response.ok) {
-        debug.youtubeStatus = response.status;
-        console.error('YouTube trending API error:', response.status);
-      } else {
-        const data = await response.json();
-        youtubeSongs.push(...(data.items || []).map(item => ({
-          id: item.id,
-          title: item.snippet.title,
-          artist: item.snippet.channelTitle,
-          youtubeId: item.id,
-          thumbnail: item.snippet.thumbnails.default.url,
-          viewCount: item.statistics?.viewCount,
-          publishedAt: item.snippet.publishedAt
-        })));
-      }
-    } catch (error) {
-      debug.youtubeError = error.message;
-      console.error('YouTube popular songs error:', error);
-    }
-  } else {
-    debug.youtubeKeyMissing = true;
-  }
-
-  // Return only YouTube results; maintain previous response shape partially for compatibility.
-  return res.status(200).json({ youtubeSongs });
-}
+// Spotify integration removed: feature deprecated.
 
 // --- Transcribe handler ---
 async function handleTranscribe(req, res) {
