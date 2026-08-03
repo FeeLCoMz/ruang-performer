@@ -539,20 +539,24 @@ export default function ProfilePage() {
         {/* Tombol aksi diatur grid 2 kolom di desktop, 1 kolom di mobile */}
         <div className="profile-actions">
           <button className="btn btn-primary" type="button" onClick={() => { setEditModalKey(k => k+1); setShowEdit(true); }}>
-            <span role="img" aria-label="Edit" className="profile-action-icon">✏️</span> Edit Profil
+            <span role="img" aria-label="Edit" className="profile-action-icon">✏️</span>
+            <span className="profile-action-label">Edit</span>
           </button>
           <button className="btn btn-secondary" type="button" onClick={() => setShowPassword(true)}>
-            <span role="img" aria-label="Password" className="profile-action-icon">🔒</span> Ubah Password
+            <span role="img" aria-label="Password" className="profile-action-icon">🔒</span>
+            <span className="profile-action-label">Sandi</span>
           </button>
           <button className="btn" type="button" onClick={handleLogout}>
-            <span role="img" aria-label="Logout" className="profile-action-icon">🚪</span> Logout
+            <span role="img" aria-label="Logout" className="profile-action-icon">🚪</span>
+            <span className="profile-action-label">Keluar</span>
           </button>
           <button
             className="btn btn-danger"
             type="button"
             onClick={() => setShowDelete(true)}
           >
-            <span role="img" aria-label="Delete" className="profile-action-icon">🗑️</span> Hapus Akun
+            <span role="img" aria-label="Delete" className="profile-action-icon">🗑️</span>
+            <span className="profile-action-label">Hapus</span>
           </button>
         </div>
       </div>

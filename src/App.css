@@ -251,6 +251,10 @@
   margin-right: 6px;
 }
 
+.profile-action-label {
+  display: inline;
+}
+
 .profile-section-card {
   margin-top: 24px;
   padding: var(--spacing-xl);
@@ -1034,10 +1038,20 @@ body.lyrics-mode .setlist-song-info {
     gap: 2px;
   }
   .profile-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
   .profile-actions .btn {
-    min-height: 46px;
+    min-height: 42px;
+    padding: 10px 12px;
+    font-size: 0.92rem;
+    justify-content: center;
+  }
+  .profile-action-icon {
+    display: none;
+  }
+  .profile-action-label {
+    display: inline;
   }
   .profile-section-card {
     padding: var(--spacing-lg) var(--spacing-md);
@@ -1066,6 +1080,24 @@ body.lyrics-mode .setlist-song-info {
     gap: 10px;
   }
   .profile-actions {
+    width: 100%;
+  }
+
+  .profile-actions .btn {
+    justify-content: center;
+  }
+
+  .profile-action-label {
+    display: inline;
+  }
+}
+
+@media (max-width: 420px) {
+  .profile-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-actions .btn {
     width: 100%;
   }
 }
