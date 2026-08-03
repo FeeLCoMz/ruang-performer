@@ -1586,27 +1586,46 @@ body {
   position: absolute;
   top: 12px;
   right: 12px;
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 0.9em;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
   color: var(--text-primary);
   transition: all var(--transition-fast);
   z-index: 10;
   box-shadow: var(--shadow-sm);
+  touch-action: manipulation;
 }
 
 .youtube-trending-share-btn:hover {
   background: white;
   box-shadow: var(--shadow-md);
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .youtube-trending-share-btn:active {
   transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  .youtube-trending-share-btn {
+    top: 10px;
+    right: 10px;
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+  }
 }
 
 /* YouTube Share Modal Styles */

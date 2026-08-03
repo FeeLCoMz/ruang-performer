@@ -384,10 +384,12 @@ export default function YouTubeTrendingPage({ performanceMode }) {
                 {!performanceMode && (
                   <button
                     className="youtube-trending-share-btn"
+                    type="button"
                     onClick={(e) => handleShareClick(e, item)}
                     title="Bagikan lagu ini"
+                    aria-label={`Bagikan lagu: ${item.title}`}
                   >
-                    📤 Bagikan
+                    <span aria-hidden="true">📤</span>
                   </button>
                 )}
               </div>
