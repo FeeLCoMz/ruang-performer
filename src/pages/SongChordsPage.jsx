@@ -659,7 +659,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       />
 
       {/* Setlist Navigation (if in setlist context) */}
-      {setlistId &&
+      {!lyricsMode && setlistId &&
         setlistData.songs &&
         Array.isArray(setlistData.songs) &&
         (() => {
