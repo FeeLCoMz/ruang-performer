@@ -78,19 +78,30 @@ export default function SongChordsLyricsToolbar({
 }) {
   const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
   const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
+  const [isYoutubeReady, setIsYoutubeReady] = useState(false);
   const chordStyleMenuRef = useRef(null);
   const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
   const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
 
   // Sync YouTube playing state
   useEffect(() => {
-    if (!youtubeRef?.current) return;
-    const interval = setInterval(() => {
+    if (!youtubeRef?.current) {
+      setIsYoutubeReady(false);
+      setIsYoutubePlaying(false);
+      return;
+    }
+
+    const syncPlaybackState = () => {
       const state = youtubeRef.current?.getPlayerState?.();
-      setIsYoutubePlaying(state === 1);
-    }, 500);
+      const nextPlaying = state === 1;
+      setIsYoutubePlaying(nextPlaying);
+      setIsYoutubeReady(true);
+    };
+
+    syncPlaybackState();
+    const interval = setInterval(syncPlaybackState, 500);
     return () => clearInterval(interval);
-  }, [youtubeRef]);
+  }, [youtubeRef, youtubeId]);
 
   useEffect(() => {
     if (!showChordStyleMenu) return undefined;
@@ -169,7 +180,7 @@ export default function SongChordsLyricsToolbar({
                       setTimeout(() => {
                         const state = youtubeRef.current?.getPlayerState?.();
                         setIsYoutubePlaying(state === 1);
-                      }, 50);
+                      }, 100);
                     }
                   }}
                 >
