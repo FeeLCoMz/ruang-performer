@@ -7089,8 +7089,8 @@ body.dark-mode .cd-token {
 
 .media-panel-header {
   margin-bottom: var(--spacing-lg);
-  padding-bottom: var(--spacing-md);
-  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .media-panel-header-content {
