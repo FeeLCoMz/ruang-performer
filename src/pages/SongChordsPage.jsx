@@ -27,7 +27,7 @@ import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyrics
  * Props:
  *   - song: (optional) data lagu yang diterima dari parent
  */
-export default function SongChordsPage({ song: songProp, performanceMode = false, lyricsMode = false }) {
+export default function SongChordsPage({ song: songProp, performanceMode = false, lyricsMode = false, activeSetlist = null }) {
   // State untuk toggle tampilan partitur
   const [showSheetMusic, setShowSheetMusic] = useState(false);
   // =========================
@@ -35,7 +35,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // =========================
   const navigate = useNavigate();
   const location = useLocation();
-  const { id } = useParams();
+  const { id: songId, setlistId: routeSetlistId } = useParams();
   const { user } = useAuth();
 
   // =========================
@@ -51,15 +51,15 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // =========================
   // 3. State: Data Lagu (via custom hook)
   // =========================
-  const { song: fetchedSong, loading, error, setSong: setFetchedSong } = useSongFetch(id);
+  const { song: fetchedSong, loading, error, setSong: setFetchedSong } = useSongFetch(songId);
 
   // =========================
   // 4. State: Setlist Context
   // =========================
   // Metadata lagu dalam setlist (jika ada)
   const setlistSongData = location.state?.setlistSong || {};
-  const setlistData = location.state?.setlist || {};
-  const setlistId = location.state?.setlistId;
+  const setlistData = location.state?.setlist || activeSetlist || {};
+  const setlistId = location.state?.setlistId || activeSetlist?.id || routeSetlistId || null;
   const autoStartMetronome = location.state?.autoStartMetronome === true;
   const autoPlayVideo = location.state?.autoPlayVideo === true;
 
@@ -659,42 +659,39 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       />
 
       {/* Setlist Navigation (if in setlist context) */}
-      {!lyricsMode && setlistId &&
-        setlistData.songs &&
-        Array.isArray(setlistData.songs) &&
-        (() => {
-          const songsArr = setlistData.songs;
-          const idx = songsArr.findIndex((s) => (s.id || s._id) === song.id);
-          const totalSongs = songsArr.length;
-          const songNumber = idx >= 0 ? idx + 1 : null;
-          const navPrev = idx > 0 ? songsArr[idx - 1] : null;
-          const navNext = idx < totalSongs - 1 && idx >= 0 ? songsArr[idx + 1] : null;
-          const handlePrev = () => {
-            if (navPrev) {
-              navigate(`/setlists/${setlistId}/songs/${navPrev.id || navPrev._id}`, {
-                state: { setlistId, setlist: setlistData, setlistSong: navPrev },
-              });
-            }
-          };
-          const handleNext = () => {
-            if (navNext) {
-              navigate(`/setlists/${setlistId}/songs/${navNext.id || navNext._id}`, {
-                state: { setlistId, setlist: setlistData, setlistSong: navNext },
-              });
-            }
-          };
-          return (
-            <SetlistSongNavigator
-              navPrev={!!navPrev}
-              navNext={!!navNext}
-              songNumber={songNumber}
-              totalSongs={totalSongs}
-              onPrev={handlePrev}
-              onNext={handleNext}
-              compact={lyricsMode}
-            />
-          );
-        })()}
+      {setlistId && (() => {
+        const songsArr = Array.isArray(setlistData?.songs) ? setlistData.songs : [];
+        const idx = songsArr.findIndex((s) => (s.id || s._id) === song.id);
+        const totalSongs = songsArr.length;
+        const songNumber = idx >= 0 ? idx + 1 : null;
+        const navPrev = idx > 0 ? songsArr[idx - 1] : null;
+        const navNext = idx < totalSongs - 1 && idx >= 0 ? songsArr[idx + 1] : null;
+        const handlePrev = () => {
+          if (navPrev) {
+            navigate(`/setlists/${setlistId}/songs/${navPrev.id || navPrev._id}`, {
+              state: { setlistId, setlist: setlistData, setlistSong: navPrev },
+            });
+          }
+        };
+        const handleNext = () => {
+          if (navNext) {
+            navigate(`/setlists/${setlistId}/songs/${navNext.id || navNext._id}`, {
+              state: { setlistId, setlist: setlistData, setlistSong: navNext },
+            });
+          }
+        };
+        return (
+          <SetlistSongNavigator
+            navPrev={!!navPrev}
+            navNext={!!navNext}
+            songNumber={songNumber}
+            totalSongs={totalSongs || undefined}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            compact={lyricsMode}
+          />
+        );
+      })()}
 
       {/* Setlists containing this song */}
       {!performanceMode && !lyricsMode && song.id && !loadingSetlists && setlists.length > 0 && (() => {

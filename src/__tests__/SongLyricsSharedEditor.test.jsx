@@ -1,12 +1,40 @@
 import React from 'react';
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import VirtualPiano from '../components/VirtualPiano.jsx';
+import SongChordsPage from '../pages/SongChordsPage.jsx';
+
+vi.mock('../components/SetlistSongNavigator.jsx', () => ({
+  default: ({ compact }) => <div data-testid="setlist-navigator">{compact ? 'compact' : 'full'}</div>,
+}));
+
+vi.mock('../hooks/useSongFetch.js', () => ({
+  useSongFetch: () => ({
+    song: { id: '1', title: 'Song A', lyrics: '[C]Hello' },
+    loading: false,
+    error: null,
+    setSong: vi.fn(),
+  }),
+}));
+
+vi.mock('../contexts/AuthContext.jsx', () => ({
+  useAuth: () => ({ user: { role: 'member' } }),
+}));
+
+vi.mock('../hooks/usePermission.js', () => ({
+  usePermission: () => ({ can: () => true }),
+}));
+
+vi.mock('../apiClient.js', () => ({
+  fetchSetLists: vi.fn().mockResolvedValue([]),
+  updateSongMastery: vi.fn(),
+}));
 
 function noop() {}
 
@@ -343,6 +371,20 @@ describe('Song lyrics shared editor rendering', () => {
 
     expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Edit Lirik')).toBe(false);
     expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Export')).toBe(false);
+  });
+
+  test('Given vocalist mode is active in a setlist view, Then setlist navigator is still rendered', async () => {
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={['/setlists/10/songs/1']}>
+          <Routes>
+            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage lyricsMode={true} />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    expect(container.querySelector('[data-testid="setlist-navigator"]')).toBeTruthy();
   });
 
   test('Given song view edit mode, When piano note is selected, Then lyrics state receives note token', async () => {
