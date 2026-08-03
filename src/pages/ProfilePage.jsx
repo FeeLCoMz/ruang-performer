@@ -97,25 +97,54 @@ export default function ProfilePage() {
     fetchActivity();
   }, [profile]);
 
-  if (authLoading || profile === null) {
+  if (authLoading) {
     return (
       <div className="page-container">
         <div className="card profile-loading-card">
           <div className="spinner" aria-label="Memuat profil..." />
+          <p className="profile-loading-text">Memuat data profil akun...</p>
         </div>
       </div>
     );
   }
-  if (!profile) {
+  if (!user) {
     return (
       <div className="page-container">
-        <div className="card">
+        <div className="card profile-empty-card">
           <h2>Profil</h2>
-          <p>Anda belum login.</p>
+          <p className="profile-empty-text">Anda belum login. Silakan masuk terlebih dahulu untuk melihat profil.</p>
         </div>
       </div>
     );
   }
+
+  if (profile === null) {
+    return (
+      <div className="page-container">
+        <div className="card profile-loading-card">
+          <div className="spinner" aria-label="Memuat profil..." />
+          <p className="profile-loading-text">Menyiapkan detail profil terbaru...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const bandCount = Array.isArray(profile.bands) ? profile.bands.length : 0;
+  const genreCount = Array.isArray(profile.genres)
+    ? profile.genres.filter(Boolean).length
+    : profile.genres
+      ? 1
+      : 0;
+  const roleLabel = profile.role
+    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+    : "Member";
+  const memberSince = profile.createdAt
+    ? new Date(profile.createdAt).toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "-";
 
   // Handler for logout
   const handleLogout = () => {
@@ -142,7 +171,13 @@ export default function ProfilePage() {
   const DeleteAccountModal = () => (
     <div className="modal-overlay" onClick={() => setShowDelete(false)}>
       <div className="modal danger-modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Konfirmasi Hapus Akun</h2>
+        <div className="profile-modal-header">
+          <div className="profile-modal-eyebrow">Aksi berisiko</div>
+          <h2 className="profile-modal-title">Konfirmasi Hapus Akun</h2>
+          <p className="profile-modal-description">
+            Tindakan ini akan menghapus akun dan seluruh data terkait secara permanen.
+          </p>
+        </div>
         <p className="profile-delete-warning">
           Apakah Anda yakin ingin menghapus akun? Semua data Anda akan hilang dan tidak bisa
           dikembalikan.
@@ -220,7 +255,13 @@ export default function ProfilePage() {
     return (
       <div className="modal-overlay" onClick={() => { setShowEdit(false); setEditModalKey(k => k+1); }}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <h2>Edit Profil</h2>
+          <div className="profile-modal-header">
+            <div className="profile-modal-eyebrow">Perbarui identitas</div>
+            <h2 className="profile-modal-title">Edit Profil</h2>
+            <p className="profile-modal-description">
+              Ubah informasi akun agar profil tetap akurat dan mudah dikenali.
+            </p>
+          </div>
           <form onSubmit={handleSubmit} className="modal-form">
             <label>
               Nama Tampilan
@@ -339,7 +380,13 @@ export default function ProfilePage() {
     return (
       <div className="modal-overlay" onClick={() => setShowPassword(false)}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <h2>Ubah Password</h2>
+          <div className="profile-modal-header">
+            <div className="profile-modal-eyebrow">Keamanan akun</div>
+            <h2 className="profile-modal-title">Ubah Password</h2>
+            <p className="profile-modal-description">
+              Gunakan password baru yang kuat dan belum pernah dipakai sebelumnya.
+            </p>
+          </div>
           <form onSubmit={handleSubmit} className="modal-form">
             <label>
               Password Lama
@@ -401,6 +448,29 @@ export default function ProfilePage() {
         <h1>Profil Akun</h1>
       </div>
       <div className="card profile-card">
+        <div className="profile-hero">
+          <div>
+            <div className="profile-eyebrow">Akun aktif</div>
+            <h2 className="profile-title">{profile.displayName || "Profil pengguna"}</h2>
+            <p className="profile-subtitle">
+              {profile.email || "-"} · {roleLabel}
+            </p>
+          </div>
+          <div className="profile-quick-stats">
+            <div className="profile-quick-stat">
+              <span className="profile-quick-stat-label">Band</span>
+              <span className="profile-quick-stat-value">{bandCount}</span>
+            </div>
+            <div className="profile-quick-stat">
+              <span className="profile-quick-stat-label">Genre</span>
+              <span className="profile-quick-stat-value">{genreCount}</span>
+            </div>
+            <div className="profile-quick-stat">
+              <span className="profile-quick-stat-label">Gabung</span>
+              <span className="profile-quick-stat-value">{memberSince}</span>
+            </div>
+          </div>
+        </div>
         <div className="profile-main-row">
           <div className="profile-avatar">
             {profile.profilePicture ? (
@@ -488,9 +558,19 @@ export default function ProfilePage() {
       </div>
       {/* Statistik Aktivitas User */}
       <div className="card profile-section-card">
-        <h2>Statistik Aktivitas</h2>
+        <div className="profile-section-header">
+          <div>
+            <h2>Statistik Aktivitas</h2>
+            <p className="profile-section-description">
+              Ringkasan aktivitas terbaru dan distribusi event akun Anda.
+            </p>
+          </div>
+        </div>
         {activityLoading ? (
-          <div>Loading...</div>
+          <div className="profile-state-card">
+            <div className="spinner" aria-label="Memuat statistik aktivitas..." />
+            <p className="profile-state-title">Memuat statistik aktivitas...</p>
+          </div>
         ) : activityStats ? (
           <div className="statistik-grid">
             <div className="statistik-item">
@@ -545,18 +625,34 @@ export default function ProfilePage() {
             </div>
           </div>
         ) : (
-          <div>Tidak ada data aktivitas.</div>
+          <div className="profile-state-card profile-state-empty">
+            <p className="profile-state-title">Tidak ada data aktivitas.</p>
+            <p className="profile-state-text">Aktivitas baru akan muncul di sini setelah akun mulai digunakan.</p>
+          </div>
         )}
       </div>
       {/* Audit Log User */}
       <div className="card profile-section-card">
-        <h2>Riwayat Aktivitas (Audit Log)</h2>
+        <div className="profile-section-header">
+          <div>
+            <h2>Riwayat Aktivitas (Audit Log)</h2>
+            <p className="profile-section-description">
+              Catatan tindakan akun yang terbaru dan paling relevan.
+            </p>
+          </div>
+        </div>
         {auditLoading ? (
-          <div>Loading...</div>
+          <div className="profile-state-card">
+            <div className="spinner" aria-label="Memuat audit log..." />
+            <p className="profile-state-title">Memuat riwayat aktivitas...</p>
+          </div>
         ) : auditError ? (
           <div className="error-text">{auditError}</div>
         ) : auditLogs.length === 0 ? (
-          <div>Tidak ada aktivitas.</div>
+          <div className="profile-state-card profile-state-empty">
+            <p className="profile-state-title">Tidak ada riwayat aktivitas.</p>
+            <p className="profile-state-text">Audit log akan tampil setelah ada tindakan yang terekam oleh sistem.</p>
+          </div>
         ) : (
           <div className="auditlog-table">
             <div className="auditlog-header">
