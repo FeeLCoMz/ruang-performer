@@ -568,17 +568,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       />
 
       {!lyricsMode && (
-        <SongChordsAnalyzer
-          showChordAnalyzer={showChordAnalyzer}
-          setShowChordAnalyzer={setShowChordAnalyzer}
-          chordStats={chordStats}
-          transpose={transpose}
-          songKey={key}
-          onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-        />
-      )}
-
-      {!lyricsMode && (
         <SongChordsMediaPanel
           mediaPanelExpanded={mediaPanelExpanded}
           setMediaPanelExpanded={setMediaPanelExpanded}
@@ -588,6 +577,17 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
           performanceMode={performanceMode}
           canEdit={can(PERMISSIONS.SONG_EDIT)}
           handleTimeMarkerUpdate={handleTimeMarkerUpdate}
+        />
+      )}
+
+      {!lyricsMode && (
+        <SongChordsAnalyzer
+          showChordAnalyzer={showChordAnalyzer}
+          setShowChordAnalyzer={setShowChordAnalyzer}
+          chordStats={chordStats}
+          transpose={transpose}
+          songKey={key}
+          onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
         />
       )}
 
