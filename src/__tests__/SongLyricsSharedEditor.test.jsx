@@ -287,6 +287,64 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('World');
   });
 
+  test('Given vocalist mode is active, Then edit and export controls are hidden', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsLyricsToolbar
+          isEditingLyrics={false}
+          performanceMode={false}
+          lyricsMode={true}
+          canEdit={true}
+          tempo={120}
+          timeSignature={'4/4'}
+          autoScrollActive={false}
+          scrollSpeed={120}
+          setAutoScrollActive={noop}
+          setScrollSpeed={noop}
+          lyricsDisplayRef={{ current: null }}
+          currentBeat={0}
+          setCurrentBeat={noop}
+          transpose={0}
+          setTranspose={noop}
+          zoom={1}
+          setZoom={noop}
+          showChordNumbers={false}
+          setShowChordNumbers={noop}
+          showJazzChords={false}
+          setShowJazzChords={noop}
+          showSimpleChords={false}
+          setShowSimpleChords={noop}
+          keySignature={'C'}
+          handleEditLyrics={noop}
+          savingLyrics={false}
+          handleSaveLyrics={noop}
+          handleAlignSelectedBarlines={noop}
+          handleWrap4BarsPerLine={noop}
+          barsPerLine={4}
+          setBarsPerLine={noop}
+          handleWrapBarsPerLine={noop}
+          handleCancelEditLyrics={noop}
+          onOpenPiano={noop}
+          insertNotesToLyrics={true}
+          setInsertNotesToLyrics={noop}
+          insertNoteFormat={'bracket'}
+          setInsertNoteFormat={noop}
+          insertTrailingSpace={true}
+          setInsertTrailingSpace={noop}
+          showExportMenu={false}
+          setShowExportMenu={noop}
+          handleExportText={noop}
+          handleExportPDF={noop}
+          youtubeId={null}
+          youtubeRef={{ current: null }}
+        />
+      );
+    });
+
+    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Edit Lirik')).toBe(false);
+    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Export')).toBe(false);
+  });
+
   test('Given song view edit mode, When piano note is selected, Then lyrics state receives note token', async () => {
     await act(async () => {
       root.render(<SongViewEditorHarness />);

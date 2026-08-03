@@ -431,9 +431,9 @@ export default function SongChordsLyricsDisplay({
           {lyricsMode && (
             <span
               className="song-lyrics-fullscreen-style-badge mode-hidden"
-              title="Lirik Mode aktif"
+              title="Vocalist Mode aktif"
             >
-              Lirik Saja
+              Vocalist Focus
             </span>
           )}
           <button

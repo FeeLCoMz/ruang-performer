@@ -78,10 +78,10 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
             <button
               className={`btn btn-secondary ${lyricsMode ? ' active' : ''}`}
               onClick={() => setLyricsMode(v => !v)}
-              title={lyricsMode ? 'Nonaktifkan Lirik Mode' : 'Aktifkan Lirik Mode'}
-              aria-label="Toggle lirik mode"
+              title={lyricsMode ? 'Switch ke tampilan Player' : 'Switch ke tampilan Vocalist'}
+              aria-label="Toggle vocalist/player view"
             >
-              {lyricsMode ? '📝 Lirik' : '🎙️ Lirik'}
+              {lyricsMode ? '🎤 Vocalist' : '🎙️ Player'}
             </button>
           </div>
         </div>

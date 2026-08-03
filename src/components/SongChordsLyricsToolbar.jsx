@@ -120,7 +120,7 @@ export default function SongChordsLyricsToolbar({
   return (
     <>
       <div className="song-lyrics-toolbar">
-        {!isEditingLyrics && (
+        {!isEditingLyrics && !lyricsMode && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-actions">
             {!performanceMode && canEdit && (
               <button
@@ -156,9 +156,49 @@ export default function SongChordsLyricsToolbar({
 
         {!isEditingLyrics && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-view">
+            {youtubeId && youtubeRef && (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-secondary song-lyrics-youtube-btn"
+                  title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
+                  aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
+                  onClick={() => {
+                    if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
+                      youtubeRef.current.handleTogglePlayPause();
+                      setTimeout(() => {
+                        const state = youtubeRef.current?.getPlayerState?.();
+                        setIsYoutubePlaying(state === 1);
+                      }, 50);
+                    }
+                  }}
+                >
+                  <span aria-hidden="true">{isYoutubePlaying ? '⏸' : '▶'}</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary song-lyrics-youtube-btn"
+                  title="Putar dari awal"
+                  aria-label="Putar dari awal"
+                  onClick={() => {
+                    if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
+                      youtubeRef.current.handleSeek(0);
+                      setTimeout(() => {
+                        const state = youtubeRef.current?.getPlayerState?.();
+                        setIsYoutubePlaying(state === 1);
+                      }, 50);
+                    }
+                  }}
+                >
+                  <span aria-hidden="true">↺</span>
+                </button>
+              </>
+            )}
             <button
-              className="btn btn-secondary"
+              type="button"
+              className="btn btn-primary song-lyrics-fullscreen-btn"
               title="Tampilkan lirik layar penuh"
+              aria-label="Buka layar penuh"
               onClick={() => {
                 const el = document.querySelector(".song-lyrics-display");
                 if (el && el.requestFullscreen) {
@@ -170,44 +210,9 @@ export default function SongChordsLyricsToolbar({
                 }
               }}
             >
-              🖥️
+              <span aria-hidden="true">⛶</span>
+              <span className="song-lyrics-fullscreen-btn-label">Full screen</span>
             </button>
-
-            {youtubeId && youtubeRef && (
-              <>
-                <button
-                  className="btn btn-secondary"
-                  title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-                  onClick={() => {
-                    if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
-                      youtubeRef.current.handleTogglePlayPause();
-                      // Update state setelah toggle
-                      setTimeout(() => {
-                        const state = youtubeRef.current?.getPlayerState?.();
-                        setIsYoutubePlaying(state === 1);
-                      }, 50);
-                    }
-                  }}
-                >
-                  {isYoutubePlaying ? '⏸️ Pause' : '▶️ Play'}
-                </button>
-                <button
-                  className="btn btn-secondary"
-                  title="Putar dari awal"
-                  onClick={() => {
-                    if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
-                      youtubeRef.current.handleSeek(0);
-                      setTimeout(() => {
-                        const state = youtubeRef.current?.getPlayerState?.();
-                        setIsYoutubePlaying(state === 1);
-                      }, 50);
-                    }
-                  }}
-                >
-                  ⏮️ Restart
-                </button>
-              </>
-            )}
           </div>
         )}
 

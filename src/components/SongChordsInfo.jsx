@@ -55,12 +55,24 @@ export default function SongChordsInfo({
           {!performanceMode && !lyricsMode && (
             <div className="song-title-actions">
               {canEdit && (
-                <button type="button" onClick={onEdit} className="btn btn-secondary" title="Edit lagu">
-                  ✏️ Edit
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  className="btn btn-secondary song-detail-action-btn"
+                  title="Edit lagu"
+                  aria-label="Edit lagu"
+                >
+                  <span aria-hidden="true">✎</span>
                 </button>
               )}
-              <button type="button" onClick={onShare} className="btn btn-secondary" title="Bagikan lagu">
-                🔗 Bagikan
+              <button
+                type="button"
+                onClick={onShare}
+                className="btn btn-secondary song-detail-action-btn"
+                title="Bagikan lagu"
+                aria-label="Bagikan lagu"
+              >
+                <span aria-hidden="true">↗</span>
               </button>
             </div>
           )}
@@ -70,23 +82,25 @@ export default function SongChordsInfo({
           {artist && (
             <h2 className="song-artist-main">{artist}</h2>
           )}
-          {contributor && !performanceMode && (
+          {contributor && !performanceMode && !lyricsMode && (
             <div className="song-contributor-main">Kontributor: {contributor}</div>
           )}
-          {!performanceMode && shareMessage && (
+          {!performanceMode && !lyricsMode && shareMessage && (
             <div className="info-text song-info-share-message">{shareMessage}</div>
           )}
         </div>
       )}
-      <div className="song-info-compact-header">
-        <ExpandButton
-          isExpanded={showSongInfo}
-          setIsExpanded={setShowSongInfo}
-          icon="📋"
-          label="Info Lagu"
-          ariaLabel={showSongInfo ? 'Sembunyikan info lagu' : 'Tampilkan info lagu'}
-        />
-      </div>
+      {!lyricsMode && (
+        <div className="song-info-compact-header">
+          <ExpandButton
+            isExpanded={showSongInfo}
+            setIsExpanded={setShowSongInfo}
+            icon="📋"
+            label="Info Lagu"
+            ariaLabel={showSongInfo ? 'Sembunyikan info lagu' : 'Tampilkan info lagu'}
+          />
+        </div>
+      )}
       {showSongInfo && !lyricsMode && (
         <div className="song-info-compact-grid">
           {(originalKey || targetKey) && (

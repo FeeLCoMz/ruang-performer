@@ -289,9 +289,10 @@ function AppContent() {
               <button
                 className={`btn btn-secondary ${lyricsMode ? " active" : ""}`}
                 onClick={() => setLyricsMode((v) => !v)}
-                title={lyricsMode ? "Nonaktifkan Lirik Mode" : "Aktifkan Lirik Mode"}
+                title={lyricsMode ? "Switch ke tampilan Player" : "Switch ke tampilan Vocalist"}
+                aria-label="Toggle vocalist/player view"
               >
-                {lyricsMode ? "📝 Lirik" : "🎙️ Lirik"}
+                {lyricsMode ? "🎤 Vocalist" : "🎙️ Player"}
               </button>
             </div>
           </header>

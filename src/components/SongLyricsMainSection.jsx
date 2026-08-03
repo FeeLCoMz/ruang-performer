@@ -77,7 +77,7 @@ export default function SongLyricsMainSection({
           isExpanded={lyricsPanelExpanded}
           setIsExpanded={setLyricsPanelExpanded}
           icon="🎤"
-          label={lyricsMode ? 'Lirik Mode' : 'Lirik & Chord'}
+          label={lyricsMode ? 'Vocalist Mode' : 'Lirik & Chord'}
           ariaLabel={lyricsPanelExpanded ? 'Sembunyikan panel lirik' : 'Tampilkan panel lirik'}
         />
         {lyricsPanelExpanded && (
