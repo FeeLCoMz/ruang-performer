@@ -41,18 +41,37 @@ export default function SongChordsInfo({
   isMasteredByCurrentUser = false,
   onToggleMastery,
   masteryUpdating = false,
+  pianoRecommendation = null,
+  onApplyRecommendedTranspose,
 }) {
   const masteredNames = (Array.isArray(masteredBy) ? masteredBy : [])
     .map((entry) => entry?.username)
     .filter(Boolean)
     .join(', ');
+  const showActions = !performanceMode && !lyricsMode;
+  const showMetadata = performanceMode || lyricsMode || showSongInfo;
+  const showMinimalMetadata = performanceMode || lyricsMode;
+  const metadataItems = [];
+
+  if (originalKey || targetKey) {
+    metadataItems.push(`Key: ${targetKey || originalKey}`);
+  }
+  if (tempo) {
+    metadataItems.push(`Tempo: ${tempo}`);
+  }
+  if (timeSignature) {
+    metadataItems.push(`Time: ${timeSignature}`);
+  }
+  if (lyricsOriginalKey) {
+    metadataItems.push(`Original: ${lyricsOriginalKey}`);
+  }
 
   return (
     <div className="song-panel">
       {/* Judul dan artis selalu di atas info lain */}
       {(title || artist || contributor || !performanceMode) && (
         <div className="song-title-artist-block">
-          {!performanceMode && !lyricsMode && (
+          {showActions && (
             <div className="song-title-actions">
               {canEdit && (
                 <button
@@ -82,15 +101,15 @@ export default function SongChordsInfo({
           {artist && (
             <h2 className="song-artist-main">{artist}</h2>
           )}
-          {contributor && !performanceMode && !lyricsMode && (
+          {contributor && showActions && (
             <div className="song-contributor-main">Kontributor: {contributor}</div>
           )}
-          {!performanceMode && !lyricsMode && shareMessage && (
+          {shareMessage && showActions && (
             <div className="info-text song-info-share-message">{shareMessage}</div>
           )}
         </div>
       )}
-      {!lyricsMode && (
+      {showActions && (
         <div className="song-info-compact-header">
           <ExpandButton
             isExpanded={showSongInfo}
@@ -101,88 +120,117 @@ export default function SongChordsInfo({
           />
         </div>
       )}
-      {showSongInfo && !lyricsMode && (
-        <div className="song-info-compact-grid">
-          {(originalKey || targetKey) && (
-            <div className="song-info-item song-info-priority song-info-key">
-              <span className="song-info-label">🎹 Key</span>
-              <TransposeKeyControl
-                originalKey={originalKey}
-                targetKey={targetKey}
-                transpose={transpose}
-                onTransposeChange={setTranspose}
-              />
+      {showMetadata && (
+        <div className={`song-info-compact-grid ${showMinimalMetadata ? 'song-info-compact-grid-minimal' : ''}`}>
+          {showMinimalMetadata ? (
+            <div className="song-info-item song-info-priority song-info-inline-strip">
+              <span className="song-info-inline-text">
+                {metadataItems.join(' • ')}
+              </span>
             </div>
-           )}
-          {lyricsOriginalKey && (
-            <div className="song-info-item">
-              <span className="song-info-label">🎵 Nada Asli</span>
-              <span className="song-info-value">{lyricsOriginalKey}</span>
-            </div>
+          ) : (
+            <>
+              {(originalKey || targetKey) && (
+                <div className="song-info-item song-info-priority song-info-key">
+                  <span className="song-info-label">🎹 Key</span>
+                  <TransposeKeyControl
+                    originalKey={originalKey}
+                    targetKey={targetKey}
+                    transpose={transpose}
+                    onTransposeChange={setTranspose}
+                  />
+                </div>
+              )}
+              {lyricsOriginalKey && (
+                <div className="song-info-item">
+                  <span className="song-info-label">🎵 Nada Asli</span>
+                  <span className="song-info-value">{lyricsOriginalKey}</span>
+                </div>
+              )}
+              {timeSignature && (
+                <div className="song-info-item">
+                  <span className="song-info-label">🎼 Time</span>
+                  <span className="song-info-value">{timeSignature}</span>
+                </div>
+              )}
+              {tempo && (
+                <div className="song-info-item song-info-tempo-item">
+                  <span className="song-info-label">⏱️ Tempo</span>
+                  <TempoControl
+                    tempo={tempo}
+                    scrollSpeed={scrollSpeed}
+                    setScrollSpeed={setScrollSpeed}
+                    isMetronomeActive={isMetronomeActive}
+                    setIsMetronomeActive={setIsMetronomeActive}
+                  />
+                </div>
+              )}
+              {!showMinimalMetadata && genre && (
+                <div className="song-info-item">
+                  <span className="song-info-label">🎸 Genre</span>
+                  <span className="song-info-value">{genre}</span>
+                </div>
+              )}
+              {!showMinimalMetadata && arrangementStyle && (
+                <div className="song-info-item song-info-block song-info-block-arrangement">
+                  <span className="song-info-label">🎷 Aransemen</span>
+                  <span className="song-info-value">{arrangementStyle}</span>
+                </div>
+              )}
+              {!showMinimalMetadata && keyboardPatch && (
+                <div className="song-info-item song-info-block song-info-block-keyboard">
+                  <span className="song-info-label">🎹 Keyboard Patch</span>
+                  <span className="song-info-value">{keyboardPatch}</span>
+                </div>
+              )}
+              {!showMinimalMetadata && (
+                <div className="song-info-item song-info-mastery-block">
+                  <span className="song-info-label">✅ Sudah Dikuasai</span>
+                  <span className="song-info-value song-info-mastery-count">
+                    {Array.isArray(masteredBy) ? masteredBy.length : 0} orang
+                  </span>
+                  {masteredNames && (
+                    <p className="song-info-mastery-members">{masteredNames}</p>
+                  )}
+                  <button
+                    type="button"
+                    className={`btn song-info-mastery-btn ${isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
+                    onClick={onToggleMastery}
+                    disabled={!canMarkMastery || masteryUpdating}
+                    title={canMarkMastery ? 'Tandai lagu ini sudah dikuasai' : 'Anda belum bisa menandai lagu ini'}
+                  >
+                    {masteryUpdating
+                      ? 'Menyimpan...'
+                      : (canMarkMastery
+                        ? (isMasteredByCurrentUser ? 'Sudah Kuasai' : 'Belum Kuasai')
+                        : 'Belum Bisa Tandai')}
+                  </button>
+                  {!canMarkMastery && (
+                    <p className="song-info-mastery-note">
+                      Tombol aktif saat Anda bisa menandai lagu.
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
           )}
-          {timeSignature && (
-            <div className="song-info-item">
-              <span className="song-info-label">🎼 Time</span>
-              <span className="song-info-value">{timeSignature}</span>
-            </div>
-          )}
-          {tempo && (
-            <div className="song-info-item song-info-tempo-item">
-              <span className="song-info-label">⏱️ Tempo</span>
-              <TempoControl
-                tempo={tempo}
-                scrollSpeed={scrollSpeed}
-                setScrollSpeed={setScrollSpeed}
-                isMetronomeActive={isMetronomeActive}
-                setIsMetronomeActive={setIsMetronomeActive}
-              />
-            </div>
-          )}
-          {genre && (
-            <div className="song-info-item">
-              <span className="song-info-label">🎸 Genre</span>
-              <span className="song-info-value">{genre}</span>
-            </div>
-          )}
-          {arrangementStyle && (
-            <div className="song-info-item song-info-block song-info-block-arrangement">
-              <span className="song-info-label">🎷 Aransemen</span>
-              <span className="song-info-value">{arrangementStyle}</span>
-            </div>
-          )}
-          {keyboardPatch && (
-            <div className="song-info-item song-info-block song-info-block-keyboard">
-              <span className="song-info-label">🎹 Keyboard Patch</span>
-              <span className="song-info-value">{keyboardPatch}</span>
-            </div>
-          )}
-          <div className="song-info-item song-info-mastery-block">
-            <span className="song-info-label">✅ Sudah Dikuasai</span>
-            <span className="song-info-value song-info-mastery-count">
-              {Array.isArray(masteredBy) ? masteredBy.length : 0} orang
-            </span>
-            {masteredNames && (
-              <p className="song-info-mastery-members">{masteredNames}</p>
-            )}
+        </div>
+      )}
+      {performanceMode && pianoRecommendation?.recommendedKey && (
+        <div className="song-info-item song-info-piano-reco-block">
+          <span className="song-info-label">🎹 Rekomendasi Nada Dasar</span>
+          <span className="song-info-value">{pianoRecommendation.recommendedKey}</span>
+          {typeof onApplyRecommendedTranspose === 'function' && (
             <button
               type="button"
-              className={`btn song-info-mastery-btn ${isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
-              onClick={onToggleMastery}
-              disabled={!canMarkMastery || masteryUpdating}
-              title={canMarkMastery ? 'Tandai lagu ini sudah dikuasai' : 'Anda belum bisa menandai lagu ini'}
+              className="btn btn-secondary song-info-piano-reco-btn"
+              onClick={() => onApplyRecommendedTranspose(pianoRecommendation.transposeFromCurrent)}
+              disabled={pianoRecommendation.transposeFromCurrent === 0}
+              title="Terapkan transpose rekomendasi nada dasar keyboard"
             >
-              {masteryUpdating
-                ? 'Menyimpan...'
-                : (canMarkMastery
-                  ? (isMasteredByCurrentUser ? 'Sudah Kuasai' : 'Belum Kuasai')
-                  : 'Belum Bisa Tandai')}
+              Terapkan Rekomendasi
             </button>
-            {!canMarkMastery && (
-              <p className="song-info-mastery-note">
-                Tombol aktif saat Anda bisa menandai lagu.
-              </p>
-            )}
-          </div>
+          )}
         </div>
       )}
     </div>

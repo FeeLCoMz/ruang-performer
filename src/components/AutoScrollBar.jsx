@@ -218,6 +218,7 @@ export default function AutoScrollBar({
   setCurrentBeat,
   hideUi = false,
   forceSnapMode = false,
+  compactMode = false,
 }) {
   const normalizeSpeed = (value) => Math.max(40, Math.min(240, Number(value) || 40));
   const [scrolling, setScrolling] = useState(active);
@@ -424,69 +425,71 @@ export default function AutoScrollBar({
           {scrolling ? '⏸️' : '▶️'}
         </button>
 
-        {/* Compact Tempo Control */}
-        <div className="auto-scroll-tempo-compact">
-          <input
-            type="range"
-            min={40}
-            max={240}
-            value={currentSpeed}
-            onChange={(e) => handleSpeedChange(e.target.value)}
-            className="auto-scroll-tempo-slider"
-            title="Sesuaikan kecepatan (BPM)"
-          />
-          <input
-            type="number"
-            min={40}
-            max={240}
-            value={currentSpeed}
-            onChange={(e) => handleSpeedChange(e.target.value)}
-            className="auto-scroll-tempo-input-mini"
-            title="BPM"
-          />
-        </div>
+        {!compactMode && (
+          <div className="auto-scroll-tempo-compact">
+            <input
+              type="range"
+              min={40}
+              max={240}
+              value={currentSpeed}
+              onChange={(e) => handleSpeedChange(e.target.value)}
+              className="auto-scroll-tempo-slider"
+              title="Sesuaikan kecepatan (BPM)"
+            />
+            <input
+              type="number"
+              min={40}
+              max={240}
+              value={currentSpeed}
+              onChange={(e) => handleSpeedChange(e.target.value)}
+              className="auto-scroll-tempo-input-mini"
+              title="BPM"
+            />
+          </div>
+        )}
 
-        {/* Menu Toggle (Mode & Reset) */}
-        <div className="auto-scroll-menu-container">
-          <button
-            className="auto-scroll-menu-toggle"
-            onClick={() => setShowMenu(!showMenu)}
-            title="Opsi lanjut"
-            type="button"
-          >
-            ⋮
-          </button>
+        {!compactMode && (
+          <div className="auto-scroll-menu-container">
+            <button
+              className="auto-scroll-menu-toggle"
+              onClick={() => setShowMenu(!showMenu)}
+              title="Opsi lanjut"
+              type="button"
+            >
+              ⋮
+            </button>
 
-          {showMenu && (
-            <div className="auto-scroll-menu-dropdown">
-              <button
-                className={`auto-scroll-menu-item ${scrollMode === 'smooth' ? 'active' : ''}`}
-                type="button"
-                onClick={() => {
-                  setScrollMode((mode) => (mode === 'snap' ? 'smooth' : 'snap'));
-                }}
-                title={scrollMode === 'snap' ? 'Smooth: scroll gradual' : 'Snap: scroll per baris'}
-              >
-                {scrollMode === 'snap' ? '◉ Snap' : '◉ Smooth'}
-              </button>
+            {showMenu && (
+              <div className="auto-scroll-menu-dropdown">
+                <button
+                  className={`auto-scroll-menu-item ${scrollMode === 'smooth' ? 'active' : ''}`}
+                  type="button"
+                  onClick={() => {
+                    setScrollMode((mode) => (mode === 'snap' ? 'smooth' : 'snap'));
+                  }}
+                  title={scrollMode === 'snap' ? 'Smooth: scroll gradual' : 'Snap: scroll per baris'}
+                >
+                  {scrollMode === 'snap' ? '◉ Snap' : '◉ Smooth'}
+                </button>
 
-              <button
-                className="auto-scroll-menu-item auto-scroll-reset-mini"
-                type="button"
-                onClick={handleResetTempo}
-                disabled={isDefaultTempo}
-                title="Kembalikan ke tempo default"
-              >
-                Reset
-              </button>
-            </div>
-          )}
-        </div>
+                <button
+                  className="auto-scroll-menu-item auto-scroll-reset-mini"
+                  type="button"
+                  onClick={handleResetTempo}
+                  disabled={isDefaultTempo}
+                  title="Kembalikan ke tempo default"
+                >
+                  Reset
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       )}
 
       {/* Beat Indicator - Minimized */}
-      {!hideUi && scrolling && (
+      {!hideUi && scrolling && !compactMode && (
         <div className="auto-scroll-beats-minimal">
           <div className="auto-scroll-beat-dots">
             {Array.from({ length: beatsPerBar }, (_, i) => i).map((i) => (

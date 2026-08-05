@@ -10,16 +10,34 @@ import { transposeChord, getNoteIndex, getTransposeSteps } from '../utils/chordU
  * @param {boolean} compact - Optional compact mode for smaller display
  */
 export default function TransposeKeyControl({ originalKey, targetKey, transpose, onTransposeChange, compact = false }) {
-  // Kalkulasi otomatis transpose jika targetKey berbeda dengan originalKey
+  const safeOnTransposeChange = React.useCallback((nextValue) => {
+    if (typeof onTransposeChange === 'function') {
+      onTransposeChange(nextValue);
+    }
+  }, [onTransposeChange]);
+  const appliedKeyPairRef = React.useRef(null);
+
+  // Terapkan transpose otomatis hanya saat pasangan key pertama kali dipasang atau berubah.
+  // Setelah pengguna mengubah transpose manual, jangan mengoverride nilai tersebut.
   React.useEffect(() => {
-    if (!originalKey || !targetKey) return;
+    if (!originalKey || !targetKey) {
+      appliedKeyPairRef.current = null;
+      return;
+    }
+
+    const keyPair = `${originalKey}::${targetKey}`;
+    if (appliedKeyPairRef.current === keyPair) {
+      return;
+    }
+
+    appliedKeyPairRef.current = keyPair;
     const steps = getTransposeSteps(originalKey, targetKey);
     if (steps !== null && steps !== transpose) {
-      onTransposeChange(steps);
+      safeOnTransposeChange(steps);
     } else if (steps === 0 && transpose !== 0) {
-      onTransposeChange(0);
+      safeOnTransposeChange(0);
     }
-  }, [originalKey, targetKey]);
+  }, [originalKey, targetKey, transpose, safeOnTransposeChange]);
   // Calculate transposed key menggunakan chordUtils
   const getTransposedKey = (key, semitones) => {
     if (!key || semitones === 0) return key;
@@ -29,16 +47,16 @@ export default function TransposeKeyControl({ originalKey, targetKey, transpose,
   const transposedKey = getTransposedKey(originalKey, transpose);
 
   const handleTransposeDown = () => {
-    onTransposeChange(transpose - 1);
+    safeOnTransposeChange(transpose - 1);
   };
 
   const handleTransposeUp = () => {
-    onTransposeChange(transpose + 1);
+    safeOnTransposeChange(transpose + 1);
   };
 
   const handleReset = () => {
     if (transpose !== 0) {
-      onTransposeChange(0);
+      safeOnTransposeChange(0);
     }
   };
 

@@ -73,14 +73,16 @@ export default function SongLyricsMainSection({
   return (
     <div className="song-panel song-lyrics-main">
       <div className="song-lyrics-main-header">
-        <ExpandButton
-          isExpanded={lyricsPanelExpanded}
-          setIsExpanded={setLyricsPanelExpanded}
-          icon="🎤"
-          label={lyricsMode ? 'Vocalist Mode' : 'Lirik & Chord'}
-          ariaLabel={lyricsPanelExpanded ? 'Sembunyikan panel lirik' : 'Tampilkan panel lirik'}
-        />
-        {lyricsPanelExpanded && (
+        {!performanceMode && (
+          <ExpandButton
+            isExpanded={lyricsPanelExpanded}
+            setIsExpanded={setLyricsPanelExpanded}
+            icon="🎤"
+            label={lyricsMode ? 'Vocalist Mode' : 'Lirik & Chord'}
+            ariaLabel={lyricsPanelExpanded ? 'Sembunyikan panel lirik' : 'Tampilkan panel lirik'}
+          />
+        )}
+        {(lyricsPanelExpanded || performanceMode) && (
           <SongChordsLyricsToolbar
             isEditingLyrics={isEditingLyrics}
             performanceMode={performanceMode}
@@ -176,6 +178,7 @@ export default function SongLyricsMainSection({
               isEditingLyrics={isEditingLyrics}
               lyricsDisplayRef={lyricsDisplayRef}
               song={song}
+              performanceMode={performanceMode}
               transpose={transpose}
               setTranspose={setTranspose}
               showChords={showChords}

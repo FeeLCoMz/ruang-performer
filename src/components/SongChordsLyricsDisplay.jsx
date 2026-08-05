@@ -33,6 +33,7 @@ export default function SongChordsLyricsDisplay({
   editedLyrics,
   setEditedLyrics,
   song,
+  performanceMode = false,
   transpose,
   setTranspose,
   showChords,
@@ -218,7 +219,6 @@ export default function SongChordsLyricsDisplay({
 
   const normalizedBpm = Math.max(40, Math.min(240, Number(song?.tempo) || 120));
   const normalizedScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedBpm));
-  const blinkDurationMs = Math.round(60000 / normalizedBpm);
   const effectiveShowChords = lyricsMode ? false : showChords;
   const currentChordModeKey = !effectiveShowChords
     ? 'hidden'
@@ -293,7 +293,7 @@ export default function SongChordsLyricsDisplay({
         role="group"
         aria-label="Kontrol fullscreen lirik"
       >
-        {!lyricsMode && (
+        {!lyricsMode && !performanceMode && (
           <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Transpose">
             <span className="song-lyrics-fullscreen-control-label">Tr</span>
             <button
@@ -459,19 +459,6 @@ export default function SongChordsLyricsDisplay({
       {zoomHudVisible && (
         <div className="song-lyrics-zoom-hud" aria-live="polite">Zoom {zoomHudText}</div>
       )}
-      <div
-        className={`song-lyrics-fullscreen-tempo-led-row${isFullscreen ? ' song-lyrics-fullscreen-tempo-led-row-compact' : ''}`}
-        title={`Tempo ${normalizedBpm} BPM`}
-      >
-        <span
-          className="song-info-tempo-led"
-          style={{ animationDuration: `${blinkDurationMs}ms` }}
-          aria-hidden="true"
-        />
-        <span className={`song-lyrics-fullscreen-tempo-led-text${isFullscreen ? ' song-lyrics-fullscreen-tempo-led-text-compact' : ''}`}>
-          {isFullscreen ? `${normalizedBpm}` : `Tempo ${normalizedBpm} BPM`}
-        </span>
-      </div>
       {/* Tombol Lihat Partitur (selalu tampil jika ada MusicXML) */}
       {!isFullscreen && !lyricsMode && song?.sheetMusicXml && (
         <button
@@ -482,7 +469,7 @@ export default function SongChordsLyricsDisplay({
         </button>
       )}
       {/* Tampilkan partitur jika diaktifkan */}
-      {!lyricsMode && showSheetMusic && song?.sheetMusicXml && (
+        {!lyricsMode && !performanceMode && showSheetMusic && song?.sheetMusicXml && (
         <SongSheetMusic sheetMusicXml={song.sheetMusicXml} />
       )}
       <ChordDisplay

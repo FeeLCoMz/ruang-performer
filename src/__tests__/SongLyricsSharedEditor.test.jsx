@@ -7,6 +7,8 @@ import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
+import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
+import TransposeKeyControl from '../components/TransposeKeyControl.jsx';
 import VirtualPiano from '../components/VirtualPiano.jsx';
 import SongChordsPage from '../pages/SongChordsPage.jsx';
 
@@ -303,6 +305,254 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-title-actions')).toBeFalsy();
     expect(container.textContent).toContain('Song A');
     expect(container.textContent).toContain('Artist A');
+  });
+
+  test('Given performance mode is active, Then song info metadata remains visible', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          contributor="Contributor"
+          performanceMode={true}
+          lyricsMode={false}
+          canEdit={true}
+          onEdit={noop}
+          onShare={noop}
+          shareMessage="Shared"
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          originalKey="C"
+          targetKey="D"
+          tempo="120"
+          timeSignature="4/4"
+          genre="Rock"
+        />
+      );
+    });
+
+    expect(container.querySelector('.song-title-actions')).toBeFalsy();
+    expect(container.querySelector('.song-info-compact-grid')).toBeTruthy();
+    expect(container.textContent).toContain('Song A');
+    expect(container.textContent).toContain('Artist A');
+    expect(container.textContent).toContain('Key');
+    expect(container.textContent).toContain('Tempo');
+  });
+
+  test('Given performance mode is active with piano recommendation, Then recommendation button is visible', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          contributor="Contributor"
+          performanceMode={true}
+          lyricsMode={false}
+          canEdit={true}
+          onEdit={noop}
+          onShare={noop}
+          shareMessage="Shared"
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          pianoRecommendation={{ recommendedKey: 'C', transposeFromCurrent: 2 }}
+          onApplyRecommendedTranspose={noop}
+        />
+      );
+    });
+
+    expect(container.textContent).toContain('Rekomendasi Nada Dasar');
+    expect(container.textContent).toContain('C');
+    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Rekomendasi'))).toBe(true);
+  });
+
+  test('Given performance mode is active, Then toolbar keeps only essential controls', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsLyricsToolbar
+          isEditingLyrics={false}
+          performanceMode={true}
+          lyricsMode={false}
+          canEdit={true}
+          tempo={120}
+          timeSignature={'4/4'}
+          autoScrollActive={false}
+          scrollSpeed={120}
+          setAutoScrollActive={noop}
+          setScrollSpeed={noop}
+          lyricsDisplayRef={{ current: null }}
+          currentBeat={0}
+          setCurrentBeat={noop}
+          transpose={0}
+          setTranspose={noop}
+          zoom={1}
+          setZoom={noop}
+          showChordNumbers={false}
+          setShowChordNumbers={noop}
+          showJazzChords={false}
+          setShowJazzChords={noop}
+          showSimpleChords={false}
+          setShowSimpleChords={noop}
+          keySignature={'C'}
+          handleEditLyrics={noop}
+          savingLyrics={false}
+          handleSaveLyrics={noop}
+          handleAlignSelectedBarlines={noop}
+          handleWrap4BarsPerLine={noop}
+          barsPerLine={4}
+          setBarsPerLine={noop}
+          handleWrapBarsPerLine={noop}
+          handleCancelEditLyrics={noop}
+          onOpenPiano={noop}
+          insertNotesToLyrics={true}
+          setInsertNotesToLyrics={noop}
+          insertNoteFormat={'bracket'}
+          setInsertNoteFormat={noop}
+          insertTrailingSpace={true}
+          setInsertTrailingSpace={noop}
+          showExportMenu={false}
+          setShowExportMenu={noop}
+          handleExportText={noop}
+          handleExportPDF={noop}
+          youtubeId={null}
+          youtubeRef={{ current: null }}
+        />
+      );
+    });
+
+    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Edit Lirik')).toBe(false);
+    expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-chord-style-menu-container')).toBeFalsy();
+    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Full screen'))).toBe(true);
+    expect(container.querySelector('.auto-scroll-tempo-slider')).toBeFalsy();
+    expect(container.querySelector('.auto-scroll-menu-toggle')).toBeFalsy();
+    expect(container.querySelector('.auto-scroll-beats-minimal')).toBeFalsy();
+  });
+
+  test('Given performance mode is active, Then the lyrics and chord collapse button is hidden', async () => {
+    await act(async () => {
+      root.render(
+        <SongLyricsMainSection
+          isEditingLyrics={false}
+          lyricsDisplayRef={{ current: null }}
+          editedLyrics={'[C]Hello'}
+          setEditedLyrics={noop}
+          editError={null}
+          handleEditLyrics={noop}
+          savingLyrics={false}
+          handleSaveLyrics={noop}
+          handleAlignSelectedBarlines={noop}
+          handleWrap4BarsPerLine={noop}
+          barsPerLine={4}
+          setBarsPerLine={noop}
+          handleWrapBarsPerLine={noop}
+          handleCancelEditLyrics={noop}
+          onOpenPiano={noop}
+          insertNotesToLyrics={false}
+          setInsertNotesToLyrics={noop}
+          insertNoteFormat={'bracket'}
+          setInsertNoteFormat={noop}
+          insertTrailingSpace={false}
+          setInsertTrailingSpace={noop}
+          insertNumberKeySignature={'C'}
+          showExportMenu={false}
+          setShowExportMenu={noop}
+          handleExportText={noop}
+          handleExportPDF={noop}
+          tempo={120}
+          timeSignature={'4/4'}
+          autoScrollActive={false}
+          scrollSpeed={120}
+          setAutoScrollActive={noop}
+          setScrollSpeed={noop}
+          currentBeat={0}
+          setCurrentBeat={noop}
+          zoom={1}
+          setZoom={noop}
+          performanceMode={true}
+          lyricsMode={false}
+          canEdit={true}
+          song={{ lyrics: '[C]Hello' }}
+          transpose={0}
+          setTranspose={noop}
+          showChordNumbers={false}
+          setShowChordNumbers={noop}
+          showJazzChords={false}
+          setShowJazzChords={noop}
+          showSimpleChords={false}
+          setShowSimpleChords={noop}
+          keySignature={'C'}
+          showSheetMusic={false}
+          setShowSheetMusic={noop}
+          youtubeRef={{ current: null }}
+          youtubeId={null}
+          loading={false}
+        />
+      );
+    });
+
+    expect(container.querySelector('.expand-button')).toBeFalsy();
+  });
+
+  test('Given performance mode is active in player view, Then transpose and sheet music controls are hidden', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsLyricsDisplay
+          isEditingLyrics={false}
+          lyricsDisplayRef={{ current: null }}
+          editedLyrics={''}
+          setEditedLyrics={noop}
+          song={{ lyrics: '[C]Hello', tempo: '120', sheetMusicXml: '<xml />' }}
+          performanceMode={true}
+          transpose={0}
+          setTranspose={noop}
+          showChords={true}
+          zoom={1}
+          setZoom={noop}
+          lyricsMode={false}
+          showChordNumbers={false}
+          showJazzChords={false}
+          showSimpleChords={false}
+          keySignature={'C'}
+          autoScrollActive={false}
+          scrollSpeed={120}
+          setAutoScrollActive={noop}
+          setScrollSpeed={noop}
+          showSheetMusic={true}
+          setShowSheetMusic={noop}
+          youtubeRef={{ current: null }}
+          youtubeId={null}
+        />
+      );
+    });
+
+    expect(container.querySelector('.song-lyrics-fullscreen-control-row[aria-label="Transpose"]')).toBeFalsy();
+    expect(Array.from(container.querySelectorAll('button')).some((button) => button.textContent?.includes('Lihat Partitur'))).toBe(false);
+  });
+
+  test('Given transpose is changed manually, Then it stays applied instead of being overridden by the target key', async () => {
+    function TransposeHost() {
+      const [transpose, setTranspose] = React.useState(0);
+      return (
+        <>
+          <TransposeKeyControl originalKey="C" targetKey="D" transpose={transpose} onTransposeChange={setTranspose} />
+          <div data-testid="transpose-value">{transpose}</div>
+        </>
+      );
+    }
+
+    await act(async () => {
+      root.render(<TransposeHost />);
+    });
+
+    const transposeValue = container.querySelector('[data-testid="transpose-value"]');
+    expect(transposeValue.textContent).toBe('2');
+
+    const buttons = container.querySelectorAll('button');
+    await act(async () => {
+      buttons[0].click();
+    });
+
+    expect(transposeValue.textContent).toBe('1');
   });
 
   test('Given chord display is hidden in lirik mode, Then chord-only tokens are not rendered', async () => {

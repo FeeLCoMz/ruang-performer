@@ -15,7 +15,7 @@ import { handleExportText, handleExportPDF, handleShare } from '../utils/songHan
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
-import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils.js';
+import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 
@@ -118,6 +118,11 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // Chord Analyzer state
   const [showChordAnalyzer, setShowChordAnalyzer] = useState(false);
   const chordStats = useChordStats(song?.lyrics);
+  const pianoRecommendation = recommendPianoFriendlyKey({
+    chords: chordStats.chords,
+    key,
+    transpose,
+  });
 
   // Setlists state for showing which setlists contain this song
   const [setlists, setSetlists] = useState([]);
@@ -565,9 +570,11 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         isMasteredByCurrentUser={song.isMasteredByCurrentUser}
         onToggleMastery={handleToggleMastery}
         masteryUpdating={updatingMastery}
+        pianoRecommendation={pianoRecommendation}
+        onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
       />
 
-      {!lyricsMode && (
+      {!lyricsMode && !performanceMode && (
         <SongChordsMediaPanel
           mediaPanelExpanded={mediaPanelExpanded}
           setMediaPanelExpanded={setMediaPanelExpanded}
@@ -580,7 +587,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         />
       )}
 
-      {!lyricsMode && (
+      {!lyricsMode && !performanceMode && (
         <SongChordsAnalyzer
           showChordAnalyzer={showChordAnalyzer}
           setShowChordAnalyzer={setShowChordAnalyzer}
