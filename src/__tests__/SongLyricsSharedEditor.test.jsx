@@ -344,6 +344,52 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).not.toContain('Genre');
   });
 
+  test('Given normal mode is active, Then mastery info renders as a full-width row', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          performanceMode={false}
+          lyricsMode={false}
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          originalKey="C"
+          targetKey="D"
+          tempo="120"
+          timeSignature="4/4"
+          genre="Rock"
+          masteredBy={[{ username: 'User 1' }]}
+          canMarkMastery={true}
+          isMasteredByCurrentUser={false}
+          onToggleMastery={noop}
+        />
+      );
+    });
+
+    expect(container.querySelector('.song-info-mastery-block-full')).toBeTruthy();
+  });
+
+  test('Given normal mode is active, Then time and genre render as a combined two-column row', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          performanceMode={false}
+          lyricsMode={false}
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          timeSignature="4/4"
+          genre="Rock"
+        />
+      );
+    });
+
+    expect(container.querySelector('.song-info-combined-row')).toBeTruthy();
+    expect(container.querySelectorAll('.song-info-combined-column')).toHaveLength(2);
+  });
+
   test('Given performance mode is active, Then song info metadata remains visible', async () => {
     await act(async () => {
       root.render(

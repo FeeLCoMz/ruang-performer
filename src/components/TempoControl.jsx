@@ -8,13 +8,20 @@ export default function TempoControl({ tempo, scrollSpeed, setScrollSpeed, isMet
 
   return (
     <>
-      <div className="song-info-tempo-led-row" title={`Indikator tempo ${normalizedBpm} BPM`}>
-        <span
-          className="song-info-tempo-led"
-          style={{ animationDuration: `${blinkDurationMs}ms` }}
-          aria-hidden="true"
-        />
-        <span className="song-info-tempo-led-text">LED Tempo</span>
+      <div className="song-info-tempo-header-row">
+        <div className="song-info-tempo-led-row" title={`Indikator tempo ${normalizedBpm} BPM`}>
+          <span
+            className="song-info-tempo-led"
+            style={{ animationDuration: `${blinkDurationMs}ms` }}
+            aria-hidden="true"
+          />
+          <span className="song-info-tempo-led-text">LED Tempo</span>
+        </div>
+        {tempoTerm && (
+          <span className="song-info-tempo-term">
+            <span>{tempoTerm}</span>
+          </span>
+        )}
       </div>
       <div className="song-info-tempo-controls">
         <button
@@ -46,9 +53,6 @@ export default function TempoControl({ tempo, scrollSpeed, setScrollSpeed, isMet
           {isMetronomeActive ? "⏹️" : "▶️"}
         </button>
       </div>
-      <span className="song-info-tempo-term">
-        {tempoTerm && <span>{tempoTerm}</span>}
-      </span>
       {isMetronomeActive && (
         <div className="song-info-tempo-status">♪ Playing...</div>
       )}

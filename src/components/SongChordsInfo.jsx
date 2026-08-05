@@ -166,12 +166,33 @@ export default function SongChordsInfo({
                   <span className="song-info-value">{lyricsOriginalKey}</span>
                 </div>
               )}
-              {timeSignature && (
-                <div className="song-info-item">
-                  <span className="song-info-label">🎼 Time</span>
-                  <span className="song-info-value">{timeSignature}</span>
+              {!showMinimalMetadata && ((timeSignature && genre) ? (
+                <div className="song-info-item song-info-combined-row">
+                  <div className="song-info-combined-column">
+                    <span className="song-info-label">🎼 Time</span>
+                    <span className="song-info-value">{timeSignature}</span>
+                  </div>
+                  <div className="song-info-combined-column">
+                    <span className="song-info-label">🎸 Genre</span>
+                    <span className="song-info-value">{genre}</span>
+                  </div>
                 </div>
-              )}
+              ) : (
+                <>
+                  {timeSignature && (
+                    <div className="song-info-item">
+                      <span className="song-info-label">🎼 Time</span>
+                      <span className="song-info-value">{timeSignature}</span>
+                    </div>
+                  )}
+                  {genre && (
+                    <div className="song-info-item">
+                      <span className="song-info-label">🎸 Genre</span>
+                      <span className="song-info-value">{genre}</span>
+                    </div>
+                  )}
+                </>
+              ))}
               {tempo && (
                 <div className="song-info-item song-info-tempo-item">
                   <span className="song-info-label">⏱️ Tempo</span>
@@ -182,12 +203,6 @@ export default function SongChordsInfo({
                     isMetronomeActive={isMetronomeActive}
                     setIsMetronomeActive={setIsMetronomeActive}
                   />
-                </div>
-              )}
-              {!showMinimalMetadata && genre && (
-                <div className="song-info-item">
-                  <span className="song-info-label">🎸 Genre</span>
-                  <span className="song-info-value">{genre}</span>
                 </div>
               )}
               {!showMinimalMetadata && arrangementStyle && (
@@ -203,7 +218,7 @@ export default function SongChordsInfo({
                 </div>
               )}
               {!showMinimalMetadata && (
-                <div className="song-info-item song-info-mastery-block">
+                <div className="song-info-item song-info-mastery-block song-info-mastery-block-full">
                   <span className="song-info-label">✅ Sudah Dikuasai</span>
                   <span className="song-info-value song-info-mastery-count">
                     {Array.isArray(masteredBy) ? masteredBy.length : 0} orang
