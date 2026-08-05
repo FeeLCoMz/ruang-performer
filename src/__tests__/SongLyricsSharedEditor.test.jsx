@@ -365,9 +365,11 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.textContent).toContain('Rekomendasi Nada Dasar');
+    expect(container.textContent).toContain('Key Kibordis');
     expect(container.textContent).toContain('C');
-    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Rekomendasi'))).toBe(true);
+    expect(container.textContent).toContain('Jarak dari key dasar');
+    expect(container.textContent).toContain('+2 semitone');
+    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Key Kibordis'))).toBe(true);
   });
 
   test('Given performance mode is active, Then toolbar keeps only essential controls', async () => {
@@ -426,6 +428,8 @@ describe('Song lyrics shared editor rendering', () => {
 
     expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Edit Lirik')).toBe(false);
     expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-transpose-controls-compact')).toBeTruthy();
+    expect(container.querySelector('.song-lyrics-toolbar-group-tempo-led-compact')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-chord-style-menu-container')).toBeFalsy();
     expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Full screen'))).toBe(true);
     expect(container.querySelector('.auto-scroll-bar-compact')).toBeTruthy();
@@ -650,8 +654,8 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.textContent).not.toContain('Rekomendasi Nada Dasar');
-    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Rekomendasi'))).toBe(false);
+    expect(container.textContent).not.toContain('Key Kibordis');
+    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Key Kibordis'))).toBe(false);
   });
 
   test('Given performance mode is active, Then the YouTube media panel stays mounted but hidden', async () => {

@@ -80,6 +80,7 @@ export default function SongChordsLyricsToolbar({
   const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
   const [isYoutubeReady, setIsYoutubeReady] = useState(false);
   const chordStyleMenuRef = useRef(null);
+  const normalizedTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
   const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
   const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
 
@@ -205,6 +206,11 @@ export default function SongChordsLyricsToolbar({
                 </button>
               </>
             )}
+          </div>
+        )}
+
+        {!isEditingLyrics && (
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-fullscreen">
             <button
               type="button"
               className="btn btn-primary song-lyrics-fullscreen-btn"
@@ -241,6 +247,45 @@ export default function SongChordsLyricsToolbar({
               setCurrentBeat={setCurrentBeat}
               compactMode={performanceMode}
             />
+          </div>
+        )}
+
+        {!isEditingLyrics && !lyricsMode && performanceMode && (
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-tempo-led-compact" title={`Tempo ${normalizedTempo} BPM`}>
+            <span
+              className="song-info-tempo-led"
+              style={{ animationDuration: `${Math.round(60000 / normalizedTempo)}ms` }}
+              aria-hidden="true"
+            />
+            <span className="song-lyrics-tempo-led-compact-text">{normalizedTempo}</span>
+          </div>
+        )}
+
+        {!isEditingLyrics && !lyricsMode && performanceMode && (
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-transpose-compact">
+            <div className="song-lyrics-transpose-controls-compact" title="Transpose sederhana">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setTranspose((prev) => prev - 1)}
+                title="Transpose turun 1 semitone"
+                aria-label="Transpose turun"
+              >
+                -
+              </button>
+              <span className="song-lyrics-transpose-value" aria-live="polite">
+                Tr {transpose > 0 ? `+${transpose}` : transpose}
+              </span>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setTranspose((prev) => prev + 1)}
+                title="Transpose naik 1 semitone"
+                aria-label="Transpose naik"
+              >
+                +
+              </button>
+            </div>
           </div>
         )}
 

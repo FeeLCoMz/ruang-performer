@@ -223,7 +223,7 @@ export default function SongChordsAnalyzer({
           </div>
           {pianoRecommendation && pianoRecommendation.recommendedKey && (
             <div className="song-lyrics-analyzer-piano-reco">
-              <div className="song-lyrics-analyzer-piano-reco-title">Rekomendasi Nada Dasar Piano/Keyboard</div>
+              <div className="song-lyrics-analyzer-piano-reco-title">Saran Key Kibordis</div>
               <div className="song-lyrics-analyzer-piano-reco-key">{pianoRecommendation.recommendedKey}</div>
               <div className="song-lyrics-analyzer-piano-reco-note">
                 {pianoRecommendation.transposeFromCurrent === 0
@@ -238,7 +238,7 @@ export default function SongChordsAnalyzer({
                     onClick={() => handleApplyRecommendedTranspose(pianoRecommendation.transposeFromCurrent)}
                     disabled={pianoRecommendation.transposeFromCurrent === 0}
                   >
-                    Terapkan Transpose Rekomendasi
+                    Terapkan Key Kibordis
                   </button>
                   {applyNotice && <div className="song-lyrics-analyzer-piano-reco-notice">{applyNotice}</div>}
                 </div>

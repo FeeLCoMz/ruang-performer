@@ -52,6 +52,10 @@ export default function SongChordsInfo({
   const showMetadata = performanceMode || lyricsMode || showSongInfo;
   const showMinimalMetadata = performanceMode || lyricsMode;
   const metadataItems = [];
+  const recommendedTranspose = Number(pianoRecommendation?.transposeFromCurrent || 0);
+  const recommendedTransposeText = recommendedTranspose > 0
+    ? `+${recommendedTranspose}`
+    : `${recommendedTranspose}`;
 
   if (originalKey || targetKey) {
     metadataItems.push(`Key: ${targetKey || originalKey}`);
@@ -221,17 +225,20 @@ export default function SongChordsInfo({
       )}
       {performanceMode && !lyricsMode && pianoRecommendation?.recommendedKey && (
         <div className="song-info-item song-info-piano-reco-block">
-          <span className="song-info-label">🎹 Rekomendasi Nada Dasar</span>
+          <span className="song-info-label">🎹 Key Kibordis</span>
           <span className="song-info-value">{pianoRecommendation.recommendedKey}</span>
+          <span className="song-info-piano-reco-distance">
+            Jarak dari key dasar: {recommendedTransposeText} semitone
+          </span>
           {typeof onApplyRecommendedTranspose === 'function' && (
             <button
               type="button"
               className="btn btn-secondary song-info-piano-reco-btn"
               onClick={() => onApplyRecommendedTranspose(pianoRecommendation.transposeFromCurrent)}
               disabled={pianoRecommendation.transposeFromCurrent === 0}
-              title="Terapkan transpose rekomendasi nada dasar keyboard"
+              title="Terapkan transpose key kibordis"
             >
-              Terapkan Rekomendasi
+              Terapkan Key Kibordis
             </button>
           )}
         </div>
