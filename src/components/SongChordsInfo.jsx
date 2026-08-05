@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import TransposeKeyControl from "./TransposeKeyControl.jsx";
 import ExpandButton from "./ExpandButton.jsx";
 import TempoControl from "./TempoControl.jsx";
+import { transposeChord } from "../utils/chordUtils.js";
 
 /**
  * SongChordsInfo
@@ -52,21 +53,32 @@ export default function SongChordsInfo({
   const showMetadata = performanceMode || lyricsMode || showSongInfo;
   const showMinimalMetadata = performanceMode || lyricsMode;
   const metadataItems = [];
+  const [isKeyboardistKeyCollapsed, setIsKeyboardistKeyCollapsed] = useState(true);
   const recommendedTranspose = Number(pianoRecommendation?.transposeFromCurrent || 0);
   const recommendedTransposeText = recommendedTranspose > 0
     ? `+${recommendedTranspose}`
     : `${recommendedTranspose}`;
+  const baseDisplayKey = targetKey || originalKey || '';
+  const transposedDisplayKey = (() => {
+    if (!baseDisplayKey || !transpose) return baseDisplayKey;
+    const shifted = transposeChord(baseDisplayKey, transpose);
+    return shifted || baseDisplayKey;
+  })();
 
-  if (originalKey || targetKey) {
-    metadataItems.push(`Key: ${targetKey || originalKey}`);
+  useEffect(() => {
+    setIsKeyboardistKeyCollapsed(true);
+  }, [pianoRecommendation?.recommendedKey, performanceMode, lyricsMode]);
+
+  if (baseDisplayKey) {
+    metadataItems.push(`Key: ${transposedDisplayKey}`);
   }
-  if (tempo) {
+  if (!lyricsMode && tempo) {
     metadataItems.push(`Tempo: ${tempo}`);
   }
-  if (timeSignature) {
+  if (!lyricsMode && timeSignature) {
     metadataItems.push(`Time: ${timeSignature}`);
   }
-  if (genre) {
+  if (!lyricsMode && genre) {
     metadataItems.push(`Genre: ${genre}`);
   }
   if (lyricsOriginalKey) {
@@ -225,21 +237,36 @@ export default function SongChordsInfo({
       )}
       {performanceMode && !lyricsMode && pianoRecommendation?.recommendedKey && (
         <div className="song-info-item song-info-piano-reco-block">
-          <span className="song-info-label">🎹 Key Kibordis</span>
-          <span className="song-info-value">{pianoRecommendation.recommendedKey}</span>
-          <span className="song-info-piano-reco-distance">
-            Jarak dari key dasar: {recommendedTransposeText} semitone
-          </span>
-          {typeof onApplyRecommendedTranspose === 'function' && (
+          <div className="song-info-piano-reco-header">
+            <span className="song-info-label">🎹 Key Kibordis</span>
             <button
               type="button"
-              className="btn btn-secondary song-info-piano-reco-btn"
-              onClick={() => onApplyRecommendedTranspose(pianoRecommendation.transposeFromCurrent)}
-              disabled={pianoRecommendation.transposeFromCurrent === 0}
-              title="Terapkan transpose key kibordis"
+              className="btn btn-secondary song-info-piano-reco-toggle"
+              onClick={() => setIsKeyboardistKeyCollapsed((prev) => !prev)}
+              aria-expanded={!isKeyboardistKeyCollapsed}
+              title={isKeyboardistKeyCollapsed ? 'Buka detail key kibordis' : 'Tutup detail key kibordis'}
             >
-              Terapkan Key Kibordis
+              {isKeyboardistKeyCollapsed ? '▼' : '▲'}
             </button>
+          </div>
+          {!isKeyboardistKeyCollapsed && (
+            <>
+              <span className="song-info-value">{pianoRecommendation.recommendedKey}</span>
+              <span className="song-info-piano-reco-distance">
+                Jarak dari key dasar: {recommendedTransposeText} semitone
+              </span>
+              {typeof onApplyRecommendedTranspose === 'function' && (
+                <button
+                  type="button"
+                  className="btn btn-secondary song-info-piano-reco-btn"
+                  onClick={() => onApplyRecommendedTranspose(pianoRecommendation.transposeFromCurrent)}
+                  disabled={pianoRecommendation.transposeFromCurrent === 0}
+                  title="Terapkan transpose key kibordis"
+                >
+                  Terapkan Key Kibordis
+                </button>
+              )}
+            </>
           )}
         </div>
       )}

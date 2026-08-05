@@ -278,15 +278,25 @@ export default function SongChordsLyricsDisplay({
   return (
     <div className="song-lyrics-display" ref={lyricsDisplayRef}>
       {isFullscreen && (
-        <button
-          type="button"
-          className="song-lyrics-fullscreen-controls-toggle"
-          onClick={showFullscreenControls}
-          aria-label="Tampilkan kontrol perform"
-          title="Kontrol perform"
-        >
-          ⚙
-        </button>
+        <>
+          <button
+            type="button"
+            className="song-lyrics-fullscreen-controls-toggle"
+            onClick={showFullscreenControls}
+            aria-label="Tampilkan kontrol perform"
+            title="Kontrol perform"
+          >
+            ⚙
+          </button>
+          <div className="song-lyrics-fullscreen-tempo-led-inline" title={`Tempo ${normalizedBpm} BPM`}>
+            <span
+              className="song-info-tempo-led"
+              style={{ animationDuration: `${Math.round(60000 / normalizedBpm)}ms` }}
+              aria-hidden="true"
+            />
+            <span className="song-lyrics-fullscreen-tempo-led-inline-text">{normalizedBpm}</span>
+          </div>
+        </>
       )}
       <div
         className={`song-lyrics-fullscreen-quick-controls${controlsVisible ? ' is-visible' : ''}`}

@@ -65,6 +65,8 @@ export default function SongLyricsMainSection({
   setShowSheetMusic,
   youtubeRef,
   youtubeId,
+  onPlayYouTube,
+  onRestartYouTube,
   loading = false
 }) {
   // Expand/collapse state for lyrics panel
@@ -130,6 +132,8 @@ export default function SongLyricsMainSection({
             handleExportPDF={handleExportPDF}
             youtubeId={youtubeId}
             youtubeRef={youtubeRef}
+            onPlayYouTube={onPlayYouTube}
+            onRestartYouTube={onRestartYouTube}
           />
         )}
       </div>

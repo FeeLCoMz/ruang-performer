@@ -20,6 +20,10 @@ vi.mock('../components/SongChordsMediaPanel.jsx', () => ({
   default: () => <div data-testid="song-chords-media-panel" />,
 }));
 
+vi.mock('../components/FloatingYouTubePlayer.jsx', () => ({
+  default: ({ isOpen }) => (isOpen ? <div data-testid="floating-youtube-player" /> : null),
+}));
+
 vi.mock('../hooks/useSongFetch.js', () => ({
   useSongFetch: () => ({
     song: { id: '1', title: 'Song A', lyrics: '[C]Hello', youtubeId: 'dQw4w9WgXcQ' },
@@ -311,6 +315,35 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('Artist A');
   });
 
+  test('Given lirik mode is active, Then tempo time and genre metadata are hidden', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          contributor="Contributor"
+          performanceMode={false}
+          lyricsMode={true}
+          canEdit={true}
+          onEdit={noop}
+          onShare={noop}
+          shareMessage="Shared"
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          originalKey="C"
+          targetKey="D"
+          tempo="120"
+          timeSignature="4/4"
+          genre="Rock"
+        />
+      );
+    });
+
+    expect(container.textContent).not.toContain('Tempo');
+    expect(container.textContent).not.toContain('Time');
+    expect(container.textContent).not.toContain('Genre');
+  });
+
   test('Given performance mode is active, Then song info metadata remains visible', async () => {
     await act(async () => {
       root.render(
@@ -344,6 +377,29 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('Genre');
   });
 
+  test('Given performance mode transpose is set, Then key metadata reflects transposed key', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          performanceMode={true}
+          lyricsMode={false}
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          originalKey="C"
+          targetKey="C"
+          transpose={2}
+          setTranspose={noop}
+          tempo="120"
+          timeSignature="4/4"
+        />
+      );
+    });
+
+    expect(container.textContent).toContain('Key: D');
+  });
+
   test('Given performance mode is active with piano recommendation, Then recommendation button is visible', async () => {
     await act(async () => {
       root.render(
@@ -366,6 +422,15 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     expect(container.textContent).toContain('Key Kibordis');
+    expect(container.textContent).not.toContain('Jarak dari key dasar');
+    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Key Kibordis'))).toBe(false);
+
+    const toggleButton = container.querySelector('.song-info-piano-reco-toggle');
+    expect(toggleButton).toBeTruthy();
+    await act(async () => {
+      toggleButton.click();
+    });
+
     expect(container.textContent).toContain('C');
     expect(container.textContent).toContain('Jarak dari key dasar');
     expect(container.textContent).toContain('+2 semitone');
@@ -373,6 +438,8 @@ describe('Song lyrics shared editor rendering', () => {
   });
 
   test('Given performance mode is active, Then toolbar keeps only essential controls', async () => {
+    const onPlayYouTube = vi.fn();
+
     await act(async () => {
       root.render(
         <SongChordsLyricsToolbar
@@ -420,8 +487,10 @@ describe('Song lyrics shared editor rendering', () => {
           setShowExportMenu={noop}
           handleExportText={noop}
           handleExportPDF={noop}
-          youtubeId={null}
+          youtubeId={'dQw4w9WgXcQ'}
           youtubeRef={{ current: null }}
+          onPlayYouTube={onPlayYouTube}
+          onRestartYouTube={noop}
         />
       );
     });
@@ -436,6 +505,13 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.auto-scroll-tempo-slider')).toBeFalsy();
     expect(container.querySelector('.auto-scroll-menu-toggle')).toBeFalsy();
     expect(container.querySelector('.auto-scroll-beats-minimal')).toBeFalsy();
+
+    const playButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.title === 'Play YouTube');
+    expect(playButton).toBeTruthy();
+    await act(async () => {
+      playButton.click();
+    });
+    expect(onPlayYouTube).toHaveBeenCalled();
   });
 
   test('Given performance mode is active, Then the lyrics and chord collapse button is hidden', async () => {
@@ -684,6 +760,22 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     expect(container.querySelector('[data-testid="setlist-navigator"]')).toBeTruthy();
+  });
+
+  test('Given performance mode is active in a setlist view, Then setlist navigator uses compact buttons', async () => {
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={['/setlists/10/songs/1']}>
+          <Routes>
+            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} lyricsMode={false} />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const navigator = container.querySelector('[data-testid="setlist-navigator"]');
+    expect(navigator).toBeTruthy();
+    expect(navigator.textContent).toContain('compact');
   });
 
   test('Given song view edit mode, When piano note is selected, Then lyrics state receives note token', async () => {

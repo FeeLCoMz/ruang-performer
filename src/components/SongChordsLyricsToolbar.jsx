@@ -75,6 +75,8 @@ export default function SongChordsLyricsToolbar({
   handleExportPDF,
   youtubeId,
   youtubeRef,
+  onPlayYouTube,
+  onRestartYouTube,
 }) {
   const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
   const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
@@ -176,6 +178,10 @@ export default function SongChordsLyricsToolbar({
                   title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
                   aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
                   onClick={() => {
+                    if (performanceMode && typeof onPlayYouTube === 'function') {
+                      onPlayYouTube();
+                      return;
+                    }
                     if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
                       youtubeRef.current.handleTogglePlayPause();
                       setTimeout(() => {
@@ -193,6 +199,10 @@ export default function SongChordsLyricsToolbar({
                   title="Putar dari awal"
                   aria-label="Putar dari awal"
                   onClick={() => {
+                    if (performanceMode && typeof onRestartYouTube === 'function') {
+                      onRestartYouTube();
+                      return;
+                    }
                     if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
                       youtubeRef.current.handleSeek(0);
                       setTimeout(() => {

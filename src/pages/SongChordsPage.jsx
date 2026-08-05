@@ -5,6 +5,7 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import SetlistSongNavigator from "../components/SetlistSongNavigator.jsx";
 import SongChordsMediaPanel from '../components/SongChordsMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
+import FloatingYouTubePlayer from '../components/FloatingYouTubePlayer.jsx';
 import VirtualPiano from "../components/VirtualPiano.jsx";
 import { getAuthHeader } from "../utils/auth.js";
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -141,6 +142,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
   // Media panel collapse state (default: collapsed)
   const [mediaPanelExpanded, setMediaPanelExpanded] = useState(false);
+  const [showMiniVideoPlayer, setShowMiniVideoPlayer] = useState(false);
 
   // Metronome state for quick access
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, tempo);
@@ -262,6 +264,44 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     } catch (err) {
       console.error("Error updating time markers:", err);
     }
+  };
+
+  const ensureMiniPlayerReady = (callback) => {
+    if (!performanceMode) {
+      callback?.();
+      return;
+    }
+
+    setShowMiniVideoPlayer(true);
+    let attempts = 0;
+    const maxAttempts = 24;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      if (youtubeRef.current) {
+        callback?.();
+        clearInterval(intervalId);
+        return;
+      }
+      if (attempts >= maxAttempts) {
+        clearInterval(intervalId);
+      }
+    }, 120);
+  };
+
+  const handlePlayYouTube = () => {
+    ensureMiniPlayerReady(() => {
+      if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
+        youtubeRef.current.handleTogglePlayPause();
+      }
+    });
+  };
+
+  const handleRestartYouTube = () => {
+    ensureMiniPlayerReady(() => {
+      if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
+        youtubeRef.current.handleSeek(0);
+      }
+    });
   };
 
   // Handle lyrics save
@@ -650,6 +690,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setShowSheetMusic={setShowSheetMusic}
         youtubeRef={youtubeRef}
         youtubeId={youtubeId}
+        onPlayYouTube={handlePlayYouTube}
+        onRestartYouTube={handleRestartYouTube}
         loading={loading}
         showChordNumbers={showChordNumbers}
         setShowChordNumbers={setShowChordNumbers}
@@ -659,6 +701,20 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setShowSimpleChords={setShowSimpleChords}
         keySignature={key || song?.key || ''}
       />
+
+      {performanceMode && !lyricsMode && youtubeId && (
+        <FloatingYouTubePlayer
+          isOpen={showMiniVideoPlayer}
+          videoId={youtubeId}
+          youtubeRef={youtubeRef}
+          onClose={() => {
+            if (youtubeRef.current && typeof youtubeRef.current.handlePause === 'function') {
+              youtubeRef.current.handlePause();
+            }
+            setShowMiniVideoPlayer(false);
+          }}
+        />
+      )}
 
       <VirtualPiano
         isOpen={showLyricsPiano}
@@ -697,7 +753,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
             totalSongs={totalSongs || undefined}
             onPrev={handlePrev}
             onNext={handleNext}
-            compact={lyricsMode}
+            compact={lyricsMode || performanceMode}
           />
         );
       })()}
