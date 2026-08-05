@@ -16,9 +16,13 @@ vi.mock('../components/SetlistSongNavigator.jsx', () => ({
   default: ({ compact }) => <div data-testid="setlist-navigator">{compact ? 'compact' : 'full'}</div>,
 }));
 
+vi.mock('../components/SongChordsMediaPanel.jsx', () => ({
+  default: () => <div data-testid="song-chords-media-panel" />,
+}));
+
 vi.mock('../hooks/useSongFetch.js', () => ({
   useSongFetch: () => ({
-    song: { id: '1', title: 'Song A', lyrics: '[C]Hello' },
+    song: { id: '1', title: 'Song A', lyrics: '[C]Hello', youtubeId: 'dQw4w9WgXcQ' },
     loading: false,
     error: null,
     setSong: vi.fn(),
@@ -337,6 +341,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('Artist A');
     expect(container.textContent).toContain('Key');
     expect(container.textContent).toContain('Tempo');
+    expect(container.textContent).toContain('Genre');
   });
 
   test('Given performance mode is active with piano recommendation, Then recommendation button is visible', async () => {
@@ -423,6 +428,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
     expect(container.querySelector('.song-lyrics-chord-style-menu-container')).toBeFalsy();
     expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Full screen'))).toBe(true);
+    expect(container.querySelector('.auto-scroll-bar-compact')).toBeTruthy();
     expect(container.querySelector('.auto-scroll-tempo-slider')).toBeFalsy();
     expect(container.querySelector('.auto-scroll-menu-toggle')).toBeFalsy();
     expect(container.querySelector('.auto-scroll-beats-minimal')).toBeFalsy();
@@ -621,6 +627,45 @@ describe('Song lyrics shared editor rendering', () => {
 
     expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Edit Lirik')).toBe(false);
     expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Export')).toBe(false);
+  });
+
+  test('Given vocalist mode is active, Then piano recommendation is hidden', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          contributor="Contributor"
+          performanceMode={true}
+          lyricsMode={true}
+          canEdit={true}
+          onEdit={noop}
+          onShare={noop}
+          shareMessage="Shared"
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          pianoRecommendation={{ recommendedKey: 'C', transposeFromCurrent: 2 }}
+          onApplyRecommendedTranspose={noop}
+        />
+      );
+    });
+
+    expect(container.textContent).not.toContain('Rekomendasi Nada Dasar');
+    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Rekomendasi'))).toBe(false);
+  });
+
+  test('Given performance mode is active, Then the YouTube media panel stays mounted but hidden', async () => {
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={['/songs/view/1']}>
+          <Routes>
+            <Route path="/songs/view/:id" element={<SongChordsPage performanceMode={true} />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    expect(container.querySelector('.song-media-panel-hidden')).toBeTruthy();
   });
 
   test('Given vocalist mode is active in a setlist view, Then setlist navigator is still rendered', async () => {

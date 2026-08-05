@@ -62,6 +62,9 @@ export default function SongChordsInfo({
   if (timeSignature) {
     metadataItems.push(`Time: ${timeSignature}`);
   }
+  if (genre) {
+    metadataItems.push(`Genre: ${genre}`);
+  }
   if (lyricsOriginalKey) {
     metadataItems.push(`Original: ${lyricsOriginalKey}`);
   }
@@ -216,7 +219,7 @@ export default function SongChordsInfo({
           )}
         </div>
       )}
-      {performanceMode && pianoRecommendation?.recommendedKey && (
+      {performanceMode && !lyricsMode && pianoRecommendation?.recommendedKey && (
         <div className="song-info-item song-info-piano-reco-block">
           <span className="song-info-label">🎹 Rekomendasi Nada Dasar</span>
           <span className="song-info-value">{pianoRecommendation.recommendedKey}</span>

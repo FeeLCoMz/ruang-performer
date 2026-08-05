@@ -412,7 +412,7 @@ export default function AutoScrollBar({
   }, [scrolling, currentSpeed, lyricsDisplayRef, setCurrentBeat, beatsPerBar, scrollMode]);
 
   return (
-    <div className={`auto-scroll-bar ${hideUi ? 'auto-scroll-bar-hidden' : ''}`}>
+    <div className={`auto-scroll-bar ${compactMode ? 'auto-scroll-bar-compact' : ''} ${hideUi ? 'auto-scroll-bar-hidden' : ''}`}>
       {!hideUi && (
       <div className="auto-scroll-controls">
         {/* Play/Pause Toggle */}

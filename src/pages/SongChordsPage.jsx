@@ -574,17 +574,19 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
       />
 
-      {!lyricsMode && !performanceMode && (
-        <SongChordsMediaPanel
-          mediaPanelExpanded={mediaPanelExpanded}
-          setMediaPanelExpanded={setMediaPanelExpanded}
-          youtubeId={youtubeId}
-          youtubeRef={youtubeRef}
-          timeMarkers={timeMarkers}
-          performanceMode={performanceMode}
-          canEdit={can(PERMISSIONS.SONG_EDIT)}
-          handleTimeMarkerUpdate={handleTimeMarkerUpdate}
-        />
+      {!lyricsMode && youtubeId && (
+        <div className={performanceMode ? 'song-media-panel-hidden' : ''}>
+          <SongChordsMediaPanel
+            mediaPanelExpanded={mediaPanelExpanded}
+            setMediaPanelExpanded={setMediaPanelExpanded}
+            youtubeId={youtubeId}
+            youtubeRef={youtubeRef}
+            timeMarkers={timeMarkers}
+            performanceMode={performanceMode}
+            canEdit={can(PERMISSIONS.SONG_EDIT)}
+            handleTimeMarkerUpdate={handleTimeMarkerUpdate}
+          />
+        </div>
       )}
 
       {!lyricsMode && !performanceMode && (
