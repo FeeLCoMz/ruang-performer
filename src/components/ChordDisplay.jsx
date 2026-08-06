@@ -50,7 +50,8 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
   }
 
   const lines = song.lyrics.split(/\r?\n/);
-  const parsedLines = parseLines(lines, transpose);
+  const effectiveTranspose = showChordNumbers ? 0 : transpose;
+  const parsedLines = parseLines(lines, effectiveTranspose);
 
   return (
     <div className="cd" style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>

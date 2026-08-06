@@ -697,6 +697,22 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('World');
   });
 
+  test('Given chord number mode is active, Then transpose does not change displayed numbers', async () => {
+    await act(async () => {
+      root.render(
+        <ChordDisplay
+          song={{ lyrics: 'C G Am F' }}
+          showChords={true}
+          showChordNumbers={true}
+          keySignature={'C'}
+          transpose={2}
+        />
+      );
+    });
+
+    expect(container.textContent).toContain('1 5 6m 4');
+  });
+
   test('Given vocalist mode is active, Then edit and export controls are hidden', async () => {
     await act(async () => {
       root.render(
