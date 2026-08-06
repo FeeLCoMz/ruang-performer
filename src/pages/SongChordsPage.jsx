@@ -745,6 +745,11 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
             });
           }
         };
+        const handleOpenSetlist = () => {
+          navigate(`/setlists/${setlistId}`, {
+            state: { setlistId, setlist: setlistData, focusSongId: song.id },
+          });
+        };
         return (
           <SetlistSongNavigator
             navPrev={!!navPrev}
@@ -753,6 +758,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
             totalSongs={totalSongs || undefined}
             onPrev={handlePrev}
             onNext={handleNext}
+            onOpenSetlist={performanceMode ? handleOpenSetlist : undefined}
             compact={lyricsMode || performanceMode}
           />
         );

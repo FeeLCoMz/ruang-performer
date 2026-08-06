@@ -741,6 +741,20 @@
     opacity var(--transition-fast),
     cursor var(--transition-fast);
 }
+.setlist-nav-open-list-btn {
+  min-height: 42px;
+}
+
+.setlist-nav-open-list-btn-compact {
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+}
+
+.setlist-song-navigator-compact .setlist-nav-open-list-btn {
+  order: 4;
+}
 .setlist-nav-btn.disabled,
 .setlist-nav-btn:disabled {
   opacity: 0.5;
@@ -780,6 +794,18 @@ body.lyrics-mode .setlist-song-info {
   font-size: 1em;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+@media (max-width: 600px) {
+  .setlist-song-navigator-compact {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .setlist-song-navigator-compact .setlist-song-info {
+    width: 100%;
+    justify-content: center;
+  }
 }
 /* ========== CUSTOM UTILITY FOR SONGCHORDSPAGE ========== */
 .info-text-margin {

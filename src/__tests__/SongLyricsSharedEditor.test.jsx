@@ -13,7 +13,12 @@ import VirtualPiano from '../components/VirtualPiano.jsx';
 import SongChordsPage from '../pages/SongChordsPage.jsx';
 
 vi.mock('../components/SetlistSongNavigator.jsx', () => ({
-  default: ({ compact }) => <div data-testid="setlist-navigator">{compact ? 'compact' : 'full'}</div>,
+  default: ({ compact, onOpenSetlist }) => (
+    <div data-testid="setlist-navigator">
+      {compact ? 'compact' : 'full'}
+      {typeof onOpenSetlist === 'function' ? '|has-open-setlist' : ''}
+    </div>
+  ),
 }));
 
 vi.mock('../components/SongChordsMediaPanel.jsx', () => ({
@@ -838,6 +843,7 @@ describe('Song lyrics shared editor rendering', () => {
     const navigator = container.querySelector('[data-testid="setlist-navigator"]');
     expect(navigator).toBeTruthy();
     expect(navigator.textContent).toContain('compact');
+    expect(navigator.textContent).toContain('has-open-setlist');
   });
 
   test('Given song view edit mode, When piano note is selected, Then lyrics state receives note token', async () => {

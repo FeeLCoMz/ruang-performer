@@ -1,7 +1,15 @@
 import React from 'react';
 
-export default function SetlistSongNavigator({ navPrev, navNext, songNumber, totalSongs, onPrev, onNext, compact = false }) {
-  const hasNavigation = Boolean(navPrev || navNext);
+export default function SetlistSongNavigator({
+  navPrev,
+  navNext,
+  songNumber,
+  totalSongs,
+  onPrev,
+  onNext,
+  onOpenSetlist,
+  compact = false,
+}) {
 
   return (
     <div className={`setlist-song-navigator${compact ? ' setlist-song-navigator-compact' : ''}`}>
@@ -22,6 +30,17 @@ export default function SetlistSongNavigator({ navPrev, navNext, songNumber, tot
           <span className="setlist-song-info-label">{compact ? '/' : 'dari'}</span>
           <span className="setlist-song-info-total">{totalSongs}</span>
         </div>
+      )}
+
+      {typeof onOpenSetlist === 'function' && (
+        <button
+          className={`btn btn-secondary setlist-nav-open-list-btn${compact ? ' setlist-nav-open-list-btn-compact' : ''}`}
+          title="Buka daftar lagu setlist"
+          onClick={onOpenSetlist}
+          aria-label="Buka daftar lagu setlist"
+        >
+          {compact ? '☰ Daftar' : '📋 Daftar Lagu'}
+        </button>
       )}
 
       <button
