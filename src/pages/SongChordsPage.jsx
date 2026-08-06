@@ -199,6 +199,23 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
     return () => clearInterval(intervalId);
   }, [autoPlayVideo, youtubeId]);
+
+  useEffect(() => {
+    if (isEditingLyrics && youtubeId) {
+      setShowMiniVideoPlayer(true);
+    }
+  }, [isEditingLyrics, youtubeId]);
+
+  useEffect(() => {
+    if (!youtubeId) {
+      setShowMiniVideoPlayer(false);
+      return;
+    }
+
+    if (!performanceMode && !isEditingLyrics) {
+      setShowMiniVideoPlayer(false);
+    }
+  }, [performanceMode, isEditingLyrics, youtubeId]);
   // (Efek autoscroll dipindah ke komponen AutoScrollBar)
 
   // Metronome effect now handled by useMetronome hook
@@ -614,19 +631,21 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
       />
 
-      {!lyricsMode && youtubeId && (
-        <div className={performanceMode ? 'song-media-panel-hidden' : ''}>
-          <SongChordsMediaPanel
-            mediaPanelExpanded={mediaPanelExpanded}
-            setMediaPanelExpanded={setMediaPanelExpanded}
-            youtubeId={youtubeId}
-            youtubeRef={youtubeRef}
-            timeMarkers={timeMarkers}
-            performanceMode={performanceMode}
-            canEdit={can(PERMISSIONS.SONG_EDIT)}
-            handleTimeMarkerUpdate={handleTimeMarkerUpdate}
-          />
-        </div>
+      {!lyricsMode && youtubeId && !performanceMode && !isEditingLyrics && (
+        <SongChordsMediaPanel
+          mediaPanelExpanded={mediaPanelExpanded}
+          setMediaPanelExpanded={setMediaPanelExpanded}
+          youtubeId={youtubeId}
+          youtubeRef={youtubeRef}
+          timeMarkers={timeMarkers}
+          performanceMode={performanceMode}
+          canEdit={can(PERMISSIONS.SONG_EDIT)}
+          handleTimeMarkerUpdate={handleTimeMarkerUpdate}
+        />
+      )}
+
+      {!lyricsMode && youtubeId && (performanceMode || isEditingLyrics) && (
+        <div className="song-media-panel-hidden" aria-hidden="true" />
       )}
 
       {!lyricsMode && !performanceMode && (
@@ -690,6 +709,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setShowSheetMusic={setShowSheetMusic}
         youtubeRef={youtubeRef}
         youtubeId={youtubeId}
+        showMiniVideoPlayer={showMiniVideoPlayer}
+        onOpenMiniVideoPlayer={() => setShowMiniVideoPlayer(true)}
         onPlayYouTube={handlePlayYouTube}
         onRestartYouTube={handleRestartYouTube}
         loading={loading}
@@ -702,11 +723,14 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         keySignature={key || song?.key || ''}
       />
 
-      {performanceMode && !lyricsMode && youtubeId && (
+      {!lyricsMode && youtubeId && (performanceMode || isEditingLyrics) && (
         <FloatingYouTubePlayer
           isOpen={showMiniVideoPlayer}
           videoId={youtubeId}
           youtubeRef={youtubeRef}
+          timeMarkers={timeMarkers}
+          readonlyTimeMarkers={performanceMode || !can(PERMISSIONS.SONG_EDIT)}
+          onUpdateTimeMarkers={can(PERMISSIONS.SONG_EDIT) ? handleTimeMarkerUpdate : undefined}
           onClose={() => {
             if (youtubeRef.current && typeof youtubeRef.current.handlePause === 'function') {
               youtubeRef.current.handlePause();

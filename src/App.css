@@ -4958,6 +4958,22 @@ body.dark-mode .lyrics-editor-textarea {
   border-bottom: 2px solid var(--border-color);
 }
 
+.song-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.song-section-title-row .song-section-title {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.song-floating-player-toggle {
+  min-height: 36px;
+}
+
 .song-edit-error-banner {
   margin-top: 12px;
   margin-bottom: 0;
@@ -5053,6 +5069,17 @@ body.dark-mode .lyrics-editor-textarea {
 .song-sheetmusic-textarea {
   font-family: monospace;
   resize: vertical;
+}
+
+@media (max-width: 768px) {
+  .song-section-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .song-floating-player-toggle {
+    width: 100%;
+  }
 }
 
 .form-input-field {
@@ -8967,6 +8994,10 @@ body.dark-mode .cd-token {
   color: var(--text-primary);
 }
 
+.song-lyrics-mini-player-reopen {
+  margin-left: auto;
+}
+
 .song-lyrics-toolbar {
   display: flex;
   gap: var(--spacing-md);
@@ -9442,6 +9473,36 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
 .floating-youtube-player-body iframe {
   width: 100%;
   border-radius: var(--radius-sm);
+}
+
+.floating-youtube-player-markers {
+  margin-top: 8px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+
+.floating-youtube-player-markers-toggle {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 34px;
+}
+
+.floating-youtube-player-markers-content {
+  margin-top: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.floating-youtube-player-markers-content .time-markers {
+  margin-top: 0;
+}
+
+@media (max-width: 600px) {
+  .floating-youtube-player-markers-content {
+    max-height: 180px;
+  }
 }
 
 .page-container.performance-mode .song-lyrics-display {
@@ -10549,6 +10610,11 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   .song-lyrics-main-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .song-lyrics-mini-player-reopen {
+    margin-left: 0;
+    width: 100%;
   }
 
   .song-lyrics-toolbar {

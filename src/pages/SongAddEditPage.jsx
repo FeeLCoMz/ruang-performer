@@ -9,6 +9,7 @@ import VirtualPiano from "../components/VirtualPiano";
 import AIAutofillModal from "../components/AIAutofillModal";
 import ChordLinks from "../components/ChordLinks";
 import SongLyricsEditorPanel from "../components/SongLyricsEditorPanel.jsx";
+import FloatingYouTubePlayer from "../components/FloatingYouTubePlayer.jsx";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
 import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils.js';
@@ -66,6 +67,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [insertTrailingSpace, setInsertTrailingSpace] = useState(true);
   const [barsPerLine, setBarsPerLine] = useState(4);
   const [lyricsEditError, setLyricsEditError] = useState("");
+  const [showFloatingYouTubePlayer, setShowFloatingYouTubePlayer] = useState(false);
 
   // YouTube ref
   const ytRef = useRef(null);
@@ -73,6 +75,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const lyricsTextareaRef = useRef(null);
   const [ytCurrentTime, setYtCurrentTime] = useState(0);
   const [ytDuration, setYtDuration] = useState(0);
+  const normalizedYoutubeId = extractYouTubeId(youtubeId);
 
   const areMarkersEqual = (first = [], second = []) => JSON.stringify(first) === JSON.stringify(second);
 
@@ -153,6 +156,12 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       setTimeMarkers(mergedMarkers);
     }
   }, [lyrics, timeMarkers]);
+
+  useEffect(() => {
+    if (!normalizedYoutubeId) {
+      setShowFloatingYouTubePlayer(false);
+    }
+  }, [normalizedYoutubeId]);
 
   const handleAIAutofill = async () => {
     if (!title.trim()) {
@@ -592,14 +601,28 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                       <span className="media-section-label">YouTube Video</span>
                     </div>
                     <div className="media-section-body">
-                      <YouTubeViewer
-                        videoId={extractYouTubeId(youtubeId)}
-                        ref={ytRef}
-                        onTimeUpdate={(t, d) => {
-                          setYtCurrentTime(t);
-                          if (typeof d === "number") setYtDuration(d);
-                        }}
-                      />
+                      {!showFloatingYouTubePlayer ? (
+                        <YouTubeViewer
+                          videoId={normalizedYoutubeId}
+                          ref={ytRef}
+                          onTimeUpdate={(t, d) => {
+                            setYtCurrentTime(t);
+                            if (typeof d === "number") setYtDuration(d);
+                          }}
+                        />
+                      ) : (
+                        <div className="media-empty-state">
+                          <span className="media-empty-icon">🪟</span>
+                          <p className="media-empty-text">YouTube sedang dibuka dalam mode floating.</p>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => setShowFloatingYouTubePlayer(false)}
+                          >
+                            Kembalikan ke panel
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -652,7 +675,19 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
         {/* Lyrics Section */}
         <div className="song-section-card">
-          <h3 className="song-section-title">🎤 Lirik & Chord</h3>
+          <div className="song-section-title-row">
+            <h3 className="song-section-title">🎤 Lirik & Chord</h3>
+            {normalizedYoutubeId && (
+              <button
+                type="button"
+                className={`btn ${showFloatingYouTubePlayer ? 'btn-primary' : 'btn-secondary'} song-floating-player-toggle`}
+                onClick={() => setShowFloatingYouTubePlayer((prev) => !prev)}
+                title={showFloatingYouTubePlayer ? 'Tutup YouTube floating' : 'Buka YouTube floating'}
+              >
+                {showFloatingYouTubePlayer ? '🗗 Tutup Floating' : '🗖 YouTube Floating'}
+              </button>
+            )}
+          </div>
           <SongLyricsEditorPanel
             lyricsRef={lyricsTextareaRef}
             lyricsValue={lyrics}
@@ -734,6 +769,25 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         onClose={() => setShowLyricsPiano(false)}
         onKeySelect={handleLyricsPianoKeySelect}
         helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${getNumericNotationKey(songKey || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
+      />
+
+      <FloatingYouTubePlayer
+        isOpen={showFloatingYouTubePlayer}
+        videoId={normalizedYoutubeId}
+        youtubeRef={ytRef}
+        title="YouTube Floating"
+        timeMarkers={timeMarkers}
+        readonlyTimeMarkers={true}
+        onTimeUpdate={(t, d) => {
+          setYtCurrentTime(t);
+          if (typeof d === "number") setYtDuration(d);
+        }}
+        onClose={() => {
+          if (ytRef.current && typeof ytRef.current.handlePause === 'function') {
+            ytRef.current.handlePause();
+          }
+          setShowFloatingYouTubePlayer(false);
+        }}
       />
 
       {/* AI Autofill Modal */}

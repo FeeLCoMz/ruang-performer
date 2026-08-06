@@ -65,6 +65,8 @@ export default function SongLyricsMainSection({
   setShowSheetMusic,
   youtubeRef,
   youtubeId,
+  showMiniVideoPlayer = false,
+  onOpenMiniVideoPlayer,
   onPlayYouTube,
   onRestartYouTube,
   loading = false
@@ -135,6 +137,17 @@ export default function SongLyricsMainSection({
             onPlayYouTube={onPlayYouTube}
             onRestartYouTube={onRestartYouTube}
           />
+        )}
+
+        {isEditingLyrics && youtubeId && !showMiniVideoPlayer && (
+          <button
+            type="button"
+            className="btn btn-secondary song-lyrics-mini-player-reopen"
+            onClick={onOpenMiniVideoPlayer}
+            title="Buka mini video player"
+          >
+            🗖 Buka Mini Video
+          </button>
         )}
       </div>
 
