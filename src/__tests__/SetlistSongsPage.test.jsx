@@ -123,6 +123,37 @@ describe('SetlistSongsPage', () => {
     expect(findElementByText(container, 'Lagu Belum')).toBeTruthy();
   });
 
+  test('hides drag handle icon in performance mode', async () => {
+    const props = buildProps({ performanceMode: true });
+
+    await renderPage(root, props);
+
+    expect(container.querySelector('.drag-handle-icon')).toBeFalsy();
+  });
+
+  test('hides setlist usage metadata in performance mode while keeping key and tempo', async () => {
+    const props = buildProps({ performanceMode: true });
+
+    await renderPage(root, props);
+
+    const metaBlocks = Array.from(container.querySelectorAll('.song-meta')).map((el) => el.textContent || '');
+    expect(metaBlocks.length).toBeGreaterThan(0);
+    metaBlocks.forEach((metaText) => {
+      expect(metaText).not.toContain('📋');
+      expect(metaText).not.toContain('🎸');
+    });
+    expect(metaBlocks[0]).toContain('🎹 C');
+    expect(metaBlocks[0]).toContain('⏱️ 120 BPM');
+  });
+
+  test('shows mood badge in both normal and performance mode', async () => {
+    await renderPage(root, buildProps({ performanceMode: false }));
+    expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);
+
+    await renderPage(root, buildProps({ performanceMode: true }));
+    expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);
+  });
+
   test('merges multiple source setlists at once without duplicate songs', async () => {
     const setSetlists = vi.fn();
     const props = buildProps({

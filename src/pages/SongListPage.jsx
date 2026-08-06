@@ -12,6 +12,7 @@ import { fetchSetLists, fetchBands, updateSongMastery, addSong } from '../apiCli
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
+import { inferSongMood } from '../utils/songMoodUtils.js';
 import { List as VirtualList } from 'react-window';
 
 function VirtualSongRow({ index, style, ariaAttributes, songs, renderSongItem }) {
@@ -618,6 +619,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
 
   function renderSongItem(song, style) {
     const isInlineVideoSong = activeVideoSong?.id === song.id;
+    const mood = inferSongMood(song);
 
     return (
       <React.Fragment key={song.id}>
@@ -632,6 +634,9 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
             </h3>
             <div className="song-meta">
+              <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
+                Mood: {mood.label}
+              </span>
               {song.artist && <span>👤 {song.artist}</span>}
               {song.key && <span>🎹 {song.key}</span>}
               {song.tempo && <span>⏱️ {song.tempo} BPM</span>}

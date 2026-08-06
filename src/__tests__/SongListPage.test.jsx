@@ -146,4 +146,29 @@ describe('SongListPage trending actions', () => {
 
     expect(container.textContent).toContain('Sudah ada');
   });
+
+  test('shows mood badge in normal and performance mode', async () => {
+    const baseProps = {
+      songs: [
+        { id: 'song-1', title: 'Anthem', artist: 'Band A', key: 'C', tempo: '132', genre: 'Rock' },
+      ],
+      loading: false,
+      error: null,
+      onSongClick: () => {},
+      onSongMasteryUpdated: () => {},
+      trendingSongs: [],
+    };
+
+    await act(async () => {
+      root.render(<SongListPage {...baseProps} performanceMode={false} />);
+      await flushPromises();
+    });
+    expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);
+
+    await act(async () => {
+      root.render(<SongListPage {...baseProps} performanceMode={true} />);
+      await flushPromises();
+    });
+    expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);
+  });
 });

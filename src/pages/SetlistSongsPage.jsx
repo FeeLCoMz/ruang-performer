@@ -16,6 +16,7 @@ import { PERMISSIONS, canEditSetlist } from '../utils/permissionUtils.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as chordUtils from '../utils/chordUtils.js';
 import { buildSmartSetlistPlan } from '../utils/setlistSmartAssistant.js';
+import { inferSongMood } from '../utils/songMoodUtils.js';
 import useMetronome from '../hooks/useMetronome.js';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 
@@ -1751,6 +1752,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             const isSmartFeatured = setlistSongMeta?.[song.id]?.smartFeatured === true;
             const isCompleted = completedSongs?.[song.id] === true;
             const isInlinePlayerSong = (activeVideoSong?.id === song.id) || (isMetronomeActive && metronomeSongId === song.id);
+            const mood = inferSongMood(song);
             return (
               <React.Fragment key={song.id}>
                 <div
@@ -1795,7 +1797,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   })}
                 >
                   {/* Drag handle icon */}
-                  {sortBy === 'custom' && groupBy === 'none' && (
+                  {sortBy === 'custom' && groupBy === 'none' && !performanceMode && (
                     <span className="drag-handle-icon" title="Seret untuk mengatur urutan">
                       <DragHandleIcon size={18} />
                     </span>
@@ -1825,6 +1827,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                       {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
                     </h3>
                     <div className="song-meta">
+                      <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
+                        Mood: {mood.label}
+                      </span>
                       {song.artist && <span>👤 {song.artist}</span>}
                       {song.key && (
                         <span>
@@ -1838,13 +1843,13 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                           {tempoChanged && baseSong?.tempo ? ` (${baseSong.tempo} BPM)` : ''}
                         </span>
                       )}
-                      {song.genre && (
+                      {!performanceMode && song.genre && (
                         <span>
                           🎸 {song.genre}
                           {genreChanged && baseSong?.genre ? ` (${baseSong.genre})` : ''}
                         </span>
                       )}
-                      <span>📋 {songUsageCountMap.get(song.id) || 0} setlist</span>
+                      {!performanceMode && <span>📋 {songUsageCountMap.get(song.id) || 0} setlist</span>}
                     </div>
                   </div>
 
