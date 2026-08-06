@@ -85,6 +85,7 @@ export default function SongChordsLyricsToolbar({
   const normalizedTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
   const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
   const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
+  const toolbarClassName = `song-lyrics-toolbar ${performanceMode ? 'song-lyrics-toolbar--performance' : 'song-lyrics-toolbar--normal'}`;
 
   // Sync YouTube playing state
   useEffect(() => {
@@ -133,17 +134,18 @@ export default function SongChordsLyricsToolbar({
 
   return (
     <>
-      <div className="song-lyrics-toolbar">
+      <div className={toolbarClassName}>
         {!isEditingLyrics && !lyricsMode && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-actions">
             {!performanceMode && canEdit && (
               <button
                 type="button"
                 onClick={handleEditLyrics}
-                className="btn btn-primary"
+                className="btn btn-primary song-lyrics-toolbar-btn"
                 title="Edit Lirik"
               >
-                ✏️
+                <span aria-hidden="true">✏️</span>
+                <span className="song-lyrics-toolbar-btn-label">Edit Lirik</span>
               </button>
             )}
 
@@ -152,10 +154,11 @@ export default function SongChordsLyricsToolbar({
                 <button
                   type="button"
                   onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="btn btn-secondary"
+                  className="btn btn-secondary song-lyrics-toolbar-btn"
                   title="Export"
                 >
-                  📥
+                  <span aria-hidden="true">📥</span>
+                  <span className="song-lyrics-toolbar-btn-label">Export</span>
                 </button>
                 <SongChordsExportMenu
                   showExportMenu={showExportMenu}
@@ -174,7 +177,7 @@ export default function SongChordsLyricsToolbar({
               <>
                 <button
                   type="button"
-                  className="btn btn-secondary song-lyrics-youtube-btn"
+                  className={`btn btn-secondary song-lyrics-youtube-btn${!performanceMode ? ' song-lyrics-youtube-btn--normal' : ''}`}
                   title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
                   aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
                   onClick={() => {
@@ -192,10 +195,13 @@ export default function SongChordsLyricsToolbar({
                   }}
                 >
                   <span aria-hidden="true">{isYoutubePlaying ? '⏸' : '▶'}</span>
+                  {!performanceMode && (
+                    <span className="song-lyrics-toolbar-btn-label">{isYoutubePlaying ? 'Pause' : 'Play'}</span>
+                  )}
                 </button>
                 <button
                   type="button"
-                  className="btn btn-secondary song-lyrics-youtube-btn"
+                  className={`btn btn-secondary song-lyrics-youtube-btn${!performanceMode ? ' song-lyrics-youtube-btn--normal' : ''}`}
                   title="Putar dari awal"
                   aria-label="Putar dari awal"
                   onClick={() => {
@@ -213,6 +219,7 @@ export default function SongChordsLyricsToolbar({
                   }}
                 >
                   <span aria-hidden="true">↺</span>
+                  {!performanceMode && <span className="song-lyrics-toolbar-btn-label">Restart</span>}
                 </button>
               </>
             )}
@@ -223,7 +230,7 @@ export default function SongChordsLyricsToolbar({
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-fullscreen">
             <button
               type="button"
-              className="btn btn-primary song-lyrics-fullscreen-btn"
+              className="btn btn-primary song-lyrics-fullscreen-btn song-lyrics-toolbar-btn"
               title="Tampilkan lirik layar penuh"
               aria-label="Buka layar penuh"
               onClick={() => {
@@ -336,7 +343,7 @@ export default function SongChordsLyricsToolbar({
             </div>
 
             <button
-              className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'}`}
+              className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
               title={showChordNumbers ? 'Chord (angka) - aktif' : 'Toggle angka chord'}
               onClick={() => {
                 setShowChordNumbers((prev) => {
@@ -349,19 +356,21 @@ export default function SongChordsLyricsToolbar({
                 });
               }}
             >
-              🔢
+              <span aria-hidden="true">🔢</span>
+              <span className="song-lyrics-toolbar-btn-label">Angka</span>
             </button>
 
             <div className="song-lyrics-chord-style-menu-container" ref={chordStyleMenuRef}>
               <button
-                className={`btn ${showJazzChords || showSimpleChords ? 'btn-primary' : 'btn-secondary'}`}
+                className={`btn ${showJazzChords || showSimpleChords ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
                 title={`Style chord: ${currentChordStyleLabel}`}
                 onClick={() => setShowChordStyleMenu((prev) => !prev)}
                 type="button"
                 aria-haspopup="menu"
                 aria-expanded={showChordStyleMenu}
               >
-                🎼
+                <span aria-hidden="true">🎼</span>
+                <span className="song-lyrics-toolbar-btn-label">Style</span>
               </button>
               <span
                 className={`song-lyrics-chord-style-badge mode-${currentChordStyleKey}`}

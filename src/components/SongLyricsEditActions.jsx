@@ -77,50 +77,52 @@ export default function SongLyricsEditActions({
   return (
     <>
       <div className="song-lyrics-edit-actions">
-        <button
-          type="button"
-          onClick={handleAlignSelectedBarlines}
-          disabled={disabled}
-          className="btn btn-secondary"
-          title="Sejajarkan garis bar (|) pada teks yang dipilih"
-        >
-          ∥ Sejajar
-        </button>
-        <button
-          type="button"
-          onClick={handleWrap4BarsPerLine}
-          disabled={disabled}
-          className="btn btn-secondary"
-          title="Pecah otomatis menjadi 4 bar per baris pada teks yang dipilih"
-        >
-          ↩ 4/Baris
-        </button>
-        <div className="song-lyrics-bar-wrap-controls">
-          <label htmlFor={barsPerLineSelectId} className="song-lyrics-bar-wrap-label">Bar/Baris</label>
-          <select
-            id={barsPerLineSelectId}
-            className="song-lyrics-bar-wrap-select"
-            value={barsPerLine}
-            onChange={(e) => setBarsPerLine(Number(e.target.value))}
-            disabled={disabled}
-            aria-label="Pilih jumlah bar per baris"
-          >
-            <option value={2}>2</option>
-            <option value={4}>4</option>
-            <option value={6}>6</option>
-          </select>
+        <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-format">
           <button
             type="button"
-            onClick={() => handleWrapBarsPerLine(barsPerLine)}
+            onClick={handleAlignSelectedBarlines}
             disabled={disabled}
             className="btn btn-secondary"
-            title="Terapkan jumlah bar per baris pada teks yang dipilih"
+            title="Sejajarkan garis bar (|) pada teks yang dipilih"
           >
-            Terapkan
+            ∥ Sejajar
           </button>
+          <button
+            type="button"
+            onClick={handleWrap4BarsPerLine}
+            disabled={disabled}
+            className="btn btn-secondary"
+            title="Pecah otomatis menjadi 4 bar per baris pada teks yang dipilih"
+          >
+            ↩ 4/Baris
+          </button>
+          <div className="song-lyrics-bar-wrap-controls">
+            <label htmlFor={barsPerLineSelectId} className="song-lyrics-bar-wrap-label">Bar/Baris</label>
+            <select
+              id={barsPerLineSelectId}
+              className="song-lyrics-bar-wrap-select"
+              value={barsPerLine}
+              onChange={(e) => setBarsPerLine(Number(e.target.value))}
+              disabled={disabled}
+              aria-label="Pilih jumlah bar per baris"
+            >
+              <option value={2}>2</option>
+              <option value={4}>4</option>
+              <option value={6}>6</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => handleWrapBarsPerLine(barsPerLine)}
+              disabled={disabled}
+              className="btn btn-secondary"
+              title="Terapkan jumlah bar per baris pada teks yang dipilih"
+            >
+              Terapkan
+            </button>
+          </div>
         </div>
         {showPianoControls && (
-          <div className="song-lyrics-piano-controls">
+          <div className="song-lyrics-edit-actions-group song-lyrics-piano-controls">
             <button
               type="button"
               onClick={onOpenPiano}
@@ -175,40 +177,44 @@ export default function SongLyricsEditActions({
             )}
           </div>
         )}
-        {showMetadataHelpButton && (
-          <button
-            type="button"
-            onClick={() => setShowMetadataHelp(true)}
-            disabled={disabled}
-            className="btn btn-secondary"
-            title="Lihat daftar metadata yang didukung"
-          >
-            ❓ Help
-          </button>
-        )}
-        {showSaveCancelButtons && (
-          <>
-            <button
-              type="button"
-              onClick={handleSaveLyrics}
-              disabled={disabled}
-              className="btn"
-              title={savingLyrics ? "Menyimpan..." : "Simpan"}
-              aria-label={savingLyrics ? "Menyimpan" : "Simpan"}
-            >
-              {savingLyrics ? "⏳" : "✓"}
-            </button>
-            <button
-              type="button"
-              onClick={handleCancelEditLyrics}
-              disabled={disabled}
-              className="btn btn-secondary"
-              title="Batal"
-              aria-label="Batal"
-            >
-              ✕
-            </button>
-          </>
+        {(showMetadataHelpButton || showSaveCancelButtons) && (
+          <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-meta">
+            {showMetadataHelpButton && (
+              <button
+                type="button"
+                onClick={() => setShowMetadataHelp(true)}
+                disabled={disabled}
+                className="btn btn-secondary"
+                title="Lihat daftar metadata yang didukung"
+              >
+                ❓ Help
+              </button>
+            )}
+            {showSaveCancelButtons && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSaveLyrics}
+                  disabled={disabled}
+                  className="btn"
+                  title={savingLyrics ? "Menyimpan..." : "Simpan"}
+                  aria-label={savingLyrics ? "Menyimpan" : "Simpan"}
+                >
+                  {savingLyrics ? "⏳" : "✓"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelEditLyrics}
+                  disabled={disabled}
+                  className="btn btn-secondary"
+                  title="Batal"
+                  aria-label="Batal"
+                >
+                  ✕
+                </button>
+              </>
+            )}
+          </div>
         )}
       </div>
 
