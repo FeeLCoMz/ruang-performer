@@ -2,6 +2,45 @@ import React, { useEffect, useRef, useState } from 'react';
 import YouTubeViewer from './YouTubeViewer.jsx';
 import TimeMarkers from './TimeMarkers.jsx';
 
+const FLOATING_PLAYER_POSITION_STORAGE_KEY = 'ruangperformer_floating_youtube_player_position_v1';
+const DEFAULT_PLAYER_WIDTH = 360;
+const DEFAULT_PLAYER_HEIGHT = 300;
+
+function clampPlayerPosition(x, y, width, height) {
+  return {
+    x: Math.min(
+      Math.max(8, Number.isFinite(x) ? x : 8),
+      Math.max(8, window.innerWidth - width - 8)
+    ),
+    y: Math.min(
+      Math.max(8, Number.isFinite(y) ? y : 8),
+      Math.max(8, window.innerHeight - height - 8)
+    ),
+  };
+}
+
+function readSavedPlayerPosition() {
+  try {
+    const raw = localStorage.getItem(FLOATING_PLAYER_POSITION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Number.isFinite(parsed.x) || !Number.isFinite(parsed.y)) {
+      return null;
+    }
+    return { x: parsed.x, y: parsed.y };
+  } catch {
+    return null;
+  }
+}
+
+function savePlayerPosition(position) {
+  try {
+    localStorage.setItem(FLOATING_PLAYER_POSITION_STORAGE_KEY, JSON.stringify(position));
+  } catch {
+    // Ignore storage failures (private mode/quota) and keep runtime position only.
+  }
+}
+
 export default function FloatingYouTubePlayer({
   isOpen,
   videoId,
@@ -23,11 +62,18 @@ export default function FloatingYouTubePlayer({
   useEffect(() => {
     if (!isOpen) return;
 
-    const width = 360;
-    const height = 246;
+    const savedPosition = readSavedPlayerPosition();
+    const width = Math.min(DEFAULT_PLAYER_WIDTH, Math.max(240, window.innerWidth - 16));
+    const height = DEFAULT_PLAYER_HEIGHT;
+
+    if (savedPosition) {
+      setPosition(clampPlayerPosition(savedPosition.x, savedPosition.y, width, height));
+      return;
+    }
+
     const x = Math.max(12, window.innerWidth - width - 16);
     const y = Math.max(80, window.innerHeight - height - 24);
-    setPosition({ x, y });
+    setPosition(clampPlayerPosition(x, y, width, height));
   }, [isOpen]);
 
   useEffect(() => {
@@ -44,20 +90,44 @@ export default function FloatingYouTubePlayer({
 
   useEffect(() => {
     if (!isOpen) return;
+    savePlayerPosition(position);
+  }, [position, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const ensureInsideViewport = () => {
+      const panelWidth = panelRef.current?.offsetWidth || DEFAULT_PLAYER_WIDTH;
+      const panelHeight = panelRef.current?.offsetHeight || DEFAULT_PLAYER_HEIGHT;
+      setPosition((prev) => {
+        const clamped = clampPlayerPosition(prev.x, prev.y, panelWidth, panelHeight);
+        if (clamped.x === prev.x && clamped.y === prev.y) return prev;
+        return clamped;
+      });
+    };
+
+    ensureInsideViewport();
+    window.addEventListener('resize', ensureInsideViewport);
+
+    return () => {
+      window.removeEventListener('resize', ensureInsideViewport);
+    };
+  }, [isOpen, markersExpanded]);
+
+  useEffect(() => {
+    if (!isOpen) return;
 
     const handleMove = (clientX, clientY) => {
       if (!dragStateRef.current.active) return;
-      const panelWidth = panelRef.current?.offsetWidth || 360;
-      const panelHeight = panelRef.current?.offsetHeight || 246;
-      const nextX = Math.min(
-        Math.max(8, clientX - dragStateRef.current.offsetX),
-        Math.max(8, window.innerWidth - panelWidth - 8)
+      const panelWidth = panelRef.current?.offsetWidth || DEFAULT_PLAYER_WIDTH;
+      const panelHeight = panelRef.current?.offsetHeight || DEFAULT_PLAYER_HEIGHT;
+      const clamped = clampPlayerPosition(
+        clientX - dragStateRef.current.offsetX,
+        clientY - dragStateRef.current.offsetY,
+        panelWidth,
+        panelHeight
       );
-      const nextY = Math.min(
-        Math.max(8, clientY - dragStateRef.current.offsetY),
-        Math.max(8, window.innerHeight - panelHeight - 8)
-      );
-      setPosition({ x: nextX, y: nextY });
+      setPosition(clamped);
     };
 
     const onMouseMove = (event) => {
@@ -156,6 +226,7 @@ export default function FloatingYouTubePlayer({
               <TimeMarkers
                 timeMarkers={timeMarkers}
                 readonly={readonlyTimeMarkers}
+                compactUI={true}
                 currentTime={ytCurrentTime}
                 duration={ytDuration}
                 onUpdate={onUpdateTimeMarkers}

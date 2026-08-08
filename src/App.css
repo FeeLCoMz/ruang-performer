@@ -8033,6 +8033,60 @@ body.dark-mode .cd-token {
   margin-bottom: var(--spacing-xs);
 }
 
+.time-markers-compact-ui {
+  padding: var(--spacing-sm);
+  border-style: dashed;
+}
+
+.time-markers-compact-ui .time-markers-content {
+  gap: var(--spacing-sm);
+}
+
+.time-markers-compact-ui .time-markers-progress {
+  text-align: left;
+  font-size: 0.72rem;
+}
+
+.time-markers-compact-ui .time-marker-item {
+  padding: var(--spacing-sm);
+  gap: var(--spacing-sm);
+}
+
+.time-markers-compact-ui .time-marker-time {
+  min-width: 42px;
+  font-size: 0.82rem;
+}
+
+.time-markers-compact-ui .time-marker-label {
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.time-markers-compact-ui .time-marker-play-btn {
+  min-width: 34px;
+  width: 34px;
+  height: 30px;
+  padding: 0;
+}
+
+.time-markers-compact-ui .time-marker-actions .btn,
+.time-markers-compact-ui .time-marker-edit-actions .btn,
+.time-markers-compact-ui .time-marker-add .btn {
+  min-height: 30px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+}
+
+.time-markers-compact-ui .time-marker-input {
+  padding: 6px 8px;
+  font-size: 0.8rem;
+}
+
+.time-markers-compact-ui .time-marker-empty {
+  padding: var(--spacing-sm);
+  font-size: 0.8rem;
+}
+
 @media (max-width: 768px) {
   .time-markers-hint-desktop {
     display: none;

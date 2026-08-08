@@ -7,13 +7,15 @@ export default function TimeMarkers({
   duration = 0,
   readonly = false,
   onUpdate,
-  getCurrentYouTubeTime // function: returns current time in seconds from YouTube player
+  getCurrentYouTubeTime, // function: returns current time in seconds from YouTube player
+  compactUI = false,
 }) {  
   const [editingId, setEditingId] = useState(null);
   const [editTime, setEditTime] = useState('');
   const [editLabel, setEditLabel] = useState('');
   const [newTime, setNewTime] = useState('');
   const [newLabel, setNewLabel] = useState('');
+  const [showAddForm, setShowAddForm] = useState(!compactUI);
 
   // Auto-fill newTime with YouTube time when add form is shown
   useEffect(() => {
@@ -124,13 +126,16 @@ export default function TimeMarkers({
     onUpdate(updatedMarkers);
     setNewTime('');
     setNewLabel('');
+    if (compactUI) {
+      setShowAddForm(false);
+    }
   };
 
   const sortedMarkers = [...timeMarkers].sort((a, b) => a.time - b.time);
   const isCompactReadonly = readonly;
 
   return (
-    <div className="time-markers">
+    <div className={`time-markers ${compactUI ? 'time-markers-compact-ui' : ''}`}>
       <div className="time-markers-content">
         {duration > 0 && (
           <div className="time-markers-progress">
@@ -138,7 +143,7 @@ export default function TimeMarkers({
           </div>
         )}
 
-        {sortedMarkers.length > 0 && (
+        {sortedMarkers.length > 0 && !compactUI && (
           <div className="time-markers-hint" aria-live="polite">
             <span className="time-markers-hint-desktop">Klik marker untuk seek. Double-click untuk pause.</span>
             <span className="time-markers-hint-mobile">Tap: seek | 2x tap: pause</span>
@@ -147,38 +152,64 @@ export default function TimeMarkers({
 
         {!readonly && (
           <div className="time-marker-add">
-            <div className="time-marker-add-row">
-              <input
-                type="text"
-                value={newTime}
-                onChange={(e) => setNewTime(e.target.value)}
-                placeholder="mm:ss"
-                className="time-marker-input"
-              />
+            {compactUI && !showAddForm && (
               <button
                 type="button"
-                title="Ambil waktu dari YouTube"
-                onClick={handleFillNewTimeFromYouTube}
                 className="btn btn-secondary"
+                onClick={() => setShowAddForm(true)}
+                title="Tambah time marker"
               >
-                ⏱️
+                + Marker
               </button>
-            </div>
-            <input
-              type="text"
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              placeholder="Label"
-              className="time-marker-input"
-            />
-            <button
-              type="button"
-              onClick={handleAddNew}
-              disabled={!newTime}
-              className="btn"
-            >
-              Tambah Timestamp
-            </button>
+            )}
+
+            {(!compactUI || showAddForm) && (
+              <>
+                <div className="time-marker-add-row">
+                  <input
+                    type="text"
+                    value={newTime}
+                    onChange={(e) => setNewTime(e.target.value)}
+                    placeholder="mm:ss"
+                    className="time-marker-input"
+                  />
+                  <button
+                    type="button"
+                    title="Ambil waktu dari YouTube"
+                    onClick={handleFillNewTimeFromYouTube}
+                    className="btn btn-secondary"
+                  >
+                    ⏱️
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  placeholder="Label"
+                  className="time-marker-input"
+                />
+                <div className="time-marker-add-row">
+                  <button
+                    type="button"
+                    onClick={handleAddNew}
+                    disabled={!newTime}
+                    className="btn"
+                  >
+                    Tambah Timestamp
+                  </button>
+                  {compactUI && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddForm(false)}
+                      className="btn btn-secondary"
+                    >
+                      Batal
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 
