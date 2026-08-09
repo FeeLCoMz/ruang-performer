@@ -22,19 +22,14 @@
   ],
   "categories": ["music", "productivity"],
   "screenshots": [
-    {
-      "src": "/screenshots/screenshot-mobile.png",
-      "sizes": "540x960",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Setlist view"
-    },
-    {
-      "src": "/screenshots/screenshot-desktop.png",
-      "sizes": "1280x800",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Dashboard view"
-    }
+    { "src": "/screenshots/screenshot1.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },
+    { "src": "/screenshots/screenshot2.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },
+    { "src": "/screenshots/screenshot3.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },
+    { "src": "/screenshots/screenshot4.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },
+    { "src": "/screenshots/screenshot5.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },
+    { "src": "/screenshots/screenshot6.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },
+    { "src": "/screenshots/screenshot7.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },
+    { "src": "/screenshots/screenshot8.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },
+    { "src": "/screenshots/screenshot9.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" }
   ]
 }
