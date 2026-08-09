@@ -18,6 +18,11 @@ describe("chordUtils", () => {
     expect(parseSection('Key change: A')).toEqual({ type: 'modulation', label: 'A' });
   });
 
+  test("parseSection detects pre and post chorus labels", () => {
+    expect(parseSection('Pre-Chorus:')).toEqual({ type: 'structure', label: 'Pre-Chorus' });
+    expect(parseSection('[Post-Chorus]')).toEqual({ type: 'structure', label: 'Post-Chorus' });
+  });
+
   test("parseSection does not treat substring inside a word as structure", () => {
     expect(parseSection('stuck in reverse')).toBe(null);
   });

@@ -112,8 +112,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [editError, setEditError] = useState(null);
   const [barsPerLine, setBarsPerLine] = useState(4);
   const [showLyricsPiano, setShowLyricsPiano] = useState(false);
-  const [insertNotesToLyrics, setInsertNotesToLyrics] = useState(true);
-  const [insertNoteFormat, setInsertNoteFormat] = useState('bracket');
+  const [insertNotesToLyrics, setInsertNotesToLyrics] = useState(false);
+  const [insertNoteFormat, setInsertNoteFormat] = useState('number');
   const [insertTrailingSpace, setInsertTrailingSpace] = useState(true);
 
   // Chord Analyzer state

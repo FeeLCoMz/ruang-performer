@@ -495,7 +495,7 @@ export function parseSection(line) {
     const displayLabel = annotation ? `${originalLabel} (${annotation})` : originalLabel;
     const labelLower = originalLabel.toLowerCase();
     // Daftar kata kunci struktur lagu
-    const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain', 'pre-chorus', 'solo', 'musik'];
+    const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain', 'pre-chorus', 'post-chorus', 'solo', 'musik'];
     // Daftar kata kunci instrumen umum per kategori
     const instrumentKeywords = [
       'gitar', 'guitar', 'bass', 'ukulele', 'mandolin',
@@ -1054,6 +1054,7 @@ const parseStandardFormat = (lines) => {
     if (n.includes('intro')) return 'intro';
     if (n.includes('verse')) return 'verse';
     if (n.includes('pre') && n.includes('chorus')) return 'pre-chorus';
+    if (n.includes('post') && n.includes('chorus')) return 'post-chorus';
     if (n.includes('chorus')) return 'chorus';
     if (n.includes('bridge')) return 'bridge';
     if (n.includes('outro')) return 'outro';

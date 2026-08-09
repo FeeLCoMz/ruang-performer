@@ -1,4 +1,26 @@
 import React, { useMemo, useState } from "react";
+import {
+  autoAlignChordLyricPairs,
+  autoTagSongSections,
+  detectSectionBadges,
+  insertLineAtCursor,
+  removeExtraSpacesAndBrokenLines,
+  standardizeChordNotation,
+  transposeLyricsText,
+} from "../utils/lyricsEditorUtils.js";
+
+const SECTION_LABELS = [
+  { label: "Intro", value: "[Intro]" },
+  { label: "Verse 1", value: "[Verse 1]" },
+  { label: "Verse 2", value: "[Verse 2]" },
+  { label: "Pre-Chorus", value: "[Pre-Chorus]" },
+  { label: "Post-Chorus", value: "[Post-Chorus]" },
+  { label: "Chorus", value: "[Chorus]" },
+  { label: "Bridge", value: "[Bridge]" },
+  { label: "Interlude", value: "[Interlude]" },
+  { label: "Outro", value: "[Outro]" },
+  { label: "Coda", value: "[Coda]" },
+];
 
 const METADATA_HELP_ITEMS = [
   {
@@ -70,13 +92,63 @@ export default function SongLyricsEditActions({
   insertTrailingSpace = false,
   onToggleInsertTrailingSpace,
   keySignature = "",
+  lyricsRef,
+  lyricsValue = "",
+  setLyricsValue,
 }) {
   const [showMetadataHelp, setShowMetadataHelp] = useState(false);
   const metadataSections = useMemo(() => METADATA_HELP_ITEMS, []);
+  const detectedSectionBadges = useMemo(() => detectSectionBadges(lyricsValue), [lyricsValue]);
+
+  const handleInsertSection = (sectionLabel) => {
+    if (!lyricsRef?.current || typeof setLyricsValue !== 'function') return;
+    const el = lyricsRef.current;
+    const { nextText, nextCursor } = insertLineAtCursor({
+      text: lyricsValue,
+      selectionStart: el.selectionStart,
+      label: sectionLabel,
+    });
+    setLyricsValue(nextText);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(nextCursor, nextCursor);
+    }, 0);
+  };
+
+  const applyTextTransform = (transformer) => {
+    if (typeof setLyricsValue !== "function") return;
+    const nextText = transformer(lyricsValue);
+    if (typeof nextText !== "string" || nextText === lyricsValue) return;
+
+    const el = lyricsRef?.current;
+    const nextCursor = Math.min(el?.selectionStart ?? nextText.length, nextText.length);
+    setLyricsValue(nextText);
+
+    setTimeout(() => {
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(nextCursor, nextCursor);
+    }, 0);
+  };
 
   return (
     <>
       <div className="song-lyrics-edit-actions">
+        <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-sections">
+          <span className="song-lyrics-sections-label">Bagian:</span>
+          {SECTION_LABELS.map(({ label, value }) => (
+            <button
+              key={value}
+              type="button"
+              className="btn btn-secondary song-lyrics-section-btn"
+              disabled={disabled}
+              title={`Sisipkan ${value}`}
+              onClick={() => handleInsertSection(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-format">
           <button
             type="button"
@@ -86,6 +158,15 @@ export default function SongLyricsEditActions({
             title="Sejajarkan garis bar (|) pada teks yang dipilih"
           >
             ∥ Sejajar
+          </button>
+          <button
+            type="button"
+            onClick={() => applyTextTransform(autoAlignChordLyricPairs)}
+            disabled={disabled}
+            className="btn btn-secondary"
+            title="Deteksi chord line di atas lirik dan rapikan posisinya agar sejajar dengan suku kata"
+          >
+            ⇅ Auto-Align
           </button>
           <button
             type="button"
@@ -120,6 +201,56 @@ export default function SongLyricsEditActions({
               Terapkan
             </button>
           </div>
+        </div>
+        <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-cleanup">
+          <button
+            type="button"
+            onClick={() => applyTextTransform(removeExtraSpacesAndBrokenLines)}
+            disabled={disabled}
+            className="btn btn-secondary"
+            title="Hapus spasi ganda, tab, dan tumpukan baris kosong dari hasil copy-paste"
+          >
+            ✨ Bersihkan Teks
+          </button>
+          <button
+            type="button"
+            onClick={() => applyTextTransform(autoTagSongSections)}
+            disabled={disabled}
+            className="btn btn-secondary"
+            title="Deteksi Intro, Verse, Chorus, Bridge, dan normalisasi menjadi tag section"
+          >
+            🏷 Tag Bagian
+          </button>
+          <button
+            type="button"
+            onClick={() => applyTextTransform(standardizeChordNotation)}
+            disabled={disabled}
+            className="btn btn-secondary"
+            title="Standarkan format penulisan chord seperti min/minor/Maj menjadi format yang konsisten"
+          >
+            ♫ Standarkan Chord
+          </button>
+        </div>
+        <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-transpose">
+          <span className="song-lyrics-sections-label">Transpose Teks:</span>
+          <button
+            type="button"
+            onClick={() => applyTextTransform((text) => transposeLyricsText(text, -1))}
+            disabled={disabled}
+            className="btn btn-secondary"
+            title="Turunkan semua chord dalam teks satu semitone"
+          >
+            -1
+          </button>
+          <button
+            type="button"
+            onClick={() => applyTextTransform((text) => transposeLyricsText(text, 1))}
+            disabled={disabled}
+            className="btn btn-secondary"
+            title="Naikkan semua chord dalam teks satu semitone"
+          >
+            +1
+          </button>
         </div>
         {showPianoControls && (
           <div className="song-lyrics-edit-actions-group song-lyrics-piano-controls">
@@ -217,6 +348,22 @@ export default function SongLyricsEditActions({
           </div>
         )}
       </div>
+
+      {detectedSectionBadges.length > 0 && (
+        <div className="song-lyrics-detected-sections" aria-label="Bagian lagu terdeteksi">
+          <span className="song-lyrics-sections-label">Bagian Terdeteksi:</span>
+          {detectedSectionBadges.map((item) => (
+            <span
+              key={`${item.lineNumber}-${item.label}`}
+              className={`song-lyrics-section-detected-badge tone-${item.tone}`}
+              title={`Baris ${item.lineNumber}`}
+            >
+              {item.label}
+              <span className="song-lyrics-section-detected-line">L{item.lineNumber}</span>
+            </span>
+          ))}
+        </div>
+      )}
 
       {showMetadataHelp && (
         <div

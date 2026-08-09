@@ -240,6 +240,77 @@ describe('Song lyrics shared editor rendering', () => {
 
     expect(container.querySelector('.song-lyrics-edit-actions')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-textarea')).toBeTruthy();
+    expect(container.textContent).toContain('Auto-Align');
+    expect(container.textContent).toContain('Bersihkan Teks');
+    expect(container.textContent).toContain('Tag Bagian');
+    expect(container.textContent).toContain('Standarkan Chord');
+    expect(container.textContent).toContain('Post-Chorus');
+  });
+
+  test('Given recognized section labels in edit mode, Then detector badges are shown', async () => {
+    await act(async () => {
+      root.render(
+        <SongLyricsMainSection
+          isEditingLyrics={true}
+          lyricsDisplayRef={{ current: null }}
+          editedLyrics={'[Intro]\nAm F\nPost Chorus:\nChorus:'}
+          setEditedLyrics={noop}
+          editError={null}
+          handleEditLyrics={noop}
+          savingLyrics={false}
+          handleSaveLyrics={noop}
+          handleAlignSelectedBarlines={noop}
+          handleWrap4BarsPerLine={noop}
+          barsPerLine={4}
+          setBarsPerLine={noop}
+          handleWrapBarsPerLine={noop}
+          handleCancelEditLyrics={noop}
+          onOpenPiano={noop}
+          insertNotesToLyrics={true}
+          setInsertNotesToLyrics={noop}
+          insertNoteFormat={'bracket'}
+          setInsertNoteFormat={noop}
+          insertTrailingSpace={true}
+          setInsertTrailingSpace={noop}
+          insertNumberKeySignature={'C'}
+          showExportMenu={false}
+          setShowExportMenu={noop}
+          handleExportText={noop}
+          handleExportPDF={noop}
+          tempo={120}
+          timeSignature={'4/4'}
+          autoScrollActive={false}
+          scrollSpeed={120}
+          setAutoScrollActive={noop}
+          setScrollSpeed={noop}
+          currentBeat={0}
+          setCurrentBeat={noop}
+          zoom={1}
+          setZoom={noop}
+          performanceMode={false}
+          canEdit={true}
+          song={{ lyrics: '[Intro]\nAm F\nPost Chorus:\nChorus:' }}
+          transpose={0}
+          setTranspose={noop}
+          showChordNumbers={false}
+          setShowChordNumbers={noop}
+          showJazzChords={false}
+          setShowJazzChords={noop}
+          showSimpleChords={false}
+          setShowSimpleChords={noop}
+          keySignature={'C'}
+          showSheetMusic={false}
+          setShowSheetMusic={noop}
+          youtubeRef={{ current: null }}
+          loading={false}
+        />
+      );
+    });
+
+    expect(container.querySelector('.song-lyrics-detected-sections')).toBeTruthy();
+    expect(container.textContent).toContain('Intro');
+    expect(container.textContent).toContain('Post-Chorus');
+    expect(container.textContent).toContain('Chorus');
   });
 
   test('Given SongChordsLyricsToolbar in edit mode, Then toolbar does not render old edit action block', async () => {
