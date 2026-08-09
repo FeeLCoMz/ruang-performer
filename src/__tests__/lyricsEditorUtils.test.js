@@ -49,6 +49,11 @@ describe("lyricsEditorUtils", () => {
     expect(removeExtraSpacesAndBrokenLines(input)).toBe("Verse 1\n\n[C]Hello world\nAm F");
   });
 
+  test("removeExtraSpacesAndBrokenLines removes hidden directional characters", () => {
+    const input = "\u200ECm D#\n\u200EA# Cm";
+    expect(removeExtraSpacesAndBrokenLines(input)).toBe("Cm D#\nA# Cm");
+  });
+
   test("autoTagSongSections normalizes common song section labels", () => {
     const input = "Intro:\nVerse 1\nPre Chorus\nPost Chorus\nReff\nBridge";
     expect(autoTagSongSections(input)).toBe("[Intro]\n[Verse 1]\n[Pre-Chorus]\n[Post-Chorus]\n[Chorus]\n[Bridge]");
@@ -75,6 +80,11 @@ describe("lyricsEditorUtils", () => {
   test("standardizeChordNotation normalizes spacing inside existing grid bars", () => {
     const input = "|cmajor7| g | aminor |f|";
     expect(standardizeChordNotation(input)).toBe("| Cmaj7 | G | Am | F |");
+  });
+
+  test("standardizeChordNotation handles invisible directional marks from copied lyrics", () => {
+    const input = "\u200ECm D#\n\u200EMendung idak guruh jugo idak tibo\n\u200EA# Cm";
+    expect(standardizeChordNotation(input)).toBe("| Cm | D# |\nMendung idak guruh jugo idak tibo\n| A# | Cm |");
   });
 
   test("transposeLyricsText transposes inline, chord-line, and modulation chords", () => {

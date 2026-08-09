@@ -4,9 +4,12 @@ import { toNumberNotation } from "./notationUtils.js";
 const LIKELY_CHORD_SYMBOL_REGEX = /^[A-Ga-g][#b♭♯]?(?:(?:maj|major|min|minor|m|dim|aug|sus|add|M|no|omit|\+|-)?[0-9#b♭♯+\-]*)*(?:\/[A-Ga-g][#b♭♯]?)?$/i;
 const BRACKETED_CHORD_REGEX = /([\[\(\{])([^\]\)\}\n]+)([\]\)\}])/g;
 const BLANK_LINE_REGEX = /\n{3,}/g;
+const INVISIBLE_FORMAT_CHARS_REGEX = /[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
 
 function normalizeLineEndings(text) {
-  return String(text || "").replace(/\r\n?/g, "\n");
+  return String(text || "")
+    .replace(/\r\n?/g, "\n")
+    .replace(INVISIBLE_FORMAT_CHARS_REGEX, "");
 }
 
 function standardizeRoot(rawRoot = "") {

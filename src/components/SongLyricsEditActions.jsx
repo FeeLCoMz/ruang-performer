@@ -208,7 +208,7 @@ export default function SongLyricsEditActions({
             onClick={() => applyTextTransform(removeExtraSpacesAndBrokenLines)}
             disabled={disabled}
             className="btn btn-secondary"
-            title="Hapus spasi ganda, tab, dan tumpukan baris kosong dari hasil copy-paste"
+            title="Hapus spasi ganda, tab, baris kosong menumpuk, dan karakter tersembunyi dari hasil copy-paste"
           >
             ✨ Bersihkan Teks
           </button>
