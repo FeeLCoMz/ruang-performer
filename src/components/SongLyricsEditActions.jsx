@@ -135,21 +135,25 @@ export default function SongLyricsEditActions({
     <>
       <div className="song-lyrics-edit-actions">
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-sections">
+          <span className="song-lyrics-action-group-title">Section Builder</span>
           <span className="song-lyrics-sections-label">Bagian:</span>
-          {SECTION_LABELS.map(({ label, value }) => (
-            <button
-              key={value}
-              type="button"
-              className="btn btn-secondary song-lyrics-section-btn"
-              disabled={disabled}
-              title={`Sisipkan ${value}`}
-              onClick={() => handleInsertSection(value)}
-            >
-              {label}
-            </button>
-          ))}
+          <div className="song-lyrics-section-chip-list" role="group" aria-label="Section templates">
+            {SECTION_LABELS.map(({ label, value }) => (
+              <button
+                key={value}
+                type="button"
+                className="btn btn-secondary song-lyrics-section-btn"
+                disabled={disabled}
+                title={`Sisipkan ${value}`}
+                onClick={() => handleInsertSection(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-format">
+          <span className="song-lyrics-action-group-title">Alignment & Grid</span>
           <button
             type="button"
             onClick={handleAlignSelectedBarlines}
@@ -203,6 +207,7 @@ export default function SongLyricsEditActions({
           </div>
         </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-cleanup">
+          <span className="song-lyrics-action-group-title">Cleanup & Structure</span>
           <button
             type="button"
             onClick={() => applyTextTransform(removeExtraSpacesAndBrokenLines)}
@@ -232,6 +237,7 @@ export default function SongLyricsEditActions({
           </button>
         </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-transpose">
+          <span className="song-lyrics-action-group-title">Quick Transpose</span>
           <span className="song-lyrics-sections-label">Transpose Teks:</span>
           <button
             type="button"
@@ -254,6 +260,7 @@ export default function SongLyricsEditActions({
         </div>
         {showPianoControls && (
           <div className="song-lyrics-edit-actions-group song-lyrics-piano-controls">
+            <span className="song-lyrics-action-group-title">Piano Insert</span>
             <button
               type="button"
               onClick={onOpenPiano}
@@ -310,6 +317,7 @@ export default function SongLyricsEditActions({
         )}
         {(showMetadataHelpButton || showSaveCancelButtons) && (
           <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-meta">
+            <span className="song-lyrics-action-group-title">Editor Actions</span>
             {showMetadataHelpButton && (
               <button
                 type="button"
