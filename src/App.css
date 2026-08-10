@@ -6564,6 +6564,43 @@ input[type="datetime-local"]:disabled {
   white-space: pre;
 }
 
+.cd-preset-cue {
+  margin: 12px 0 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--primary-accent) 26%, transparent), color-mix(in srgb, #f59e0b 28%, transparent));
+  border: 1px solid color-mix(in srgb, var(--primary-accent) 46%, var(--border-color) 54%);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.cd-preset-cue-inline {
+  margin: 2px 0 6px;
+}
+
+.cd-preset-cue-label {
+  white-space: normal;
+}
+
+.cd-preset-cue-meta {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--card-bg) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.cd-chord-grid-block {
+  margin-bottom: 4px;
+}
+
 .cd-chord {
   white-space: pre;
   margin-bottom: 4px;
@@ -6694,6 +6731,123 @@ body.dark-mode .cd-token {
   color: var(--primary-accent);
   background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
   font-weight: 700;
+}
+
+.song-midi-panel {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--primary-bg) 8%);
+  box-shadow: var(--shadow-xs);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.song-midi-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.song-midi-panel-title {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.song-midi-support-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid var(--border-color);
+}
+
+.song-midi-support-badge.is-supported {
+  color: #065f46;
+  background: #d1fae5;
+  border-color: #6ee7b7;
+}
+
+.song-midi-support-badge.is-unsupported {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.song-midi-panel-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.song-midi-select-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 220px;
+}
+
+.song-midi-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.song-midi-output-select {
+  height: 34px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  padding: 0 10px;
+}
+
+.song-midi-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--secondary-bg) 72%, transparent);
+}
+
+.song-midi-panel-info {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.song-midi-panel-count,
+.song-midi-panel-cue {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.song-midi-panel-message {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.page-container.performance-mode .song-midi-panel {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+}
+
+@media (max-width: 768px) {
+  .song-midi-select-wrap {
+    min-width: 100%;
+  }
 }
 
 .page-container.performance-mode .cd-layout-bar-grid .cd-bar-measure {

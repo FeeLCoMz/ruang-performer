@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import SongChordsAnalyzer from '../components/SongChordsAnalyzer.jsx';
 import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import { useNavigate, useLocation, useParams } from "react-router-dom";
@@ -7,6 +7,7 @@ import SongChordsMediaPanel from '../components/SongChordsMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import FloatingYouTubePlayer from '../components/FloatingYouTubePlayer.jsx';
 import VirtualPiano from "../components/VirtualPiano.jsx";
+import SongMidiProgramPanel from '../components/SongMidiProgramPanel.jsx';
 import { getAuthHeader } from "../utils/auth.js";
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
@@ -15,8 +16,9 @@ import { useSongFetch } from '../hooks/useSongFetch.js';
 import { handleExportText, handleExportPDF, handleShare } from '../utils/songHandlers.js';
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
+import useWebMidiProgramChange from '../hooks/useWebMidiProgramChange.js';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
-import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey } from '../utils/chordUtils.js';
+import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractPresetCuesFromLyrics } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 
@@ -150,6 +152,28 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // Chord Analyzer state
   const [showChordAnalyzer, setShowChordAnalyzer] = useState(false);
   const chordStats = useChordStats(song?.lyrics);
+  const {
+    isSupported: isMidiSupported,
+    isAccessGranted: isMidiAccessGranted,
+    outputs: midiOutputs,
+    selectedOutputId,
+    setSelectedOutputId,
+    isEnabled: isMidiProgramChangeEnabled,
+    setIsEnabled: setIsMidiProgramChangeEnabled,
+    lastMessage: midiLastMessage,
+    requestAccess: requestMidiAccess,
+    sendProgramChange,
+  } = useWebMidiProgramChange();
+  const autoMidiCueSentRef = useRef('');
+
+  const presetCues = useMemo(() => {
+    return extractPresetCuesFromLyrics(song?.lyrics || '');
+  }, [song?.lyrics]);
+
+  const firstMidiCue = useMemo(() => {
+    return presetCues.find((cue) => Number.isFinite(Number(cue?.midi?.program))) || null;
+  }, [presetCues]);
+
   const pianoRecommendation = recommendPianoFriendlyKey({
     chords: chordStats.chords,
     key,
@@ -247,6 +271,20 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       setShowMiniVideoPlayer(false);
     }
   }, [performanceMode, isEditingLyrics, youtubeId]);
+
+  useEffect(() => {
+    if (!song?.id) return;
+    if (!isMidiProgramChangeEnabled) return;
+    if (!firstMidiCue?.midi) return;
+
+    const autoSendKey = `${song.id}|${selectedOutputId || 'default'}`;
+    if (autoMidiCueSentRef.current === autoSendKey) return;
+
+    const sent = sendProgramChange(firstMidiCue.midi, `Auto cue ${firstMidiCue.label}`);
+    if (sent) {
+      autoMidiCueSentRef.current = autoSendKey;
+    }
+  }, [song?.id, selectedOutputId, isMidiProgramChangeEnabled, firstMidiCue, sendProgramChange]);
   // (Efek autoscroll dipindah ke komponen AutoScrollBar)
 
   // Metronome effect now handled by useMetronome hook
@@ -660,6 +698,20 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         masteryUpdating={updatingMastery}
         pianoRecommendation={pianoRecommendation}
         onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+      />
+
+      <SongMidiProgramPanel
+        isSupported={isMidiSupported}
+        isAccessGranted={isMidiAccessGranted}
+        outputs={midiOutputs}
+        selectedOutputId={selectedOutputId}
+        setSelectedOutputId={setSelectedOutputId}
+        isEnabled={isMidiProgramChangeEnabled}
+        setIsEnabled={setIsMidiProgramChangeEnabled}
+        requestAccess={requestMidiAccess}
+        cueCount={presetCues.length}
+        autoCueLabel={firstMidiCue?.label || ''}
+        lastMessage={midiLastMessage}
       />
 
       {!lyricsMode && youtubeId && !performanceMode && !isEditingLyrics && (

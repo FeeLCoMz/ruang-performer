@@ -159,4 +159,30 @@ describe('ChordDisplay bar grid mode', () => {
     });
     document.body.removeChild(container);
   });
+
+  test('renders preset cue badge above following bar grid line', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <ChordDisplay
+          song={{ lyrics: '[Verse: Acoustic Piano]\n| C | G |' }}
+          showChords={true}
+          layoutMode="bar-grid"
+        />
+      );
+    });
+
+    const cueBadge = container.querySelector('.cd-preset-cue');
+    expect(cueBadge).toBeTruthy();
+    expect(cueBadge.textContent).toContain('[Verse: Acoustic Piano]');
+    expect(container.querySelectorAll('.cd-bar-measure').length).toBe(2);
+
+    act(() => {
+      root.unmount();
+    });
+    document.body.removeChild(container);
+  });
 });

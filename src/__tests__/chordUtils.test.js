@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordToRomanNumeral, chordTextToNumberText, chordTextToRomanNumeralText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
+import { isValidChord, chordToNumber, chordToRomanNumeral, chordTextToNumberText, chordTextToRomanNumeralText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, parsePresetCueLine, extractPresetCuesFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -423,7 +423,39 @@ describe("chordUtils", () => {
         patch: 'Stage Piano',
         layer: 'Warm Pad (Volume 30%)',
       },
+      midi: null,
     });
+  });
+
+  test("parsePresetCueLine parses cue label and optional MIDI options", () => {
+    expect(parsePresetCueLine('[Chorus: Lead Synth + Strings | PC: 81 | CH: 2 | BankMSB: 1 | BankLSB: 32]')).toEqual({
+      type: 'preset_cue',
+      section: 'Chorus',
+      patch: 'Lead Synth + Strings',
+      label: 'Chorus: Lead Synth + Strings',
+      text: '[Chorus: Lead Synth + Strings | PC: 81 | CH: 2 | BankMSB: 1 | BankLSB: 32]',
+      midi: {
+        program: 81,
+        channel: 2,
+        bankMsb: 1,
+        bankLsb: 32,
+      },
+    });
+  });
+
+  test("extractPresetCuesFromLyrics returns cue list in order", () => {
+    const cues = extractPresetCuesFromLyrics(`
+[Verse: Acoustic Piano]
+| C | G |
+[Chorus: Lead Synth + Strings | PC: 80 | CH: 1]
+| Am | F |
+`);
+
+    expect(cues).toHaveLength(2);
+    expect(cues[0].label).toBe('Verse: Acoustic Piano');
+    expect(cues[0].midi).toBe(null);
+    expect(cues[1].label).toBe('Chorus: Lead Synth + Strings');
+    expect(cues[1].midi).toEqual({ program: 80, channel: 1 });
   });
 
   test("parseInstrumentPatchLine does not classify plain sentence metadata", () => {
@@ -445,6 +477,7 @@ describe("chordUtils", () => {
         patch: 'Stage Piano',
         layer: 'Warm Pad (Volume 30%)',
       },
+      midi: null,
     });
     expect(parsed[2].type).toBe('chord');
   });

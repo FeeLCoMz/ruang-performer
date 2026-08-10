@@ -81,6 +81,10 @@ function parseLine(line, transpose) {
       }))
     };
   }
+  const presetCue = parsePresetCueLine(line);
+  if (presetCue) {
+    return presetCue;
+  }
   const section = parseSection(line);
   if (section) {
     // Transpose modulation key label
@@ -182,6 +186,19 @@ export function parseLines(lines, transpose) {
   }
 
   return parsed;
+}
+
+export function extractPresetCuesFromLyrics(lyricsText) {
+  if (typeof lyricsText !== 'string' || !lyricsText.trim()) return [];
+
+  const parsedLines = parseLines(lyricsText.split(/\r?\n/), 0);
+
+  return parsedLines
+    .filter((lineObj) => lineObj?.type === 'preset_cue')
+    .map((cue, index) => ({
+      ...cue,
+      id: `${index + 1}-${cue.section}-${cue.patch}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-'),
+    }));
 }
 /**
  * Helper: parse [mm:ss] or [hh:mm:ss] timestamp to seconds
@@ -618,12 +635,133 @@ export function parseSection(line) {
 const METADATA_KEYS = new Set([
   'patch', 'layer', 'intensitas', 'intensity', 'dynamics', 'dinamik', 'cue', 'notes', 'catatan',
   'sound', 'tone', 'fx', 'effect', 'effects', 'instrument', 'instrumen', 'voicing', 'texture',
-  'split', 'zone', 'program', 'preset', 'scene', 'part', 'fill', 'groove', 'feel'
+  'split', 'zone', 'program', 'preset', 'scene', 'part', 'fill', 'groove', 'feel',
+  'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb'
 ]);
 
 const INSTRUMENT_PATCH_KEYS = new Set([
-  'patch', 'layer', 'split', 'zone', 'program', 'preset', 'scene', 'sound', 'tone', 'instrument', 'instrumen'
+  'patch', 'layer', 'split', 'zone', 'program', 'preset', 'scene', 'sound', 'tone', 'instrument', 'instrumen',
+  'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb'
 ]);
+
+const PRESET_CUE_SECTION_KEYWORDS = [
+  'intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain',
+  'pre-chorus', 'post-chorus', 'solo', 'musik', 'hook', 'drop', 'ending', 'ending tag'
+];
+
+const normalizeMidiByte = (value, { max = 127 } = {}) => {
+  const numeric = Number.parseInt(String(value || '').trim(), 10);
+  if (!Number.isFinite(numeric)) return null;
+  if (numeric < 0 || numeric > max) return null;
+  return numeric;
+};
+
+const normalizeMidiChannel = (value) => {
+  const numeric = Number.parseInt(String(value || '').trim(), 10);
+  if (!Number.isFinite(numeric)) return null;
+  if (numeric >= 1 && numeric <= 16) return numeric;
+  if (numeric >= 0 && numeric <= 15) return numeric + 1;
+  return null;
+};
+
+const parseMidiFromFields = (fields = {}) => {
+  const rawProgram = fields.program ?? fields.preset ?? fields.pc;
+  const rawChannel = fields.channel ?? fields.ch;
+  const rawBankMsb = fields.bankmsb ?? fields.msb ?? fields.bank;
+  const rawBankLsb = fields.banklsb ?? fields.lsb;
+
+  const midi = {};
+
+  if (rawProgram !== undefined) {
+    const program = normalizeMidiByte(rawProgram);
+    if (program !== null) midi.program = program;
+  }
+
+  if (rawChannel !== undefined) {
+    const channel = normalizeMidiChannel(rawChannel);
+    if (channel !== null) midi.channel = channel;
+  }
+
+  if (rawBankMsb !== undefined) {
+    const bankMsb = normalizeMidiByte(rawBankMsb);
+    if (bankMsb !== null) midi.bankMsb = bankMsb;
+  }
+
+  if (rawBankLsb !== undefined) {
+    const bankLsb = normalizeMidiByte(rawBankLsb);
+    if (bankLsb !== null) midi.bankLsb = bankLsb;
+  }
+
+  if (!Object.keys(midi).length) return null;
+  return midi;
+};
+
+const parseCueOptionFields = (rawOptions = '') => {
+  if (typeof rawOptions !== 'string' || !rawOptions.trim()) return {};
+
+  const fields = {};
+  rawOptions
+    .split('|')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .forEach((segment) => {
+      const idx = segment.indexOf(':');
+      if (idx <= 0 || idx >= segment.length - 1) return;
+
+      const rawKey = segment.slice(0, idx).trim().toLowerCase();
+      const key = rawKey.replace(/\s+/g, '');
+      const value = segment.slice(idx + 1).trim();
+      if (!value) return;
+
+      if (key === 'program' || key === 'pc') fields.program = value;
+      if (key === 'preset') fields.preset = value;
+      if (key === 'channel' || key === 'ch') fields.channel = value;
+      if (key === 'bank' || key === 'bankmsb' || key === 'msb') fields.bankmsb = value;
+      if (key === 'banklsb' || key === 'lsb') fields.banklsb = value;
+    });
+
+  return fields;
+};
+
+const isLikelyCueSectionLabel = (label = '') => {
+  const normalized = String(label || '').toLowerCase();
+  if (!normalized) return false;
+
+  return PRESET_CUE_SECTION_KEYWORDS.some((keyword) => {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
+    return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i').test(normalized);
+  });
+};
+
+export const parsePresetCueLine = (line) => {
+  if (typeof line !== 'string') return null;
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return null;
+
+  const insideBracket = trimmed.slice(1, -1).trim();
+  const match = insideBracket.match(/^([^:|\]]+):\s*([^|\]]+?)(?:\s*\|\s*(.+))?$/);
+  if (!match) return null;
+
+  const section = match[1].trim();
+  const patch = match[2].trim();
+  const optionsRaw = match[3]?.trim() || '';
+
+  if (!section || !patch) return null;
+
+  const hasMidiHints = /(?:\bpc\b|\bprogram\b|\bch\b|\bchannel\b|\bbank\b|\bmsb\b|\blsb\b)/i.test(optionsRaw);
+  if (!hasMidiHints && !isLikelyCueSectionLabel(section)) return null;
+
+  const midi = parseMidiFromFields(parseCueOptionFields(optionsRaw));
+
+  return {
+    type: 'preset_cue',
+    section,
+    patch,
+    label: `${section}: ${patch}`,
+    text: trimmed,
+    midi,
+  };
+};
 
 export const parseInstrumentPatchLine = (line) => {
   if (typeof line !== 'string') return null;
@@ -639,16 +777,20 @@ export const parseInstrumentPatchLine = (line) => {
     if (idx <= 0 || idx >= segment.length - 1) continue;
 
     const rawKey = segment.slice(0, idx).trim().toLowerCase();
-    const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '');
+    const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '').replace(/\s+/g, '');
     if (!INSTRUMENT_PATCH_KEYS.has(key)) continue;
 
-    const fieldKey = key === 'instrumen' ? 'instrument' : key;
+    let fieldKey = key === 'instrumen' ? 'instrument' : key;
+    if (fieldKey === 'ch') fieldKey = 'channel';
+    if (fieldKey === 'msb' || fieldKey === 'bank') fieldKey = 'bankmsb';
+    if (fieldKey === 'lsb') fieldKey = 'banklsb';
+    if (fieldKey === 'pc') fieldKey = 'program';
     const value = segment.slice(idx + 1).trim();
     if (value) fields[fieldKey] = value;
   }
 
   if (!Object.keys(fields).length) return null;
-  return { type: 'instrument_patch', text: trimmed, fields };
+  return { type: 'instrument_patch', text: trimmed, fields, midi: parseMidiFromFields(fields) };
 };
 
 export const isMetadataLine = (line) => {
@@ -664,7 +806,7 @@ export const isMetadataLine = (line) => {
     const idx = segment.indexOf(':');
     if (idx <= 0 || idx >= segment.length - 1) return false;
     const rawKey = segment.slice(0, idx).trim().toLowerCase();
-    const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '');
+    const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '').replace(/\s+/g, '');
     return METADATA_KEYS.has(key);
   });
 };
