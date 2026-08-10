@@ -131,4 +131,32 @@ describe('ChordDisplay bar grid mode', () => {
     });
     document.body.removeChild(container);
   });
+
+  test('maps dot-step notation to multiple chords in one bar', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <ChordDisplay
+          song={{ lyrics: '| C . Dm . |' }}
+          showChords={true}
+          layoutMode="bar-grid"
+          timeSignature="4/4"
+        />
+      );
+    });
+
+    const occupied = container.querySelectorAll('.cd-bar-beat-cell--occupied');
+    expect(container.querySelectorAll('.cd-bar-measure').length).toBe(1);
+    expect(occupied.length).toBe(2);
+    expect(container.textContent).toContain('C');
+    expect(container.textContent).toContain('Dm');
+
+    act(() => {
+      root.unmount();
+    });
+    document.body.removeChild(container);
+  });
 });

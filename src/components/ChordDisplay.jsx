@@ -97,6 +97,43 @@ const buildMeasuresFromChordTokens = (tokens) => {
   return chordLikeTokens.map((token) => normalizeMeasureTokens([token]));
 };
 
+const buildBeatSlotsFromMeasureTokens = (measureTokens, beatsPerBar) => {
+  const totalBeats = Math.max(1, Number(beatsPerBar) || 4);
+  const slots = Array.from({ length: totalBeats }, () => ({ chords: [], texts: [] }));
+  const chordTokens = (Array.isArray(measureTokens) ? measureTokens : []).filter((token) => token?.isChord);
+
+  if (!chordTokens.length) {
+    return slots;
+  }
+
+  const hasDotStepper = chordTokens.some((token) => /^\.$/.test(String(token?.token || '').trim()));
+
+  if (!hasDotStepper) {
+    chordTokens.forEach((token, idx) => {
+      const beatIndex = Math.min(idx, totalBeats - 1);
+      slots[beatIndex].chords.push(token.token);
+    });
+    return slots;
+  }
+
+  let beatCursor = 0;
+  chordTokens.forEach((token) => {
+    const raw = String(token?.token || '').trim();
+    if (!raw) return;
+
+    if (raw === '.') {
+      beatCursor = Math.min(totalBeats, beatCursor + 1);
+      return;
+    }
+
+    const targetBeat = Math.min(Math.max(0, beatCursor), totalBeats - 1);
+    slots[targetBeat].chords.push(raw);
+    beatCursor = Math.min(totalBeats, beatCursor + 1);
+  });
+
+  return slots;
+};
+
 
 export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showRomanNumerals = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause, layoutMode = 'lyrics', currentBeat = 0, timeSignature = '4/4', barGridColumns = 'auto', barGridFocusMode = false }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -184,11 +221,21 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
                     ))}
                   </div>
                   <div className="cd-bar-chords">
-                    {measureTokens.map((tokenObj, tokenIdx) => (
-                      <span key={`${i}-${measureIdx}-${tokenIdx}`} className={tokenObj?.isChord ? 'cd-token' : 'cd-bar-text-token'}>
-                        {tokenObj?.isChord ? formatChordToken(tokenObj.token) : tokenObj?.token}
-                      </span>
-                    ))}
+                    {buildBeatSlotsFromMeasureTokens(measureTokens, beatsPerBar).map((slot, beatIdx) => {
+                      const chordText = slot.chords
+                        .map((chord) => formatChordToken(chord))
+                        .filter(Boolean)
+                        .join(' / ');
+
+                      return (
+                        <span
+                          key={`${i}-${measureIdx}-beat-${beatIdx}`}
+                          className={`cd-bar-beat-cell${chordText ? ' cd-bar-beat-cell--occupied' : ''}`}
+                        >
+                          {chordText || '·'}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
