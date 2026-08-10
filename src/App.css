@@ -6859,6 +6859,36 @@ body.dark-mode .cd-token {
   color: var(--text-secondary);
 }
 
+.song-lyrics-gm-cue-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.song-lyrics-gm-cue-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.song-lyrics-gm-cue-patch-select {
+  min-width: 260px;
+}
+
+@media (max-width: 768px) {
+  .song-lyrics-gm-cue-field {
+    width: 100%;
+  }
+
+  .song-lyrics-gm-cue-patch-select {
+    min-width: 100%;
+  }
+}
+
 .page-container.performance-mode .song-midi-panel {
   margin-bottom: 10px;
   padding: 8px 10px;
