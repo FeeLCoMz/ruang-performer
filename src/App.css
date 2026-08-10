@@ -6596,6 +6596,106 @@ body.dark-mode .cd-token {
   min-height: 1.5em;
 }
 
+.cd-layout-bar-grid .cd-chord-grid-line {
+  white-space: normal;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 10px;
+  margin: 8px 0 14px;
+  cursor: pointer;
+}
+
+.cd-layout-bar-grid.cd-layout-bar-grid-cols-2 .cd-chord-grid-line {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cd-layout-bar-grid.cd-layout-bar-grid-cols-4 .cd-chord-grid-line {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cd-layout-bar-grid.cd-layout-bar-grid-focus .cd-section-struct {
+  margin: 12px 0 6px;
+}
+
+.cd-layout-bar-grid .cd-bar-measure {
+  border: 1px solid color-mix(in srgb, var(--border-color) 78%, var(--primary-accent) 22%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--card-bg) 88%, var(--primary-bg) 12%);
+  padding: 6px 8px 9px;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 6px;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--primary-accent) 14%, transparent);
+}
+
+.cd-layout-bar-grid .cd-bar-beat-markers {
+  display: flex;
+  align-items: center;
+  justify-content: stretch;
+  gap: 4px;
+}
+
+.cd-layout-bar-grid .cd-bar-beat-led {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted) 45%, transparent);
+  opacity: 0.42;
+  transition: transform 90ms ease, opacity 90ms ease, background 90ms ease, box-shadow 120ms ease;
+}
+
+.cd-layout-bar-grid .cd-bar-beat-led.is-downbeat {
+  height: 7px;
+}
+
+.cd-layout-bar-grid .cd-bar-beat-led.is-sub-accent {
+  opacity: 0.7;
+  background: color-mix(in srgb, #10b981 45%, var(--text-muted) 55%);
+}
+
+.cd-layout-bar-grid .cd-bar-beat-led.is-active {
+  background: #10b981;
+  opacity: 1;
+  transform: scaleY(1.2);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
+}
+
+.cd-layout-bar-grid .cd-bar-chords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.cd-layout-bar-grid .cd-bar-text-token {
+  color: var(--text-secondary);
+  font-size: 0.95em;
+}
+
+.page-container.performance-mode .cd-layout-bar-grid .cd-bar-measure {
+  min-height: 76px;
+  border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+  .cd-layout-bar-grid .cd-chord-grid-line {
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    gap: 8px;
+  }
+
+  .cd-layout-bar-grid.cd-layout-bar-grid-cols-2 .cd-chord-grid-line,
+  .cd-layout-bar-grid.cd-layout-bar-grid-cols-4 .cd-chord-grid-line {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cd-layout-bar-grid .cd-bar-measure {
+    min-height: 66px;
+    padding: 6px 7px 8px;
+  }
+}
+
 /* ========================================
    ZOOM CONTROLS STYLES
    ======================================== */
@@ -9238,6 +9338,31 @@ body.dark-mode .cd-token {
   background: var(--secondary-bg);
 }
 
+.song-lyrics-toolbar-group-grid-density {
+  order: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.song-lyrics-grid-density-select {
+  min-width: 94px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  padding: 0 8px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.song-lyrics-grid-density-select:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent) 22%, transparent);
+}
+
 .song-lyrics-tempo-led-compact-text {
   font-size: 0.78rem;
   font-weight: 700;
@@ -9425,6 +9550,17 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   flex: 0 0 auto;
   height: 30px;
   padding: 0 6px;
+}
+
+.page-container.performance-mode .song-lyrics-toolbar-group-grid-density {
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.page-container.performance-mode .song-lyrics-toolbar-group-grid-density .song-lyrics-grid-density-select {
+  min-width: 78px;
+  height: 34px;
+  font-size: 0.72rem;
 }
 
 .page-container.performance-mode .song-lyrics-toolbar-group {

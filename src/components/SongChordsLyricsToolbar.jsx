@@ -54,6 +54,12 @@ export default function SongChordsLyricsToolbar({
   setShowJazzChords,
   showSimpleChords,
   setShowSimpleChords,
+  chordLayoutMode,
+  setChordLayoutMode,
+  barGridColumns,
+  setBarGridColumns,
+  barGridFocusMode,
+  setBarGridFocusMode,
   keySignature,
   handleEditLyrics,
   savingLyrics,
@@ -85,6 +91,7 @@ export default function SongChordsLyricsToolbar({
   const [isYoutubeReady, setIsYoutubeReady] = useState(false);
   const chordStyleMenuRef = useRef(null);
   const normalizedTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
+  const isBarGridMode = chordLayoutMode === 'bar-grid';
   const currentChordStyleLabel = showRomanNumerals ? 'Romawi' : showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
   const currentChordStyleKey = showRomanNumerals ? 'roman' : showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
   const toolbarClassName = `song-lyrics-toolbar ${performanceMode ? 'song-lyrics-toolbar--performance' : 'song-lyrics-toolbar--normal'}`;
@@ -267,6 +274,73 @@ export default function SongChordsLyricsToolbar({
               setCurrentBeat={setCurrentBeat}
               compactMode={performanceMode}
             />
+          </div>
+        )}
+
+        {!isEditingLyrics && !lyricsMode && performanceMode && (
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-layout-toggle">
+            <button
+              type="button"
+              className={`btn ${isBarGridMode ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
+              title={isBarGridMode ? 'Mode birama aktif' : 'Aktifkan mode birama'}
+              aria-label={isBarGridMode ? 'Mode birama aktif' : 'Aktifkan mode birama'}
+              onClick={() => {
+                if (typeof setChordLayoutMode !== 'function') return;
+                setChordLayoutMode((prev) => (prev === 'bar-grid' ? 'lyrics' : 'bar-grid'));
+              }}
+            >
+              <span aria-hidden="true">▦</span>
+            </button>
+          </div>
+        )}
+
+        {!isEditingLyrics && !lyricsMode && isBarGridMode && (
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-grid-density">
+            <select
+              className="song-lyrics-grid-density-select"
+              value={String(barGridColumns || 'auto')}
+              onChange={(e) => {
+                if (typeof setBarGridColumns !== 'function') return;
+                setBarGridColumns(e.target.value);
+              }}
+              aria-label="Kepadatan bar grid"
+              title="Kepadatan bar grid"
+            >
+              <option value="auto">Auto</option>
+              <option value="2">2 bar/row</option>
+              <option value="4">4 bar/row</option>
+            </select>
+            <button
+              type="button"
+              className={`btn ${barGridFocusMode ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
+              onClick={() => {
+                if (typeof setBarGridFocusMode !== 'function') return;
+                setBarGridFocusMode((prev) => !prev);
+              }}
+              title={barGridFocusMode ? 'Nonaktifkan focus mode birama' : 'Aktifkan focus mode birama'}
+              aria-label={barGridFocusMode ? 'Nonaktifkan focus mode birama' : 'Aktifkan focus mode birama'}
+            >
+              <span aria-hidden="true">◎</span>
+              {!performanceMode && <span className="song-lyrics-toolbar-btn-label">{barGridFocusMode ? 'Focus ON' : 'Focus OFF'}</span>}
+            </button>
+          </div>
+        )}
+
+        {!isEditingLyrics && !lyricsMode && !performanceMode && (
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-layout-toggle">
+            <button
+              type="button"
+              className={`btn ${isBarGridMode ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
+              title={isBarGridMode ? 'Kembali ke mode lirik standar' : 'Aktifkan mode bar grid'}
+              aria-label={isBarGridMode ? 'Kembali ke mode lirik standar' : 'Aktifkan mode bar grid'}
+              onClick={() => {
+                if (typeof setChordLayoutMode !== 'function') return;
+                setChordLayoutMode((prev) => (prev === 'bar-grid' ? 'lyrics' : 'bar-grid'));
+              }}
+            >
+              <span aria-hidden="true">▦</span>
+              <span className="song-lyrics-toolbar-btn-label">{isBarGridMode ? 'Line Mode' : 'Bar Grid'}</span>
+            </button>
           </div>
         )}
 

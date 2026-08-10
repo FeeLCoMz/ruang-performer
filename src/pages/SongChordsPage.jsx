@@ -101,10 +101,40 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [showRomanNumerals, setShowRomanNumerals] = useState(false);
   const [showJazzChords, setShowJazzChords] = useState(false);
   const [showSimpleChords, setShowSimpleChords] = useState(false);
+  const [chordLayoutMode, setChordLayoutMode] = useState(() => {
+    if (typeof window === 'undefined') return 'lyrics';
+    const saved = window.localStorage.getItem('ruangperformer_chord_layout_mode');
+    return saved === 'bar-grid' ? 'bar-grid' : 'lyrics';
+  });
+  const [barGridColumns, setBarGridColumns] = useState(() => {
+    if (typeof window === 'undefined') return 'auto';
+    const saved = window.localStorage.getItem('ruangperformer_bar_grid_columns');
+    return ['auto', '2', '4'].includes(saved) ? saved : 'auto';
+  });
+  const [barGridFocusMode, setBarGridFocusMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('ruangperformer_bar_grid_focus') === 'true';
+  });
 
   useEffect(() => {
     setShowChords(!lyricsMode);
   }, [lyricsMode]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('ruangperformer_chord_layout_mode', chordLayoutMode === 'bar-grid' ? 'bar-grid' : 'lyrics');
+  }, [chordLayoutMode]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const safe = ['auto', '2', '4'].includes(String(barGridColumns)) ? String(barGridColumns) : 'auto';
+    window.localStorage.setItem('ruangperformer_bar_grid_columns', safe);
+  }, [barGridColumns]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('ruangperformer_bar_grid_focus', barGridFocusMode ? 'true' : 'false');
+  }, [barGridFocusMode]);
   
   // In-place editing state
   const [isEditingLyrics, setIsEditingLyrics] = useState(false);
@@ -723,6 +753,12 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setShowJazzChords={setShowJazzChords}
         showSimpleChords={showSimpleChords}
         setShowSimpleChords={setShowSimpleChords}
+        chordLayoutMode={chordLayoutMode}
+        setChordLayoutMode={setChordLayoutMode}
+        barGridColumns={barGridColumns}
+        setBarGridColumns={setBarGridColumns}
+        barGridFocusMode={barGridFocusMode}
+        setBarGridFocusMode={setBarGridFocusMode}
         keySignature={key || song?.key || ''}
       />
 

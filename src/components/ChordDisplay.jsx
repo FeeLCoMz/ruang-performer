@@ -22,8 +22,83 @@ import React, { useState } from 'react';
 import NumberToken from './NumberToken.jsx';
 import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToRomanNumeralText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
 
+const BARLINE_REGEX = /^(\|:|:\||\[\:|:\]|\|\||\|)$/;
 
-export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showRomanNumerals = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
+const parseBeatsPerBar = (timeSignature) => {
+  const match = String(timeSignature || '4/4').trim().match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (!match) return 4;
+  const numerator = Number(match[1]);
+  if (!Number.isFinite(numerator) || numerator <= 0) return 4;
+  return Math.max(1, Math.min(12, numerator));
+};
+
+const getSecondaryAccentBeatSet = (timeSignature, beatsPerBar) => {
+  const normalized = String(timeSignature || '').replace(/\s+/g, '');
+  if (normalized === '6/8' && beatsPerBar >= 4) return new Set([3]);
+  if (normalized === '12/8' && beatsPerBar >= 10) return new Set([3, 6, 9]);
+  if (normalized === '4/4' && beatsPerBar >= 3) return new Set([2]);
+  return new Set();
+};
+
+const splitCompactChordToken = (token) => {
+  if (typeof token !== 'string' || !token.includes('..')) return [token];
+  return token
+    .split(/\.{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+};
+
+const buildMeasuresFromChordTokens = (tokens) => {
+  const compact = Array.isArray(tokens) ? tokens.filter((token) => !token?.isSpace) : [];
+  if (!compact.length) return [];
+
+  const hasBarline = compact.some((token) => token?.isBarline || BARLINE_REGEX.test(token?.token || ''));
+  const normalizeMeasureTokens = (measureTokens) => {
+    const expanded = [];
+    measureTokens.forEach((token) => {
+      const parts = splitCompactChordToken(token?.token || '');
+      if (parts.length > 1) {
+        parts.forEach((part) => expanded.push({ ...token, token: part }));
+      } else {
+        expanded.push(token);
+      }
+    });
+    return expanded;
+  };
+
+  if (hasBarline) {
+    const measures = [];
+    let currentMeasure = [];
+
+    compact.forEach((token) => {
+      const isBarline = token?.isBarline || BARLINE_REGEX.test(token?.token || '');
+      if (isBarline) {
+        if (currentMeasure.length) {
+          measures.push(normalizeMeasureTokens(currentMeasure));
+          currentMeasure = [];
+        }
+        return;
+      }
+      currentMeasure.push(token);
+    });
+
+    if (currentMeasure.length) {
+      measures.push(normalizeMeasureTokens(currentMeasure));
+    }
+
+    return measures;
+  }
+
+  const chordLikeTokens = compact.filter((token) => token?.isChord);
+  if (!chordLikeTokens.length) {
+    return [normalizeMeasureTokens(compact)];
+  }
+
+  return chordLikeTokens.map((token) => normalizeMeasureTokens([token]));
+};
+
+
+export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showRomanNumerals = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause, layoutMode = 'lyrics', currentBeat = 0, timeSignature = '4/4', barGridColumns = 'auto', barGridFocusMode = false }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const formatInstrumentPatchText = (lineObj) => {
@@ -53,10 +128,27 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
   const lines = song.lyrics.split(/\r?\n/);
   const effectiveTranspose = showChordNumbers ? 0 : transpose;
   const parsedLines = parseLines(lines, effectiveTranspose);
+  const beatsPerBar = parseBeatsPerBar(timeSignature);
+  const secondaryAccents = getSecondaryAccentBeatSet(timeSignature, beatsPerBar);
+  const activeBeat = Number.isFinite(Number(currentBeat))
+    ? ((Number(currentBeat) % beatsPerBar) + beatsPerBar) % beatsPerBar
+    : 0;
+  const normalizedColumns = ['auto', '2', '4'].includes(String(barGridColumns))
+    ? String(barGridColumns)
+    : 'auto';
+
+  const shouldHideLineInFocusMode = (lineObj) => {
+    if (!barGridFocusMode || layoutMode !== 'bar-grid') return false;
+    return ['lyrics', 'metadata', 'instrument', 'instrument_patch', 'number', 'empty'].includes(lineObj?.type);
+  };
 
   return (
-    <div className="cd" style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
+    <div className={`cd ${layoutMode === 'bar-grid' ? 'cd-layout-bar-grid' : ''} ${layoutMode === 'bar-grid' ? `cd-layout-bar-grid-cols-${normalizedColumns}` : ''} ${barGridFocusMode && layoutMode === 'bar-grid' ? 'cd-layout-bar-grid-focus' : ''}`} style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
       {parsedLines.map((lineObj, i) => {
+        if (shouldHideLineInFocusMode(lineObj)) {
+          return null;
+        }
+
         if (lineObj.type === 'empty')
           return <div key={i} className="cd-empty-line">&nbsp;</div>;
         if (lineObj.type === 'structure')
@@ -79,7 +171,29 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
         if (lineObj.type === 'metadata')
           return <div key={i} className="cd-metadata">{lineObj.text}</div>;
         if (lineObj.type === 'chord' && showChords)
-          return (
+          return layoutMode === 'bar-grid' ? (
+            <div key={i} className="cd-chord cd-chord-grid-line">
+              {buildMeasuresFromChordTokens(lineObj.tokens).map((measureTokens, measureIdx) => (
+                <div key={`${i}-${measureIdx}`} className="cd-bar-measure">
+                  <div className="cd-bar-beat-markers" aria-hidden="true">
+                    {Array.from({ length: beatsPerBar }, (_, beatIdx) => (
+                      <span
+                        key={`${i}-${measureIdx}-${beatIdx}`}
+                        className={`cd-bar-beat-led${activeBeat === beatIdx ? ' is-active' : ''}${beatIdx === 0 ? ' is-downbeat' : ''}${secondaryAccents.has(beatIdx) ? ' is-sub-accent' : ''}`}
+                      />
+                    ))}
+                  </div>
+                  <div className="cd-bar-chords">
+                    {measureTokens.map((tokenObj, tokenIdx) => (
+                      <span key={`${i}-${measureIdx}-${tokenIdx}`} className={tokenObj?.isChord ? 'cd-token' : 'cd-bar-text-token'}>
+                        {tokenObj?.isChord ? formatChordToken(tokenObj.token) : tokenObj?.token}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
             <div key={i} className="cd-chord">
               {lineObj.tokens.map((t, j) =>
                 t.isSpace ? (

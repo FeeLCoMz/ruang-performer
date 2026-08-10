@@ -62,6 +62,12 @@ export default function SongLyricsMainSection({
   setShowJazzChords,
   showSimpleChords,
   setShowSimpleChords,
+  chordLayoutMode,
+  setChordLayoutMode,
+  barGridColumns,
+  setBarGridColumns,
+  barGridFocusMode,
+  setBarGridFocusMode,
   keySignature,
   showSheetMusic,
   setShowSheetMusic,
@@ -115,6 +121,12 @@ export default function SongLyricsMainSection({
             setShowJazzChords={setShowJazzChords}
             showSimpleChords={showSimpleChords}
             setShowSimpleChords={setShowSimpleChords}
+            chordLayoutMode={chordLayoutMode}
+            setChordLayoutMode={setChordLayoutMode}
+            barGridColumns={barGridColumns}
+            setBarGridColumns={setBarGridColumns}
+            barGridFocusMode={barGridFocusMode}
+            setBarGridFocusMode={setBarGridFocusMode}
             handleEditLyrics={handleEditLyrics}
             savingLyrics={savingLyrics}
             handleSaveLyrics={handleSaveLyrics}
@@ -199,6 +211,7 @@ export default function SongLyricsMainSection({
               isEditingLyrics={isEditingLyrics}
               lyricsDisplayRef={lyricsDisplayRef}
               song={song}
+              tempo={tempo}
               performanceMode={performanceMode}
               transpose={transpose}
               setTranspose={setTranspose}
@@ -220,6 +233,10 @@ export default function SongLyricsMainSection({
               youtubeRef={youtubeRef}
               youtubeId={youtubeId}
               timeSignature={timeSignature}
+              currentBeat={currentBeat}
+              chordLayoutMode={chordLayoutMode}
+              barGridColumns={barGridColumns}
+              barGridFocusMode={barGridFocusMode}
             />
           )}
         </>

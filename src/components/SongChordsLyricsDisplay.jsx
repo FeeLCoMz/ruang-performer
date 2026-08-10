@@ -7,6 +7,14 @@ const MAX_ZOOM = 1.5;
 
 const clampZoom = (value) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
 
+const parseBeatsPerBar = (timeSignature) => {
+  const match = String(timeSignature || '4/4').trim().match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (!match) return 4;
+  const numerator = Number(match[1]);
+  if (!Number.isFinite(numerator) || numerator <= 0) return 4;
+  return Math.max(1, Math.min(12, numerator));
+};
+
 /**
  * SongChordsLyricsDisplay
  * Komponen utama untuk menampilkan lirik dan chord, partitur, dan autoscroll.
@@ -33,6 +41,7 @@ export default function SongChordsLyricsDisplay({
   editedLyrics,
   setEditedLyrics,
   song,
+  tempo,
   performanceMode = false,
   transpose,
   setTranspose,
@@ -53,6 +62,11 @@ export default function SongChordsLyricsDisplay({
   setShowSheetMusic,
   youtubeRef,
   youtubeId,
+  currentBeat = 0,
+  timeSignature = '4/4',
+  chordLayoutMode = 'lyrics',
+  barGridColumns = 'auto',
+  barGridFocusMode = false,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
   const zoomRef = useRef(zoom);
@@ -63,6 +77,7 @@ export default function SongChordsLyricsDisplay({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(false);
   const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
+  const [visualBeat, setVisualBeat] = useState(0);
 
   useEffect(() => {
     zoomRef.current = zoom;
@@ -218,8 +233,9 @@ export default function SongChordsLyricsDisplay({
     };
   }, [lyricsDisplayRef, setZoom]);
 
-  const normalizedBpm = Math.max(40, Math.min(240, Number(song?.tempo) || 120));
+  const normalizedBpm = Math.max(40, Math.min(240, Number(tempo) || Number(song?.tempo) || 120));
   const normalizedScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedBpm));
+  const beatsPerBar = parseBeatsPerBar(timeSignature || song?.time_signature || '4/4');
   const effectiveShowChords = lyricsMode ? false : showChords;
   const currentChordModeKey = !effectiveShowChords
     ? 'hidden'
@@ -243,6 +259,30 @@ export default function SongChordsLyricsDisplay({
         : showSimpleChords
           ? 'Simple'
           : 'Default';
+
+  useEffect(() => {
+    if (autoScrollActive) return undefined;
+    const intervalDuration = Math.max(120, Math.round(60000 / normalizedBpm));
+    const intervalId = setInterval(() => {
+      setVisualBeat((prev) => (prev + 1) % beatsPerBar);
+    }, intervalDuration);
+
+    return () => clearInterval(intervalId);
+  }, [autoScrollActive, normalizedBpm, beatsPerBar]);
+
+  useEffect(() => {
+    if (!autoScrollActive) return;
+    const safeBeat = Number.isFinite(Number(currentBeat))
+      ? ((Number(currentBeat) % beatsPerBar) + beatsPerBar) % beatsPerBar
+      : 0;
+    setVisualBeat(safeBeat);
+  }, [autoScrollActive, currentBeat, beatsPerBar]);
+
+  const activeVisualBeat = autoScrollActive
+    ? (Number.isFinite(Number(currentBeat))
+      ? ((Number(currentBeat) % beatsPerBar) + beatsPerBar) % beatsPerBar
+      : 0)
+    : visualBeat;
 
   const nudgeScrollSpeed = (delta) => {
     setScrollSpeed((prev) => {
@@ -491,6 +531,11 @@ export default function SongChordsLyricsDisplay({
         song={song}
         transpose={transpose}
         zoom={zoom}
+        layoutMode={chordLayoutMode}
+        barGridColumns={barGridColumns}
+        barGridFocusMode={barGridFocusMode}
+        currentBeat={activeVisualBeat}
+        timeSignature={timeSignature || song?.time_signature || '4/4'}
         showChords={effectiveShowChords}
         showChordNumbers={showChordNumbers}
         showRomanNumerals={showRomanNumerals}
