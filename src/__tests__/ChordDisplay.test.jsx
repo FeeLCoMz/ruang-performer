@@ -185,4 +185,38 @@ describe('ChordDisplay bar grid mode', () => {
     });
     document.body.removeChild(container);
   });
+
+  test('calls preset cue trigger handler when Send MIDI button clicked', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const calls = [];
+
+    act(() => {
+      root.render(
+        <ChordDisplay
+          song={{ lyrics: '[Chorus: Lead Synth | PC: 81 | CH: 2]\n| C | G |' }}
+          showChords={true}
+          layoutMode="bar-grid"
+          onPresetCueTrigger={(cue) => calls.push(cue)}
+        />
+      );
+    });
+
+    const trigger = container.querySelector('.cd-preset-cue-trigger');
+    expect(trigger).toBeTruthy();
+
+    act(() => {
+      trigger.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].label).toBe('Chorus: Lead Synth');
+    expect(calls[0].midi).toEqual({ program: 81, channel: 2 });
+
+    act(() => {
+      root.unmount();
+    });
+    document.body.removeChild(container);
+  });
 });

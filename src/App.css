@@ -6597,6 +6597,26 @@ input[type="datetime-local"]:disabled {
   padding: 1px 7px;
 }
 
+.cd-preset-cue-trigger {
+  border: 1px solid color-mix(in srgb, var(--primary-accent) 40%, var(--border-color) 60%);
+  background: color-mix(in srgb, var(--card-bg) 84%, var(--primary-accent) 16%);
+  color: var(--text-primary);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cd-preset-cue-trigger:hover {
+  background: color-mix(in srgb, var(--primary-accent) 26%, var(--card-bg) 74%);
+}
+
+.cd-preset-cue-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary-accent) 70%, white 30%);
+  outline-offset: 1px;
+}
+
 .cd-chord-grid-block {
   margin-bottom: 4px;
 }
@@ -6853,6 +6873,10 @@ body.dark-mode .cd-token {
 .page-container.performance-mode .cd-layout-bar-grid .cd-bar-measure {
   min-height: 76px;
   border-radius: 10px;
+}
+
+.page-container.performance-mode .cd-preset-cue {
+  margin-top: 8px;
 }
 
 @media (max-width: 768px) {

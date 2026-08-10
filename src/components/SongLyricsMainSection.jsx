@@ -68,6 +68,7 @@ export default function SongLyricsMainSection({
   setBarGridColumns,
   barGridFocusMode,
   setBarGridFocusMode,
+  onPresetCueTrigger,
   keySignature,
   showSheetMusic,
   setShowSheetMusic,
@@ -240,6 +241,7 @@ export default function SongLyricsMainSection({
               setBarGridColumns={setBarGridColumns}
               barGridFocusMode={barGridFocusMode}
               setBarGridFocusMode={setBarGridFocusMode}
+              onPresetCueTrigger={onPresetCueTrigger}
             />
           )}
         </>

@@ -70,6 +70,7 @@ export default function SongChordsLyricsDisplay({
   setBarGridColumns,
   barGridFocusMode = false,
   setBarGridFocusMode,
+  onPresetCueTrigger,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
   const zoomRef = useRef(zoom);
@@ -611,6 +612,7 @@ export default function SongChordsLyricsDisplay({
             youtubeRef.current.handlePause();
           }
         }}
+        onPresetCueTrigger={onPresetCueTrigger}
       />
     </div>
   );

@@ -165,6 +165,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     sendProgramChange,
   } = useWebMidiProgramChange();
   const autoMidiCueSentRef = useRef('');
+  const lastAutoTimelineMarkerRef = useRef('');
 
   const presetCues = useMemo(() => {
     return extractPresetCuesFromLyrics(song?.lyrics || '');
@@ -172,6 +173,25 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
   const firstMidiCue = useMemo(() => {
     return presetCues.find((cue) => Number.isFinite(Number(cue?.midi?.program))) || null;
+  }, [presetCues]);
+
+  const normalizeSectionKey = (value = '') => {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/[\[\]()]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  };
+
+  const cueBySectionKey = useMemo(() => {
+    const map = new Map();
+    presetCues.forEach((cue) => {
+      if (!Number.isFinite(Number(cue?.midi?.program))) return;
+      const keyValue = normalizeSectionKey(cue?.section || cue?.label || '');
+      if (!keyValue) return;
+      if (!map.has(keyValue)) map.set(keyValue, cue);
+    });
+    return map;
   }, [presetCues]);
 
   const pianoRecommendation = recommendPianoFriendlyKey({
@@ -285,6 +305,76 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       autoMidiCueSentRef.current = autoSendKey;
     }
   }, [song?.id, selectedOutputId, isMidiProgramChangeEnabled, firstMidiCue, sendProgramChange]);
+
+  useEffect(() => {
+    if (!song?.id || !youtubeId) return undefined;
+    if (!isMidiProgramChangeEnabled) return undefined;
+    if (!cueBySectionKey.size) return undefined;
+
+    const normalizedMarkers = Array.isArray(timeMarkers)
+      ? timeMarkers
+          .map((marker) => {
+            const time = Number(marker?.time);
+            if (!Number.isFinite(time)) return null;
+            const label = String(marker?.label || '').trim();
+            if (!label) return null;
+
+            return {
+              id: marker?.id || `${song.id}-${time}-${label}`,
+              time,
+              label,
+              sectionKey: normalizeSectionKey(label),
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.time - b.time)
+      : [];
+
+    if (!normalizedMarkers.length) return undefined;
+
+    const intervalId = setInterval(() => {
+      if (!youtubeRef.current || typeof youtubeRef.current.getPlayerState !== 'function') return;
+      const state = youtubeRef.current.getPlayerState();
+      if (state !== 1) return;
+
+      const currentTime = Number(youtubeRef.current.currentTime || 0);
+      if (!Number.isFinite(currentTime)) return;
+
+      let activeMarker = null;
+      for (let i = normalizedMarkers.length - 1; i >= 0; i -= 1) {
+        if (currentTime >= normalizedMarkers[i].time) {
+          activeMarker = normalizedMarkers[i];
+          break;
+        }
+      }
+      if (!activeMarker) return;
+
+      const markerKey = `${song.id}:${activeMarker.id}`;
+      if (lastAutoTimelineMarkerRef.current === markerKey) return;
+
+      const cueMatch = cueBySectionKey.get(activeMarker.sectionKey);
+      if (!cueMatch?.midi) {
+        lastAutoTimelineMarkerRef.current = markerKey;
+        return;
+      }
+
+      const sent = sendProgramChange(cueMatch.midi, `Timeline cue ${cueMatch.label}`);
+      if (sent) {
+        lastAutoTimelineMarkerRef.current = markerKey;
+      }
+    }, 300);
+
+    return () => clearInterval(intervalId);
+  }, [song?.id, youtubeId, timeMarkers, cueBySectionKey, isMidiProgramChangeEnabled, sendProgramChange]);
+
+  useEffect(() => {
+    lastAutoTimelineMarkerRef.current = '';
+  }, [song?.id]);
+
+  const handlePresetCueTrigger = (cue) => {
+    if (!cue?.midi) return;
+    sendProgramChange(cue.midi, `Manual cue ${cue.label}`);
+  };
   // (Efek autoscroll dipindah ke komponen AutoScrollBar)
 
   // Metronome effect now handled by useMetronome hook
@@ -811,6 +901,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setBarGridColumns={setBarGridColumns}
         barGridFocusMode={barGridFocusMode}
         setBarGridFocusMode={setBarGridFocusMode}
+        onPresetCueTrigger={handlePresetCueTrigger}
         keySignature={key || song?.key || ''}
       />
 

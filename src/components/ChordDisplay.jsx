@@ -135,7 +135,7 @@ const buildBeatSlotsFromMeasureTokens = (measureTokens, beatsPerBar) => {
 };
 
 
-export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showRomanNumerals = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause, layoutMode = 'lyrics', currentBeat = 0, timeSignature = '4/4', barGridColumns = 'auto', barGridFocusMode = false }) {
+export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showRomanNumerals = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause, onPresetCueTrigger, layoutMode = 'lyrics', currentBeat = 0, timeSignature = '4/4', barGridColumns = 'auto', barGridFocusMode = false }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const formatInstrumentPatchText = (lineObj) => {
@@ -195,6 +195,16 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
           {midiChannelLabel ? ` ${midiChannelLabel}` : ''}
           {midiBankLabel ? ` ${midiBankLabel}` : ''}
         </span>
+        {typeof onPresetCueTrigger === 'function' ? (
+          <button
+            type="button"
+            className="cd-preset-cue-trigger"
+            onClick={() => onPresetCueTrigger(lineObj)}
+            title={hasMidiProgram ? 'Kirim Program Change sekarang' : 'Cue ini belum punya Program Change'}
+          >
+            {hasMidiProgram ? 'Send MIDI' : 'No PC'}
+          </button>
+        ) : null}
       </div>
     );
   };
