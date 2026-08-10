@@ -6509,7 +6509,22 @@ input[type="datetime-local"]:disabled {
   border-radius: 4px;
   font-weight: 700;
   font-size: 0.95rem;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cd-section-repeat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 .cd-section-inst {

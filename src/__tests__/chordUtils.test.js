@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
+import { isValidChord, chordToNumber, chordToRomanNumeral, chordTextToNumberText, chordTextToRomanNumeralText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -11,6 +11,52 @@ describe("chordUtils", () => {
     expect(parsed).toHaveLength(2);
     expect(parsed[0]).toEqual({ type: 'structure', label: 'Intro' });
     expect(parsed[1].type).toBe('chord');
+  });
+
+  test("parseLines expands standalone repeated section labels using previous section content", () => {
+    const parsed = parseLines([
+      'Verse 1:',
+      'C G',
+      'Lirik baris 1',
+      '',
+      'Chorus:',
+      'F G C',
+      'Lirik bagian C',
+      '',
+      'Verse 1',
+      'Chorus'
+    ], 0);
+
+    const verseRepeatIndex = parsed.findIndex((lineObj, idx) => lineObj.type === 'structure' && lineObj.label === 'Verse 1' && idx > 0);
+    expect(verseRepeatIndex).toBeGreaterThan(-1);
+    expect(parsed[verseRepeatIndex].isRepeatedReference).toBe(true);
+    expect(parsed[verseRepeatIndex + 1]).toMatchObject({ type: 'chord' });
+    expect(parsed[verseRepeatIndex + 2]).toMatchObject({ type: 'lyrics' });
+
+    const chorusRepeatIndex = parsed.findIndex((lineObj, idx) => lineObj.type === 'structure' && lineObj.label === 'Chorus' && idx > verseRepeatIndex);
+    expect(chorusRepeatIndex).toBeGreaterThan(-1);
+    expect(parsed[chorusRepeatIndex].isRepeatedReference).toBe(true);
+    expect(parsed[chorusRepeatIndex + 1]).toMatchObject({ type: 'chord' });
+    expect(parsed[chorusRepeatIndex + 2]).toMatchObject({ type: 'lyrics' });
+  });
+
+  test("parseLines keeps section as header when section still has following content", () => {
+    const parsed = parseLines([
+      'Verse:',
+      'C G',
+      'Line lama',
+      '',
+      'Verse',
+      'Am F',
+      'Line baru'
+    ], 0);
+
+    const secondVerseIndex = parsed.findIndex((lineObj, idx) => lineObj.type === 'structure' && lineObj.label === 'Verse' && idx > 0);
+    expect(secondVerseIndex).toBeGreaterThan(-1);
+    expect(parsed[secondVerseIndex + 1]).toMatchObject({ type: 'chord' });
+    const nextLyricsTokens = parsed[secondVerseIndex + 2]?.tokens || [];
+    const lyricsText = nextLyricsTokens.map((tokenObj) => tokenObj.token).join('');
+    expect(lyricsText).toContain('Line baru');
   });
 
   test("parseSection detects modulation lines", () => {
@@ -55,6 +101,18 @@ describe("chordUtils", () => {
   test("chordTextToNumberText converts inline chord tokens", () => {
     expect(chordTextToNumberText('C G Am F', 'C')).toBe('1 5 6m 4');
     expect(chordTextToNumberText('D.. Gm..', 'C')).toBe('2.. 5m..');
+  });
+
+  test("chordToRomanNumeral converts basic chords into Roman numerals", () => {
+    expect(chordToRomanNumeral('C', 'C')).toBe('I');
+    expect(chordToRomanNumeral('Am', 'C')).toBe('vi');
+    expect(chordToRomanNumeral('F', 'C')).toBe('IV');
+    expect(chordToRomanNumeral('G7', 'C')).toBe('V7');
+  });
+
+  test("chordTextToRomanNumeralText converts inline chords to Roman numerals", () => {
+    expect(chordTextToRomanNumeralText('C G Am F', 'C')).toBe('I V vi IV');
+    expect(chordTextToRomanNumeralText('D.. Gm..', 'C')).toBe('II.. v..');
   });
 
   test("chordTextToJazzText reharmonizes common chord qualities into jazzier voicings", () => {

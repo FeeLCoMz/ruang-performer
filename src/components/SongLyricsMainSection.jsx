@@ -56,6 +56,8 @@ export default function SongLyricsMainSection({
   setShowChords,
   showChordNumbers,
   setShowChordNumbers,
+  showRomanNumerals,
+  setShowRomanNumerals,
   showJazzChords,
   setShowJazzChords,
   showSimpleChords,
@@ -107,6 +109,8 @@ export default function SongLyricsMainSection({
             setZoom={setZoom}
             showChordNumbers={showChordNumbers}
             setShowChordNumbers={setShowChordNumbers}
+            showRomanNumerals={showRomanNumerals}
+            setShowRomanNumerals={setShowRomanNumerals}
             showJazzChords={showJazzChords}
             setShowJazzChords={setShowJazzChords}
             showSimpleChords={showSimpleChords}
@@ -203,6 +207,7 @@ export default function SongLyricsMainSection({
               setZoom={setZoom}
               lyricsMode={lyricsMode}
               showChordNumbers={showChordNumbers}
+              showRomanNumerals={showRomanNumerals}
               showJazzChords={showJazzChords}
               showSimpleChords={showSimpleChords}
               keySignature={keySignature}

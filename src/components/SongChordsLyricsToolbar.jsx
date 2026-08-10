@@ -48,6 +48,8 @@ export default function SongChordsLyricsToolbar({
   setZoom,
   showChordNumbers,
   setShowChordNumbers,
+  showRomanNumerals,
+  setShowRomanNumerals,
   showJazzChords,
   setShowJazzChords,
   showSimpleChords,
@@ -83,8 +85,8 @@ export default function SongChordsLyricsToolbar({
   const [isYoutubeReady, setIsYoutubeReady] = useState(false);
   const chordStyleMenuRef = useRef(null);
   const normalizedTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
-  const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
-  const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
+  const currentChordStyleLabel = showRomanNumerals ? 'Romawi' : showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
+  const currentChordStyleKey = showRomanNumerals ? 'roman' : showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
   const toolbarClassName = `song-lyrics-toolbar ${performanceMode ? 'song-lyrics-toolbar--performance' : 'song-lyrics-toolbar--normal'}`;
 
   // Sync YouTube playing state
@@ -127,6 +129,7 @@ export default function SongChordsLyricsToolbar({
 
   const applyChordStyle = (style) => {
     setShowChordNumbers(false);
+    setShowRomanNumerals(style === 'roman');
     setShowJazzChords(style === 'jazz');
     setShowSimpleChords(style === 'simple');
     setShowChordStyleMenu(false);
@@ -349,6 +352,7 @@ export default function SongChordsLyricsToolbar({
                 setShowChordNumbers((prev) => {
                   const next = !prev;
                   if (next) {
+                    setShowRomanNumerals(false);
                     setShowJazzChords(false);
                     setShowSimpleChords(false);
                   }
@@ -358,6 +362,25 @@ export default function SongChordsLyricsToolbar({
             >
               <span aria-hidden="true">🔢</span>
               <span className="song-lyrics-toolbar-btn-label">Angka</span>
+            </button>
+
+            <button
+              className={`btn ${showRomanNumerals ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
+              title={showRomanNumerals ? 'Chord (romawi) - aktif' : 'Toggle chord romawi'}
+              onClick={() => {
+                setShowRomanNumerals((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    setShowChordNumbers(false);
+                    setShowJazzChords(false);
+                    setShowSimpleChords(false);
+                  }
+                  return next;
+                });
+              }}
+            >
+              <span aria-hidden="true">Ⅳ</span>
+              <span className="song-lyrics-toolbar-btn-label">Romawi</span>
             </button>
 
             <div className="song-lyrics-chord-style-menu-container" ref={chordStyleMenuRef}>
@@ -382,11 +405,19 @@ export default function SongChordsLyricsToolbar({
                 <div className="song-lyrics-chord-style-menu" role="menu" aria-label="Pilih style chord">
                   <button
                     type="button"
-                    className={`song-lyrics-chord-style-item${!showJazzChords && !showSimpleChords ? ' active' : ''}`}
+                    className={`song-lyrics-chord-style-item${!showJazzChords && !showSimpleChords && !showRomanNumerals ? ' active' : ''}`}
                     onClick={() => applyChordStyle('default')}
                     role="menuitem"
                   >
                     Default
+                  </button>
+                  <button
+                    type="button"
+                    className={`song-lyrics-chord-style-item${showRomanNumerals ? ' active' : ''}`}
+                    onClick={() => applyChordStyle('roman')}
+                    role="menuitem"
+                  >
+                    Roman
                   </button>
                   <button
                     type="button"

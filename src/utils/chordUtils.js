@@ -21,6 +21,53 @@ export function splitSectionLabelWithChords(line) {
   return [`${labelToken}:`, trailing];
 }
 
+function normalizeSectionReferenceKey(label) {
+  if (typeof label !== 'string') return null;
+  return label
+    .toLowerCase()
+    .replace(/[\[\]:]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getSectionReferenceKey(line) {
+  const parsedSection = parseSection(line);
+  if (!parsedSection || parsedSection.type !== 'structure') return null;
+  return normalizeSectionReferenceKey(parsedSection.label);
+}
+
+function findNextNonEmptyLineIndex(lines, startIndex) {
+  for (let i = startIndex; i < lines.length; i += 1) {
+    if (typeof lines[i] === 'string' && lines[i].trim()) return i;
+  }
+  return -1;
+}
+
+function shouldExpandSectionReference(lines, lineIndex) {
+  const currentLine = lines[lineIndex];
+  const sectionKey = getSectionReferenceKey(currentLine);
+  if (!sectionKey) return false;
+
+  const nextNonEmptyLineIndex = findNextNonEmptyLineIndex(lines, lineIndex + 1);
+  if (nextNonEmptyLineIndex === -1) return true;
+
+  const nextSection = parseSection(lines[nextNonEmptyLineIndex]);
+  return nextSection?.type === 'structure';
+}
+
+function collectSectionBodyLines(lines, sectionStartIndex, inlineChordLine = null) {
+  const bodyLines = [];
+  if (inlineChordLine) bodyLines.push(inlineChordLine);
+
+  for (let i = sectionStartIndex + 1; i < lines.length; i += 1) {
+    const nextSection = parseSection(lines[i]);
+    if (nextSection?.type === 'structure') break;
+    bodyLines.push(lines[i]);
+  }
+
+  return bodyLines;
+}
+
 function parseLine(line, transpose) {
   const trimmed = line.trim();
   if (!trimmed) return { type: 'empty' };
@@ -91,13 +138,50 @@ function parseLine(line, transpose) {
 }
 
 export function parseLines(lines, transpose) {
-  return lines.flatMap(line => {
+  const parsed = [];
+  const sectionBodies = new Map();
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
     const sectionChunks = splitSectionLabelWithChords(line);
-    if (sectionChunks) {
-      return sectionChunks.map(chunk => parseLine(chunk, transpose));
+    const sectionKey = getSectionReferenceKey(line);
+
+    if (sectionKey && shouldExpandSectionReference(lines, index) && sectionBodies.has(sectionKey)) {
+      const repeatedSectionLine = parseLine(line, transpose);
+      if (repeatedSectionLine?.type === 'structure') {
+        repeatedSectionLine.isRepeatedReference = true;
+      }
+      parsed.push(repeatedSectionLine);
+      const storedSectionBody = sectionBodies.get(sectionKey) || [];
+      storedSectionBody.forEach((sectionLine) => {
+        parsed.push(parseLine(sectionLine, transpose));
+      });
+      continue;
     }
-    return [parseLine(line, transpose)];
-  });
+
+    if (sectionChunks) {
+      sectionChunks.forEach((chunk) => {
+        parsed.push(parseLine(chunk, transpose));
+      });
+    } else {
+      parsed.push(parseLine(line, transpose));
+    }
+
+    if (sectionKey) {
+      const inlineChordLine = sectionChunks?.[1] || null;
+      const candidateBody = collectSectionBodyLines(lines, index, inlineChordLine);
+      const hasRenderableContent = candidateBody.some((bodyLine) => {
+        if (typeof bodyLine !== 'string') return false;
+        return bodyLine.trim() !== '';
+      });
+
+      if (hasRenderableContent) {
+        sectionBodies.set(sectionKey, candidateBody);
+      }
+    }
+  }
+
+  return parsed;
 }
 /**
  * Helper: parse [mm:ss] or [hh:mm:ss] timestamp to seconds
@@ -870,6 +954,78 @@ export const chordTextToNumberText = (text, key = 'C') => {
     const prefix = innerMatch ? innerMatch[1] : '';
     const suffix = innerMatch ? innerMatch[3] : '';
     return `${prefix}${numberChord}${suffix}${trailingDots}`;
+  });
+
+  return replaced;
+};
+
+const romanNumeralMap = {
+  1: 'I',
+  2: 'II',
+  3: 'III',
+  4: 'IV',
+  5: 'V',
+  6: 'VI',
+  7: 'VII',
+};
+
+const romanNumeralMinorMap = {
+  1: 'i',
+  2: 'ii',
+  3: 'iii',
+  4: 'iv',
+  5: 'v',
+  6: 'vi',
+  7: 'vii',
+};
+
+export const chordToRomanNumeral = (chord, key = 'C') => {
+  if (!chord || typeof chord !== 'string') return null;
+
+  const normalizedChord = chord.trim();
+  if (normalizedChord.startsWith('-')) {
+    const rest = chordToRomanNumeral(normalizedChord.slice(1), key);
+    return rest ? `-${rest}` : null;
+  }
+
+  const match = normalizedChord.match(/^([A-G][#b]?)(.*)$/i);
+  if (!match) return null;
+
+  const root = match[1];
+  const remainder = match[2] || '';
+  const scaleType = getScaleTypeFromKey(key);
+  const degree = getScaleDegreeFromRoot(root, key, scaleType);
+  if (!degree) return null;
+
+  const quality = normalizeChordQuality(remainder);
+  const isMinorChord = quality && /^(m|min|mi|minor)$/i.test(quality);
+  const degreeNumber = Number.parseInt(degree, 10);
+  const baseMap = scaleType === 'minor' ? romanNumeralMinorMap : romanNumeralMap;
+  let baseLabel = baseMap[degreeNumber] || degree;
+
+  if (isMinorChord) {
+    baseLabel = baseLabel.toLowerCase();
+  }
+
+  const qualitySuffix = quality ? quality.replace(/^(m|min|mi|minor)$/i, '') : '';
+  const romanChord = `${baseLabel}${qualitySuffix || ''}`;
+
+  return romanChord;
+};
+
+export const chordTextToRomanNumeralText = (text, key = 'C') => {
+  if (!text || typeof text !== 'string') return text;
+
+  const replaced = text.replace(CHORD_REGEX_GLOBAL, (match) => {
+    const innerMatch = match.match(/^([\(\[\{]?)(.+?)([\)\]\}]?)$/);
+    const fullMatch = innerMatch ? innerMatch[2] : match;
+    const sanitized = normalizeChordToken(fullMatch.replace(/\.+$/, ''));
+    const romanChord = chordToRomanNumeral(sanitized, key);
+    if (!romanChord) return match;
+    const trailingDots = match.slice(match.replace(/\.+$/, '').length);
+    const prefix = innerMatch ? innerMatch[1] : '';
+    const suffix = innerMatch ? innerMatch[3] : '';
+    return `${prefix}${romanChord}${suffix}${trailingDots}`;
   });
 
   return replaced;

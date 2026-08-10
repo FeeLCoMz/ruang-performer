@@ -20,10 +20,10 @@
 
 import React, { useState } from 'react';
 import NumberToken from './NumberToken.jsx';
-import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
+import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToRomanNumeralText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
 
 
-export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
+export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showRomanNumerals = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const formatInstrumentPatchText = (lineObj) => {
@@ -36,6 +36,7 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
 
   const formatChordToken = (token) => {
     if (showChordNumbers) return chordTextToNumberText(token, keySignature);
+    if (showRomanNumerals) return chordTextToRomanNumeralText(token, keySignature);
     if (showJazzChords) return chordTextToJazzText(token);
     if (showSimpleChords) return chordTextToSimpleText(token);
     return token;
@@ -59,7 +60,16 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
         if (lineObj.type === 'empty')
           return <div key={i} className="cd-empty-line">&nbsp;</div>;
         if (lineObj.type === 'structure')
-          return <div key={i} className="cd-section-struct">{lineObj.label}</div>;
+          return (
+            <div key={i} className="cd-section-struct">
+              <span>{lineObj.label}</span>
+              {lineObj.isRepeatedReference ? (
+                <span className="cd-section-repeat-badge" title="Bagian ini diambil dari section sebelumnya">
+                  Repeated
+                </span>
+              ) : null}
+            </div>
+          );
         if (lineObj.type === 'instrument')
           return <div key={i} className="cd-section-inst">{lineObj.label}</div>;
         if (lineObj.type === 'modulation')
