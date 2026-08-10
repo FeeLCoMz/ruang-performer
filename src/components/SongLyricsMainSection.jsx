@@ -235,8 +235,11 @@ export default function SongLyricsMainSection({
               timeSignature={timeSignature}
               currentBeat={currentBeat}
               chordLayoutMode={chordLayoutMode}
+              setChordLayoutMode={setChordLayoutMode}
               barGridColumns={barGridColumns}
+              setBarGridColumns={setBarGridColumns}
               barGridFocusMode={barGridFocusMode}
+              setBarGridFocusMode={setBarGridFocusMode}
             />
           )}
         </>

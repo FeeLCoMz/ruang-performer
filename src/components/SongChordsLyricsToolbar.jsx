@@ -95,6 +95,15 @@ export default function SongChordsLyricsToolbar({
   const currentChordStyleLabel = showRomanNumerals ? 'Romawi' : showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
   const currentChordStyleKey = showRomanNumerals ? 'roman' : showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
   const toolbarClassName = `song-lyrics-toolbar ${performanceMode ? 'song-lyrics-toolbar--performance' : 'song-lyrics-toolbar--normal'}`;
+  const currentGridPreset = isBarGridMode
+    ? (() => {
+      const columns = String(barGridColumns || 'auto');
+      if (columns === '4' && barGridFocusMode) return 'dense';
+      if (columns === '2' && barGridFocusMode) return 'conductor';
+      if (columns === 'auto' && !barGridFocusMode) return 'balanced';
+      return 'custom';
+    })()
+    : 'off';
 
   // Sync YouTube playing state
   useEffect(() => {
@@ -140,6 +149,36 @@ export default function SongChordsLyricsToolbar({
     setShowJazzChords(style === 'jazz');
     setShowSimpleChords(style === 'simple');
     setShowChordStyleMenu(false);
+  };
+
+  const applyGridPreset = (preset) => {
+    if (typeof setChordLayoutMode !== 'function') return;
+    if (typeof setBarGridColumns !== 'function') return;
+    if (typeof setBarGridFocusMode !== 'function') return;
+
+    if (preset === 'off') {
+      setChordLayoutMode('lyrics');
+      return;
+    }
+
+    setChordLayoutMode('bar-grid');
+
+    if (preset === 'balanced') {
+      setBarGridColumns('auto');
+      setBarGridFocusMode(false);
+      return;
+    }
+
+    if (preset === 'dense') {
+      setBarGridColumns('4');
+      setBarGridFocusMode(true);
+      return;
+    }
+
+    if (preset === 'conductor') {
+      setBarGridColumns('2');
+      setBarGridFocusMode(true);
+    }
   };
 
   return (
@@ -296,6 +335,18 @@ export default function SongChordsLyricsToolbar({
 
         {!isEditingLyrics && !lyricsMode && isBarGridMode && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-grid-density">
+            <select
+              className="song-lyrics-grid-preset-select"
+              value={currentGridPreset}
+              onChange={(e) => applyGridPreset(e.target.value)}
+              aria-label="Preset bar grid"
+              title="Preset bar grid"
+            >
+              <option value="balanced">Balanced</option>
+              <option value="dense">Dense</option>
+              <option value="conductor">Conductor</option>
+              {currentGridPreset === 'custom' && <option value="custom">Custom</option>}
+            </select>
             <select
               className="song-lyrics-grid-density-select"
               value={String(barGridColumns || 'auto')}

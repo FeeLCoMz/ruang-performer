@@ -65,8 +65,11 @@ export default function SongChordsLyricsDisplay({
   currentBeat = 0,
   timeSignature = '4/4',
   chordLayoutMode = 'lyrics',
+  setChordLayoutMode,
   barGridColumns = 'auto',
+  setBarGridColumns,
   barGridFocusMode = false,
+  setBarGridFocusMode,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
   const zoomRef = useRef(zoom);
@@ -130,6 +133,62 @@ export default function SongChordsLyricsDisplay({
       document.removeEventListener('MSFullscreenChange', checkFullscreen);
     };
   }, [lyricsDisplayRef]);
+
+  useEffect(() => {
+    if (!isFullscreen) return undefined;
+
+    const isEditableTarget = (target) => {
+      const tag = target?.tagName?.toLowerCase?.();
+      return tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable;
+    };
+
+    const handleKeyDown = (event) => {
+      if (isEditableTarget(event.target)) return;
+      const key = String(event.key || '').toLowerCase();
+
+      if (key === 'g') {
+        event.preventDefault();
+        if (typeof setChordLayoutMode === 'function') {
+          setChordLayoutMode((prev) => (prev === 'bar-grid' ? 'lyrics' : 'bar-grid'));
+        }
+        return;
+      }
+
+      if (chordLayoutMode !== 'bar-grid') return;
+
+      if (key === 'f') {
+        event.preventDefault();
+        if (typeof setBarGridFocusMode === 'function') {
+          setBarGridFocusMode((prev) => !prev);
+        }
+        return;
+      }
+
+      if (key === '2' || key === '4') {
+        event.preventDefault();
+        if (typeof setBarGridColumns === 'function') {
+          setBarGridColumns(key);
+        }
+        return;
+      }
+
+      if (key === '0') {
+        event.preventDefault();
+        if (typeof setBarGridColumns === 'function') {
+          setBarGridColumns('auto');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    isFullscreen,
+    chordLayoutMode,
+    setChordLayoutMode,
+    setBarGridColumns,
+    setBarGridFocusMode,
+  ]);
 
   useEffect(() => {
     if (!isFullscreen) {

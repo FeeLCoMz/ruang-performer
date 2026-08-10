@@ -9357,7 +9357,25 @@ body.dark-mode .cd-token {
   font-weight: 600;
 }
 
+.song-lyrics-grid-preset-select {
+  min-width: 108px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  padding: 0 8px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
 .song-lyrics-grid-density-select:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent) 22%, transparent);
+}
+
+.song-lyrics-grid-preset-select:focus {
   outline: none;
   border-color: var(--primary-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent) 22%, transparent);
@@ -9559,6 +9577,12 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
 
 .page-container.performance-mode .song-lyrics-toolbar-group-grid-density .song-lyrics-grid-density-select {
   min-width: 78px;
+  height: 34px;
+  font-size: 0.72rem;
+}
+
+.page-container.performance-mode .song-lyrics-toolbar-group-grid-density .song-lyrics-grid-preset-select {
+  min-width: 86px;
   height: 34px;
   font-size: 0.72rem;
 }
