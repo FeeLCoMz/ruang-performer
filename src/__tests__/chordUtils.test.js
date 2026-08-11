@@ -13,6 +13,18 @@ describe("chordUtils", () => {
     expect(parsed[1].type).toBe('chord');
   });
 
+  test("parseLines preserves section and cue separation for single-line and multi-line input", () => {
+    const separateLines = parseLines(['[Intro]', '[Keys: Acoustic Grand Piano | PC: 0 | CH: 1]', 'Hello'], 0);
+    expect(separateLines[0]).toEqual({ type: 'structure', label: 'Intro' });
+    expect(separateLines[1]).toMatchObject({ type: 'preset_cue', section: 'Keys', patch: 'Acoustic Grand Piano' });
+    expect(separateLines[2]).toMatchObject({ type: 'lyrics' });
+
+    const sameLine = parseLines(['[Intro] [Keys: Acoustic Grand Piano | PC: 0 | CH: 1]', 'Hello'], 0);
+    expect(sameLine[0]).toEqual({ type: 'structure', label: 'Intro' });
+    expect(sameLine[1]).toMatchObject({ type: 'preset_cue', section: 'Keys', patch: 'Acoustic Grand Piano' });
+    expect(sameLine[2]).toMatchObject({ type: 'lyrics' });
+  });
+
   test("parseLines expands standalone repeated section labels using previous section content", () => {
     const parsed = parseLines([
       'Verse 1:',

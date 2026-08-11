@@ -70,6 +70,20 @@ function collectSectionBodyLines(lines, sectionStartIndex, inlineChordLine = nul
   return bodyLines;
 }
 
+function splitBracketCompoundLine(line) {
+  if (typeof line !== 'string') return null;
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+
+  const matches = Array.from(trimmed.matchAll(/\[[^\]]+\]/g));
+  if (matches.length <= 1) return null;
+
+  const remainingText = trimmed.replace(/\[[^\]]+\]/g, '').trim();
+  if (remainingText) return null;
+
+  return matches.map((match) => match[0].trim());
+}
+
 function parseLine(line, transpose) {
   const trimmed = line.trim();
   if (!trimmed) return { type: 'empty' };
@@ -149,6 +163,14 @@ export function parseLines(lines, transpose) {
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
+    const bracketChunks = splitBracketCompoundLine(line);
+    if (bracketChunks) {
+      bracketChunks.forEach((chunk) => {
+        parsed.push(parseLine(chunk, transpose));
+      });
+      continue;
+    }
+
     const sectionChunks = splitSectionLabelWithChords(line);
     const sectionKey = getSectionReferenceKey(line);
 
@@ -893,6 +915,7 @@ export const parseInstrumentPatchLine = (line) => {
   if (typeof line !== 'string') return null;
   const trimmed = line.trim();
   if (!trimmed || !trimmed.includes(':')) return null;
+  if (Array.from(trimmed.matchAll(/\[[^\]]+\]/g)).length > 1) return null;
 
   const segments = trimmed.split('|').map((segment) => segment.trim()).filter(Boolean);
   if (!segments.length) return null;
