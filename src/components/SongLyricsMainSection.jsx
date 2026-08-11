@@ -76,6 +76,8 @@ export default function SongLyricsMainSection({
   youtubeId,
   showMiniVideoPlayer = false,
   onOpenMiniVideoPlayer,
+  onPlayYouTube,
+  onRestartYouTube,
   loading = false
 }) {
   // Expand/collapse state for lyrics panel
@@ -148,8 +150,9 @@ export default function SongLyricsMainSection({
             handleExportText={handleExportText}
             handleExportPDF={handleExportPDF}
             youtubeId={youtubeId}
-            showMiniVideoPlayer={showMiniVideoPlayer}
-            onOpenMiniVideoPlayer={onOpenMiniVideoPlayer}
+            youtubeRef={youtubeRef}
+            onPlayYouTube={onPlayYouTube}
+            onRestartYouTube={onRestartYouTube}
           />
         )}
 
@@ -239,7 +242,6 @@ export default function SongLyricsMainSection({
               barGridFocusMode={barGridFocusMode}
               setBarGridFocusMode={setBarGridFocusMode}
               onPresetCueTrigger={onPresetCueTrigger}
-              onOpenMiniVideoPlayer={onOpenMiniVideoPlayer}
             />
           )}
         </>

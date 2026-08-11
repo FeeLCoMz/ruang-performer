@@ -284,8 +284,13 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   useEffect(() => {
     if (!youtubeId) {
       setShowMiniVideoPlayer(false);
+      return;
     }
-  }, [youtubeId]);
+
+    if (!performanceMode && !isEditingLyrics) {
+      setShowMiniVideoPlayer(false);
+    }
+  }, [performanceMode, isEditingLyrics, youtubeId]);
 
   useEffect(() => {
     if (!song?.id) return;
@@ -435,6 +440,44 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     } catch (err) {
       console.error("Error updating time markers:", err);
     }
+  };
+
+  const ensureMiniPlayerReady = (callback) => {
+    if (!performanceMode) {
+      callback?.();
+      return;
+    }
+
+    setShowMiniVideoPlayer(true);
+    let attempts = 0;
+    const maxAttempts = 24;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      if (youtubeRef.current) {
+        callback?.();
+        clearInterval(intervalId);
+        return;
+      }
+      if (attempts >= maxAttempts) {
+        clearInterval(intervalId);
+      }
+    }, 120);
+  };
+
+  const handlePlayYouTube = () => {
+    ensureMiniPlayerReady(() => {
+      if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
+        youtubeRef.current.handleTogglePlayPause();
+      }
+    });
+  };
+
+  const handleRestartYouTube = () => {
+    ensureMiniPlayerReady(() => {
+      if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
+        youtubeRef.current.handleSeek(0);
+      }
+    });
   };
 
   // Handle lyrics save
@@ -841,6 +884,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         youtubeId={youtubeId}
         showMiniVideoPlayer={showMiniVideoPlayer}
         onOpenMiniVideoPlayer={() => setShowMiniVideoPlayer(true)}
+        onPlayYouTube={handlePlayYouTube}
+        onRestartYouTube={handleRestartYouTube}
         loading={loading}
         showChordNumbers={showChordNumbers}
         setShowChordNumbers={setShowChordNumbers}
@@ -860,7 +905,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         keySignature={key || song?.key || ''}
       />
 
-      {!lyricsMode && youtubeId && (performanceMode || isEditingLyrics || showMiniVideoPlayer) && (
+      {!lyricsMode && youtubeId && (performanceMode || isEditingLyrics) && (
         <FloatingYouTubePlayer
           isOpen={showMiniVideoPlayer}
           videoId={youtubeId}
