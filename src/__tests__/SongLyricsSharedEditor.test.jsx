@@ -560,7 +560,7 @@ describe('Song lyrics shared editor rendering', () => {
   });
 
   test('Given performance mode is active, Then toolbar keeps only essential controls', async () => {
-    const onPlayYouTube = vi.fn();
+    const onOpenMiniVideoPlayer = vi.fn();
 
     await act(async () => {
       root.render(
@@ -610,9 +610,8 @@ describe('Song lyrics shared editor rendering', () => {
           handleExportText={noop}
           handleExportPDF={noop}
           youtubeId={'dQw4w9WgXcQ'}
-          youtubeRef={{ current: null }}
-          onPlayYouTube={onPlayYouTube}
-          onRestartYouTube={noop}
+          showMiniVideoPlayer={false}
+          onOpenMiniVideoPlayer={onOpenMiniVideoPlayer}
         />
       );
     });
@@ -628,12 +627,12 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.auto-scroll-menu-toggle')).toBeFalsy();
     expect(container.querySelector('.auto-scroll-beats-minimal')).toBeFalsy();
 
-    const playButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.title === 'Play YouTube');
-    expect(playButton).toBeTruthy();
+    const miniPlayerButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.title === 'Buka mini video player');
+    expect(miniPlayerButton).toBeTruthy();
     await act(async () => {
-      playButton.click();
+      miniPlayerButton.click();
     });
-    expect(onPlayYouTube).toHaveBeenCalled();
+    expect(onOpenMiniVideoPlayer).toHaveBeenCalled();
   });
 
   test('Given performance mode is active, Then the lyrics and chord collapse button is hidden', async () => {

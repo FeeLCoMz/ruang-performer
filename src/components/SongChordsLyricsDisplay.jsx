@@ -71,6 +71,7 @@ export default function SongChordsLyricsDisplay({
   barGridFocusMode = false,
   setBarGridFocusMode,
   onPresetCueTrigger,
+  onOpenMiniVideoPlayer,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
   const zoomRef = useRef(zoom);
@@ -80,22 +81,11 @@ export default function SongChordsLyricsDisplay({
   const [zoomHudText, setZoomHudText] = useState(`${Math.round((zoom || 1) * 100)}%`);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(false);
-  const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
   const [visualBeat, setVisualBeat] = useState(0);
 
   useEffect(() => {
     zoomRef.current = zoom;
   }, [zoom]);
-
-  // Sync YouTube playing state
-  useEffect(() => {
-    if (!youtubeRef?.current) return;
-    const interval = setInterval(() => {
-      const state = youtubeRef.current?.getPlayerState?.();
-      setIsYoutubePlaying(state === 1);
-    }, 500);
-    return () => clearInterval(interval);
-  }, [youtubeRef]);
 
   useEffect(() => {
     return () => {
@@ -495,42 +485,16 @@ export default function SongChordsLyricsDisplay({
             R
           </button>
         </div>
-        {youtubeId && youtubeRef && (
+        {youtubeId && typeof onOpenMiniVideoPlayer === 'function' && (
           <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="YouTube">
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => {
-                if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
-                  youtubeRef.current.handleTogglePlayPause();
-                  // Update state setelah toggle
-                  setTimeout(() => {
-                    const state = youtubeRef.current?.getPlayerState?.();
-                    setIsYoutubePlaying(state === 1);
-                  }, 50);
-                }
-              }}
-              aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-              title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
+              onClick={onOpenMiniVideoPlayer}
+              aria-label="Buka mini video player"
+              title="Buka mini video player"
             >
-              {isYoutubePlaying ? '⏸️ Pause' : '▶️ Play'}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => {
-                if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
-                  youtubeRef.current.handleSeek(0);
-                  setTimeout(() => {
-                    const state = youtubeRef.current?.getPlayerState?.();
-                    setIsYoutubePlaying(state === 1);
-                  }, 50);
-                }
-              }}
-              aria-label="Putar dari awal"
-              title="Putar dari awal"
-            >
-              ⏮️ Restart
+              🗖 Mini Player
             </button>
           </div>
         )}

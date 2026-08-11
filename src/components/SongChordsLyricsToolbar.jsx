@@ -82,13 +82,10 @@ export default function SongChordsLyricsToolbar({
   handleExportText,
   handleExportPDF,
   youtubeId,
-  youtubeRef,
-  onPlayYouTube,
-  onRestartYouTube,
+  showMiniVideoPlayer,
+  onOpenMiniVideoPlayer,
 }) {
   const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
-  const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
-  const [isYoutubeReady, setIsYoutubeReady] = useState(false);
   const chordStyleMenuRef = useRef(null);
   const normalizedTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
   const isBarGridMode = chordLayoutMode === 'bar-grid';
@@ -104,26 +101,6 @@ export default function SongChordsLyricsToolbar({
       return 'custom';
     })()
     : 'off';
-
-  // Sync YouTube playing state
-  useEffect(() => {
-    if (!youtubeRef?.current) {
-      setIsYoutubeReady(false);
-      setIsYoutubePlaying(false);
-      return;
-    }
-
-    const syncPlaybackState = () => {
-      const state = youtubeRef.current?.getPlayerState?.();
-      const nextPlaying = state === 1;
-      setIsYoutubePlaying(nextPlaying);
-      setIsYoutubeReady(true);
-    };
-
-    syncPlaybackState();
-    const interval = setInterval(syncPlaybackState, 500);
-    return () => clearInterval(interval);
-  }, [youtubeRef, youtubeId]);
 
   useEffect(() => {
     if (!showChordStyleMenu) return undefined;
@@ -222,55 +199,16 @@ export default function SongChordsLyricsToolbar({
 
         {!isEditingLyrics && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-view">
-            {!lyricsMode && youtubeId && youtubeRef && (
-              <>
-                <button
-                  type="button"
-                  className={`btn btn-secondary song-lyrics-youtube-btn${!performanceMode ? ' song-lyrics-youtube-btn--normal' : ''}`}
-                  title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-                  aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-                  onClick={() => {
-                    if (performanceMode && typeof onPlayYouTube === 'function') {
-                      onPlayYouTube();
-                      return;
-                    }
-                    if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
-                      youtubeRef.current.handleTogglePlayPause();
-                      setTimeout(() => {
-                        const state = youtubeRef.current?.getPlayerState?.();
-                        setIsYoutubePlaying(state === 1);
-                      }, 100);
-                    }
-                  }}
-                >
-                  <span aria-hidden="true">{isYoutubePlaying ? '⏸' : '▶'}</span>
-                  {!performanceMode && (
-                    <span className="song-lyrics-toolbar-btn-label">{isYoutubePlaying ? 'Pause' : 'Play'}</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-secondary song-lyrics-youtube-btn${!performanceMode ? ' song-lyrics-youtube-btn--normal' : ''}`}
-                  title="Putar dari awal"
-                  aria-label="Putar dari awal"
-                  onClick={() => {
-                    if (performanceMode && typeof onRestartYouTube === 'function') {
-                      onRestartYouTube();
-                      return;
-                    }
-                    if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
-                      youtubeRef.current.handleSeek(0);
-                      setTimeout(() => {
-                        const state = youtubeRef.current?.getPlayerState?.();
-                        setIsYoutubePlaying(state === 1);
-                      }, 50);
-                    }
-                  }}
-                >
-                  <span aria-hidden="true">↺</span>
-                  {!performanceMode && <span className="song-lyrics-toolbar-btn-label">Restart</span>}
-                </button>
-              </>
+            {!lyricsMode && youtubeId && !showMiniVideoPlayer && typeof onOpenMiniVideoPlayer === 'function' && (
+              <button
+                type="button"
+                className="btn btn-secondary song-lyrics-mini-player-reopen"
+                onClick={onOpenMiniVideoPlayer}
+                title="Buka mini video player"
+                aria-label="Buka mini video player"
+              >
+                🗖 Mini Player
+              </button>
             )}
           </div>
         )}
