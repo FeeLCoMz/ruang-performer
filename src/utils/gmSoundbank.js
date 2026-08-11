@@ -129,17 +129,80 @@ export const GM_SOUND_BANK = [
   { program: 127, name: 'Gunshot' },
 ];
 
-export const GM_CUE_SECTIONS = [
-  'Intro',
-  'Verse',
-  'Pre-Chorus',
-  'Chorus',
-  'Bridge',
-  'Interlude',
-  'Solo',
-  'Outro',
-  'Coda',
+export const GM_SOUND_CATEGORIES = [
+  { value: 'piano-keys', label: 'Piano & Keys' },
+  { value: 'guitar', label: 'Guitar' },
+  { value: 'bass', label: 'Bass' },
+  { value: 'strings-orchestra', label: 'Strings & Orchestra' },
+  { value: 'brass-reed-wind', label: 'Brass / Reed / Wind' },
+  { value: 'synth-lead-pad-fx', label: 'Synth Lead / Pad / FX' },
+  { value: 'ethnic-percussion-sfx', label: 'Ethnic / Percussion / SFX' },
+  { value: 'all', label: 'All GM Sounds' },
 ];
+
+export const getGmCategoryFromProgram = (program) => {
+  const value = Number(program);
+  if (!Number.isFinite(value)) return 'all';
+  if (value >= 0 && value <= 23) return 'piano-keys';
+  if (value >= 24 && value <= 31) return 'guitar';
+  if (value >= 32 && value <= 39) return 'bass';
+  if (value >= 40 && value <= 63) return 'strings-orchestra';
+  if (value >= 64 && value <= 79) return 'brass-reed-wind';
+  if (value >= 80 && value <= 103) return 'synth-lead-pad-fx';
+  if (value >= 104 && value <= 127) return 'ethnic-percussion-sfx';
+  return 'all';
+};
+
+export const filterGmSoundBankByCategory = (categoryValue = 'all') => {
+  if (!categoryValue || categoryValue === 'all') return GM_SOUND_BANK;
+  return GM_SOUND_BANK.filter((item) => getGmCategoryFromProgram(item.program) === categoryValue);
+};
+
+export const findClosestGmPatch = (queryText = '', hintCategory = 'all') => {
+  const query = String(queryText || '').toLowerCase().replace(/[^a-z0-9\s()+-]/g, ' ').replace(/\s+/g, ' ').trim();
+  const queryTokens = query.split(' ').filter(Boolean);
+
+  const candidates = filterGmSoundBankByCategory(hintCategory);
+  const pool = candidates.length ? candidates : GM_SOUND_BANK;
+
+  if (!query) {
+    return pool[0] || GM_SOUND_BANK[0] || null;
+  }
+
+  let best = null;
+  let bestScore = -1;
+
+  pool.forEach((patch) => {
+    const name = String(patch.name || '').toLowerCase();
+    const nameTokens = name.replace(/[^a-z0-9\s()+-]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+
+    let score = 0;
+    if (name === query) score += 500;
+    if (name.startsWith(query)) score += 240;
+    if (name.includes(query)) score += 170;
+    if (query.includes(name)) score += 130;
+
+    const overlap = queryTokens.filter((token) => nameTokens.includes(token)).length;
+    score += overlap * 40;
+
+    if (/\bpiano\b/.test(query) && /piano/.test(name)) score += 90;
+    if (/\bep\b|electric\s+piano/.test(query) && /electric\s+piano/.test(name)) score += 120;
+    if (/\bacoustic\b/.test(query) && /acoustic/.test(name)) score += 80;
+    if (/\bguitar\b/.test(query) && /guitar/.test(name)) score += 90;
+    if (/\bbass\b/.test(query) && /bass/.test(name)) score += 90;
+    if (/\borgan\b/.test(query) && /organ/.test(name)) score += 70;
+    if (/\bstrings?\b/.test(query) && /string/.test(name)) score += 80;
+    if (/\blead\b/.test(query) && /lead/.test(name)) score += 80;
+    if (/\bpad\b/.test(query) && /pad/.test(name)) score += 80;
+
+    if (score > bestScore) {
+      best = patch;
+      bestScore = score;
+    }
+  });
+
+  return best || GM_SOUND_BANK[0] || null;
+};
 
 export const formatGmPatchOptionLabel = ({ program, name }) => {
   const humanProgram = String(Number(program) + 1).padStart(3, '0');

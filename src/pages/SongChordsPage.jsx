@@ -18,7 +18,7 @@ import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import useWebMidiProgramChange from '../hooks/useWebMidiProgramChange.js';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
-import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractPresetCuesFromLyrics } from '../utils/chordUtils.js';
+import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractMidiProgramCuesFromLyrics } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 
@@ -167,13 +167,13 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const autoMidiCueSentRef = useRef('');
   const lastAutoTimelineMarkerRef = useRef('');
 
-  const presetCues = useMemo(() => {
-    return extractPresetCuesFromLyrics(song?.lyrics || '');
+  const midiProgramCues = useMemo(() => {
+    return extractMidiProgramCuesFromLyrics(song?.lyrics || '');
   }, [song?.lyrics]);
 
   const firstMidiCue = useMemo(() => {
-    return presetCues.find((cue) => Number.isFinite(Number(cue?.midi?.program))) || null;
-  }, [presetCues]);
+    return midiProgramCues.find((cue) => Number.isFinite(Number(cue?.midi?.program))) || null;
+  }, [midiProgramCues]);
 
   const normalizeSectionKey = (value = '') => {
     return String(value || '')
@@ -185,14 +185,14 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
   const cueBySectionKey = useMemo(() => {
     const map = new Map();
-    presetCues.forEach((cue) => {
+    midiProgramCues.forEach((cue) => {
       if (!Number.isFinite(Number(cue?.midi?.program))) return;
-      const keyValue = normalizeSectionKey(cue?.section || cue?.label || '');
+      const keyValue = normalizeSectionKey(cue?.section || cue?.patch || cue?.label || '');
       if (!keyValue) return;
       if (!map.has(keyValue)) map.set(keyValue, cue);
     });
     return map;
-  }, [presetCues]);
+  }, [midiProgramCues]);
 
   const pianoRecommendation = recommendPianoFriendlyKey({
     chords: chordStats.chords,
@@ -799,7 +799,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         isEnabled={isMidiProgramChangeEnabled}
         setIsEnabled={setIsMidiProgramChangeEnabled}
         requestAccess={requestMidiAccess}
-        cueCount={presetCues.length}
+        cueCount={midiProgramCues.length}
         autoCueLabel={firstMidiCue?.label || ''}
         lastMessage={midiLastMessage}
       />

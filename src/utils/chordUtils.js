@@ -1,3 +1,5 @@
+import { findClosestGmPatch } from './gmSoundbank.js';
+
 /**
  * Mem-parse array baris lirik menjadi struktur token untuk rendering.
  * @param {string[]} lines - Array baris lirik
@@ -199,6 +201,47 @@ export function extractPresetCuesFromLyrics(lyricsText) {
       ...cue,
       id: `${index + 1}-${cue.section}-${cue.patch}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-'),
     }));
+}
+
+export function extractMidiProgramCuesFromLyrics(lyricsText) {
+  if (typeof lyricsText !== 'string' || !lyricsText.trim()) return [];
+
+  const parsedLines = parseLines(lyricsText.split(/\r?\n/), 0);
+  let rowIndex = 0;
+
+  return parsedLines
+    .filter((lineObj) => lineObj?.midi && Number.isFinite(Number(lineObj?.midi?.program)))
+    .map((lineObj) => {
+      rowIndex += 1;
+
+      if (lineObj.type === 'preset_cue') {
+        const section = String(lineObj.section || '').trim();
+        const patch = String(lineObj.patch || '').trim();
+        return {
+          id: `preset-${rowIndex}-${section}-${patch}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-'),
+          type: 'preset_cue',
+          section,
+          patch,
+          label: lineObj.label || `${section}: ${patch}`,
+          midi: lineObj.midi,
+          text: lineObj.text,
+        };
+      }
+
+      const patch = String(lineObj?.fields?.patch || lineObj?.fields?.preset || lineObj?.fields?.sound || lineObj?.fields?.tone || 'Keyboard Patch').trim();
+      const instrument = String(lineObj?.fields?.instrument || '').trim();
+      const label = instrument ? `${patch} (${instrument})` : patch;
+
+      return {
+        id: `patch-${rowIndex}-${patch}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-'),
+        type: 'instrument_patch',
+        section: '',
+        patch,
+        label,
+        midi: lineObj.midi,
+        text: lineObj.text,
+      };
+    });
 }
 /**
  * Helper: parse [mm:ss] or [hh:mm:ss] timestamp to seconds
@@ -646,7 +689,8 @@ const INSTRUMENT_PATCH_KEYS = new Set([
 
 const PRESET_CUE_SECTION_KEYWORDS = [
   'intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain',
-  'pre-chorus', 'post-chorus', 'solo', 'musik', 'hook', 'drop', 'ending', 'ending tag'
+  'pre-chorus', 'post-chorus', 'solo', 'musik', 'hook', 'drop', 'ending', 'ending tag',
+  'keys', 'keyboard', 'guitar', 'gitar'
 ];
 
 const normalizeMidiByte = (value, { max = 127 } = {}) => {
@@ -733,6 +777,83 @@ const isLikelyCueSectionLabel = (label = '') => {
   });
 };
 
+const getDefaultMidiChannelByContext = (contextText = '') => {
+  const normalized = String(contextText || '').toLowerCase();
+  if (/\bguitar\b|\bgitar\b/.test(normalized)) return 2;
+  return 1;
+};
+
+const inferCategoryHintFromContext = (contextText = '') => {
+  const normalized = String(contextText || '').toLowerCase();
+  if (/\bguitar\b|\bgitar\b/.test(normalized)) return 'guitar';
+  if (/\bkeys\b|\bkeyboard\b|\bpiano\b|\borgan\b|\bep\b/.test(normalized)) return 'piano-keys';
+  if (/\bbass\b/.test(normalized)) return 'bass';
+  if (/\bstring\b|\borchestra\b|\bchoir\b/.test(normalized)) return 'strings-orchestra';
+  if (/\bbrass\b|\btrumpet\b|\bsax\b|\bflute\b|\bclarinet\b/.test(normalized)) return 'brass-reed-wind';
+  if (/\blead\b|\bpad\b|\bsynth\b|\bfx\b/.test(normalized)) return 'synth-lead-pad-fx';
+  return 'all';
+};
+
+const inferProgramByCommonInstrumentName = (contextText = '') => {
+  const normalized = String(contextText || '').toLowerCase();
+
+  if (/\bpiano\b|\bacoustic\s+grand\b/.test(normalized)) return 0;
+  if (/\bbright\s+piano\b/.test(normalized)) return 1;
+  if (/\belectric\s+piano\b|\bep\b/.test(normalized)) return 4;
+  if (/\borgan\b/.test(normalized)) return 16;
+  if (/\bnylon\b/.test(normalized)) return 24;
+  if (/\bsteel\b/.test(normalized)) return 25;
+  if (/\bclean\b/.test(normalized)) return 27;
+  if (/\bmuted\b/.test(normalized)) return 28;
+  if (/\boverdriven\b/.test(normalized)) return 29;
+  if (/\bdistortion\b|\bcrunch\b/.test(normalized)) return 30;
+  if (/\bbass\b/.test(normalized)) return 33;
+  if (/\bstrings?\b/.test(normalized)) return 48;
+  if (/\bchoir\b/.test(normalized)) return 52;
+  if (/\btrumpet\b/.test(normalized)) return 56;
+  if (/\bsax\b/.test(normalized)) return 66;
+  if (/\bflute\b/.test(normalized)) return 73;
+  if (/\blead\b/.test(normalized)) return 81;
+  if (/\bpad\b/.test(normalized)) return 89;
+
+  return null;
+};
+
+const inferMidiFromPatchContext = ({ section = '', patch = '', instrument = '' } = {}) => {
+  const context = `${section} ${instrument} ${patch}`.trim();
+  const commonProgram = inferProgramByCommonInstrumentName(context);
+  if (Number.isFinite(commonProgram)) {
+    return {
+      program: commonProgram,
+      channel: getDefaultMidiChannelByContext(context),
+    };
+  }
+
+  const categoryHint = inferCategoryHintFromContext(context);
+  const closestPatch = findClosestGmPatch(patch || context, categoryHint);
+  if (!closestPatch || !Number.isFinite(Number(closestPatch.program))) return null;
+
+  return {
+    program: Number(closestPatch.program),
+    channel: getDefaultMidiChannelByContext(context),
+  };
+};
+
+const mergeMidiWithInference = ({ explicitMidi, section = '', patch = '', instrument = '' } = {}) => {
+  const inferred = inferMidiFromPatchContext({ section, patch, instrument });
+  const merged = {
+    ...(inferred || {}),
+    ...(explicitMidi || {}),
+  };
+
+  if (!Number.isFinite(Number(merged.program))) return null;
+  if (!Number.isFinite(Number(merged.channel))) {
+    merged.channel = getDefaultMidiChannelByContext(`${section} ${instrument} ${patch}`);
+  }
+
+  return merged;
+};
+
 export const parsePresetCueLine = (line) => {
   if (typeof line !== 'string') return null;
   const trimmed = line.trim();
@@ -751,7 +872,12 @@ export const parsePresetCueLine = (line) => {
   const hasMidiHints = /(?:\bpc\b|\bprogram\b|\bch\b|\bchannel\b|\bbank\b|\bmsb\b|\blsb\b)/i.test(optionsRaw);
   if (!hasMidiHints && !isLikelyCueSectionLabel(section)) return null;
 
-  const midi = parseMidiFromFields(parseCueOptionFields(optionsRaw));
+  const midi = mergeMidiWithInference({
+    explicitMidi: parseMidiFromFields(parseCueOptionFields(optionsRaw)),
+    section,
+    patch,
+    instrument: section,
+  });
 
   return {
     type: 'preset_cue',
@@ -790,7 +916,21 @@ export const parseInstrumentPatchLine = (line) => {
   }
 
   if (!Object.keys(fields).length) return null;
-  return { type: 'instrument_patch', text: trimmed, fields, midi: parseMidiFromFields(fields) };
+
+  const patch = String(fields.patch || fields.preset || fields.sound || fields.tone || '').trim();
+  const instrument = String(fields.instrument || '').trim();
+
+  return {
+    type: 'instrument_patch',
+    text: trimmed,
+    fields,
+    midi: mergeMidiWithInference({
+      explicitMidi: parseMidiFromFields(fields),
+      section: instrument,
+      patch,
+      instrument,
+    }),
+  };
 };
 
 export const isMetadataLine = (line) => {

@@ -8,37 +8,9 @@ import {
   standardizeChordNotation,
   transposeLyricsText,
 } from "../utils/lyricsEditorUtils.js";
-import { GM_CUE_SECTIONS, GM_SOUND_BANK, formatGmPatchOptionLabel } from '../utils/gmSoundbank.js';
+import { GM_SOUND_CATEGORIES, GM_SOUND_BANK, filterGmSoundBankByCategory, formatGmPatchOptionLabel } from '../utils/gmSoundbank.js';
 
 const LAST_MIDI_CHANNEL_STORAGE_KEY = 'ruangperformer_last_midi_channel';
-
-const detectActiveSectionFromCursor = (text = '', cursor = 0) => {
-  const safeCursor = Number.isFinite(Number(cursor)) ? Number(cursor) : 0;
-  const beforeCursor = String(text || '').slice(0, Math.max(0, safeCursor));
-  const lines = beforeCursor.split(/\r?\n/);
-
-  for (let idx = lines.length - 1; idx >= 0; idx -= 1) {
-    const line = String(lines[idx] || '').trim();
-    if (!line) continue;
-
-    const cueMatch = line.match(/^\[\s*([^:\]]+)\s*:/);
-    if (cueMatch?.[1]) {
-      return cueMatch[1].trim();
-    }
-
-    const bracketSectionMatch = line.match(/^\[\s*([^\]]+)\s*\]$/);
-    if (bracketSectionMatch?.[1]) {
-      return bracketSectionMatch[1].trim();
-    }
-
-    const plainSectionMatch = line.match(/^([A-Za-z0-9 _-]{2,})\s*:\s*$/);
-    if (plainSectionMatch?.[1]) {
-      return plainSectionMatch[1].trim();
-    }
-  }
-
-  return 'Verse';
-};
 
 const SECTION_LABELS = [
   { label: "Intro", value: "[Intro]" },
@@ -75,10 +47,10 @@ const METADATA_HELP_ITEMS = [
   },
   {
     title: "Preset Cue MIDI",
-    description: "Cue patch yang bisa trigger Program Change otomatis/manual.",
+    description: "Patch keyboard yang bisa trigger Program Change otomatis/manual.",
     examples: [
-      "[Verse: Acoustic Grand Piano | PC: 0 | CH: 1]",
-      "[Chorus: Lead 2 (sawtooth) | PC: 81 | CH: 2]",
+      "[Keys: Acoustic Grand Piano | PC: 0 | CH: 1]",
+      "[Guitar: Lead 2 (sawtooth) | PC: 81 | CH: 2]",
     ],
   },
   {
@@ -136,7 +108,7 @@ export default function SongLyricsEditActions({
   setLyricsValue,
 }) {
   const [showMetadataHelp, setShowMetadataHelp] = useState(false);
-  const [selectedGmSection, setSelectedGmSection] = useState('Verse');
+  const [selectedGmCategory, setSelectedGmCategory] = useState('piano-keys');
   const [selectedGmProgram, setSelectedGmProgram] = useState(0);
   const [selectedGmChannel, setSelectedGmChannel] = useState(() => {
     if (typeof window === 'undefined') return 1;
@@ -146,10 +118,23 @@ export default function SongLyricsEditActions({
   });
   const metadataSections = useMemo(() => METADATA_HELP_ITEMS, []);
   const detectedSectionBadges = useMemo(() => detectSectionBadges(lyricsValue), [lyricsValue]);
+  const filteredGmSounds = useMemo(() => {
+    const filtered = filterGmSoundBankByCategory(selectedGmCategory);
+    return filtered.length ? filtered : GM_SOUND_BANK;
+  }, [selectedGmCategory]);
   const selectedGmPatch = useMemo(() => {
     const parsedProgram = Number(selectedGmProgram);
-    return GM_SOUND_BANK.find((item) => item.program === parsedProgram) || GM_SOUND_BANK[0];
-  }, [selectedGmProgram]);
+    return GM_SOUND_BANK.find((item) => item.program === parsedProgram) || filteredGmSounds[0] || GM_SOUND_BANK[0];
+  }, [selectedGmProgram, filteredGmSounds]);
+
+  const ensureSelectedProgramInCategory = (categoryValue) => {
+    const candidateSounds = filterGmSoundBankByCategory(categoryValue);
+    if (!candidateSounds.length) return;
+    const hasSelected = candidateSounds.some((item) => item.program === Number(selectedGmProgram));
+    if (!hasSelected) {
+      setSelectedGmProgram(candidateSounds[0].program);
+    }
+  };
 
   const handleInsertSection = (sectionLabel) => {
     if (!lyricsRef?.current || typeof setLyricsValue !== 'function') return;
@@ -186,45 +171,10 @@ export default function SongLyricsEditActions({
     if (!lyricsRef?.current || typeof setLyricsValue !== 'function') return;
 
     const el = lyricsRef.current;
-    const section = String(selectedGmSection || 'Verse').trim();
     const channel = Number.isFinite(Number(selectedGmChannel)) ? Number(selectedGmChannel) : 1;
     const program = Number.isFinite(Number(selectedGmProgram)) ? Number(selectedGmProgram) : 0;
     const patchName = selectedGmPatch?.name || 'GM Patch';
-    const cueLine = `[${section}: ${patchName} | PC: ${program} | CH: ${channel}]`;
-
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(LAST_MIDI_CHANNEL_STORAGE_KEY, String(channel));
-    }
-
-    const { nextText, nextCursor } = insertLineAtCursor({
-      text: lyricsValue,
-      selectionStart: el.selectionStart,
-      label: cueLine,
-    });
-
-    setLyricsValue(nextText);
-    setTimeout(() => {
-      el.focus();
-      el.setSelectionRange(nextCursor, nextCursor);
-    }, 0);
-  };
-
-  const handleQuickInsertGmCue = () => {
-    if (!lyricsRef?.current || typeof setLyricsValue !== 'function') return;
-
-    const el = lyricsRef.current;
-    const program = Number.isFinite(Number(selectedGmProgram)) ? Number(selectedGmProgram) : 0;
-    const patchName = selectedGmPatch?.name || 'GM Patch';
-    const activeSection = detectActiveSectionFromCursor(lyricsValue, el.selectionStart);
-
-    const persistedChannel = typeof window !== 'undefined'
-      ? Number.parseInt(window.localStorage.getItem(LAST_MIDI_CHANNEL_STORAGE_KEY) || '', 10)
-      : NaN;
-    const channel = Number.isFinite(persistedChannel) && persistedChannel >= 1 && persistedChannel <= 16
-      ? persistedChannel
-      : (Number.isFinite(Number(selectedGmChannel)) ? Number(selectedGmChannel) : 1);
-
-    const cueLine = `[${activeSection}: ${patchName} | PC: ${program} | CH: ${channel}]`;
+    const cueLine = `[Keys: ${patchName} | PC: ${program} | CH: ${channel}]`;
 
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(LAST_MIDI_CHANNEL_STORAGE_KEY, String(channel));
@@ -371,19 +321,23 @@ export default function SongLyricsEditActions({
           </button>
         </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-gm-cue">
-          <span className="song-lyrics-action-group-title">GM Cue Builder</span>
+          <span className="song-lyrics-action-group-title">Keyboard Patch Builder</span>
           <div className="song-lyrics-gm-cue-controls">
-            <label className="song-lyrics-gm-cue-field" htmlFor="gm-cue-section-select">
-              Section
+            <label className="song-lyrics-gm-cue-field" htmlFor="gm-cue-category-select">
+              Kategori Sound
               <select
-                id="gm-cue-section-select"
+                id="gm-cue-category-select"
                 className="song-lyrics-bar-wrap-select"
-                value={selectedGmSection}
-                onChange={(e) => setSelectedGmSection(e.target.value)}
+                value={selectedGmCategory}
+                onChange={(e) => {
+                  const nextCategory = e.target.value;
+                  setSelectedGmCategory(nextCategory);
+                  ensureSelectedProgramInCategory(nextCategory);
+                }}
                 disabled={disabled}
               >
-                {GM_CUE_SECTIONS.map((section) => (
-                  <option key={section} value={section}>{section}</option>
+                {GM_SOUND_CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>{category.label}</option>
                 ))}
               </select>
             </label>
@@ -396,22 +350,13 @@ export default function SongLyricsEditActions({
                 onChange={(e) => setSelectedGmProgram(Number(e.target.value))}
                 disabled={disabled}
               >
-                {GM_SOUND_BANK.map((patch) => (
+                {filteredGmSounds.map((patch) => (
                   <option key={patch.program} value={String(patch.program)}>
                     {formatGmPatchOptionLabel(patch)}
                   </option>
                 ))}
               </select>
             </label>
-            <button
-              type="button"
-              onClick={handleQuickInsertGmCue}
-              disabled={disabled}
-              className="btn btn-primary"
-              title="Quick insert: pakai section aktif di posisi kursor + channel terakhir"
-            >
-              Quick Insert
-            </button>
             <label className="song-lyrics-gm-cue-field" htmlFor="gm-cue-channel-select">
               Channel
               <select
@@ -431,9 +376,9 @@ export default function SongLyricsEditActions({
               onClick={handleInsertGmCue}
               disabled={disabled}
               className="btn btn-primary"
-              title="Sisipkan cue MIDI dari dropdown GM"
+              title="Sisipkan patch keyboard MIDI dari dropdown GM"
             >
-              Insert GM Cue
+              Insert Patch
             </button>
           </div>
         </div>
