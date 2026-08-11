@@ -735,6 +735,9 @@
   min-height: 40px;
 }
 .setlist-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 8px 16px;
   min-height: 42px;
   transition:
@@ -742,7 +745,11 @@
     cursor var(--transition-fast);
 }
 .setlist-nav-open-list-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 42px;
+  margin-left: auto;
 }
 
 .setlist-nav-open-list-btn-compact {
@@ -754,6 +761,7 @@
 
 .setlist-song-navigator-compact .setlist-nav-open-list-btn {
   order: 4;
+  margin-left: auto;
 }
 .setlist-nav-btn.disabled,
 .setlist-nav-btn:disabled {

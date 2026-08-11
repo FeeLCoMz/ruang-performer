@@ -964,8 +964,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
             totalSongs={totalSongs || undefined}
             onPrev={handlePrev}
             onNext={handleNext}
-            onOpenSetlist={performanceMode ? handleOpenSetlist : undefined}
-            compact={lyricsMode || performanceMode}
+            onOpenSetlist={handleOpenSetlist}
+            compact={lyricsMode}
           />
         );
       })()}

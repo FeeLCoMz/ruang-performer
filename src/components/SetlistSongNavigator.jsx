@@ -20,7 +20,7 @@ export default function SetlistSongNavigator({
         onClick={onPrev}
         aria-label="Lagu sebelumnya"
       >
-        {compact ? '←' : '← Sebelumnya'}
+        <span aria-hidden="true">←</span>
       </button>
 
       {songNumber && totalSongs && (
@@ -32,17 +32,6 @@ export default function SetlistSongNavigator({
         </div>
       )}
 
-      {typeof onOpenSetlist === 'function' && (
-        <button
-          className={`btn btn-secondary setlist-nav-open-list-btn${compact ? ' setlist-nav-open-list-btn-compact' : ''}`}
-          title="Buka daftar lagu setlist"
-          onClick={onOpenSetlist}
-          aria-label="Buka daftar lagu setlist"
-        >
-          {compact ? '☰ Daftar' : '📋 Daftar Lagu'}
-        </button>
-      )}
-
       <button
         className={`btn setlist-nav-btn${!navNext ? ' disabled' : ''}`}
         disabled={!navNext}
@@ -50,8 +39,19 @@ export default function SetlistSongNavigator({
         onClick={onNext}
         aria-label="Lagu berikutnya"
       >
-        {compact ? '→' : 'Berikutnya →'}
+        <span aria-hidden="true">→</span>
       </button>
+
+      {typeof onOpenSetlist === 'function' && (
+        <button
+          className={`btn btn-secondary setlist-nav-open-list-btn${compact ? ' setlist-nav-open-list-btn-compact' : ''}`}
+          title="Daftar setlist aktif"
+          onClick={onOpenSetlist}
+          aria-label="Daftar setlist aktif"
+        >
+          <span aria-hidden="true">📋</span>
+        </button>
+      )}
     </div>
   );
 }
