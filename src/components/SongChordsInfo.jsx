@@ -251,21 +251,19 @@ export default function SongChordsInfo({
         </div>
       )}
       {performanceMode && !lyricsMode && pianoRecommendation?.recommendedKey && (
-        <div className="song-info-item song-info-piano-reco-block">
+        <div className="song-midi-panel song-info-piano-reco-block">
           <div className="song-info-piano-reco-header">
-            <span className="song-info-label">🎹 Key Kibordis</span>
-            <button
-              type="button"
-              className="btn btn-secondary song-info-piano-reco-toggle"
-              onClick={() => setIsKeyboardistKeyCollapsed((prev) => !prev)}
-              aria-expanded={!isKeyboardistKeyCollapsed}
-              title={isKeyboardistKeyCollapsed ? 'Buka detail key kibordis' : 'Tutup detail key kibordis'}
-            >
-              {isKeyboardistKeyCollapsed ? '▼' : '▲'}
-            </button>
+            <ExpandButton
+              isExpanded={!isKeyboardistKeyCollapsed}
+              setIsExpanded={() => setIsKeyboardistKeyCollapsed((prev) => !prev)}
+              icon="🎹"
+              label="Key Kibordis"
+              ariaLabel={isKeyboardistKeyCollapsed ? 'Buka detail key kibordis' : 'Tutup detail key kibordis'}
+              className="song-info-piano-reco-toggle"
+            />
           </div>
           {!isKeyboardistKeyCollapsed && (
-            <>
+            <div className="song-info-piano-reco-body">
               <span className="song-info-value">{pianoRecommendation.recommendedKey}</span>
               <span className="song-info-piano-reco-distance">
                 Jarak dari key dasar: {recommendedTransposeText} semitone
@@ -281,7 +279,7 @@ export default function SongChordsInfo({
                   Terapkan Key Kibordis
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
       )}

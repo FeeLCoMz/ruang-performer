@@ -9795,8 +9795,14 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
 }
 
 .page-container.performance-mode .song-lyrics-toolbar-group-fullscreen {
-  margin-left: auto;
+  order: 3;
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  margin-left: 0;
   flex: 0 0 auto;
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  border-radius: var(--radius-md);
 }
 
 .page-container.performance-mode .song-lyrics-toolbar-group-autoscroll {
@@ -10022,6 +10028,39 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   font-size: 0.92rem;
 }
 
+.song-info-piano-reco-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.song-info-piano-reco-header {
+  width: 100%;
+}
+
+.song-info-piano-reco-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.song-info-piano-reco-btn {
+  align-self: flex-start;
+}
+
+.song-info-piano-reco-distance {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.page-container.performance-mode .song-info-piano-reco-block {
+  margin-top: 0;
+  padding: 8px 10px;
+}
+
 .page-container.performance-mode .song-info-piano-reco-distance {
   font-size: 0.74rem;
   color: var(--text-secondary);
@@ -10029,19 +10068,15 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
 }
 
 .page-container.performance-mode .song-info-piano-reco-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
   width: 100%;
 }
 
-.page-container.performance-mode .song-info-piano-reco-toggle {
-  min-width: 28px;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border-radius: 999px;
+.page-container.performance-mode .song-info-piano-reco-header .expand-button {
+  width: 100%;
+  min-height: 36px;
+  padding: 0.45rem 0.7rem;
+  border-radius: var(--radius-md);
+  box-shadow: none;
 }
 
 .page-container.performance-mode .song-info-label {

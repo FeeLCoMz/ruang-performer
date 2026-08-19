@@ -7,13 +7,14 @@ export default function ExpandButton({
   label = 'Toggle',
   badge = null,
   rightContent = null,
-  ariaLabel = null
+  ariaLabel = null,
+  className = ''
 }) {
   return (
     <button
       type="button"
       onClick={() => setIsExpanded(!isExpanded)}
-      className={`expand-button ${isExpanded ? 'expanded' : ''}`}
+      className={`expand-button ${isExpanded ? 'expanded' : ''} ${className}`.trim()}
       aria-label={ariaLabel || `${isExpanded ? 'Tutup' : 'Buka'} ${label}`}
       aria-expanded={isExpanded}
     >

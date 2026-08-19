@@ -8,6 +8,7 @@ import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
+import SongMidiProgramPanel from '../components/SongMidiProgramPanel.jsx';
 import TransposeKeyControl from '../components/TransposeKeyControl.jsx';
 import VirtualPiano from '../components/VirtualPiano.jsx';
 import SongChordsPage from '../pages/SongChordsPage.jsx';
@@ -870,6 +871,29 @@ describe('Song lyrics shared editor rendering', () => {
 
     expect(container.textContent).not.toContain('Key Kibordis');
     expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Key Kibordis'))).toBe(false);
+  });
+
+  test('Given performance mode is active, Then the MIDI ready badge is hidden', async () => {
+    await act(async () => {
+      root.render(
+        <SongMidiProgramPanel
+          performanceMode={true}
+          isSupported={true}
+          isAccessGranted={true}
+          outputs={[]}
+          selectedOutputId=""
+          setSelectedOutputId={noop}
+          isEnabled={false}
+          setIsEnabled={noop}
+          requestAccess={noop}
+          cueCount={0}
+          autoCueLabel=""
+          lastMessage="MIDI siap"
+        />
+      );
+    });
+
+    expect(container.querySelector('.song-midi-support-badge')).toBeFalsy();
   });
 
   test('Given performance mode is active, Then the YouTube media panel stays mounted but hidden', async () => {

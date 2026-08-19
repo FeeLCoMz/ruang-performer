@@ -802,6 +802,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         cueCount={midiProgramCues.length}
         autoCueLabel={firstMidiCue?.label || ''}
         lastMessage={midiLastMessage}
+        performanceMode={performanceMode}
       />
 
       {!lyricsMode && youtubeId && !performanceMode && !isEditingLyrics && (
@@ -965,7 +966,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
             onPrev={handlePrev}
             onNext={handleNext}
             onOpenSetlist={handleOpenSetlist}
-            compact={lyricsMode}
+            compact={performanceMode || lyricsMode}
           />
         );
       })()}
