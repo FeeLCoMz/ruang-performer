@@ -31,4 +31,31 @@ describe('API /api/setlists', () => {
     expect([200, 201]).toContain(res.statusCode);
     expect(res.body.id).toBeDefined();
   });
+
+  test('should deduplicate song ids before inserting setlist songs', async () => {
+    const token = createAuthToken();
+    const res = await request(app)
+      .post('/api/setlists')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Deduped Setlist',
+        description: 'Desc',
+        songs: [1, '1', '2', 2],
+        setlistSongMeta: {
+          1: { key: 'C' },
+          '2': { key: 'G' }
+        }
+      });
+
+    expect([200, 201]).toContain(res.statusCode);
+    expect(res.body.id).toBeDefined();
+
+    const getRes = await request(app)
+      .get(`/api/setlists/${res.body.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(getRes.statusCode).toBe(200);
+    expect(getRes.body.songs).toHaveLength(2);
+    expect(new Set(getRes.body.songs).size).toBe(2);
+  });
 });

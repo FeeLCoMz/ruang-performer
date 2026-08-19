@@ -16,13 +16,22 @@ async function readJson(req) {
   });
 }
 
-function dedupeSongIds(songIds = []) {
+export function normalizeSongId(songId) {
+  if (songId === null || songId === undefined) return '';
+  return String(songId).trim();
+}
+
+export function dedupeSongIds(songIds = []) {
   const seenSongIds = new Set();
   const dedupedSongs = [];
   for (const songId of songIds) {
-    if (!seenSongIds.has(songId)) {
-      seenSongIds.add(songId);
-      dedupedSongs.push(songId);
+    const normalizedSongId = normalizeSongId(songId);
+    if (!normalizedSongId || normalizedSongId === 'null' || normalizedSongId === 'undefined') {
+      continue;
+    }
+    if (!seenSongIds.has(normalizedSongId)) {
+      seenSongIds.add(normalizedSongId);
+      dedupedSongs.push(normalizedSongId);
     }
   }
   return dedupedSongs;
@@ -175,7 +184,7 @@ export default async function handler(req, res) {
             `SELECT song_id, position, meta FROM setlist_songs WHERE setlist_id = ? ORDER BY position ASC`,
             [idStr]
           );
-          const songs = songRows.rows?.map(r => r.song_id) || [];
+          const songs = (songRows.rows?.map(r => normalizeSongId(r.song_id)) || []).filter(Boolean);
           const preferredKeyMap = await getBandPreferredKeyMap(client, row.bandId, songs);
           // meta: { songId: metaObj }
           const songKeys = {};
@@ -222,6 +231,7 @@ export default async function handler(req, res) {
           return;
         }
         const effectiveBandId = body.bandId !== undefined ? body.bandId : existingSetlistRow.bandId;
+        const dedupedSongs = Array.isArray(body.songs) ? dedupeSongIds(body.songs) : [];
 
         const permissionCheck = await ensureSetlistPermission(
           client,
@@ -256,7 +266,6 @@ export default async function handler(req, res) {
         // Update setlist_songs: remove all then insert new
         if (Array.isArray(body.songs)) {
           await client.execute(`DELETE FROM setlist_songs WHERE setlist_id = ?`, [idStr]);
-          const dedupedSongs = dedupeSongIds(body.songs);
           const preferredKeyMap = await getBandPreferredKeyMap(client, effectiveBandId, dedupedSongs);
           for (let i = 0; i < dedupedSongs.length; i++) {
             const songId = dedupedSongs[i];
@@ -264,7 +273,9 @@ export default async function handler(req, res) {
             const metaObj = applyBandPreferredKey(rawMetaObj, preferredKeyMap.get(songId));
             await client.execute(
               `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
-               VALUES (?, ?, ?, ?, ?, ?)`,
+               VALUES (?, ?, ?, ?, ?, ?)
+               ON CONFLICT(setlist_id, song_id)
+               DO UPDATE SET position = excluded.position, meta = excluded.meta, updatedAt = excluded.updatedAt`,
               [idStr, songId, i, JSON.stringify(metaObj), now, now]
             );
           }
@@ -549,7 +560,9 @@ export default async function handler(req, res) {
             const metaObj = applyBandPreferredKey(rawMetaObj, preferredKeyMap.get(songId));
             await client.execute(
               `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
-               VALUES (?, ?, ?, ?, ?, ?)`,
+               VALUES (?, ?, ?, ?, ?, ?)
+               ON CONFLICT(setlist_id, song_id)
+               DO UPDATE SET position = excluded.position, meta = excluded.meta, updatedAt = excluded.updatedAt`,
               [id, songId, i, JSON.stringify(metaObj), now, now]
             );
           }
@@ -586,7 +599,9 @@ export default async function handler(req, res) {
               const metaObj = applyBandPreferredKey(rawMetaObj, preferredKeyMap.get(songId));
               await client.execute(
                 `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
-                 VALUES (?, ?, ?, ?, ?, ?)`,
+                 VALUES (?, ?, ?, ?, ?, ?)
+                 ON CONFLICT(setlist_id, song_id)
+                 DO UPDATE SET position = excluded.position, meta = excluded.meta, updatedAt = excluded.updatedAt`,
                 [id, songId, i, JSON.stringify(metaObj), now, now]
               );
             }
