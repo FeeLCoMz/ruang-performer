@@ -205,7 +205,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
   const pianoRecommendation = recommendPianoFriendlyKey({
     chords: chordStats.chords,
-    key,
+    key: song?.key || key,
     transpose,
   });
 
@@ -838,7 +838,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
           setShowChordAnalyzer={setShowChordAnalyzer}
           chordStats={chordStats}
           transpose={transpose}
-          songKey={key}
+          songKey={song?.key || key}
           onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
         />
       )}

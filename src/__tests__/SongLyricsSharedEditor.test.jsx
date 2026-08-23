@@ -32,7 +32,7 @@ vi.mock('../components/FloatingYouTubePlayer.jsx', () => ({
 
 vi.mock('../hooks/useSongFetch.js', () => ({
   useSongFetch: () => ({
-    song: { id: '1', title: 'Song A', key: 'C', lyrics: 'C G', youtubeId: 'dQw4w9WgXcQ' },
+    song: { id: '1', title: 'Song A', key: 'G', lyrics: 'G D C', youtubeId: 'dQw4w9WgXcQ' },
     loading: false,
     error: null,
     setSong: vi.fn(),
@@ -955,8 +955,84 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.querySelector('.cd-chord')?.textContent).toBe('D A');
+    expect(container.querySelector('.cd-chord')?.textContent).toBe('D A G');
     expect(container.textContent).toContain('Key: D');
+  });
+
+  test('Given a setlist key override, Then keyboard key recommendation is relative to that override', async () => {
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[{
+          pathname: '/setlists/10/songs/1',
+          state: { setlistSong: { key: 'D' } },
+        }]}>
+          <Routes>
+            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} lyricsMode={false} />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const keyboardistKeyToggle = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Key Kibordis')
+    );
+    expect(keyboardistKeyToggle).toBeTruthy();
+
+    await act(async () => {
+      keyboardistKeyToggle.click();
+    });
+
+    expect(container.textContent).toContain('C');
+    expect(container.textContent).toContain('-2 semitone');
+
+    const applyButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Terapkan Key Kibordis')
+    );
+    expect(applyButton).toBeTruthy();
+
+    await act(async () => {
+      applyButton.click();
+    });
+
+    expect(container.querySelector('.cd-chord')?.textContent).toBe('C G F');
+  });
+
+  test('Given normal mode opens a song from a setlist, Then keyboard key recommendation uses the original song key', async () => {
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[{
+          pathname: '/setlists/10/songs/1',
+          state: { setlistSong: { key: 'D' } },
+        }]}>
+          <Routes>
+            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={false} lyricsMode={false} />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const analyzerToggle = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Analisis Chord')
+    );
+    expect(analyzerToggle).toBeTruthy();
+
+    await act(async () => {
+      analyzerToggle.click();
+    });
+
+    expect(container.querySelector('.song-lyrics-analyzer-piano-reco-key')?.textContent).toBe('C');
+    expect(container.querySelector('.song-lyrics-analyzer-piano-reco-note')?.textContent).toContain('-2 semitone');
+
+    const applyButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Terapkan Key Kibordis')
+    );
+    expect(applyButton).toBeTruthy();
+
+    await act(async () => {
+      applyButton.click();
+    });
+
+    expect(container.querySelector('.cd-chord')?.textContent).toBe('C G F');
   });
 
   test('Given song view edit mode, When piano note is selected, Then lyrics state receives note token', async () => {
