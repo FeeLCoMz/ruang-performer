@@ -407,6 +407,41 @@ describe('SetlistSongsPage', () => {
     expect(shareTextarea.value).not.toContain('Opening Song');
   });
 
+  test('share modal includes YouTube links in full format while keeping app link', async () => {
+    const props = buildProps({
+      setlists: [
+        {
+          id: 'setlist-1',
+          name: 'Setlist Konser',
+          userId: 'user-1',
+          songs: ['song-1', 'song-2'],
+          completedSongs: {},
+          setlistSongMeta: {},
+        },
+      ],
+      songs: [
+        { id: 'song-1', title: 'Opening Song', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop', youtubeId: 'abc123def45' },
+        { id: 'song-2', title: 'Closing Song', artist: 'Artist B', key: 'G', tempo: '110', genre: 'Rock' },
+      ],
+    });
+
+    await renderPage(root, props);
+
+    const openShareButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Bagikan'));
+    expect(openShareButton).toBeTruthy();
+
+    await act(async () => {
+      openShareButton.click();
+      await flushPromises();
+    });
+
+    const shareTextarea = container.querySelector('textarea.modal-input');
+    expect(shareTextarea).toBeTruthy();
+    expect(shareTextarea.value).toContain('https://www.youtube.com/watch?v=abc123def45');
+    expect(shareTextarea.value).toContain('/setlists/setlist-1');
+    expect(shareTextarea.value).toContain('Lihat detail & chord:');
+  });
+
   test('groups songs by artist when grouping option is selected', async () => {
     const props = buildProps({
       setlists: [

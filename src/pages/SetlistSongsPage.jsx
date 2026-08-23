@@ -647,9 +647,20 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           return `${songNumber}. ${completedPrefix}${song.title}${song.artist ? ` - ${song.artist}` : ''}`;
         }
 
+        const youtubeUrl = (() => {
+          if (song.youtubeId) return `https://www.youtube.com/watch?v=${song.youtubeId}`;
+          if (song.youtube_url) return song.youtube_url;
+          return '';
+        })();
         const songKey = song.key ? ` [${song.key}]` : '';
         const songTempo = song.tempo ? ` (${song.tempo} BPM)` : '';
-        return `${songNumber}. ${completedPrefix}${song.title}${song.artist ? ` - ${song.artist}` : ''}${songKey}${songTempo}`;
+        const songLine = `${songNumber}. ${completedPrefix}${song.title}${song.artist ? ` - ${song.artist}` : ''}${songKey}${songTempo}`;
+
+        if (!youtubeUrl) {
+          return songLine;
+        }
+
+        return `${songLine}\n   🎬 ${youtubeUrl}`;
       })
       .join('\n')
         .trim();
@@ -660,10 +671,15 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       ? `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
         `${sessionTitleText}` +
         `${hasSessionDividerInShare ? 'Pembagian sesi:\n' : ''}${formatShareLines(false)}`
-      : `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
-        `${sessionTitleText}` +
-        `${hasSessionDividerInShare ? 'Pembagian sesi:\n' : ''}${formatShareLines(true)}` +
-        `\n\nLihat detail & chord: ${shareUrl}`;
+      : shareFormat === 'title-artist-key-tempo'
+        ? `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
+          `${sessionTitleText}` +
+          `${hasSessionDividerInShare ? 'Pembagian sesi:\n' : ''}${formatShareLines(true)}` +
+          `\n\nLihat detail & chord: ${shareUrl}`
+        : `${bandText}🎶 Setlist: ${setlist.name}\n\n` +
+          `${sessionTitleText}` +
+          `${hasSessionDividerInShare ? 'Pembagian sesi:\n' : ''}${formatShareLines(true)}` +
+          `\n\nLihat detail & chord: ${shareUrl}`;
 
 
   function handleCopyShare() {
@@ -2071,8 +2087,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 className="filter-select"
                 aria-label="Format teks bagikan"
               >
-                <option value="full">Format lengkap (judul, penyanyi, key, tempo, link)</option>
-                <option value="title-artist-only">Hanya judul lagu + penyanyi</option>
+                <option value="full">Judul lagu - penyanyi, nada dasar, tempo, link YouTube</option>
+                <option value="title-artist-key-tempo">Judul lagu - penyanyi, nada dasar, tempo</option>
+                <option value="title-artist-only">Judul lagu + penyanyi</option>
               </select>
               {shareSessionOptions.length > 0 && (
                 <select
