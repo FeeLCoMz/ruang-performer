@@ -32,6 +32,7 @@ export default function SongChordsInfo({
   artist,
   contributor,
   performanceMode,
+  performanceKeyOverride = '',
   lyricsMode = false,
   canEdit = false,
   onEdit,
@@ -58,8 +59,12 @@ export default function SongChordsInfo({
   const recommendedTransposeText = recommendedTranspose > 0
     ? `+${recommendedTranspose}`
     : `${recommendedTranspose}`;
-  const baseDisplayKey = targetKey || originalKey || '';
+  const hasPerformanceKeyOverride = performanceMode && Boolean(performanceKeyOverride);
+  const baseDisplayKey = hasPerformanceKeyOverride
+    ? performanceKeyOverride
+    : (targetKey || originalKey || '');
   const transposedDisplayKey = (() => {
+    if (hasPerformanceKeyOverride) return baseDisplayKey;
     if (!baseDisplayKey || !transpose) return baseDisplayKey;
     const shifted = transposeChord(baseDisplayKey, transpose);
     return shifted || baseDisplayKey;

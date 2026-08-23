@@ -32,7 +32,7 @@ vi.mock('../components/FloatingYouTubePlayer.jsx', () => ({
 
 vi.mock('../hooks/useSongFetch.js', () => ({
   useSongFetch: () => ({
-    song: { id: '1', title: 'Song A', lyrics: '[C]Hello', youtubeId: 'dQw4w9WgXcQ' },
+    song: { id: '1', title: 'Song A', key: 'C', lyrics: 'C G', youtubeId: 'dQw4w9WgXcQ' },
     loading: false,
     error: null,
     setSong: vi.fn(),
@@ -939,6 +939,24 @@ describe('Song lyrics shared editor rendering', () => {
     expect(navigator).toBeTruthy();
     expect(navigator.textContent).toContain('compact');
     expect(navigator.textContent).toContain('has-open-setlist');
+  });
+
+  test('Given performance mode opens a song from a setlist, Then chords follow the setlist key', async () => {
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[{
+          pathname: '/setlists/10/songs/1',
+          state: { setlistSong: { key: 'D' } },
+        }]}>
+          <Routes>
+            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} lyricsMode={false} />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    expect(container.querySelector('.cd-chord')?.textContent).toBe('D A');
+    expect(container.textContent).toContain('Key: D');
   });
 
   test('Given song view edit mode, When piano note is selected, Then lyrics state receives note token', async () => {

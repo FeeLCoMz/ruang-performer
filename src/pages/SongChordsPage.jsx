@@ -18,7 +18,7 @@ import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import useWebMidiProgramChange from '../hooks/useWebMidiProgramChange.js';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
-import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractMidiProgramCuesFromLyrics } from '../utils/chordUtils.js';
+import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractMidiProgramCuesFromLyrics, getTransposeSteps } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 
@@ -97,6 +97,15 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
      
   // Transpose state
   const [transpose, setTranspose] = useState(0);
+
+  useEffect(() => {
+    if (!performanceMode) return;
+
+    const originalKey = song?.key;
+    const targetKey = setlistSongData.key;
+    setTranspose(originalKey && targetKey ? getTransposeSteps(originalKey, targetKey) : 0);
+  }, [performanceMode, song?.key, setlistSongData.key]);
+
   const [zoom, setZoom] = useState(1);
   const [showChords, setShowChords] = useState(!lyricsMode);
   const [showChordNumbers, setShowChordNumbers] = useState(false);
@@ -776,6 +785,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         artist={artist}
         contributor={song.contributor}
         performanceMode={performanceMode}
+        performanceKeyOverride={setlistSongData.key || ''}
         lyricsMode={lyricsMode}
         canEdit={can(PERMISSIONS.SONG_EDIT)}
         onEdit={handleEdit}
