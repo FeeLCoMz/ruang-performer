@@ -9905,6 +9905,7 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
 .floating-youtube-player {
   position: fixed;
   width: min(360px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
   z-index: 1200;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -9945,6 +9946,34 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   border-radius: 999px;
 }
 
+.floating-youtube-player-resize-handle {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 90%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 80%, transparent);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: nwse-resize;
+  z-index: 2;
+  touch-action: none;
+}
+
+.floating-youtube-player-resize-handle::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  display: block;
+}
+
 .floating-youtube-player-body {
   padding: 8px;
 }
@@ -9976,6 +10005,12 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
 
 .floating-youtube-player-markers-content .time-markers {
   margin-top: 0;
+}
+
+@media (max-width: 768px) {
+  .floating-youtube-player-resize-handle {
+    display: none;
+  }
 }
 
 @media (max-width: 600px) {

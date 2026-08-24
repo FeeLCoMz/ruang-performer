@@ -5,6 +5,13 @@ import TimeMarkers from './TimeMarkers.jsx';
 const FLOATING_PLAYER_POSITION_STORAGE_KEY = 'ruangperformer_floating_youtube_player_position_v1';
 const DEFAULT_PLAYER_WIDTH = 360;
 const DEFAULT_PLAYER_HEIGHT = 300;
+const MIN_PLAYER_WIDTH = 260;
+const MAX_PLAYER_WIDTH = 520;
+
+function clampPlayerWidth(width) {
+  const maxWidth = Math.min(Math.max(MIN_PLAYER_WIDTH, window.innerWidth - 16), MAX_PLAYER_WIDTH);
+  return Math.min(Math.max(MIN_PLAYER_WIDTH, Number.isFinite(width) ? width : DEFAULT_PLAYER_WIDTH), maxWidth);
+}
 
 function clampPlayerPosition(x, y, width, height) {
   return {
@@ -27,7 +34,11 @@ function readSavedPlayerPosition() {
     if (!parsed || !Number.isFinite(parsed.x) || !Number.isFinite(parsed.y)) {
       return null;
     }
-    return { x: parsed.x, y: parsed.y };
+    return {
+      x: parsed.x,
+      y: parsed.y,
+      width: parsed.width,
+    };
   } catch {
     return null;
   }
@@ -54,7 +65,9 @@ export default function FloatingYouTubePlayer({
 }) {
   const panelRef = useRef(null);
   const dragStateRef = useRef({ active: false, offsetX: 0, offsetY: 0 });
+  const resizeStateRef = useRef({ active: false, startX: 0, startWidth: DEFAULT_PLAYER_WIDTH });
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [panelWidth, setPanelWidth] = useState(DEFAULT_PLAYER_WIDTH);
   const [ytCurrentTime, setYtCurrentTime] = useState(0);
   const [ytDuration, setYtDuration] = useState(0);
   const [markersExpanded, setMarkersExpanded] = useState(false);
@@ -63,16 +76,18 @@ export default function FloatingYouTubePlayer({
     if (!isOpen) return;
 
     const savedPosition = readSavedPlayerPosition();
-    const width = Math.min(DEFAULT_PLAYER_WIDTH, Math.max(240, window.innerWidth - 16));
+    const width = clampPlayerWidth(savedPosition?.width || DEFAULT_PLAYER_WIDTH);
     const height = DEFAULT_PLAYER_HEIGHT;
 
     if (savedPosition) {
+      setPanelWidth(width);
       setPosition(clampPlayerPosition(savedPosition.x, savedPosition.y, width, height));
       return;
     }
 
     const x = Math.max(12, window.innerWidth - width - 16);
     const y = Math.max(80, window.innerHeight - height - 24);
+    setPanelWidth(width);
     setPosition(clampPlayerPosition(x, y, width, height));
   }, [isOpen]);
 
@@ -86,21 +101,23 @@ export default function FloatingYouTubePlayer({
     if (!panelRef.current || !isOpen) return;
     panelRef.current.style.left = `${position.x}px`;
     panelRef.current.style.top = `${position.y}px`;
-  }, [position, isOpen]);
+    panelRef.current.style.width = `${panelWidth}px`;
+  }, [position, panelWidth, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
-    savePlayerPosition(position);
-  }, [position, isOpen]);
+    savePlayerPosition({ ...position, width: panelWidth });
+  }, [position, panelWidth, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const ensureInsideViewport = () => {
-      const panelWidth = panelRef.current?.offsetWidth || DEFAULT_PLAYER_WIDTH;
+      const nextWidth = clampPlayerWidth(panelWidth);
       const panelHeight = panelRef.current?.offsetHeight || DEFAULT_PLAYER_HEIGHT;
+      setPanelWidth((prevWidth) => (prevWidth === nextWidth ? prevWidth : nextWidth));
       setPosition((prev) => {
-        const clamped = clampPlayerPosition(prev.x, prev.y, panelWidth, panelHeight);
+        const clamped = clampPlayerPosition(prev.x, prev.y, nextWidth, panelHeight);
         if (clamped.x === prev.x && clamped.y === prev.y) return prev;
         return clamped;
       });
@@ -112,37 +129,50 @@ export default function FloatingYouTubePlayer({
     return () => {
       window.removeEventListener('resize', ensureInsideViewport);
     };
-  }, [isOpen, markersExpanded]);
+  }, [isOpen, markersExpanded, panelWidth]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const handleMove = (clientX, clientY) => {
       if (!dragStateRef.current.active) return;
-      const panelWidth = panelRef.current?.offsetWidth || DEFAULT_PLAYER_WIDTH;
-      const panelHeight = panelRef.current?.offsetHeight || DEFAULT_PLAYER_HEIGHT;
+      const currentPanelWidth = panelRef.current?.offsetWidth || panelWidth;
+      const currentPanelHeight = panelRef.current?.offsetHeight || DEFAULT_PLAYER_HEIGHT;
       const clamped = clampPlayerPosition(
         clientX - dragStateRef.current.offsetX,
         clientY - dragStateRef.current.offsetY,
-        panelWidth,
-        panelHeight
+        currentPanelWidth,
+        currentPanelHeight
       );
       setPosition(clamped);
     };
 
+    const handleResize = (clientX) => {
+      if (!resizeStateRef.current.active) return;
+      const nextWidth = clampPlayerWidth(resizeStateRef.current.startWidth + (clientX - resizeStateRef.current.startX));
+      setPanelWidth(nextWidth);
+      setPosition((prev) => clampPlayerPosition(prev.x, prev.y, nextWidth, DEFAULT_PLAYER_HEIGHT));
+    };
+
     const onMouseMove = (event) => {
       handleMove(event.clientX, event.clientY);
+      handleResize(event.clientX);
     };
     const onMouseUp = () => {
       dragStateRef.current.active = false;
+      resizeStateRef.current.active = false;
     };
     const onTouchMove = (event) => {
       const touch = event.touches?.[0];
       if (!touch) return;
       handleMove(touch.clientX, touch.clientY);
+      if (resizeStateRef.current.active) {
+        handleResize(touch.clientX);
+      }
     };
     const onTouchEnd = () => {
       dragStateRef.current.active = false;
+      resizeStateRef.current.active = false;
     };
 
     window.addEventListener('mousemove', onMouseMove);
@@ -156,7 +186,7 @@ export default function FloatingYouTubePlayer({
       window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('touchend', onTouchEnd);
     };
-  }, [isOpen]);
+  }, [isOpen, panelWidth]);
 
   if (!isOpen || !videoId) return null;
 
@@ -192,6 +222,27 @@ export default function FloatingYouTubePlayer({
           ×
         </button>
       </div>
+      <div
+        className="floating-youtube-player-resize-handle"
+        aria-label="Atur ukuran mini video"
+        title="Geser untuk mengubah ukuran"
+        onMouseDown={(event) => {
+          if (window.innerWidth <= 768) return;
+          resizeStateRef.current.active = true;
+          resizeStateRef.current.startX = event.clientX;
+          resizeStateRef.current.startWidth = panelRef.current?.offsetWidth || panelWidth;
+          event.preventDefault();
+        }}
+        onTouchStart={(event) => {
+          if (window.innerWidth <= 768) return;
+          const touch = event.touches?.[0];
+          if (!touch) return;
+          resizeStateRef.current.active = true;
+          resizeStateRef.current.startX = touch.clientX;
+          resizeStateRef.current.startWidth = panelRef.current?.offsetWidth || panelWidth;
+          event.preventDefault();
+        }}
+      />
       <div className="floating-youtube-player-body">
         <YouTubeViewer
           ref={youtubeRef}
