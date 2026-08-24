@@ -668,7 +668,7 @@ export function parseSection(line) {
       'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'sintetisator', 'sintetizer', 'sintetizer', 'pianika', 'melodika',
       // Brass section
       'brass', 'horn section', 'horns', 'trombone', 'tuba', 'euphonium', 'cornet',
-      'saxophone', 'saksofon', 'saxofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet', 'bansi',
+      'saxophone', 'saksofon', 'sax', 'saxo', 'saxofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet', 'bansi',
       'violin', 'biola', 'cello', 'kontrabas', 'strings',
       'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
       'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana'
