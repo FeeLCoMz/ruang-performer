@@ -6565,6 +6565,10 @@ input[type="datetime-local"]:disabled {
   color: var(--text-secondary);
   font-size: 0.95em;
   font-style: italic;
+  padding: 6px 10px;
+  border-left: 3px solid var(--primary-accent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--secondary-bg) 72%, transparent);
 }
 
 .cd-instrument-patch {
@@ -6573,18 +6577,37 @@ input[type="datetime-local"]:disabled {
 }
 
 .cd-preset-cue {
-  margin: 12px 0 6px;
+  margin: 12px 0 8px;
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: linear-gradient(120deg, color-mix(in srgb, var(--primary-accent) 26%, transparent), color-mix(in srgb, #f59e0b 28%, transparent));
-  border: 1px solid color-mix(in srgb, var(--primary-accent) 46%, var(--border-color) 54%);
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--secondary-bg) 82%, transparent), color-mix(in srgb, var(--primary-accent) 18%, transparent));
+  border: 1px solid color-mix(in srgb, var(--primary-accent) 42%, var(--border-color) 58%);
+  border-left: 4px solid var(--primary-accent);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
   color: var(--text-primary);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.01em;
+}
+
+.cd-preset-cue::before {
+  content: 'Cue';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-bg) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary-accent) 26%, var(--border-color) 74%);
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .cd-preset-cue-inline {
@@ -6593,6 +6616,7 @@ input[type="datetime-local"]:disabled {
 
 .cd-preset-cue-label {
   white-space: normal;
+  color: var(--text-primary);
 }
 
 .cd-preset-cue-meta {
@@ -6602,7 +6626,7 @@ input[type="datetime-local"]:disabled {
   background: color-mix(in srgb, var(--card-bg) 72%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
   border-radius: 999px;
-  padding: 1px 7px;
+  padding: 2px 7px;
 }
 
 .cd-preset-cue-trigger {
