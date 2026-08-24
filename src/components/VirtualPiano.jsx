@@ -169,6 +169,10 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText 
   };
 
   const playNote = (frequency, note, isMidiTriggered = false) => {
+    if (onKeySelect) {
+      onKeySelect(note);
+    }
+
     const audioContext = getAudioContext();
     if (!audioContext) return;
 
@@ -199,14 +203,6 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText 
         return next;
       });
     }, 200);
-
-    if (!isMidiTriggered && onKeySelect) {
-      onKeySelect(note);
-    }
-
-    if (isMidiTriggered && onKeySelect) {
-      onKeySelect(note);
-    }
   };
 
   const keys = [

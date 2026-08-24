@@ -115,6 +115,22 @@ describe("chordUtils", () => {
     expect(chordTextToNumberText('D.. Gm..', 'C')).toBe('2.. 5m..');
   });
 
+  test("parseLines treats parenthesized and apostrophe-number tokens as numbered notation", () => {
+    const parsed = parseLines(['(5) 6\' 7'], 0);
+    expect(parsed[0]).toMatchObject({ type: 'number' });
+    expect(parsed[0].tokens).toContainEqual({ token: "(5)", isNumber: true });
+    expect(parsed[0].tokens).toContainEqual({ token: "6'", isNumber: true });
+  });
+
+  test("parseLines treats dotted and parenthesized numeric bar patterns as number notation", () => {
+    const parsed = parseLines(['| 3 . . (4 3) | 2 . . . . |'], 0);
+    expect(parsed[0]).toMatchObject({ type: 'number' });
+    expect(parsed[0].tokens.some((token) => token.isNumber && token.token === '3')).toBe(true);
+    expect(parsed[0].tokens.some((token) => token.isNumber && token.token === '.')).toBe(true);
+    expect(parsed[0].tokens.some((token) => token.isNumber && token.token === '(4')).toBe(true);
+    expect(parsed[0].tokens.some((token) => token.isNumber && token.token === '3)')).toBe(true);
+  });
+
   test("chordToRomanNumeral converts basic chords into Roman numerals", () => {
     expect(chordToRomanNumeral('C', 'C')).toBe('I');
     expect(chordToRomanNumeral('Am', 'C')).toBe('vi');

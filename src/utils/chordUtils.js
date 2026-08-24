@@ -138,11 +138,11 @@ function parseLine(line, transpose) {
   if (parseNumberLine(line)) {
     return {
       type: 'number',
-      tokens: line.split(/(\s+)/).map(token =>
-        /^\s+$/.test(token)
-          ? { token, isSpace: true }
-          : { token, isNumber: true }
-      )
+      tokens: line.split(/(\s+)/).map(token => {
+        if (/^\s+$/.test(token)) return { token, isSpace: true };
+        if (isNumberNotationToken(token) || /^\.{2,}$/.test(token)) return { token, isNumber: true };
+        return { token, isNumber: true };
+      })
     };
   }
   return {
@@ -151,7 +151,7 @@ function parseLine(line, transpose) {
       if (/^\s+$/.test(token)) return { token, isSpace: true };
       if (isChordToken(token)) return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };
       if (isLeadingDashChordToken(token)) return { token: transpose ? transposeLeadingDashChordToken(token, transpose) : token, isChord: true };
-      if (parseNumberLine(token)) return { token, isNumber: true };
+      if (isNumberNotationToken(token) || /^\.{2,}$/.test(token)) return { token, isNumber: true };
       return { token };
     })
   };
@@ -407,6 +407,23 @@ export function isValidChord(chord) {
  *
  * Return: true jika mayoritas token adalah not angka (1-7, boleh ada titik/garis/aksen)
  */
+function isNumberNotationToken(token) {
+  if (typeof token !== 'string') return false;
+  const cleaned = token.trim();
+  if (!cleaned) return false;
+
+  const normalized = cleaned
+    .replace(/^[\(\[]+/, '')
+    .replace(/[\)\]]+$/g, '')
+    .replace(/[’]/g, "'");
+
+  if (!normalized) return false;
+
+  const numRegex = /^[1-7](?:[.']+)?$/;
+  const dotRegex = /^\.{1,}$/;
+  return numRegex.test(normalized) || dotRegex.test(normalized);
+}
+
 export function parseNumberLine(line) {
   // Hilangkan barline di awal/akhir/token
   const cleaned = line
@@ -420,11 +437,8 @@ export function parseNumberLine(line) {
   // Hilangkan token pengulangan (2x, 3x, dst) saja
   tokens = tokens.filter(t => !/^\d+x$/i.test(t));
   if (!tokens.length) return false;
-  // Regex not angka: 1-7, boleh ada titik, aksen, petik, dsb
-  const numRegex = /^[1-7][.']*$/;
-  const dotRegex = /^\.{2,}$/; // token hanya titik minimal dua (....)
-  // Hitung mayoritas dari not angka dan .... saja
-  const validCount = tokens.filter(t => numRegex.test(t) || dotRegex.test(t)).length;
+
+  const validCount = tokens.filter((t) => isNumberNotationToken(t) || /^\.{2,}$/.test(t)).length;
   return validCount > 0 && validCount >= tokens.length / 2;
 }
 

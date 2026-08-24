@@ -91,6 +91,38 @@ describe('VirtualPiano MIDI input', () => {
     expect(onKeySelect).toHaveBeenCalledWith('C');
   });
 
+  test('still calls the key callback when audio context is unavailable', async () => {
+    const onKeySelect = vi.fn();
+    const input = { id: 'input-1', name: 'USB Keyboard', onmidimessage: null };
+    const access = {
+      inputs: new Map([['input-1', input]]),
+      outputs: new Map(),
+      onstatechange: null,
+    };
+
+    window.AudioContext = undefined;
+    window.webkitAudioContext = undefined;
+    navigator.requestMIDIAccess = vi.fn().mockResolvedValue(access);
+
+    await act(async () => {
+      root.render(
+        <VirtualPiano
+          isOpen={true}
+          onClose={() => {}}
+          onKeySelect={onKeySelect}
+          helperText="MIDI without WebAudio"
+        />
+      );
+      await Promise.resolve();
+    });
+
+    act(() => {
+      input.onmidimessage({ data: [0x90, 64, 100] });
+    });
+
+    expect(onKeySelect).toHaveBeenCalledWith('E');
+  });
+
   test('allows dragging the piano popup by moving the header', async () => {
     await act(async () => {
       root.render(
