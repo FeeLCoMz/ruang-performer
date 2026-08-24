@@ -1565,9 +1565,10 @@ body.dark-mode .song-mood-badge.mood-peak {
 .number-token {
   color: var(--primary-accent);
   font-weight: 600;
-  background: rgba(59, 130, 246, 0.08);  
+  background: rgba(59, 130, 246, 0.08);
   border-radius: 3px;
-  font-size: var(--font-size-base);
+  font-size: inherit;
+  line-height: inherit;
   display: inline-block;
   transition: background var(--transition-fast);
 }
@@ -6671,6 +6672,8 @@ input[type="datetime-local"]:disabled {
 .cd-token {
   color: var(--primary-accent);
   font-weight: 600;
+  font-size: inherit;
+  line-height: inherit;
 }
 body.dark-mode .cd-token {
   color: var(--chord-bright);

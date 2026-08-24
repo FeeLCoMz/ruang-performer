@@ -814,6 +814,25 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('1 5 6m 4');
   });
 
+  test('Given bar-grid mode is active, Then number notation is rendered inside the grid', async () => {
+    await act(async () => {
+      root.render(
+        <ChordDisplay
+          song={{ lyrics: 'C G Am F' }}
+          showChords={true}
+          showChordNumbers={true}
+          keySignature={'C'}
+          transpose={0}
+          layoutMode={'bar-grid'}
+        />
+      );
+    });
+
+    expect(container.querySelectorAll('.cd-chord-grid-block').length).toBeGreaterThan(0);
+    expect(container.textContent).toContain('1');
+    expect(container.textContent).toContain('5');
+  });
+
   test('Given vocalist mode is active, Then edit and export controls are hidden', async () => {
     await act(async () => {
       root.render(

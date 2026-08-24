@@ -89,7 +89,7 @@ const buildMeasuresFromChordTokens = (tokens) => {
     return measures;
   }
 
-  const chordLikeTokens = compact.filter((token) => token?.isChord);
+  const chordLikeTokens = compact.filter((token) => token?.isChord || token?.isNumber);
   if (!chordLikeTokens.length) {
     return [normalizeMeasureTokens(compact)];
   }
@@ -100,7 +100,7 @@ const buildMeasuresFromChordTokens = (tokens) => {
 const buildBeatSlotsFromMeasureTokens = (measureTokens, beatsPerBar) => {
   const totalBeats = Math.max(1, Number(beatsPerBar) || 4);
   const slots = Array.from({ length: totalBeats }, () => ({ chords: [], texts: [] }));
-  const chordTokens = (Array.isArray(measureTokens) ? measureTokens : []).filter((token) => token?.isChord);
+  const chordTokens = (Array.isArray(measureTokens) ? measureTokens : []).filter((token) => token?.isChord || token?.isNumber);
 
   if (!chordTokens.length) {
     return slots;
@@ -259,8 +259,9 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
       renderedRows.push(<div key={i} className="cd-metadata">{lineObj.text}</div>);
       return;
     }
-    if (lineObj.type === 'chord' && showChords) {
+    if ((lineObj.type === 'chord' && showChords) || lineObj.type === 'number') {
       if (layoutMode === 'bar-grid') {
+        const isNumberLine = lineObj.type === 'number';
         renderedRows.push(
           <div key={i} className="cd-chord-grid-block">
             {pendingPresetCue ? renderPresetCueBadge(pendingPresetCue, `pending-preset-cue-${i}`, true) : null}
@@ -278,7 +279,7 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
                   <div className="cd-bar-chords">
                     {buildBeatSlotsFromMeasureTokens(measureTokens, beatsPerBar).map((slot, beatIdx) => {
                       const chordText = slot.chords
-                        .map((chord) => formatChordToken(chord))
+                        .map((chord) => isNumberLine ? chord : formatChordToken(chord))
                         .filter(Boolean)
                         .join(' / ');
 
@@ -301,28 +302,25 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
         return;
       }
 
-      renderedRows.push(
-        <div key={i} className="cd-chord">
-          {lineObj.tokens.map((t, j) =>
-            t.isSpace ? (
-              <span key={j}>{t.token}</span>
-            ) : t.isBarline ? (
-              <span key={j} className="cd-barline-token">{t.token}</span>
-            ) : (
-              <span key={j} className="cd-token">
-                {formatChordToken(t.token)}
-              </span>
-            )
-          )}
-        </div>
-      );
-      return;
-    }
-    if (lineObj.type === 'chord' && !showChords) {
-      pendingPresetCue = null;
-      return;
-    }
-    if (lineObj.type === 'number') {
+      if (lineObj.type === 'chord') {
+        renderedRows.push(
+          <div key={i} className="cd-chord">
+            {lineObj.tokens.map((t, j) =>
+              t.isSpace ? (
+                <span key={j}>{t.token}</span>
+              ) : t.isBarline ? (
+                <span key={j} className="cd-barline-token">{t.token}</span>
+              ) : (
+                <span key={j} className="cd-token">
+                  {formatChordToken(t.token)}
+                </span>
+              )
+            )}
+          </div>
+        );
+        return;
+      }
+
       renderedRows.push(
         <div key={i} className="cd-number">
           {lineObj.tokens.map((t, j) =>
@@ -330,6 +328,10 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
           )}
         </div>
       );
+      return;
+    }
+    if (lineObj.type === 'chord' && !showChords) {
+      pendingPresetCue = null;
       return;
     }
 
