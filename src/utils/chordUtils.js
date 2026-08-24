@@ -665,7 +665,7 @@ export function parseSection(line) {
     // Daftar kata kunci instrumen umum per kategori
     const instrumentKeywords = [
       'gitar', 'guitar', 'bass', 'ukulele', 'mandolin',
-      'piano', 'keyboard', 'organ', 'synth',
+      'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'sintetisator', 'sintetizer', 'sintetizer', 'pianika', 'melodika',
       // Brass section
       'brass', 'horn section', 'horns', 'trombone', 'tuba', 'euphonium', 'cornet',
       'saxophone', 'saksofon', 'saxofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet', 'bansi',
