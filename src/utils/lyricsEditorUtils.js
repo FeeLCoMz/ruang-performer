@@ -321,6 +321,37 @@ export function detectSectionBadges(text) {
     .filter(Boolean);
 }
 
+function normalizeSectionTagLine(line, info) {
+  const trimmed = String(line || "").trim();
+  if (!trimmed) return line;
+
+  const alreadyTaggedMatch = trimmed.match(/^\[([^\]]+)\](.*)$/);
+  if (alreadyTaggedMatch) {
+    const [, label, trailing = ""] = alreadyTaggedMatch;
+    const normalizedLabel = detectSectionInfo(label)?.label || label.trim();
+    const suffix = trailing.trim();
+    return suffix ? `[${normalizedLabel}] ${suffix}` : `[${normalizedLabel}]`;
+  }
+
+  const escapedLabel = info.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const labelVariants = [
+    escapedLabel,
+    escapedLabel.replace(/\s+/g, "[-\\s_]+"),
+    escapedLabel.replace(/-/g, "[-\\s_]+"),
+    escapedLabel.replace(/\s+/g, "[- ]+"),
+    escapedLabel.replace(/-/g, "\\s*[-\\s_]*\\s*"),
+  ];
+
+  for (const variant of labelVariants) {
+    const match = trimmed.match(new RegExp(`^${variant}\\s*[:\-]?\\s*(.*)$`, "i"));
+    if (!match) continue;
+    const suffix = match[1].trim();
+    return suffix ? `[${info.label}] ${suffix}` : `[${info.label}]`;
+  }
+
+  return `[${info.label}]`;
+}
+
 export function autoTagSongSections(text) {
   return normalizeLineEndings(text)
     .split("\n")
@@ -329,7 +360,7 @@ export function autoTagSongSections(text) {
       if (parsed?.type && parsed.type !== "structure") return line;
       const info = parsed?.type === "structure" ? detectSectionInfo(parsed.label) : detectSectionInfo(line);
       if (!info) return line;
-      return `[${info.label}]`;
+      return normalizeSectionTagLine(line, info);
     })
     .join("\n");
 }

@@ -59,6 +59,11 @@ describe("lyricsEditorUtils", () => {
     expect(autoTagSongSections(input)).toBe("[Intro]\n[Verse 1]\n[Pre-Chorus]\n[Post-Chorus]\n[Chorus]\n[Bridge]");
   });
 
+  test("autoTagSongSections keeps other text on the same line when labeling a section", () => {
+    const input = "Verse 1: Aku kembali\nPre Chorus - sampai\nChorus: na na";
+    expect(autoTagSongSections(input)).toBe("[Verse 1] Aku kembali\n[Pre-Chorus] sampai\n[Chorus] na na");
+  });
+
   test("detectSectionBadges returns section labels with line numbers", () => {
     expect(detectSectionBadges("[Intro]\nAm F\nPost Chorus:\nChorus:")).toEqual([
       { lineNumber: 1, label: "Intro", tone: "intro" },
