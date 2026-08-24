@@ -523,6 +523,30 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('Key: D');
   });
 
+  test('Given performance mode is active, Then original song key is also displayed', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          performanceMode={true}
+          lyricsMode={false}
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          originalKey="C"
+          targetKey="D"
+          transpose={2}
+          setTranspose={noop}
+          tempo="120"
+          timeSignature="4/4"
+        />
+      );
+    });
+
+    expect(container.textContent).toContain('Key: E');
+    expect(container.textContent).toContain('Nada Asli: C');
+  });
+
   test('Given performance mode is active with piano recommendation, Then recommendation button is visible', async () => {
     await act(async () => {
       root.render(

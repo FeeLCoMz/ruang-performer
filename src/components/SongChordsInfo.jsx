@@ -77,6 +77,9 @@ export default function SongChordsInfo({
   if (baseDisplayKey) {
     metadataItems.push(`Key: ${transposedDisplayKey}`);
   }
+  if (performanceMode && originalKey && originalKey !== transposedDisplayKey) {
+    metadataItems.push(`Nada Asli: ${originalKey}`);
+  }
   if (!lyricsMode && tempo) {
     metadataItems.push(`Tempo: ${tempo}`);
   }
