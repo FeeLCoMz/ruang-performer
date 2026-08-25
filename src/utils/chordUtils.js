@@ -25,11 +25,21 @@ export function splitSectionLabelWithChords(line) {
 
 function normalizeSectionReferenceKey(label) {
   if (typeof label !== 'string') return null;
-  return label
+
+  const normalized = label
     .toLowerCase()
     .replace(/[\[\]:]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+
+  if (!normalized) return null;
+
+  const trimmedVariant = normalized
+    .replace(/\s*\([^)]*\)\s*$/, '')
+    .replace(/\s*[-/]\s*.+$/, '')
+    .trim();
+
+  return trimmedVariant || normalized;
 }
 
 function getSectionReferenceKey(line) {
@@ -160,6 +170,7 @@ function parseLine(line, transpose) {
 export function parseLines(lines, transpose) {
   const parsed = [];
   const sectionBodies = new Map();
+  const sectionLabels = new Map();
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -173,8 +184,23 @@ export function parseLines(lines, transpose) {
 
     const sectionChunks = splitSectionLabelWithChords(line);
     const sectionKey = getSectionReferenceKey(line);
+    const section = parseSection(line);
+    const isStandaloneStructureTag = Boolean(
+      section?.type === 'structure' &&
+      !splitSectionLabelWithChords(line) &&
+      !splitBracketCompoundLine(line)
+    );
+    const isStyledRepeatReference =
+      sectionKey &&
+      isStandaloneStructureTag &&
+      shouldExpandSectionReference(lines, index) &&
+      sectionBodies.has(sectionKey) &&
+      sectionLabels.has(sectionKey) &&
+      section.label &&
+      sectionLabels.get(sectionKey) !== section.label &&
+      /[-/]/.test(section.label);
 
-    if (sectionKey && shouldExpandSectionReference(lines, index) && sectionBodies.has(sectionKey)) {
+    if (sectionKey && isStandaloneStructureTag && (isStyledRepeatReference || (shouldExpandSectionReference(lines, index) && sectionBodies.has(sectionKey)))) {
       const repeatedSectionLine = parseLine(line, transpose);
       if (repeatedSectionLine?.type === 'structure') {
         repeatedSectionLine.isRepeatedReference = true;
@@ -196,6 +222,11 @@ export function parseLines(lines, transpose) {
     }
 
     if (sectionKey) {
+      const sectionLabel = parseSection(line)?.label || null;
+      if (sectionLabel) {
+        sectionLabels.set(sectionKey, sectionLabel);
+      }
+
       const inlineChordLine = sectionChunks?.[1] || null;
       const candidateBody = collectSectionBodyLines(lines, index, inlineChordLine);
       const hasRenderableContent = candidateBody.some((bodyLine) => {
@@ -341,6 +372,51 @@ export function extractTimestampSeconds(text) {
 }
 
 /**
+ * Cari label struktur dari teks lirik untuk timestamp yang terdeteksi.
+ * Jika sebuah timestamp muncul sebelum section tag seperti [Verse],
+ * maka tag tersebut dipakai sebagai nama marker.
+ */
+function resolveTimestampLabelsFromLyrics(lyricsText) {
+  const lines = typeof lyricsText === 'string' ? lyricsText.split(/\r?\n/) : [];
+  const labelByTime = new Map();
+  let currentSectionLabel = null;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const trimmed = String(line || '').trim();
+    if (!trimmed) continue;
+
+    const section = parseSection(trimmed);
+    if (section?.type === 'structure') {
+      currentSectionLabel = section.label;
+      continue;
+    }
+
+    const lineTimes = Array.from(trimmed.matchAll(/\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]/g))
+      .map((match) => parseTimestampToken(`[${match[1]}:${match[2]}${match[3] ? `:${match[3]}` : ''}]`))
+      .filter((time) => time !== null);
+
+    if (lineTimes.length === 0) continue;
+
+    const nextStructure = (() => {
+      for (let nextIndex = index + 1; nextIndex < lines.length; nextIndex += 1) {
+        const nextTrimmed = String(lines[nextIndex] || '').trim();
+        if (!nextTrimmed) continue;
+        const nextSection = parseSection(nextTrimmed);
+        if (nextSection?.type === 'structure') return nextSection.label;
+      }
+      return null;
+    })();
+
+    lineTimes.forEach((time) => {
+      labelByTime.set(time, nextStructure || currentSectionLabel || `Timestamp ${formatMarkerTime(time)}`);
+    });
+  }
+
+  return labelByTime;
+}
+
+/**
  * Gabungkan marker existing dengan timestamp yang terdeteksi di lirik/chord.
  * Marker existing dipertahankan, timestamp baru ditambahkan jika belum ada.
  */
@@ -361,12 +437,13 @@ export function mergeDetectedTimestampsIntoMarkers(lyricsText, existingMarkers =
 
   const seenTimes = new Set(normalizedExisting.map((marker) => marker.time));
   const detectedTimes = extractTimestampSeconds(lyricsText);
+  const labelsByTime = resolveTimestampLabelsFromLyrics(lyricsText);
 
   const appended = detectedTimes
     .filter((time) => !seenTimes.has(time))
     .map((time) => ({
       time,
-      label: `Timestamp ${formatMarkerTime(time)}`,
+      label: labelsByTime.get(time) || `Timestamp ${formatMarkerTime(time)}`,
     }));
 
   return [...normalizedExisting, ...appended].sort((a, b) => a.time - b.time);
@@ -974,7 +1051,16 @@ export const isMetadataLine = (line) => {
   if (parseInstrumentPatchLine(line)) return true;
   if (typeof line !== 'string') return false;
   const trimmed = line.trim();
-  if (!trimmed || !trimmed.includes(':')) return false;
+  if (!trimmed) return false;
+
+  const singleBracketMatch = trimmed.match(/^\[([^\]]+):\s*([^\]]+)\]$/);
+  if (singleBracketMatch) {
+    const rawKey = singleBracketMatch[1].trim().toLowerCase();
+    const key = rawKey.replace(/\s+/g, '');
+    return METADATA_KEYS.has(key) || key === 'style' || key === 'cue';
+  }
+
+  if (!trimmed.includes(':')) return false;
 
   const segments = trimmed.split('|').map((segment) => segment.trim()).filter(Boolean);
   if (!segments.length) return false;
@@ -984,7 +1070,7 @@ export const isMetadataLine = (line) => {
     if (idx <= 0 || idx >= segment.length - 1) return false;
     const rawKey = segment.slice(0, idx).trim().toLowerCase();
     const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '').replace(/\s+/g, '');
-    return METADATA_KEYS.has(key);
+    return METADATA_KEYS.has(key) || key === 'style' || key === 'cue';
   });
 };
 /**

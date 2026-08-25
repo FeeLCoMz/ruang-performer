@@ -71,6 +71,38 @@ describe("chordUtils", () => {
     expect(lyricsText).toContain('Line baru');
   });
 
+  test("parseLines treats standalone style-tagged repeat section as the same section reference", () => {
+    const parsed = parseLines([
+      '[Bridge]',
+      'Bm F#m',
+      '[Bridge - Koplo]',
+      '[Chorus]',
+      '[Chorus]'
+    ], 0);
+
+    const repeatIndexes = parsed
+      .map((lineObj, idx) => ({ lineObj, idx }))
+      .filter(({ lineObj }) => lineObj?.type === 'structure' && lineObj.label.startsWith('Bridge'))
+      .map(({ idx }) => idx);
+
+    expect(repeatIndexes).toHaveLength(2);
+    expect(parsed[repeatIndexes[1]].isRepeatedReference).toBe(true);
+  });
+
+  test("parseLines does not repeat a section when the tag is followed by lyric or chord content", () => {
+    const parsed = parseLines([
+      '[Bridge]',
+      'Bm F#m',
+      '[Bridge - Koplo]',
+      'ngene men anak sing rusak omahe..',
+      '[Chorus]',
+      '[Chorus]'
+    ], 0);
+
+    expect(parsed[2].isRepeatedReference).toBeUndefined();
+    expect(parsed[2]).toMatchObject({ type: 'structure', label: 'Bridge - Koplo' });
+  });
+
   test("parseSection detects modulation lines", () => {
     expect(parseSection('Modulation: G')).toEqual({ type: 'modulation', label: 'G' });
     expect(parseSection('Key change: A')).toEqual({ type: 'modulation', label: 'A' });
@@ -89,6 +121,31 @@ describe("chordUtils", () => {
     expect(parseSection('[Intro] (Intensitas 1 - Stage Piano + Warm Pad)')).toEqual({
       type: 'structure',
       label: 'Intro (Intensitas 1 - Stage Piano + Warm Pad)'
+    });
+  });
+
+  test("parseSection supports bracketed structure labels with numbers and instrumentation notes", () => {
+    expect(parseSection('[Intro - Piano & Biola]')).toEqual({
+      type: 'structure',
+      label: 'Intro - Piano & Biola'
+    });
+    expect(parseSection('[Verse 2]')).toEqual({
+      type: 'structure',
+      label: 'Verse 2'
+    });
+  });
+
+  test("parseLines keeps bracket metadata tags renderable in mixed section lines", () => {
+    const parsed = parseLines(['[Verse 2] [Style: Pop] [Cue: Fill Bell]'], 0);
+    expect(parsed[0]).toEqual({ type: 'structure', label: 'Verse 2' });
+    expect(parsed[1]).toMatchObject({ type: 'metadata', text: '[Style: Pop]' });
+    expect(parsed[2]).toMatchObject({ type: 'metadata', text: '[Cue: Fill Bell]' });
+  });
+
+  test("parseSection still accepts bracketed structure labels with instrumentation annotations", () => {
+    expect(parseSection('[Intro - Piano & Biola]')).toEqual({
+      type: 'structure',
+      label: 'Intro - Piano & Biola'
     });
   });
 
@@ -618,6 +675,15 @@ Repeat [00:12] then [1:02:03]
       { time: 30, label: 'Intro cue' },
       { time: 60, label: 'Timestamp 1:00' },
       { time: 90, label: 'Bridge cue' },
+    ]);
+  });
+
+  test("mergeDetectedTimestampsIntoMarkers uses following section label when timestamp precedes structure tag", () => {
+    const lyrics = `[00:30]\n[Verse]\nC G Am F\n[01:00]\n[Chorus]\nF G C`;
+
+    expect(mergeDetectedTimestampsIntoMarkers(lyrics, [])).toEqual([
+      { time: 30, label: 'Verse' },
+      { time: 60, label: 'Chorus' },
     ]);
   });
 });
