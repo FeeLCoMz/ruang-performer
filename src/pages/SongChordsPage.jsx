@@ -156,6 +156,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [showLyricsPiano, setShowLyricsPiano] = useState(false);
   const [insertNotesToLyrics, setInsertNotesToLyrics] = useState(false);
   const [insertNoteFormat, setInsertNoteFormat] = useState('number');
+  const [insertNumberKeySignature, setInsertNumberKeySignature] = useState(() => getNumericNotationKey(key || song?.key || 'C'));
   const [insertTrailingSpace, setInsertTrailingSpace] = useState(true);
 
   // Chord Analyzer state
@@ -737,7 +738,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     const textarea = lyricsDisplayRef.current;
     const token = buildInsertNoteToken({
       note,
-      keySignature: key || song?.key || 'C',
+      keySignature: insertNumberKeySignature || key || song?.key || 'C',
       insertNoteFormat,
       insertTrailingSpace,
     });
@@ -866,7 +867,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setInsertNoteFormat={setInsertNoteFormat}
         insertTrailingSpace={insertTrailingSpace}
         setInsertTrailingSpace={setInsertTrailingSpace}
-        insertNumberKeySignature={getNumericNotationKey(key || song?.key || 'C')}
+        insertNumberKeySignature={insertNumberKeySignature}
+        setInsertNumberKeySignature={setInsertNumberKeySignature}
         showExportMenu={showExportMenu}
         setShowExportMenu={setShowExportMenu}
         handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, setShowExportMenu)}
@@ -937,7 +939,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         isOpen={showLyricsPiano}
         onClose={() => setShowLyricsPiano(false)}
         onKeySelect={handleLyricsPianoKeySelect}
-        helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${getNumericNotationKey(key || song?.key || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
+        helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${insertNumberKeySignature || getNumericNotationKey(key || song?.key || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
       />
 
       {/* Setlist Navigation (if in setlist context) */}

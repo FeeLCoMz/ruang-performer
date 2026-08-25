@@ -32,6 +32,7 @@ export default function SongLyricsMainSection({
   insertTrailingSpace,
   setInsertTrailingSpace,
   insertNumberKeySignature,
+  setInsertNumberKeySignature,
   showExportMenu,
   setShowExportMenu,
   handleExportText,
@@ -202,6 +203,7 @@ export default function SongLyricsMainSection({
                 insertTrailingSpace,
                 setInsertTrailingSpace,
                 insertNumberKeySignature,
+                onChangeInsertNumberKeySignature: setInsertNumberKeySignature,
               })}
               autoFocus={true}
               showTips={true}

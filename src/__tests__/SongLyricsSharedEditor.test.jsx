@@ -8,6 +8,7 @@ import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
+import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
 import SongMidiProgramPanel from '../components/SongMidiProgramPanel.jsx';
 import TransposeKeyControl from '../components/TransposeKeyControl.jsx';
 import VirtualPiano from '../components/VirtualPiano.jsx';
@@ -246,6 +247,47 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('Tag Bagian');
     expect(container.textContent).toContain('Standarkan Chord');
     expect(container.textContent).toContain('Post-Chorus');
+  });
+
+  test('Given piano insert number key selector is used, Then callback updates selected key', async () => {
+    const handleChange = vi.fn();
+    await act(async () => {
+      root.render(
+        <SongLyricsEditorPanel
+          lyricsRef={{ current: null }}
+          lyricsValue={'[C]Hello'}
+          setLyricsValue={noop}
+          error={null}
+          disabled={false}
+          editorActions={{
+            showPianoControls: true,
+            onOpenPiano: noop,
+            insertNotesEnabled: true,
+            onToggleInsertNotes: noop,
+            insertNoteFormat: 'number',
+            onChangeInsertNoteFormat: noop,
+            insertTrailingSpace: true,
+            onToggleInsertTrailingSpace: noop,
+            keySignature: 'C',
+            onChangeInsertNumberKeySignature: handleChange,
+          }}
+          autoFocus={false}
+          showTips={false}
+        />
+      );
+    });
+
+    const keySelect = Array.from(container.querySelectorAll('select')).find((select) =>
+      select.getAttribute('aria-label') === 'Pilih key untuk angka chord'
+    );
+
+    expect(keySelect).toBeTruthy();
+    await act(async () => {
+      keySelect.value = 'G';
+      keySelect.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    expect(handleChange).toHaveBeenCalledWith('G');
   });
 
   test('Given recognized section labels in edit mode, Then detector badges are shown', async () => {

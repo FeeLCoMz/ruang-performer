@@ -17,6 +17,7 @@ function buildEditorActions({
   insertTrailingSpace,
   setInsertTrailingSpace,
   keySignature,
+  onChangeInsertNumberKeySignature,
 }) {
   return {
     barsPerLine,
@@ -39,6 +40,7 @@ function buildEditorActions({
     insertTrailingSpace,
     onToggleInsertTrailingSpace: setInsertTrailingSpace,
     keySignature,
+    onChangeInsertNumberKeySignature,
   };
 }
 

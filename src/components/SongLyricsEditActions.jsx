@@ -12,6 +12,11 @@ import { GM_SOUND_CATEGORIES, GM_SOUND_BANK, filterGmSoundBankByCategory, format
 
 const LAST_MIDI_CHANNEL_STORAGE_KEY = 'ruangperformer_last_midi_channel';
 
+const INSERT_KEY_OPTIONS = [
+  'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb',
+  'Am', 'Em', 'Bm', 'Dm', 'Gm', 'Cm'
+];
+
 const SECTION_LABELS = [
   { label: "Intro", value: "[Intro]" },
   { label: "Verse 1", value: "[Verse 1]" },
@@ -103,6 +108,7 @@ export default function SongLyricsEditActions({
   insertTrailingSpace = false,
   onToggleInsertTrailingSpace,
   keySignature = "",
+  onChangeInsertNumberKeySignature,
   lyricsRef,
   lyricsValue = "",
   setLyricsValue,
@@ -421,9 +427,21 @@ export default function SongLyricsEditActions({
                   </select>
                 </label>
                 {insertNoteFormat === "number" && (
-                  <span className="song-lyrics-insert-key-hint" title="Nada dasar untuk format angka">
-                    Key: {keySignature || "C"}
-                  </span>
+                  <label className="song-lyrics-insert-key" htmlFor="lyrics-insert-key-select">
+                    Key
+                    <select
+                      id="lyrics-insert-key-select"
+                      className="song-lyrics-bar-wrap-select"
+                      value={keySignature || 'C'}
+                      onChange={(e) => onChangeInsertNumberKeySignature?.(e.target.value)}
+                      disabled={disabled}
+                      aria-label="Pilih key untuk angka chord"
+                    >
+                      {INSERT_KEY_OPTIONS.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  </label>
                 )}
                 <button
                   type="button"

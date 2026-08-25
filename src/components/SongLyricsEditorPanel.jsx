@@ -35,6 +35,7 @@ export default function SongLyricsEditorPanel({
     insertTrailingSpace = false,
     onToggleInsertTrailingSpace,
     keySignature = "",
+    onChangeInsertNumberKeySignature,
   } = editorActions;
 
   return (
@@ -73,6 +74,7 @@ export default function SongLyricsEditorPanel({
           insertTrailingSpace={insertTrailingSpace}
           onToggleInsertTrailingSpace={onToggleInsertTrailingSpace}
           keySignature={keySignature}
+          onChangeInsertNumberKeySignature={onChangeInsertNumberKeySignature}
           lyricsRef={lyricsRef}
           lyricsValue={lyricsValue}
           setLyricsValue={setLyricsValue}

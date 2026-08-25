@@ -64,6 +64,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [showLyricsPiano, setShowLyricsPiano] = useState(false);
   const [insertNotesToLyrics, setInsertNotesToLyrics] = useState(false);
   const [insertNoteFormat, setInsertNoteFormat] = useState('number');
+  const [insertNumberKeySignature, setInsertNumberKeySignature] = useState(() => getNumericNotationKey('C'));
   const [insertTrailingSpace, setInsertTrailingSpace] = useState(true);
   const [barsPerLine, setBarsPerLine] = useState(4);
   const [lyricsEditError, setLyricsEditError] = useState("");
@@ -126,6 +127,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
           setTitle(newVersionMode ? buildNewVersionTitle(data.title) : (data.title || ""));
           setArtist(data.artist || "");
           setSongKey(data.key || "");
+          setInsertNumberKeySignature(getNumericNotationKey(data.key || 'C'));
           setTempo(data.tempo || "");
           setTimeSignature(data.time_signature || "4/4");
           setGenre(data.genre || "");          
@@ -209,7 +211,10 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const handleApplyAI = () => {
     if (!aiResult) return;
     if (aiConfirmFields.artist && aiResult.artist) setArtist(aiResult.artist);
-    if (aiConfirmFields.key && aiResult.key) setSongKey(aiResult.key);
+    if (aiConfirmFields.key && aiResult.key) {
+      setSongKey(aiResult.key);
+      setInsertNumberKeySignature(getNumericNotationKey(aiResult.key || 'C'));
+    }
     if (aiConfirmFields.tempo && aiResult.tempo) setTempo(aiResult.tempo.toString());
     if (aiConfirmFields.genre && aiResult.genre) setGenre(aiResult.genre);
     if (aiConfirmFields.youtubeId && aiResult.youtubeId) setYoutubeId(aiResult.youtubeId);
@@ -377,7 +382,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     const textarea = lyricsTextareaRef.current;
     const token = buildInsertNoteToken({
       note,
-      keySignature: songKey || 'C',
+      keySignature: insertNumberKeySignature || songKey || 'C',
       insertNoteFormat,
       insertTrailingSpace,
     });
@@ -477,7 +482,11 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 <input
                   type="text"
                   value={songKey}
-                  onChange={(e) => setSongKey(e.target.value)}
+                  onChange={(e) => {
+                    const nextKey = e.target.value;
+                    setSongKey(nextKey);
+                    setInsertNumberKeySignature(getNumericNotationKey(nextKey || 'C'));
+                  }}
                   placeholder="C, D, E, dll"
                   className="form-input-field song-key-input"
                 />
@@ -707,7 +716,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               setInsertNoteFormat,
               insertTrailingSpace,
               setInsertTrailingSpace,
-              keySignature: getNumericNotationKey(songKey || 'C'),
+              insertNumberKeySignature,
+              setInsertNumberKeySignature,
             })}
             autoFocus={false}
             showTips={true}
@@ -761,14 +771,17 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       <VirtualPiano
         isOpen={showPiano}
         onClose={() => setShowPiano(false)}
-        onKeySelect={(key) => setSongKey(key)}
+        onKeySelect={(key) => {
+          setSongKey(key);
+          setInsertNumberKeySignature(getNumericNotationKey(key || 'C'));
+        }}
       />
 
       <VirtualPiano
         isOpen={showLyricsPiano}
         onClose={() => setShowLyricsPiano(false)}
         onKeySelect={handleLyricsPianoKeySelect}
-        helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${getNumericNotationKey(songKey || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
+        helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${insertNumberKeySignature || getNumericNotationKey(songKey || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
       />
 
       <FloatingYouTubePlayer
