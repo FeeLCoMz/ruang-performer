@@ -147,6 +147,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [metronomeSongId, setMetronomeSongId] = useState(null);
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
   const [activeVideoSong, setActiveVideoSong] = useState(null);
+  const [isSequentialVideoMode, setIsSequentialVideoMode] = useState(false);
+  const [isSequentialVideoLoop, setIsSequentialVideoLoop] = useState(false);
   const videoRef = useRef(null);
   const activeInlinePlayerRef = useRef(null);
 
@@ -236,6 +238,12 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   } else {
     setlistSongs = availableSongsPool.filter(song => (localOrder || []).includes(song.id));
   }
+
+  const sequentialVideoQueue = useMemo(
+    () => (setlistSongs || []).filter((song) => hasYouTubeVideo(song)),
+    [setlistSongs]
+  );
+  const hasSequentialVideoSet = sequentialVideoQueue.length > 0;
 
   // Extract unique values untuk filter
   const uniqueArtists = useMemo(() => {
@@ -1442,14 +1450,69 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   function handlePlayVideo(song, e) {
     e.stopPropagation();
     if (!hasYouTubeVideo(song)) return;
+    setIsSequentialVideoMode(false);
     setActiveVideoSong(song);
   }
 
+  function handleSequentialVideoPlayback(startSongId = null) {
+    const queue = (setlistSongs || []).filter((song) => hasYouTubeVideo(song));
+    if (!queue.length) return;
+
+    const startIndex = startSongId ? queue.findIndex((song) => song.id === startSongId) : 0;
+    const targetSong = queue[startIndex >= 0 ? startIndex : 0];
+    setIsSequentialVideoMode(true);
+    setActiveVideoSong(targetSong);
+  }
+
+  function handleNextSequentialVideo(currentSongId) {
+    const queue = (setlistSongs || []).filter((song) => hasYouTubeVideo(song));
+    if (!queue.length) return;
+
+    const currentIndex = queue.findIndex((song) => song.id === currentSongId);
+    const nextIndex = currentIndex >= 0 ? currentIndex + 1 : 0;
+
+    if (nextIndex >= queue.length) {
+      if (isSequentialVideoLoop || isSequentialVideoMode) {
+        setIsSequentialVideoMode(true);
+        setActiveVideoSong(queue[0]);
+        return;
+      }
+
+      setIsSequentialVideoMode(false);
+      if (videoRef.current && typeof videoRef.current.handlePause === 'function') {
+        videoRef.current.handlePause();
+      }
+      setActiveVideoSong(null);
+      return;
+    }
+
+    setIsSequentialVideoMode(true);
+    setActiveVideoSong(queue[nextIndex]);
+  }
+
+  function handlePreviousSequentialVideo(currentSongId) {
+    const queue = (setlistSongs || []).filter((song) => hasYouTubeVideo(song));
+    if (!queue.length) return;
+
+    const currentIndex = queue.findIndex((song) => song.id === currentSongId);
+    const previousIndex = currentIndex > 0 ? currentIndex - 1 : (isSequentialVideoLoop || isSequentialVideoMode ? queue.length - 1 : 0);
+
+    setIsSequentialVideoMode(true);
+    setActiveVideoSong(queue[previousIndex]);
+  }
+
   function handleCloseVideoPlayer() {
+    setIsSequentialVideoMode(false);
+    setIsSequentialVideoLoop(false);
     if (videoRef.current && typeof videoRef.current.handlePause === 'function') {
       videoRef.current.handlePause();
     }
     setActiveVideoSong(null);
+  }
+
+  function handleYouTubeStateChange(event, songId) {
+    if (!event || !isSequentialVideoMode || event.data !== 0) return;
+    handleNextSequentialVideo(songId);
   }
 
   function isSongPlaying(songId) {
@@ -1491,6 +1554,34 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   <span className="setlist-btn-icon" aria-hidden="true">🔀</span>
                   <span className="setlist-btn-label">Merge Setlist</span>
                 </button>
+              )}
+              {hasSequentialVideoSet && (
+                <>
+                  <button
+                    className={`btn ${isSequentialVideoLoop ? 'setlist-btn-primary' : 'btn-secondary'} setlist-btn-mobile-icon`}
+                    onClick={() => setIsSequentialVideoLoop((prev) => !prev)}
+                    title={isSequentialVideoLoop ? 'Matikan loop playlist video' : 'Aktifkan loop playlist video'}
+                    aria-label={isSequentialVideoLoop ? 'Matikan loop playlist video' : 'Aktifkan loop playlist video'}
+                  >
+                    <span className="setlist-btn-icon" aria-hidden="true">🔁</span>
+                    <span className="setlist-btn-label">{isSequentialVideoLoop ? 'Loop On' : 'Loop'}</span>
+                  </button>
+                  <button
+                    className={`btn ${isSequentialVideoMode ? 'setlist-btn-primary' : 'btn-secondary'} setlist-btn-mobile-icon`}
+                    onClick={() => {
+                      if (isSequentialVideoMode) {
+                        handleCloseVideoPlayer();
+                        return;
+                      }
+                      handleSequentialVideoPlayback();
+                    }}
+                    title={isSequentialVideoMode ? 'Hentikan pemutaran video berurutan' : 'Putar video setlist berurutan'}
+                    aria-label={isSequentialVideoMode ? 'Hentikan pemutaran video setlist berurutan' : 'Putar video setlist berurutan'}
+                  >
+                    <span className="setlist-btn-icon" aria-hidden="true">🎬</span>
+                    <span className="setlist-btn-label">{isSequentialVideoMode ? 'Berhenti' : 'Putar Berurutan'}</span>
+                  </button>
+                </>
               )}
               <button
                 className="btn setlist-btn-secondary setlist-btn-mobile-icon"
@@ -1952,9 +2043,17 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                           {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
                         </button>
                         {activeVideoSong?.id === song.id && (
-                          <button className="btn btn-secondary" aria-label="Tutup video" onClick={handleCloseVideoPlayer}>
-                            ✕
-                          </button>
+                          <>
+                            <button className="btn btn-secondary" aria-label="Video sebelumnya" onClick={() => handlePreviousSequentialVideo(song.id)}>
+                              ⏮
+                            </button>
+                            <button className="btn btn-secondary" aria-label="Video berikutnya" onClick={() => handleNextSequentialVideo(song.id)}>
+                              ⏭
+                            </button>
+                            <button className="btn btn-secondary" aria-label="Tutup video" onClick={handleCloseVideoPlayer}>
+                              ✕
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -1963,6 +2062,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                         <YouTubeViewer
                           ref={videoRef}
                           videoId={song.youtubeId || song.youtube_url}
+                          autoPlay={Boolean(activeVideoSong)}
+                          onStateChange={(event) => handleYouTubeStateChange(event, song.id)}
                         />
                       </div>
                     )}

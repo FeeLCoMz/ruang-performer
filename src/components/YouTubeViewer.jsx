@@ -18,7 +18,9 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const YouTubeViewer = React.forwardRef(({
   videoId,
-  onTimeUpdate
+  onTimeUpdate,
+  onStateChange,
+  autoPlay = false
 }, ref) => {
   const [player, setPlayer] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -31,7 +33,9 @@ const YouTubeViewer = React.forwardRef(({
     currentTime,
     handlePlay: () => {
       if (player && typeof player.playVideo === 'function') {
-        player.playVideo();
+        try {
+          player.playVideo();
+        } catch {}
       }
     },
     handlePause: () => {
@@ -131,7 +135,13 @@ const YouTubeViewer = React.forwardRef(({
     }
     const newPlayer = new window.YT.Player(elId, {
       videoId: id,
-      playerVars: { autoplay: 0, controls: 1, modestbranding: 1, rel: 0 },
+      playerVars: {
+        autoplay: autoPlay ? 1 : 0,
+        controls: 1,
+        modestbranding: 1,
+        rel: 0,
+        playsinline: 1,
+      },
       events: {
         onReady: (event) => {
           setPlayer(event.target);
@@ -139,6 +149,19 @@ const YouTubeViewer = React.forwardRef(({
             const d = event.target.getDuration?.() || 0;
             setDuration(Number.isFinite(d) ? d : 0);
           } catch {}
+
+          if (autoPlay && typeof event.target.playVideo === 'function') {
+            try {
+              event.target.playVideo();
+            } catch {}
+          }
+        },
+        onStateChange: (event) => {
+          if (typeof onStateChange === 'function') {
+            try {
+              onStateChange(event);
+            } catch {}
+          }
         }
       }
     });

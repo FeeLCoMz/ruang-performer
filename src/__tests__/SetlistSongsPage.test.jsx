@@ -123,6 +123,55 @@ describe('SetlistSongsPage', () => {
     expect(findElementByText(container, 'Lagu Belum')).toBeTruthy();
   });
 
+  test('shows sequential autoplay control for setlist videos and starts the first song', async () => {
+    const props = buildProps({
+      songs: [
+        { id: 'song-1', title: 'Lagu Sudah', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop', youtubeId: 'abc123def45' },
+        { id: 'song-2', title: 'Lagu Belum', artist: 'Artist B', key: 'G', tempo: '110', genre: 'Rock', youtubeId: 'xyz987uvw21' },
+      ],
+    });
+
+    await renderPage(root, props);
+
+    const autoplayButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent.includes('Putar Berurutan') || button.getAttribute('aria-label') === 'Putar video setlist berurutan'
+    );
+
+    expect(autoplayButton).toBeTruthy();
+
+    await act(async () => {
+      autoplayButton.click();
+      await flushPromises();
+    });
+
+    expect(findElementByText(container, 'Now Playing')).toBeTruthy();
+    expect(findElementByText(container, 'Lagu Sudah')).toBeTruthy();
+  });
+
+  test('shows next/previous and loop controls while a setlist video is active', async () => {
+    const props = buildProps({
+      songs: [
+        { id: 'song-1', title: 'Lagu Sudah', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop', youtubeId: 'abc123def45' },
+        { id: 'song-2', title: 'Lagu Belum', artist: 'Artist B', key: 'G', tempo: '110', genre: 'Rock', youtubeId: 'xyz987uvw21' },
+      ],
+    });
+
+    await renderPage(root, props);
+
+    const autoplayButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent.includes('Putar Berurutan') || button.getAttribute('aria-label') === 'Putar video setlist berurutan'
+    );
+
+    await act(async () => {
+      autoplayButton.click();
+      await flushPromises();
+    });
+
+    expect(container.querySelector('button[aria-label="Video sebelumnya"]')).toBeTruthy();
+    expect(container.querySelector('button[aria-label="Video berikutnya"]')).toBeTruthy();
+    expect(container.querySelector('button[aria-label="Aktifkan loop playlist video"]')).toBeTruthy();
+  });
+
   test('hides drag handle icon in performance mode', async () => {
     const props = buildProps({ performanceMode: true });
 
