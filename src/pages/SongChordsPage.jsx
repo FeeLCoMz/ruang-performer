@@ -109,7 +109,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [zoom, setZoom] = useState(1);
   const [showChords, setShowChords] = useState(!lyricsMode);
   const [showChordNumbers, setShowChordNumbers] = useState(false);
-  const [showRomanNumerals, setShowRomanNumerals] = useState(false);
   const [showJazzChords, setShowJazzChords] = useState(false);
   const [showSimpleChords, setShowSimpleChords] = useState(false);
   const [chordLayoutMode, setChordLayoutMode] = useState(() => {
@@ -902,8 +901,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         loading={loading}
         showChordNumbers={showChordNumbers}
         setShowChordNumbers={setShowChordNumbers}
-        showRomanNumerals={showRomanNumerals}
-        setShowRomanNumerals={setShowRomanNumerals}
         showJazzChords={showJazzChords}
         setShowJazzChords={setShowJazzChords}
         showSimpleChords={showSimpleChords}

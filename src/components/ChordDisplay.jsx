@@ -20,7 +20,7 @@
 
 import React, { useState } from 'react';
 import NumberToken from './NumberToken.jsx';
-import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToRomanNumeralText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
+import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
 
 const BARLINE_REGEX = /^(\|:|:\||\[\:|:\]|\|\||\|)$/;
 
@@ -135,7 +135,7 @@ const buildBeatSlotsFromMeasureTokens = (measureTokens, beatsPerBar) => {
 };
 
 
-export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showRomanNumerals = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause, onPresetCueTrigger, layoutMode = 'lyrics', currentBeat = 0, timeSignature = '4/4', barGridColumns = 'auto', barGridFocusMode = false }) {
+export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause, onPresetCueTrigger, layoutMode = 'lyrics', currentBeat = 0, timeSignature = '4/4', barGridColumns = 'auto', barGridFocusMode = false }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const formatInstrumentPatchText = (lineObj) => {
@@ -148,7 +148,6 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
 
   const formatChordToken = (token) => {
     if (showChordNumbers) return chordTextToNumberText(token, keySignature);
-    if (showRomanNumerals) return chordTextToRomanNumeralText(token, keySignature);
     if (showJazzChords) return chordTextToJazzText(token);
     if (showSimpleChords) return chordTextToSimpleText(token);
     return token;

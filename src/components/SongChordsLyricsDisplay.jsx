@@ -50,7 +50,6 @@ export default function SongChordsLyricsDisplay({
   setZoom,
   lyricsMode = false,
   showChordNumbers,
-  showRomanNumerals,
   showJazzChords,
   showSimpleChords,
   keySignature,
@@ -301,24 +300,20 @@ export default function SongChordsLyricsDisplay({
     ? 'hidden'
     : showChordNumbers
     ? 'number'
-    : showRomanNumerals
-      ? 'roman'
-      : showJazzChords
-        ? 'jazz'
-        : showSimpleChords
-          ? 'simple'
-          : 'default';
+    : showJazzChords
+      ? 'jazz'
+      : showSimpleChords
+        ? 'simple'
+        : 'default';
   const currentChordModeLabel = !effectiveShowChords
     ? 'Off'
     : showChordNumbers
     ? 'Angka'
-    : showRomanNumerals
-      ? 'Romawi'
-      : showJazzChords
-        ? 'Jazz'
-        : showSimpleChords
-          ? 'Simple'
-          : 'Default';
+    : showJazzChords
+      ? 'Jazz'
+      : showSimpleChords
+        ? 'Simple'
+        : 'Default';
 
   useEffect(() => {
     if (autoScrollActive) return undefined;
@@ -598,7 +593,6 @@ export default function SongChordsLyricsDisplay({
         timeSignature={timeSignature || song?.time_signature || '4/4'}
         showChords={effectiveShowChords}
         showChordNumbers={showChordNumbers}
-        showRomanNumerals={showRomanNumerals}
         showJazzChords={showJazzChords}
         showSimpleChords={showSimpleChords}
         keySignature={keySignature || song?.key || 'C'}

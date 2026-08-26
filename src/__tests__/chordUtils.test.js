@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordToRomanNumeral, chordTextToNumberText, chordTextToRomanNumeralText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, parsePresetCueLine, extractPresetCuesFromLyrics, extractMidiProgramCuesFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, parsePresetCueLine, extractPresetCuesFromLyrics, extractMidiProgramCuesFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -179,6 +179,12 @@ describe("chordUtils", () => {
     expect(parsed[0].tokens).toContainEqual({ token: "6'", isNumber: true });
   });
 
+  test("Roman numeral chord mode is not available", async () => {
+    const utils = await import('../utils/chordUtils');
+    expect(utils.chordToRomanNumeral).toBeUndefined();
+    expect(utils.chordTextToRomanNumeralText).toBeUndefined();
+  });
+
   test("parseLines treats dotted and parenthesized numeric bar patterns as number notation", () => {
     const parsed = parseLines(['| 3 . . (4 3) | 2 . . . . |'], 0);
     expect(parsed[0]).toMatchObject({ type: 'number' });
@@ -186,18 +192,6 @@ describe("chordUtils", () => {
     expect(parsed[0].tokens.some((token) => token.isNumber && token.token === '.')).toBe(true);
     expect(parsed[0].tokens.some((token) => token.isNumber && token.token === '(4')).toBe(true);
     expect(parsed[0].tokens.some((token) => token.isNumber && token.token === '3)')).toBe(true);
-  });
-
-  test("chordToRomanNumeral converts basic chords into Roman numerals", () => {
-    expect(chordToRomanNumeral('C', 'C')).toBe('I');
-    expect(chordToRomanNumeral('Am', 'C')).toBe('vi');
-    expect(chordToRomanNumeral('F', 'C')).toBe('IV');
-    expect(chordToRomanNumeral('G7', 'C')).toBe('V7');
-  });
-
-  test("chordTextToRomanNumeralText converts inline chords to Roman numerals", () => {
-    expect(chordTextToRomanNumeralText('C G Am F', 'C')).toBe('I V vi IV');
-    expect(chordTextToRomanNumeralText('D.. Gm..', 'C')).toBe('II.. v..');
   });
 
   test("chordTextToJazzText reharmonizes common chord qualities into jazzier voicings", () => {
