@@ -589,7 +589,9 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('Nada Asli: C');
   });
 
-  test('Given performance mode is active with piano recommendation, Then recommendation button is visible', async () => {
+  test('Given performance mode is active with piano recommendation, Then key easy button is visible in song info', async () => {
+    const onApplyRecommendedTranspose = vi.fn();
+
     await act(async () => {
       root.render(
         <SongChordsInfo
@@ -605,25 +607,22 @@ describe('Song lyrics shared editor rendering', () => {
           showSongInfo={true}
           setShowSongInfo={noop}
           pianoRecommendation={{ recommendedKey: 'C', transposeFromCurrent: 2 }}
-          onApplyRecommendedTranspose={noop}
+          onApplyRecommendedTranspose={onApplyRecommendedTranspose}
         />
       );
     });
 
-    expect(container.textContent).toContain('Key Kibordis');
-    expect(container.textContent).not.toContain('Jarak dari key dasar');
-    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Key Kibordis'))).toBe(false);
-
-    const toggleButton = container.querySelector('.song-info-piano-reco-toggle');
-    expect(toggleButton).toBeTruthy();
-    await act(async () => {
-      toggleButton.click();
-    });
-
-    expect(container.textContent).toContain('C');
+    expect(container.textContent).toContain('Key Mudah');
     expect(container.textContent).toContain('Jarak dari key dasar');
     expect(container.textContent).toContain('+2 semitone');
-    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Key Kibordis'))).toBe(true);
+
+    const keyButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent?.trim() === 'C');
+    expect(keyButton).toBeTruthy();
+    await act(async () => {
+      keyButton.click();
+    });
+
+    expect(onApplyRecommendedTranspose).toHaveBeenCalledWith(2);
   });
 
   test('Given performance mode is active, Then toolbar keeps only essential controls', async () => {
@@ -954,8 +953,8 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.textContent).not.toContain('Key Kibordis');
-    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan Key Kibordis'))).toBe(false);
+    expect(container.textContent).not.toContain('Key Mudah');
+    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan key mudah'))).toBe(false);
   });
 
   test('Given performance mode is active, Then the MIDI ready badge is hidden', async () => {
@@ -1075,25 +1074,15 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const keyboardistKeyToggle = Array.from(container.querySelectorAll('button')).find((button) =>
-      button.textContent?.includes('Key Kibordis')
+    const keyEasyButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.trim() === 'C'
     );
-    expect(keyboardistKeyToggle).toBeTruthy();
-
-    await act(async () => {
-      keyboardistKeyToggle.click();
-    });
-
-    expect(container.textContent).toContain('C');
+    expect(keyEasyButton).toBeTruthy();
+    expect(container.textContent).toContain('Key Mudah');
     expect(container.textContent).toContain('-2 semitone');
 
-    const applyButton = Array.from(container.querySelectorAll('button')).find((button) =>
-      button.textContent?.includes('Terapkan Key Kibordis')
-    );
-    expect(applyButton).toBeTruthy();
-
     await act(async () => {
-      applyButton.click();
+      keyEasyButton.click();
     });
 
     expect(container.querySelector('.cd-chord')?.textContent).toBe('C G F');
@@ -1113,25 +1102,15 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const analyzerToggle = Array.from(container.querySelectorAll('button')).find((button) =>
-      button.textContent?.includes('Analisis Chord')
+    const keyEasyButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.trim() === 'C'
     );
-    expect(analyzerToggle).toBeTruthy();
+    expect(keyEasyButton).toBeTruthy();
+    expect(container.textContent).toContain('Key Mudah');
+    expect(container.textContent).toContain('-2 semitone');
 
     await act(async () => {
-      analyzerToggle.click();
-    });
-
-    expect(container.querySelector('.song-lyrics-analyzer-piano-reco-key')?.textContent).toBe('C');
-    expect(container.querySelector('.song-lyrics-analyzer-piano-reco-note')?.textContent).toContain('-2 semitone');
-
-    const applyButton = Array.from(container.querySelectorAll('button')).find((button) =>
-      button.textContent?.includes('Terapkan Key Kibordis')
-    );
-    expect(applyButton).toBeTruthy();
-
-    await act(async () => {
-      applyButton.click();
+      keyEasyButton.click();
     });
 
     expect(container.querySelector('.cd-chord')?.textContent).toBe('C G F');

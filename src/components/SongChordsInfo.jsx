@@ -53,6 +53,7 @@ export default function SongChordsInfo({
   const showActions = !performanceMode && !lyricsMode;
   const showMetadata = performanceMode || lyricsMode || showSongInfo;
   const showMinimalMetadata = performanceMode || lyricsMode;
+  const showKeyEasyRecommendation = !lyricsMode && !!pianoRecommendation?.recommendedKey;
   const metadataItems = [];
   const [isKeyboardistKeyCollapsed, setIsKeyboardistKeyCollapsed] = useState(true);
   const recommendedTranspose = Number(pianoRecommendation?.transposeFromCurrent || 0);
@@ -150,11 +151,35 @@ export default function SongChordsInfo({
       {showMetadata && (
         <div className={`song-info-compact-grid ${showMinimalMetadata ? 'song-info-compact-grid-minimal' : ''}`}>
           {showMinimalMetadata ? (
-            <div className="song-info-item song-info-priority song-info-inline-strip">
-              <span className="song-info-inline-text">
-                {metadataItems.join(' • ')}
-              </span>
-            </div>
+            <>
+              <div className="song-info-item song-info-priority song-info-inline-strip">
+                <span className="song-info-inline-text">
+                  {metadataItems.join(' • ')}
+                </span>
+              </div>
+              {!performanceMode && showKeyEasyRecommendation && (
+                <div className="song-info-item song-info-piano-reco-item">
+                  <span className="song-info-label">🎹 Key Mudah</span>
+                  <div className="song-info-piano-reco-body">
+                    <button
+                      type="button"
+                      className="btn btn-secondary song-info-piano-reco-btn"
+                      onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
+                      disabled={typeof onApplyRecommendedTranspose !== 'function' || pianoRecommendation.transposeFromCurrent === 0}
+                      title="Terapkan key mudah"
+                      aria-label="Gunakan key mudah yang disarankan"
+                    >
+                      {pianoRecommendation.recommendedKey}
+                    </button>
+                    <span className="song-info-piano-reco-distance">
+                      {pianoRecommendation.transposeFromCurrent === 0
+                        ? 'Key dasar sudah cocok.'
+                        : `Jarak dari key dasar: ${recommendedTransposeText} semitone`}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <>
               {(originalKey || targetKey) && (
@@ -166,6 +191,28 @@ export default function SongChordsInfo({
                     transpose={transpose}
                     onTransposeChange={setTranspose}
                   />
+                </div>
+              )}
+              {!performanceMode && showKeyEasyRecommendation && (
+                <div className="song-info-item song-info-piano-reco-item">
+                  <span className="song-info-label">🎹 Key Mudah</span>
+                  <div className="song-info-piano-reco-body">
+                    <button
+                      type="button"
+                      className="btn btn-secondary song-info-piano-reco-btn"
+                      onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
+                      disabled={typeof onApplyRecommendedTranspose !== 'function' || pianoRecommendation.transposeFromCurrent === 0}
+                      title="Terapkan key mudah"
+                      aria-label="Gunakan key mudah yang disarankan"
+                    >
+                      {pianoRecommendation.recommendedKey}
+                    </button>
+                    <span className="song-info-piano-reco-distance">
+                      {pianoRecommendation.transposeFromCurrent === 0
+                        ? 'Key dasar sudah cocok.'
+                        : `Jarak dari key dasar: ${recommendedTransposeText} semitone`}
+                    </span>
+                  </div>
                 </div>
               )}
               {lyricsOriginalKey && (
@@ -258,37 +305,26 @@ export default function SongChordsInfo({
           )}
         </div>
       )}
-      {performanceMode && !lyricsMode && pianoRecommendation?.recommendedKey && (
-        <div className="song-midi-panel song-info-piano-reco-block">
-          <div className="song-info-piano-reco-header">
-            <ExpandButton
-              isExpanded={!isKeyboardistKeyCollapsed}
-              setIsExpanded={() => setIsKeyboardistKeyCollapsed((prev) => !prev)}
-              icon="🎹"
-              label="Key Kibordis"
-              ariaLabel={isKeyboardistKeyCollapsed ? 'Buka detail key kibordis' : 'Tutup detail key kibordis'}
-              className="song-info-piano-reco-toggle"
-            />
+      {performanceMode && showKeyEasyRecommendation && (
+        <div className="song-info-piano-reco-full">
+          <div className="song-info-label">🎹 Key Mudah</div>
+          <div className="song-info-piano-reco-full-body">
+            <button
+              type="button"
+              className="btn btn-secondary song-info-piano-reco-btn"
+              onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
+              disabled={typeof onApplyRecommendedTranspose !== 'function' || pianoRecommendation.transposeFromCurrent === 0}
+              title="Terapkan key mudah"
+              aria-label="Gunakan key mudah yang disarankan"
+            >
+              {pianoRecommendation.recommendedKey}
+            </button>
+            <span className="song-info-piano-reco-distance">
+              {pianoRecommendation.transposeFromCurrent === 0
+                ? 'Key dasar sudah cocok.'
+                : `Jarak dari key dasar: ${recommendedTransposeText} semitone`}
+            </span>
           </div>
-          {!isKeyboardistKeyCollapsed && (
-            <div className="song-info-piano-reco-body">
-              <span className="song-info-value">{pianoRecommendation.recommendedKey}</span>
-              <span className="song-info-piano-reco-distance">
-                Jarak dari key dasar: {recommendedTransposeText} semitone
-              </span>
-              {typeof onApplyRecommendedTranspose === 'function' && (
-                <button
-                  type="button"
-                  className="btn btn-secondary song-info-piano-reco-btn"
-                  onClick={() => onApplyRecommendedTranspose(pianoRecommendation.transposeFromCurrent)}
-                  disabled={pianoRecommendation.transposeFromCurrent === 0}
-                  title="Terapkan transpose key kibordis"
-                >
-                  Terapkan Key Kibordis
-                </button>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>

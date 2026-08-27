@@ -221,30 +221,6 @@ export default function SongChordsAnalyzer({
               )}
             </div>
           </div>
-          {pianoRecommendation && pianoRecommendation.recommendedKey && (
-            <div className="song-lyrics-analyzer-piano-reco">
-              <div className="song-lyrics-analyzer-piano-reco-title">Saran Key Kibordis</div>
-              <div className="song-lyrics-analyzer-piano-reco-key">{pianoRecommendation.recommendedKey}</div>
-              <div className="song-lyrics-analyzer-piano-reco-note">
-                {pianoRecommendation.transposeFromCurrent === 0
-                  ? "Nada dasar saat ini sudah cocok dimainkan."
-                  : `Saran transpose ${pianoRecommendation.transposeFromCurrent > 0 ? `+${pianoRecommendation.transposeFromCurrent}` : pianoRecommendation.transposeFromCurrent} semitone dari posisi sekarang.`}
-              </div>
-              {typeof onApplyRecommendedTranspose === "function" && (
-                <div className="song-lyrics-analyzer-piano-reco-actions">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => handleApplyRecommendedTranspose(pianoRecommendation.transposeFromCurrent)}
-                    disabled={pianoRecommendation.transposeFromCurrent === 0}
-                  >
-                    Terapkan Key Kibordis
-                  </button>
-                  {applyNotice && <div className="song-lyrics-analyzer-piano-reco-notice">{applyNotice}</div>}
-                </div>
-              )}
-            </div>
-          )}
         </>
       )}
     </div>

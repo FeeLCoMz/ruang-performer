@@ -8547,6 +8547,56 @@ body.dark-mode .cd-token {
   font-size: var(--font-size-lg);
 }
 
+.song-info-piano-reco-item {
+  grid-column: span 2;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(59, 130, 246, 0.04));
+  border-color: rgba(59, 130, 246, 0.3);
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+
+.song-info-piano-reco-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.song-info-piano-reco-full {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.09), rgba(59, 130, 246, 0.04));
+}
+
+.song-info-piano-reco-full-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.song-info-piano-reco-btn {
+  align-self: flex-start;
+  min-height: 30px;
+  padding: 0.35rem 0.7rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+}
+
+.song-info-piano-reco-distance {
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
 .song-info-label {
   font-size: var(--font-size-xs);
   font-weight: 600;
