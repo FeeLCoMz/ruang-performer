@@ -1026,6 +1026,23 @@ describe('Song lyrics shared editor rendering', () => {
     expect(navigator.textContent).toContain('has-open-setlist');
   });
 
+  test('Given a song is opened outside the setlist route, Then the navigation panel stays hidden', async () => {
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[{
+          pathname: '/songs/view/1',
+          state: { setlistId: 10, setlist: { id: 10, songs: [{ id: '1' }, { id: '2' }] } },
+        }]}>
+          <Routes>
+            <Route path="/songs/view/:id" element={<SongChordsPage performanceMode={false} lyricsMode={false} />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    expect(container.querySelector('[data-testid="setlist-navigator"]')).toBeNull();
+  });
+
   test('Given performance mode opens a song from a setlist, Then chords follow the setlist key', async () => {
     await act(async () => {
       root.render(

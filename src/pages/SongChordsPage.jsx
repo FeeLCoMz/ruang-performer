@@ -60,11 +60,12 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // 4. State: Setlist Context
   // =========================
   // Metadata lagu dalam setlist (jika ada)
-  const setlistSongData = location.state?.setlistSong || {};
-  const setlistData = location.state?.setlist || activeSetlist || {};
-  const setlistId = location.state?.setlistId || activeSetlist?.id || routeSetlistId || null;
-  const autoStartMetronome = location.state?.autoStartMetronome === true;
-  const autoPlayVideo = location.state?.autoPlayVideo === true;
+  const isSetlistRoute = typeof location?.pathname === 'string' && location.pathname.startsWith('/setlists/');
+  const setlistSongData = isSetlistRoute ? (location.state?.setlistSong || {}) : {};
+  const setlistData = isSetlistRoute ? (location.state?.setlist || activeSetlist || {}) : {};
+  const setlistId = isSetlistRoute ? (location.state?.setlistId || activeSetlist?.id || routeSetlistId || null) : null;
+  const autoStartMetronome = isSetlistRoute && location.state?.autoStartMetronome === true;
+  const autoPlayVideo = isSetlistRoute && location.state?.autoPlayVideo === true;
 
    // =========================
   // 6. Data Lagu & Metadata
@@ -393,23 +394,26 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     // Analyze chords when lyrics change
   // ChordStats logic now handled by useChordStats hook
 
-  // Fetch setlists that contain this song
+  // Fetch setlists that contain this song only when we actually need the global list.
+  // In a setlist route, the current setlist context already provides the relevant data.
   useEffect(() => {
-    if (song.id && !performanceMode) {
-      setLoadingSetlists(true);
-      fetchSetLists()
-        .then((data) => {
-          setSetlists(Array.isArray(data) ? data : []);
-        })
-        .catch((err) => {
-          console.error('Failed to fetch setlists:', err);
-          setSetlists([]);
-        })
-        .finally(() => {
-          setLoadingSetlists(false);
-        });
+    if (!song?.id || performanceMode || setlistId) {
+      return;
     }
-  }, [song.id, performanceMode]);
+
+    setLoadingSetlists(true);
+    fetchSetLists()
+      .then((data) => {
+        setSetlists(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch setlists:', err);
+        setSetlists([]);
+      })
+      .finally(() => {
+        setLoadingSetlists(false);
+      });
+  }, [song?.id, performanceMode, setlistId]);
 
   // Handler export & share di utils/songHandlers.js
 
