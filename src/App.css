@@ -8713,6 +8713,48 @@ body.dark-mode .cd-token {
   transform: scale(0.95);
 }
 
+.page-container.performance-mode .key-transpose-reset {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  line-height: 1;
+  margin-left: 0.12rem;
+  transition: all var(--transition-fast);
+}
+
+.page-container.performance-mode .key-transpose-reset:hover {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: var(--text-primary);
+  transform: scale(1.06);
+}
+
+.page-container.performance-mode .key-transpose-reset:active {
+  transform: scale(0.96);
+}
+
+.page-container.performance-mode .song-info-inline-chip-key .transpose-key-control-compact .btn,
+.page-container.performance-mode .song-info-inline-chip-key .transpose-key-control-compact .key-transpose-reset {
+  min-width: 18px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  line-height: 1;
+  margin: 0;
+}
+
+.page-container.performance-mode .song-info-inline-chip-key .transpose-key-control-compact {
+  gap: 0.12rem;
+}
+
 /* Tempo Metronome Controls */
 .song-info-tempo-controls {
   display: flex;
@@ -10213,11 +10255,88 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 0.45rem 0.75rem;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(14, 165, 233, 0.08));
-  border: 1px solid rgba(37, 99, 235, 0.18);
+  min-height: 38px;
+  padding: 0.3rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.page-container.performance-mode .song-info-inline-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.page-container.performance-mode .song-info-inline-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.12rem 0.38rem;
   border-radius: 999px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  min-height: 24px;
+  line-height: 1;
+  box-shadow: none;
+}
+
+.page-container.performance-mode .song-info-inline-chip-key {
+  padding: 0.08rem 0.26rem;
+}
+
+.page-container.performance-mode .song-info-inline-chip-key .transpose-key-control-compact {
+  gap: 0.12rem;
+}
+
+.page-container.performance-mode .song-info-inline-chip-key .btn {
+  min-width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.page-container.performance-mode .song-info-inline-chip-key .song-info-key-display {
+  min-height: 20px;
+  padding: 0.08rem 0.22rem;
+  min-width: 58px;
+  gap: 0.1rem;
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 999px;
+}
+
+.page-container.performance-mode .song-info-inline-chip-key .song-info-key-original,
+.page-container.performance-mode .song-info-inline-chip-key .song-info-key-arrow,
+.page-container.performance-mode .song-info-inline-chip-key .song-info-value {
+  font-size: 0.7rem;
+  color: var(--text-primary);
+}
+
+.page-container.performance-mode .song-info-inline-chip-key .song-info-key-original {
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.page-container.performance-mode .song-info-inline-icon {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.page-container.performance-mode .song-info-inline-value {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .page-container.performance-mode .song-info-inline-text {

@@ -55,6 +55,7 @@ export default function SongChordsInfo({
   const showMinimalMetadata = performanceMode || lyricsMode;
   const showKeyEasyRecommendation = !lyricsMode && !!pianoRecommendation?.recommendedKey;
   const metadataItems = [];
+  const performanceMetadataItems = [];
   const [isKeyboardistKeyCollapsed, setIsKeyboardistKeyCollapsed] = useState(true);
   const recommendedTranspose = Number(pianoRecommendation?.transposeFromCurrent || 0);
   const recommendedTransposeText = recommendedTranspose > 0
@@ -77,18 +78,43 @@ export default function SongChordsInfo({
 
   if (baseDisplayKey) {
     metadataItems.push(`Key: ${transposedDisplayKey}`);
+    if (performanceMode) {
+      performanceMetadataItems.push({
+        key: 'key',
+        icon: '🎹',
+        render: (
+          <TransposeKeyControl
+            key="performance-key"
+            originalKey={originalKey || baseDisplayKey}
+            targetKey={targetKey || originalKey || baseDisplayKey}
+            transpose={transpose || 0}
+            onTransposeChange={setTranspose}
+            compact
+          />
+        ),
+      });
+    }
   }
   if (performanceMode && originalKey && originalKey !== transposedDisplayKey) {
     metadataItems.push(`Nada Asli: ${originalKey}`);
   }
   if (!lyricsMode && tempo) {
     metadataItems.push(`Tempo: ${tempo}`);
+    if (performanceMode) {
+      performanceMetadataItems.push({ key: 'tempo', icon: '⏱️', text: tempo });
+    }
   }
   if (!lyricsMode && timeSignature) {
     metadataItems.push(`Time: ${timeSignature}`);
+    if (performanceMode) {
+      performanceMetadataItems.push({ key: 'time', icon: '🎼', text: timeSignature });
+    }
   }
   if (!lyricsMode && genre) {
     metadataItems.push(`Genre: ${genre}`);
+    if (performanceMode) {
+      performanceMetadataItems.push({ key: 'genre', icon: '🎸', text: genre });
+    }
   }
   if (lyricsOriginalKey) {
     metadataItems.push(`Original: ${lyricsOriginalKey}`);
@@ -152,11 +178,30 @@ export default function SongChordsInfo({
         <div className={`song-info-compact-grid ${showMinimalMetadata ? 'song-info-compact-grid-minimal' : ''}`}>
           {showMinimalMetadata ? (
             <>
-              <div className="song-info-item song-info-priority song-info-inline-strip">
-                <span className="song-info-inline-text">
-                  {metadataItems.join(' • ')}
-                </span>
-              </div>
+              {performanceMode ? (
+                <div className="song-info-item song-info-priority song-info-inline-strip">
+                  <div className="song-info-inline-chip-list">
+                    {performanceMetadataItems.map((item) => (
+                      <div key={item.key} className={`song-info-inline-chip${item.key === 'key' ? ' song-info-inline-chip-key' : ''}`}>
+                        {item.key === 'key' ? (
+                          item.render
+                        ) : (
+                          <>
+                            <span className="song-info-inline-icon" aria-hidden="true">{item.icon}</span>
+                            <span className="song-info-inline-value">{item.text}</span>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="song-info-item song-info-priority song-info-inline-strip">
+                  <span className="song-info-inline-text">
+                    {metadataItems.join(' • ')}
+                  </span>
+                </div>
+              )}
               {!performanceMode && showKeyEasyRecommendation && (
                 <div className="song-info-item song-info-piano-reco-item">
                   <span className="song-info-label">🎹 Key Mudah</span>

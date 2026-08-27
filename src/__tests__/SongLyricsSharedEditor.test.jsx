@@ -537,9 +537,12 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-info-compact-grid')).toBeTruthy();
     expect(container.textContent).toContain('Song A');
     expect(container.textContent).toContain('Artist A');
-    expect(container.textContent).toContain('Key');
-    expect(container.textContent).toContain('Tempo');
-    expect(container.textContent).toContain('Genre');
+    expect(container.textContent).toContain('−');
+    expect(container.textContent).toContain('⏱️');
+    expect(container.textContent).toContain('🎸');
+    expect(container.textContent).not.toContain('Key');
+    expect(container.textContent).not.toContain('Tempo');
+    expect(container.textContent).not.toContain('Genre');
   });
 
   test('Given performance mode transpose is set, Then key metadata reflects transposed key', async () => {
@@ -562,7 +565,43 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.textContent).toContain('Key: D');
+    expect(container.textContent).toContain('D');
+    expect(container.textContent).not.toContain('Key:');
+  });
+
+  test('Given performance mode is active, Then song info uses icon chips and key transpose controls are available', async () => {
+    const setTranspose = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          performanceMode={true}
+          lyricsMode={false}
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          originalKey="C"
+          targetKey="C"
+          transpose={0}
+          setTranspose={setTranspose}
+          tempo="120"
+          timeSignature="4/4"
+          genre="Rock"
+        />
+      );
+    });
+
+    expect(container.querySelector('.transpose-key-control-compact')).toBeTruthy();
+    const upButton = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'Transpose up');
+    expect(upButton).toBeTruthy();
+    expect(container.textContent).not.toContain('Key:');
+
+    await act(async () => {
+      upButton.click();
+    });
+
+    expect(setTranspose).toHaveBeenCalledWith(1);
   });
 
   test('Given performance mode is active, Then original song key is also displayed', async () => {
@@ -585,8 +624,9 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.textContent).toContain('Key: E');
-    expect(container.textContent).toContain('Nada Asli: C');
+    expect(container.textContent).toContain('D');
+    expect(container.textContent).toContain('C');
+    expect(container.textContent).not.toContain('Key:');
   });
 
   test('Given performance mode is active with piano recommendation, Then key easy button is visible in song info', async () => {
@@ -1057,7 +1097,8 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     expect(container.querySelector('.cd-chord')?.textContent).toBe('D A G');
-    expect(container.textContent).toContain('Key: D');
+    expect(container.textContent).toContain('D');
+    expect(container.textContent).not.toContain('Key:');
   });
 
   test('Given a setlist key override, Then keyboard key recommendation is relative to that override', async () => {
