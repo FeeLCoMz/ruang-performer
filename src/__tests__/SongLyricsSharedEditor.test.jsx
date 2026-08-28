@@ -1034,6 +1034,32 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-media-panel-hidden')).toBeTruthy();
   });
 
+  test('Given performance mode is active and a song has a YouTube video, Then the mini player stays hidden until the play control is clicked', async () => {
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={['/songs/view/1']}>
+          <Routes>
+            <Route path="/songs/view/:id" element={<SongChordsPage performanceMode={true} />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    expect(container.querySelector('[data-testid="floating-youtube-player"]')).toBeNull();
+
+    const playButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.title === 'Play YouTube'
+    );
+
+    expect(playButton).toBeTruthy();
+
+    await act(async () => {
+      playButton.click();
+    });
+
+    expect(container.querySelector('[data-testid="floating-youtube-player"]')).toBeTruthy();
+  });
+
   test('Given vocalist mode is active in a setlist view, Then setlist navigator is still rendered', async () => {
     await act(async () => {
       root.render(
