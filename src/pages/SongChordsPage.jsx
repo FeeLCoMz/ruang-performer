@@ -874,8 +874,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setInsertNumberKeySignature={setInsertNumberKeySignature}
         showExportMenu={showExportMenu}
         setShowExportMenu={setShowExportMenu}
-        handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, setShowExportMenu)}
-        handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, setShowExportMenu)}
+        handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
+        handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
         tempo={tempo}
         timeSignature={timeSignature}
         autoScrollActive={autoScrollActive}

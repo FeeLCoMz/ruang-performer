@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, vi } from "vitest";
 import {
   autoAlignChordLyricPairs,
   autoTagSongSections,
@@ -9,6 +9,7 @@ import {
   standardizeChordNotation,
   transposeLyricsText,
 } from "../utils/lyricsEditorUtils.js";
+import { handleExportPDF, handleExportText } from "../utils/songHandlers.js";
 
 describe("lyricsEditorUtils", () => {
   test("buildInsertNoteToken returns bracket token with trailing space", () => {
@@ -95,6 +96,77 @@ describe("lyricsEditorUtils", () => {
   test("transposeLyricsText transposes inline, chord-line, and modulation chords", () => {
     const input = "[C]Hello\nAm F G\nModulation: Bb";
     expect(transposeLyricsText(input, 2)).toBe("[D]Hello\nBm G A\nModulation: C");
+  });
+
+  test("handleExportText applies the active transpose to chords and key metadata", async () => {
+    const createObjectURL = vi.fn(() => "blob:export");
+    const revokeObjectURL = vi.fn();
+    const click = vi.fn();
+    const anchor = { href: "", click };
+
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL,
+      revokeObjectURL,
+    });
+    vi.spyOn(document, "createElement").mockReturnValue(anchor);
+
+    handleExportText(
+      { title: "Song A" },
+      "Artist B",
+      "C",
+      "Original Key: G",
+      96,
+      "Am\nF G",
+      2,
+      () => {}
+    );
+
+    expect(createObjectURL.mock.calls.length).toBe(1);
+    const blob = createObjectURL.mock.calls[0][0];
+    expect(blob.type).toBe("text/plain");
+
+    const text = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(blob);
+    });
+
+    expect(text).toContain("Key: D");
+    expect(text).toContain("Bm\nG A");
+    expect(click.mock.calls.length).toBe(1);
+
+    vi.restoreAllMocks();
+  });
+
+  test("handleExportPDF embeds the current transposed lyrics and key", () => {
+    const printWindow = {
+      document: {
+        write: vi.fn(),
+        close: vi.fn(),
+      },
+      print: vi.fn(),
+    };
+    vi.spyOn(window, "open").mockReturnValue(printWindow);
+
+    handleExportPDF(
+      { title: "Song A" },
+      "Artist B",
+      "C",
+      "Original Key: G",
+      96,
+      "Am\nF G",
+      2,
+      () => {}
+    );
+
+    const html = printWindow.document.write.mock.calls[0][0];
+    expect(html).toContain("Key:</strong> D");
+    expect(html).toContain("Bm\nG A");
+    expect(printWindow.print.mock.calls.length).toBe(1);
+
+    vi.restoreAllMocks();
   });
 
   test("autoAlignChordLyricPairs nudges chord positions toward lyric syllables", () => {
