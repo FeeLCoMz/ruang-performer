@@ -26,6 +26,7 @@ export default function SongChordsInfo({
   genre,
   arrangementStyle,
   keyboardPatch,
+  detectedInstruments = [],
   showSongInfo,
   setShowSongInfo,
   title,
@@ -56,7 +57,37 @@ export default function SongChordsInfo({
   const showKeyEasyRecommendation = !lyricsMode && !!pianoRecommendation?.recommendedKey;
   const metadataItems = [];
   const performanceMetadataItems = [];
+  const detectedInstrumentList = Array.isArray(detectedInstruments) ? detectedInstruments.filter(Boolean) : [];
   const [isKeyboardistKeyCollapsed, setIsKeyboardistKeyCollapsed] = useState(true);
+  const handleCopyInstruments = async () => {
+    const parts = [];
+    if (keyboardPatch) parts.push(`Keyboard Patch: ${keyboardPatch}`);
+    if (detectedInstrumentList.length) parts.push(`Instrumen: ${detectedInstrumentList.join(', ')}`);
+    if (!parts.length) return;
+
+    const copyText = parts.join('\n');
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(copyText);
+        return;
+      }
+
+      if (typeof document !== 'undefined') {
+        const textarea = document.createElement('textarea');
+        textarea.value = copyText;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+    } catch (error) {
+      console.warn('Gagal menyalin instrumen lagu:', error);
+    }
+  };
   const recommendedTranspose = Number(pianoRecommendation?.transposeFromCurrent || 0);
   const recommendedTransposeText = recommendedTranspose > 0
     ? `+${recommendedTranspose}`
@@ -118,6 +149,13 @@ export default function SongChordsInfo({
   }
   if (lyricsOriginalKey) {
     metadataItems.push(`Original: ${lyricsOriginalKey}`);
+  }
+  if (detectedInstrumentList.length) {
+    const instrumentText = detectedInstrumentList.join(', ');
+    metadataItems.push(`Instrumen: ${instrumentText}`);
+    if (performanceMode) {
+      performanceMetadataItems.push({ key: 'instruments', icon: '🎼', text: instrumentText });
+    }
   }
 
   return (
@@ -315,6 +353,29 @@ export default function SongChordsInfo({
                 <div className="song-info-item song-info-block song-info-block-keyboard">
                   <span className="song-info-label">🎹 Keyboard Patch</span>
                   <span className="song-info-value">{keyboardPatch}</span>
+                </div>
+              )}
+              {!showMinimalMetadata && detectedInstrumentList.length > 0 && (
+                <div className="song-info-item song-info-block song-info-block-instruments">
+                  <div className="song-info-block-header">
+                    <span className="song-info-label">🎼 Instrumen</span>
+                    <button
+                      type="button"
+                      className="btn btn-secondary song-info-copy-btn"
+                      onClick={handleCopyInstruments}
+                      title="Salin instrumen dan keyboard patch"
+                      aria-label="Salin instrumen dan keyboard patch"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div className="song-info-chip-list" aria-label="Daftar instrumen terdeteksi">
+                    {detectedInstrumentList.map((instrument) => (
+                      <span key={`${instrument}-${Math.random()}`} className="song-info-chip">
+                        {instrument}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
               {!showMinimalMetadata && (

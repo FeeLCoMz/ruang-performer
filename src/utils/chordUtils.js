@@ -102,6 +102,7 @@ const instrumentKeywords = [
   'violin', 'biola', 'cello', 'kontrabas', 'strings',
   'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
   'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana',
+  'kenong', 'gamelan', 'kendang', 'gong', 'angklung', 'rebab',
   'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out'
 ];
 
@@ -444,6 +445,130 @@ export function extractMidiProgramCuesFromLyrics(lyricsText) {
         text: lineObj.text,
       };
     });
+}
+
+const NON_DISPLAY_INSTRUMENT_CUES = new Set([
+  'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out'
+]);
+
+const REAL_INSTRUMENT_KEYWORDS = instrumentKeywords.filter((keyword) => !NON_DISPLAY_INSTRUMENT_CUES.has(keyword));
+
+function normalizeDetectedInstrumentName(candidate = '') {
+  if (typeof candidate !== 'string') return '';
+
+  const raw = candidate.trim();
+  if (!raw) return '';
+
+  const cleaned = raw
+    .replace(/^[\(\[\{]+|[\)\]\}]+$/g, '')
+    .replace(/^[\(\[\{]+|[\)\]\}]+$/g, '')
+    .trim();
+
+  if (!cleaned) return '';
+
+  const segments = cleaned
+    .split(/[,&]/)
+    .map((segment) => segment.replace(/:.*$/, '').trim())
+    .filter(Boolean);
+
+  const matches = segments
+    .map((segment) => {
+      const lower = segment.toLowerCase();
+      const keywordMatch = REAL_INSTRUMENT_KEYWORDS.find((keyword) => {
+        const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
+        return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i').test(lower);
+      });
+      if (!keywordMatch) return '';
+
+      const directMatch = segment.match(new RegExp(keywordMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+'), 'i'));
+      return directMatch ? directMatch[0] : keywordMatch;
+    })
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (matches.length) {
+    return matches[0];
+  }
+
+  const fallback = REAL_INSTRUMENT_KEYWORDS.find((keyword) => {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
+    return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i').test(cleaned.toLowerCase());
+  });
+
+  return fallback || '';
+}
+
+export function extractDetectedInstrumentsFromLyrics(lyricsText) {
+  if (typeof lyricsText !== 'string' || !lyricsText.trim()) return [];
+
+  const parsedLines = parseLines(lyricsText.split(/\r?\n/), 0);
+  const detected = [];
+  const seen = new Set();
+
+  const addCandidate = (candidate = '') => {
+    const normalized = normalizeDetectedInstrumentName(candidate);
+    if (!normalized) return;
+
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) return;
+
+    seen.add(key);
+    detected.push(normalized);
+  };
+
+  const scanTextCandidates = (text = '') => {
+    if (typeof text !== 'string' || !text.trim()) return;
+
+    const segments = text
+      .split(/[\/,&;]+/)
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+
+    segments.forEach((segment) => {
+      const directMatch = findInlineInstrumentMatch(segment);
+      if (directMatch) {
+        addCandidate(directMatch);
+        return;
+      }
+
+      const words = segment.split(/\s+/).filter(Boolean);
+      words.forEach((word) => {
+        if (matchInlineInstrumentLabel(word)) {
+          addCandidate(word);
+        }
+      });
+    });
+  };
+
+  parsedLines.forEach((lineObj) => {
+    if (lineObj?.type === 'instrument_patch' && typeof lineObj?.fields?.instrument === 'string') {
+      addCandidate(lineObj.fields.instrument);
+    }
+
+    if (lineObj?.type === 'structure' && typeof lineObj?.label === 'string') {
+      scanTextCandidates(lineObj.label);
+    }
+
+    if (Array.isArray(lineObj?.tokens)) {
+      lineObj.tokens.forEach((token) => {
+        if (token?.isInstrument) {
+          addCandidate(token.token);
+        }
+      });
+    }
+
+    if (lineObj?.type === 'metadata' && typeof lineObj?.text === 'string') {
+      const metadataText = lineObj.text.trim();
+      const metadataCandidates = [metadataText, metadataText.replace(/^.*?:\s*/, ''), metadataText.replace(/^.*?\s+/, '')];
+      metadataCandidates.forEach((value) => {
+        if (!value) return;
+        const match = findInlineInstrumentMatch(value);
+        if (match) addCandidate(match);
+      });
+    }
+  });
+
+  return detected;
 }
 /**
  * Helper: parse [mm:ss] or [hh:mm:ss] timestamp to seconds

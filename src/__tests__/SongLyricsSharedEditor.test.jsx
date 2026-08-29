@@ -463,6 +463,40 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).not.toContain('Genre');
   });
 
+  test('Given detected instruments are present, Then a copy button is visible for registration memory', async () => {
+    const clipboard = {
+      writeText: vi.fn().mockResolvedValue(undefined),
+    };
+    Object.defineProperty(globalThis.navigator, 'clipboard', {
+      value: clipboard,
+      configurable: true,
+    });
+
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          performanceMode={false}
+          lyricsMode={false}
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          keyboardPatch="Stage Piano"
+          detectedInstruments={['Gitar', 'Sax', 'Piano']}
+        />
+      );
+    });
+
+    const copyButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'Copy');
+    expect(copyButton).toBeTruthy();
+
+    await act(async () => {
+      copyButton.click();
+    });
+
+    expect(clipboard.writeText).toHaveBeenCalledWith('Keyboard Patch: Stage Piano\nInstrumen: Gitar, Sax, Piano');
+  });
+
   test('Given normal mode is active, Then mastery info renders as a full-width row', async () => {
     await act(async () => {
       root.render(

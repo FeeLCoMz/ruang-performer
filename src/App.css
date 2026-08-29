@@ -8766,6 +8766,46 @@ body.dark-mode .cd-token {
   font-weight: 700;
 }
 
+.song-info-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+  align-items: center;
+}
+
+.song-info-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.28rem 0.56rem;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.song-info-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.song-info-copy-btn {
+  min-height: 28px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+.song-info-block-instruments .song-info-chip-list {
+  margin-top: 0.1rem;
+}
+
 /* Key Transpose Controls */
 .song-info-key {
   grid-column: span 2;

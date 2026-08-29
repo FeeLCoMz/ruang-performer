@@ -18,7 +18,7 @@ import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import useWebMidiProgramChange from '../hooks/useWebMidiProgramChange.js';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
-import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractMidiProgramCuesFromLyrics, getTransposeSteps } from '../utils/chordUtils.js';
+import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractMidiProgramCuesFromLyrics, extractDetectedInstrumentsFromLyrics, getTransposeSteps } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 
@@ -209,6 +209,10 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
     key: song?.key || key,
     transpose,
   });
+
+  const detectedInstruments = useMemo(() => {
+    return extractDetectedInstrumentsFromLyrics(song?.lyrics || '');
+  }, [song?.lyrics]);
 
   // Setlists state for showing which setlists contain this song
   const [setlists, setSetlists] = useState([]);
@@ -783,6 +787,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         genre={genre}
         arrangementStyle={arrangementStyle}
         keyboardPatch={keyboardPatch}
+        detectedInstruments={detectedInstruments}
         showSongInfo={showSongInfo}
         setShowSongInfo={setShowSongInfo}
         title={song.title}

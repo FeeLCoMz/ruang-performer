@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, parsePresetCueLine, extractPresetCuesFromLyrics, extractMidiProgramCuesFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, parsePresetCueLine, extractPresetCuesFromLyrics, extractMidiProgramCuesFromLyrics, extractDetectedInstrumentsFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from "../utils/chordUtils";
 
 describe("chordUtils", () => {
   test("splitSectionLabelWithChords separates section label and chord line", () => {
@@ -136,6 +136,30 @@ describe("chordUtils", () => {
     expect(parsed[10].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
     expect(parsed[11].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
     expect(parsed[11].tokens).toContainEqual({ token: 'Stop', isInstrument: true });
+  });
+
+  test("extractDetectedInstrumentsFromLyrics keeps real instruments and ignores cue tags", () => {
+    const instruments = extractDetectedInstrumentsFromLyrics([
+      'Gitar: teks apapun',
+      '(teks apapun Gitar)',
+      '(Aksen)',
+      '(Stop)',
+      '(Sax)(Stop) Am | Dm G |',
+      'Cue: Mainkan Piano Melodi Chorus',
+      'Dm (Sax) Em | G |',
+      'Biola: Lead utama',
+    ].join('\n'));
+
+    expect(instruments).toEqual(['Gitar', 'Sax', 'Piano', 'Biola']);
+  });
+
+  test("extractDetectedInstrumentsFromLyrics reads instruments from structure labels", () => {
+    const instruments = extractDetectedInstrumentsFromLyrics([
+      '[Intro - Koplo / Piano, Kenong, Gamelan]',
+      'Am F',
+    ].join('\n'));
+
+    expect(instruments).toEqual(['Piano', 'Kenong', 'Gamelan']);
   });
 
   test("parseSection detects modulation lines", () => {
