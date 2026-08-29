@@ -83,6 +83,33 @@ describe('ChordDisplay bar grid mode', () => {
     document.body.removeChild(container);
   });
 
+  test('renders instrument tokens with category color classes and without parentheses', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <ChordDisplay
+          song={{ lyrics: '(Gitar) (Suling) lirik' }}
+          showChords={false}
+          layoutMode="lyrics"
+        />
+      );
+    });
+
+    const instrumentTokens = container.querySelectorAll('.cd-instrument-token');
+    expect(instrumentTokens).toHaveLength(2);
+    expect(Array.from(instrumentTokens).map((node) => node.textContent)).toEqual(['Gitar', 'Suling']);
+    expect(container.querySelector('.cd-instrument-token--guitar')).toBeTruthy();
+    expect(container.querySelector('.cd-instrument-token--wind')).toBeTruthy();
+
+    act(() => {
+      root.unmount();
+    });
+    document.body.removeChild(container);
+  });
+
   test('applies fixed 2-column grid class when requested', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

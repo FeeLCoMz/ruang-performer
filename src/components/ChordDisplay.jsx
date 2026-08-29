@@ -32,6 +32,19 @@ const parseBeatsPerBar = (timeSignature) => {
   return Math.max(1, Math.min(12, numerator));
 };
 
+const getInstrumentTokenClass = (label = '') => {
+  const normalized = String(label || '').trim().toLowerCase();
+  if (!normalized) return 'cd-instrument-token--default';
+
+  if (/(gitar|guitar|bass|ukulele|mandolin)/.test(normalized)) return 'cd-instrument-token--guitar';
+  if (/(piano|keyboard|organ|keys|synth|sintet|melodika|pianika)/.test(normalized)) return 'cd-instrument-token--piano';
+  if (/(suling|flute|clarinet|sakso|sax|trumpet|terompet|brass|horn|trombone|tuba)/.test(normalized)) return 'cd-instrument-token--wind';
+  if (/(drum|drums|perkusi|percussion|tamborin|marakas|cajon|rebana)/.test(normalized)) return 'cd-instrument-token--drums';
+  if (/(vokal|voice|choir|vocal|vocalist)/.test(normalized)) return 'cd-instrument-token--vocal';
+  if (/(violin|biola|cello|string|strings|kontrabas)/.test(normalized)) return 'cd-instrument-token--strings';
+  return 'cd-instrument-token--default';
+};
+
 const getSecondaryAccentBeatSet = (timeSignature, beatsPerBar) => {
   const normalized = String(timeSignature || '').replace(/\s+/g, '');
   if (normalized === '6/8' && beatsPerBar >= 4) return new Set([3]);
@@ -243,7 +256,7 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
       return;
     }
     if (lineObj.type === 'instrument') {
-      renderedRows.push(<div key={i} className="cd-section-inst">{lineObj.label}</div>);
+      renderedRows.push(<span key={i} className="cd-instrument-token cd-section-inst">{lineObj.label}</span>);
       return;
     }
     if (lineObj.type === 'modulation') {
@@ -251,7 +264,7 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
       return;
     }
     if (lineObj.type === 'instrument_patch') {
-      renderedRows.push(<div key={i} className="cd-section-inst cd-instrument-patch">{formatInstrumentPatchText(lineObj)}</div>);
+      renderedRows.push(<span key={i} className="cd-instrument-token cd-instrument-patch">{formatInstrumentPatchText(lineObj)}</span>);
       return;
     }
     if (lineObj.type === 'metadata') {
@@ -364,6 +377,9 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
                 </button>
               </span>
             );
+          }
+          if (t.isInstrument) {
+            return <span key={j} className={`cd-instrument-token ${getInstrumentTokenClass(tokenText)}`}>{tokenText}</span>;
           }
           return <span key={j}>{tokenText}</span>;
         })}

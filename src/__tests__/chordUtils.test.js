@@ -103,6 +103,41 @@ describe("chordUtils", () => {
     expect(parsed[2]).toMatchObject({ type: 'structure', label: 'Bridge - Koplo' });
   });
 
+  test("parseLines strips parentheses and keeps inline instrument labels in full-row lyric flow", () => {
+    const parsed = parseLines(['(Gitar)      (Suling)', 'lirik lirik  lirk lagu'], 0);
+    expect(parsed[0]).toMatchObject({ type: 'lyrics' });
+    expect(parsed[0].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
+    expect(parsed[0].tokens).toContainEqual({ token: 'Suling', isInstrument: true });
+    expect(parsed[0].tokens.some((token) => token.token === '(Gitar)')).toBe(false);
+    expect(parsed[0].tokens.some((token) => token.token === '(Suling)')).toBe(false);
+    expect(parsed[1].tokens).toContainEqual({ token: 'lirik', isInstrument: undefined });
+  });
+
+  test("parseLines keeps parenthetical instrument phrases intact when they are a single tag", () => {
+    const parsed = parseLines(['(Strings Stac.)', '(Gitar & Fill-in)', '(Biola: Lead utama)', '(teks apapun Gitar)'], 0);
+    expect(parsed[0].tokens).toContainEqual({ token: 'Strings Stac.', isInstrument: true });
+    expect(parsed[1].tokens).toContainEqual({ token: 'Gitar & Fill-in', isInstrument: true });
+    expect(parsed[2].tokens).toContainEqual({ token: 'Biola: Lead utama', isInstrument: true });
+    expect(parsed[3].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
+  });
+
+  test("parseLines detects instrument labels with colons and display cue tags in inline flow", () => {
+    const parsed = parseLines(['Gitar: teks apapun', '(teks apapun Gitar)', '(Aksen)', '(Stop)', '(BBreak)', '(Fill-in)', '(Fade in/out)', 'Cue: Gitar', 'Cue: (Sax)', 'Cue: Mainkan Piano Melodi Chorus', 'Dm (Sax) Em | G |', '(Sax)(Stop) Am | Dm G |'], 0);
+    expect(parsed[0].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
+    expect(parsed[1].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
+    expect(parsed[2].tokens).toContainEqual({ token: 'Aksen', isInstrument: true });
+    expect(parsed[3].tokens).toContainEqual({ token: 'Stop', isInstrument: true });
+    expect(parsed[4].tokens).toContainEqual({ token: 'BBreak', isInstrument: true });
+    expect(parsed[5].tokens).toContainEqual({ token: 'Fill-in', isInstrument: true });
+    expect(parsed[6].tokens).toContainEqual({ token: 'Fade in/out', isInstrument: true });
+    expect(parsed[7]).toMatchObject({ type: 'metadata' });
+    expect(parsed[8]).toMatchObject({ type: 'metadata' });
+    expect(parsed[9]).toMatchObject({ type: 'metadata' });
+    expect(parsed[10].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
+    expect(parsed[11].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
+    expect(parsed[11].tokens).toContainEqual({ token: 'Stop', isInstrument: true });
+  });
+
   test("parseSection detects modulation lines", () => {
     expect(parseSection('Modulation: G')).toEqual({ type: 'modulation', label: 'G' });
     expect(parseSection('Key change: A')).toEqual({ type: 'modulation', label: 'A' });
@@ -133,6 +168,13 @@ describe("chordUtils", () => {
       type: 'structure',
       label: 'Verse 2'
     });
+  });
+
+  test("parseSection ignores bare instrument labels and keeps them as inline display-only tags", () => {
+    expect(parseSection('(Sax)')).toBe(null);
+    expect(parseSection('(Suling)')).toBe(null);
+    expect(parseSection('Sax')).toBe(null);
+    expect(parseSection('Suling')).toBe(null);
   });
 
   test("parseLines keeps bracket metadata tags renderable in mixed section lines", () => {

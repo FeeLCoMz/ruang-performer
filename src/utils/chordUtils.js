@@ -94,9 +94,154 @@ function splitBracketCompoundLine(line) {
   return matches.map((match) => match[0].trim());
 }
 
+const instrumentKeywords = [
+  'gitar', 'guitar', 'bass', 'ukulele', 'mandolin',
+  'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'pianika', 'melodika',
+  'brass', 'horn section', 'horns', 'trombone', 'tuba', 'euphonium', 'cornet',
+  'saxophone', 'saksofon', 'sax', 'saxo', 'saxofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet', 'bansi',
+  'violin', 'biola', 'cello', 'kontrabas', 'strings',
+  'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
+  'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana',
+  'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out'
+];
+
+const matchInlineInstrumentLabel = (candidate = '') => {
+  if (typeof candidate !== 'string') return false;
+
+  const normalized = candidate.trim();
+  if (!normalized) return false;
+
+  const lower = normalized.toLowerCase();
+
+  const fullPhraseMatch = instrumentKeywords.some((keyword) => {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
+    return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i').test(lower);
+  });
+  if (fullPhraseMatch) return true;
+
+  const phraseWords = normalized.split(/\s+/).filter(Boolean);
+  if (phraseWords.length <= 1) return false;
+
+  return phraseWords.some((word) => {
+    const cleanWord = word.replace(/[.,]/g, '').trim();
+    return instrumentKeywords.includes(cleanWord.toLowerCase());
+  });
+};
+
+const findInlineInstrumentMatch = (candidate = '') => {
+  if (typeof candidate !== 'string') return false;
+
+  const normalized = String(candidate || '').trim();
+  if (!normalized) return false;
+
+  const words = normalized.split(/\s+/).filter(Boolean);
+  if (words.length > 1) {
+    const firstWord = words[0].replace(/[.,]/g, '').toLowerCase();
+    const firstWordMatch = instrumentKeywords.includes(firstWord);
+    if (firstWordMatch) return normalized;
+
+    const containsAmpersand = normalized.includes('&');
+    const hasKeywordInPhrase = words.some((word) => {
+      const cleaned = word.replace(/[.,]/g, '').toLowerCase();
+      return instrumentKeywords.includes(cleaned);
+    });
+    if (containsAmpersand && hasKeywordInPhrase) return normalized;
+  }
+
+  const lower = normalized.toLowerCase();
+  for (const keyword of [...instrumentKeywords].reverse()) {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
+    const regex = new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i');
+    if (!regex.test(lower)) continue;
+
+    const directMatch = normalized.match(new RegExp(escaped, 'i'));
+    if (directMatch) return directMatch[0];
+  }
+
+  const phraseWords = normalized.split(/\s+/).filter(Boolean);
+  if (phraseWords.length > 1) {
+    const matchedWord = phraseWords
+      .map((word) => word.replace(/[.,]/g, '').trim())
+      .find((word) => instrumentKeywords.includes(word.toLowerCase()));
+    if (matchedWord) return matchedWord;
+  }
+
+  return false;
+};
+
+const normalizeInstrumentDisplayLabel = (label = '') => {
+  const trimmed = String(label || '').trim();
+  if (!trimmed) return false;
+
+  const withoutColon = trimmed.replace(/:$/, '').trim();
+  if (!withoutColon) return false;
+
+  const value = withoutColon.startsWith('(') && withoutColon.endsWith(')')
+    ? withoutColon.slice(1, -1).trim()
+    : withoutColon;
+
+  const valueWithColon = value.includes(':') ? value : null;
+  if (valueWithColon) {
+    const beforeColon = value.split(':')[0].trim();
+    const afterColon = value.slice(value.indexOf(':') + 1).trim();
+    if (beforeColon && afterColon && matchInlineInstrumentLabel(beforeColon)) {
+      return `${beforeColon}: ${afterColon}`;
+    }
+  }
+
+  const match = findInlineInstrumentMatch(value);
+  if (match) return match;
+
+  const prefixed = value.match(/^([A-Za-z0-9\s/&\-_]+)$/);
+  if (prefixed) {
+    const prefixedMatch = findInlineInstrumentMatch(prefixed[1]);
+    if (prefixedMatch) return prefixedMatch;
+  }
+
+  return false;
+};
+
+const splitInlineTokens = (text = '') => {
+  if (typeof text !== 'string') return [];
+
+  const regex = /\s+|\([^)]*\)|\S+/g;
+  return text.match(regex) || [];
+};
+
+const isInlineInstrumentToken = (token) => {
+  if (typeof token !== 'string') return false;
+  const trimmed = token.trim();
+  if (!trimmed) return false;
+
+  if (/^\(([^)]+)\)$/.test(trimmed)) {
+    const inside = trimmed.slice(1, -1).trim();
+    if (!inside) return false;
+    return matchInlineInstrumentLabel(inside) ? normalizeInstrumentDisplayLabel(inside) : false;
+  }
+
+  const colonMatch = trimmed.match(/^([A-Za-z0-9\s/\-_]+):$/);
+  if (colonMatch && matchInlineInstrumentLabel(colonMatch[1])) {
+    return normalizeInstrumentDisplayLabel(colonMatch[1]);
+  }
+
+  const textMatch = trimmed.match(/^([A-Za-z0-9\s/\-_]+):\s*(.*)$/);
+  if (textMatch && matchInlineInstrumentLabel(textMatch[1])) {
+    return normalizeInstrumentDisplayLabel(textMatch[1]);
+  }
+
+  if (matchInlineInstrumentLabel(trimmed)) {
+    return normalizeInstrumentDisplayLabel(trimmed);
+  }
+
+  return false;
+};
+
 function parseLine(line, transpose) {
   const trimmed = line.trim();
   if (!trimmed) return { type: 'empty' };
+  if (/^Cue\s*:/i.test(trimmed)) {
+    return { type: 'metadata', text: line.trim() };
+  }
   // Jangan transpose baris "Original Key:" — tetap tampilkan metadata asli tanpa transposi
   if (/^Original\s+Key:/i.test(trimmed)) {
     return {
@@ -129,9 +274,11 @@ function parseLine(line, transpose) {
   if (isChordLine(line)) {
     return {
       type: 'chord',
-      tokens: line.split(/(\s+)/).map(token => {
+      tokens: splitInlineTokens(line).map(token => {
         if (/^\s+$/.test(token)) return { token, isSpace: true };
         if (/^(\|:|:\||\[\:|\:\]|\|\||\|)$/.test(token)) return { token, isBarline: true };
+        const inlineInstrumentLabel = isInlineInstrumentToken(token);
+        if (inlineInstrumentLabel) return { token: inlineInstrumentLabel, isInstrument: true };
         if (isChordToken(token)) {
           return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };
         }
@@ -157,8 +304,10 @@ function parseLine(line, transpose) {
   }
   return {
     type: 'lyrics',
-    tokens: line.split(/(\s+)/).map(token => {
+    tokens: splitInlineTokens(line).map(token => {
       if (/^\s+$/.test(token)) return { token, isSpace: true };
+      const inlineInstrumentLabel = isInlineInstrumentToken(token);
+      if (inlineInstrumentLabel) return { token: inlineInstrumentLabel, isInstrument: true };
       if (isChordToken(token)) return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };
       if (isLeadingDashChordToken(token)) return { token: transpose ? transposeLeadingDashChordToken(token, transpose) : token, isChord: true };
       if (isNumberNotationToken(token) || /^\.{2,}$/.test(token)) return { token, isNumber: true };
@@ -743,6 +892,12 @@ export function parseSection(line) {
   const trimmedLine = typeof line === 'string' ? line.trim() : '';
   if (!trimmedLine) return null;
 
+  // Instrumen hanya diperlakukan sebagai gaya render inline; tidak dianggap sebagai section/metadata struktur.
+  const inlineInstrumentCandidates = Array.from(trimmedLine.matchAll(/\([^)]*\)/g));
+  if (inlineInstrumentCandidates.length > 1 && !trimmedLine.includes(':')) {
+    return null;
+  }
+
   // Gabungkan deteksi [Section], Section:, [Instrumen], Instrumen: dengan satu regex
   // Contoh cocok: [Intro], Intro:, [Gitar], Gitar:
   const match = trimmedLine.match(/^(?:\[)?([A-Za-z0-9 .:_\-\+&(),\/']+?)(?:\])?\s*:?\s*(?:\(([^)]+)\))?\s*$/);
@@ -753,17 +908,6 @@ export function parseSection(line) {
     const labelLower = originalLabel.toLowerCase();
     // Daftar kata kunci struktur lagu
     const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain', 'pre-chorus', 'post-chorus', 'solo', 'musik'];
-    // Daftar kata kunci instrumen umum per kategori
-    const instrumentKeywords = [
-      'gitar', 'guitar', 'bass', 'ukulele', 'mandolin',
-      'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'sintetisator', 'sintetizer', 'sintetizer', 'pianika', 'melodika',
-      // Brass section
-      'brass', 'horn section', 'horns', 'trombone', 'tuba', 'euphonium', 'cornet',
-      'saxophone', 'saksofon', 'sax', 'saxo', 'saxofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet', 'bansi',
-      'violin', 'biola', 'cello', 'kontrabas', 'strings',
-      'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
-      'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana'
-    ];
     const hasKeywordAsWholeWord = (text, keyword) => {
       const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const pattern = escaped.replace(/\s+/g, '[\\s_-]+');
@@ -773,8 +917,11 @@ export function parseSection(line) {
     if (labelLower === 'int' || structureKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
       return { type: 'structure', label: displayLabel };
     }
-    if (instrumentKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
-      return { type: 'instrument', label: displayLabel };
+
+    // Instrument labels are rendered only as inline highlight tokens; they are not treated
+    // as song sections or metadata tags by the parser.
+    if (labelLower === 'instrument' || labelLower === 'instrumen') {
+      return null;
     }
   }
 
@@ -790,7 +937,7 @@ export function parseSection(line) {
 
 const METADATA_KEYS = new Set([
   'patch', 'layer', 'intensitas', 'intensity', 'dynamics', 'dinamik', 'cue', 'notes', 'catatan',
-  'sound', 'tone', 'fx', 'effect', 'effects', 'instrument', 'instrumen', 'voicing', 'texture',
+  'sound', 'tone', 'fx', 'effect', 'effects', 'voicing', 'texture',
   'split', 'zone', 'program', 'preset', 'scene', 'part', 'fill', 'groove', 'feel',
   'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb'
 ]);
@@ -1052,6 +1199,7 @@ export const isMetadataLine = (line) => {
   if (typeof line !== 'string') return false;
   const trimmed = line.trim();
   if (!trimmed) return false;
+  if (/^Cue\s*:/i.test(trimmed)) return true;
 
   const singleBracketMatch = trimmed.match(/^\[([^\]]+):\s*([^\]]+)\]$/);
   if (singleBracketMatch) {
