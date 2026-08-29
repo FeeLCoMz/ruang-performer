@@ -95,15 +95,16 @@ function splitBracketCompoundLine(line) {
 }
 
 const instrumentKeywords = [
-  'gitar', 'guitar', 'bass', 'ukulele', 'mandolin',
+  'gitar', 'guitar', 'bass', 'ukulele', 'mandolin', 'sape',
   'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'pianika', 'melodika',
   'brass', 'horn section', 'horns', 'trombone', 'tuba', 'euphonium', 'cornet',
   'saxophone', 'saksofon', 'sax', 'saxo', 'saxofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet', 'bansi',
   'violin', 'biola', 'cello', 'kontrabas', 'strings',
   'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
   'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana',
-  'kenong', 'gamelan', 'kendang', 'gong', 'angklung', 'rebab',
-  'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out'
+  'kenong', 'gamelan', 'kendang', 'gong', 'angklung', 'rebab',  
+  'bell','bell pads',
+  'tutti', 'hit','aksen', 'stop', 'break', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out'
 ];
 
 const matchInlineInstrumentLabel = (candidate = '') => {
