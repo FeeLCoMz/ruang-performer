@@ -125,17 +125,17 @@ describe("chordUtils", () => {
     const parsed = parseLines(['Gitar: teks apapun', '(teks apapun Gitar)', '(Aksen)', '(Stop)', '(BBreak)', '(Fill-in)', '(Fade in/out)', 'Cue: Gitar', 'Cue: (Sax)', 'Cue: Mainkan Piano Melodi Chorus', 'Dm (Sax) Em | G |', '(Sax)(Stop) Am | Dm G |'], 0);
     expect(parsed[0].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
     expect(parsed[1].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
-    expect(parsed[2].tokens).toContainEqual({ token: 'Aksen', isInstrument: true });
-    expect(parsed[3].tokens).toContainEqual({ token: 'Stop', isInstrument: true });
-    expect(parsed[4].tokens).toContainEqual({ token: 'BBreak', isInstrument: true });
-    expect(parsed[5].tokens).toContainEqual({ token: 'Fill-in', isInstrument: true });
-    expect(parsed[6].tokens).toContainEqual({ token: 'Fade in/out', isInstrument: true });
+    expect(parsed[2].tokens).toContainEqual({ token: 'Aksen', isCueMark: true });
+    expect(parsed[3].tokens).toContainEqual({ token: 'Stop', isCueMark: true });
+    expect(parsed[4].tokens).toContainEqual({ token: 'BBreak', isCueMark: true });
+    expect(parsed[5].tokens).toContainEqual({ token: 'Fill-in', isCueMark: true });
+    expect(parsed[6].tokens).toContainEqual({ token: 'Fade in/out', isCueMark: true });
     expect(parsed[7]).toMatchObject({ type: 'metadata' });
     expect(parsed[8]).toMatchObject({ type: 'metadata' });
     expect(parsed[9]).toMatchObject({ type: 'metadata' });
     expect(parsed[10].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
     expect(parsed[11].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
-    expect(parsed[11].tokens).toContainEqual({ token: 'Stop', isInstrument: true });
+    expect(parsed[11].tokens).toContainEqual({ token: 'Stop', isCueMark: true });
   });
 
   test("extractDetectedInstrumentsFromLyrics keeps real instruments and ignores cue tags", () => {

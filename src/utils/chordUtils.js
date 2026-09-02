@@ -94,6 +94,10 @@ function splitBracketCompoundLine(line) {
   return matches.map((match) => match[0].trim());
 }
 
+const CUE_MARK_KEYWORDS = [
+  'tutti', 'hit', 'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out', 'ritardando', 'rit.'
+];
+
 const instrumentKeywords = [
   'gitar', 'guitar', 'bass', 'ukulele', 'mandolin', 'sape',
   'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'pianika', 'melodika',
@@ -102,10 +106,15 @@ const instrumentKeywords = [
   'violin', 'biola', 'cello', 'kontrabas', 'strings',
   'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
   'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana',
-  'kenong', 'gamelan', 'kendang', 'gong', 'angklung', 'rebab',  
-  'bell','bell pads',
-  'tutti', 'hit','aksen', 'stop', 'break', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out'
+  'kenong', 'gamelan', 'kendang', 'gong', 'angklung', 'rebab',
+  'bell', 'bell pads',
+  'pads'
 ];
+
+const matchKeywordPattern = (keyword = '') => {
+  const escaped = String(keyword || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
+  return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i');
+};
 
 const matchInlineInstrumentLabel = (candidate = '') => {
   if (typeof candidate !== 'string') return false;
@@ -152,11 +161,10 @@ const findInlineInstrumentMatch = (candidate = '') => {
 
   const lower = normalized.toLowerCase();
   for (const keyword of [...instrumentKeywords].reverse()) {
-    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
-    const regex = new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i');
+    const regex = matchKeywordPattern(keyword);
     if (!regex.test(lower)) continue;
 
-    const directMatch = normalized.match(new RegExp(escaped, 'i'));
+    const directMatch = normalized.match(new RegExp(String(keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+'), 'i'));
     if (directMatch) return directMatch[0];
   }
 
@@ -169,6 +177,26 @@ const findInlineInstrumentMatch = (candidate = '') => {
   }
 
   return false;
+};
+
+const isCueMarkKeyword = (candidate = '') => {
+  if (typeof candidate !== 'string') return false;
+
+  const normalized = String(candidate || '').trim();
+  if (!normalized) return false;
+
+  const lower = normalized.toLowerCase();
+  const hasInstrumentInPhrase = instrumentKeywords.some((keyword) => matchKeywordPattern(keyword).test(lower));
+  if (hasInstrumentInPhrase) return false;
+
+  return CUE_MARK_KEYWORDS.some((keyword) => matchKeywordPattern(keyword).test(lower));
+};
+
+const normalizeCueMarkToken = (candidate = '') => {
+  if (!isCueMarkKeyword(candidate)) return false;
+
+  const normalized = String(candidate || '').trim();
+  return normalized.replace(/[()\[\]{}]+/g, '').trim();
 };
 
 const normalizeInstrumentDisplayLabel = (label = '') => {
@@ -208,6 +236,22 @@ const splitInlineTokens = (text = '') => {
 
   const regex = /\s+|\([^)]*\)|\S+/g;
   return text.match(regex) || [];
+};
+
+const isInlineCueMarkToken = (token) => {
+  if (typeof token !== 'string') return false;
+
+  const trimmed = token.trim();
+  if (!trimmed) return false;
+
+  const raw = trimmed.replace(/^\((.*)\)$/, '$1').trim();
+  if (!raw) return false;
+
+  if (isCueMarkKeyword(raw)) {
+    return normalizeCueMarkToken(raw);
+  }
+
+  return false;
 };
 
 const isInlineInstrumentToken = (token) => {
@@ -279,6 +323,8 @@ function parseLine(line, transpose) {
       tokens: splitInlineTokens(line).map(token => {
         if (/^\s+$/.test(token)) return { token, isSpace: true };
         if (/^(\|:|:\||\[\:|\:\]|\|\||\|)$/.test(token)) return { token, isBarline: true };
+        const inlineCueMark = isInlineCueMarkToken(token);
+        if (inlineCueMark) return { token: inlineCueMark, isCueMark: true };
         const inlineInstrumentLabel = isInlineInstrumentToken(token);
         if (inlineInstrumentLabel) return { token: inlineInstrumentLabel, isInstrument: true };
         if (isChordToken(token)) {
@@ -308,6 +354,8 @@ function parseLine(line, transpose) {
     type: 'lyrics',
     tokens: splitInlineTokens(line).map(token => {
       if (/^\s+$/.test(token)) return { token, isSpace: true };
+      const inlineCueMark = isInlineCueMarkToken(token);
+      if (inlineCueMark) return { token: inlineCueMark, isCueMark: true };
       const inlineInstrumentLabel = isInlineInstrumentToken(token);
       if (inlineInstrumentLabel) return { token: inlineInstrumentLabel, isInstrument: true };
       if (isChordToken(token)) return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };

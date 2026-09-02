@@ -378,6 +378,9 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
               </span>
             );
           }
+          if (t.isCueMark) {
+            return <span key={j} className="cd-cue-mark-token">{tokenText}</span>;
+          }
           if (t.isInstrument) {
             return <span key={j} className={`cd-instrument-token ${getInstrumentTokenClass(tokenText)}`}>{tokenText}</span>;
           }
