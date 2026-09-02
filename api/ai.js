@@ -1,6 +1,8 @@
 // Text-only Gemini models that support generateContent for song metadata lookup.
 // Keep multimodal/audio/image/video models out of this list to avoid 404s here.
-const GEMINI_TEXT_MODELS_SUPPORTED = [
+// NOTE: Gemma 3n variants are not consistently available in the v1beta generateContent API
+// for all projects, so we intentionally exclude them to prevent 404s on production traffic.
+export const GEMINI_TEXT_MODELS_SUPPORTED = [
   'gemini-2.5-flash',
   'gemini-2.5-pro',
   'gemini-2.0-flash',
@@ -12,8 +14,6 @@ const GEMINI_TEXT_MODELS_SUPPORTED = [
   'gemma-3-4b-it',
   'gemma-3-12b-it',
   'gemma-3-27b-it',
-  'gemma-3n-e4b-it',
-  'gemma-3n-e2b-it',
   'gemini-flash-latest',
   'gemini-flash-lite-latest',
   'gemini-pro-latest',
@@ -24,6 +24,11 @@ const GEMINI_TEXT_MODELS_SUPPORTED = [
   'gemini-3-flash-preview',
   'deep-research-pro-preview-12-2025',
 ];
+
+const UNSUPPORTED_GEMINI_MODELS = new Set([
+  'gemma-3n-e2b-it',
+  'gemma-3n-e4b-it',
+]);
 
 const GEMINI_FALLBACK_MODELS = [
   'gemini-2.5-flash',
@@ -38,11 +43,11 @@ function isGeminiProjectDeniedAccess(status, message) {
   return normalized.includes('denied access') || normalized.includes('project has been denied access');
 }
 
-function buildGeminiModelCandidates(requestedModel) {
+export function buildGeminiModelCandidates(requestedModel) {
   const unique = [];
   const seen = new Set();
   for (const modelName of [requestedModel, ...GEMINI_FALLBACK_MODELS, ...GEMINI_TEXT_MODELS_SUPPORTED]) {
-    if (!modelName || seen.has(modelName)) continue;
+    if (!modelName || seen.has(modelName) || UNSUPPORTED_GEMINI_MODELS.has(modelName)) continue;
     seen.add(modelName);
     unique.push(modelName);
   }
