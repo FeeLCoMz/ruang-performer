@@ -147,6 +147,30 @@ describe('SongListPage trending actions', () => {
     expect(container.textContent).toContain('Sudah ada');
   });
 
+  test('shows song counts in the band filter dropdown options', async () => {
+    await act(async () => {
+      root.render(
+        <SongListPage
+          songs={[
+            { id: 'song-1', title: 'Anthem', bandId: 'band-1', bandName: 'Band One', artist: 'Artist 1' },
+            { id: 'song-2', title: 'Second', bandId: 'band-1', bandName: 'Band One', artist: 'Artist 2' },
+            { id: 'song-3', title: 'Third', bandId: 'band-2', bandName: 'Band Two', artist: 'Artist 3' },
+          ]}
+          loading={false}
+          error={null}
+          onSongClick={() => {}}
+          onSongMasteryUpdated={() => {}}
+          trendingSongs={[]}
+        />
+      );
+      await flushPromises();
+    });
+
+    const options = Array.from(container.querySelectorAll('select')[0].querySelectorAll('option')).map((option) => option.textContent);
+    expect(options).toContain('Band One (2)');
+    expect(options).toContain('Band Two (1)');
+  });
+
   test('shows mood badge in normal and performance mode', async () => {
     const baseProps = {
       songs: [

@@ -171,19 +171,28 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
 
     bands.forEach((band) => {
       if (!band?.id) return;
-      map.set(String(band.id), band.name || `Band ${band.id}`);
+      map.set(String(band.id), {
+        id: String(band.id),
+        name: band.name || `Band ${band.id}`,
+        count: 0,
+      });
     });
 
     songs.forEach((song) => {
       if (!song?.bandId) return;
       const songBandId = String(song.bandId);
       if (!map.has(songBandId)) {
-        map.set(songBandId, song.bandName || `Band ${song.bandId}`);
+        map.set(songBandId, {
+          id: songBandId,
+          name: song.bandName || `Band ${song.bandId}`,
+          count: 0,
+        });
       }
+      map.get(songBandId).count += 1;
     });
 
-    return Array.from(map.entries())
-      .map(([id, name]) => ({ id, name }))
+    return Array.from(map.values())
+      .map((band) => ({ ...band, label: `${band.name} (${band.count})` }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [bands, songs]);
 
@@ -881,7 +890,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
             >
               <option value="all">Semua Band</option>
               {bandOptions.map((band) => (
-                <option key={band.id} value={band.id}>{band.name}</option>
+                <option key={band.id} value={band.id}>{band.label}</option>
               ))}
             </select>
 
