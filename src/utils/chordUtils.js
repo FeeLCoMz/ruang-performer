@@ -238,6 +238,36 @@ const splitInlineTokens = (text = '') => {
   return text.match(regex) || [];
 };
 
+const splitParenthesizedMultiChordToken = (token = '', transpose = 0) => {
+  if (typeof token !== 'string') return [];
+
+  const trimmed = token.trim();
+  if (!trimmed) return [];
+
+  const groupMatch = trimmed.match(/^([\(\[\{])(.+?)([\)\]\}])$/);
+  if (!groupMatch) return [];
+
+  const [, opening, inner, closing] = groupMatch;
+  const innerParts = inner.split(/\s+/).filter(Boolean);
+  if (innerParts.length < 2) return [];
+
+  const transposedParts = innerParts.map((part, index) => {
+    const partToken = index === 0 ? `${opening}${part}` : index === innerParts.length - 1 ? `${part}${closing}` : part;
+    const isChord = isChordToken(partToken) || isLeadingDashChordToken(partToken);
+    if (transpose && isChord) {
+      if (isLeadingDashChordToken(partToken)) {
+        return { token: transposeLeadingDashChordToken(partToken, transpose), isChord: true };
+      }
+      return { token: transposeChordToken(partToken, transpose), isChord: true };
+    }
+    return { token: partToken, isChord: true };
+  });
+
+  return transposedParts.flatMap((part, index, arr) => (
+    index === arr.length - 1 ? [part] : [part, { token: ' ', isSpace: true }]
+  ));
+};
+
 const isInlineCueMarkToken = (token) => {
   if (typeof token !== 'string') return false;
 
@@ -320,23 +350,27 @@ function parseLine(line, transpose) {
   if (isChordLine(line)) {
     return {
       type: 'chord',
-      tokens: splitInlineTokens(line).map(token => {
-        if (/^\s+$/.test(token)) return { token, isSpace: true };
-        if (/^(\|:|:\||\[\:|\:\]|\|\||\|)$/.test(token)) return { token, isBarline: true };
+      tokens: splitInlineTokens(line).flatMap(token => {
+        if (/^\s+$/.test(token)) return [{ token, isSpace: true }];
+        if (/^(\|:|:\||\[\:|\:\]|\|\||\|)$/.test(token)) return [{ token, isBarline: true }];
         const inlineCueMark = isInlineCueMarkToken(token);
-        if (inlineCueMark) return { token: inlineCueMark, isCueMark: true };
+        if (inlineCueMark) return [{ token: inlineCueMark, isCueMark: true }];
         const inlineInstrumentLabel = isInlineInstrumentToken(token);
-        if (inlineInstrumentLabel) return { token: inlineInstrumentLabel, isInstrument: true };
+        if (inlineInstrumentLabel) return [{ token: inlineInstrumentLabel, isInstrument: true }];
+
+        const expandedParenthesizedGroup = splitParenthesizedMultiChordToken(token, transpose);
+        if (expandedParenthesizedGroup.length) return expandedParenthesizedGroup;
+
         if (isChordToken(token)) {
-          return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };
+          return [{ token: transpose ? transposeChordToken(token, transpose) : token, isChord: true }];
         }
         if (isLeadingDashChordToken(token)) {
-          return { token: transpose ? transposeLeadingDashChordToken(token, transpose) : token, isChord: true };
+          return [{ token: transpose ? transposeLeadingDashChordToken(token, transpose) : token, isChord: true }];
         }
         if (token.includes('..') || token.includes('-')) {
-          return { token: transposeCompactChordToken(token, transpose), isChord: true };
+          return [{ token: transposeCompactChordToken(token, transpose), isChord: true }];
         }
-        return { token, isChord: true };
+        return [{ token, isChord: true }];
       })
     };
   }
@@ -352,16 +386,20 @@ function parseLine(line, transpose) {
   }
   return {
     type: 'lyrics',
-    tokens: splitInlineTokens(line).map(token => {
-      if (/^\s+$/.test(token)) return { token, isSpace: true };
+    tokens: splitInlineTokens(line).flatMap(token => {
+      if (/^\s+$/.test(token)) return [{ token, isSpace: true }];
       const inlineCueMark = isInlineCueMarkToken(token);
-      if (inlineCueMark) return { token: inlineCueMark, isCueMark: true };
+      if (inlineCueMark) return [{ token: inlineCueMark, isCueMark: true }];
       const inlineInstrumentLabel = isInlineInstrumentToken(token);
-      if (inlineInstrumentLabel) return { token: inlineInstrumentLabel, isInstrument: true };
-      if (isChordToken(token)) return { token: transpose ? transposeChordToken(token, transpose) : token, isChord: true };
-      if (isLeadingDashChordToken(token)) return { token: transpose ? transposeLeadingDashChordToken(token, transpose) : token, isChord: true };
-      if (isNumberNotationToken(token) || /^\.{2,}$/.test(token)) return { token, isNumber: true };
-      return { token };
+      if (inlineInstrumentLabel) return [{ token: inlineInstrumentLabel, isInstrument: true }];
+
+      const expandedParenthesizedGroup = splitParenthesizedMultiChordToken(token, transpose);
+      if (expandedParenthesizedGroup.length) return expandedParenthesizedGroup;
+
+      if (isChordToken(token)) return [{ token: transpose ? transposeChordToken(token, transpose) : token, isChord: true }];
+      if (isLeadingDashChordToken(token)) return [{ token: transpose ? transposeLeadingDashChordToken(token, transpose) : token, isChord: true }];
+      if (isNumberNotationToken(token) || /^\.{2,}$/.test(token)) return [{ token, isNumber: true }];
+      return [{ token }];
     })
   };
 }

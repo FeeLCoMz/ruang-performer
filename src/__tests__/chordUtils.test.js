@@ -283,6 +283,13 @@ describe("chordUtils", () => {
     expect(parsed[0].tokens).toContainEqual({ token: '(Bm)', isChord: true });
   });
 
+  test("transpose multiple chord tokens inside one parenthesized group", () => {
+    const parsed = parseLines(['| F G Dm (Am C) |'], 2);
+    expect(parsed[0].type).toBe('chord');
+    expect(parsed[0].tokens).toContainEqual({ token: '(Bm', isChord: true });
+    expect(parsed[0].tokens).toContainEqual({ token: 'D)', isChord: true });
+  });
+
   test("transpose compact chord token in chord line", () => {
     const parsed = parseLines(['D..F# G'], 2);
     expect(parsed[0].type).toBe('chord');
