@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   autoAlignChordLyricPairs,
   autoTagSongSections,
@@ -114,6 +114,8 @@ export default function SongLyricsEditActions({
   setLyricsValue,
 }) {
   const [showMetadataHelp, setShowMetadataHelp] = useState(false);
+  const [showTextFormatMenu, setShowTextFormatMenu] = useState(false);
+  const formatMenuRef = useRef(null);
   const [selectedGmCategory, setSelectedGmCategory] = useState('piano-keys');
   const [selectedGmProgram, setSelectedGmProgram] = useState(0);
   const [selectedGmChannel, setSelectedGmChannel] = useState(() => {
@@ -133,6 +135,24 @@ export default function SongLyricsEditActions({
     return GM_SOUND_BANK.find((item) => item.program === parsedProgram) || filteredGmSounds[0] || GM_SOUND_BANK[0];
   }, [selectedGmProgram, filteredGmSounds]);
 
+  useEffect(() => {
+    if (!showTextFormatMenu) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!formatMenuRef.current?.contains(event.target)) {
+        setShowTextFormatMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+    };
+  }, [showTextFormatMenu]);
+
   const ensureSelectedProgramInCategory = (categoryValue) => {
     const candidateSounds = filterGmSoundBankByCategory(categoryValue);
     if (!candidateSounds.length) return;
@@ -141,6 +161,57 @@ export default function SongLyricsEditActions({
       setSelectedGmProgram(candidateSounds[0].program);
     }
   };
+
+  const formatActions = [
+    {
+      icon: '∥',
+      label: 'Sejajar',
+      title: 'Sejajarkan garis bar (|) pada teks yang dipilih',
+      onClick: handleAlignSelectedBarlines,
+    },
+    {
+      icon: '⇅',
+      label: 'Auto-Align',
+      title: 'Deteksi chord line di atas lirik dan rapikan posisinya agar sejajar dengan suku kata',
+      onClick: () => applyTextTransform(autoAlignChordLyricPairs),
+    },
+    {
+      icon: '↩',
+      label: '4/Baris',
+      title: 'Pecah otomatis menjadi 4 bar per baris pada teks yang dipilih',
+      onClick: handleWrap4BarsPerLine,
+    },
+    {
+      icon: '✨',
+      label: 'Bersihkan Teks',
+      title: 'Hapus spasi ganda, tab, baris kosong menumpuk, dan karakter tersembunyi dari hasil copy-paste',
+      onClick: () => applyTextTransform(removeExtraSpacesAndBrokenLines),
+    },
+    {
+      icon: '🏷',
+      label: 'Tag Bagian',
+      title: 'Deteksi Intro, Verse, Chorus, Bridge, dan normalisasi menjadi tag section',
+      onClick: () => applyTextTransform(autoTagSongSections),
+    },
+    {
+      icon: '♫',
+      label: 'Standarkan Chord',
+      title: 'Standarkan format penulisan chord seperti min/minor/Maj menjadi format yang konsisten',
+      onClick: () => applyTextTransform(standardizeChordNotation),
+    },
+    {
+      icon: '−',
+      label: 'Transpose -1',
+      title: 'Turunkan semua chord dalam teks satu semitone',
+      onClick: () => applyTextTransform((text) => transposeLyricsText(text, -1)),
+    },
+    {
+      icon: '+',
+      label: 'Transpose +1',
+      title: 'Naikkan semua chord dalam teks satu semitone',
+      onClick: () => applyTextTransform((text) => transposeLyricsText(text, 1)),
+    },
+  ];
 
   const handleInsertSection = (sectionLabel) => {
     if (!lyricsRef?.current || typeof setLyricsValue !== 'function') return;
@@ -221,88 +292,67 @@ export default function SongLyricsEditActions({
           </div>
         </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-format">
-          <span className="song-lyrics-action-group-title">Alignment & Grid</span>
-          <button
-            type="button"
-            onClick={handleAlignSelectedBarlines}
-            disabled={disabled}
-            className="btn btn-secondary"
-            title="Sejajarkan garis bar (|) pada teks yang dipilih"
-          >
-            ∥ Sejajar
-          </button>
-          <button
-            type="button"
-            onClick={() => applyTextTransform(autoAlignChordLyricPairs)}
-            disabled={disabled}
-            className="btn btn-secondary"
-            title="Deteksi chord line di atas lirik dan rapikan posisinya agar sejajar dengan suku kata"
-          >
-            ⇅ Auto-Align
-          </button>
-          <button
-            type="button"
-            onClick={handleWrap4BarsPerLine}
-            disabled={disabled}
-            className="btn btn-secondary"
-            title="Pecah otomatis menjadi 4 bar per baris pada teks yang dipilih"
-          >
-            ↩ 4/Baris
-          </button>
-          <div className="song-lyrics-bar-wrap-controls">
-            <label htmlFor={barsPerLineSelectId} className="song-lyrics-bar-wrap-label">Bar/Baris</label>
-            <select
-              id={barsPerLineSelectId}
-              className="song-lyrics-bar-wrap-select"
-              value={barsPerLine}
-              onChange={(e) => setBarsPerLine(Number(e.target.value))}
-              disabled={disabled}
-              aria-label="Pilih jumlah bar per baris"
-            >
-              <option value={2}>2</option>
-              <option value={4}>4</option>
-              <option value={6}>6</option>
-            </select>
+          <span className="song-lyrics-action-group-title">Quick Tools</span>
+          <div className="song-lyrics-format-menu-container" ref={formatMenuRef}>
             <button
               type="button"
-              onClick={() => handleWrapBarsPerLine(barsPerLine)}
+              onClick={() => setShowTextFormatMenu((prev) => !prev)}
               disabled={disabled}
               className="btn btn-secondary"
-              title="Terapkan jumlah bar per baris pada teks yang dipilih"
+              title="Menu format, cleanup, dan transpose lirik"
+              aria-haspopup="menu"
+              aria-expanded={showTextFormatMenu}
             >
-              Terapkan
+              ⚡ Quick Tools
             </button>
+            {showTextFormatMenu && (
+              <div className="song-lyrics-format-menu" role="menu" aria-label="Format teks lirik">
+                {formatActions.map((action) => (
+                  <button
+                    key={action.label}
+                    type="button"
+                    className="song-lyrics-format-item"
+                    onClick={() => {
+                      action.onClick?.();
+                      setShowTextFormatMenu(false);
+                    }}
+                    title={action.title}
+                    role="menuitem"
+                  >
+                    <span className="song-lyrics-format-item-icon" aria-hidden="true">{action.icon}</span>
+                    <span>{action.label}</span>
+                  </button>
+                ))}
+                <div className="song-lyrics-format-menu-row">
+                  <label htmlFor={barsPerLineSelectId} className="song-lyrics-bar-wrap-label">Bar/Baris</label>
+                  <select
+                    id={barsPerLineSelectId}
+                    className="song-lyrics-bar-wrap-select"
+                    value={barsPerLine}
+                    onChange={(e) => setBarsPerLine(Number(e.target.value))}
+                    disabled={disabled}
+                    aria-label="Pilih jumlah bar per baris"
+                  >
+                    <option value={2}>2</option>
+                    <option value={4}>4</option>
+                    <option value={6}>6</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleWrapBarsPerLine(barsPerLine);
+                      setShowTextFormatMenu(false);
+                    }}
+                    disabled={disabled}
+                    className="btn btn-secondary"
+                    title="Terapkan jumlah bar per baris pada teks yang dipilih"
+                  >
+                    Terapkan
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-        <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-cleanup">
-          <span className="song-lyrics-action-group-title">Cleanup & Structure</span>
-          <button
-            type="button"
-            onClick={() => applyTextTransform(removeExtraSpacesAndBrokenLines)}
-            disabled={disabled}
-            className="btn btn-secondary"
-            title="Hapus spasi ganda, tab, baris kosong menumpuk, dan karakter tersembunyi dari hasil copy-paste"
-          >
-            ✨ Bersihkan Teks
-          </button>
-          <button
-            type="button"
-            onClick={() => applyTextTransform(autoTagSongSections)}
-            disabled={disabled}
-            className="btn btn-secondary"
-            title="Deteksi Intro, Verse, Chorus, Bridge, dan normalisasi menjadi tag section"
-          >
-            🏷 Tag Bagian
-          </button>
-          <button
-            type="button"
-            onClick={() => applyTextTransform(standardizeChordNotation)}
-            disabled={disabled}
-            className="btn btn-secondary"
-            title="Standarkan format penulisan chord seperti min/minor/Maj menjadi format yang konsisten"
-          >
-            ♫ Standarkan Chord
-          </button>
         </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-transpose">
           <span className="song-lyrics-action-group-title">Quick Transpose</span>

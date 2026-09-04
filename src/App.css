@@ -995,6 +995,120 @@ body.dark-mode .song-mood-badge.mood-peak {
   animation: slideUpModal 0.2s ease;
 }
 
+.song-lyrics-format-menu-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.song-lyrics-format-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card-bg) 96%, white),
+    color-mix(in srgb, var(--secondary-bg) 90%, transparent)
+  );
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+}
+
+.song-lyrics-format-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 0.9rem;
+}
+
+.song-lyrics-format-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  font-size: 0.95rem;
+  color: var(--primary-accent);
+  opacity: 0.9;
+}
+
+.song-lyrics-format-item:hover,
+.song-lyrics-format-item:focus-visible {
+  background: color-mix(in srgb, var(--primary-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary-accent) 22%, var(--border-color));
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.song-lyrics-format-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+}
+
+.song-lyrics-format-menu-row .song-lyrics-bar-wrap-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .song-lyrics-edit-actions {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .song-lyrics-edit-actions-group {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .song-lyrics-edit-actions-group-format {
+    flex-basis: 100%;
+  }
+
+  .song-lyrics-format-menu-container {
+    width: 100%;
+  }
+
+  .song-lyrics-format-menu {
+    width: min(100vw - 48px, 290px);
+    min-width: 0;
+    left: 0;
+    right: auto;
+  }
+
+  .song-lyrics-format-menu-row {
+    flex-wrap: wrap;
+  }
+
+  .song-lyrics-format-menu-row .song-lyrics-bar-wrap-label,
+  .song-lyrics-format-menu-row .song-lyrics-bar-wrap-select,
+  .song-lyrics-format-menu-row .btn {
+    flex: 1 1 100%;
+  }
+}
+
 .song-lyrics-chord-style-item {
   display: block;
   width: 100%;
@@ -10396,8 +10510,8 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   position: relative;
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--spacing-md);
+  align-items: stretch;
+  gap: 10px;
   margin-bottom: var(--spacing-md);
   padding: var(--spacing-md);
   border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
@@ -10415,16 +10529,25 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   display: inline-flex;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: var(--spacing-sm);
-  min-height: 56px;
-  padding: 10px;
+  gap: 8px;
+  min-height: 50px;
+  padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--border-color) 78%, transparent);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--secondary-bg) 88%, var(--card-bg));
 }
 
 .song-lyrics-edit-actions-group .btn {
-  min-height: 32px;
+  min-height: 30px;
+  padding-block: 6px;
+}
+
+.song-lyrics-edit-actions-group-sections,
+.song-lyrics-edit-actions-group-format,
+.song-lyrics-edit-actions-group-gm-cue,
+.song-lyrics-piano-controls,
+.song-lyrics-edit-actions-group-meta {
+  flex: 1 1 320px;
 }
 
 .song-lyrics-action-group-title {
@@ -10438,13 +10561,18 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
 }
 
 .song-lyrics-edit-actions-group-format {
-  flex: 1 1 520px;
+  flex: 1.2 1 380px;
   min-width: 0;
+  align-items: center;
+}
+
+.song-lyrics-edit-actions-group-sections {
+  flex: 1.6 1 100%;
 }
 
 .song-lyrics-edit-actions-group-cleanup,
 .song-lyrics-edit-actions-group-transpose {
-  flex: 0 1 auto;
+  display: none;
 }
 
 .song-lyrics-edit-actions-group-sections {

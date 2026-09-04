@@ -242,11 +242,102 @@ describe('Song lyrics shared editor rendering', () => {
 
     expect(container.querySelector('.song-lyrics-edit-actions')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-textarea')).toBeTruthy();
+    expect(container.querySelector('button[aria-haspopup="menu"]')).toBeTruthy();
+    expect(container.textContent).toContain('Post-Chorus');
+
+    const formatMenuTrigger = container.querySelector('button[aria-haspopup="menu"]');
+    await act(async () => {
+      formatMenuTrigger.click();
+    });
+
     expect(container.textContent).toContain('Auto-Align');
     expect(container.textContent).toContain('Bersihkan Teks');
-    expect(container.textContent).toContain('Tag Bagian');
     expect(container.textContent).toContain('Standarkan Chord');
-    expect(container.textContent).toContain('Post-Chorus');
+  });
+
+  test('Given lyrics editor, Then formatting text actions are grouped in a menu', async () => {
+    await act(async () => {
+      root.render(
+        <SongLyricsEditorPanel
+          lyricsRef={{ current: null }}
+          lyricsValue={'[C]Hello'}
+          setLyricsValue={noop}
+          error={null}
+          disabled={false}
+          editorActions={{
+            barsPerLine: 4,
+            setBarsPerLine: noop,
+            handleAlignSelectedBarlines: noop,
+            handleWrap4BarsPerLine: noop,
+            handleWrapBarsPerLine: noop,
+            showMetadataHelpButton: true,
+            showSaveCancelButtons: false,
+            savingLyrics: false,
+            handleSaveLyrics: noop,
+            handleCancelEditLyrics: noop,
+            barsPerLineSelectId: 'bars-per-line',
+            showPianoControls: false,
+          }}
+          autoFocus={false}
+          showTips={false}
+        />
+      );
+    });
+
+    const formatMenuTrigger = Array.from(container.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Quick Tools')
+    );
+    expect(formatMenuTrigger).toBeTruthy();
+
+    await act(async () => {
+      formatMenuTrigger.click();
+    });
+
+    expect(container.textContent).toContain('Auto-Align');
+    expect(container.textContent).toContain('Bersihkan Teks');
+    expect(container.textContent).toContain('Standarkan Chord');
+  });
+
+  test('Given lyrics editor quick tools menu, Then transpose actions are also available there', async () => {
+    await act(async () => {
+      root.render(
+        <SongLyricsEditorPanel
+          lyricsRef={{ current: null }}
+          lyricsValue={'[C]Hello'}
+          setLyricsValue={noop}
+          error={null}
+          disabled={false}
+          editorActions={{
+            barsPerLine: 4,
+            setBarsPerLine: noop,
+            handleAlignSelectedBarlines: noop,
+            handleWrap4BarsPerLine: noop,
+            handleWrapBarsPerLine: noop,
+            showMetadataHelpButton: true,
+            showSaveCancelButtons: false,
+            savingLyrics: false,
+            handleSaveLyrics: noop,
+            handleCancelEditLyrics: noop,
+            barsPerLineSelectId: 'bars-per-line',
+            showPianoControls: false,
+          }}
+          autoFocus={false}
+          showTips={false}
+        />
+      );
+    });
+
+    const formatMenuTrigger = Array.from(container.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Quick Tools')
+    );
+
+    expect(formatMenuTrigger).toBeTruthy();
+    await act(async () => {
+      formatMenuTrigger.click();
+    });
+
+    expect(container.textContent).toContain('Transpose -1');
+    expect(container.textContent).toContain('Transpose +1');
   });
 
   test('Given piano insert number key selector is used, Then callback updates selected key', async () => {

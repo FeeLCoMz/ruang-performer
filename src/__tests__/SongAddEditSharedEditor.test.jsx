@@ -80,9 +80,18 @@ describe('SongAddEditPage shared lyrics editor', () => {
     expect(pianoButton).toBeTruthy();
 
     const insertToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Insert ON')
+      btn.textContent?.includes('Insert OFF')
     );
     expect(insertToggle).toBeTruthy();
+
+    await act(async () => {
+      insertToggle.click();
+    });
+
+    const insertOnToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Insert ON')
+    );
+    expect(insertOnToggle).toBeTruthy();
 
     const formatSelect = container.querySelector('#lyrics-insert-format-select');
     expect(formatSelect).toBeTruthy();
@@ -94,12 +103,21 @@ describe('SongAddEditPage shared lyrics editor', () => {
     });
 
     const insertToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Insert ON')
+      btn.textContent?.includes('Insert OFF')
     );
     expect(insertToggle).toBeTruthy();
 
     await act(async () => {
       insertToggle.click();
+    });
+
+    const insertOnToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Insert ON')
+    );
+    expect(insertOnToggle).toBeTruthy();
+
+    await act(async () => {
+      insertOnToggle.click();
     });
 
     const insertOffToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
@@ -119,6 +137,15 @@ describe('SongAddEditPage shared lyrics editor', () => {
     const textarea = container.querySelector('.song-lyrics-textarea');
     expect(textarea).toBeTruthy();
 
+    const insertToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Insert OFF')
+    );
+    expect(insertToggle).toBeTruthy();
+
+    await act(async () => {
+      insertToggle.click();
+    });
+
     const pianoButton = container.querySelector('.song-lyrics-piano-controls button');
     expect(pianoButton).toBeTruthy();
 
@@ -135,6 +162,6 @@ describe('SongAddEditPage shared lyrics editor', () => {
       noteButton.click();
     });
 
-    expect(textarea.value).toBe('[C] ');
+    expect(textarea.value).toBe('1 ');
   });
 });
