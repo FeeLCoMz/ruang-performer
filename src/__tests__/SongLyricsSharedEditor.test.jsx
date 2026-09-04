@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
@@ -1214,6 +1214,75 @@ describe('Song lyrics shared editor rendering', () => {
     expect(navigator).toBeTruthy();
     expect(navigator.textContent).toContain('compact');
     expect(navigator.textContent).toContain('has-open-setlist');
+  });
+
+  test('Given lyrics are saved from a setlist route, Then the app remains on the setlist song route', async () => {
+    let currentLocation; 
+    function LocationProbe() {
+      currentLocation = useLocation();
+      return null;
+    }
+
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: '1',
+          title: 'Song A',
+          key: 'G',
+          lyrics: '[C]Hello updated',
+        }),
+      });
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={[{
+          pathname: '/setlists/10/songs/1',
+          state: {
+            setlistId: 10,
+            setlist: { id: 10, songs: [{ id: '1' }, { id: '2' }] },
+            setlistSong: { id: '1' },
+          },
+        }]}>
+          <Routes>
+            <Route path="/setlists/:setlistId/songs/:id" element={<><LocationProbe /><SongChordsPage /></>} />
+            <Route path="/songs/view/:id" element={<LocationProbe />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const editButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Edit')
+    );
+    expect(editButton).toBeTruthy();
+
+    await act(async () => {
+      editButton.click();
+    });
+
+    const textarea = container.querySelector('textarea');
+    expect(textarea).toBeTruthy();
+
+    await act(async () => {
+      textarea.value = '[C]Hello updated';
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    const saveButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.getAttribute('aria-label') === 'Simpan' || button.title === 'Simpan'
+    );
+    expect(saveButton).toBeTruthy();
+
+    await act(async () => {
+      saveButton.click();
+    });
+
+    expect(currentLocation.pathname).toBe('/setlists/10/songs/1');
   });
 
   test('Given a song is opened outside the setlist route, Then the navigation panel stays hidden', async () => {

@@ -668,13 +668,13 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       setShowLyricsPiano(false);
       setEditedLyrics("");
 
-      // Jika ada setlist context, navigate ulang dengan state setlist agar navigator tetap muncul
-      if (setlistId && setlistData && setlistData.songs) {
-        navigate(`/songs/view/${song.id}`, {
+      // Tetap di route setlist agar navigasi antar lagu setlist tetap tersedia
+      if (setlistId) {
+        navigate(`/setlists/${setlistId}/songs/${song.id}`, {
           state: {
             setlistId,
-            setlist: setlistData,
-            setlistSong: setlistSongData,
+            setlist: setlistData || { id: setlistId, songs: [] },
+            setlistSong: setlistSongData || song,
           },
           replace: true,
         });
