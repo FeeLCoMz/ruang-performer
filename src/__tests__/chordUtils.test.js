@@ -806,4 +806,21 @@ Repeat [00:12] then [1:02:03]
       { time: 60, label: 'Chorus' },
     ]);
   });
+
+  test("mergeDetectedTimestampsIntoMarkers uses adjacent structure labels before or after timestamps without leading zeroes", () => {
+    const lyrics = `[02:33]\n[intro]\nintro:\n[3:45]`;
+
+    expect(mergeDetectedTimestampsIntoMarkers(lyrics, [])).toEqual([
+      { time: 153, label: 'intro' },
+      { time: 225, label: 'intro' },
+    ]);
+  });
+
+  test("mergeDetectedTimestampsIntoMarkers does not reuse non-adjacent structure labels", () => {
+    const lyrics = `[Intro]\nC G Am F\n[1:20]`;
+
+    expect(mergeDetectedTimestampsIntoMarkers(lyrics, [])).toEqual([
+      { time: 80, label: 'Timestamp 1:20' },
+    ]);
+  });
 });

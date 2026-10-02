@@ -921,25 +921,16 @@ export function extractTimestampSeconds(text) {
 }
 
 /**
- * Cari label struktur dari teks lirik untuk timestamp yang terdeteksi.
- * Jika sebuah timestamp muncul sebelum section tag seperti [Verse],
- * maka tag tersebut dipakai sebagai nama marker.
+ * Cari label struktur yang tepat bersebelahan dengan timestamp.
  */
 function resolveTimestampLabelsFromLyrics(lyricsText) {
   const lines = typeof lyricsText === 'string' ? lyricsText.split(/\r?\n/) : [];
   const labelByTime = new Map();
-  let currentSectionLabel = null;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
     const trimmed = String(line || '').trim();
     if (!trimmed) continue;
-
-    const section = parseSection(trimmed);
-    if (section?.type === 'structure') {
-      currentSectionLabel = section.label;
-      continue;
-    }
 
     const lineTimes = Array.from(trimmed.matchAll(/\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]/g))
       .map((match) => parseTimestampToken(`[${match[1]}:${match[2]}${match[3] ? `:${match[3]}` : ''}]`))
@@ -947,18 +938,16 @@ function resolveTimestampLabelsFromLyrics(lyricsText) {
 
     if (lineTimes.length === 0) continue;
 
-    const nextStructure = (() => {
-      for (let nextIndex = index + 1; nextIndex < lines.length; nextIndex += 1) {
-        const nextTrimmed = String(lines[nextIndex] || '').trim();
-        if (!nextTrimmed) continue;
-        const nextSection = parseSection(nextTrimmed);
-        if (nextSection?.type === 'structure') return nextSection.label;
-      }
-      return null;
-    })();
+    const previousSection = parseSection(lines[index - 1]);
+    const nextSection = parseSection(lines[index + 1]);
+    const adjacentSectionLabel = (nextSection?.type === 'structure' && nextSection.label)
+      || (previousSection?.type === 'structure' && previousSection.label)
+      || null;
 
     lineTimes.forEach((time) => {
-      labelByTime.set(time, nextStructure || currentSectionLabel || `Timestamp ${formatMarkerTime(time)}`);
+      if (adjacentSectionLabel) {
+        labelByTime.set(time, adjacentSectionLabel);
+      }
     });
   }
 
