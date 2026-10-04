@@ -501,59 +501,6 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-edit-actions')).toBeFalsy();
   });
 
-  test('Given lirik mode is active, Then non-essential song actions are hidden', async () => {
-    await act(async () => {
-      root.render(
-        <SongChordsInfo
-          title="Song A"
-          artist="Artist A"
-          contributor="Contributor"
-          performanceMode={false}
-          lyricsMode={true}
-          canEdit={true}
-          onEdit={noop}
-          onShare={noop}
-          shareMessage="Shared"
-          showSongInfo={true}
-          setShowSongInfo={noop}
-        />
-      );
-    });
-
-    expect(container.querySelector('.song-title-actions')).toBeFalsy();
-    expect(container.textContent).toContain('Song A');
-    expect(container.textContent).toContain('Artist A');
-  });
-
-  test('Given lirik mode is active, Then tempo time and genre metadata are hidden', async () => {
-    await act(async () => {
-      root.render(
-        <SongChordsInfo
-          title="Song A"
-          artist="Artist A"
-          contributor="Contributor"
-          performanceMode={false}
-          lyricsMode={true}
-          canEdit={true}
-          onEdit={noop}
-          onShare={noop}
-          shareMessage="Shared"
-          showSongInfo={true}
-          setShowSongInfo={noop}
-          originalKey="C"
-          targetKey="D"
-          tempo="120"
-          timeSignature="4/4"
-          genre="Rock"
-        />
-      );
-    });
-
-    expect(container.textContent).not.toContain('Tempo');
-    expect(container.textContent).not.toContain('Time');
-    expect(container.textContent).not.toContain('Genre');
-  });
-
   test('Given detected instruments are present, Then a copy button is visible for registration memory', async () => {
     const clipboard = {
       writeText: vi.fn().mockResolvedValue(undefined),
@@ -569,7 +516,6 @@ describe('Song lyrics shared editor rendering', () => {
           title="Song A"
           artist="Artist A"
           performanceMode={false}
-          lyricsMode={false}
           showSongInfo={true}
           setShowSongInfo={noop}
           keyboardPatch="Stage Piano"
@@ -595,7 +541,6 @@ describe('Song lyrics shared editor rendering', () => {
           title="Song A"
           artist="Artist A"
           performanceMode={true}
-          lyricsMode={false}
           showSongInfo={true}
           setShowSongInfo={noop}
           originalKey="C"
@@ -619,7 +564,6 @@ describe('Song lyrics shared editor rendering', () => {
           title="Song A"
           artist="Artist A"
           performanceMode={false}
-          lyricsMode={false}
           showSongInfo={true}
           setShowSongInfo={noop}
           originalKey="C"
@@ -645,7 +589,6 @@ describe('Song lyrics shared editor rendering', () => {
           title="Song A"
           artist="Artist A"
           performanceMode={false}
-          lyricsMode={false}
           showSongInfo={true}
           setShowSongInfo={noop}
           timeSignature="4/4"
@@ -675,7 +618,6 @@ describe('Song lyrics shared editor rendering', () => {
           artist="Artist A"
           contributor="Contributor"
           performanceMode={true}
-          lyricsMode={false}
           canEdit={true}
           onEdit={noop}
           onShare={noop}
@@ -711,7 +653,6 @@ describe('Song lyrics shared editor rendering', () => {
           title="Song A"
           artist="Artist A"
           performanceMode={true}
-          lyricsMode={false}
           showSongInfo={true}
           setShowSongInfo={noop}
           originalKey="C"
@@ -737,7 +678,6 @@ describe('Song lyrics shared editor rendering', () => {
           title="Song A"
           artist="Artist A"
           performanceMode={true}
-          lyricsMode={false}
           showSongInfo={true}
           setShowSongInfo={noop}
           originalKey="C"
@@ -770,7 +710,6 @@ describe('Song lyrics shared editor rendering', () => {
           title="Song A"
           artist="Artist A"
           performanceMode={true}
-          lyricsMode={false}
           showSongInfo={true}
           setShowSongInfo={noop}
           originalKey="C"
@@ -798,7 +737,6 @@ describe('Song lyrics shared editor rendering', () => {
           artist="Artist A"
           contributor="Contributor"
           performanceMode={true}
-          lyricsMode={false}
           canEdit={true}
           onEdit={noop}
           onShare={noop}
@@ -832,7 +770,6 @@ describe('Song lyrics shared editor rendering', () => {
         <SongChordsLyricsToolbar
           isEditingLyrics={false}
           performanceMode={true}
-          lyricsMode={false}
           canEdit={true}
           tempo={120}
           timeSignature={'4/4'}
@@ -942,7 +879,6 @@ describe('Song lyrics shared editor rendering', () => {
           zoom={1}
           setZoom={noop}
           performanceMode={true}
-          lyricsMode={false}
           canEdit={true}
           song={{ lyrics: '[C]Hello' }}
           transpose={0}
@@ -981,7 +917,6 @@ describe('Song lyrics shared editor rendering', () => {
           showChords={true}
           zoom={1}
           setZoom={noop}
-          lyricsMode={false}
           showChordNumbers={false}
           showJazzChords={false}
           showSimpleChords={false}
@@ -1073,89 +1008,6 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('5');
   });
 
-  test('Given vocalist mode is active, Then edit and export controls are hidden', async () => {
-    await act(async () => {
-      root.render(
-        <SongChordsLyricsToolbar
-          isEditingLyrics={false}
-          performanceMode={false}
-          lyricsMode={true}
-          canEdit={true}
-          tempo={120}
-          timeSignature={'4/4'}
-          autoScrollActive={false}
-          scrollSpeed={120}
-          setAutoScrollActive={noop}
-          setScrollSpeed={noop}
-          lyricsDisplayRef={{ current: null }}
-          currentBeat={0}
-          setCurrentBeat={noop}
-          transpose={0}
-          setTranspose={noop}
-          zoom={1}
-          setZoom={noop}
-          showChordNumbers={false}
-          setShowChordNumbers={noop}
-          showJazzChords={false}
-          setShowJazzChords={noop}
-          showSimpleChords={false}
-          setShowSimpleChords={noop}
-          keySignature={'C'}
-          handleEditLyrics={noop}
-          savingLyrics={false}
-          handleSaveLyrics={noop}
-          handleAlignSelectedBarlines={noop}
-          handleWrap4BarsPerLine={noop}
-          barsPerLine={4}
-          setBarsPerLine={noop}
-          handleWrapBarsPerLine={noop}
-          handleCancelEditLyrics={noop}
-          onOpenPiano={noop}
-          insertNotesToLyrics={true}
-          setInsertNotesToLyrics={noop}
-          insertNoteFormat={'bracket'}
-          setInsertNoteFormat={noop}
-          insertTrailingSpace={true}
-          setInsertTrailingSpace={noop}
-          showExportMenu={false}
-          setShowExportMenu={noop}
-          handleExportText={noop}
-          handleExportPDF={noop}
-          youtubeId={null}
-          youtubeRef={{ current: null }}
-        />
-      );
-    });
-
-    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Edit Lirik')).toBe(false);
-    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Export')).toBe(false);
-  });
-
-  test('Given vocalist mode is active, Then piano recommendation is hidden', async () => {
-    await act(async () => {
-      root.render(
-        <SongChordsInfo
-          title="Song A"
-          artist="Artist A"
-          contributor="Contributor"
-          performanceMode={true}
-          lyricsMode={true}
-          canEdit={true}
-          onEdit={noop}
-          onShare={noop}
-          shareMessage="Shared"
-          showSongInfo={true}
-          setShowSongInfo={noop}
-          pianoRecommendation={{ recommendedKey: 'C', transposeFromCurrent: 2 }}
-          onApplyRecommendedTranspose={noop}
-        />
-      );
-    });
-
-    expect(container.textContent).not.toContain('Key Mudah');
-    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Terapkan key mudah'))).toBe(false);
-  });
-
   test('Given performance mode is active, Then the MIDI ready badge is hidden', async () => {
     await act(async () => {
       root.render(
@@ -1242,26 +1094,14 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('[data-testid="floating-youtube-player"]')).toBeTruthy();
   });
 
-  test('Given vocalist mode is active in a setlist view, Then setlist navigator is still rendered', async () => {
-    await act(async () => {
-      root.render(
-        <MemoryRouter initialEntries={['/setlists/10/songs/1']}>
-          <Routes>
-            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage lyricsMode={true} />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
-
-    expect(container.querySelector('[data-testid="setlist-navigator"]')).toBeTruthy();
-  });
+  
 
   test('Given performance mode is active in a setlist view, Then setlist navigator uses compact buttons', async () => {
     await act(async () => {
       root.render(
         <MemoryRouter initialEntries={['/setlists/10/songs/1']}>
           <Routes>
-            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} lyricsMode={false} />} />
+            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} />} />
           </Routes>
         </MemoryRouter>
       );
@@ -1350,7 +1190,7 @@ describe('Song lyrics shared editor rendering', () => {
           state: { setlistId: 10, setlist: { id: 10, songs: [{ id: '1' }, { id: '2' }] } },
         }]}>
           <Routes>
-            <Route path="/songs/view/:id" element={<SongChordsPage performanceMode={false} lyricsMode={false} />} />
+            <Route path="/songs/view/:id" element={<SongChordsPage performanceMode={false} />} />
           </Routes>
         </MemoryRouter>
       );
@@ -1367,7 +1207,7 @@ describe('Song lyrics shared editor rendering', () => {
           state: { setlistSong: { key: 'D' } },
         }]}>
           <Routes>
-            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} lyricsMode={false} />} />
+            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} />} />
           </Routes>
         </MemoryRouter>
       );
@@ -1386,7 +1226,7 @@ describe('Song lyrics shared editor rendering', () => {
           state: { setlistSong: { key: 'D' } },
         }]}>
           <Routes>
-            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} lyricsMode={false} />} />
+            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} />} />
           </Routes>
         </MemoryRouter>
       );
@@ -1414,7 +1254,7 @@ describe('Song lyrics shared editor rendering', () => {
           state: { setlistSong: { key: 'D' } },
         }]}>
           <Routes>
-            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={false} lyricsMode={false} />} />
+            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={false} />} />
           </Routes>
         </MemoryRouter>
       );

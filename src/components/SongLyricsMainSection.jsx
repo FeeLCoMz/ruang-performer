@@ -48,7 +48,6 @@ export default function SongLyricsMainSection({
   zoom,
   setZoom,
   performanceMode,
-  lyricsMode,
   canEdit,
   song,
   transpose,
@@ -89,7 +88,7 @@ export default function SongLyricsMainSection({
             isExpanded={lyricsPanelExpanded}
             setIsExpanded={setLyricsPanelExpanded}
             icon="🎤"
-            label={lyricsMode ? 'Vocalist Mode' : 'Lirik & Chord'}
+            label="Lirik & Chord"
             ariaLabel={lyricsPanelExpanded ? 'Sembunyikan panel lirik' : 'Tampilkan panel lirik'}
           />
         )}
@@ -97,7 +96,6 @@ export default function SongLyricsMainSection({
           <SongChordsLyricsToolbar
             isEditingLyrics={isEditingLyrics}
             performanceMode={performanceMode}
-            lyricsMode={lyricsMode}
             canEdit={canEdit}
             tempo={tempo}
             timeSignature={timeSignature}
@@ -210,7 +208,6 @@ export default function SongLyricsMainSection({
               showChords={showChords}
               zoom={zoom}
               setZoom={setZoom}
-              lyricsMode={lyricsMode}
               showChordNumbers={showChordNumbers}
               showJazzChords={showJazzChords}
               showSimpleChords={showSimpleChords}

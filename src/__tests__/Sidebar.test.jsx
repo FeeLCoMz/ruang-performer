@@ -22,7 +22,7 @@ describe('Sidebar', () => {
     mockCan.mockClear();
   });
 
-  test('shows player label when lyrics mode is off and lirik label when active', () => {
+  test('does not render the vocalist/player toggle button', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root = createRoot(container);
@@ -37,8 +37,6 @@ describe('Sidebar', () => {
             setTheme={() => {}}
             performanceMode={false}
             setPerformanceMode={() => {}}
-            lyricsMode={false}
-            setLyricsMode={() => {}}
           />
         </MemoryRouter>
       );
@@ -48,9 +46,8 @@ describe('Sidebar', () => {
       button.getAttribute('aria-label') === 'Toggle vocalist/player view'
     );
 
-    expect(modeButton).toBeTruthy();
-    expect(modeButton.textContent).toContain('Player');
-    expect(modeButton.textContent).not.toContain('Lirik');
+    expect(modeButton).toBeFalsy();
+    expect(container.textContent).not.toContain('Vocalist');
 
     act(() => {
       root.unmount();

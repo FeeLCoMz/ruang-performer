@@ -31,7 +31,6 @@ import SongChordsExportMenu from "./SongChordsExportMenu.jsx";
 export default function SongChordsLyricsToolbar({
   isEditingLyrics,
   performanceMode,
-  lyricsMode,
   canEdit,
   tempo,
   timeSignature,
@@ -135,7 +134,7 @@ export default function SongChordsLyricsToolbar({
   return (
     <>
       <div className={toolbarClassName}>
-        {!isEditingLyrics && !lyricsMode && (
+        {!isEditingLyrics && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-actions">
             {!performanceMode && canEdit && (
               <button
@@ -173,7 +172,7 @@ export default function SongChordsLyricsToolbar({
 
         {!isEditingLyrics && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-view">
-            {!lyricsMode && youtubeId && youtubeRef && (
+            {youtubeId && youtubeRef && (
               <>
                 <button
                   type="button"
@@ -267,7 +266,7 @@ export default function SongChordsLyricsToolbar({
           </div>
         )}
 
-        {!isEditingLyrics && !lyricsMode && performanceMode && (
+        {!isEditingLyrics && performanceMode && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-tempo-led-compact" title={`Tempo ${normalizedTempo} BPM`}>
             <span
               className="song-info-tempo-led"
@@ -278,7 +277,7 @@ export default function SongChordsLyricsToolbar({
           </div>
         )}
 
-        {!isEditingLyrics && !lyricsMode && !performanceMode && (
+        {!isEditingLyrics && !performanceMode && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">
             <div className="song-lyrics-transpose-controls" title="Transpose lirik/chord">
               <button

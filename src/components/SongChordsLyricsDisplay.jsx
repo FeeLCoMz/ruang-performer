@@ -49,7 +49,6 @@ export default function SongChordsLyricsDisplay({
   showChords,
   zoom,
   setZoom,
-  lyricsMode = false,
   showChordNumbers,
   showJazzChords,
   showSimpleChords,
@@ -274,7 +273,7 @@ export default function SongChordsLyricsDisplay({
   const normalizedBpm = Math.max(40, Math.min(240, Number(tempo) || Number(song?.tempo) || 120));
   const normalizedScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedBpm));
   const beatsPerBar = parseBeatsPerBar(timeSignature || song?.time_signature || '4/4');
-  const effectiveShowChords = lyricsMode ? false : showChords;
+  const effectiveShowChords = showChords;
   const currentChordModeKey = !effectiveShowChords
     ? 'hidden'
     : showChordNumbers
@@ -573,7 +572,7 @@ export default function SongChordsLyricsDisplay({
         role="group"
         aria-label="Kontrol fullscreen lirik"
       >
-        {!lyricsMode && !performanceMode && (
+        {!performanceMode && (
           <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Transpose">
             <span className="song-lyrics-fullscreen-control-label">Tr</span>
             <button
@@ -708,22 +707,12 @@ export default function SongChordsLyricsDisplay({
           </div>
         )}
         <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Fullscreen">
-          {!lyricsMode && (
-            <span
-              className={`song-lyrics-fullscreen-style-badge mode-${currentChordModeKey}`}
-              title={`Mode chord aktif: ${currentChordModeLabel}`}
-            >
-              Chord: {currentChordModeLabel}
-            </span>
-          )}
-          {lyricsMode && (
-            <span
-              className="song-lyrics-fullscreen-style-badge mode-hidden"
-              title="Vocalist Mode aktif"
-            >
-              Vocalist Focus
-            </span>
-          )}
+          <span
+            className={`song-lyrics-fullscreen-style-badge mode-${currentChordModeKey}`}
+            title={`Mode chord aktif: ${currentChordModeLabel}`}
+          >
+            Chord: {currentChordModeLabel}
+          </span>
           {!performanceMode && (
             <button
               type="button"
@@ -742,7 +731,7 @@ export default function SongChordsLyricsDisplay({
         <div className="song-lyrics-zoom-hud" aria-live="polite">Zoom {zoomHudText}</div>
       )}
       {/* Tombol Lihat Partitur (selalu tampil jika ada MusicXML) */}
-      {!isFullscreen && !lyricsMode && song?.sheetMusicXml && (
+      {!isFullscreen && song?.sheetMusicXml && (
         <button
           className="btn btn-secondary btn-margin-bottom"
           onClick={() => setShowSheetMusic((v) => !v)}
@@ -751,7 +740,7 @@ export default function SongChordsLyricsDisplay({
         </button>
       )}
       {/* Tampilkan partitur jika diaktifkan */}
-        {!lyricsMode && !performanceMode && showSheetMusic && song?.sheetMusicXml && (
+        {!performanceMode && showSheetMusic && song?.sheetMusicXml && (
         <SongSheetMusic sheetMusicXml={song.sheetMusicXml} />
       )}
       <ChordDisplay

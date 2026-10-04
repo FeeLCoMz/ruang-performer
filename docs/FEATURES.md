@@ -131,9 +131,6 @@ Untuk penggunaan di panggung:
 
 > ⚠️ Performance Mode hanya mengubah tampilan. **Logika permission tidak boleh diubah** di mode ini.
 
-### Lyrics Mode 🎙️
-Tampilan untuk vokalis: lirik diperbesar, fokus pada teks. Disimpan di `ruangperformer_lyrics_mode` (menggantikan key lama `ruangperformer_vocal_mode`).
-
 ---
 
 ## 9. Offline

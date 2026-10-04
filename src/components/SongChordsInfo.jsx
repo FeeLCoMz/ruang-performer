@@ -34,7 +34,6 @@ export default function SongChordsInfo({
   contributor,
   performanceMode,
   performanceKeyOverride = '',
-  lyricsMode = false,
   canEdit = false,
   onEdit,
   onShare,
@@ -51,10 +50,10 @@ export default function SongChordsInfo({
     .map((entry) => entry?.username)
     .filter(Boolean)
     .join(', ');
-  const showActions = !performanceMode && !lyricsMode;
-  const showMetadata = performanceMode || lyricsMode || showSongInfo;
-  const showMinimalMetadata = performanceMode || lyricsMode;
-  const showKeyEasyRecommendation = !lyricsMode && !!pianoRecommendation?.recommendedKey;
+  const showActions = !performanceMode;
+  const showMetadata = performanceMode || showSongInfo;
+  const showMinimalMetadata = performanceMode;
+  const showKeyEasyRecommendation = !!pianoRecommendation?.recommendedKey;
   const metadataItems = [];
   const performanceMetadataItems = [];
   const detectedInstrumentList = Array.isArray(detectedInstruments) ? detectedInstruments.filter(Boolean) : [];
@@ -108,7 +107,7 @@ export default function SongChordsInfo({
 
   useEffect(() => {
     setIsKeyboardistKeyCollapsed(true);
-  }, [pianoRecommendation?.recommendedKey, performanceMode, lyricsMode]);
+  }, [pianoRecommendation?.recommendedKey, performanceMode]);
 
   if (baseDisplayKey) {
     metadataItems.push(`Key: ${transposedDisplayKey}`);
@@ -158,19 +157,19 @@ export default function SongChordsInfo({
   if (performanceMode && originalKey && originalKey !== transposedDisplayKey) {
     metadataItems.push(`Nada Asli: ${originalKey}`);
   }
-  if (!lyricsMode && tempo) {
+  if (tempo) {
     metadataItems.push(`Tempo: ${tempo}`);
     if (performanceMode) {
       performanceMetadataItems.push({ key: 'tempo', icon: '⏱️', text: tempo });
     }
   }
-  if (!lyricsMode && timeSignature) {
+  if (timeSignature) {
     metadataItems.push(`Time: ${timeSignature}`);
     if (performanceMode) {
       performanceMetadataItems.push({ key: 'time', icon: '🎼', text: timeSignature });
     }
   }
-  if (!lyricsMode && genre) {
+  if (genre) {
     metadataItems.push(`Genre: ${genre}`);
     if (performanceMode) {
       performanceMetadataItems.push({ key: 'genre', icon: '🎸', text: genre });

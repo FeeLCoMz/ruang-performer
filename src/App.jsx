@@ -107,17 +107,6 @@ function AppContent() {
     }
     return false;
   });
-  const [lyricsMode, setLyricsMode] = useState(() => {
-    if (typeof window !== "undefined") {
-      const lyricsModeRaw = localStorage.getItem("ruangperformer_lyrics_mode");
-      if (lyricsModeRaw !== null) {
-        return lyricsModeRaw === "true";
-      }
-
-      return localStorage.getItem("ruangperformer_vocal_mode") === "true";
-    }
-    return false;
-  });
   const hasPrefetchedPerformanceDataRef = useRef(false);
 
   useEffect(() => {
@@ -129,15 +118,7 @@ function AppContent() {
     }
   }, [performanceMode]);
 
-  useEffect(() => {
-    localStorage.setItem("ruangperformer_lyrics_mode", lyricsMode ? "true" : "false");
-    localStorage.removeItem("ruangperformer_vocal_mode");
-    if (lyricsMode) {
-      document.body.classList.add("lyrics-mode");
-    } else {
-      document.body.classList.remove("lyrics-mode");
-    }
-  }, [lyricsMode]);
+  
 
   // ALL HOOKS MUST BE HERE - BEFORE ANY CONDITIONAL LOGIC
   useEffect(() => {
@@ -253,8 +234,6 @@ function AppContent() {
           setTheme={setTheme}
           performanceMode={performanceMode}
           setPerformanceMode={setPerformanceMode}
-          lyricsMode={lyricsMode}
-          setLyricsMode={setLyricsMode}
         />
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
 
@@ -293,14 +272,6 @@ function AppContent() {
                     🎤
                   </button>
                   <button
-                    className={`btn btn-secondary header-icon-btn ${lyricsMode ? 'active' : ''}`}
-                    onClick={() => setLyricsMode((v) => !v)}
-                    title={lyricsMode ? 'Switch ke tampilan Player' : 'Switch ke tampilan Vocalist'}
-                    aria-label="Toggle vocalist/player view"
-                  >
-                    {lyricsMode ? '🎤' : '🎙️'}
-                  </button>
-                  <button
                     className={`btn btn-secondary header-icon-btn ${theme === 'dark' ? 'dark' : 'light'}`}
                     onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
                     title="Ganti mode gelap/terang"
@@ -336,14 +307,6 @@ function AppContent() {
                 }
               >
                 {performanceMode ? "🎤 Performance" : "🎶 Normal"}
-              </button>
-              <button
-                className={`btn btn-secondary ${lyricsMode ? " active" : ""}`}
-                onClick={() => setLyricsMode((v) => !v)}
-                title={lyricsMode ? "Switch ke tampilan Player" : "Switch ke tampilan Vocalist"}
-                aria-label="Toggle vocalist/player view"
-              >
-                {lyricsMode ? "🎤 Vocalist" : "🎙️ Player"}
               </button>
             </div>
               </>
@@ -477,7 +440,7 @@ function AppContent() {
               />
               <Route
                 path="/songs/view/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} lyricsMode={lyricsMode} />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} />}
               />
               <Route
                 path="/setlists/:id"
@@ -496,7 +459,7 @@ function AppContent() {
               />
               <Route
                 path="/setlists/:setlistId/songs/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} lyricsMode={lyricsMode} />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} />}
               />
               <Route
                 path="/setlists"
@@ -574,10 +537,10 @@ function EditSongRoute({ onSongUpdated }) {
 }
 
 // SongLyricsRoute component
-function SongLyricsRoute({ songs, activeSetlist, performanceMode, lyricsMode }) {
+function SongLyricsRoute({ songs, activeSetlist, performanceMode }) {
   const { id } = useParams();
   const song = Array.isArray(songs) ? songs.find((s) => String(s.id) === String(id)) : null;
-  return <SongChordsPage song={song} activeSetlist={activeSetlist} performanceMode={performanceMode} lyricsMode={lyricsMode} />;
+  return <SongChordsPage song={song} activeSetlist={activeSetlist} performanceMode={performanceMode} />;
 }
 
 export default App;

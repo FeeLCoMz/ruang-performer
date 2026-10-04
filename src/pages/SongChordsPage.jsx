@@ -30,7 +30,7 @@ import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyrics
  * Props:
  *   - song: (optional) data lagu yang diterima dari parent
  */
-export default function SongChordsPage({ song: songProp, performanceMode = false, lyricsMode = false, activeSetlist = null }) {
+export default function SongChordsPage({ song: songProp, performanceMode = false, activeSetlist = null }) {
   // State untuk toggle tampilan partitur
   const [showSheetMusic, setShowSheetMusic] = useState(false);
   // =========================
@@ -95,7 +95,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const timeSignature = setlistSongData.time_signature || song?.time_signature || "4/4";
   const youtubeId = song?.youtubeId || song?.youtube_url || "";
   const timeMarkers = song?.time_markers || [];
-     
+
   // Transpose state
   const [transpose, setTranspose] = useState(0);
 
@@ -108,13 +108,10 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   }, [performanceMode, song?.key, setlistSongData.key]);
 
   const [zoom, setZoom] = useState(1);
-  const [showChords, setShowChords] = useState(!lyricsMode);
+  const [showChords, setShowChords] = useState(true);
   const [showChordNumbers, setShowChordNumbers] = useState(false);
   const [showJazzChords, setShowJazzChords] = useState(false);
   const [showSimpleChords, setShowSimpleChords] = useState(false);
-  useEffect(() => {
-    setShowChords(!lyricsMode);
-  }, [lyricsMode]);
 
   // In-place editing state
   const [isEditingLyrics, setIsEditingLyrics] = useState(false);
@@ -740,7 +737,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   };
 
   return (
-    <div className={`page-container${performanceMode ? ' performance-mode' : ''}${lyricsMode ? ' lyrics-mode' : ''}`}> {/* Tambah class jika performanceMode */}
+    <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}> {/* Tambah class jika performanceMode */}
       {performanceMode ? (
         <div className="song-performance-top-panel">
           <SongChordsInfo
@@ -766,7 +763,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
             contributor={song.contributor}
             performanceMode={performanceMode}
             performanceKeyOverride={setlistSongData.key || ''}
-            lyricsMode={lyricsMode}
             canEdit={can(PERMISSIONS.SONG_EDIT)}
             onEdit={handleEdit}
             onShare={() => handleShare(song, artist, setShareMessage)}
@@ -820,7 +816,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
             contributor={song.contributor}
             performanceMode={performanceMode}
             performanceKeyOverride={setlistSongData.key || ''}
-            lyricsMode={lyricsMode}
             canEdit={can(PERMISSIONS.SONG_EDIT)}
             onEdit={handleEdit}
             onShare={() => handleShare(song, artist, setShareMessage)}
@@ -851,7 +846,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         </>
       )}
 
-      {!lyricsMode && youtubeId && !performanceMode && !isEditingLyrics && (
+      {youtubeId && !performanceMode && !isEditingLyrics && (
         <SongChordsMediaPanel
           mediaPanelExpanded={mediaPanelExpanded}
           setMediaPanelExpanded={setMediaPanelExpanded}
@@ -864,11 +859,11 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         />
       )}
 
-      {!lyricsMode && youtubeId && (performanceMode || isEditingLyrics) && (
+      {youtubeId && (performanceMode || isEditingLyrics) && (
         <div className="song-media-panel-hidden" aria-hidden="true" />
       )}
 
-      {!lyricsMode && !performanceMode && (
+      {!performanceMode && (
         <SongChordsAnalyzer
           showChordAnalyzer={showChordAnalyzer}
           setShowChordAnalyzer={setShowChordAnalyzer}
@@ -919,7 +914,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         zoom={zoom}
         setZoom={setZoom}
         performanceMode={performanceMode}
-        lyricsMode={lyricsMode}
         canEdit={can(PERMISSIONS.SONG_EDIT)}
         song={song}
         transpose={transpose}
@@ -950,7 +944,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
       />
 
-      {!lyricsMode && youtubeId && (performanceMode || isEditingLyrics) && (
+      {youtubeId && (performanceMode || isEditingLyrics) && (
         <FloatingYouTubePlayer
           isOpen={showMiniVideoPlayer}
           videoId={youtubeId}
@@ -1010,13 +1004,13 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
             onPrev={handlePrev}
             onNext={handleNext}
             onOpenSetlist={handleOpenSetlist}
-            compact={performanceMode || lyricsMode}
+            compact={performanceMode}
           />
         );
       })()}
 
       {/* Setlists containing this song */}
-      {!performanceMode && !lyricsMode && song.id && !loadingSetlists && setlists.length > 0 && (() => {
+      {!performanceMode && song.id && !loadingSetlists && setlists.length > 0 && (() => {
         const containingSetlists = setlists.filter(setlist =>
           Array.isArray(setlist.songs) && setlist.songs.includes(song.id)
         );
