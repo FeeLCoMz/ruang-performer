@@ -1524,7 +1524,15 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   return (
     <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}>  {/* Tambah class jika performanceMode */}
       <div className="page-header">
-        <div>
+        <div className="setlist-header-info">
+          {performanceMode && (
+            <div className="setlist-progress" role="progressbar" aria-valuemin={0} aria-valuemax={setlistSongs.length} aria-valuenow={completedCount} aria-label="Progres setlist">
+              <div
+                className="setlist-progress-fill"
+                style={{ width: `${setlistSongs.length ? Math.round((completedCount / setlistSongs.length) * 100) : 0}%` }}
+              />
+            </div>
+          )}
           <h1>📋 {setlist.name}</h1>
           {setlist.bandName && (
             <div className="setlist-band-name">🎸 {setlist.bandName}</div>
@@ -1532,8 +1540,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           {setlist.description && (
             <div className="setlist-description">{setlist.description}</div>
           )}
-          <p>{setlistSongs.length} lagu di setlist ini</p>
-          <p>✅ {completedCount} lagu sudah dibawakan</p>
+          {performanceMode ? (
+            <div className="setlist-header-summary">
+              {setlistSongs.length} lagu • {completedCount} sudah dibawakan • {uncompletedCount} tersisa
+            </div>
+          ) : (
+            <>
+              <p>{setlistSongs.length} lagu di setlist ini</p>
+              <p>✅ {completedCount} lagu sudah dibawakan</p>
+            </>
+          )}
           {featuredSongIdsFromMeta.length > 0 && (
             <div className="smart-featured-caption">
               ✨ {featuredSongIdsFromMeta.length} lagu ditandai sebagai blok show utama Smart Assistant
@@ -1597,7 +1613,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             </div>
           )}
 
-          {canEdit && (
+          {canEdit && !performanceMode && (
             <div className="setlist-header-action-group setlist-header-progress-group" aria-label="Aksi progres performa">
               {localOrder.length > 0 && !allSongsCompleted && (
                 <button className="btn btn-secondary setlist-btn-ghost" onClick={handleMarkAllSongsCompleted} title="Tandai semua lagu sudah dibawakan">
@@ -1863,7 +1879,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             return (
               <React.Fragment key={song.id}>
                 <div
-                  className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
+                  className={`song-item${performanceMode ? ' song-item-performance' : ''}${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
                   draggable={sortBy === 'custom' && groupBy === 'none'}
                   onDragStart={e => {
                     if (sortBy !== 'custom' || groupBy !== 'none') return;
@@ -1934,8 +1950,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                       {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
                     </h3>
                     <div className="song-meta">
-                      <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
-                        Mood: {mood.label}
+                      <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood: ${mood.label} (${mood.sourceHint})`}>
+                        {performanceMode ? mood.tone : `Mood: ${mood.label}`}
                       </span>
                       {song.artist && <span>👤 {song.artist}</span>}
                       {song.key && (
@@ -1965,14 +1981,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     className="song-actions"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <button
-                      onClick={(e) => handleToggleMetronome(song, e)}
-                      className="btn btn-secondary song-action-mini"
-                      title="Play metronom"
-                      aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
-                    >
-                      {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
-                    </button>
+                    {!performanceMode && (
+                      <button
+                        onClick={(e) => handleToggleMetronome(song, e)}
+                        className="btn btn-secondary song-action-mini"
+                        title="Play metronom"
+                        aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
+                      >
+                        {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
+                      </button>
+                    )}
                     {hasYouTubeVideo(song) && (
                       <button
                         onClick={(e) => handlePlayVideo(song, e)}

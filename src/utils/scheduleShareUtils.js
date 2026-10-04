@@ -57,7 +57,7 @@ export function createGigCalendar(title, gigs) {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//PerformerHub//Ruang Performer//EN',
+    'PRODID:-//Ruang Performer//Ruang Performer//EN',
     `X-WR-CALNAME:${title}`,
     `X-WR-TIMEZONE:UTC`
   ];

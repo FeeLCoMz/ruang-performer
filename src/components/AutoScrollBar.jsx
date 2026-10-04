@@ -77,14 +77,27 @@ const scrollContainerTo = (container, top, behavior = 'auto') => {
   container.scrollTo({ top: normalizedTop, behavior });
 };
 
-const getStickyTempoOverlayHeight = (host) => {
-  if (!host) return 0;
-  const tempoRow = host.querySelector('.song-lyrics-fullscreen-tempo-led-row');
-  if (!tempoRow) return 0;
+const STICKY_OVERLAY_SELECTORS = [
+  '.song-lyrics-fullscreen-performance-bar',
+  '.song-lyrics-fullscreen-tempo-led-row',
+];
 
-  const style = window.getComputedStyle(tempoRow);
-  const marginBottom = Number.parseFloat(style.marginBottom) || 0;
-  return Math.ceil(tempoRow.getBoundingClientRect().height + marginBottom);
+// Hitung tinggi overlay sticky (bar kontrol perform / bar tempo) yang menutupi
+// bagian atas container, sehingga lirik tidak ikut tersembunyi di belakangnya.
+const getStickyTempoOverlayHeight = (host) => {
+  if (!host || typeof host.querySelector !== 'function') return 0;
+
+  let totalHeight = 0;
+  STICKY_OVERLAY_SELECTORS.forEach((selector) => {
+    const overlay = host.querySelector(selector);
+    if (!overlay) return;
+
+    const style = window.getComputedStyle(overlay);
+    const marginBottom = Number.parseFloat(style.marginBottom) || 0;
+    totalHeight += Math.ceil(overlay.getBoundingClientRect().height + marginBottom);
+  });
+
+  return totalHeight;
 };
 
 const getLinePreviewOffset = (lineElement, previousLinesToShow = 2) => {
@@ -137,9 +150,9 @@ const buildLineBeatPlan = (lyricsDisplayRef, beatsPerBar) => {
   return { lineElements, lineBeats };
 };
 
-const resolveCurrentLineIndex = (lineElements, container) => {
+const resolveCurrentLineIndex = (lineElements, container, stickyOverlayOffset = 0) => {
   if (!lineElements.length) return 0;
-  const currentTop = getCurrentScrollTop(container) + 8;
+  const currentTop = getCurrentScrollTop(container) + 8 + stickyOverlayOffset;
 
   for (let i = 0; i < lineElements.length; i += 1) {
     const line = lineElements[i];
@@ -335,13 +348,15 @@ export default function AutoScrollBar({
   }, [lyricsDisplayRef, beatsPerBar, setCurrentBeat]);
 
   useEffect(() => {
+    const host = lyricsDisplayRef?.current;
     if (scrolling) {
       beatTimeRef.current = performance.now();
       beatsInCurrentLineRef.current = 0;
 
       const container = getScrollContainer(lyricsDisplayRef);
       const linePlan = buildLineBeatPlan(lyricsDisplayRef, beatsPerBar);
-      const currentLineIndex = resolveCurrentLineIndex(linePlan.lineElements, container);
+      const stickyOverlayOffset = getStickyTempoOverlayHeight(host || container);
+      const currentLineIndex = resolveCurrentLineIndex(linePlan.lineElements, container, stickyOverlayOffset);
       jumpToLineIndex(currentLineIndex, { forcePlan: linePlan });
 
       const scrollStep = () => {

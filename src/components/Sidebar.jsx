@@ -29,6 +29,11 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
     ...(user && user.role === 'owner' ? [{ path: '/tools', label: 'Tools', icon: '🛠️' }] : []),
   ];
 
+  // Saat Performance Mode aktif, tampilkan hanya menu Lagu dan Setlist
+  const visibleNavItems = performanceMode
+    ? navItems.filter((item) => item.path === '/songs' || item.path === '/setlists')
+    : navItems;
+
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
     // Exact match untuk /bands agar tidak konflik dengan /bands/manage
@@ -90,7 +95,7 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
         <nav className="sidebar-nav" aria-label="Navigasi utama sidebar">
           <div className="sidebar-nav-section">
             <h3 className="sidebar-nav-title">Menu Utama</h3>
-            {navItems.map(item => (
+            {visibleNavItems.map(item => (
               <button
                 key={item.path}
                 className={`sidebar-nav-item ${isActive(item.path) ? 'active' : ''}`}

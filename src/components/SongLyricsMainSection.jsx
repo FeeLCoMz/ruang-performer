@@ -68,6 +68,11 @@ export default function SongLyricsMainSection({
   barGridFocusMode,
   setBarGridFocusMode,
   onPresetCueTrigger,
+  originalKey = '',
+  targetKey = '',
+  performanceKeyOverride = '',
+  pianoRecommendation = null,
+  onApplyRecommendedTranspose,
   keySignature,
   showSheetMusic,
   setShowSheetMusic,
@@ -239,6 +244,11 @@ export default function SongLyricsMainSection({
               barGridFocusMode={barGridFocusMode}
               setBarGridFocusMode={setBarGridFocusMode}
               onPresetCueTrigger={onPresetCueTrigger}
+              originalKey={originalKey}
+              targetKey={targetKey}
+              performanceKeyOverride={performanceKeyOverride}
+              pianoRecommendation={pianoRecommendation}
+              onApplyRecommendedTranspose={onApplyRecommendedTranspose}
             />
           )}
         </>

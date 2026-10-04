@@ -260,7 +260,58 @@ function AppContent() {
 
         <div className="app-container">
           {/* Mobile Header dengan Hamburger */}
-          <header className="app-header-mobile">
+          <header className={`app-header-mobile${performanceMode ? ' app-header-mobile-performance' : ''}`}>
+            {performanceMode ? (
+              <>
+                <nav className="header-nav" aria-label="Navigasi cepat performance">
+                  <button
+                    className={`btn header-nav-btn ${location.pathname.startsWith('/songs') ? 'active' : ''}`}
+                    onClick={() => navigate('/songs')}
+                    title="Lagu"
+                    aria-label="Menu Lagu"
+                  >
+                    <span className="header-nav-icon" aria-hidden="true">🎵</span>
+                    <span className="header-nav-label">Lagu</span>
+                  </button>
+                  <button
+                    className={`btn header-nav-btn ${location.pathname.startsWith('/setlists') ? 'active' : ''}`}
+                    onClick={() => navigate('/setlists')}
+                    title="Setlist"
+                    aria-label="Menu Setlist"
+                  >
+                    <span className="header-nav-icon" aria-hidden="true">📋</span>
+                    <span className="header-nav-label">Setlist</span>
+                  </button>
+                </nav>
+                <div className="header-actions header-actions-compact">
+                  <button
+                    className="btn btn-secondary header-icon-btn active"
+                    onClick={() => setPerformanceMode(false)}
+                    title="Nonaktifkan Performance Mode"
+                    aria-label="Nonaktifkan performance mode"
+                  >
+                    🎤
+                  </button>
+                  <button
+                    className={`btn btn-secondary header-icon-btn ${lyricsMode ? 'active' : ''}`}
+                    onClick={() => setLyricsMode((v) => !v)}
+                    title={lyricsMode ? 'Switch ke tampilan Player' : 'Switch ke tampilan Vocalist'}
+                    aria-label="Toggle vocalist/player view"
+                  >
+                    {lyricsMode ? '🎤' : '🎙️'}
+                  </button>
+                  <button
+                    className={`btn btn-secondary header-icon-btn ${theme === 'dark' ? 'dark' : 'light'}`}
+                    onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+                    title="Ganti mode gelap/terang"
+                    aria-label="Toggle dark mode"
+                  >
+                    {theme === 'dark' ? '🌙' : '☀️'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
             <button
               className="hamburger-btn"
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -295,6 +346,8 @@ function AppContent() {
                 {lyricsMode ? "🎤 Vocalist" : "🎙️ Player"}
               </button>
             </div>
+              </>
+            )}
           </header>
         </div>
 

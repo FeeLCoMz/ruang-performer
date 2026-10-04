@@ -980,6 +980,11 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setBarGridFocusMode={setBarGridFocusMode}
         onPresetCueTrigger={handlePresetCueTrigger}
         keySignature={key || song?.key || ''}
+        originalKey={song?.key || key || ''}
+        targetKey={key || song?.key || ''}
+        performanceKeyOverride={setlistSongData.key || ''}
+        pianoRecommendation={pianoRecommendation}
+        onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
       />
 
       {!lyricsMode && youtubeId && (performanceMode || isEditingLyrics) && (

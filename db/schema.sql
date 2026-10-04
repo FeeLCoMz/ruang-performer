@@ -1,4 +1,4 @@
--- Turso (libsql) schema for PerformerHub
+-- Turso (libsql) schema for Ruang Performer
 
 
 -- Users table

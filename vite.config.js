@@ -54,7 +54,7 @@ export default defineConfig({
     }
   },
   define: {
-    __APP_NAME__: JSON.stringify('PerformerHub'),
+    __APP_NAME__: JSON.stringify('Ruang Performer'),
     __APP_VERSION__: JSON.stringify('1.0.0')
   }
 });

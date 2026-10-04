@@ -84,7 +84,7 @@ export default async function handler(req, res) {
       await transporter.sendMail({
         from: SMTP_USER,
         to: email,
-        subject: 'PerformerHub - Reset Your Password',
+        subject: 'Ruang Performer - Reset Your Password',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #3b82f6;">Password Reset Request</h2>
