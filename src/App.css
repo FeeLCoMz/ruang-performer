@@ -2037,7 +2037,7 @@ body {
 
 .main-content {
   flex: 1;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-md);
   background: var(--primary-bg);
   margin-left: 260px;
 }
