@@ -1,95 +1,3 @@
-export async function getUserAuditLogs() {
-  const res = await fetch('/api/auth/user-audit-logs', {
-    method: 'GET',
-    headers: {
-      ...authUtils.getAuthHeader(),
-      'Content-Type': 'application/json',
-    },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Gagal mengambil audit log');
-  return data.logs;
-}
-export async function deleteAccount() {
-  const res = await fetch('/api/auth/delete-account', {
-    method: 'DELETE',
-    headers: {
-      ...authUtils.getAuthHeader(),
-      'Content-Type': 'application/json',
-    },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Gagal menghapus akun');
-  return data;
-}
-// Update user profile
-export async function updateProfile(profileData) {
-  const res = await fetch(`${API_BASE}/auth/me`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(profileData)
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to update profile');
-  }
-  return await res.json();
-}
-
-// Change password
-export async function changePassword(oldPassword, newPassword) {
-  const res = await fetch(`${API_BASE}/auth/change-password`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ oldPassword, newPassword })
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to change password');
-  }
-  return await res.json();
-}
-// Tools (Owner) API
-export async function backupDatabase() {
-  const res = await fetch(`${API_BASE}/tools/backup`, {
-    method: 'GET',
-    headers: getHeaders()
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.text(); } catch {}
-    throw new Error('Failed to backup database');
-  }
-  return await res.text();
-}
-export async function exportAllData() {
-  const res = await fetch(`${API_BASE}/tools`, {
-    method: 'GET',
-    headers: getHeaders()
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to export data');
-  }
-  return await res.json();
-}
-
-export async function importAllData({ songs, setlists, bands, users }) {
-  const res = await fetch(`${API_BASE}/tools`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ songs, setlists, bands, users })
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to import data');
-  }
-  return await res.json();
-}
 // Simple API client for Turso backend
 import * as authUtils from './utils/auth.js';
 import {
@@ -103,81 +11,160 @@ import {
   getSetlist as getCachedSetlist,
 } from './utils/offlineCache.js';
 
+export async function getUserAuditLogs() {
+  const data = await request('/auth/user-audit-logs', {
+    fallbackError: 'Gagal mengambil audit log',
+  });
+  return data.logs;
+}
+export async function deleteAccount() {
+  return request('/auth/delete-account', {
+    method: 'DELETE',
+    fallbackError: 'Gagal menghapus akun',
+  });
+}
+// Update user profile
+export async function updateProfile(profileData) {
+  return request('/auth/me', {
+    method: 'PUT',
+    body: profileData,
+    fallbackError: 'Failed to update profile',
+  });
+}
+
+// Change password
+export async function changePassword(oldPassword, newPassword) {
+  return request('/auth/change-password', {
+    method: 'POST',
+    body: { oldPassword, newPassword },
+    fallbackError: 'Failed to change password',
+  });
+}
+// Tools (Owner) API
+export async function backupDatabase() {
+  return request('/tools/backup', { expect: 'text', fallbackError: 'Failed to backup database' });
+}
+export async function exportAllData() {
+  return request('/tools', { fallbackError: 'Failed to export data' });
+}
+
+export async function importAllData({ songs, setlists, bands, users }) {
+  return request('/tools', {
+    method: 'POST',
+    body: { songs, setlists, bands, users },
+    fallbackError: 'Failed to import data',
+  });
+}
 const API_BASE = '/api';
 
-function getHeaders(additionalHeaders = {}) {
-  return {
-    'Content-Type': 'application/json',
-    ...authUtils.getAuthHeader(),
-    ...additionalHeaders
-  };
+function resolveUrl(path) {
+  if (/^https?:\/\//.test(path)) return path;
+  if (path.startsWith('/api')) return path;
+  return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+/**
+ * Single entry point for all API calls: performs the fetch, parses the
+ * response body and normalises error handling into a thrown Error carrying
+ * the server-provided message.
+ *
+ * @param {string} path Endpoint path (e.g. '/songs') or absolute URL.
+ * @param {Object} [options]
+ * @param {string} [options.method='GET'] HTTP method.
+ * @param {*} [options.body] Value to JSON-serialise as the request body.
+ * @param {Object} [options.headers] Extra headers merged last.
+ * @param {boolean} [options.authenticated=true] Attach the auth header.
+ * @param {boolean} [options.sendContentType=true] Send a JSON content type.
+ * @param {'json'|'text'} [options.expect='json'] Response body format.
+ * @param {string} [options.fallbackError] Message used when the server gives none.
+ */
+async function request(path, options = {}) {
+  const {
+    method = 'GET',
+    body,
+    headers = {},
+    authenticated = true,
+    sendContentType = true,
+    expect = 'json',
+    fallbackError = 'Request failed',
+  } = options;
+
+  const baseHeaders = sendContentType
+    ? { 'Content-Type': 'application/json' }
+    : {};
+  const requestHeaders = authenticated
+    ? { ...baseHeaders, ...authUtils.getAuthHeader(), ...headers }
+    : { ...baseHeaders, ...headers };
+
+  const init = { method, headers: requestHeaders };
+  if (body !== undefined && body !== null) {
+    // Pass FormData/Blob/ReadableStream bodies through untouched.
+    const isRawBody =
+      (typeof FormData !== 'undefined' && body instanceof FormData) ||
+      (typeof Blob !== 'undefined' && body instanceof Blob) ||
+      (typeof ArrayBuffer !== 'undefined' && body instanceof ArrayBuffer) ||
+      typeof body === 'string';
+    init.body = isRawBody ? body : JSON.stringify(body);
+  }
+
+  const res = await fetch(resolveUrl(path), init);
+
+  if (!res.ok) {
+    let message = '';
+    if (expect === 'text') {
+      message = (await res.text().catch(() => '')) || '';
+    } else {
+      const errorData = await res.json().catch(() => ({}));
+      message = typeof errorData?.error === 'string' ? errorData.error : '';
+    }
+    throw new Error(message || fallbackError);
+  }
+
+  if (expect === 'text') return res.text();
+  if (res.status === 204) return null;
+  return res.json();
 }
 
 // Auth endpoints
 export async function register(email, username, password) {
-  const res = await fetch(`${API_BASE}/auth/register`, {
+  return request('/auth/register', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, username, password })
+    authenticated: false,
+    body: { email, username, password },
+    fallbackError: 'Registration failed',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Registration failed');
-  }
-  return await res.json();
 }
 
 export async function login(email, password) {
-  const res = await fetch(`${API_BASE}/auth/login`, {
+  return request('/auth/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    authenticated: false,
+    body: { email, password },
+    fallbackError: 'Login failed',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Login failed');
-  }
-  return await res.json();
 }
 
 export async function getCurrentUser() {
-  const res = await fetch(`${API_BASE}/auth/me`, {
-    method: 'GET',
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to get current user');
-  return await res.json();
+  return request('/auth/me', { fallbackError: 'Failed to get current user' });
 }
 
 // Password Reset endpoints
 export async function requestPasswordReset(email) {
-  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+  return request('/auth/forgot-password', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
+    authenticated: false,
+    body: { email },
+    fallbackError: 'Failed to request password reset',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to request password reset');
-  }
-  return await res.json();
 }
 
 export async function resetPassword(token, email, newPassword) {
-  const res = await fetch(`${API_BASE}/auth/reset-password`, {
+  return request('/auth/reset-password', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, email, newPassword })
+    authenticated: false,
+    body: { token, email, newPassword },
+    fallbackError: 'Failed to reset password',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to reset password');
-  }
-  return await res.json();
 }
 
 export async function fetchSongs(options = {}) {
@@ -189,15 +176,10 @@ export async function fetchSongs(options = {}) {
     params.set('include', 'trending');
   }
   const query = params.toString();
-  const url = query ? `${API_BASE}/songs?${query}` : `${API_BASE}/songs`;
+  const path = query ? `/songs?${query}` : '/songs';
 
   try {
-    const res = await fetch(url, {
-      headers: getHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch songs');
-
-    const payload = await res.json();
+    const payload = await request(path, { fallbackError: 'Failed to fetch songs' });
     const songs = Array.isArray(payload) ? payload : Array.isArray(payload?.songs) ? payload.songs : [];
     const trending = Array.isArray(payload?.trending) ? payload.trending : [];
 
@@ -221,12 +203,7 @@ export async function fetchSongs(options = {}) {
 
 export async function fetchSongById(id) {
   try {
-    const res = await fetch(`${API_BASE}/songs/${id}`, {
-      headers: getHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch song');
-
-    const song = await res.json();
+    const song = await request(`/songs/${id}`, { fallbackError: 'Failed to fetch song' });
     await cacheSong(song).catch(() => {});
     return song;
   } catch (error) {
@@ -240,63 +217,36 @@ export async function fetchSongById(id) {
 }
 
 export async function addSong(song) {
-    const res = await fetch(`${API_BASE}/songs`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(song)
-    });
-    if (!res.ok) throw new Error('Failed to add song');
-    return await res.json();
+  return request('/songs', { method: 'POST', body: song, fallbackError: 'Failed to add song' });
 }
 
 export async function updateSong(id, song) {
-    const res = await fetch(`${API_BASE}/songs/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(song)
-    });
-    if (!res.ok) throw new Error('Failed to update song');
-    return await res.json();
+  return request(`/songs/${id}`, { method: 'PUT', body: song, fallbackError: 'Failed to update song' });
 }
 
 export async function updateSongMastery(id, mastered = true) {
-    const res = await fetch(`${API_BASE}/songs/${id}/mastery`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ mastered })
-    });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to update song mastery');
-    }
-    return await res.json();
+  return request(`/songs/${id}/mastery`, {
+    method: 'PUT',
+    body: { mastered },
+    fallbackError: 'Failed to update song mastery',
+  });
 }
 
 export async function deleteSong(id) {
-  const res = await fetch(`${API_BASE}/songs/${id}`, {
+  const data = await request(`/songs/${id}`, {
     method: 'DELETE',
-    headers: getHeaders()
+    fallbackError: 'Failed to delete song',
   });
-  if (!res.ok) {
-    if (res.status === 204) return;
-    throw new Error('Failed to delete song');
-  }
-  if (res.status === 204) return;
-  return await res.json();
+  return data ?? undefined;
 }
 
 export async function fetchSetLists(options = {}) {
   const params = new URLSearchParams();
   if (options.summary) params.set('summary', '1');
-  const url = params.toString() ? `${API_BASE}/setlists?${params.toString()}` : `${API_BASE}/setlists`;
+  const path = params.toString() ? `/setlists?${params.toString()}` : '/setlists';
 
   try {
-    const res = await fetch(url, {
-      headers: getHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch setlists');
-
-    const setlists = await res.json();
+    const setlists = await request(path, { fallbackError: 'Failed to fetch setlists' });
     if (Array.isArray(setlists) && !options.summary) {
       await cacheSetlists(setlists).catch(() => {});
     }
@@ -318,12 +268,7 @@ export async function fetchSetLists(options = {}) {
 
 export async function fetchSetListById(id) {
   try {
-    const res = await fetch(`${API_BASE}/setlists/${id}`, {
-      headers: getHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch setlist');
-
-    const setlist = await res.json();
+    const setlist = await request(`/setlists/${id}`, { fallbackError: 'Failed to fetch setlist' });
     await cacheSetlist(setlist).catch(() => {});
     return setlist;
   } catch (error) {
@@ -389,154 +334,78 @@ export async function prefetchPerformanceData() {
 }
 
 export async function addSetList(setList) {
-  const res = await fetch(`${API_BASE}/setlists`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify(setList)
-  });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to add setlist');
-  }
-  return await res.json();
+  return request('/setlists', { method: 'POST', body: setList, fallbackError: 'Failed to add setlist' });
 }
 
 export async function deleteSetList(id) {
-  const res = await fetch(`${API_BASE}/setlists/${id}`, {
+  const data = await request(`/setlists/${id}`, {
     method: 'DELETE',
-    headers: getHeaders()
+    fallbackError: 'Failed to delete setlist',
   });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Failed to delete setlist');
-  }
-  // Status 204 has no content
-  return res.status === 204 ? { id } : await res.json();
+  return data ?? { id };
 }
 
 export async function updateSetList(setList) {
-  const res = await fetch(`${API_BASE}/setlists/${setList.id}`, {
+  return request(`/setlists/${setList.id}`, {
     method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(setList)
+    body: setList,
+    fallbackError: 'Failed to update setlist',
   });
-  if (!res.ok) throw new Error('Failed to update setlist');
-  return await res.json();
 }
 
 export async function askAI({ prompt, context, system, model } = {}) {
-  const res = await fetch(`${API_BASE}/ai`, {
+  return request('/ai', {
     method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ prompt, context, system, model })
+    body: { prompt, context, system, model },
+    fallbackError: 'Failed to call AI',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to call AI');
-  }
-  return await res.json();
 }
 
 
 export async function transcribeAudio(audioFile) {
   const formData = new FormData();
   formData.append('audio', audioFile);
-  const res = await fetch(`${API_BASE}/ai/transcribe`, {
+  return request('/ai/transcribe', {
     method: 'POST',
-    headers: { ...authUtils.getAuthHeader() },
-    body: formData
+    sendContentType: false,
+    body: formData,
+    fallbackError: 'Failed to transcribe audio',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to transcribe audio');
-  }
-  return await res.json();
 }
 
 export async function aiSongSearch({ title, artist }) {
-  const res = await fetch(`${API_BASE}/ai/song-search`, {
+  return request('/ai/song-search', {
     method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ title, artist })
+    body: { title, artist },
+    fallbackError: 'Failed to search song',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to search song');
-  }
-  return await res.json();
 }
 
 // Bands API
 export async function fetchBands() {
-  const res = await fetch(`${API_BASE}/bands`, {
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch bands');
-  return await res.json();
+  return request('/bands', { fallbackError: 'Failed to fetch bands' });
 }
 
 export async function fetchBandById(id) {
-  const res = await fetch(`${API_BASE}/bands/${id}`, {
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch band');
-  return await res.json();
+  return request(`/bands/${id}`, { fallbackError: 'Failed to fetch band' });
 }
 
 export async function createBand(band) {
-  const res = await fetch(`${API_BASE}/bands`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify(band)
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to create band');
-  }
-  return await res.json();
+  return request('/bands', { method: 'POST', body: band, fallbackError: 'Failed to create band' });
 }
 
 export async function updateBand(id, band) {
-  const res = await fetch(`${API_BASE}/bands/${id}`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(band)
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to update band');
-  }
-  return await res.json();
+  return request(`/bands/${id}`, { method: 'PUT', body: band, fallbackError: 'Failed to update band' });
 }
 
 export async function deleteBand(id) {
-  const res = await fetch(`${API_BASE}/bands/${id}`, {
-    method: 'DELETE',
-    headers: getHeaders()
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to delete band');
-  }
-  return await res.json();
+  return request(`/bands/${id}`, { method: 'DELETE', fallbackError: 'Failed to delete band' });
 }
 
 export async function fetchYoutubeTrending() {
-  const res = await fetch(`${API_BASE}/songs?include=trending`, {
-    headers: getHeaders()
+  const data = await request('/songs?include=trending', {
+    fallbackError: 'Failed to fetch YouTube trending',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to fetch YouTube trending');
-  }
-  const data = await res.json();
   return {
     trending: Array.isArray(data?.trending) ? data.trending : []
   };
@@ -544,200 +413,89 @@ export async function fetchYoutubeTrending() {
 
 // Gigs API
 export async function fetchGigs(bandId = null) {
-  let url = `${API_BASE}/events/gig`;
-  if (bandId) {
-    url += `?bandId=${encodeURIComponent(bandId)}`;
-  }
-  const res = await fetch(url, {
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch gigs');
-  return await res.json();
+  const path = bandId
+    ? `/events/gig?bandId=${encodeURIComponent(bandId)}`
+    : '/events/gig';
+  return request(path, { fallbackError: 'Failed to fetch gigs' });
 }
 
 export async function fetchGigById(id) {
-  const res = await fetch(`${API_BASE}/events/gig/${id}`, {
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch gig');
-  return await res.json();
+  return request(`/events/gig/${id}`, { fallbackError: 'Failed to fetch gig' });
 }
 
 export async function createGig(gig) {
-  const res = await fetch(`${API_BASE}/events/gig`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify(gig)
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to create gig');
-  }
-  return await res.json();
+  return request('/events/gig', { method: 'POST', body: gig, fallbackError: 'Failed to create gig' });
 }
 
 export async function updateGig(id, gig) {
-  const res = await fetch(`${API_BASE}/events/gig/${id}`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(gig)
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to update gig');
-  }
-  return await res.json();
+  return request(`/events/gig/${id}`, { method: 'PUT', body: gig, fallbackError: 'Failed to update gig' });
 }
 
 export async function deleteGig(id) {
-  const res = await fetch(`${API_BASE}/events/gig/${id}`, {
+  const data = await request(`/events/gig/${id}`, {
     method: 'DELETE',
-    headers: getHeaders()
+    fallbackError: 'Failed to delete gig',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to delete gig');
-  }
   // 204 No Content has no body
-  if (res.status === 204) {
-    return { success: true };
-  }
-  return await res.json();
+  return data ?? { success: true };
 }
 
 // List Gemini Models
 export async function listGeminiModels() {
-  const res = await fetch(`/api/ai/list-models`, {
-    method: 'GET',
-    headers: getHeaders(),
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to list Gemini models');
-  }
-  return await res.json();
+  return request('/ai/list-models', { fallbackError: 'Failed to list Gemini models' });
 }
 
 // Band Members endpoints
 // Tambah anggota band
 export async function addBandMember(bandId, email, role) {
-  const res = await fetch(`${API_BASE}/bands/${bandId}/members`, {
+  return request(`/bands/${bandId}/members`, {
     method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ email, role })
+    body: { email, role },
+    fallbackError: 'Failed to add band member',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to add band member');
-  }
-  return await res.json();
 }
 export async function getBandMembers(bandId) {
-  const res = await fetch(`${API_BASE}/bands/${bandId}/members`, {
-    headers: getHeaders()
-  });
-  if (!res.ok) throw new Error('Failed to fetch band members');
-  return await res.json();
+  return request(`/bands/${bandId}/members`, { fallbackError: 'Failed to fetch band members' });
 }
 
 export async function updateMemberRole(bandId, userId, role) {
-  const res = await fetch(`${API_BASE}/bands/${bandId}/members/${userId}`, {
+  return request(`/bands/${bandId}/members/${userId}`, {
     method: 'PATCH',
-    headers: getHeaders(),
-    body: JSON.stringify({ role })
+    body: { role },
+    fallbackError: 'Failed to update member role',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to update member role');
-  }
-  return await res.json();
 }
 
 export async function removeBandMember(bandId, userId) {
-  const res = await fetch(`${API_BASE}/bands/${bandId}/members/${userId}`, {
+  return request(`/bands/${bandId}/members/${userId}`, {
     method: 'DELETE',
-    headers: getHeaders()
+    fallbackError: 'Failed to remove member',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Failed to remove member');
-  }
-  return await res.json();
 }
 
 // --- User Management (Owner Only) ---
 export async function getAllUsers() {
-  const res = await fetch(`${API_BASE}/users`, {
-    method: 'GET',
-    headers: getHeaders()
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Gagal mengambil daftar users');
-  }
-  return await res.json();
+  return request('/users', { fallbackError: 'Gagal mengambil daftar users' });
 }
 
 export async function getUserById(userId) {
-  const res = await fetch(`${API_BASE}/users/${userId}`, {
-    method: 'GET',
-    headers: getHeaders()
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Gagal mengambil data user');
-  }
-  return await res.json();
+  return request(`/users/${userId}`, { fallbackError: 'Gagal mengambil data user' });
 }
 
 export async function updateUser(userId, updates) {
-  const res = await fetch(`${API_BASE}/users/${userId}`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(updates)
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Gagal mengupdate user');
-  }
-  return await res.json();
+  return request(`/users/${userId}`, { method: 'PUT', body: updates, fallbackError: 'Gagal mengupdate user' });
 }
 
 export async function deleteUser(userId) {
-  const res = await fetch(`${API_BASE}/users/${userId}`, {
-    method: 'DELETE',
-    headers: getHeaders()
-  });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Gagal menghapus user');
-  }
-  return await res.json();
+  return request(`/users/${userId}`, { method: 'DELETE', fallbackError: 'Gagal menghapus user' });
 }
 
 export async function resetUserPassword(userId, newPassword) {
-  const res = await fetch(`${API_BASE}/users/${userId}/reset-password`, {
+  return request(`/users/${userId}/reset-password`, {
     method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ newPassword })
+    body: { newPassword },
+    fallbackError: 'Gagal reset password',
   });
-  if (!res.ok) {
-    let err;
-    try { err = await res.json(); } catch {}
-    throw new Error(err?.error || 'Gagal reset password');
-  }
-  return await res.json();
 }
 
 // Popular Songs API

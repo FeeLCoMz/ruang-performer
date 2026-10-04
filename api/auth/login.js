@@ -20,10 +20,18 @@ async function readJson(req) {
 
 const rateLimiter = createRateLimiter({ ...RATE_LIMITS.AUTH_LOGIN });
 export default async function handler(req, res) {
-  let rateLimited = false;
-  await rateLimiter(req, res, () => { rateLimited = false; });
+  // The limiter only calls the continuation when the request is allowed;
+  // if it denies, it responds 429 itself and never invokes the callback.
+  let allowed = false;
+  await rateLimiter(req, res, () => { allowed = true; });
   // If rate limiter already sent a response, stop handler
   if (res.headersSent) return;
+  if (!allowed) {
+    return res.status(429).json({
+      error: 'Too many requests',
+      message: 'Terlalu banyak percobaan login. Coba lagi nanti.'
+    });
+  }
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });

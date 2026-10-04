@@ -72,18 +72,6 @@ async function readJson(req) {
   });
 }
 
-export default async function handler(req, res) {
-  const url = req.url || '';
-  if (url.startsWith('/song-search')) return await handleSongSearch(req, res);
-  if (url.startsWith('/popular-songs')) {
-    return res.status(404).json({
-      error: 'Endpoint ini tidak digunakan lagi. Gunakan /api/songs?include=trending untuk data trending YouTube.'
-    });
-  }
-  if (url.startsWith('/transcribe')) return await handleTranscribe(req, res);
-  if (url.startsWith('/recommend-setlist')) return await handleRecommendSetlist(req, res);
-  if (url.startsWith('/list-models')) return await handleListModels(req, res);
-  return await handleChat(req, res);
 // --- List Models handler ---
 async function handleListModels(req, res) {
   try {
@@ -162,6 +150,19 @@ async function handleRecommendSetlist(req, res) {
     res.status(500).json({ error: 'Gagal mendapatkan rekomendasi setlist', message: err.message });
   }
 }
+
+export default async function handler(req, res) {
+  const url = req.url || '';
+  if (url.startsWith('/song-search')) return await handleSongSearch(req, res);
+  if (url.startsWith('/popular-songs')) {
+    return res.status(404).json({
+      error: 'Endpoint ini tidak digunakan lagi. Gunakan /api/songs?include=trending untuk data trending YouTube.'
+    });
+  }
+  if (url.startsWith('/transcribe')) return await handleTranscribe(req, res);
+  if (url.startsWith('/recommend-setlist')) return await handleRecommendSetlist(req, res);
+  if (url.startsWith('/list-models')) return await handleListModels(req, res);
+  return await handleChat(req, res);
 }
 
 // --- Chat/general AI handler ---
@@ -228,6 +229,126 @@ async function handleChat(req, res) {
   }
 }
 
+// --- Song search helpers ---
+const GEMINI_JSON_FORMAT_INSTRUCTIONS = `Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- arrangement_style: gaya aransemen (akustik, full band, unplugged, dll)\n- keyboard_patch: string penjelasan patch keyboard yang digunakan dan bagaimana patch tersebut dipakai dalam lagu (misal: "EP1 untuk intro dan verse, Pad untuk chorus, Strings untuk bridge") atau null jika tidak diketahui\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan.`;
+
+/**
+ * Build the Gemini prompt for song metadata lookup.
+ */
+function buildSongInfoPrompt(title, artist) {
+  if (!artist) {
+    return `Cari informasi lagu berjudul "${title}". Jika diketahui, berikan juga nama artis/penyanyi. ${GEMINI_JSON_FORMAT_INSTRUCTIONS} Contoh:\n{"artist": "John Doe", "key": "G", "tempo": 120, "genre": "pop", "arrangement_style": "full band", "keyboard_patch": "EP1 untuk intro, Pad untuk chorus", "lyrics": "Ini lirik lagu..."}`;
+  }
+  return `Cari informasi lagu "${title}" oleh "${artist}". ${GEMINI_JSON_FORMAT_INSTRUCTIONS} Contoh:\n{"artist": "${artist}", "key": "G", "tempo": 120, "genre": "pop", "arrangement_style": "akustik", "keyboard_patch": "EP1 untuk intro, Pad untuk chorus", "lyrics": "Ini lirik lagu..."}`;
+}
+
+/**
+ * Build the chord-site deep links shown to the user.
+ */
+function buildChordLinks(title, artist) {
+  const q = encodeURIComponent(`${title} ${artist || ''}`);
+  return [
+    { title: 'Chordtela', site: 'chordtela.com', url: `https://www.chordtela.com/chord-kunci-gitar-dasar-hasil-pencarian?q=${q}` },
+    { title: 'Ultimate Guitar', site: 'ultimate-guitar.com', url: `https://www.ultimate-guitar.com/search.php?search_type=title&value=${q}` },
+    { title: 'Chordify', site: 'chordify.net', url: `https://www.chordify.net/search?q=${q}` },
+    { title: 'Google Search', site: 'google.com', url: `https://www.google.com/search?q=${encodeURIComponent(`${title} ${artist || ''} chord`)}` }
+  ];
+}
+
+/**
+ * Look up a YouTube video id for the given song.
+ * Never throws: failures are reported through the returned debug object so the
+ * rest of the song-search response can still be returned.
+ *
+ * @returns {Promise<{youtubeId: string|null, debug: Object}>}
+ */
+async function searchYoutube(title, artist) {
+  const debug = {};
+  if (!process.env.VITE_YOUTUBE_API_KEY) {
+    console.warn('Warning: VITE_YOUTUBE_API_KEY not configured');
+    debug.youtubeKeyMissing = true;
+    return { youtubeId: null, debug };
+  }
+
+  try {
+    const youtubeUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(`${title} ${artist}`)}&key=${process.env.VITE_YOUTUBE_API_KEY}`;
+    const youtubeResponse = await fetch(youtubeUrl, { timeout: 5000 });
+    if (!youtubeResponse.ok) {
+      debug.youtubeStatus = youtubeResponse.status;
+      console.error(`YouTube API returned ${youtubeResponse.status}`);
+      return { youtubeId: null, debug };
+    }
+    const data = await youtubeResponse.json();
+    const items = Array.isArray(data?.items) ? data.items : [];
+    return { youtubeId: items.length > 0 ? items[0]?.id?.videoId ?? null : null, debug };
+  } catch (err) {
+    console.error('YouTube search error:', err);
+    debug.youtubeError = err.message;
+    return { youtubeId: null, debug };
+  }
+}
+
+/**
+ * Ask Gemini for structured song metadata, walking the supported model list
+ * until one answers. Never throws.
+ *
+ * @returns {Promise<{success: boolean, fields: Object, modelName: string|null, debug: Object}>}
+ */
+async function fetchSongInfoFromGemini(prompt) {
+  const { GoogleGenerativeAI } = await import('@google/generative-ai');
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const deniedModels = new Set();
+  let lastError = null;
+
+  for (const modelName of GEMINI_TEXT_MODELS_SUPPORTED) {
+    if (deniedModels.has(modelName)) continue;
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const response = await model.generateContent(prompt);
+      const text = response.response.text();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) continue;
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        success: true,
+        modelName,
+        fields: {
+          artist: parsed.artist || null,
+          key: parsed.key || null,
+          tempo: parsed.tempo || null,
+          genre: parsed.genre || null,
+          arrangementStyle: parsed.arrangement_style || null,
+          keyboardPatch: parsed.keyboard_patch || null,
+          lyrics: parsed.lyrics || null,
+        },
+        debug: {},
+      };
+    } catch (err) {
+      lastError = err;
+      console.error(`Gemini API error (model: ${modelName}):`, err);
+      if (isGeminiProjectDeniedAccess(err?.status, err?.message)) {
+        deniedModels.add(modelName);
+      }
+      // Lanjut ke model berikutnya untuk toleransi akses/quota/preview restrictions
+    }
+  }
+
+  const message = lastError?.message || '';
+  const isQuotaError = Boolean(
+    lastError && (lastError.status === 429 || message.includes('429') || message.toLowerCase().includes('quota'))
+  );
+  return {
+    success: false,
+    modelName: null,
+    fields: {},
+    debug: {
+      geminiError: isQuotaError ? 'Gemini API quota exceeded' : (lastError?.message || 'Gemini API gagal'),
+      geminiQuota: isQuotaError,
+    },
+  };
+}
+
 // --- Song search handler ---
 async function handleSongSearch(req, res) {
   if (req.method !== 'POST') {
@@ -249,12 +370,13 @@ async function handleSongSearch(req, res) {
   if (songInfoCache[cacheKey]) {
     return res.status(200).json(songInfoCache[cacheKey]);
   }
+
   try {
     const results = {
       artist: null,
       key: null,
       tempo: null,
-      genre: null,      
+      genre: null,
       arrangementStyle: null, // new field
       keyboardPatch: null,    // new field
       youtubeId: null,
@@ -262,104 +384,33 @@ async function handleSongSearch(req, res) {
       chordLinks: [],
       debug: {}
     };
-    // YouTube search
-    if (!process.env.VITE_YOUTUBE_API_KEY) {
-      console.warn('Warning: VITE_YOUTUBE_API_KEY not configured');
-      results.debug.youtubeKeyMissing = true;
-    }
-    if (process.env.VITE_YOUTUBE_API_KEY) {
-      try {
-        const youtubeUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(`${title} ${artist}`)}&key=${process.env.VITE_YOUTUBE_API_KEY}`;
-        const youtubeResponse = await fetch(youtubeUrl, { timeout: 5000 });
-        if (youtubeResponse.ok) {
-          const data = await youtubeResponse.json();
-          if (data?.items?.length > 0) {
-            results.youtubeId = data.items[0].id.videoId;
-          }
-        } else {
-          results.debug.youtubeStatus = youtubeResponse.status;
-          console.error(`YouTube API returned ${youtubeResponse.status}`);
-        }
-      } catch (err) {
-        console.error('YouTube search error:', err);
-        results.debug.youtubeError = err.message;
-      }
-    }
+
+    // YouTube search (independent of Gemini)
+    const youtube = await searchYoutube(title, artist);
+    results.youtubeId = youtube.youtubeId;
+    results.debug = { ...results.debug, ...youtube.debug };
+
     // Chord links
-    results.chordLinks = [
-      { title: 'Chordtela', site: 'chordtela.com', url: `https://www.chordtela.com/chord-kunci-gitar-dasar-hasil-pencarian?q=${encodeURIComponent(`${title} ${artist}`)}` },
-      { title: 'Ultimate Guitar', site: 'ultimate-guitar.com', url: `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(`${title} ${artist}`)}` },
-      { title: 'Chordify', site: 'chordify.net', url: `https://www.chordify.net/search?q=${encodeURIComponent(`${title} ${artist}`)}` },
-      { title: 'Google Search', site: 'google.com', url: `https://www.google.com/search?q=${encodeURIComponent(`${title} ${artist} chord`)}` }
-    ];
+    results.chordLinks = buildChordLinks(title, artist);
+
     // Gemini song info
     if (process.env.GEMINI_API_KEY) {
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      let prompt;
-      if (!artist) {
-        prompt = `Cari informasi lagu berjudul "${title}". Jika diketahui, berikan juga nama artis/penyanyi. Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- arrangement_style: gaya aransemen (akustik, full band, unplugged, dll)\n- keyboard_patch: string penjelasan patch keyboard yang digunakan dan bagaimana patch tersebut dipakai dalam lagu (misal: "EP1 untuk intro dan verse, Pad untuk chorus, Strings untuk bridge") atau null jika tidak diketahui\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"artist": "John Doe", "key": "G", "tempo": 120, "genre": "pop", "arrangement_style": "full band", "keyboard_patch": "EP1 untuk intro, Pad untuk chorus", "lyrics": "Ini lirik lagu..."}`;
+      const gemini = await fetchSongInfoFromGemini(buildSongInfoPrompt(title, artist));
+      Object.assign(results, gemini.fields);
+      results.debug = { ...results.debug, ...gemini.debug };
+      if (gemini.success) {
+        results.debug.geminiModel = gemini.modelName;
       } else {
-        prompt = `Cari informasi lagu "${title}" oleh "${artist}". Berikan informasi dalam format JSON dengan field:\n- artist: nama artis/penyanyi\n- key: kunci musik (C, D, E, F, G, A, B atau minor variants seperti Cm, Dm, dll) atau null jika tidak diketahui\n- tempo: tempo BPM sebagai angka atau null jika tidak diketahui\n- genre: genre/style musik (pop, rock, jazz, classical, dll) atau null jika tidak diketahui\n- arrangement_style: gaya aransemen (akustik, full band, unplugged, dll)\n- keyboard_patch: string penjelasan patch keyboard yang digunakan dan bagaimana patch tersebut dipakai dalam lagu (misal: "EP1 untuk intro dan verse, Pad untuk chorus, Strings untuk bridge") atau null jika tidak diketahui\n- lyrics: lirik lagu lengkap (string, jika ada, tanpa penjelasan tambahan)\n\nHanya return JSON tanpa penjelasan tambahan. Contoh:\n{"artist": "${artist}", "key": "G", "tempo": 120, "genre": "pop", "arrangement_style": "akustik", "keyboard_patch": "EP1 untuk intro, Pad untuk chorus", "lyrics": "Ini lirik lagu..."}`;
-      }
-      let success = false;
-      let lastError = null;
-      const deniedModels = new Set();
-      for (const modelName of GEMINI_TEXT_MODELS_SUPPORTED) {
-        if (deniedModels.has(modelName)) continue;
-        try {
-          const model = genAI.getGenerativeModel({ model: modelName });
-          const response = await model.generateContent(prompt);
-          const text = response.response.text();
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            if (parsed.artist) results.artist = parsed.artist;
-            if (parsed.key) results.key = parsed.key;
-            if (parsed.tempo) results.tempo = parsed.tempo;
-            if (parsed.genre) results.genre = parsed.genre;
-            if (parsed.arrangement_style) results.arrangementStyle = parsed.arrangement_style;
-            if (parsed.keyboard_patch) results.keyboardPatch = parsed.keyboard_patch;
-            if (parsed.lyrics) results.lyrics = parsed.lyrics;
-            results.debug.geminiModel = modelName;
-            success = true;
-            break;
-          }
-        } catch (err) {
-          lastError = err;
-          console.error(`Gemini API error (model: ${modelName}):`, err);
-          if (isGeminiProjectDeniedAccess(err?.status, err?.message)) {
-            deniedModels.add(modelName);
-          }
-          // Lanjut ke model berikutnya untuk toleransi akses/quota/preview restrictions
-        }
-      }
-      if (!success) {
-        // Cek error quota
-        let isQuotaError = false;
-        if (lastError && (lastError.status === 429 || (lastError.message && lastError.message.includes('429')) || (lastError.message && lastError.message.toLowerCase().includes('quota')))) {
-          isQuotaError = true;
-        }
-        results.debug.geminiError = isQuotaError ? 'Gemini API quota exceeded' : (lastError?.message || 'Gemini API gagal');
-        results.debug.geminiQuota = isQuotaError;
-        // Tetap return hasil YouTube, chordLinks, dan field lain yang tidak bergantung Gemini
+        // Tetap return hasil YouTube, chordLinks, dan field lain yang tidak bergantung Gemini.
         // Jangan return error status, biarkan frontend handle error dari debug.geminiError
-        // (artist, youtubeId, chordLinks, dsb tetap terisi jika ada)
-        // Model Gemini tidak diisi
-        // Save to cache before returning
         songInfoCache[cacheKey] = results;
         return res.status(200).json(results);
       }
     }
+
     // Always return artist (from input or AI)
     if (!results.artist) results.artist = artist || null;
-    // Always return chordLinks
-    results.chordLinks = results.chordLinks || [
-      { title: 'Chordtela', site: 'chordtela.com', url: `https://www.chordtela.com/chord-kunci-gitar-dasar-hasil-pencarian?q=${encodeURIComponent(`${title} ${artist || results.artist || ''}`)}` },
-      { title: 'Ultimate Guitar', site: 'ultimate-guitar.com', url: `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(`${title} ${artist || results.artist || ''}`)}` },
-      { title: 'Chordify', site: 'chordify.net', url: `https://www.chordify.net/search?q=${encodeURIComponent(`${title} ${artist || results.artist || ''}`)}` },
-      { title: 'Google Search', site: 'google.com', url: `https://www.google.com/search?q=${encodeURIComponent(`${title} ${artist || results.artist || ''} chord`)}` }
-    ];
+
     // Save to cache before returning
     songInfoCache[cacheKey] = results;
     return res.status(200).json(results);

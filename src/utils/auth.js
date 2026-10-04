@@ -21,7 +21,15 @@ export function saveUser(user) {
 
 export function getUser() {
   const user = localStorage.getItem(USER_KEY);
-  return user ? JSON.parse(user) : null;
+  if (!user) return null;
+  try {
+    return JSON.parse(user);
+  } catch {
+    // Corrupted or non-JSON payload (e.g. written by an older version):
+    // drop it so callers get a clean null instead of a thrown SyntaxError.
+    localStorage.removeItem(USER_KEY);
+    return null;
+  }
 }
 
 export function removeUser() {
