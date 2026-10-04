@@ -52,12 +52,6 @@ export default function SongChordsLyricsToolbar({
   setShowJazzChords,
   showSimpleChords,
   setShowSimpleChords,
-  chordLayoutMode,
-  setChordLayoutMode,
-  barGridColumns,
-  setBarGridColumns,
-  barGridFocusMode,
-  setBarGridFocusMode,
   keySignature,
   handleEditLyrics,
   savingLyrics,
@@ -89,19 +83,9 @@ export default function SongChordsLyricsToolbar({
   const [isYoutubeReady, setIsYoutubeReady] = useState(false);
   const chordStyleMenuRef = useRef(null);
   const normalizedTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
-  const isBarGridMode = chordLayoutMode === 'bar-grid';
   const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
   const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
   const toolbarClassName = `song-lyrics-toolbar ${performanceMode ? 'song-lyrics-toolbar--performance' : 'song-lyrics-toolbar--normal'}`;
-  const currentGridPreset = isBarGridMode
-    ? (() => {
-      const columns = String(barGridColumns || 'auto');
-      if (columns === '4' && barGridFocusMode) return 'dense';
-      if (columns === '2' && barGridFocusMode) return 'conductor';
-      if (columns === 'auto' && !barGridFocusMode) return 'balanced';
-      return 'custom';
-    })()
-    : 'off';
 
   // Sync YouTube playing state
   useEffect(() => {
@@ -146,36 +130,6 @@ export default function SongChordsLyricsToolbar({
     setShowJazzChords(style === 'jazz');
     setShowSimpleChords(style === 'simple');
     setShowChordStyleMenu(false);
-  };
-
-  const applyGridPreset = (preset) => {
-    if (typeof setChordLayoutMode !== 'function') return;
-    if (typeof setBarGridColumns !== 'function') return;
-    if (typeof setBarGridFocusMode !== 'function') return;
-
-    if (preset === 'off') {
-      setChordLayoutMode('lyrics');
-      return;
-    }
-
-    setChordLayoutMode('bar-grid');
-
-    if (preset === 'balanced') {
-      setBarGridColumns('auto');
-      setBarGridFocusMode(false);
-      return;
-    }
-
-    if (preset === 'dense') {
-      setBarGridColumns('4');
-      setBarGridFocusMode(true);
-      return;
-    }
-
-    if (preset === 'conductor') {
-      setBarGridColumns('2');
-      setBarGridFocusMode(true);
-    }
   };
 
   return (
@@ -310,85 +264,6 @@ export default function SongChordsLyricsToolbar({
               setCurrentBeat={setCurrentBeat}
               compactMode={performanceMode}
             />
-          </div>
-        )}
-
-        {!isEditingLyrics && !lyricsMode && performanceMode && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-layout-toggle">
-            <button
-              type="button"
-              className={`btn ${isBarGridMode ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
-              title={isBarGridMode ? 'Mode birama aktif' : 'Aktifkan mode birama'}
-              aria-label={isBarGridMode ? 'Mode birama aktif' : 'Aktifkan mode birama'}
-              onClick={() => {
-                if (typeof setChordLayoutMode !== 'function') return;
-                setChordLayoutMode((prev) => (prev === 'bar-grid' ? 'lyrics' : 'bar-grid'));
-              }}
-            >
-              <span aria-hidden="true">▦</span>
-            </button>
-          </div>
-        )}
-
-        {!isEditingLyrics && !lyricsMode && isBarGridMode && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-grid-density">
-            <select
-              className="song-lyrics-grid-preset-select"
-              value={currentGridPreset}
-              onChange={(e) => applyGridPreset(e.target.value)}
-              aria-label="Preset bar grid"
-              title="Preset bar grid"
-            >
-              <option value="balanced">Balanced</option>
-              <option value="dense">Dense</option>
-              <option value="conductor">Conductor</option>
-              {currentGridPreset === 'custom' && <option value="custom">Custom</option>}
-            </select>
-            <select
-              className="song-lyrics-grid-density-select"
-              value={String(barGridColumns || 'auto')}
-              onChange={(e) => {
-                if (typeof setBarGridColumns !== 'function') return;
-                setBarGridColumns(e.target.value);
-              }}
-              aria-label="Kepadatan bar grid"
-              title="Kepadatan bar grid"
-            >
-              <option value="auto">Auto</option>
-              <option value="2">2 bar/row</option>
-              <option value="4">4 bar/row</option>
-            </select>
-            <button
-              type="button"
-              className={`btn ${barGridFocusMode ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
-              onClick={() => {
-                if (typeof setBarGridFocusMode !== 'function') return;
-                setBarGridFocusMode((prev) => !prev);
-              }}
-              title={barGridFocusMode ? 'Nonaktifkan focus mode birama' : 'Aktifkan focus mode birama'}
-              aria-label={barGridFocusMode ? 'Nonaktifkan focus mode birama' : 'Aktifkan focus mode birama'}
-            >
-              <span aria-hidden="true">◎</span>
-              {!performanceMode && <span className="song-lyrics-toolbar-btn-label">{barGridFocusMode ? 'Focus ON' : 'Focus OFF'}</span>}
-            </button>
-          </div>
-        )}
-
-        {!isEditingLyrics && !lyricsMode && !performanceMode && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-layout-toggle">
-            <button
-              type="button"
-              className={`btn ${isBarGridMode ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
-              title={isBarGridMode ? 'Kembali ke mode lirik standar' : 'Aktifkan mode bar grid'}
-              aria-label={isBarGridMode ? 'Kembali ke mode lirik standar' : 'Aktifkan mode bar grid'}
-              onClick={() => {
-                if (typeof setChordLayoutMode !== 'function') return;
-                setChordLayoutMode((prev) => (prev === 'bar-grid' ? 'lyrics' : 'bar-grid'));
-              }}
-            >
-              <span aria-hidden="true">▦</span>
-              <span className="song-lyrics-toolbar-btn-label">{isBarGridMode ? 'Line Mode' : 'Bar Grid'}</span>
-            </button>
           </div>
         )}
 

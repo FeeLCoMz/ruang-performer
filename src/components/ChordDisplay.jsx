@@ -22,16 +22,6 @@ import React, { useState } from 'react';
 import NumberToken from './NumberToken.jsx';
 import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
 
-const BARLINE_REGEX = /^(\|:|:\||\[\:|:\]|\|\||\|)$/;
-
-const parseBeatsPerBar = (timeSignature) => {
-  const match = String(timeSignature || '4/4').trim().match(/^(\d+)\s*\/\s*(\d+)$/);
-  if (!match) return 4;
-  const numerator = Number(match[1]);
-  if (!Number.isFinite(numerator) || numerator <= 0) return 4;
-  return Math.max(1, Math.min(12, numerator));
-};
-
 const getInstrumentTokenClass = (label = '') => {
   const normalized = String(label || '').trim().toLowerCase();
   if (!normalized) return 'cd-instrument-token--default';
@@ -43,112 +33,9 @@ const getInstrumentTokenClass = (label = '') => {
   if (/(vokal|voice|choir|vocal|vocalist)/.test(normalized)) return 'cd-instrument-token--vocal';
   if (/(violin|biola|cello|string|strings|kontrabas)/.test(normalized)) return 'cd-instrument-token--strings';
   return 'cd-instrument-token--default';
-};
-
-const getSecondaryAccentBeatSet = (timeSignature, beatsPerBar) => {
-  const normalized = String(timeSignature || '').replace(/\s+/g, '');
-  if (normalized === '6/8' && beatsPerBar >= 4) return new Set([3]);
-  if (normalized === '12/8' && beatsPerBar >= 10) return new Set([3, 6, 9]);
-  if (normalized === '4/4' && beatsPerBar >= 3) return new Set([2]);
-  return new Set();
-};
-
-const splitCompactChordToken = (token) => {
-  if (typeof token !== 'string' || !token.includes('..')) return [token];
-  return token
-    .split(/\.{2,}/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-};
-
-const buildMeasuresFromChordTokens = (tokens) => {
-  const compact = Array.isArray(tokens) ? tokens.filter((token) => !token?.isSpace) : [];
-  if (!compact.length) return [];
-
-  const hasBarline = compact.some((token) => token?.isBarline || BARLINE_REGEX.test(token?.token || ''));
-  const normalizeMeasureTokens = (measureTokens) => {
-    const expanded = [];
-    measureTokens.forEach((token) => {
-      const parts = splitCompactChordToken(token?.token || '');
-      if (parts.length > 1) {
-        parts.forEach((part) => expanded.push({ ...token, token: part }));
-      } else {
-        expanded.push(token);
-      }
-    });
-    return expanded;
   };
 
-  if (hasBarline) {
-    const measures = [];
-    let currentMeasure = [];
-
-    compact.forEach((token) => {
-      const isBarline = token?.isBarline || BARLINE_REGEX.test(token?.token || '');
-      if (isBarline) {
-        if (currentMeasure.length) {
-          measures.push(normalizeMeasureTokens(currentMeasure));
-          currentMeasure = [];
-        }
-        return;
-      }
-      currentMeasure.push(token);
-    });
-
-    if (currentMeasure.length) {
-      measures.push(normalizeMeasureTokens(currentMeasure));
-    }
-
-    return measures;
-  }
-
-  const chordLikeTokens = compact.filter((token) => token?.isChord || token?.isNumber);
-  if (!chordLikeTokens.length) {
-    return [normalizeMeasureTokens(compact)];
-  }
-
-  return chordLikeTokens.map((token) => normalizeMeasureTokens([token]));
-};
-
-const buildBeatSlotsFromMeasureTokens = (measureTokens, beatsPerBar) => {
-  const totalBeats = Math.max(1, Number(beatsPerBar) || 4);
-  const slots = Array.from({ length: totalBeats }, () => ({ chords: [], texts: [] }));
-  const chordTokens = (Array.isArray(measureTokens) ? measureTokens : []).filter((token) => token?.isChord || token?.isNumber);
-
-  if (!chordTokens.length) {
-    return slots;
-  }
-
-  const hasDotStepper = chordTokens.some((token) => /^\.$/.test(String(token?.token || '').trim()));
-
-  if (!hasDotStepper) {
-    chordTokens.forEach((token, idx) => {
-      const beatIndex = Math.min(idx, totalBeats - 1);
-      slots[beatIndex].chords.push(token.token);
-    });
-    return slots;
-  }
-
-  let beatCursor = 0;
-  chordTokens.forEach((token) => {
-    const raw = String(token?.token || '').trim();
-    if (!raw) return;
-
-    if (raw === '.') {
-      beatCursor = Math.min(totalBeats, beatCursor + 1);
-      return;
-    }
-
-    const targetBeat = Math.min(Math.max(0, beatCursor), totalBeats - 1);
-    slots[targetBeat].chords.push(raw);
-    beatCursor = Math.min(totalBeats, beatCursor + 1);
-  });
-
-  return slots;
-};
-
-
-export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause, onPresetCueTrigger, layoutMode = 'lyrics', currentBeat = 0, timeSignature = '4/4', barGridColumns = 'auto', barGridFocusMode = false }) {
+  export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause, onPresetCueTrigger }) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const formatInstrumentPatchText = (lineObj) => {
@@ -177,21 +64,8 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
   const lines = song.lyrics.split(/\r?\n/);
   const effectiveTranspose = showChordNumbers ? 0 : transpose;
   const parsedLines = parseLines(lines, effectiveTranspose);
-  const beatsPerBar = parseBeatsPerBar(timeSignature);
-  const secondaryAccents = getSecondaryAccentBeatSet(timeSignature, beatsPerBar);
-  const activeBeat = Number.isFinite(Number(currentBeat))
-    ? ((Number(currentBeat) % beatsPerBar) + beatsPerBar) % beatsPerBar
-    : 0;
-  const normalizedColumns = ['auto', '2', '4'].includes(String(barGridColumns))
-    ? String(barGridColumns)
-    : 'auto';
 
-  const shouldHideLineInFocusMode = (lineObj) => {
-    if (!barGridFocusMode || layoutMode !== 'bar-grid') return false;
-    return ['lyrics', 'metadata', 'instrument', 'instrument_patch', 'number', 'empty'].includes(lineObj?.type);
-  };
-
-  const renderPresetCueBadge = (lineObj, key, inlineForGrid = false) => {
+  const renderPresetCueBadge = (lineObj, key) => {
     const hasMidiProgram = Number.isFinite(Number(lineObj?.midi?.program));
     const midiChannelLabel = Number.isFinite(Number(lineObj?.midi?.channel)) ? `CH ${lineObj.midi.channel}` : null;
     const midiProgramLabel = hasMidiProgram ? `PC ${lineObj.midi.program}` : null;
@@ -200,7 +74,7 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
       : null;
 
     return (
-      <div key={key} className={`cd-preset-cue${inlineForGrid ? ' cd-preset-cue-inline' : ''}`}>
+      <div key={key} className="cd-preset-cue">
         <span className="cd-preset-cue-label">[{lineObj.label}]</span>
         <span className="cd-preset-cue-meta">
           {midiProgramLabel || 'Manual Cue'}
@@ -222,19 +96,10 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
   };
 
   const renderedRows = [];
-  let pendingPresetCue = null;
 
   parsedLines.forEach((lineObj, i) => {
     if (lineObj?.type === 'preset_cue') {
-      if (layoutMode === 'bar-grid') {
-        pendingPresetCue = lineObj;
-      } else {
-        renderedRows.push(renderPresetCueBadge(lineObj, `preset-cue-${i}`));
-      }
-      return;
-    }
-
-    if (shouldHideLineInFocusMode(lineObj)) {
+      renderedRows.push(renderPresetCueBadge(lineObj, `preset-cue-${i}`));
       return;
     }
 
@@ -272,48 +137,6 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
       return;
     }
     if ((lineObj.type === 'chord' && showChords) || lineObj.type === 'number') {
-      if (layoutMode === 'bar-grid') {
-        const isNumberLine = lineObj.type === 'number';
-        renderedRows.push(
-          <div key={i} className="cd-chord-grid-block">
-            {pendingPresetCue ? renderPresetCueBadge(pendingPresetCue, `pending-preset-cue-${i}`, true) : null}
-            <div className="cd-chord cd-chord-grid-line">
-              {buildMeasuresFromChordTokens(lineObj.tokens).map((measureTokens, measureIdx) => (
-                <div key={`${i}-${measureIdx}`} className="cd-bar-measure">
-                  <div className="cd-bar-beat-markers" aria-hidden="true">
-                    {Array.from({ length: beatsPerBar }, (_, beatIdx) => (
-                      <span
-                        key={`${i}-${measureIdx}-${beatIdx}`}
-                        className={`cd-bar-beat-led${activeBeat === beatIdx ? ' is-active' : ''}${beatIdx === 0 ? ' is-downbeat' : ''}${secondaryAccents.has(beatIdx) ? ' is-sub-accent' : ''}`}
-                      />
-                    ))}
-                  </div>
-                  <div className="cd-bar-chords">
-                    {buildBeatSlotsFromMeasureTokens(measureTokens, beatsPerBar).map((slot, beatIdx) => {
-                      const chordText = slot.chords
-                        .map((chord) => isNumberLine ? chord : formatChordToken(chord))
-                        .filter(Boolean)
-                        .join(' / ');
-
-                      return (
-                        <span
-                          key={`${i}-${measureIdx}-beat-${beatIdx}`}
-                          className={`cd-bar-beat-cell${chordText ? ' cd-bar-beat-cell--occupied' : ''}`}
-                        >
-                          {chordText || '·'}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-        pendingPresetCue = null;
-        return;
-      }
-
       if (lineObj.type === 'chord') {
         renderedRows.push(
           <div key={i} className="cd-chord">
@@ -343,7 +166,6 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
       return;
     }
     if (lineObj.type === 'chord' && !showChords) {
-      pendingPresetCue = null;
       return;
     }
 
@@ -390,12 +212,8 @@ export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords
     );
   });
 
-  if (pendingPresetCue) {
-    renderedRows.push(renderPresetCueBadge(pendingPresetCue, 'pending-preset-cue-tail', layoutMode === 'bar-grid'));
-  }
-
   return (
-    <div className={`cd ${layoutMode === 'bar-grid' ? 'cd-layout-bar-grid' : ''} ${layoutMode === 'bar-grid' ? `cd-layout-bar-grid-cols-${normalizedColumns}` : ''} ${barGridFocusMode && layoutMode === 'bar-grid' ? 'cd-layout-bar-grid-focus' : ''}`} style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
+    <div className="cd" style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
       {renderedRows}
     </div>
   );

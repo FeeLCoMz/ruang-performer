@@ -183,7 +183,28 @@ export default function SongChordsInfo({
     const instrumentText = detectedInstrumentList.join(', ');
     metadataItems.push(`Instrumen: ${instrumentText}`);
     if (performanceMode) {
-      performanceMetadataItems.push({ key: 'instruments', icon: '🎼', text: instrumentText, fullWidth: true });
+      performanceMetadataItems.push({
+        key: 'instruments',
+        icon: '🎼',
+        fullWidth: true,
+        render: (
+          <>
+            <span className="song-info-inline-icon" aria-hidden="true">🎼</span>
+            <span className="song-info-inline-label">Instrumen</span>
+            <span className="song-info-instrument-badge-list">
+              {detectedInstrumentList.map((instrument, instrumentIdx) => (
+                <span
+                  key={`${instrument}-${instrumentIdx}`}
+                  className="song-info-instrument-badge"
+                  title={`Instrumen: ${instrument}`}
+                >
+                  {instrument}
+                </span>
+              ))}
+            </span>
+          </>
+        ),
+      });
     }
   }
 
@@ -336,33 +357,18 @@ export default function SongChordsInfo({
                   <span className="song-info-value">{lyricsOriginalKey}</span>
                 </div>
               )}
-              {!showMinimalMetadata && ((timeSignature && genre) ? (
-                <div className="song-info-item song-info-combined-row">
-                  <div className="song-info-combined-column">
-                    <span className="song-info-label">🎼 Time</span>
-                    <span className="song-info-value">{timeSignature}</span>
-                  </div>
-                  <div className="song-info-combined-column">
-                    <span className="song-info-label">🎸 Genre</span>
-                    <span className="song-info-value">{genre}</span>
-                  </div>
+              {!showMinimalMetadata && timeSignature && (
+                <div className="song-info-item">
+                  <span className="song-info-label">🎼 Time</span>
+                  <span className="song-info-value">{timeSignature}</span>
                 </div>
-              ) : (
-                <>
-                  {timeSignature && (
-                    <div className="song-info-item">
-                      <span className="song-info-label">🎼 Time</span>
-                      <span className="song-info-value">{timeSignature}</span>
-                    </div>
-                  )}
-                  {genre && (
-                    <div className="song-info-item">
-                      <span className="song-info-label">🎸 Genre</span>
-                      <span className="song-info-value">{genre}</span>
-                    </div>
-                  )}
-                </>
-              ))}
+              )}
+              {!showMinimalMetadata && genre && (
+                <div className="song-info-item">
+                  <span className="song-info-label">🎸 Genre</span>
+                  <span className="song-info-value">{genre}</span>
+                </div>
+              )}
               {tempo && (
                 <div className="song-info-item song-info-tempo-item">
                   <span className="song-info-label">⏱️ Tempo</span>

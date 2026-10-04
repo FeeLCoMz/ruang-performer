@@ -6752,7 +6752,7 @@ input[type="datetime-local"]:disabled {
 
 .cd-section-struct {
   margin: 16px 0 8px 0;
-  padding: 8px 12px;
+  padding: 5px 8px;
   background: var(--primary-accent);
   color: white;
   border-radius: 4px;
@@ -6959,10 +6959,6 @@ input[type="datetime-local"]:disabled {
   outline-offset: 1px;
 }
 
-.cd-chord-grid-block {
-  margin-bottom: 4px;
-}
-
 .cd-chord {
   white-space: pre;
   margin-bottom: 4px;
@@ -6995,106 +6991,6 @@ body.dark-mode .cd-token {
   white-space: pre;
   margin-bottom: 4px;
   min-height: 1.5em;
-}
-
-.cd-layout-bar-grid .cd-chord-grid-line {
-  white-space: normal;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
-  gap: 10px;
-  margin: 8px 0 14px;
-  cursor: pointer;
-}
-
-.cd-layout-bar-grid.cd-layout-bar-grid-cols-2 .cd-chord-grid-line {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.cd-layout-bar-grid.cd-layout-bar-grid-cols-4 .cd-chord-grid-line {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.cd-layout-bar-grid.cd-layout-bar-grid-focus .cd-section-struct {
-  margin: 12px 0 6px;
-}
-
-.cd-layout-bar-grid .cd-bar-measure {
-  border: 1px solid color-mix(in srgb, var(--border-color) 78%, var(--primary-accent) 22%);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--card-bg) 88%, var(--primary-bg) 12%);
-  padding: 6px 8px 9px;
-  min-height: 70px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 6px;
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--primary-accent) 14%, transparent);
-}
-
-.cd-layout-bar-grid .cd-bar-beat-markers {
-  display: flex;
-  align-items: center;
-  justify-content: stretch;
-  gap: 4px;
-}
-
-.cd-layout-bar-grid .cd-bar-beat-led {
-  flex: 1;
-  height: 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--text-muted) 45%, transparent);
-  opacity: 0.42;
-  transition: transform 90ms ease, opacity 90ms ease, background 90ms ease, box-shadow 120ms ease;
-}
-
-.cd-layout-bar-grid .cd-bar-beat-led.is-downbeat {
-  height: 7px;
-}
-
-.cd-layout-bar-grid .cd-bar-beat-led.is-sub-accent {
-  opacity: 0.7;
-  background: color-mix(in srgb, #10b981 45%, var(--text-muted) 55%);
-}
-
-.cd-layout-bar-grid .cd-bar-beat-led.is-active {
-  background: #10b981;
-  opacity: 1;
-  transform: scaleY(1.2);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
-}
-
-.cd-layout-bar-grid .cd-bar-chords {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
-  align-items: stretch;
-}
-
-.cd-layout-bar-grid .cd-bar-text-token {
-  color: var(--text-secondary);
-  font-size: 0.95em;
-}
-
-.cd-layout-bar-grid .cd-bar-beat-cell {
-  min-height: 24px;
-  border-radius: 5px;
-  border: 1px dashed color-mix(in srgb, var(--border-color) 82%, transparent);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1px 4px;
-  font-size: 0.84em;
-  color: var(--text-muted);
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
-.cd-layout-bar-grid .cd-bar-beat-cell.cd-bar-beat-cell--occupied {
-  border-style: solid;
-  border-color: color-mix(in srgb, var(--primary-accent) 42%, var(--border-color) 58%);
-  color: var(--primary-accent);
-  background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
-  font-weight: 700;
 }
 
 .song-midi-panel {
@@ -7312,36 +7208,8 @@ body.dark-mode .cd-token {
   }
 }
 
-.page-container.performance-mode .cd-layout-bar-grid .cd-bar-measure {
-  min-height: 76px;
-  border-radius: 10px;
-}
-
 .page-container.performance-mode .cd-preset-cue {
   margin-top: 8px;
-}
-
-@media (max-width: 768px) {
-  .cd-layout-bar-grid .cd-chord-grid-line {
-    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
-    gap: 8px;
-  }
-
-  .cd-layout-bar-grid.cd-layout-bar-grid-cols-2 .cd-chord-grid-line,
-  .cd-layout-bar-grid.cd-layout-bar-grid-cols-4 .cd-chord-grid-line {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .cd-layout-bar-grid .cd-bar-measure {
-    min-height: 66px;
-    padding: 6px 7px 8px;
-  }
-
-  .cd-layout-bar-grid .cd-bar-beat-cell {
-    min-height: 22px;
-    font-size: 0.8em;
-    padding: 1px 3px;
-  }
 }
 
 /* ========================================
@@ -9387,28 +9255,6 @@ body.dark-mode .cd-token {
   font-family: "Courier New", monospace;
 }
 
-.song-info-combined-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--spacing-sm);
-  grid-column: span 2;
-  padding: var(--spacing-sm);
-  align-items: stretch;
-}
-
-.song-info-combined-column {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm);
-  background: var(--secondary-bg);
-  border: none;
-  border-radius: var(--radius-sm);
-  min-width: 0;
-}
-
 .song-info-mastery-block {
   grid-column: span 2;
 }
@@ -9915,7 +9761,7 @@ body.dark-mode .cd-token {
     min-height: 100px;
     font-size: 0.95em;
   }
-  
+
   .calendar-gig-item {
     font-size: 0.7em;
   }
@@ -9925,30 +9771,30 @@ body.dark-mode .cd-token {
   .calendar-container {
     padding: 12px;
   }
-  
+
   .calendar-header {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .calendar-header h2 {
     min-width: 100%;
     font-size: 1.1em;
   }
-  
+
   .calendar-day {
     min-height: 90px;
     padding: 6px;
   }
-  
+
   .calendar-day-number {
     font-size: 0.9em;
   }
-  
+
   .calendar-day-gigs {
     max-height: 60px;
   }
-  
+
   .calendar-gig-item {
     font-size: 0.65em;
   }
@@ -9958,7 +9804,7 @@ body.dark-mode .cd-token {
   .calendar-day {
     min-height: 80px;
   }
-  
+
   .calendar-day-header {
     font-size: 0.75em;
     padding: 6px 2px;
@@ -10214,49 +10060,6 @@ body.dark-mode .cd-token {
   background: var(--secondary-bg);
 }
 
-.song-lyrics-toolbar-group-grid-density {
-  order: 5;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.song-lyrics-grid-density-select {
-  min-width: 94px;
-  height: 36px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  padding: 0 8px;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-}
-
-.song-lyrics-grid-preset-select {
-  min-width: 108px;
-  height: 36px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  padding: 0 8px;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-}
-
-.song-lyrics-grid-density-select:focus {
-  outline: none;
-  border-color: var(--primary-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent) 22%, transparent);
-}
-
-.song-lyrics-grid-preset-select:focus {
-  outline: none;
-  border-color: var(--primary-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent) 22%, transparent);
-}
-
 .song-lyrics-tempo-led-compact-text {
   font-size: 0.78rem;
   font-weight: 700;
@@ -10356,7 +10159,7 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
 }
 
 .page-container.performance-mode {
-  padding: 12px 12px 18px;
+  padding: 2px 2px 18px;
 }
 
 .page-container.performance-mode .song-panel,
@@ -10502,8 +10305,6 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   border-radius: 12px;
 }
 
-.page-container.performance-mode .song-lyrics-toolbar-group-grid-density .song-lyrics-grid-density-select,
-.page-container.performance-mode .song-lyrics-toolbar-group-grid-density .song-lyrics-grid-preset-select,
 .page-container.performance-mode .song-lyrics-toolbar-group-tempo-led-compact {
   background: rgba(15, 23, 42, 0.04);
   border: 1px solid rgba(148, 163, 184, 0.12);
@@ -10606,6 +10407,34 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   font-size: 0.8rem;
   font-weight: 700;
   opacity: 0.9;
+}
+
+/* Instrumen sebagai badge di performance mode */
+.song-info-instrument-badge-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+  margin-left: 0.3rem;
+}
+
+.song-info-instrument-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.14);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.page-container.performance-mode .song-info-instrument-badge {
+  font-size: 0.84rem;
+  padding: 0.22rem 0.58rem;
 }
 
 .page-container.performance-mode .song-info-inline-button {

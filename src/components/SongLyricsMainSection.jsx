@@ -61,12 +61,6 @@ export default function SongLyricsMainSection({
   setShowJazzChords,
   showSimpleChords,
   setShowSimpleChords,
-  chordLayoutMode,
-  setChordLayoutMode,
-  barGridColumns,
-  setBarGridColumns,
-  barGridFocusMode,
-  setBarGridFocusMode,
   onPresetCueTrigger,
   originalKey = '',
   targetKey = '',
@@ -124,12 +118,6 @@ export default function SongLyricsMainSection({
             setShowJazzChords={setShowJazzChords}
             showSimpleChords={showSimpleChords}
             setShowSimpleChords={setShowSimpleChords}
-            chordLayoutMode={chordLayoutMode}
-            setChordLayoutMode={setChordLayoutMode}
-            barGridColumns={barGridColumns}
-            setBarGridColumns={setBarGridColumns}
-            barGridFocusMode={barGridFocusMode}
-            setBarGridFocusMode={setBarGridFocusMode}
             handleEditLyrics={handleEditLyrics}
             savingLyrics={savingLyrics}
             handleSaveLyrics={handleSaveLyrics}
@@ -237,12 +225,6 @@ export default function SongLyricsMainSection({
               youtubeId={youtubeId}
               timeSignature={timeSignature}
               currentBeat={currentBeat}
-              chordLayoutMode={chordLayoutMode}
-              setChordLayoutMode={setChordLayoutMode}
-              barGridColumns={barGridColumns}
-              setBarGridColumns={setBarGridColumns}
-              barGridFocusMode={barGridFocusMode}
-              setBarGridFocusMode={setBarGridFocusMode}
               onPresetCueTrigger={onPresetCueTrigger}
               originalKey={originalKey}
               targetKey={targetKey}

@@ -64,12 +64,6 @@ export default function SongChordsLyricsDisplay({
   youtubeId,
   currentBeat = 0,
   timeSignature = '4/4',
-  chordLayoutMode = 'lyrics',
-  setChordLayoutMode,
-  barGridColumns = 'auto',
-  setBarGridColumns,
-  barGridFocusMode = false,
-  setBarGridFocusMode,
   onPresetCueTrigger,
   originalKey = '',
   targetKey = '',
@@ -78,6 +72,7 @@ export default function SongChordsLyricsDisplay({
   onApplyRecommendedTranspose,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
+  const handleExitFullscreenRef = useRef(null);
   const zoomRef = useRef(zoom);
   const zoomHudTimerRef = useRef(null);
   const controlsHideTimerRef = useRef(null);
@@ -152,37 +147,9 @@ export default function SongChordsLyricsDisplay({
       if (isEditableTarget(event.target)) return;
       const key = String(event.key || '').toLowerCase();
 
-      if (key === 'g') {
-        event.preventDefault();
-        if (typeof setChordLayoutMode === 'function') {
-          setChordLayoutMode((prev) => (prev === 'bar-grid' ? 'lyrics' : 'bar-grid'));
-        }
+      if (key === 'escape') {
+        handleExitFullscreenRef.current?.();
         return;
-      }
-
-      if (chordLayoutMode !== 'bar-grid') return;
-
-      if (key === 'f') {
-        event.preventDefault();
-        if (typeof setBarGridFocusMode === 'function') {
-          setBarGridFocusMode((prev) => !prev);
-        }
-        return;
-      }
-
-      if (key === '2' || key === '4') {
-        event.preventDefault();
-        if (typeof setBarGridColumns === 'function') {
-          setBarGridColumns(key);
-        }
-        return;
-      }
-
-      if (key === '0') {
-        event.preventDefault();
-        if (typeof setBarGridColumns === 'function') {
-          setBarGridColumns('auto');
-        }
       }
     };
 
@@ -190,10 +157,6 @@ export default function SongChordsLyricsDisplay({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     isFullscreen,
-    chordLayoutMode,
-    setChordLayoutMode,
-    setBarGridColumns,
-    setBarGridFocusMode,
   ]);
 
   useEffect(() => {
@@ -407,6 +370,8 @@ export default function SongChordsLyricsDisplay({
       document.msExitFullscreen();
     }
   };
+
+  handleExitFullscreenRef.current = handleExitFullscreen;
 
   return (
     <div className="song-lyrics-display" ref={lyricsDisplayRef}>
@@ -793,9 +758,6 @@ export default function SongChordsLyricsDisplay({
         song={song}
         transpose={transpose}
         zoom={zoom}
-        layoutMode={chordLayoutMode}
-        barGridColumns={barGridColumns}
-        barGridFocusMode={barGridFocusMode}
         currentBeat={activeVisualBeat}
         timeSignature={timeSignature || song?.time_signature || '4/4'}
         showChords={effectiveShowChords}

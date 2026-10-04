@@ -588,6 +588,30 @@ describe('Song lyrics shared editor rendering', () => {
     expect(clipboard.writeText).toHaveBeenCalledWith('Keyboard Patch: Stage Piano\nInstrumen: Gitar, Sax, Piano');
   });
 
+  test('Given performance mode is active, Then detected instruments render as separate badges', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsInfo
+          title="Song A"
+          artist="Artist A"
+          performanceMode={true}
+          lyricsMode={false}
+          showSongInfo={true}
+          setShowSongInfo={noop}
+          originalKey="C"
+          targetKey="C"
+          transpose={0}
+          setTranspose={noop}
+          detectedInstruments={['Gitar', 'Sax', 'Piano']}
+        />
+      );
+    });
+
+    const badges = Array.from(container.querySelectorAll('.song-info-instrument-badge'));
+    expect(badges.map((node) => node.textContent)).toEqual(['Gitar', 'Sax', 'Piano']);
+    expect(container.querySelector('.song-info-instrument-badge-list')).toBeTruthy();
+  });
+
   test('Given normal mode is active, Then mastery info renders as a full-width row', async () => {
     await act(async () => {
       root.render(
@@ -614,7 +638,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-info-mastery-block-full')).toBeTruthy();
   });
 
-  test('Given normal mode is active, Then time and genre render as a combined two-column row', async () => {
+  test('Given normal mode is active, Then time and genre render as separate info items', async () => {
     await act(async () => {
       root.render(
         <SongChordsInfo
@@ -630,8 +654,17 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.querySelector('.song-info-combined-row')).toBeTruthy();
-    expect(container.querySelectorAll('.song-info-combined-column')).toHaveLength(2);
+    const items = Array.from(container.querySelectorAll('.song-info-compact-grid .song-info-item'));
+    const timeItem = items.find((item) => item.textContent.includes('Time'));
+    const genreItem = items.find((item) => item.textContent.includes('Genre'));
+
+    expect(timeItem).toBeTruthy();
+    expect(timeItem.textContent).toContain('4/4');
+    expect(timeItem.textContent).not.toContain('Rock');
+    expect(genreItem).toBeTruthy();
+    expect(genreItem.textContent).toContain('Rock');
+    expect(genreItem.textContent).not.toContain('4/4');
+    expect(container.querySelector('.song-info-split-row')).toBeFalsy();
   });
 
   test('Given performance mode is active, Then song info metadata remains visible', async () => {
@@ -1021,7 +1054,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('1 5 6m 4');
   });
 
-  test('Given bar-grid mode is active, Then number notation is rendered inside the grid', async () => {
+  test('Given number notation is active, Then numbers render in the standard chord line', async () => {
     await act(async () => {
       root.render(
         <ChordDisplay
@@ -1030,12 +1063,12 @@ describe('Song lyrics shared editor rendering', () => {
           showChordNumbers={true}
           keySignature={'C'}
           transpose={0}
-          layoutMode={'bar-grid'}
         />
       );
     });
 
-    expect(container.querySelectorAll('.cd-chord-grid-block').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.cd-chord-grid-block').length).toBe(0);
+    expect(container.querySelector('.cd-layout-bar-grid')).toBeFalsy();
     expect(container.textContent).toContain('1');
     expect(container.textContent).toContain('5');
   });
