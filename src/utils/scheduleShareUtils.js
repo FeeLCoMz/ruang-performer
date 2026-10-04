@@ -59,7 +59,7 @@ export function createGigCalendar(title, gigs) {
     'VERSION:2.0',
     'PRODID:-//Ruang Performer//Ruang Performer//EN',
     `X-WR-CALNAME:${title}`,
-    `X-WR-TIMEZONE:UTC`
+    'X-WR-TIMEZONE:UTC'
   ];
 
   const dtstamp = formatIcsDateTime(new Date().toISOString());

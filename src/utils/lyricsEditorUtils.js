@@ -1,5 +1,5 @@
-import { isChordLine, parseSection, transposeChord } from "./chordUtils.js";
-import { toNumberNotation } from "./notationUtils.js";
+import { isChordLine, parseSection, transposeChord } from './chordUtils.js';
+import { toNumberNotation } from './notationUtils.js';
 
 const LIKELY_CHORD_SYMBOL_REGEX = /^[A-Ga-g][#b♭♯]?(?:(?:maj|major|min|minor|m|dim|aug|sus|add|M|no|omit|\+|-)?[0-9#b♭♯+\-]*)*(?:\/[A-Ga-g][#b♭♯]?)?$/i;
 const BRACKETED_CHORD_REGEX = /([\[\(\{])([^\]\)\}\n]+)([\]\)\}])/g;
@@ -7,32 +7,32 @@ const BLANK_LINE_REGEX = /\n{3,}/g;
 const INVISIBLE_FORMAT_CHARS_REGEX = /[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
 
 function normalizeLineEndings(text) {
-  return String(text || "")
-    .replace(/\r\n?/g, "\n")
-    .replace(INVISIBLE_FORMAT_CHARS_REGEX, "");
+  return String(text || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(INVISIBLE_FORMAT_CHARS_REGEX, '');
 }
 
-function standardizeRoot(rawRoot = "") {
+function standardizeRoot(rawRoot = '') {
   if (!rawRoot) return rawRoot;
-  const normalized = rawRoot.replace(/♯/g, "#").replace(/♭/g, "b");
+  const normalized = rawRoot.replace(/♯/g, '#').replace(/♭/g, 'b');
   return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
 }
 
-function normalizeChordQualitySuffix(rawSuffix = "") {
-  if (!rawSuffix) return "";
+function normalizeChordQualitySuffix(rawSuffix = '') {
+  if (!rawSuffix) return '';
 
-  let suffix = rawSuffix.replace(/♯/g, "#").replace(/♭/g, "b").replace(/\s+/g, "");
-  suffix = suffix.replace(/^major/i, "maj");
-  suffix = suffix.replace(/^maj/i, "maj");
-  suffix = suffix.replace(/^minor/i, "m");
-  suffix = suffix.replace(/^min/i, "m");
-  suffix = suffix.replace(/^M(?=\d|$)/, "maj");
-  if (suffix === "-") return "m";
+  let suffix = rawSuffix.replace(/♯/g, '#').replace(/♭/g, 'b').replace(/\s+/g, '');
+  suffix = suffix.replace(/^major/i, 'maj');
+  suffix = suffix.replace(/^maj/i, 'maj');
+  suffix = suffix.replace(/^minor/i, 'm');
+  suffix = suffix.replace(/^min/i, 'm');
+  suffix = suffix.replace(/^M(?=\d|$)/, 'maj');
+  if (suffix === '-') return 'm';
   return suffix;
 }
 
 function isLikelyChordSymbol(token) {
-  if (typeof token !== "string") return false;
+  if (typeof token !== 'string') return false;
   const trimmed = token.trim();
   if (!trimmed) return false;
   if (/^(N\.C\.|NC|No\s*Chord)$/i.test(trimmed)) return true;
@@ -40,37 +40,37 @@ function isLikelyChordSymbol(token) {
 }
 
 export function standardizeChordSymbol(chord) {
-  if (typeof chord !== "string") return chord;
+  if (typeof chord !== 'string') return chord;
 
   const trimmed = chord.trim();
   if (!trimmed) return chord;
-  if (/^(N\.C\.|NC|No\s*Chord)$/i.test(trimmed)) return "N.C.";
+  if (/^(N\.C\.|NC|No\s*Chord)$/i.test(trimmed)) return 'N.C.';
 
-  const slashParts = trimmed.split("/");
-  const basePart = slashParts.shift() || "";
+  const slashParts = trimmed.split('/');
+  const basePart = slashParts.shift() || '';
   const baseMatch = basePart.match(/^([A-Ga-g][#b♭♯]?)(.*)$/);
   if (!baseMatch) return chord;
 
-  const [, root, rawSuffix = ""] = baseMatch;
+  const [, root, rawSuffix = ''] = baseMatch;
   const normalizedRoot = standardizeRoot(root);
   const normalizedSuffix = normalizeChordQualitySuffix(rawSuffix);
   const normalizedBass = slashParts.length > 0
     ? `/${slashParts
-        .join("/")
-        .replace(/^([A-Ga-g][#b♭♯]?)(.*)$/i, (_, bassRoot, remainder = "") => `${standardizeRoot(bassRoot)}${remainder.replace(/\s+/g, "")}`)}`
-    : "";
+        .join('/')
+        .replace(/^([A-Ga-g][#b♭♯]?)(.*)$/i, (_, bassRoot, remainder = '') => `${standardizeRoot(bassRoot)}${remainder.replace(/\s+/g, '')}`)}`
+    : '';
 
   return `${normalizedRoot}${normalizedSuffix}${normalizedBass}`;
 }
 
 function transformDelimitedChordToken(token, transformChord) {
-  if (typeof token !== "string" || !token) return token;
+  if (typeof token !== 'string' || !token) return token;
   if (/^(\|:|:\||\[\:|:\]|\|\||\|)$/.test(token) || /^\(\d+x\)$/i.test(token)) return token;
 
   const wrappedMatch = token.match(/^([\[\(\{]?)(.+?)([\]\)\}]?)(\.{2,})?$/);
   if (!wrappedMatch) return token;
 
-  const [, prefix = "", inner = "", suffix = "", trailingDots = ""] = wrappedMatch;
+  const [, prefix = '', inner = '', suffix = '', trailingDots = ''] = wrappedMatch;
   const rawInner = inner.trim();
   if (!rawInner) return token;
 
@@ -88,13 +88,13 @@ function transformDelimitedChordToken(token, transformChord) {
       if (!cleaned || !isLikelyChordSymbol(cleaned)) return part;
       return transformChord(cleaned);
     })
-    .join("");
+    .join('');
 
   return `${prefix}${nextInner}${suffix}${trailingDots}`;
 }
 
 function hasLikelyChordContent(token) {
-  if (typeof token !== "string") return false;
+  if (typeof token !== 'string') return false;
   const trimmed = token.trim();
   if (!trimmed) return false;
   if (/^(\|:|:\||\[\:|:\]|\|\||\|)$/.test(trimmed) || /^\(\d+x\)$/i.test(trimmed)) return true;
@@ -120,17 +120,17 @@ function normalizeChordMeasuresContent(content) {
   return compactOrSpacedParts.map((part) => standardizeChordSymbol(part));
 }
 
-function buildChordGridLine(measures, boundaryStart = "|", boundaryEnd = "|") {
-  if (!Array.isArray(measures) || measures.length === 0) return "";
-  return `${boundaryStart} ${measures.join(" | ")} ${boundaryEnd}`.replace(/\s+/g, " ").trim();
+function buildChordGridLine(measures, boundaryStart = '|', boundaryEnd = '|') {
+  if (!Array.isArray(measures) || measures.length === 0) return '';
+  return `${boundaryStart} ${measures.join(' | ')} ${boundaryEnd}`.replace(/\s+/g, ' ').trim();
 }
 
 function normalizeChordMeasureText(measure) {
-  return String(measure || "")
+  return String(measure || '')
     .split(/\s+/)
     .filter(Boolean)
     .map((token) => transformDelimitedChordToken(token, standardizeChordSymbol))
-    .join(" ");
+    .join(' ');
 }
 
 function normalizeBarlineChordGrid(line) {
@@ -145,15 +145,15 @@ function normalizeBarlineChordGrid(line) {
     const start = boundaryMatches[index].index + boundaryMatches[index][0].length;
     const end = boundaryMatches[index + 1].index;
     const rawMeasure = trimmed.slice(start, end).trim();
-    measures.push(rawMeasure ? normalizeChordMeasureText(rawMeasure) : "");
+    measures.push(rawMeasure ? normalizeChordMeasureText(rawMeasure) : '');
   }
 
-  const normalizedMeasures = measures.map((measure) => measure.replace(/^\|\s*|\s*\|$/g, "").trim());
+  const normalizedMeasures = measures.map((measure) => measure.replace(/^\|\s*|\s*\|$/g, '').trim());
   return buildChordGridLine(normalizedMeasures, boundaryMatches[0][0], boundaryMatches[boundaryMatches.length - 1][0]);
 }
 
 function normalizeChordGridCandidate(line) {
-  const leadingWhitespace = (line.match(/^\s*/) || [""])[0];
+  const leadingWhitespace = (line.match(/^\s*/) || [''])[0];
   const trimmed = line.trim();
   if (!trimmed) return line;
 
@@ -183,10 +183,10 @@ function transformChordContent(text, transformChord) {
   const normalizedText = normalizeLineEndings(text);
 
   return normalizedText
-    .split("\n")
+    .split('\n')
     .map((line) => {
       const section = parseSection(line);
-      if (section?.type === "modulation") {
+      if (section?.type === 'modulation') {
         return line.replace(/^(\s*(?:modulation|key\s+change)\s*:\s*)(.+)$/i, (_, start, chord) => `${start}${transformChord(chord.trim())}`);
       }
 
@@ -205,33 +205,33 @@ function transformChordContent(text, transformChord) {
         return `${open}${transformChord(inner.trim())}${close}`;
       });
     })
-    .join("\n");
+    .join('\n');
 }
 
 function detectSectionInfo(line) {
-  const trimmed = String(line || "").trim();
+  const trimmed = String(line || '').trim();
   if (!trimmed) return null;
 
   const numericSuffixMatch = trimmed.match(/(\d+)/);
-  const suffix = numericSuffixMatch ? ` ${numericSuffixMatch[1]}` : "";
+  const suffix = numericSuffixMatch ? ` ${numericSuffixMatch[1]}` : '';
   const normalized = trimmed
-    .replace(/^\[|\]$/g, "")
-    .replace(/:+$/, "")
-    .replace(/[_-]+/g, " ")
+    .replace(/^\[|\]$/g, '')
+    .replace(/:+$/, '')
+    .replace(/[_-]+/g, ' ')
     .trim()
     .toLowerCase();
 
   const candidates = [
-    { key: "intro", label: "Intro", tone: "intro", match: /(intro|opening)/ },
-    { key: "verse", label: `Verse${suffix}`, tone: "verse", match: /(^|\s)(verse|bait)(\s|$)/ },
-    { key: "pre-chorus", label: "Pre-Chorus", tone: "pre-chorus", match: /pre\s*[- ]?chorus/ },
-    { key: "post-chorus", label: "Post-Chorus", tone: "post-chorus", match: /post\s*[- ]?chorus/ },
-    { key: "chorus", label: "Chorus", tone: "chorus", match: /(chorus|reff|refrain)/ },
-    { key: "bridge", label: "Bridge", tone: "bridge", match: /bridge/ },
-    { key: "interlude", label: "Interlude", tone: "interlude", match: /(interlude|\bint\b)/ },
-    { key: "solo", label: "Solo", tone: "solo", match: /solo/ },
-    { key: "outro", label: "Outro", tone: "outro", match: /(outro|ending)/ },
-    { key: "coda", label: "Coda", tone: "coda", match: /coda/ },
+    { key: 'intro', label: 'Intro', tone: 'intro', match: /(intro|opening)/ },
+    { key: 'verse', label: `Verse${suffix}`, tone: 'verse', match: /(^|\s)(verse|bait)(\s|$)/ },
+    { key: 'pre-chorus', label: 'Pre-Chorus', tone: 'pre-chorus', match: /pre\s*[- ]?chorus/ },
+    { key: 'post-chorus', label: 'Post-Chorus', tone: 'post-chorus', match: /post\s*[- ]?chorus/ },
+    { key: 'chorus', label: 'Chorus', tone: 'chorus', match: /(chorus|reff|refrain)/ },
+    { key: 'bridge', label: 'Bridge', tone: 'bridge', match: /bridge/ },
+    { key: 'interlude', label: 'Interlude', tone: 'interlude', match: /(interlude|\bint\b)/ },
+    { key: 'solo', label: 'Solo', tone: 'solo', match: /solo/ },
+    { key: 'outro', label: 'Outro', tone: 'outro', match: /(outro|ending)/ },
+    { key: 'coda', label: 'Coda', tone: 'coda', match: /coda/ },
   ];
 
   const hit = candidates.find((candidate) => candidate.match.test(normalized));
@@ -260,13 +260,13 @@ function alignChordLineToLyric(chordLine, lyricLine) {
 
   if (!tokens.length) return chordLine;
 
-  let nextLine = "";
+  let nextLine = '';
   let previousEnd = 0;
 
   tokens.forEach(({ token, start }) => {
     const targetStart = findNextLyricAnchor(lyricLine, start, previousEnd > 0 ? previousEnd + 1 : 0);
     if (nextLine.length < targetStart) {
-      nextLine += " ".repeat(targetStart - nextLine.length);
+      nextLine += ' '.repeat(targetStart - nextLine.length);
     }
     nextLine += token;
     previousEnd = nextLine.length;
@@ -276,7 +276,7 @@ function alignChordLineToLyric(chordLine, lyricLine) {
 }
 
 export function autoAlignChordLyricPairs(text) {
-  const lines = normalizeLineEndings(text).split("\n");
+  const lines = normalizeLineEndings(text).split('\n');
   const nextLines = [...lines];
 
   for (let index = 0; index < lines.length - 1; index += 1) {
@@ -287,30 +287,30 @@ export function autoAlignChordLyricPairs(text) {
     nextLines[index] = alignChordLineToLyric(chordLine, lyricLine);
   }
 
-  return nextLines.join("\n");
+  return nextLines.join('\n');
 }
 
 export function removeExtraSpacesAndBrokenLines(text) {
   const normalizedText = normalizeLineEndings(text);
   const compacted = normalizedText
-    .split("\n")
+    .split('\n')
     .map((line) => {
-      const noTabs = line.replace(/\t+/g, " ").replace(/\s+$/g, "");
-      if (!noTabs.trim()) return "";
-      return noTabs.replace(/ {2,}/g, " ");
+      const noTabs = line.replace(/\t+/g, ' ').replace(/\s+$/g, '');
+      if (!noTabs.trim()) return '';
+      return noTabs.replace(/ {2,}/g, ' ');
     })
-    .join("\n")
-    .replace(BLANK_LINE_REGEX, "\n\n");
+    .join('\n')
+    .replace(BLANK_LINE_REGEX, '\n\n');
 
   return compacted.trim();
 }
 
 export function detectSectionBadges(text) {
   return normalizeLineEndings(text)
-    .split("\n")
+    .split('\n')
     .map((line, index) => {
       const parsed = parseSection(line);
-      const info = parsed?.type === "structure" ? detectSectionInfo(parsed.label) : detectSectionInfo(line);
+      const info = parsed?.type === 'structure' ? detectSectionInfo(parsed.label) : detectSectionInfo(line);
       if (!info) return null;
       return {
         lineNumber: index + 1,
@@ -322,28 +322,28 @@ export function detectSectionBadges(text) {
 }
 
 function normalizeSectionTagLine(line, info) {
-  const trimmed = String(line || "").trim();
+  const trimmed = String(line || '').trim();
   if (!trimmed) return line;
 
   const alreadyTaggedMatch = trimmed.match(/^\[([^\]]+)\](.*)$/);
   if (alreadyTaggedMatch) {
-    const [, label, trailing = ""] = alreadyTaggedMatch;
+    const [, label, trailing = ''] = alreadyTaggedMatch;
     const normalizedLabel = detectSectionInfo(label)?.label || label.trim();
     const suffix = trailing.trim();
     return suffix ? `[${normalizedLabel}] ${suffix}` : `[${normalizedLabel}]`;
   }
 
-  const escapedLabel = info.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedLabel = info.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const labelVariants = [
     escapedLabel,
-    escapedLabel.replace(/\s+/g, "[-\\s_]+"),
-    escapedLabel.replace(/-/g, "[-\\s_]+"),
-    escapedLabel.replace(/\s+/g, "[- ]+"),
-    escapedLabel.replace(/-/g, "\\s*[-\\s_]*\\s*"),
+    escapedLabel.replace(/\s+/g, '[-\\s_]+'),
+    escapedLabel.replace(/-/g, '[-\\s_]+'),
+    escapedLabel.replace(/\s+/g, '[- ]+'),
+    escapedLabel.replace(/-/g, '\\s*[-\\s_]*\\s*'),
   ];
 
   for (const variant of labelVariants) {
-    const match = trimmed.match(new RegExp(`^${variant}\\s*[:\-]?\\s*(.*)$`, "i"));
+    const match = trimmed.match(new RegExp(`^${variant}\\s*[:\-]?\\s*(.*)$`, 'i'));
     if (!match) continue;
     const suffix = match[1].trim();
     return suffix ? `[${info.label}] ${suffix}` : `[${info.label}]`;
@@ -354,23 +354,23 @@ function normalizeSectionTagLine(line, info) {
 
 export function autoTagSongSections(text) {
   return normalizeLineEndings(text)
-    .split("\n")
+    .split('\n')
     .map((line) => {
       const parsed = parseSection(line);
-      if (parsed?.type && parsed.type !== "structure") return line;
-      const info = parsed?.type === "structure" ? detectSectionInfo(parsed.label) : detectSectionInfo(line);
+      if (parsed?.type && parsed.type !== 'structure') return line;
+      const info = parsed?.type === 'structure' ? detectSectionInfo(parsed.label) : detectSectionInfo(line);
       if (!info) return line;
       return normalizeSectionTagLine(line, info);
     })
-    .join("\n");
+    .join('\n');
 }
 
 export function standardizeChordNotation(text) {
   const normalizedText = transformChordContent(text, standardizeChordSymbol);
   return normalizeLineEndings(normalizedText)
-    .split("\n")
+    .split('\n')
     .map((line) => normalizeChordGridCandidate(line))
-    .join("\n");
+    .join('\n');
 }
 
 export function transposeLyricsText(text, steps) {
@@ -380,14 +380,14 @@ export function transposeLyricsText(text, steps) {
 
 export function buildInsertNoteToken({
   note,
-  keySignature = "C",
-  insertNoteFormat = "bracket",
+  keySignature = 'C',
+  insertNoteFormat = 'bracket',
   insertTrailingSpace = true,
 }) {
-  const formattedNote = insertNoteFormat === "number"
+  const formattedNote = insertNoteFormat === 'number'
     ? toNumberNotation(note, keySignature)
     : note;
-  const noteToken = insertNoteFormat === "bracket" ? `[${formattedNote}]` : formattedNote;
+  const noteToken = insertNoteFormat === 'bracket' ? `[${formattedNote}]` : formattedNote;
   return insertTrailingSpace ? `${noteToken} ` : noteToken;
 }
 

@@ -1,0 +1,7 @@
+dist/
+node_modules/
+public/
+temp-inspect-file.js
+temp-parse.js
+.git/
+.vercel/

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { getAuthHeader } from "../utils/auth.js";
-import { cacheSong, getSong as getSongOffline } from "../utils/offlineCache.js";
+import { useEffect, useState } from 'react';
+import { getAuthHeader } from '../utils/auth.js';
+import { cacheSong, getSong as getSongOffline } from '../utils/offlineCache.js';
 
 export function useSongFetch(id) {
   const [song, setSong] = useState(null);
@@ -16,7 +16,7 @@ export function useSongFetch(id) {
       headers: getAuthHeader(),
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Gagal memuat lagu");
+        if (!res.ok) throw new Error('Gagal memuat lagu');
         return res.json();
       })
       .then((data) => {
@@ -29,12 +29,12 @@ export function useSongFetch(id) {
           const offlineSong = await getSongOffline(id);
           if (offlineSong) {
             setSong(offlineSong);
-            setError("[Offline] Data dari cache");
+            setError('[Offline] Data dari cache');
           } else {
-            setError("Gagal memuat lagu: " + err.message);
+            setError('Gagal memuat lagu: ' + err.message);
           }
         } catch (e) {
-          setError("Gagal memuat lagu: " + err.message);
+          setError('Gagal memuat lagu: ' + err.message);
         }
         setLoading(false);
       });

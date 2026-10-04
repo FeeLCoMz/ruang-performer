@@ -22,7 +22,7 @@ function openDB() {
     }
 
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = (e) => {
+    req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE_SONGS)) {
         db.createObjectStore(STORE_SONGS, { keyPath: 'id' });

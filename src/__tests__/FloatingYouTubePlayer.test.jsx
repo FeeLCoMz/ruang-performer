@@ -1,13 +1,14 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { describe, test, expect } from 'vitest';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import FloatingYouTubePlayer from '../components/FloatingYouTubePlayer.jsx';
 
 vi.mock('../components/YouTubeViewer.jsx', () => ({
-  default: React.forwardRef(({ videoId }) => (
-    <div data-testid="youtube-viewer">{videoId}</div>
-  )),
+  default: React.forwardRef(function MockYouTubeViewer({ videoId }) {
+    return <div data-testid="youtube-viewer">{videoId}</div>;
+  }),
 }));
 
 describe('FloatingYouTubePlayer', () => {

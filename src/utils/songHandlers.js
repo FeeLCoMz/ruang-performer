@@ -1,34 +1,34 @@
-import { transposeChord } from "./chordUtils.js";
-import { transposeLyricsText } from "./lyricsEditorUtils.js";
+import { transposeChord } from './chordUtils.js';
+import { transposeLyricsText } from './lyricsEditorUtils.js';
 
 // Handler untuk export lirik ke TXT
 export function handleExportText(song, artist, key, originalKey, tempo, lyricsClean, transpose = 0, setShowExportMenu) {
   if (!song) return;
 
-  const transposedKey = key && typeof key === "string" ? transposeChord(key, transpose) : key || "";
-  const transposedLyrics = typeof lyricsClean === "string" && transpose !== 0
+  const transposedKey = key && typeof key === 'string' ? transposeChord(key, transpose) : key || '';
+  const transposedLyrics = typeof lyricsClean === 'string' && transpose !== 0
     ? transposeLyricsText(lyricsClean, transpose)
-    : lyricsClean || "";
+    : lyricsClean || '';
 
   const content = `${song.title}\nArtist: ${artist}\nKey: ${transposedKey}\n${originalKey ? `Original Key: ${originalKey}\n` : ''}Tempo: ${tempo} BPM\n\n${transposedLyrics}`;
-  const blob = new Blob([content], { type: "text/plain" });
+  const blob = new Blob([content], { type: 'text/plain' });
   const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
   a.download = `${song.title}.txt`;
   a.click();
   window.URL.revokeObjectURL(url);
-  if (typeof setShowExportMenu === "function") setShowExportMenu(false);
+  if (typeof setShowExportMenu === 'function') setShowExportMenu(false);
 }
 
 // Handler untuk export lirik ke PDF (print)
 export function handleExportPDF(song, artist, key, originalKey, tempo, lyricsClean, transpose = 0, setShowExportMenu) {
   if (!song) return;
 
-  const transposedKey = key && typeof key === "string" ? transposeChord(key, transpose) : key || "";
-  const transposedLyrics = typeof lyricsClean === "string" && transpose !== 0
+  const transposedKey = key && typeof key === 'string' ? transposeChord(key, transpose) : key || '';
+  const transposedLyrics = typeof lyricsClean === 'string' && transpose !== 0
     ? transposeLyricsText(lyricsClean, transpose)
-    : lyricsClean || "";
+    : lyricsClean || '';
 
   const content = `
 <html>
@@ -52,11 +52,11 @@ export function handleExportPDF(song, artist, key, originalKey, tempo, lyricsCle
 </body>
 </html>
     `;
-  const printWindow = window.open("", "", "height=400,width=600");
+  const printWindow = window.open('', '', 'height=400,width=600');
   printWindow.document.write(content);
   printWindow.document.close();
   printWindow.print();
-  if (typeof setShowExportMenu === "function") setShowExportMenu(false);
+  if (typeof setShowExportMenu === 'function') setShowExportMenu(false);
 }
 
 // Handler untuk share lagu
@@ -70,7 +70,7 @@ export function handleShare(song, artist, setShareMessage) {
     });
   } else {
     navigator.clipboard.writeText(shareUrl);
-    setShareMessage("Link copied to clipboard!");
-    setTimeout(() => setShareMessage(""), 2000);
+    setShareMessage('Link copied to clipboard!');
+    setTimeout(() => setShareMessage(''), 2000);
   }
 }

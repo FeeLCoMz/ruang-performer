@@ -84,7 +84,9 @@ export function playNote(note, options = {}) {
     try {
       osc.disconnect();
       amp.disconnect();
-    } catch {}
+    } catch {
+      // Node sudah ter-disconnect lebih dulu — abaikan error ini.
+    }
   };
 }
 

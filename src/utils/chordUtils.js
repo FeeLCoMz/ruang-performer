@@ -1030,7 +1030,7 @@ function isNumberNotationToken(token) {
   const normalized = cleaned
     .replace(/^[\(\[]+/, '')
     .replace(/[\)\]]+$/g, '')
-    .replace(/[’]/g, "'");
+    .replace(/[’]/g, '\'');
 
   if (!normalized) return false;
 

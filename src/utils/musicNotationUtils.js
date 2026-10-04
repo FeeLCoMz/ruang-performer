@@ -4,15 +4,15 @@
  * @returns {string}
  */
 export function getTempoTerm(bpm) {
-  if (bpm < 40) return "";
-  if (bpm < 60) return "Grave";
-  if (bpm < 66) return "Largo";
-  if (bpm < 76) return "Adagio";
-  if (bpm < 108) return "Andante";
-  if (bpm < 120) return "Moderato";
-  if (bpm < 168) return "Allegro";
-  if (bpm < 200) return "Presto";
-  return "Prestissimo";
+  if (bpm < 40) return '';
+  if (bpm < 60) return 'Grave';
+  if (bpm < 66) return 'Largo';
+  if (bpm < 76) return 'Adagio';
+  if (bpm < 108) return 'Andante';
+  if (bpm < 120) return 'Moderato';
+  if (bpm < 168) return 'Allegro';
+  if (bpm < 200) return 'Presto';
+  return 'Prestissimo';
 }
 // Music Notation Utilities
 // Parse and display melody notation (not angka and staff notation)
@@ -51,7 +51,7 @@ export function parseMelodyString(melodyString) {
         
         let octaveShift = 0;
         if (octave.includes('.')) octaveShift = -1;
-        if (octave.includes("'")) octaveShift = 1;
+        if (octave.includes('\'')) octaveShift = 1;
         
         const durationLength = duration.length + 1; // Base duration is 1
         
@@ -168,7 +168,7 @@ export function formatNoteDisplay(note) {
   if (note.octave < 0) {
     display += '.'.repeat(Math.abs(note.octave));
   } else if (note.octave > 0) {
-    display += "'".repeat(note.octave);
+    display += '\''.repeat(note.octave);
   }
   
   if (note.duration > 1) {
