@@ -194,21 +194,10 @@ export default function SetlistPage({
       if (!completed || typeof completed !== 'object' || Array.isArray(completed)) return sum;
       return sum + Object.keys(completed).filter((id) => completed[id] === true).length;
     }, 0);
-    const bandCount = new Set(list.map((setlist) => setlist.bandName).filter(Boolean)).size;
-    const largestSetlist = list.reduce(
-      (best, setlist) => {
-        const count = setlist.songCount ?? setlist.songs?.length ?? 0;
-        return count > best.count ? { name: setlist.name, count } : best;
-      },
-      { name: null, count: 0 },
-    );
     return {
       totalSetlists,
       totalSongs,
       completedSongs,
-      bandCount,
-      avgSongs: totalSetlists ? Math.round(totalSongs / totalSetlists) : 0,
-      largestSetlist,
     };
   }, [filteredSetlists]);
 
@@ -261,9 +250,9 @@ export default function SetlistPage({
         )}
       </div>
 
-      {/* Statistik sederhana - hanya di performance mode */}
+      {/* Statistik ringkas - hanya di performance mode */}
       {isPerformanceMode && performanceStats.totalSetlists > 0 && (
-        <div className="setlist-stats-grid" aria-label="Statistik setlist">
+        <div className="setlist-stats-grid setlist-stats-grid-compact" aria-label="Statistik setlist">
           <div className="setlist-stat-card">
             <span className="setlist-stat-icon" aria-hidden="true">📋</span>
             <span className="setlist-stat-value">{performanceStats.totalSetlists}</span>
@@ -279,27 +268,6 @@ export default function SetlistPage({
             <span className="setlist-stat-value">{performanceStats.completedSongs}</span>
             <span className="setlist-stat-label">Sudah Dibawakan</span>
           </div>
-          <div className="setlist-stat-card">
-            <span className="setlist-stat-icon" aria-hidden="true">📊</span>
-            <span className="setlist-stat-value">{performanceStats.avgSongs}</span>
-            <span className="setlist-stat-label">Rata-rata/Setlist</span>
-          </div>
-          <div className="setlist-stat-card">
-            <span className="setlist-stat-icon" aria-hidden="true">🎸</span>
-            <span className="setlist-stat-value">{performanceStats.bandCount}</span>
-            <span className="setlist-stat-label">Band</span>
-          </div>
-          {performanceStats.largestSetlist.name && (
-            <div className="setlist-stat-card setlist-stat-card-wide">
-              <span className="setlist-stat-icon" aria-hidden="true">🏆</span>
-              <span className="setlist-stat-value setlist-stat-value-text">
-                {performanceStats.largestSetlist.name}
-              </span>
-              <span className="setlist-stat-label">
-                Setlist Terbesar ({performanceStats.largestSetlist.count} lagu)
-              </span>
-            </div>
-          )}
         </div>
       )}
 

@@ -851,7 +851,7 @@ describe('Song lyrics shared editor rendering', () => {
 
     expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Edit Lirik')).toBe(false);
     expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
-    expect(container.querySelector('.song-lyrics-transpose-controls-compact')).toBeTruthy();
+    expect(container.querySelector('.song-lyrics-transpose-controls-compact')).toBeFalsy();
     expect(container.querySelector('.song-lyrics-toolbar-group-tempo-led-compact')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-chord-style-menu-container')).toBeFalsy();
     expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Full screen'))).toBe(true);

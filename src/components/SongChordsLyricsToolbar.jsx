@@ -403,34 +403,6 @@ export default function SongChordsLyricsToolbar({
           </div>
         )}
 
-        {!isEditingLyrics && !lyricsMode && performanceMode && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-transpose-compact">
-            <div className="song-lyrics-transpose-controls-compact" title="Transpose sederhana">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setTranspose((prev) => prev - 1)}
-                title="Transpose turun 1 semitone"
-                aria-label="Transpose turun"
-              >
-                -
-              </button>
-              <span className="song-lyrics-transpose-value" aria-live="polite">
-                Tr {transpose > 0 ? `+${transpose}` : transpose}
-              </span>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setTranspose((prev) => prev + 1)}
-                title="Transpose naik 1 semitone"
-                aria-label="Transpose naik"
-              >
-                +
-              </button>
-            </div>
-          </div>
-        )}
-
         {!isEditingLyrics && !lyricsMode && !performanceMode && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">
             <div className="song-lyrics-transpose-controls" title="Transpose lirik/chord">

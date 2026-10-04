@@ -19,6 +19,7 @@ import { buildSmartSetlistPlan } from '../utils/setlistSmartAssistant.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
 import useMetronome from '../hooks/useMetronome.js';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
+import PerformanceSongMeta from '../components/PerformanceSongMeta.jsx';
 
 const SESSION_DIVIDER_META_FIELD = 'sessionDividerName';
 
@@ -61,7 +62,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
   }, [setlist, setlistId]);
   if (!setlist && offlineSetlist) setlist = offlineSetlist;
-  
+
   // Set setlist aktif saat halaman dibuka
   useEffect(() => {
     if (setActiveSetlist && setlist) setActiveSetlist(setlist);
@@ -260,7 +261,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const filteredSongs = useMemo(() => {
     let result = setlistSongs.filter(song => {
       const isCompleted = completedSongs?.[song.id] === true;
-      const matchSearch = !searchText || 
+      const matchSearch = !searchText ||
         (song.title || '').toLowerCase().includes(searchText.toLowerCase()) ||
         (song.artist || '').toLowerCase().includes(searchText.toLowerCase());
       const matchArtist = !filterArtist || song.artist === filterArtist;
@@ -308,7 +309,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           default:
             return 0;
         }
-        
+
         if (typeof aVal === 'string') {
           aVal = aVal.toLowerCase();
           bVal = bVal.toLowerCase();
@@ -1537,7 +1538,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           {setlist.bandName && (
             <div className="setlist-band-name">🎸 {setlist.bandName}</div>
           )}
-          {setlist.description && (
+          {!performanceMode && setlist.description && (
             <div className="setlist-description">{setlist.description}</div>
           )}
           {performanceMode ? (
@@ -1550,7 +1551,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               <p>✅ {completedCount} lagu sudah dibawakan</p>
             </>
           )}
-          {featuredSongIdsFromMeta.length > 0 && (
+          {!performanceMode && featuredSongIdsFromMeta.length > 0 && (
             <div className="smart-featured-caption">
               ✨ {featuredSongIdsFromMeta.length} lagu ditandai sebagai blok show utama Smart Assistant
             </div>
@@ -1946,33 +1947,44 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     <h3 className="song-title">
                       {song.title}
                       {isCompleted && <span className="song-completed-badge" title="Sudah dibawakan" aria-label="Sudah dibawakan">✓</span>}
-                      {isSmartFeatured && <span className="smart-featured-badge">Smart Pick</span>}
+                      {!performanceMode && isSmartFeatured && <span className="smart-featured-badge">Smart Pick</span>}
                       {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
                     </h3>
                     <div className="song-meta">
-                      <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood: ${mood.label} (${mood.sourceHint})`}>
-                        {performanceMode ? mood.tone : `Mood: ${mood.label}`}
-                      </span>
-                      {song.artist && <span>👤 {song.artist}</span>}
-                      {song.key && (
-                        <span>
-                          🎹 {song.key}
-                          {keyChanged && baseSong?.key ? ` (${baseSong.key})` : ''}
-                        </span>
+                      {performanceMode ? (
+                        <PerformanceSongMeta
+                          song={song}
+                          extra={keyChanged && baseSong?.key
+                            ? <span title={`Kunci asli: ${baseSong.key}`}>🎹 {song.key} <em>({baseSong.key})</em></span>
+                            : null}
+                        />
+                      ) : (
+                        <>
+                          <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood: ${mood.label} (${mood.sourceHint})`}>
+                            Mood: {mood.label}
+                          </span>
+                          {song.artist && <span>👤 {song.artist}</span>}
+                          {song.key && (
+                            <span>
+                              🎹 {song.key}
+                              {keyChanged && baseSong?.key ? ` (${baseSong.key})` : ''}
+                            </span>
+                          )}
+                          {song.tempo && (
+                            <span>
+                              ⏱️ {song.tempo} BPM
+                              {tempoChanged && baseSong?.tempo ? ` (${baseSong.tempo} BPM)` : ''}
+                            </span>
+                          )}
+                          {song.genre && (
+                            <span>
+                              🎸 {song.genre}
+                              {genreChanged && baseSong?.genre ? ` (${baseSong.genre})` : ''}
+                            </span>
+                          )}
+                          <span>📋 {songUsageCountMap.get(song.id) || 0} setlist</span>
+                        </>
                       )}
-                      {song.tempo && (
-                        <span>
-                          ⏱️ {song.tempo} BPM
-                          {tempoChanged && baseSong?.tempo ? ` (${baseSong.tempo} BPM)` : ''}
-                        </span>
-                      )}
-                      {!performanceMode && song.genre && (
-                        <span>
-                          🎸 {song.genre}
-                          {genreChanged && baseSong?.genre ? ` (${baseSong.genre})` : ''}
-                        </span>
-                      )}
-                      {!performanceMode && <span>📋 {songUsageCountMap.get(song.id) || 0} setlist</span>}
                     </div>
                   </div>
 
@@ -1981,16 +1993,14 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     className="song-actions"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {!performanceMode && (
-                      <button
-                        onClick={(e) => handleToggleMetronome(song, e)}
-                        className="btn btn-secondary song-action-mini"
-                        title="Play metronom"
-                        aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
-                      >
-                        {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
-                      </button>
-                    )}
+                    <button
+                      onClick={(e) => handleToggleMetronome(song, e)}
+                      className="btn btn-secondary song-action-mini"
+                      title="Play metronom"
+                      aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
+                    >
+                      {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
+                    </button>
                     {hasYouTubeVideo(song) && (
                       <button
                         onClick={(e) => handlePlayVideo(song, e)}

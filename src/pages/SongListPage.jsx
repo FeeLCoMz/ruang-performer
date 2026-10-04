@@ -10,6 +10,7 @@ import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { fetchSetLists, fetchBands, updateSongMastery, addSong } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
+import PerformanceSongMeta from '../components/PerformanceSongMeta.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
@@ -249,7 +250,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     // Apply sorting
     result.sort((a, b) => {
       let aVal, bVal;
-      
+
       switch (sortBy) {
         case 'title':
           aVal = a.title?.toLowerCase() || '';
@@ -633,7 +634,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     return (
       <React.Fragment key={song.id}>
         <div
-          className={`song-item${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
+          className={`song-item${performanceMode ? ' song-item-performance' : ''}${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
           onClick={() => navigate(`/songs/view/${song.id}`)}
           style={style}
         >
@@ -643,26 +644,32 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
             </h3>
             <div className="song-meta">
-              <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
-                Mood: {mood.label}
-              </span>
-              {song.artist && <span>👤 {song.artist}</span>}
-              {song.key && <span>🎹 {song.key}</span>}
-              {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
-              {song.genre && <span>🎸 {song.genre}</span>}
-              {song.bandId && <span>🎤 Band: {song.bandName || '-'}</span>}
-              <span className="song-setlist-count-meta">
-                {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
-              </span>
-              <span className="song-contributor-meta">
-                ✍️ {song.contributorName || song.contributorUsername || '-'}
-              </span>
-              <span className="song-mastery-summary">
-                ✅ Selesai: {Array.isArray(song.masteredBy) ? song.masteredBy.length : 0}
-                {Array.isArray(song.masteredBy) && song.masteredBy.length > 0
-                  ? ` (${song.masteredBy.map((entry) => entry.username || '-').join(', ')})`
-                  : ''}
-              </span>
+              {performanceMode ? (
+                <PerformanceSongMeta song={song} />
+              ) : (
+                <>
+                  <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
+                    Mood: {mood.label}
+                  </span>
+                  {song.artist && <span>👤 {song.artist}</span>}
+                  {song.key && <span>🎹 {song.key}</span>}
+                  {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
+                  {song.genre && <span>🎸 {song.genre}</span>}
+                  {song.bandId && <span>🎤 Band: {song.bandName || '-'}</span>}
+                  <span className="song-setlist-count-meta">
+                    {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
+                  </span>
+                  <span className="song-contributor-meta">
+                    ✍️ {song.contributorName || song.contributorUsername || '-'}
+                  </span>
+                  <span className="song-mastery-summary">
+                    ✅ Selesai: {Array.isArray(song.masteredBy) ? song.masteredBy.length : 0}
+                    {Array.isArray(song.masteredBy) && song.masteredBy.length > 0
+                      ? ` (${song.masteredBy.map((entry) => entry.username || '-').join(', ')})`
+                      : ''}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
@@ -688,7 +695,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
                 🎬
               </button>
             )}
-            {
+            {!performanceMode && (
               <button
                 className={`btn ${song.isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
                 title={song.canMarkMastery
@@ -703,7 +710,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
                     ? (song.isMasteredByCurrentUser ? 'Sudah Kuasai' : 'Belum Kuasai')
                     : 'Belum Bisa Tandai')}
               </button>
-            }
+            )}
             {!performanceMode && (() => {
               const permission = permissionsBySongId[song.id] || {};
               const canEdit = Boolean(permission.canEdit);
@@ -775,19 +782,19 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   }
 
   return (
-    <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}>  
+    <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}>
       {/* Page Header */}
       <div className="page-header">
         <div>
           <h1>🎵 Lagu Saya</h1>
           <p>{displayedSongCount} ditampilkan dari {filteredSongs.length} hasil ({songs.length} total)</p>
-          <div className="song-mastery-overview" aria-live="polite">
+          {!performanceMode && <div className="song-mastery-overview" aria-live="polite">
             <span className="song-mastery-overview-badge">✅ Sudah Dikuasai Saya: {masteredStats.masteredAllCount}/{masteredStats.totalSongs}</span>
             <span className="song-mastery-overview-text">({masteredStats.masteredPercent}%)</span>
             {filteredSongs.length !== songs.length && (
               <span className="song-mastery-overview-text">• Di hasil filter: {masteredStats.masteredFilteredCount}/{filteredSongs.length}</span>
             )}
-          </div>
+          </div>}
         </div>
         {!performanceMode && (
           <button className="btn" onClick={() => onSongClick('add')} title="Tambah lagu baru">

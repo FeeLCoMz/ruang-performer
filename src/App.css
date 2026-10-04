@@ -10202,10 +10202,6 @@ body.dark-mode .cd-token {
   order: 4;
 }
 
-.song-lyrics-toolbar-group-transpose-compact {
-  order: 5;
-}
-
 .song-lyrics-toolbar-group-tempo-led-compact {
   order: 4;
   display: inline-flex;
@@ -10267,22 +10263,6 @@ body.dark-mode .cd-token {
   color: var(--text-secondary);
   min-width: 24px;
   text-align: center;
-}
-
-.song-lyrics-transpose-controls-compact {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: 0 var(--spacing-xs);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--secondary-bg);
-}
-
-.song-lyrics-transpose-controls-compact .btn {
-  min-width: 34px;
-  height: 34px;
-  padding: 0;
 }
 
 .song-lyrics-transpose-controls {
@@ -10524,7 +10504,6 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
 
 .page-container.performance-mode .song-lyrics-toolbar-group-grid-density .song-lyrics-grid-density-select,
 .page-container.performance-mode .song-lyrics-toolbar-group-grid-density .song-lyrics-grid-preset-select,
-.page-container.performance-mode .song-lyrics-transpose-controls-compact,
 .page-container.performance-mode .song-lyrics-toolbar-group-tempo-led-compact {
   background: rgba(15, 23, 42, 0.04);
   border: 1px solid rgba(148, 163, 184, 0.12);
@@ -10831,6 +10810,28 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   margin-bottom: 14px;
 }
 
+.page-container.performance-mode .setlist-stats-grid-compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.page-container.performance-mode .setlist-stats-grid-compact .setlist-stat-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+.page-container.performance-mode .setlist-stats-grid-compact .setlist-stat-label {
+  display: none;
+}
+
+.page-container.performance-mode .setlist-stats-grid-compact .setlist-stat-value {
+  font-size: 1.15rem;
+}
+
 .page-container.performance-mode .setlist-stat-card {
   display: flex;
   flex-direction: column;
@@ -11012,6 +11013,16 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   align-items: center;
   column-gap: 12px;
   row-gap: 4px;
+}
+
+/* Daftar lagu tidak punya nomor urutan, jadi judul tetap di kolom pertama */
+.page-container.performance-mode .song-item-performance .song-info:not(:has(.song-number-wrap)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.page-container.performance-mode .song-item-performance .song-info:not(:has(.song-number-wrap)) .song-title,
+.page-container.performance-mode .song-item-performance .song-info:not(:has(.song-number-wrap)) .song-meta {
+  grid-column: 1;
 }
 
 .page-container.performance-mode .song-item-performance .song-number-wrap {
@@ -12568,11 +12579,6 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   }
 
   .page-container.performance-mode .song-lyrics-toolbar-group-autoscroll {
-    width: auto;
-    justify-content: flex-start;
-  }
-
-  .page-container.performance-mode .song-lyrics-toolbar-group-transpose-compact {
     width: auto;
     justify-content: flex-start;
   }
