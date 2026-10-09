@@ -3611,8 +3611,31 @@ body.dark-mode .lyrics-editor-textarea {
 
 .setlist-filter-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto auto;
   gap: 12px;
+  align-items: center;
+}
+
+/* Tombol di baris filter tidak ikut melar */
+.setlist-sort-order-btn,
+.setlist-reset-btn {
+  white-space: nowrap;
+  min-height: 40px;
+}
+
+@media (max-width: 900px) {
+  .setlist-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-xs);
+    align-items: center;
+  }
+
+  .setlist-filter-grid .filter-select,
+  .setlist-filter-grid .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 34px;
+  }
 }
 
 .search-input-main {
@@ -3629,18 +3652,51 @@ body.dark-mode .lyrics-editor-textarea {
 
 .filter-row {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
   align-items: center;
+  margin-top: var(--spacing-sm);
+}
+
+.filter-row .filter-select {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.filter-row .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .filter-select {
   padding: var(--spacing-sm) var(--spacing-md);
+  min-height: 40px;
   font-size: 0.9em;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background: var(--primary-bg);
   color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .filter-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-xs);
+    align-items: center;
+  }
+
+  .filter-row .filter-select,
+  .filter-row .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 34px;
+  }
+
+  /* Tombol lebar penuh di baris tersendiri agar tidak sempit */
+  .filter-row .btn {
+    grid-column: 1 / -1;
+  }
 }
 .song-list-container {
   display: flex;
@@ -3972,6 +4028,20 @@ body.dark-mode .lyrics-editor-textarea {
 
 .setlist-header-action-group .btn {
   white-space: nowrap;
+  min-height: 38px;
+  align-items: center;
+}
+
+.setlist-header-more > summary {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.setlist-inline-more > summary {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .setlist-header-actions-compact {
@@ -4600,16 +4670,6 @@ body.dark-mode .lyrics-editor-textarea {
     gap: var(--spacing-sm);
   }
 
-  .setlist-filter-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-sm);
-  }
-
-  .setlist-filter-grid .filter-select,
-  .setlist-filter-grid .btn {
-    width: 100%;
-  }
-
   .setlist-item {
     flex-direction: column;
     align-items: stretch;
@@ -4638,9 +4698,15 @@ body.dark-mode .lyrics-editor-textarea {
   }
 }
 
-.setlist-action-edit-btn {
-  padding: 6px 12px;
-  font-size: 0.85em;
+.setlist-action-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0;
+  border-radius: var(--radius-md);
 }
 
 .setlist-error-box {

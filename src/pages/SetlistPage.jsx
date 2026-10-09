@@ -247,9 +247,11 @@ export default function SetlistPage({
             ? userBandInfo.some(b => b.role && b.role !== 'guest')
             : can(PERMISSIONS.SETLIST_CREATE))
           ) && (
-            <button className="btn" onClick={() => setShowCreateSetlist(true)}>
-              <PlusIcon size={18} /> Buat Setlist
-            </button>
+            <div className="page-header-actions">
+              <button className="btn" onClick={() => setShowCreateSetlist(true)}>
+                <PlusIcon size={18} /> Buat Setlist
+              </button>
+            </div>
           )
         )}
       </div>
@@ -315,8 +317,9 @@ export default function SetlistPage({
 
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="btn btn-secondary"
-              title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
+              className="btn btn-secondary setlist-sort-order-btn"
+              title={sortOrder === 'asc' ? 'Urutan naik' : 'Urutan turun'}
+              aria-label={sortOrder === 'asc' ? 'Ubah ke urutan turun' : 'Ubah ke urutan naik'}
             >
               {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
             </button>
@@ -324,7 +327,7 @@ export default function SetlistPage({
             {hasActiveFilters && (
               <button
                 onClick={handleClearFilters}
-                className="btn btn-secondary"
+                className="btn btn-secondary setlist-reset-btn"
               >
                 ✕ Reset
               </button>
@@ -386,8 +389,9 @@ export default function SetlistPage({
                     {canEdit && (
                       <button
                         onClick={() => setEditSetlist(setlist)}
-                        className="btn setlist-action-edit-btn"
-                        title="Edit"
+                        className="btn btn-secondary setlist-action-icon-btn"
+                        title="Edit setlist"
+                        aria-label={`Edit setlist ${setlist.name}`}
                       >
                         <EditIcon size={16} />
                       </button>
@@ -395,8 +399,9 @@ export default function SetlistPage({
                     {canDelete && (
                       <button
                         onClick={() => setDeleteSetlist(setlist)}
-                        className="btn btn-red"
-                        title="Hapus"
+                        className="btn btn-red setlist-action-icon-btn"
+                        title="Hapus setlist"
+                        aria-label={`Hapus setlist ${setlist.name}`}
                       >
                         <DeleteIcon size={16} />
                       </button>
