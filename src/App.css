@@ -3619,18 +3619,6 @@ body.dark-mode .lyrics-editor-textarea {
   grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
-.setlist-open-indicator {
-  flex-shrink: 0;
-  align-self: center;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: var(--primary-accent);
-  color: #fff;
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
 /* FAB tambah lagu cepat (performance mode) */
 .setlist-fab-add-song {
   position: fixed;

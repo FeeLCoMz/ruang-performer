@@ -382,10 +382,6 @@ export default function SetlistPage({
                     </div>
                 </div>
 
-                {isPerformanceMode && (
-                  <span className="setlist-open-indicator" aria-hidden="true">Buka →</span>
-                )}
-
                 {/* Actions */}
                 {!isPerformanceMode && (
                   <div
