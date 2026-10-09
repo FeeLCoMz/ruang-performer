@@ -3591,12 +3591,6 @@ body.dark-mode .lyrics-editor-textarea {
   font-size: 0.95em;
 }
 
-.song-contributor-meta {
-  color: var(--text-secondary);
-  margin-left: 8px;
-  font-size: 0.95em;
-}
-
 .song-filter-container {
   display: flex;
   flex-direction: column;
@@ -3633,28 +3627,6 @@ body.dark-mode .lyrics-editor-textarea {
   display: flex;
   gap: 8px;
   margin-top: 8px;
-}
-
-.song-group-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--primary-bg);
-}
-
-.song-group-title {
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.song-group-count {
-  font-size: 0.8rem;
-  color: var(--text-muted);
 }
 
 .setlist-group-header {
@@ -4258,11 +4230,6 @@ body.dark-mode .lyrics-editor-textarea {
   font-weight: 700;
 }
 
-.song-mastery-overview-text {
-  color: var(--text-secondary);
-  font-weight: 600;
-}
-
 .song-actions {
   display: flex;
   gap: var(--spacing-sm);
@@ -4493,6 +4460,50 @@ body.dark-mode .lyrics-editor-textarea {
   display: flex;
   gap: var(--spacing-sm);
   flex-shrink: 0;
+}
+
+/* Mobile: setlist lebih rapi dan ringkas */
+@media (max-width: 768px) {
+  .setlist-filter-container {
+    gap: var(--spacing-sm);
+  }
+
+  .setlist-filter-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .setlist-filter-grid .filter-select,
+  .setlist-filter-grid .btn {
+    width: 100%;
+  }
+
+  .setlist-item {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--spacing-md);
+    gap: var(--spacing-sm);
+  }
+
+  .setlist-title {
+    font-size: var(--font-size-base);
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .setlist-meta {
+    gap: var(--spacing-sm);
+    font-size: 0.78em;
+  }
+
+  .setlist-actions {
+    justify-content: flex-end;
+  }
+
+  .setlist-actions .btn {
+    flex: 0 0 auto;
+  }
 }
 
 .setlist-action-edit-btn {

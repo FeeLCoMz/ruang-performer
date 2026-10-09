@@ -234,7 +234,11 @@ export default function SetlistPage({
               {performanceStats.totalSetlists} setlist • {performanceStats.totalSongs} lagu • {performanceStats.completedSongs} sudah dibawakan
             </div>
           ) : (
-            <p>{filteredSetlists.length} dari {setlists.length} setlist</p>
+            <p>
+              {hasActiveFilters
+                ? `${filteredSetlists.length} dari ${setlists.length} setlist`
+                : `${setlists.length} setlist`}
+            </p>
           )}
         </div>
         {!isPerformanceMode && (
@@ -367,7 +371,6 @@ export default function SetlistPage({
                         <>
                           {setlist.description && <span>{setlist.description}</span>}
                           {setlist.bandName && <span>🎸 {setlist.bandName}</span>}
-                          {setlist.userName && <span>👤 {setlist.userName}</span>}
                           <span>🎵 {(setlist.songCount ?? setlist.songs?.length) || 0} lagu</span>
                         </>
                       )}

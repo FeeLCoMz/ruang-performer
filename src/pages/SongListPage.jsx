@@ -56,12 +56,10 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   const [setlistsLoading, setSetlistsLoading] = useState(true);
   const [filterArtist, setFilterArtist] = useState(persisted.filterArtist || 'all');
   const [filterKey, setFilterKey] = useState(persisted.filterKey || 'all');
-  const [filterGenre, setFilterGenre] = useState(persisted.filterGenre || 'all');
   const [filterBand, setFilterBand] = useState(persisted.filterBand || 'all');
   const [filterSetlist, setFilterSetlist] = useState(persisted.filterSetlist || 'all');
   const [sortBy, setSortBy] = useState(persisted.sortBy || 'updated');
   const [sortOrder, setSortOrder] = useState(persisted.sortOrder || 'desc');
-  const [groupBy, setGroupBy] = useState(persisted.groupBy || 'none');
   const [masteryFilter, setMasteryFilter] = useState(persisted.masteryFilter || (persisted.showOnlyMastered ? 'mastered' : 'all'));
   const [metronomeTempo, setMetronomeTempo] = useState(120);
   const [metronomeSongId, setMetronomeSongId] = useState(null);
@@ -112,16 +110,14 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       search,
       filterArtist,
       filterKey,
-      filterGenre,
       filterBand,
       filterSetlist,
       sortBy,
       sortOrder,
-      groupBy,
       masteryFilter,
     };
     localStorage.setItem('songListPageState', JSON.stringify(state));
-  }, [search, filterArtist, filterKey, filterGenre, filterBand, filterSetlist, sortBy, sortOrder, groupBy, masteryFilter]);
+  }, [search, filterArtist, filterKey, filterBand, filterSetlist, sortBy, sortOrder, masteryFilter]);
 
   useEffect(() => {
     updatePageMeta(pageMetadata.songs);
@@ -149,21 +145,18 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   }, []);
 
   // Extract unique values for filters
-  const { artists, keys, genres } = useMemo(() => {
+  const { artists, keys } = useMemo(() => {
     const artistSet = new Set();
     const keySet = new Set();
-    const genreSet = new Set();
 
     songs.forEach(song => {
       if (song.artist) artistSet.add(song.artist);
       if (song.key) keySet.add(song.key);
-      if (song.genre) genreSet.add(song.genre);
     });
 
     return {
       artists: Array.from(artistSet).sort(),
       keys: Array.from(keySet).sort(),
-      genres: Array.from(genreSet).sort()
     };
   }, [songs]);
 
@@ -224,9 +217,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     if (filterKey !== 'all') {
       result = result.filter(song => song.key === filterKey);
     }
-    if (filterGenre !== 'all') {
-      result = result.filter(song => song.genre === filterGenre);
-    }
     if (filterBand !== 'all') {
       result = result.filter(song => String(song.bandId || '') === String(filterBand));
     }
@@ -286,26 +276,24 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     });
 
     return result;
-  }, [songs, debouncedSearch, filterArtist, filterKey, filterGenre, filterBand, filterSetlist, setlists, masteryFilter, sortBy, sortOrder]);
+  }, [songs, debouncedSearch, filterArtist, filterKey, filterBand, filterSetlist, setlists, masteryFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     setVisibleCount(pageSize);
-  }, [debouncedSearch, filterArtist, filterKey, filterGenre, filterBand, filterSetlist, masteryFilter, sortBy, sortOrder, groupBy, pageSize]);
+  }, [debouncedSearch, filterArtist, filterKey, filterBand, filterSetlist, masteryFilter, sortBy, sortOrder, pageSize]);
 
   const handleClearFilters = () => {
     setSearch('');
     setFilterArtist('all');
     setFilterKey('all');
-    setFilterGenre('all');
     setFilterBand('all');
     setFilterSetlist('all');
     setSortBy('updated');
     setSortOrder('desc');
-    setGroupBy('none');
     setMasteryFilter('all');
   };
 
-  const hasActiveFilters = search || filterArtist !== 'all' || filterKey !== 'all' || filterGenre !== 'all' || filterBand !== 'all' || filterSetlist !== 'all' || masteryFilter !== 'all' || groupBy !== 'none';
+  const hasActiveFilters = search || filterArtist !== 'all' || filterKey !== 'all' || filterBand !== 'all' || filterSetlist !== 'all' || masteryFilter !== 'all';
 
   // Optimized: Build a map of songId -> count of setlists using it
   const songSetlistCountMap = useMemo(() => {
@@ -372,58 +360,25 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     return filteredSongs.slice(0, visibleCount);
   }, [filteredSongs, visibleCount]);
 
-  const displayedSongRows = useMemo(() => {
-    if (groupBy === 'none') return visibleSongs.map((song) => ({ type: 'song', song }));
-
-    const getGroupLabel = (song) => {
-      if (groupBy === 'artist') return (song.artist || '').trim() || 'Tanpa Artis';
-      if (groupBy === 'genre') return (song.genre || '').trim() || 'Tanpa Genre';
-      if (groupBy === 'key') return (song.key || '').trim() || 'Tanpa Kunci';
-      if (groupBy === 'band') return song.bandName || (song.bandId ? `Band ${song.bandId}` : 'Personal');
-      if (groupBy === 'mastery') return song.isMasteredByCurrentUser ? 'Sudah Dikuasai' : 'Belum Kuasai';
-      return 'Lainnya';
-    };
-
-    const groups = new Map();
-    visibleSongs.forEach((song) => {
-      const label = getGroupLabel(song);
-      if (!groups.has(label)) groups.set(label, []);
-      groups.get(label).push(song);
-    });
-
-    let labels = Array.from(groups.keys());
-    if (groupBy === 'mastery') {
-      const desired = sortOrder === 'asc' ? ['Sudah Dikuasai', 'Belum Kuasai'] : ['Belum Kuasai', 'Sudah Dikuasai'];
-      labels = desired.filter((label) => groups.has(label));
-    } else {
-      labels = labels.sort((a, b) => sortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a));
-    }
-
-    const rows = [];
-    labels.forEach((label) => {
-      const songsInGroup = groups.get(label) || [];
-      rows.push({ type: 'group', key: `${groupBy}-${label}`, label, count: songsInGroup.length });
-      songsInGroup.forEach((song) => rows.push({ type: 'song', song }));
-    });
-    return rows;
-  }, [groupBy, visibleSongs, sortOrder]);
+  const displayedSongRows = useMemo(
+    () => visibleSongs.map((song) => ({ type: 'song', song })),
+    [visibleSongs]
+  );
 
   const hiddenSongsCount = Math.max(filteredSongs.length - visibleSongs.length, 0);
 
   const masteredStats = useMemo(() => {
     const masteredAllCount = songs.filter((song) => Boolean(song?.isMasteredByCurrentUser)).length;
-    const masteredFilteredCount = filteredSongs.filter((song) => Boolean(song?.isMasteredByCurrentUser)).length;
 
     const totalSongs = songs.length;
     const masteredPercent = totalSongs > 0 ? Math.round((masteredAllCount / totalSongs) * 100) : 0;
 
     return {
       masteredAllCount,
-      masteredFilteredCount,
       totalSongs,
       masteredPercent,
     };
-  }, [songs, filteredSongs]);
+  }, [songs]);
 
   if (loading) {
     return (
@@ -600,11 +555,10 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     return songs.find((song) => song.id === metronomeSongId) || null;
   }, [metronomeSongId, songs]);
 
-  const shouldVirtualize = groupBy === 'none' && !activeVideoSong && !isNarrowViewport && filteredSongs.length >= (performanceMode ? 120 : 180);
+  const shouldVirtualize = !activeVideoSong && !isNarrowViewport && filteredSongs.length >= (performanceMode ? 120 : 180);
   const virtualRowHeight = isNarrowViewport
     ? (performanceMode ? 210 : 230)
     : (performanceMode ? 136 : 156);
-  const displayedSongCount = shouldVirtualize ? filteredSongs.length : visibleSongs.length;
 
   async function handleToggleMastery(song, event) {
     event.stopPropagation();
@@ -655,19 +609,15 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
                   {song.key && <span>🎹 {song.key}</span>}
                   {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
                   {song.genre && <span>🎸 {song.genre}</span>}
-                  {song.bandId && <span>🎤 Band: {song.bandName || '-'}</span>}
+                  {song.bandId && <span>🎤 {song.bandName || '-'}</span>}
                   <span className="song-setlist-count-meta">
                     {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
                   </span>
-                  <span className="song-contributor-meta">
-                    ✍️ {song.contributorName || song.contributorUsername || '-'}
-                  </span>
-                  <span className="song-mastery-summary">
-                    ✅ Selesai: {Array.isArray(song.masteredBy) ? song.masteredBy.length : 0}
-                    {Array.isArray(song.masteredBy) && song.masteredBy.length > 0
-                      ? ` (${song.masteredBy.map((entry) => entry.username || '-').join(', ')})`
-                      : ''}
-                  </span>
+                  {Array.isArray(song.masteredBy) && song.masteredBy.length > 0 && (
+                    <span className="song-mastery-summary">
+                      ✅ {song.masteredBy.length} kuasai
+                    </span>
+                  )}
                 </>
               )}
             </div>
@@ -787,14 +737,12 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       <div className="page-header">
         <div>
           <h1>🎵 Lagu Saya</h1>
-          <p>{displayedSongCount} ditampilkan dari {filteredSongs.length} hasil ({songs.length} total)</p>
-          {!performanceMode && <div className="song-mastery-overview" aria-live="polite">
-            <span className="song-mastery-overview-badge">✅ Sudah Dikuasai Saya: {masteredStats.masteredAllCount}/{masteredStats.totalSongs}</span>
-            <span className="song-mastery-overview-text">({masteredStats.masteredPercent}%)</span>
-            {filteredSongs.length !== songs.length && (
-              <span className="song-mastery-overview-text">• Di hasil filter: {masteredStats.masteredFilteredCount}/{filteredSongs.length}</span>
-            )}
-          </div>}
+          <p>{filteredSongs.length} lagu</p>
+          {!performanceMode && (
+            <div className="song-mastery-overview" aria-live="polite">
+              <span className="song-mastery-overview-badge">✅ Dikuasai: {masteredStats.masteredAllCount}/{masteredStats.totalSongs} ({masteredStats.masteredPercent}%)</span>
+            </div>
+          )}
         </div>
         {!performanceMode && (
           <button className="btn" onClick={() => onSongClick('add')} title="Tambah lagu baru">
@@ -934,17 +882,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
             </select>
 
             <select
-              value={filterGenre}
-              onChange={(e) => setFilterGenre(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">Semua Genre</option>
-              {genres.map(genre => (
-                <option key={genre} value={genre}>{genre}</option>
-              ))}
-            </select>
-
-            <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="filter-select"
@@ -967,20 +904,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               <option value="all">Status: Semua Lagu</option>
               <option value="mastered">Status: Sudah Dikuasai</option>
               <option value="unmastered">Status: Belum Kuasai</option>
-            </select>
-
-            <select
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.target.value)}
-              className="filter-select"
-              aria-label="Kelompokkan daftar lagu utama"
-            >
-              <option value="none">Kelompokkan: Tidak</option>
-              <option value="artist">Kelompokkan: Artis</option>
-              <option value="genre">Kelompokkan: Genre</option>
-              <option value="key">Kelompokkan: Kunci</option>
-              <option value="band">Kelompokkan: Band</option>
-              <option value="mastery">Kelompokkan: Penguasaan</option>
             </select>
 
             {hasActiveFilters && (
@@ -1083,17 +1006,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
             </div>
           ) : (
             <div className="song-list-container">
-              {displayedSongRows.map((row) => {
-                if (row.type === 'group') {
-                  return (
-                    <div key={row.key} className="song-group-header">
-                      <span className="song-group-title">{row.label}</span>
-                      <span className="song-group-count">{row.count} lagu</span>
-                    </div>
-                  );
-                }
-                return renderSongItem(row.song);
-              })}
+              {displayedSongRows.map((row) => renderSongItem(row.song))}
             </div>
           )}
           {!shouldVirtualize && hiddenSongsCount > 0 && (
