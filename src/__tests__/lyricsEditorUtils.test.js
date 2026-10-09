@@ -1,9 +1,12 @@
 import { describe, test, expect, vi } from 'vitest';
 import {
+  applyTransformToSelection,
   autoAlignChordLyricPairs,
   autoTagSongSections,
   buildInsertNoteToken,
   detectSectionBadges,
+  formatWholeLyricsDocument,
+  insertLineAtCursor,
   removeExtraSpacesAndBrokenLines,
   replaceSelectionWithToken,
   standardizeChordNotation,
@@ -96,6 +99,65 @@ describe('lyricsEditorUtils', () => {
   test('transposeLyricsText transposes inline, chord-line, and modulation chords', () => {
     const input = '[C]Hello\nAm F G\nModulation: Bb';
     expect(transposeLyricsText(input, 2)).toBe('[D]Hello\nBm G A\nModulation: C');
+  });
+
+  test('formatWholeLyricsDocument cleans, tags sections, and standardises chords at once', () => {
+    const input = 'intro:\n\n\n\u200Ecmajor7   aminor\nreff:   fmaj   g';
+    const output = formatWholeLyricsDocument(input);
+
+    // copy-paste noise + hidden chars removed, sections tagged, chords standardised
+    expect(output).not.toContain('\u200E');
+    expect(output).not.toContain('  ');
+    expect(output).toContain('[Intro]');
+    expect(output).toContain('[Chorus]');
+    expect(output).toContain('Cmaj7');
+    expect(output).toContain('Am');
+    expect(output).not.toContain('cmajor7');
+    expect(output).not.toContain('aminor');
+    // the earlier chord grid keeps its bars instead of leaking into the section tag
+    expect(output.split('\n').filter((line) => line.startsWith('|'))).toHaveLength(1);
+  });
+
+  test('applyTransformToSelection only touches the selected range', () => {
+    const text = 'Am F\nHello world';
+    const result = applyTransformToSelection({
+      text,
+      selectionStart: 0,
+      selectionEnd: 4,
+      transform: (segment) => transposeLyricsText(segment, 2),
+    });
+
+    expect(result.nextText).toBe('Bm G\nHello world');
+    expect(result.changed).toBe(true);
+    expect(result.selectionEmpty).toBe(false);
+    expect(result.nextSelectionStart).toBe(0);
+    expect(result.nextSelectionEnd).toBe(4);
+  });
+
+  test('applyTransformToSelection falls back to the whole document without a selection', () => {
+    const text = 'Am F\nHello world';
+    const result = applyTransformToSelection({
+      text,
+      selectionStart: null,
+      selectionEnd: null,
+      transform: (segment) => transposeLyricsText(segment, 2),
+    });
+
+    expect(result.nextText).toBe('Bm G\nHello world');
+    expect(result.selectionEmpty).toBe(true);
+  });
+
+  test('insertLineAtCursor replaces the selected text instead of leaving it behind', () => {
+    const result = insertLineAtCursor({
+      text: 'Am F\nHello',
+      selectionStart: 0,
+      selectionEnd: 4,
+      label: '[Chorus]',
+    });
+
+    // Replacing the selection leaves the following newline, so the label keeps its own line.
+    expect(result.nextText).toBe('[Chorus]\n\nHello');
+    expect(result.nextText).not.toContain('Am F');
   });
 
   test('handleExportText applies the active transpose to chords and key metadata', async () => {

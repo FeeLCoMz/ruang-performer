@@ -378,6 +378,15 @@ export function transposeLyricsText(text, steps) {
   return transformChordContent(text, (chord) => transposeChord(standardizeChordSymbol(chord), steps));
 }
 
+/**
+ * One-shot tidy-up of a pasted chart: collapse copy-paste noise, normalise
+ * section tags, then standardise every chord symbol and bar grid.
+ * Order matters — cleaning first avoids tag/chord detection failing on stray tabs.
+ */
+export function formatWholeLyricsDocument(text) {
+  return standardizeChordNotation(autoTagSongSections(removeExtraSpacesAndBrokenLines(text)));
+}
+
 export function buildInsertNoteToken({
   note,
   keySignature = 'C',
@@ -408,13 +417,69 @@ export function replaceSelectionWithToken({
   };
 }
 
-/** Insert a section label on its own line at the cursor position. */
-export function insertLineAtCursor({ text, selectionStart, label }) {
+/**
+ * Insert a section label on its own line at the cursor position.
+ * When a selection range is provided, the selected text is replaced instead of
+ * being left behind after the inserted line.
+ */
+export function insertLineAtCursor({ text, selectionStart, selectionEnd, label }) {
   const safeStart = Number.isInteger(selectionStart) ? selectionStart : text.length;
+  const rawEnd = Number.isInteger(selectionEnd) ? selectionEnd : safeStart;
+  const safeEnd = Math.max(safeStart, rawEnd);
   const beforeCursor = text.slice(0, safeStart);
   const prefix = (beforeCursor.length === 0 || beforeCursor.endsWith('\n')) ? '' : '\n';
   const insertion = `${prefix}${label}\n`;
-  const nextText = beforeCursor + insertion + text.slice(safeStart);
+  const nextText = beforeCursor + insertion + text.slice(safeEnd);
   const nextCursor = safeStart + insertion.length;
   return { nextText, nextCursor };
+}
+
+/**
+ * Apply a text transformer to a selected range only (or the whole text when the
+ * selection is empty), then hand back the cursor/selection so the editor can
+ * restore the user's selection instead of collapsing it.
+ */
+export function applyTransformToSelection({ text, selectionStart, selectionEnd, transform }) {
+  const source = String(text ?? '');
+  if (typeof transform !== 'function') {
+    return {
+      nextText: source,
+      nextSelectionStart: 0,
+      nextSelectionEnd: 0,
+      changed: false,
+      selectionEmpty: true,
+    };
+  }
+
+  const hasStart = Number.isInteger(selectionStart);
+  const hasEnd = Number.isInteger(selectionEnd);
+  const rangeStart = hasStart ? Math.max(0, Math.min(selectionStart, source.length)) : 0;
+  const rangeEnd = hasEnd ? Math.max(rangeStart, Math.min(selectionEnd, source.length)) : source.length;
+
+  // No usable selection: transform the whole document and leave the cursor alone.
+  const selectionEmpty = !hasStart || !hasEnd || rangeEnd <= rangeStart;
+  const effectiveStart = selectionEmpty ? 0 : rangeStart;
+  const effectiveEnd = selectionEmpty ? source.length : rangeEnd;
+
+  const segment = source.slice(effectiveStart, effectiveEnd);
+  const transformed = transform(segment);
+
+  if (typeof transformed !== 'string' || transformed === segment) {
+    return {
+      nextText: source,
+      nextSelectionStart: effectiveStart,
+      nextSelectionEnd: effectiveEnd,
+      changed: false,
+      selectionEmpty,
+    };
+  }
+
+  const nextText = source.slice(0, effectiveStart) + transformed + source.slice(effectiveEnd);
+  return {
+    nextText,
+    nextSelectionStart: effectiveStart,
+    nextSelectionEnd: effectiveStart + transformed.length,
+    changed: true,
+    selectionEmpty,
+  };
 }

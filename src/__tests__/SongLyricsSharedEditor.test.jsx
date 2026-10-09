@@ -242,17 +242,13 @@ describe('Song lyrics shared editor rendering', () => {
 
     expect(container.querySelector('.song-lyrics-edit-actions')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-textarea')).toBeTruthy();
-    expect(container.querySelector('button[aria-haspopup="menu"]')).toBeTruthy();
+    expect(container.querySelector('.song-lyrics-format-ribbon')).toBeTruthy();
     expect(container.textContent).toContain('Post-Chorus');
-
-    const formatMenuTrigger = container.querySelector('button[aria-haspopup="menu"]');
-    await act(async () => {
-      formatMenuTrigger.click();
-    });
 
     expect(container.textContent).toContain('Auto-Align');
     expect(container.textContent).toContain('Bersihkan Teks');
     expect(container.textContent).toContain('Standarkan Chord');
+    expect(container.textContent).toContain('Format Semua');
   });
 
   test('Given lyrics editor, Then formatting text actions are grouped in a menu', async () => {
@@ -284,21 +280,13 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const formatMenuTrigger = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Quick Tools')
-    );
-    expect(formatMenuTrigger).toBeTruthy();
-
-    await act(async () => {
-      formatMenuTrigger.click();
-    });
-
+    expect(container.querySelector('.song-lyrics-format-ribbon')).toBeTruthy();
     expect(container.textContent).toContain('Auto-Align');
     expect(container.textContent).toContain('Bersihkan Teks');
     expect(container.textContent).toContain('Standarkan Chord');
   });
 
-  test('Given lyrics editor quick tools menu, Then transpose actions are also available there', async () => {
+  test('Given lyrics editor quick tools ribbon, Then transpose actions are also available there', async () => {
     await act(async () => {
       root.render(
         <SongLyricsEditorPanel
@@ -327,15 +315,7 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const formatMenuTrigger = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Quick Tools')
-    );
-
-    expect(formatMenuTrigger).toBeTruthy();
-    await act(async () => {
-      formatMenuTrigger.click();
-    });
-
+    expect(container.querySelector('.song-lyrics-format-ribbon')).toBeTruthy();
     expect(container.textContent).toContain('Transpose -1');
     expect(container.textContent).toContain('Transpose +1');
   });
@@ -1186,12 +1166,11 @@ describe('Song lyrics shared editor rendering', () => {
       editButton.click();
     });
 
-    const textarea = container.querySelector('textarea');
-    expect(textarea).toBeTruthy();
+    const editorHost = container.querySelector('.song-lyrics-textarea-editor');
+    expect(editorHost).toBeTruthy();
 
     await act(async () => {
-      textarea.value = '[C]Hello updated';
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      editorHost.querySelector('.cm-content').textContent = '[C]Hello updated';
     });
 
     const saveButton = Array.from(container.querySelectorAll('button')).find((button) =>
@@ -1321,7 +1300,6 @@ describe('Song lyrics shared editor rendering', () => {
       noteButton.click();
     });
 
-    const textarea = container.querySelector('.song-lyrics-textarea');
-    expect(textarea.value).toBe('[C] ');
+    expect(container.querySelector('.cm-content').textContent).toBe('[C] ');
   });
 });

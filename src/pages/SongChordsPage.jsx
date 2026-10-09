@@ -21,7 +21,7 @@ import useWebMidiProgramChange from '../hooks/useWebMidiProgramChange.js';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
 import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractMidiProgramCuesFromLyrics, extractDetectedInstrumentsFromLyrics, getTransposeSteps } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
-import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
+import { buildInsertNoteToken, formatWholeLyricsDocument, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 
 /**
  * SongChordsPage
@@ -490,6 +490,10 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         e.preventDefault();
         handleWrap4BarsPerLine();
       }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        handleFormatWholeDocument();
+      }
       if (e.key === "Escape") {
         handleCancelEditLyrics();
       }
@@ -708,6 +712,11 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
   const handleWrap4BarsPerLine = () => handleWrapBarsPerLine(4);
 
+  // Whole-document tidy-up: clean copy-paste noise, tag sections, standardise chords.
+  const handleFormatWholeDocument = () => {
+    setEditedLyrics((prev) => formatWholeLyricsDocument(prev));
+  };
+
   const handleLyricsPianoKeySelect = (note) => {
     if (!isEditingLyrics || !insertNotesToLyrics) return;
 
@@ -889,6 +898,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         handleSaveLyrics={handleSaveLyrics}
         handleAlignSelectedBarlines={handleAlignSelectedBarlines}
         handleWrap4BarsPerLine={handleWrap4BarsPerLine}
+        handleFormatWholeDocument={handleFormatWholeDocument}
         barsPerLine={barsPerLine}
         setBarsPerLine={setBarsPerLine}
         handleWrapBarsPerLine={handleWrapBarsPerLine}

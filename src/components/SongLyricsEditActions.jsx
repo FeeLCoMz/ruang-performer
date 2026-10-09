@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+  applyTransformToSelection,
   autoAlignChordLyricPairs,
   autoTagSongSections,
   detectSectionBadges,
+  formatWholeLyricsDocument,
   insertLineAtCursor,
   removeExtraSpacesAndBrokenLines,
   standardizeChordNotation,
@@ -92,6 +94,7 @@ export default function SongLyricsEditActions({
   setBarsPerLine,
   handleAlignSelectedBarlines,
   handleWrap4BarsPerLine,
+  handleFormatWholeDocument,
   handleWrapBarsPerLine,
   showMetadataHelpButton = true,
   showSaveCancelButtons = false,
@@ -112,10 +115,10 @@ export default function SongLyricsEditActions({
   lyricsRef,
   lyricsValue = "",
   setLyricsValue,
+  selectionRange = { start: null, end: null },
 }) {
   const [showMetadataHelp, setShowMetadataHelp] = useState(false);
-  const [showTextFormatMenu, setShowTextFormatMenu] = useState(false);
-  const formatMenuRef = useRef(null);
+  const [lastSelection, setLastSelection] = useState({ start: null, end: null });
   const [selectedGmCategory, setSelectedGmCategory] = useState('piano-keys');
   const [selectedGmProgram, setSelectedGmProgram] = useState(0);
   const [selectedGmChannel, setSelectedGmChannel] = useState(() => {
@@ -134,24 +137,6 @@ export default function SongLyricsEditActions({
     const parsedProgram = Number(selectedGmProgram);
     return GM_SOUND_BANK.find((item) => item.program === parsedProgram) || filteredGmSounds[0] || GM_SOUND_BANK[0];
   }, [selectedGmProgram, filteredGmSounds]);
-
-  useEffect(() => {
-    if (!showTextFormatMenu) return undefined;
-
-    const handlePointerDown = (event) => {
-      if (!formatMenuRef.current?.contains(event.target)) {
-        setShowTextFormatMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('touchstart', handlePointerDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('touchstart', handlePointerDown);
-    };
-  }, [showTextFormatMenu]);
 
   const ensureSelectedProgramInCategory = (categoryValue) => {
     const candidateSounds = filterGmSoundBankByCategory(categoryValue);
@@ -219,6 +204,7 @@ export default function SongLyricsEditActions({
     const { nextText, nextCursor } = insertLineAtCursor({
       text: lyricsValue,
       selectionStart: el.selectionStart,
+      selectionEnd: el.selectionEnd,
       label: sectionLabel,
     });
     setLyricsValue(nextText);
@@ -230,17 +216,37 @@ export default function SongLyricsEditActions({
 
   const applyTextTransform = (transformer) => {
     if (typeof setLyricsValue !== "function") return;
-    const nextText = transformer(lyricsValue);
-    if (typeof nextText !== "string" || nextText === lyricsValue) return;
 
     const el = lyricsRef?.current;
-    const nextCursor = Math.min(el?.selectionStart ?? nextText.length, nextText.length);
+    // Fall back to the last known selection when the textarea has lost focus
+    // (e.g. the user clicked a toolbar button before pressing the action).
+    const liveStart = Number.isInteger(el?.selectionStart) ? el.selectionStart : selectionRange.start;
+    const liveEnd = Number.isInteger(el?.selectionEnd) ? el.selectionEnd : selectionRange.end;
+
+    const { nextText, nextSelectionStart, nextSelectionEnd, changed, selectionEmpty } =
+      applyTransformToSelection({
+        text: lyricsValue,
+        selectionStart: liveStart,
+        selectionEnd: liveEnd,
+        transform: transformer,
+      });
+
+    if (!changed) return;
+
     setLyricsValue(nextText);
+    if (!selectionEmpty) {
+      setLastSelection({ start: nextSelectionStart, end: nextSelectionEnd });
+    }
 
     setTimeout(() => {
       if (!el) return;
       el.focus();
-      el.setSelectionRange(nextCursor, nextCursor);
+      if (selectionEmpty) {
+        const caret = Math.min(liveEnd ?? nextText.length, nextText.length);
+        el.setSelectionRange(caret, caret);
+        return;
+      }
+      el.setSelectionRange(nextSelectionStart, nextSelectionEnd);
     }, 0);
   };
 
@@ -260,6 +266,7 @@ export default function SongLyricsEditActions({
     const { nextText, nextCursor } = insertLineAtCursor({
       text: lyricsValue,
       selectionStart: el.selectionStart,
+      selectionEnd: el.selectionEnd,
       label: cueLine,
     });
 
@@ -268,6 +275,13 @@ export default function SongLyricsEditActions({
       el.focus();
       el.setSelectionRange(nextCursor, nextCursor);
     }, 0);
+  };
+
+  const runFormatWholeDocument =
+    handleFormatWholeDocument || (() => applyTextTransform(formatWholeLyricsDocument));
+
+  const handleOpenSearch = () => {
+    lyricsRef?.current?.openSearchPanel?.();
   };
 
   return (
@@ -293,65 +307,64 @@ export default function SongLyricsEditActions({
         </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-format">
           <span className="song-lyrics-action-group-title">Quick Tools</span>
-          <div className="song-lyrics-format-menu-container" ref={formatMenuRef}>
+          <div className="song-lyrics-format-ribbon" role="group" aria-label="Format teks lirik">
+            {formatActions.map((action) => (
+              <button
+                key={action.label}
+                type="button"
+                className="btn btn-secondary song-lyrics-format-ribbon-btn"
+                disabled={disabled}
+                onClick={() => action.onClick?.()}
+                title={action.title}
+              >
+                <span className="song-lyrics-format-ribbon-icon" aria-hidden="true">{action.icon}</span>
+                <span className="song-lyrics-format-ribbon-label">{action.label}</span>
+              </button>
+            ))}
             <button
               type="button"
-              onClick={() => setShowTextFormatMenu((prev) => !prev)}
+              className="btn btn-secondary song-lyrics-format-ribbon-btn"
+              disabled={disabled}
+              onClick={runFormatWholeDocument}
+              title="Rapikan seluruh dokumen: bersihkan teks, tag bagian, dan standarkan chord sekaligus"
+            >
+              <span className="song-lyrics-format-ribbon-icon" aria-hidden="true">🪄</span>
+              <span className="song-lyrics-format-ribbon-label">Format Semua</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary song-lyrics-format-ribbon-btn"
+              disabled={disabled}
+              onClick={handleOpenSearch}
+              title="Cari / ganti teks di editor"
+            >
+              <span className="song-lyrics-format-ribbon-icon" aria-hidden="true">🔍</span>
+              <span className="song-lyrics-format-ribbon-label">Cari</span>
+            </button>
+          </div>
+          <div className="song-lyrics-bar-wrap-controls">
+            <label htmlFor={barsPerLineSelectId} className="song-lyrics-bar-wrap-label">Bar/Baris</label>
+            <select
+              id={barsPerLineSelectId}
+              className="song-lyrics-bar-wrap-select"
+              value={barsPerLine}
+              onChange={(e) => setBarsPerLine(Number(e.target.value))}
+              disabled={disabled}
+              aria-label="Pilih jumlah bar per baris"
+            >
+              <option value={2}>2</option>
+              <option value={4}>4</option>
+              <option value={6}>6</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => handleWrapBarsPerLine(barsPerLine)}
               disabled={disabled}
               className="btn btn-secondary"
-              title="Menu format, cleanup, dan transpose lirik"
-              aria-haspopup="menu"
-              aria-expanded={showTextFormatMenu}
+              title="Terapkan jumlah bar per baris pada teks yang dipilih"
             >
-              ⚡ Quick Tools
+              Terapkan
             </button>
-            {showTextFormatMenu && (
-              <div className="song-lyrics-format-menu" role="menu" aria-label="Format teks lirik">
-                {formatActions.map((action) => (
-                  <button
-                    key={action.label}
-                    type="button"
-                    className="song-lyrics-format-item"
-                    onClick={() => {
-                      action.onClick?.();
-                      setShowTextFormatMenu(false);
-                    }}
-                    title={action.title}
-                    role="menuitem"
-                  >
-                    <span className="song-lyrics-format-item-icon" aria-hidden="true">{action.icon}</span>
-                    <span>{action.label}</span>
-                  </button>
-                ))}
-                <div className="song-lyrics-format-menu-row">
-                  <label htmlFor={barsPerLineSelectId} className="song-lyrics-bar-wrap-label">Bar/Baris</label>
-                  <select
-                    id={barsPerLineSelectId}
-                    className="song-lyrics-bar-wrap-select"
-                    value={barsPerLine}
-                    onChange={(e) => setBarsPerLine(Number(e.target.value))}
-                    disabled={disabled}
-                    aria-label="Pilih jumlah bar per baris"
-                  >
-                    <option value={2}>2</option>
-                    <option value={4}>4</option>
-                    <option value={6}>6</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleWrapBarsPerLine(barsPerLine);
-                      setShowTextFormatMenu(false);
-                    }}
-                    disabled={disabled}
-                    className="btn btn-secondary"
-                    title="Terapkan jumlah bar per baris pada teks yang dipilih"
-                  >
-                    Terapkan
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-transpose">
@@ -437,8 +450,7 @@ export default function SongLyricsEditActions({
               Insert Patch
             </button>
           </div>
-        </div>
-        {showPianoControls && (
+        </div>        {showPianoControls && (
           <div className="song-lyrics-edit-actions-group song-lyrics-piano-controls">
             <span className="song-lyrics-action-group-title">Piano Insert</span>
             <button

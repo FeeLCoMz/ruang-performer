@@ -1,6 +1,7 @@
 import React from "react";
 import SongLyricsEditActions from "./SongLyricsEditActions.jsx";
 import SongLyricsTextarea from "./SongLyricsTextarea.jsx";
+import LyricsEditorWorkspace from "./LyricsEditorWorkspace.jsx";
 
 export default function SongLyricsEditorPanel({
   lyricsRef,
@@ -13,12 +14,18 @@ export default function SongLyricsEditorPanel({
   showTips = true,
   tipsText = "",
   showActions = true,
+  showPreview = true,
+  previewSong = null,
+  previewProps = {},
+  baselineLyrics = null,
 }) {
+  const [selectionRange, setSelectionRange] = React.useState({ start: null, end: null });
   const {
     barsPerLine = 4,
     setBarsPerLine,
     handleAlignSelectedBarlines,
     handleWrap4BarsPerLine,
+    handleFormatWholeDocument,
     handleWrapBarsPerLine,
     showMetadataHelpButton = true,
     showSaveCancelButtons = false,
@@ -37,6 +44,17 @@ export default function SongLyricsEditorPanel({
     keySignature = "",
     onChangeInsertNumberKeySignature,
   } = editorActions;
+
+  const textarea = (
+    <SongLyricsTextarea
+      lyricsDisplayRef={lyricsRef}
+      editedLyrics={lyricsValue}
+      setEditedLyrics={setLyricsValue}
+      autoFocus={autoFocus}
+      onSelectionChange={setSelectionRange}
+      disabled={disabled}
+    />
+  );
 
   return (
     <>
@@ -58,6 +76,7 @@ export default function SongLyricsEditorPanel({
           setBarsPerLine={setBarsPerLine}
           handleAlignSelectedBarlines={handleAlignSelectedBarlines}
           handleWrap4BarsPerLine={handleWrap4BarsPerLine}
+          handleFormatWholeDocument={handleFormatWholeDocument}
           handleWrapBarsPerLine={handleWrapBarsPerLine}
           showMetadataHelpButton={showMetadataHelpButton}
           showSaveCancelButtons={showSaveCancelButtons}
@@ -78,15 +97,22 @@ export default function SongLyricsEditorPanel({
           lyricsRef={lyricsRef}
           lyricsValue={lyricsValue}
           setLyricsValue={setLyricsValue}
+          selectionRange={selectionRange}
         />
       )}
 
-      <SongLyricsTextarea
-        lyricsDisplayRef={lyricsRef}
-        editedLyrics={lyricsValue}
-        setEditedLyrics={setLyricsValue}
-        autoFocus={autoFocus}
-      />
+      {showPreview ? (
+        <LyricsEditorWorkspace
+          previewLyrics={lyricsValue}
+          song={previewSong}
+          previewProps={previewProps}
+          baselineLyrics={baselineLyrics}
+        >
+          {textarea}
+        </LyricsEditorWorkspace>
+      ) : (
+        textarea
+      )}
     </>
   );
 }

@@ -14,7 +14,7 @@ import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
 import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
-import { buildInsertNoteToken, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
+import { buildInsertNoteToken, formatWholeLyricsDocument, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 import { buildAddEditEditorActions } from '../utils/editorActionsUtils.js';
 
 function buildNewVersionTitle(sourceTitle) {
@@ -42,7 +42,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [songKey, setSongKey] = useState("C");
   const [tempo, setTempo] = useState("");
   const [timeSignature, setTimeSignature] = useState("4/4");
-  const [genre, setGenre] = useState("");  
+  const [genre, setGenre] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [youtubeId, setYoutubeId] = useState("");
   const [arrangementStyle, setArrangementStyle] = useState("");
@@ -130,7 +130,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
           setInsertNumberKeySignature(getNumericNotationKey(data.key || 'C'));
           setTempo(data.tempo || "");
           setTimeSignature(data.time_signature || "4/4");
-          setGenre(data.genre || "");          
+          setGenre(data.genre || "");
           setLyrics(data.lyrics || "");
           setYoutubeId(extractYouTubeId(data.youtubeId || data.youtube_url || ""));
           setArrangementStyle(data.arrangementStyle || "");
@@ -249,7 +249,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       key: songKey,
       tempo: tempo ? parseInt(tempo) : null,
       time_signature: timeSignature || "4/4",
-      genre: genre.trim(),      
+      genre: genre.trim(),
       lyrics: lyrics.trim(),
       youtubeId: extractYouTubeId(youtubeId),
       arrangementStyle: arrangementStyle.trim(),
@@ -375,6 +375,11 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   };
 
   const handleWrap4BarsPerLine = () => handleWrapBarsPerLine(4);
+
+  // Whole-document tidy-up: clean copy-paste noise, tag sections, standardise chords.
+  const handleFormatWholeDocument = () => {
+    setLyrics((prev) => formatWholeLyricsDocument(prev));
+  };
 
   const handleLyricsPianoKeySelect = (note) => {
     if (!insertNotesToLyrics) return;
@@ -708,6 +713,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               setBarsPerLine,
               handleAlignSelectedBarlines,
               handleWrap4BarsPerLine,
+              handleFormatWholeDocument,
               handleWrapBarsPerLine,
               onOpenPiano: () => setShowLyricsPiano(true),
               insertNotesToLyrics,
@@ -721,6 +727,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             })}
             autoFocus={false}
             showTips={true}
+            previewSong={{ key: songKey, tempo }}
+            previewProps={{ showChords: true, keySignature: songKey || 'C' }}
             tipsText={
               <>
                 💡 Tips: Blok teks dulu. Pilih <b>2/4/6 Bar/Baris</b> lalu klik <b>Terapkan</b> (atau <kbd>Ctrl+Shift+4</kbd> untuk cepat 4 bar), gunakan <b>Sejajarkan Bar</b> atau <kbd>Ctrl+Shift+B</kbd>, tekan <kbd>Ctrl+S</kbd> untuk simpan form.

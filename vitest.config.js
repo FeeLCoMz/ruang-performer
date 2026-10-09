@@ -4,6 +4,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: [],
+    environmentOptions: {
+      jsdom: {
+        pretendToBeVisual: true,
+      },
+    },
+    setupFiles: ['./src/__tests__/setup/codemirrorEnv.js'],
   },
 });

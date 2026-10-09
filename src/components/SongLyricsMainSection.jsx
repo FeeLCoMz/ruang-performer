@@ -20,6 +20,7 @@ export default function SongLyricsMainSection({
   handleSaveLyrics,
   handleAlignSelectedBarlines,
   handleWrap4BarsPerLine,
+  handleFormatWholeDocument,
   barsPerLine,
   setBarsPerLine,
   handleWrapBarsPerLine,
@@ -180,6 +181,7 @@ export default function SongLyricsMainSection({
                 setBarsPerLine,
                 handleAlignSelectedBarlines,
                 handleWrap4BarsPerLine,
+                handleFormatWholeDocument,
                 handleWrapBarsPerLine,
                 savingLyrics,
                 handleSaveLyrics,
@@ -197,6 +199,15 @@ export default function SongLyricsMainSection({
               autoFocus={true}
               showTips={true}
               showActions={true}
+              previewSong={song}
+              baselineLyrics={song?.lyrics ?? null}
+              previewProps={{
+                showChords,
+                showChordNumbers,
+                showJazzChords,
+                showSimpleChords,
+                keySignature: keySignature || song?.key || 'C',
+              }}
             />
           ) : (
             <SongChordsLyricsDisplay

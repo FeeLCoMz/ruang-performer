@@ -134,8 +134,8 @@ describe('SongAddEditPage shared lyrics editor', () => {
       root.render(<SongAddEditPage />);
     });
 
-    const textarea = container.querySelector('.song-lyrics-textarea');
-    expect(textarea).toBeTruthy();
+    const editorHost = container.querySelector('.song-lyrics-textarea-editor');
+    expect(editorHost).toBeTruthy();
 
     const insertToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Insert OFF')
@@ -162,6 +162,6 @@ describe('SongAddEditPage shared lyrics editor', () => {
       noteButton.click();
     });
 
-    expect(textarea.value).toBe('1 ');
+    expect(container.querySelector('.cm-content').textContent).toBe('1 ');
   });
 });
