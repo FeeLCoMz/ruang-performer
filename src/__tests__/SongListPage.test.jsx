@@ -37,7 +37,7 @@ vi.mock('../utils/metaTagsUtil.js', () => ({
   pageMetadata: { songs: {} },
 }));
 
-describe('SongListPage trending actions', () => {
+describe('SongListPage', () => {
   let container;
   let root;
 
@@ -47,8 +47,6 @@ describe('SongListPage trending actions', () => {
     document.body.appendChild(container);
     root = createRoot(container);
     mockNavigate.mockReset();
-    vi.spyOn(window, 'open').mockImplementation(() => null);
-    vi.spyOn(apiClient, 'addSong').mockResolvedValue({ id: 'new-song-id' });
     vi.spyOn(apiClient, 'fetchSetLists').mockResolvedValue([]);
     vi.spyOn(apiClient, 'fetchBands').mockResolvedValue([]);
     vi.spyOn(apiClient, 'updateSongMastery').mockResolvedValue({});
@@ -60,91 +58,6 @@ describe('SongListPage trending actions', () => {
     });
     document.body.removeChild(container);
     vi.restoreAllMocks();
-  });
-
-  test('opens YouTube video and adds a trending song', async () => {
-    const onTrendingSongAdded = vi.fn();
-
-    await act(async () => {
-      root.render(
-        <SongListPage
-          songs={[]}
-          loading={false}
-          error={null}
-          onSongClick={() => {}}
-          onSongMasteryUpdated={() => {}}
-          onTrendingSongAdded={onTrendingSongAdded}
-          trendingSongs={[
-            { videoId: 'abc123', title: 'Trending Song', channelTitle: 'Test Channel' },
-          ]}
-        />
-      );
-      await flushPromises();
-    });
-
-    const toggleButton = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'Buka panel trending');
-    expect(toggleButton).toBeTruthy();
-
-    await act(async () => {
-      toggleButton.click();
-      await flushPromises();
-    });
-
-    const openButton = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'Buka video YouTube: Trending Song');
-    expect(openButton).toBeTruthy();
-
-    await act(async () => {
-      openButton.click();
-      await flushPromises();
-    });
-
-    expect(window.open).toHaveBeenCalledWith('https://www.youtube.com/watch?v=abc123', '_blank', 'noopener,noreferrer');
-
-    const addButton = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'Tambah ke daftar: Trending Song');
-    expect(addButton).toBeTruthy();
-
-    await act(async () => {
-      addButton.click();
-      await flushPromises();
-    });
-
-    expect(apiClient.addSong).toHaveBeenCalled();
-    expect(onTrendingSongAdded).toHaveBeenCalledWith(expect.objectContaining({
-      title: 'Trending Song',
-      artist: 'Test Channel',
-      youtubeId: 'abc123',
-    }));
-    expect(container.textContent).toContain('Lagu berhasil ditambahkan');
-  });
-
-  test('marks trending songs that already exist in the song list', async () => {
-    await act(async () => {
-      root.render(
-        <SongListPage
-          songs={[
-            { id: 'existing-song', title: 'Trending Song', artist: 'Test Channel', youtubeId: 'abc123' },
-          ]}
-          loading={false}
-          error={null}
-          onSongClick={() => {}}
-          onSongMasteryUpdated={() => {}}
-          trendingSongs={[
-            { videoId: 'abc123', title: 'Trending Song', channelTitle: 'Test Channel' },
-          ]}
-        />
-      );
-      await flushPromises();
-    });
-
-    const toggleButton = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'Buka panel trending');
-    expect(toggleButton).toBeTruthy();
-
-    await act(async () => {
-      toggleButton.click();
-      await flushPromises();
-    });
-
-    expect(container.textContent).toContain('Sudah ada');
   });
 
   test('shows song counts in the band filter dropdown options', async () => {
@@ -160,7 +73,6 @@ describe('SongListPage trending actions', () => {
           error={null}
           onSongClick={() => {}}
           onSongMasteryUpdated={() => {}}
-          trendingSongs={[]}
         />
       );
       await flushPromises();
@@ -180,7 +92,6 @@ describe('SongListPage trending actions', () => {
       error: null,
       onSongClick: () => {},
       onSongMasteryUpdated: () => {},
-      trendingSongs: [],
     };
 
     await act(async () => {

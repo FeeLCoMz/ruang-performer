@@ -85,7 +85,6 @@ function AppContent() {
   const [createSetlistName, setCreateSetlistName] = useState("");
   const [createSetlistError, setCreateSetlistError] = useState("");
   const [songs, setSongs] = useState([]);
-  const [trendingSongs, setTrendingSongs] = useState([]);
   const [setlists, setSetlists] = useState([]);
   const [loadingSongs, setLoadingSongs] = useState(true);
   const [loadingSetlists, setLoadingSetlists] = useState(false);
@@ -98,7 +97,7 @@ function AppContent() {
     return "dark";
   });
 
-  const [activeSetlist, setActiveSetlist] = useState(null);  
+  const [activeSetlist, setActiveSetlist] = useState(null);
 
   // Performance Mode state
   const [performanceMode, setPerformanceMode] = useState(() => {
@@ -118,7 +117,7 @@ function AppContent() {
     }
   }, [performanceMode]);
 
-  
+
 
   // ALL HOOKS MUST BE HERE - BEFORE ANY CONDITIONAL LOGIC
   useEffect(() => {
@@ -131,11 +130,10 @@ function AppContent() {
     if (isLoading || !isAuthenticated) return;
     setLoadingSongs(true);
     apiClient
-      .fetchSongs({ includeTrending: true })
+      .fetchSongs()
       .then((data) => {
-        const fetchedSongs = Array.isArray(data?.songs) ? data.songs : [];
+        const fetchedSongs = Array.isArray(data) ? data : Array.isArray(data?.songs) ? data.songs : [];
         setSongs(fetchedSongs);
-        setTrendingSongs(Array.isArray(data?.trending) ? data.trending : []);
         setLoadingSongs(false);
       })
       .catch((err) => {
@@ -331,18 +329,6 @@ function AppContent() {
                       loading={loadingSongs}
                       error={errorSongs}
                       performanceMode={performanceMode}
-                      trendingSongs={trendingSongs}
-                      onTrendingSongAdded={(newSong) => {
-                        setSongs((prevSongs) => [
-                          {
-                            ...newSong,
-                            bandId: newSong.bandId || null,
-                            bandName: newSong.bandName || null,
-                          },
-                          ...prevSongs,
-                        ]);
-                        setToastMessage(`Lagu berhasil ditambahkan: ${newSong.title}`);
-                      }}
                       onSongMasteryUpdated={(songId, payload) => {
                         setSongs((prevSongs) => (prevSongs || []).map((song) => {
                           if (String(song.id) !== String(songId)) return song;

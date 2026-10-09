@@ -1961,7 +1961,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                       ) : (
                         <>
                           <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood: ${mood.label} (${mood.sourceHint})`}>
-                            Mood: {mood.label}
+                            {mood.label}
                           </span>
                           {song.artist && <span>👤 {song.artist}</span>}
                           {song.key && (

@@ -142,7 +142,7 @@ Halaman non-kritis di-`lazy()` dan dibungkus `Suspense` dengan `PageLoader`.
 
 ### 5.2 State Global
 
-`App.jsx` memegang: `songs`, `trendingSongs`, `setlists`, `activeSetlist`, `userBandInfo`, `theme`, `performanceMode`, `sidebarOpen`, `toastMessage`. State ini diteruskan sebagai props ke halaman.
+`App.jsx` memegang: `songs`, `setlists`, `activeSetlist`, `userBandInfo`, `theme`, `performanceMode`, `sidebarOpen`, `toastMessage`. State ini diteruskan sebagai props ke halaman.
 
 Dua mode tampilan disimpan di `localStorage` dan diterapkan sebagai class pada `<body>`:
 

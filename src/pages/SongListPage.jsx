@@ -8,7 +8,7 @@ import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
-import { fetchSetLists, fetchBands, updateSongMastery, addSong } from '../apiClient.js';
+import { fetchSetLists, fetchBands, updateSongMastery } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
 import PerformanceSongMeta from '../components/PerformanceSongMeta.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
@@ -34,7 +34,7 @@ function VirtualSongRow({ index, style, ariaAttributes, songs, renderSongItem })
   );
 }
 
-export default function SongListPage({ songs, loading, error, onSongClick, onSongMasteryUpdated, performanceMode = false, trendingSongs = [], onTrendingSongAdded }) {
+export default function SongListPage({ songs, loading, error, onSongClick, onSongMasteryUpdated, performanceMode = false }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id;
@@ -67,8 +67,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   const [activeVideoSong, setActiveVideoSong] = useState(null);
   const [updatingMasterySongId, setUpdatingMasterySongId] = useState(null);
   const [visibleCount, setVisibleCount] = useState(pageSize);
-  const [isTrendingCollapsed, setIsTrendingCollapsed] = useState(true);
-  const [trendingActionMessage, setTrendingActionMessage] = useState('');
   const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.innerWidth < 768;
@@ -97,12 +95,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   useEffect(() => {
     setVisibleCount(pageSize);
   }, [pageSize]);
-
-  useEffect(() => {
-    if (!trendingActionMessage) return undefined;
-    const timer = setTimeout(() => setTrendingActionMessage(''), 3000);
-    return () => clearTimeout(timer);
-  }, [trendingActionMessage]);
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -406,28 +398,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     return Boolean(song?.youtubeId || song?.youtube_url);
   }
 
-  function isTrendingSongAlreadyAdded(item) {
-    const videoId = item?.videoId || '';
-    const title = (item?.title || '').trim().toLowerCase();
-    const artist = (item?.channelTitle || '').trim().toLowerCase();
-
-    return songs.some((song) => {
-      const songTitle = (song?.title || '').trim().toLowerCase();
-      const songArtist = (song?.artist || '').trim().toLowerCase();
-      const songVideoId = (song?.youtubeId || song?.youtube_url || '').trim();
-
-      if (videoId && songVideoId && songVideoId === videoId) {
-        return true;
-      }
-
-      if (title && songTitle && title === songTitle) {
-        return artist ? songArtist && artist === songArtist : true;
-      }
-
-      return false;
-    });
-  }
-
   function resolveTempo(song) {
     const parsed = parseInt(song?.tempo, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 120;
@@ -449,46 +419,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     e.stopPropagation();
     if (!hasYouTubeVideo(song)) return;
     setActiveVideoSong(song);
-  }
-
-  async function handleAddTrendingSong(item) {
-    const title = item?.title || '';
-    const artist = item?.channelTitle || '';
-    const youtubeId = item?.videoId || '';
-
-    if (!title) return;
-
-    try {
-      const result = await addSong({ title, artist, youtubeId });
-      const createdSong = {
-        id: result?.id || `trending-${Date.now()}`,
-        title,
-        artist,
-        youtubeId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        contributorName: 'You',
-        canMarkMastery: true,
-        isMasteredByCurrentUser: false,
-        masteredBy: [],
-      };
-
-      if (typeof onTrendingSongAdded === 'function') {
-        onTrendingSongAdded(createdSong);
-      } else if (typeof onSongClick === 'function') {
-        onSongClick('add');
-      }
-
-      setTrendingActionMessage(`Lagu berhasil ditambahkan: ${title}`);
-    } catch (err) {
-      alert(err?.message || 'Gagal menambahkan lagu dari trending');
-    }
-  }
-
-  function handleOpenTrendingVideo(item) {
-    const videoId = item?.videoId || '';
-    if (!videoId) return;
-    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank', 'noopener,noreferrer');
   }
 
   function isSongPlaying(songId) {
@@ -603,7 +533,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               ) : (
                 <>
                   <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
-                    Mood: {mood.label}
+                    {mood.label}
                   </span>
                   {song.artist && <span>👤 {song.artist}</span>}
                   {song.key && <span>🎹 {song.key}</span>}
@@ -750,71 +680,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
           </button>
         )}
       </div>
-
-      {Array.isArray(trendingSongs) && trendingSongs.length > 0 && !performanceMode && (
-        <div className="card youtube-trending-inline-panel">
-          <div className="youtube-trending-inline-header">
-            <div>
-              <h3>📺 Trending YouTube</h3>
-              <span>{trendingSongs.length} lagu</span>
-            </div>
-            <button
-              className="btn btn-secondary youtube-trending-inline-toggle"
-              type="button"
-              onClick={() => setIsTrendingCollapsed((prev) => !prev)}
-              aria-expanded={!isTrendingCollapsed}
-              aria-label={isTrendingCollapsed ? 'Buka panel trending' : 'Tutup panel trending'}
-              title={isTrendingCollapsed ? 'Buka panel trending' : 'Tutup panel trending'}
-            >
-              {isTrendingCollapsed ? '▸' : '▾'}
-            </button>
-          </div>
-          {!isTrendingCollapsed && (
-            <>
-              {trendingActionMessage && (
-                <div className="youtube-trending-inline-feedback" role="status" aria-live="polite">
-                  {trendingActionMessage}
-                </div>
-              )}
-              <div className="youtube-trending-inline-list">
-                {trendingSongs.map((item, index) => {
-                  const alreadyAdded = isTrendingSongAlreadyAdded(item);
-                  return (
-                    <div key={item.videoId || `${item.title}-${index}`} className={`youtube-trending-inline-item${alreadyAdded ? ' youtube-trending-inline-item-added' : ''}`}>
-                      <span className="youtube-trending-inline-rank">#{index + 1}</span>
-                      <div className="youtube-trending-inline-content">
-                        <div className="youtube-trending-inline-title">{item.title}</div>
-                        <div className="youtube-trending-inline-meta">{item.channelTitle}</div>
-                        {alreadyAdded && <div className="youtube-trending-inline-added">✅ Sudah ada</div>}
-                      </div>
-                      <div className="youtube-trending-inline-actions">
-                        <button
-                          className="btn btn-secondary youtube-trending-inline-btn"
-                          type="button"
-                          onClick={() => handleOpenTrendingVideo(item)}
-                          aria-label={`Buka video YouTube: ${item.title}`}
-                          title={`Buka video YouTube: ${item.title}`}
-                        >
-                          ▶
-                        </button>
-                        <button
-                          className="btn youtube-trending-inline-btn"
-                          type="button"
-                          onClick={() => handleAddTrendingSong(item)}
-                          aria-label={`Tambah ke daftar: ${item.title}`}
-                          title={`Tambah ke daftar: ${item.title}`}
-                        >
-                          ＋
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
       {/* Filters & Search */}
       {/* Search Bar + Voice Search: Selalu tampil */}
