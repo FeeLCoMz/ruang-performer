@@ -6,7 +6,7 @@ Dokumen ini menjelaskan fitur-fitur Ruang Performer dari sudut pandang pengguna 
 
 ## 1. Autentikasi
 
-**Halaman:** `LoginPage.jsx`, `ResetPasswordPage.jsx`, `ProfilePage.jsx`
+**Halaman:** `LoginPage.jsx`, `ResetPasswordPage.jsx`
 
 | Fitur | Alur |
 | --- | --- |
@@ -76,7 +76,6 @@ Tandai lagu yang sudah dikuasai. Status disimpan per user di `song_user_mastery`
 | Auto Builder | Susun setlist otomatis dari kriteria |
 | Smart Assistant | `setlistSmartAssistant.js` — saran urutan & kombinasi lagu |
 | Poster setlist | `SetlistPoster.jsx` → ekspor PNG/PDF, lengkap dengan QR code |
-| E-flyer | `EflyerPoster.jsx` untuk promosi gigs |
 
 Mode ringkas (`?summary=1`) mengambil data lebih ringan untuk daftar setlist.
 
@@ -97,7 +96,7 @@ Peran diatur pada sistem permission; lihat [`PERMISSIONS.md`](PERMISSIONS.md).
 
 ## 6. Gigs / Pertunjukan
 
-**Halaman:** `GigPage.jsx`, `GigDetailPage.jsx`
+**Halaman:** `GigPage.jsx`
 
 | Fitur | Keterangan |
 | --- | --- |

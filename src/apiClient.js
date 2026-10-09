@@ -419,10 +419,6 @@ export async function fetchGigs(bandId = null) {
   return request(path, { fallbackError: 'Failed to fetch gigs' });
 }
 
-export async function fetchGigById(id) {
-  return request(`/events/gig/${id}`, { fallbackError: 'Failed to fetch gig' });
-}
-
 export async function createGig(gig) {
   return request('/events/gig', { method: 'POST', body: gig, fallbackError: 'Failed to create gig' });
 }

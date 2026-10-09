@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { fetchBands, fetchGigs, fetchSetLists, createGig, updateGig, deleteGig } from '../apiClient.js';
@@ -18,7 +17,6 @@ import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 import CalendarView from '../components/CalendarView.jsx';
 
 export default function GigPage() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [gigs, setGigs] = useState([]);
   const [bands, setBands] = useState([]);
@@ -262,15 +260,6 @@ export default function GigPage() {
     } catch (err) {
       console.error('Failed to delete:', err);
     }
-  };
-
-  const formatCurrency = (value) => {
-    if (!value) return '-';
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(value);
   };
 
   return (
@@ -627,7 +616,7 @@ export default function GigPage() {
           Belum ada jadwal konser untuk {monthName}
         </div>
       ) : !loading && viewMode === 'calendar' ? (
-        <CalendarView gigs={sortedGigs} selectedMonth={calendarSelectedMonth} selectedYear={shareYear} />
+        <CalendarView gigs={sortedGigs} selectedMonth={calendarSelectedMonth} selectedYear={shareYear} onGigSelect={handleEdit} />
       ) : (
         <div className="song-list-container">
           {sortedGigs.map((gig, idx) => {
@@ -638,7 +627,7 @@ export default function GigPage() {
               <div
                 key={gig.id}
                 className={`song-item hover-lift ${isCompleted ? 'gig-item-completed' : ''} ${isUpcoming ? 'gig-item-upcoming' : ''}`}
-                onClick={() => navigate(`/gigs/${gig.id}`)}
+                onClick={() => handleEdit(gig)}
               >
                 <div className="song-info">
                   <div className="song-number">{idx + 1}.</div>

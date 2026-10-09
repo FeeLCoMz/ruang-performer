@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
-import { PERMISSIONS } from '../utils/permissionUtils.js';
-import * as apiClient from '../apiClient.js';
 
 export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceMode, setPerformanceMode }) {
   const navigate = useNavigate();
@@ -22,9 +20,7 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
     { path: '/setlists', label: 'Setlist', icon: '📋' },
     { path: '/bands/manage', label: 'Band', icon: '🎸' },
     { path: '/gigs', label: 'Konser', icon: '🎤' },
-    { path: '/youtube-trending', label: 'Trending YouTube', icon: '📺' },
-    // Profile (Settings/Akun) hanya jika login
-    ...(user ? [{ path: '/profile', label: 'Profil', icon: '👤' }] : []),
+    { path: '/youtube-trending', label: 'Trending', icon: '📺' },
     ...(can && can('view_audit_log') ? [{ path: '/audit', label: 'Audit Log', icon: '📝' }] : []),
     ...(user && user.role === 'owner' ? [{ path: '/tools', label: 'Tools', icon: '🛠️' }] : []),
   ];
@@ -62,25 +58,35 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
             <span className="sidebar-logo-icon">🎸</span>
             <span className="sidebar-logo-text">Ruang Performer</span>
           </div>
-          {/* Theme & Performance Mode toggle buttons for desktop */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', marginTop: 4, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '100%' }}>
-            <button
-              className={`btn btn-secondary ${theme === 'dark' ? 'dark' : 'light'}`}
-              onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-              title="Ganti mode gelap/terang"
-              aria-label="Toggle dark mode"
-            >
-              {theme === 'dark' ? '🌙' : '☀️'}
-            </button>
-            <button
-              className={`btn btn-secondary ${performanceMode ? ' active' : ''}`}
-              onClick={() => setPerformanceMode(v => !v)}
-              title={performanceMode ? 'Nonaktifkan Performance Mode' : 'Aktifkan Performance Mode'}
-              aria-label="Toggle performance mode"
-            >
-              {performanceMode ? '🎤 Performance' : '🎶 Normal'}
-            </button>
-          </div>
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={onClose}
+            title="Tutup menu"
+            aria-label="Tutup menu"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Theme & Performance Mode toggle buttons */}
+        <div className="sidebar-controls">
+          <button
+            className={`btn btn-secondary sidebar-control-btn ${theme === 'dark' ? 'dark' : 'light'}`}
+            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+            title="Ganti mode gelap/terang"
+            aria-label="Toggle dark mode"
+          >
+            {theme === 'dark' ? '🌙' : '☀️'}
+          </button>
+          <button
+            className={`btn btn-secondary sidebar-control-btn sidebar-performance-btn ${performanceMode ? 'active' : ''}`}
+            onClick={() => setPerformanceMode(v => !v)}
+            title={performanceMode ? 'Nonaktifkan Performance Mode' : 'Aktifkan Performance Mode'}
+            aria-label="Toggle performance mode"
+          >
+            {performanceMode ? '🎤 Performance' : '🎶 Normal'}
+          </button>
         </div>
 
         {/* Navigation */}

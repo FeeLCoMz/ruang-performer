@@ -1,6 +1,4 @@
 import ToolsPage from "./pages/ToolsPage.jsx";
-import ProfilePage from "./pages/ProfilePage.jsx";
-import GigDetailPage from "./pages/GigDetailPage.jsx";
 import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from "react-router-dom";
 
@@ -486,7 +484,6 @@ function AppContent() {
                 }
               />
               <Route path="/gigs" element={<GigPage />} />
-              <Route path="/gigs/:id" element={<GigDetailPage />} />
               <Route path="/youtube-trending" element={<YouTubeTrendingPage performanceMode={performanceMode} />} />
               <Route path="/bands/manage" element={<BandManagementPage />} />
               <Route path="/bands" element={<Navigate to="/bands/manage" replace />} />
@@ -497,7 +494,6 @@ function AppContent() {
               <Route path="/audit-logs" element={<AuditLogPage />} />
               <Route path="/tools" element={<ToolsPage />} />
               <Route path="/user-management" element={<UserManagementPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

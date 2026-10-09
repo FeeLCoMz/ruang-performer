@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-export default function CalendarView({ gigs = [], selectedMonth, selectedYear }) {
-  const navigate = useNavigate();
+export default function CalendarView({ gigs = [], selectedMonth, selectedYear, onGigSelect }) {
   const exportRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -152,7 +150,7 @@ export default function CalendarView({ gigs = [], selectedMonth, selectedYear })
           {(() => {
             const gig = gigs.find(g => g.id === selectedGigId);
             if (!gig) return null;
-            
+
             return (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
@@ -202,10 +200,10 @@ export default function CalendarView({ gigs = [], selectedMonth, selectedYear })
 
                 <button
                   className="btn btn-primary"
-                  onClick={() => navigate(`/gigs/${gig.id}`)}
+                  onClick={() => onGigSelect?.(gig)}
                   style={{ marginTop: '8px' }}
                 >
-                  Lihat Detail →
+                  Edit Jadwal →
                 </button>
               </div>
             );

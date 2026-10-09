@@ -1,9 +1,11 @@
 import React, { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as apiClient from '../apiClient.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 // No permission check needed, just check user.role === 'owner'
 
 export default function ToolsPage() {
+  const navigate = useNavigate();
   const { user, login } = useAuth();
   React.useEffect(() => {
     async function syncUser() {
@@ -162,69 +164,59 @@ export default function ToolsPage() {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>Tools Owner</h1>
-      </div>
-      <div className="card tools-grid">
-                <div className="tool-card">
-                  <h2>Restore Database SQL</h2>
-                  <p>Restore database dari file SQL backup. <b>Seluruh data lama akan dihapus!</b></p>
-                  <input type="file" accept=".sql,text/sql" className="tools-hidden-input" ref={sqlInputRef} onChange={handleRestore} disabled={restoring} />
-                  <button className="btn btn-primary" onClick={() => sqlInputRef.current && sqlInputRef.current.click()} disabled={restoring}>{restoring ? 'Restoring...' : 'Restore SQL'}</button>
-                  {restoreError && <div className="tools-feedback tools-feedback-error">{restoreError}</div>}
-                  {restoreSuccess && <div className="tools-feedback tools-feedback-success">{restoreSuccess}</div>}
-                </div>
-        <div className="tool-card">
-          <h2>Export Data</h2>
-          <p>Ekspor seluruh data aplikasi ke file JSON untuk backup atau migrasi.</p>
-          <button className="btn btn-secondary" onClick={handleExport} disabled={exporting}>{exporting ? 'Exporting...' : 'Export JSON'}</button>
+        <div>
+          <h1>🛠️ Tools Owner</h1>
+          <p>Utilitas backup, restore, dan pemeliharaan data aplikasi</p>
         </div>
+      </div>
+
+      <div className="card tools-grid">
         <div className="tool-card">
-          <h2>Backup Database</h2>
+          <h2>💾 Backup Database</h2>
           <p>Backup seluruh database ke file SQL (dump). Cocok untuk restore manual atau migrasi ke server lain.</p>
           <button className="btn btn-primary" onClick={handleBackup} disabled={backingUp}>{backingUp ? 'Backing up...' : 'Backup SQL'}</button>
           {backupError && <div className="tools-feedback tools-feedback-error">{backupError}</div>}
           {backupSuccess && <div className="tools-feedback tools-feedback-success">{backupSuccess}</div>}
         </div>
+
         <div className="tool-card">
-          <h2>Import Data</h2>
+          <h2>📤 Export Data</h2>
+          <p>Ekspor seluruh data aplikasi ke file JSON untuk backup atau migrasi.</p>
+          <button className="btn btn-secondary" onClick={handleExport} disabled={exporting}>{exporting ? 'Exporting...' : 'Export JSON'}</button>
+        </div>
+
+        <div className="tool-card">
+          <h2>📥 Import Data</h2>
           <p>Impor data dari file JSON untuk restore atau migrasi data.<br/><b>Seluruh data lama akan dihapus!</b></p>
           <input type="file" accept="application/json" className="tools-hidden-input" ref={fileInputRef} onChange={handleImport} disabled={importing} />
           <button className="btn btn-secondary" onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={importing}>{importing ? 'Importing...' : 'Import JSON'}</button>
           {importError && <div className="tools-feedback tools-feedback-error">{importError}</div>}
           {importSuccess && <div className="tools-feedback tools-feedback-success">{importSuccess}</div>}
         </div>
+
         <div className="tool-card">
-          <h2>Reset Cache / Refresh Data</h2>
-          <p>Bersihkan cache aplikasi atau refresh data dari server.</p>
-          <button className="btn btn-secondary" disabled>Reset Cache (coming soon)</button>
+          <h2>♻️ Restore Database SQL</h2>
+          <p>Restore database dari file SQL backup. <b>Seluruh data lama akan dihapus!</b></p>
+          <input type="file" accept=".sql,text/sql" className="tools-hidden-input" ref={sqlInputRef} onChange={handleRestore} disabled={restoring} />
+          <button className="btn btn-primary" onClick={() => sqlInputRef.current && sqlInputRef.current.click()} disabled={restoring}>{restoring ? 'Restoring...' : 'Restore SQL'}</button>
+          {restoreError && <div className="tools-feedback tools-feedback-error">{restoreError}</div>}
+          {restoreSuccess && <div className="tools-feedback tools-feedback-success">{restoreSuccess}</div>}
         </div>
+
         <div className="tool-card">
-          <h2>User Management</h2>
+          <h2>👥 User Management</h2>
           <p>Kelola user: reset password, nonaktifkan user, atau ubah role user secara manual.</p>
-          <button className="btn btn-secondary" onClick={() => window.location.href='/user-management'}>Kelola User</button>
+          <button className="btn btn-secondary" onClick={() => navigate('/user-management')}>Kelola User</button>
         </div>
+
         <div className="tool-card">
-          <h2>Audit Log Viewer</h2>
+          <h2>📝 Audit Log Viewer</h2>
           <p>Lihat log aktivitas penting aplikasi.</p>
-          <button className="btn btn-secondary" onClick={() => window.location.href='/audit-logs'}>Lihat Audit Log</button>
+          <button className="btn btn-secondary" onClick={() => navigate('/audit-logs')}>Lihat Audit Log</button>
         </div>
+
         <div className="tool-card">
-          <h2>System Health / Status</h2>
-          <p>Lihat status server, database, dan resource penting lain.</p>
-          <button className="btn btn-secondary" disabled>Lihat Status (coming soon)</button>
-        </div>
-        <div className="tool-card">
-          <h2>Maintenance Actions</h2>
-          <p>Jalankan perintah maintenance seperti reindex, migrasi, atau perbaikan data.</p>
-          <button className="btn btn-secondary" disabled>Maintenance (coming soon)</button>
-        </div>
-        <div className="tool-card">
-          <h2>Pengaturan Aplikasi</h2>
-          <p>Ubah setting global aplikasi (branding, notifikasi, dsb).</p>
-          <button className="btn btn-secondary" disabled>Pengaturan (coming soon)</button>
-        </div>
-        <div className="tool-card">
-          <h2>List Gemini Models</h2>
+          <h2>🤖 List Gemini Models</h2>
           <p>Lihat daftar model Gemini yang tersedia dari Google Generative AI API.</p>
           <button className="btn btn-secondary" onClick={handleFetchModels} disabled={loadingModels}>
             {loadingModels ? 'Loading...' : 'List Models'}

@@ -133,10 +133,10 @@ Route yang ada:
 | `/songs/view/:id` | Lirik + kord |
 | `/setlists`, `/setlists/:id` | Setlist |
 | `/setlists/:setlistId/songs/:id` | Lirik dari dalam setlist |
-| `/gigs`, `/gigs/:id` | Gig |
+| `/gigs` | Gig |
 | `/bands/manage`, `/bands/:id` | Band |
 | `/youtube-trending` | Trending YouTube |
-| `/tools`, `/profile`, `/audit-logs`, `/user-management` | Utilitas & pengaturan |
+| `/tools`, `/audit-logs`, `/user-management` | Utilitas & pengaturan |
 
 Halaman non-kritis di-`lazy()` dan dibungkus `Suspense` dengan `PageLoader`.
 

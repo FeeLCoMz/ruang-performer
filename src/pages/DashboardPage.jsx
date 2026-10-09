@@ -338,7 +338,7 @@ export default function DashboardPage() {
             <div className="dashboard-event-list">
               {upcomingEvents.map((event, idx) => (
                 <div key={event.id} className="activity-item activity-item--clickable" onClick={() => {
-                  if (event.type === 'gig') navigate(`/gigs/${event.id}`);
+                  if (event.type === 'gig') navigate('/gigs');
                 }}>
                   <div className="activity-icon">{event.icon}</div>
                   <div className="activity-content">
