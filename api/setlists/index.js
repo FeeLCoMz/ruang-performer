@@ -574,7 +574,7 @@ export default async function handler(req, res) {
         if (insertErr.message && insertErr.message.includes('UNIQUE')) {
           // Setlist already exists, update instead
           await client.execute(
-            `UPDATE setlists SET 
+            `UPDATE setlists SET  
                name = ?, 
                description = ?,
                bandId = ?,
