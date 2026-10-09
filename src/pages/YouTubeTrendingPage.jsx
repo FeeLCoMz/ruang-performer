@@ -376,18 +376,27 @@ export default function YouTubeTrendingPage({ performanceMode }) {
                   className="youtube-trending-card"
                 >
                   {!performanceMode && item.thumbnailUrl && (
-                    <img
-                      className="youtube-trending-thumbnail"
-                      src={item.thumbnailUrl}
-                      alt={item.title}
-                    />
+                    <div className="youtube-trending-thumb-wrap">
+                      <img
+                        className="youtube-trending-thumbnail"
+                        src={item.thumbnailUrl}
+                        alt={item.title}
+                        loading="lazy"
+                      />
+                      <span className="youtube-trending-rank">#{index + 1}</span>
+                    </div>
                   )}
                   <div className="youtube-trending-card-body">
-                    <div className="youtube-trending-rank">#{index + 1}</div>
+                    {(performanceMode || !item.thumbnailUrl) && (
+                      <span className="youtube-trending-rank">#{index + 1}</span>
+                    )}
                     <h2>{item.title}</h2>
-                    <p className="youtube-trending-channel">{item.channelTitle}</p>
+                    {item.channelTitle && (
+                      <p className="youtube-trending-channel">{item.channelTitle}</p>
+                    )}
                     <p className="youtube-trending-meta">
-                      {item.viewCount ? `${formatViews(item.viewCount)} views` : 'Views tidak tersedia'} • {formatPublishedDate(item.publishedAt)}
+                      {item.viewCount ? `${formatViews(item.viewCount)} tayangan` : 'Tayangan tidak tersedia'}
+                      {item.publishedAt ? ` • ${formatPublishedDate(item.publishedAt)}` : ''}
                     </p>
                   </div>
                 </a>

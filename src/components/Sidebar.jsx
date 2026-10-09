@@ -55,7 +55,14 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
         {/* Logo/Branding */}
         <div className="sidebar-header">
           <div className="sidebar-logo">
-            <span className="sidebar-logo-icon">🎸</span>
+            <img
+              className="sidebar-logo-icon"
+              src="/icon-192x192.png"
+              alt=""
+              width="32"
+              height="32"
+              aria-hidden="true"
+            />
             <span className="sidebar-logo-text">Ruang Performer</span>
           </div>
           <button
