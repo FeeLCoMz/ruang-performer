@@ -241,4 +241,14 @@
   .setlist-poster-footer {
     font-size: 0.9rem;
   }
+
+  .setlist-share-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .setlist-share-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }

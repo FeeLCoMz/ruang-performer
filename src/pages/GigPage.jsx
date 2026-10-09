@@ -283,63 +283,37 @@ export default function GigPage() {
         </div>
         {/* Permission: Only show if user can create gig for selected band */}
         {(() => {
-          // If no band selected, allow if user is authenticated (personal gig)
-          if (!selectedBandId && user) {
-            return (
-              <>
-                <button className="btn" onClick={() => {
-                  setShowForm(true);
-                  setEditGig(null);
-                  setFormData({
-                    bandId: selectedBandId || '',
-                    date: new Date().toISOString().split('T')[0],
-                    venue: '',
-                    city: '',
-                    fee: '',
-                    setlistId: '',
-                    notes: ''
-                  });
-                  setFormError('');
-                }}>
-                  <PlusIcon size={18} /> Buat Konser
+          const canManageGigs = (!selectedBandId && user)
+            || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
+          if (!canManageGigs) return null;
+
+          const handleCreateGig = () => {
+            setShowForm(true);
+            setEditGig(null);
+            setFormData({
+              bandId: selectedBandId || '',
+              date: new Date().toISOString().split('T')[0],
+              venue: '',
+              city: '',
+              fee: '',
+              setlistId: '',
+              notes: ''
+            });
+            setFormError('');
+          };
+
+          return (
+            <div className="page-header-actions">
+              <button className="btn" onClick={handleCreateGig}>
+                <PlusIcon size={18} /> Buat Konser
+              </button>
+              {gigs.length > 0 && (
+                <button className="btn btn-secondary gig-share-trigger-btn" onClick={() => setShowShareModal(true)}>
+                  📤 Bagikan Jadwal
                 </button>
-                {gigs.length > 0 && (
-                  <button className="btn btn-secondary gig-share-trigger-btn" onClick={() => setShowShareModal(true)}>
-                    📤 Bagikan Jadwal
-                  </button>
-                )}
-              </>
-            );
-          }
-          // If band selected, check permission
-          if (userBandInfo && permissionForSelectedBand.can('gig:edit')) {
-            return (
-              <>
-                <button className="btn" onClick={() => {
-                  setShowForm(true);
-                  setEditGig(null);
-                  setFormData({
-                    bandId: selectedBandId || '',
-                    date: new Date().toISOString().split('T')[0],
-                    venue: '',
-                    city: '',
-                    fee: '',
-                    setlistId: '',
-                    notes: ''
-                  });
-                  setFormError('');
-                }}>
-                  <PlusIcon size={18} /> Buat Konser
-                </button>
-                {gigs.length > 0 && (
-                  <button className="btn btn-secondary gig-share-trigger-btn" onClick={() => setShowShareModal(true)}>
-                    📤 Bagikan Jadwal
-                  </button>
-                )}
-              </>
-            );
-          }
-          return null;
+              )}
+            </div>
+          );
         })()}
       </div>
 
@@ -670,12 +644,12 @@ export default function GigPage() {
                   <div className="song-number">{idx + 1}.</div>
                   <h3 className="song-title">{gig.bandName || 'Band Tamu'}</h3>
                   <div className="song-meta">
-                    <span>📅 {new Date(gig.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    <span>📅 {new Date(gig.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                     {gig.date && (
                       <span>⏰ {new Date(gig.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
                     )}
                     {(gig.venue || gig.city) && <span>📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}</span>}
-                    {gig.setlistName && <span>🎵 Setlist: {gig.setlistName}</span>}
+                    {gig.setlistName && <span>🎵 {gig.setlistName}</span>}
                     {isUpcoming && <span className="gig-status-badge upcoming">Akan Datang</span>}
                     {isCompleted && <span className="gig-status-badge completed">Selesai</span>}
                   </div>

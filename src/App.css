@@ -2070,8 +2070,45 @@ body {
   font-size: var(--font-size-sm);
 }
 
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
 .youtube-trending-panel {
   padding: var(--spacing-lg);
+}
+
+.youtube-trending-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--text-muted);
+}
+
+.youtube-trending-status p {
+  margin: 0;
+}
+
+.youtube-trending-status-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.youtube-trending-status-hint {
+  font-size: var(--font-size-sm);
+}
+
+.youtube-trending-status-error p {
+  color: var(--error);
 }
 
 .youtube-trending-grid {
@@ -2298,6 +2335,43 @@ body {
     min-width: 48px;
     height: 48px;
     font-size: 1.2rem;
+  }
+
+  /* Mobile: halaman trending lebih rapi dan ringkas */
+  .youtube-trending-panel {
+    padding: var(--spacing-md);
+  }
+
+  .youtube-trending-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .youtube-trending-card-body {
+    padding: var(--spacing-md);
+    gap: 4px;
+  }
+
+  .youtube-trending-card-body h2 {
+    font-size: var(--font-size-base);
+  }
+
+  .youtube-trending-rank {
+    padding: 0.25rem 0.55rem;
+    font-size: 0.68rem;
+  }
+
+  .youtube-trending-actions {
+    width: 100%;
+  }
+
+  .youtube-trending-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .youtube-share-social-buttons {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -4044,7 +4118,7 @@ body.dark-mode .lyrics-editor-textarea {
 }
 
 .gig-share-trigger-btn {
-  margin-left: 12px;
+  margin-left: 0;
 }
 
 .gig-form-row {
@@ -4180,6 +4254,70 @@ body.dark-mode .lyrics-editor-textarea {
   text-align: center;
   padding: 60px 20px;
   color: var(--text-muted);
+}
+
+/* Mobile: halaman konser lebih rapi dan ringkas */
+@media (max-width: 768px) {
+  .gig-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .gig-band-filter,
+  .gig-month-filter,
+  .gig-year-filter {
+    max-width: none;
+    width: 100%;
+  }
+
+  .gig-toolbar-date-group {
+    width: 100%;
+    gap: var(--spacing-sm);
+  }
+
+  .gig-toolbar-date-group .gig-month-filter {
+    flex: 2;
+  }
+
+  .gig-toolbar-date-group .gig-year-filter {
+    flex: 1;
+  }
+
+  .gig-toolbar-actions {
+    margin-left: 0;
+    width: 100%;
+    gap: var(--spacing-sm);
+  }
+
+  .gig-toolbar-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .gig-form-row {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .gig-form-col-time {
+    width: 100%;
+  }
+
+  .gig-empty-state {
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
+
+  .page-header .page-header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .page-header-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
 }
 
 .song-info {

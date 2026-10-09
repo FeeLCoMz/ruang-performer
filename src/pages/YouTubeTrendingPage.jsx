@@ -329,8 +329,8 @@ export default function YouTubeTrendingPage({ performanceMode }) {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1>Trending YouTube</h1>
-          <p>Daftar lagu musik paling populer di YouTube saat ini. Klik tombol bagikan untuk share dengan teman.</p>
+          <h1>📺 Trending YouTube</h1>
+          <p>Lagu musik paling populer di YouTube saat ini</p>
         </div>
         {!performanceMode && trending.length > 0 && (
           <div className="youtube-trending-actions">
@@ -347,11 +347,21 @@ export default function YouTubeTrendingPage({ performanceMode }) {
 
       <div className="card youtube-trending-panel">
         {loading ? (
-          <p>Memuat daftar trending musik YouTube...</p>
+          <div className="youtube-trending-status">
+            <span className="youtube-trending-status-icon" aria-hidden="true">⏳</span>
+            <p>Memuat daftar trending musik YouTube...</p>
+          </div>
         ) : error ? (
-          <p className="error-text">{error}</p>
+          <div className="youtube-trending-status youtube-trending-status-error">
+            <span className="youtube-trending-status-icon" aria-hidden="true">⚠️</span>
+            <p className="error-text">{error}</p>
+          </div>
         ) : trending.length === 0 ? (
-          <p>Tidak ada data trending. Pastikan YouTube API key sudah dikonfigurasi.</p>
+          <div className="youtube-trending-status">
+            <span className="youtube-trending-status-icon" aria-hidden="true">🔍</span>
+            <p>Tidak ada data trending.</p>
+            <p className="youtube-trending-status-hint">Pastikan YouTube API key sudah dikonfigurasi.</p>
+          </div>
         ) : (
           <div className={`youtube-trending-grid ${performanceMode ? 'performance-mode' : ''}`}>
             {trending.map((item, index) => (
