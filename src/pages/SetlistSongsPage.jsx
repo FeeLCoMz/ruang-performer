@@ -1558,21 +1558,19 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           )}
         </div>
         <div className="setlist-header-actions setlist-header-actions-compact">
-          {!performanceMode && (
+          {canEdit && (
             <div className="setlist-header-action-group setlist-header-primary-group" aria-label="Aksi utama setlist">
-              {canEdit && (
-                <button className="btn setlist-btn-primary" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
-                  <span className="setlist-btn-icon" aria-hidden="true"><PlusIcon size={22} /></span>
-                  <span className="setlist-btn-label">Tambah Lagu</span>
-                </button>
-              )}
-              {canEdit && (
+              <button className="btn setlist-btn-primary" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
+                <span className="setlist-btn-icon" aria-hidden="true"><PlusIcon size={22} /></span>
+                <span className="setlist-btn-label">Tambah Lagu</span>
+              </button>
+              {!performanceMode && (
                 <button className="btn btn-secondary setlist-btn-secondary setlist-btn-mobile-icon" onClick={openMergeSetlistModal} title="Merge lagu dari setlist lain">
                   <span className="setlist-btn-icon" aria-hidden="true">🔀</span>
                   <span className="setlist-btn-label">Merge Setlist</span>
                 </button>
               )}
-              {hasSequentialVideoSet && (
+              {!performanceMode && hasSequentialVideoSet && (
                 <>
                   <button
                     className={`btn ${isSequentialVideoLoop ? 'setlist-btn-primary' : 'btn-secondary'} setlist-btn-mobile-icon`}
@@ -1614,7 +1612,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             </div>
           )}
 
-          {canEdit && !performanceMode && (
+          {canEdit && (
             <div className="setlist-header-action-group setlist-header-progress-group" aria-label="Aksi progres performa">
               {localOrder.length > 0 && !allSongsCompleted && (
                 <button className="btn btn-secondary setlist-btn-ghost" onClick={handleMarkAllSongsCompleted} title="Tandai semua lagu sudah dibawakan">
@@ -1790,7 +1788,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           <p>
             {hasActiveFilters ? 'Tidak ada lagu yang cocok dengan filter' : 'Setlist ini belum berisi lagu'}
           </p>
-          {!performanceMode && !hasActiveFilters && setlistSongs.length === 0 && (
+          {!hasActiveFilters && setlistSongs.length === 0 && canEdit && (
             <button className="btn setlist-empty-add-btn" onClick={() => setShowAddSong(true)}>
               <PlusIcon size={18} /> Tambah Lagu Pertama
             </button>
@@ -2552,6 +2550,20 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             <button className="btn btn-secondary" onClick={closeEditSongModal}>Batal</button>
           </div>
         </div>
+      )}
+
+      {/* FAB: tambah lagu cepat saat performance mode */}
+      {performanceMode && canEdit && (
+        <button
+          type="button"
+          className="setlist-fab-add-song"
+          onClick={() => setShowAddSong(true)}
+          title="Tambah lagu ke setlist"
+          aria-label="Tambah lagu ke setlist"
+        >
+          <PlusIcon size={22} />
+          <span className="setlist-fab-label">Tambah Lagu</span>
+        </button>
       )}
     </div>
   );

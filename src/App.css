@@ -3609,6 +3609,68 @@ body.dark-mode .lyrics-editor-textarea {
   gap: 12px;
 }
 
+/* Performance mode: filter ringkas (band + urutan) */
+.setlist-filter-container-performance {
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.setlist-filter-container-performance .setlist-filter-grid {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.setlist-open-indicator {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--primary-accent);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* FAB tambah lagu cepat (performance mode) */
+.setlist-fab-add-song {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary-accent);
+  color: #fff;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition-fast);
+}
+
+.setlist-fab-add-song:hover {
+  transform: translateY(-2px);
+}
+
+.setlist-fab-add-song:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 480px) {
+  .setlist-fab-add-song {
+    padding: 14px;
+    border-radius: 50%;
+  }
+
+  .setlist-fab-add-song .setlist-fab-label {
+    display: none;
+  }
+}
+
 .setlist-filter-grid {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto auto;

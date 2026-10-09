@@ -278,16 +278,17 @@ export default function SetlistPage({
       )}
 
       {/* Filters & Search */}
-      {!isPerformanceMode && (
-        <div className="filter-container setlist-filter-container">
-          {/* Search Bar */}
-          <input
-            type="text"
-            placeholder="🔍 Cari nama setlist, deskripsi, atau band..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="search-input-main"
-          />
+      <div className={`filter-container setlist-filter-container${isPerformanceMode ? ' setlist-filter-container-performance' : ''}`}>
+          {/* Search Bar - hanya mode normal */}
+          {!isPerformanceMode && (
+            <input
+              type="text"
+              placeholder="🔍 Cari nama setlist, deskripsi, atau band..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="search-input-main"
+            />
+          )}
 
           {/* Filters Row */}
           <div className="setlist-filter-grid">
@@ -303,17 +304,19 @@ export default function SetlistPage({
               ))}
             </select>
 
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="filter-select"
-            >
-              <option value="name">Urutkan: Nama</option>
-              <option value="band">Urutkan: Band</option>
-              <option value="songs">Urutkan: Jumlah Lagu</option>
-              <option value="created">Urutkan: Tanggal Dibuat</option>
-              <option value="updated">Urutkan: Terakhir Diupdate</option>
-            </select>
+            {!isPerformanceMode && (
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-select"
+              >
+                <option value="name">Urutkan: Nama</option>
+                <option value="band">Urutkan: Band</option>
+                <option value="songs">Urutkan: Jumlah Lagu</option>
+                <option value="created">Urutkan: Tanggal Dibuat</option>
+                <option value="updated">Urutkan: Terakhir Diupdate</option>
+              </select>
+            )}
 
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -334,7 +337,6 @@ export default function SetlistPage({
             )}
           </div>
         </div>
-      )}
 
       {/* Setlist List */}
       {filteredSetlists.length === 0 ? (
@@ -379,6 +381,10 @@ export default function SetlistPage({
                       )}
                     </div>
                 </div>
+
+                {isPerformanceMode && (
+                  <span className="setlist-open-indicator" aria-hidden="true">Buka →</span>
+                )}
 
                 {/* Actions */}
                 {!isPerformanceMode && (
