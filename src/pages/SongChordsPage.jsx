@@ -8,6 +8,7 @@ import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import FloatingYouTubePlayer from '../components/FloatingYouTubePlayer.jsx';
 import VirtualPiano from "../components/VirtualPiano.jsx";
 import SongMidiProgramPanel from '../components/SongMidiProgramPanel.jsx';
+import ExpandButton from '../components/ExpandButton.jsx';
 import { getAuthHeader } from "../utils/auth.js";
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
@@ -198,6 +199,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // Media panel collapse state (default: collapsed)
   const [mediaPanelExpanded, setMediaPanelExpanded] = useState(false);
   const [showMiniVideoPlayer, setShowMiniVideoPlayer] = useState(false);
+  // Setlist yang memuat lagu ini (default: collapsed)
+  const [showContainingSetlists, setShowContainingSetlists] = useState(false);
 
   // Metronome state for quick access
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, tempo);
@@ -1016,40 +1019,33 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         );
         if (containingSetlists.length === 0) return null;
         return (
-          <div className="card" style={{ marginTop: '20px' }}>
-            <h3 style={{ marginBottom: '12px', color: 'var(--text-primary)' }}>
-              📋 Setlist yang Memuat Lagu Ini ({containingSetlists.length})
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {containingSetlists.map(setlist => (
-                <div
-                  key={setlist.id}
-                  style={{
-                    padding: '8px 12px',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '6px',
-                    backgroundColor: 'var(--card-bg)',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s'
-                  }}
-                  onClick={() => navigate(`/setlists/${setlist.id}`)}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--primary-bg)'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--card-bg)'}
-                >
-                  <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
-                    {setlist.name}
-                  </div>
-                  {setlist.description && (
-                    <div style={{ fontSize: '0.85em', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      {setlist.description}
-                    </div>
-                  )}
-                  <div style={{ fontSize: '0.8em', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                    🎵 {setlist.songs?.length || 0} lagu
-                  </div>
-                </div>
-              ))}
+          <div className="song-panel song-containing-setlists">
+            <div className="song-containing-setlists-header">
+              <ExpandButton
+                isExpanded={showContainingSetlists}
+                setIsExpanded={setShowContainingSetlists}
+                icon="📋"
+                label={`Setlist yang Memuat Lagu Ini`}
+                badge={containingSetlists.length}
+                ariaLabel={showContainingSetlists ? 'Sembunyikan setlist' : 'Tampilkan setlist'}
+              />
             </div>
+            {showContainingSetlists && (
+              <div className="song-containing-setlists-list">
+                {containingSetlists.map(setlist => (
+                  <button
+                    key={setlist.id}
+                    type="button"
+                    className="song-containing-setlist-item"
+                    onClick={() => navigate(`/setlists/${setlist.id}`)}
+                    title={setlist.name}
+                  >
+                    <span className="song-containing-setlist-name">{setlist.name}</span>
+                    <span className="song-containing-setlist-count">{setlist.songs?.length || 0} lagu</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         );
       })()}

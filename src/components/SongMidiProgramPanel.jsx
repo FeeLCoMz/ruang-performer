@@ -32,11 +32,6 @@ export default function SongMidiProgramPanel({
           badge={cueCount > 0 ? cueCount : null}
           ariaLabel={isExpanded ? 'Sembunyikan Preset Cue MIDI' : 'Tampilkan Preset Cue MIDI'}
         />
-        {!performanceMode && (
-          <span className={`song-midi-support-badge ${isSupported ? 'is-supported' : 'is-unsupported'}`}>
-            {isSupported ? 'Web MIDI Ready' : 'Web MIDI Unsupported'}
-          </span>
-        )}
       </div>
 
       <div className="song-midi-panel-body" style={{ display: isExpanded ? 'block' : 'none' }}>

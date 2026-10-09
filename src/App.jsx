@@ -293,13 +293,6 @@ function AppContent() {
             <h1 className="header-title">Ruang Performer</h1>
             <div className="header-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
               <button
-                className={`btn btn-secondary ${theme === "dark" ? "dark" : "light"}`}
-                onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-                title="Ganti mode gelap/terang"
-              >
-                {theme === "dark" ? "🌙" : "☀️"}
-              </button>
-              <button
                 className={`btn btn-secondary ${performanceMode ? " active" : ""}`}
                 onClick={() => setPerformanceMode((v) => !v)}
                 title={
@@ -307,6 +300,13 @@ function AppContent() {
                 }
               >
                 {performanceMode ? "🎤 Performance" : "🎶 Normal"}
+              </button>
+              <button
+                className={`btn btn-secondary ${theme === "dark" ? "dark" : "light"}`}
+                onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+                title="Ganti mode gelap/terang"
+              >
+                {theme === "dark" ? "🌙" : "☀️"}
               </button>
             </div>
               </>

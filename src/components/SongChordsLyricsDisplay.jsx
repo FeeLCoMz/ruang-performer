@@ -167,29 +167,13 @@ export default function SongChordsLyricsDisplay({
       return;
     }
 
-    // Di performance mode kontrol tetap tampil permanen di atas.
-    if (performanceMode) {
-      setControlsVisible(true);
-      if (controlsHideTimerRef.current) {
-        clearTimeout(controlsHideTimerRef.current);
-        controlsHideTimerRef.current = null;
-      }
-      return;
-    }
-
-    if (!controlsVisible) {
-      if (controlsHideTimerRef.current) {
-        clearTimeout(controlsHideTimerRef.current);
-      }
-      return;
-    }
-
+    // Kontrol perform di fullscreen tetap tampil permanen di semua mode.
+    setControlsVisible(true);
     if (controlsHideTimerRef.current) {
       clearTimeout(controlsHideTimerRef.current);
+      controlsHideTimerRef.current = null;
     }
-    controlsHideTimerRef.current = setTimeout(() => {
-      setControlsVisible(false);
-    }, 3000);
+    return;
   }, [isFullscreen, controlsVisible, transpose, autoScrollActive, scrollSpeed, performanceMode]);
 
   useEffect(() => {
@@ -345,17 +329,6 @@ export default function SongChordsLyricsDisplay({
     return transposeChord(performanceBaseKey, transpose) || performanceBaseKey;
   })();
 
-  const showFullscreenControls = () => {
-    if (!isFullscreen) return;
-    setControlsVisible(true);
-    if (controlsHideTimerRef.current) {
-      clearTimeout(controlsHideTimerRef.current);
-    }
-    controlsHideTimerRef.current = setTimeout(() => {
-      setControlsVisible(false);
-    }, 3000);
-  };
-
   const handleExitFullscreen = () => {
     if (document.exitFullscreen) {
       document.exitFullscreen();
@@ -376,30 +349,17 @@ export default function SongChordsLyricsDisplay({
     <div className="song-lyrics-display" ref={lyricsDisplayRef}>
       {isFullscreen && (
         <>
-          {!performanceMode && (
-            <button
-              type="button"
-              className="song-lyrics-fullscreen-controls-toggle"
-              onClick={showFullscreenControls}
-              aria-label="Tampilkan kontrol perform"
-              title="Kontrol perform"
-            >
-              ⚙
-            </button>
-          )}
-          {!performanceMode && (
-            <div className="song-lyrics-fullscreen-tempo-led-inline" title={`Tempo ${normalizedBpm} BPM`}>
-              <span
-                className="song-info-tempo-led"
-                style={{ animationDuration: `${Math.round(60000 / normalizedBpm)}ms` }}
-                aria-hidden="true"
-              />
-              <span className="song-lyrics-fullscreen-tempo-led-inline-text">{normalizedBpm}</span>
-            </div>
-          )}
+          <div className="song-lyrics-fullscreen-tempo-led-inline" title={`Tempo ${normalizedBpm} BPM`}>
+            <span
+              className="song-info-tempo-led"
+              style={{ animationDuration: `${Math.round(60000 / normalizedBpm)}ms` }}
+              aria-hidden="true"
+            />
+            <span className="song-lyrics-fullscreen-tempo-led-inline-text">{normalizedBpm}</span>
+          </div>
         </>
       )}
-      {isFullscreen && performanceMode && (
+      {isFullscreen && (
         <div className="song-lyrics-fullscreen-performance-bar" role="group" aria-label="Kontrol performance">
           <div className="song-lyrics-fullscreen-perf-cluster">
             <div className="song-lyrics-fullscreen-perf-group song-lyrics-fullscreen-perf-transpose" role="group" aria-label="Transpose key">
@@ -566,7 +526,7 @@ export default function SongChordsLyricsDisplay({
           </div>
         </div>
       )}
-      {!performanceMode && (
+      {isFullscreen && !performanceMode && (
       <div
         className={`song-lyrics-fullscreen-quick-controls${controlsVisible ? ' is-visible' : ''}`}
         role="group"

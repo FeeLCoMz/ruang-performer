@@ -8,39 +8,29 @@ export default function TempoControl({ tempo, scrollSpeed, setScrollSpeed, isMet
 
   return (
     <>
-      <div className="song-info-tempo-header-row">
-        <div className="song-info-tempo-led-row" title={`Indikator tempo ${normalizedBpm} BPM`}>
+      <div className="song-info-tempo-controls">
+        <button
+          onClick={() => setScrollSpeed(Math.max(40, scrollSpeed - 1))}
+          className="btn btn-secondary"
+          title="Tempo down 1 BPM"
+          aria-label="Tempo down 1 BPM"
+        >
+          −
+        </button>
+        <div className="song-info-tempo-display">
           <span
             className="song-info-tempo-led"
             style={{ animationDuration: `${blinkDurationMs}ms` }}
             aria-hidden="true"
           />
-          <span className="song-info-tempo-led-text">LED Tempo</span>
-        </div>
-        {tempoTerm && (
-          <span className="song-info-tempo-term">
-            <span>{tempoTerm}</span>
-          </span>
-        )}
-      </div>
-      <div className="song-info-tempo-controls">
-        <button
-          onClick={() => setScrollSpeed(Math.max(40, scrollSpeed - 5))}
-          className="btn btn-secondary"
-          title="Tempo down"
-          aria-label="Tempo down"
-        >
-          −
-        </button>
-        <div className="song-info-tempo-display">
           <span className="song-info-value">{scrollSpeed}</span>
           <span className="song-info-tempo-unit">BPM</span>
         </div>
         <button
-          onClick={() => setScrollSpeed(Math.min(240, scrollSpeed + 5))}
+          onClick={() => setScrollSpeed(Math.min(240, scrollSpeed + 1))}
           className="btn btn-secondary"
-          title="Tempo up"
-          aria-label="Tempo up"
+          title="Tempo up 1 BPM"
+          aria-label="Tempo up 1 BPM"
         >
           +
         </button>
@@ -52,6 +42,11 @@ export default function TempoControl({ tempo, scrollSpeed, setScrollSpeed, isMet
         >
           {isMetronomeActive ? "⏹️" : "▶️"}
         </button>
+        {tempoTerm && (
+          <span className="song-info-tempo-term" title={`Istilah tempo: ${tempoTerm}`}>
+            {tempoTerm}
+          </span>
+        )}
       </div>
       {isMetronomeActive && (
         <div className="song-info-tempo-status">♪ Playing...</div>

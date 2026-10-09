@@ -57,7 +57,14 @@ export default function SongChordsInfo({
   const metadataItems = [];
   const performanceMetadataItems = [];
   const detectedInstrumentList = Array.isArray(detectedInstruments) ? detectedInstruments.filter(Boolean) : [];
+  const hasAdvancedInfo = Boolean(
+    timeSignature || genre || arrangementStyle || keyboardPatch || lyricsOriginalKey
+    || detectedInstrumentList.length > 0
+    || (Array.isArray(masteredBy) && masteredBy.length > 0) || canMarkMastery
+  );
   const [isKeyboardistKeyCollapsed, setIsKeyboardistKeyCollapsed] = useState(true);
+  // Info lanjutan (detail sekunder) disembunyikan secara default agar ringkas.
+  const [showAdvancedInfo, setShowAdvancedInfo] = useState(false);
   const handleCopyInstruments = async () => {
     const parts = [];
     if (keyboardPatch) parts.push(`Keyboard Patch: ${keyboardPatch}`);
@@ -212,30 +219,6 @@ export default function SongChordsInfo({
       {/* Judul dan artis selalu di atas info lain */}
       {(title || artist || contributor || !performanceMode) && (
         <div className="song-title-artist-block">
-          {showActions && (
-            <div className="song-title-actions">
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={onEdit}
-                  className="btn btn-secondary song-detail-action-btn"
-                  title="Edit lagu"
-                  aria-label="Edit lagu"
-                >
-                  <span aria-hidden="true">✎</span>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={onShare}
-                className="btn btn-secondary song-detail-action-btn"
-                title="Bagikan lagu"
-                aria-label="Bagikan lagu"
-              >
-                <span aria-hidden="true">↗</span>
-              </button>
-            </div>
-          )}
           {title && (
             <h1 className="song-title-main">{title}</h1>
           )}
@@ -243,7 +226,11 @@ export default function SongChordsInfo({
             <h2 className="song-artist-main">{artist}</h2>
           )}
           {contributor && showActions && (
-            <div className="song-contributor-main">Kontributor: {contributor}</div>
+            <div className="song-contributor-main" title={`Kontributor: ${contributor}`}>
+              <span aria-hidden="true">👤</span>
+              <span className="sr-only">Kontributor:</span>
+              <span className="song-contributor-name">{contributor}</span>
+            </div>
           )}
           {shareMessage && showActions && (
             <div className="info-text song-info-share-message">{shareMessage}</div>
@@ -280,6 +267,28 @@ export default function SongChordsInfo({
             label="Info Lagu"
             ariaLabel={showSongInfo ? 'Sembunyikan info lagu' : 'Tampilkan info lagu'}
           />
+          <div className="song-info-header-actions">
+            {canEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="btn btn-secondary song-detail-action-btn"
+                title="Edit lagu"
+                aria-label="Edit lagu"
+              >
+                <span aria-hidden="true">✎</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onShare}
+              className="btn btn-secondary song-detail-action-btn"
+              title="Bagikan lagu"
+              aria-label="Bagikan lagu"
+            >
+              <span aria-hidden="true">↗</span>
+            </button>
+          </div>
         </div>
       )}
       {!performanceMode && showMetadata && (
@@ -350,19 +359,19 @@ export default function SongChordsInfo({
                   </div>
                 </div>
               )}
-              {lyricsOriginalKey && (
+              {lyricsOriginalKey && showAdvancedInfo && (
                 <div className="song-info-item">
                   <span className="song-info-label">🎵 Nada Asli</span>
                   <span className="song-info-value">{lyricsOriginalKey}</span>
                 </div>
               )}
-              {!showMinimalMetadata && timeSignature && (
+              {!showMinimalMetadata && showAdvancedInfo && timeSignature && (
                 <div className="song-info-item">
                   <span className="song-info-label">🎼 Time</span>
                   <span className="song-info-value">{timeSignature}</span>
                 </div>
               )}
-              {!showMinimalMetadata && genre && (
+              {!showMinimalMetadata && showAdvancedInfo && genre && (
                 <div className="song-info-item">
                   <span className="song-info-label">🎸 Genre</span>
                   <span className="song-info-value">{genre}</span>
@@ -380,19 +389,32 @@ export default function SongChordsInfo({
                   />
                 </div>
               )}
-              {!showMinimalMetadata && arrangementStyle && (
+              {!showMinimalMetadata && hasAdvancedInfo && (
+                <button
+                  type="button"
+                  className="btn btn-secondary song-info-advanced-toggle"
+                  onClick={() => setShowAdvancedInfo((prev) => !prev)}
+                  aria-expanded={showAdvancedInfo}
+                  aria-label={showAdvancedInfo ? 'Sembunyikan info lanjutan' : 'Tampilkan info lanjutan'}
+                  title={showAdvancedInfo ? 'Sembunyikan info lanjutan' : 'Tampilkan info lanjutan'}
+                >
+                  <span aria-hidden="true">{showAdvancedInfo ? '▼' : '▶'}</span>
+                  <span>{showAdvancedInfo ? 'Sembunyikan Info Lanjutan' : 'Info Lanjutan'}</span>
+                </button>
+              )}
+              {!showMinimalMetadata && showAdvancedInfo && arrangementStyle && (
                 <div className="song-info-item song-info-block song-info-block-arrangement">
                   <span className="song-info-label">🎷 Aransemen</span>
                   <span className="song-info-value">{arrangementStyle}</span>
                 </div>
               )}
-              {!showMinimalMetadata && keyboardPatch && (
+              {!showMinimalMetadata && showAdvancedInfo && keyboardPatch && (
                 <div className="song-info-item song-info-block song-info-block-keyboard">
                   <span className="song-info-label">🎹 Keyboard Patch</span>
                   <span className="song-info-value">{keyboardPatch}</span>
                 </div>
               )}
-              {!showMinimalMetadata && detectedInstrumentList.length > 0 && (
+              {!showMinimalMetadata && showAdvancedInfo && detectedInstrumentList.length > 0 && (
                 <div className="song-info-item song-info-block song-info-block-instruments">
                   <div className="song-info-block-header">
                     <span className="song-info-label">🎼 Instrumen</span>
@@ -415,7 +437,7 @@ export default function SongChordsInfo({
                   </div>
                 </div>
               )}
-              {!showMinimalMetadata && (
+              {!showMinimalMetadata && showAdvancedInfo && (
                 <div className="song-info-item song-info-mastery-block song-info-mastery-block-full">
                   <span className="song-info-label">✅ Sudah Dikuasai</span>
                   <span className="song-info-value song-info-mastery-count">

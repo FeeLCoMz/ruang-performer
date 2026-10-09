@@ -108,6 +108,8 @@ export default function SongLyricsMainSection({
             setCurrentBeat={setCurrentBeat}
             transpose={transpose}
             setTranspose={setTranspose}
+            originalKey={originalKey}
+            targetKey={targetKey}
             zoom={zoom}
             setZoom={setZoom}
             showChordNumbers={showChordNumbers}

@@ -40,10 +40,6 @@ export default function SongChordsMediaPanel({
       >
         {/* YouTube Video Section - Left */}
         <div className="media-section media-video-section">
-          <div className="media-section-header">
-            <span className="media-section-icon">🎥</span>
-            <span className="media-section-label">YouTube Video</span>
-          </div>
           <div className="media-section-body">
             {hasYouTube ? (
               <YouTubeViewer
@@ -68,19 +64,13 @@ export default function SongChordsMediaPanel({
         {/* Time Markers Section - Right */}
         {hasYouTube && (
           <div className="media-section media-markers-section">
-            <div className="media-section-header">
-              <span className="media-section-icon">⏱️</span>
-              <span className="media-section-label">Time Markers</span>
-              {timeMarkers.length > 0 && (
-                <span className="media-section-badge">{timeMarkers.length}</span>
-              )}
-            </div>
             <div className="media-section-body">
               <TimeMarkers
                 timeMarkers={timeMarkers}
                 currentTime={ytCurrentTime}
                 duration={ytDuration}
                 readonly={performanceMode || !canEdit}
+                compactUI={true}
                 onUpdate={handleTimeMarkerUpdate}
                 onSeek={(time, opts) => {
                   if (

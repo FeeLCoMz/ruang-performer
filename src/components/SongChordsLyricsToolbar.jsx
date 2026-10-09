@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import AutoScrollBar from "./AutoScrollBar.jsx";
 import SongChordsExportMenu from "./SongChordsExportMenu.jsx";
+import TransposeKeyControl from "./TransposeKeyControl.jsx";
 
 /**
  * SongChordsLyricsToolbar
@@ -43,6 +44,8 @@ export default function SongChordsLyricsToolbar({
   setCurrentBeat,
   transpose,
   setTranspose,
+  originalKey = '',
+  targetKey = '',
   zoom,
   setZoom,
   showChordNumbers,
@@ -249,7 +252,7 @@ export default function SongChordsLyricsToolbar({
           </div>
         )}
 
-        {!isEditingLyrics && (
+        {!isEditingLyrics && performanceMode && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-autoscroll">
             <AutoScrollBar
               tempo={parseInt(tempo, 10) || 120}
@@ -263,6 +266,48 @@ export default function SongChordsLyricsToolbar({
               setCurrentBeat={setCurrentBeat}
               compactMode={performanceMode}
             />
+          </div>
+        )}
+
+        {!isEditingLyrics && !performanceMode && (
+          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-autoscroll">
+            <div className="song-lyrics-tempo-minimal" title={`Tempo ${normalizedTempo} BPM`}>
+              <span
+                className="song-info-tempo-led"
+                style={{ animationDuration: `${Math.round(60000 / normalizedTempo)}ms` }}
+                aria-hidden="true"
+              />
+              <button
+                type="button"
+                className="btn btn-secondary song-lyrics-tempo-step-btn"
+                onClick={() => setScrollSpeed((prev) => Math.max(40, (Number(prev) || normalizedTempo) - 1))}
+                title="Tempo turun 1 BPM"
+                aria-label="Tempo turun 1 BPM"
+              >
+                −
+              </button>
+              <span className="song-lyrics-tempo-value" aria-live="polite">
+                {Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedTempo))}
+              </span>
+              <button
+                type="button"
+                className="btn btn-secondary song-lyrics-tempo-step-btn"
+                onClick={() => setScrollSpeed((prev) => Math.min(240, (Number(prev) || normalizedTempo) + 1))}
+                title="Tempo naik 1 BPM"
+                aria-label="Tempo naik 1 BPM"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                className={`btn song-lyrics-tempo-as-btn ${autoScrollActive ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setAutoScrollActive(!autoScrollActive)}
+                title={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
+                aria-label={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
+              >
+                <span aria-hidden="true">↕</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -280,37 +325,39 @@ export default function SongChordsLyricsToolbar({
         {!isEditingLyrics && !performanceMode && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">
             <div className="song-lyrics-transpose-controls" title="Transpose lirik/chord">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setTranspose((prev) => prev - 1)}
-                title="Transpose turun 1 semitone"
-                aria-label="Transpose turun"
-              >
-                -
-              </button>
-              <span className="song-lyrics-transpose-value" aria-live="polite">
-                Tr {transpose > 0 ? `+${transpose}` : transpose}
-              </span>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setTranspose((prev) => prev + 1)}
-                title="Transpose naik 1 semitone"
-                aria-label="Transpose naik"
-              >
-                +
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setTranspose(0)}
-                title="Reset transpose"
-                aria-label="Reset transpose"
-                disabled={transpose === 0}
-              >
-                0
-              </button>
+              {(originalKey || targetKey) ? (
+                <TransposeKeyControl
+                  originalKey={originalKey || targetKey}
+                  targetKey={targetKey || originalKey}
+                  transpose={transpose}
+                  onTransposeChange={setTranspose}
+                  compact
+                />
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setTranspose((prev) => prev - 1)}
+                    title="Transpose turun 1 semitone"
+                    aria-label="Transpose turun"
+                  >
+                    −
+                  </button>
+                  <span className="song-lyrics-transpose-value" aria-live="polite">
+                    {transpose > 0 ? `+${transpose}` : transpose}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setTranspose((prev) => prev + 1)}
+                    title="Transpose naik 1 semitone"
+                    aria-label="Transpose naik"
+                  >
+                    +
+                  </button>
+                </>
+              )}
             </div>
 
             <button
