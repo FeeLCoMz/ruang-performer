@@ -217,6 +217,26 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [currentBeat, setCurrentBeat] = useState(0);
   const lyricsDisplayRef = useRef(null);
 
+  // Real playback state for the timestamp play buttons. Without this the button
+  // could only ever seek: ChordDisplay used to guess locally, and once that was
+  // removed it received no state at all, so it never showed "pause".
+  const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
+
+  useEffect(() => {
+    if (!youtubeId) {
+      setIsYoutubePlaying(false);
+      return undefined;
+    }
+
+    const intervalId = setInterval(() => {
+      const player = youtubeRef.current;
+      if (!player || typeof player.getPlayerState !== 'function') return;
+      setIsYoutubePlaying(player.getPlayerState() === 1);
+    }, 500);
+
+    return () => clearInterval(intervalId);
+  }, [youtubeId]);
+
   // Update scroll speed when tempo changes
   useEffect(() => {
     if (tempo) {
@@ -937,6 +957,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setShowSheetMusic={setShowSheetMusic}
         youtubeRef={youtubeRef}
         youtubeId={youtubeId}
+        isYoutubePlaying={isYoutubePlaying}
         showMiniVideoPlayer={showMiniVideoPlayer}
         onOpenMiniVideoPlayer={() => setShowMiniVideoPlayer(true)}
         onPlayYouTube={handlePlayYouTube}

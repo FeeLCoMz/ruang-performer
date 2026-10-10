@@ -71,6 +71,57 @@ const getInstrumentTokenClass = (label = '') => {
     return token;
   };
 
+  /**
+   * A clickable timestamp with its play/pause button.
+   *
+   * Shared by every line type: a timestamp can appear on a lyrics line, a chord
+   * grid, or even alongside a section tag, and previously only the lyrics branch
+   * rendered the button — so "[01:23] | C | G |" was silently unplayable.
+   */
+  const renderTimestampToken = (rawToken, seconds, key) => {
+    const canPlay = typeof onTimestampClick === 'function';
+    const label = String(rawToken).replace(/\[|\]/g, '');
+    return (
+      <span key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ fontWeight: 600 }}>{rawToken}</span>
+        <button
+          type="button"
+          className="btn"
+          disabled={!canPlay}
+          onClick={() => {
+            if (!canPlay) return;
+            // Pause only when the parent reports real playback; otherwise seek
+            // here. The parent owns the state, so the icon and the action can no
+            // longer drift apart.
+            if (isPlaying && typeof onTimestampPause === 'function') {
+              onTimestampPause();
+            } else {
+              onTimestampClick(seconds);
+            }
+          }}
+          style={{
+            marginLeft: 4,
+            color: 'var(--primary-accent)',
+            background: 'none',
+            border: 'none',
+            cursor: canPlay ? 'pointer' : 'default',
+            fontSize: '1em',
+            opacity: canPlay ? 1 : 0.4,
+          }}
+          title={
+            !canPlay
+              ? 'Tambahkan YouTube untuk memutar dari sini'
+              : isPlaying
+                ? 'Jeda video'
+                : `Putar ke ${label}`
+          }
+        >
+          {isPlaying ? '⏸️' : '▶️'}
+        </button>
+      </span>
+    );
+  };
+
   if (!song?.lyrics) {
     return (
       <div className="cd-empty">
@@ -134,6 +185,13 @@ const getInstrumentTokenClass = (label = '') => {
               Repeated
             </span>
           ) : null}
+          {/* A section line may still carry a timestamp ("[Intro] [00:05]"). */}
+          {(() => {
+            const seconds = parseTimestampToken(lineObj.label || '');
+            if (seconds === null || typeof onTimestampClick !== 'function') return null;
+            const raw = String(lineObj.label).match(/\[[^\]]+\]/);
+            return renderTimestampToken(raw ? raw[0] : lineObj.label, seconds, 'section-ts');
+          })()}
         </div>
       );
       return;
@@ -158,17 +216,20 @@ const getInstrumentTokenClass = (label = '') => {
       if (lineObj.type === 'chord') {
         renderedRows.push(
           <div key={i} className="cd-chord">
-            {lineObj.tokens.map((t, j) =>
-              t.isSpace ? (
-                <span key={j}>{t.token}</span>
-              ) : t.isBarline ? (
-                <span key={j} className="cd-barline-token">{t.token}</span>
-              ) : (
+            {lineObj.tokens.map((t, j) => {
+              if (t.isSpace) return <span key={j}>{t.token}</span>;
+              if (t.isBarline) return <span key={j} className="cd-barline-token">{t.token}</span>;
+
+              // A timestamp can sit on a chord line ("[01:23] | C | G |").
+              const seconds = typeof t.token === 'string' ? parseTimestampToken(t.token) : null;
+              if (seconds !== null) return renderTimestampToken(t.token, seconds, j);
+
+              return (
                 <span key={j} className="cd-token">
                   {formatChordToken(t.token)}
                 </span>
-              )
-            )}
+              );
+            })}
           </div>
         );
         return;
@@ -196,38 +257,7 @@ const getInstrumentTokenClass = (label = '') => {
           const tokenText = t.isChord ? formatChordToken(t.token) : t.token;
           const seconds = typeof tokenText === 'string' ? parseTimestampToken(tokenText) : null;
           if (seconds !== null) {
-            const canPlay = typeof onTimestampClick === 'function';
-            return (
-              <span key={j} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <span style={{fontWeight: 600}}>{tokenText}</span>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={!canPlay}
-                  onClick={() => {
-                    if (!canPlay) return;
-                    // Pause only when the parent reports real playback; otherwise
-                    // seek here. The parent owns the state, so the icon and the
-                    // action can no longer drift apart.
-                    if (isPlaying && typeof onTimestampPause === 'function') {
-                      onTimestampPause();
-                    } else {
-                      onTimestampClick(seconds);
-                    }
-                  }}
-                  style={{ marginLeft: 4, color: 'var(--primary-accent)', background: 'none', border: 'none', cursor: canPlay ? 'pointer' : 'default', fontSize: '1em', opacity: canPlay ? 1 : 0.4 }}
-                  title={
-                    !canPlay
-                      ? 'Tambahkan YouTube untuk memutar dari sini'
-                      : isPlaying
-                        ? 'Jeda video'
-                        : `Putar ke ${t.token.replace(/\[|\]/g, '')}`
-                  }
-                >
-                  {isPlaying ? '⏸️' : '▶️'}
-                </button>
-              </span>
-            );
+            return renderTimestampToken(t.token, seconds, j);
           }
           if (t.isCueMark) {
             return <span key={j} className="cd-cue-mark-token">{tokenText}</span>;

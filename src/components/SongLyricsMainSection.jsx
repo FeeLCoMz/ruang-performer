@@ -66,6 +66,7 @@ export default function SongLyricsMainSection({
   setShowSheetMusic,
   youtubeRef,
   youtubeId,
+  isYoutubePlaying = false,
   showMiniVideoPlayer = false,
   onOpenMiniVideoPlayer,
   onPlayYouTube,
@@ -213,6 +214,7 @@ export default function SongLyricsMainSection({
               setShowSheetMusic={setShowSheetMusic}
               youtubeRef={youtubeRef}
               youtubeId={youtubeId}
+              isYoutubePlaying={isYoutubePlaying}
               timeSignature={timeSignature}
               currentBeat={currentBeat}
               onPresetCueTrigger={onPresetCueTrigger}

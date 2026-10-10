@@ -61,6 +61,8 @@ export default function SongChordsLyricsDisplay({
   setShowSheetMusic,
   youtubeRef,
   youtubeId,
+  isYoutubePlaying = false,
+  onYoutubePlayingChange,
   currentBeat = 0,
   timeSignature = '4/4',
   onPresetCueTrigger,
@@ -79,22 +81,14 @@ export default function SongChordsLyricsDisplay({
   const [zoomHudText, setZoomHudText] = useState(`${Math.round((zoom || 1) * 100)}%`);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(false);
-  const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
+  // isYoutubePlaying comes from the page as a prop: it owns the polling, so the
+  // timestamp buttons and the fullscreen controls share one source of truth.
   const [visualBeat, setVisualBeat] = useState(0);
 
   useEffect(() => {
     zoomRef.current = zoom;
   }, [zoom]);
 
-  // Sync YouTube playing state
-  useEffect(() => {
-    if (!youtubeRef?.current) return;
-    const interval = setInterval(() => {
-      const state = youtubeRef.current?.getPlayerState?.();
-      setIsYoutubePlaying(state === 1);
-    }, 500);
-    return () => clearInterval(interval);
-  }, [youtubeRef]);
 
   useEffect(() => {
     return () => {
@@ -486,7 +480,7 @@ export default function SongChordsLyricsDisplay({
                       youtubeRef.current.handleTogglePlayPause();
                       setTimeout(() => {
                         const state = youtubeRef.current?.getPlayerState?.();
-                        setIsYoutubePlaying(state === 1);
+                        onYoutubePlayingChange?.(state === 1);
                       }, 50);
                     }
                   }}
@@ -503,7 +497,7 @@ export default function SongChordsLyricsDisplay({
                       youtubeRef.current.handleSeek(0);
                       setTimeout(() => {
                         const state = youtubeRef.current?.getPlayerState?.();
-                        setIsYoutubePlaying(state === 1);
+                        onYoutubePlayingChange?.(state === 1);
                       }, 50);
                     }
                   }}
@@ -638,7 +632,7 @@ export default function SongChordsLyricsDisplay({
                   // Update state setelah toggle
                   setTimeout(() => {
                     const state = youtubeRef.current?.getPlayerState?.();
-                    setIsYoutubePlaying(state === 1);
+                    onYoutubePlayingChange?.(state === 1);
                   }, 50);
                 }
               }}
@@ -655,7 +649,7 @@ export default function SongChordsLyricsDisplay({
                   youtubeRef.current.handleSeek(0);
                   setTimeout(() => {
                     const state = youtubeRef.current?.getPlayerState?.();
-                    setIsYoutubePlaying(state === 1);
+                    onYoutubePlayingChange?.(state === 1);
                   }, 50);
                 }
               }}
@@ -714,6 +708,7 @@ export default function SongChordsLyricsDisplay({
         showJazzChords={showJazzChords}
         showSimpleChords={showSimpleChords}
         keySignature={keySignature || song?.key || 'C'}
+        isPlaying={isYoutubePlaying}
         onTimestampClick={(seconds) => {
           if (youtubeRef && youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
             youtubeRef.current.handleSeek(seconds);
