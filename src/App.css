@@ -5289,12 +5289,24 @@ body.dark-mode .lyrics-editor-textarea {
 
   .dashboard-welcome > div:last-child {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: 1fr;
+    align-items: center;
     gap: var(--spacing-sm);
   }
 
+  /* Tombol aksi dashboard di layar sempit.
+     Dua hal yang membuatnya terlalu tinggi sebelumnya:
+     1. grid default `align-items: normal` (= stretch) menstretch tombol setinggi baris,
+     2. `auto-fit minmax(140px, 1fr)` hanya memuat 2 tombol per baris pada 390px,
+        sehingga tombol ketiga jadi orphan di baris sendiri.
+     Satu kolom penuh + align-items center = tiap tombol setinggi isinya sendiri. */
   .dashboard-welcome > div:last-child .btn {
     width: 100%;
+    padding: 8px 12px;
+    font-size: var(--font-size-sm);
+    line-height: 1.2;
+    gap: 6px;
+    border-radius: var(--radius-sm);
   }
 
   .dashboard-grid {
