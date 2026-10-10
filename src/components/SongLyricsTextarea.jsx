@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { EditorView, keymap } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
-import { history, historyKeymap, defaultKeymap, indentWithTab } from "@codemirror/commands";
+import { history, historyKeymap, defaultKeymap, indentWithTab, undo, redo } from "@codemirror/commands";
 import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
 import { lyricsHighlighting, lyricsEditorTheme } from "../utils/lyricsHighlightExtension.js";
 
@@ -105,6 +105,14 @@ export default function SongLyricsTextarea({
       /** Open CodeMirror's built-in find/replace panel. */
       openSearchPanel() {
         openSearchPanel(view);
+      },
+      /** Step back one edit. Returns false when there is nothing to undo. */
+      undo() {
+        return undo({ state: view.state, dispatch: view.dispatch });
+      },
+      /** Step forward one edit. Returns false when there is nothing to redo. */
+      redo() {
+        return redo({ state: view.state, dispatch: view.dispatch });
       },
     };
 

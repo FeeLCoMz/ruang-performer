@@ -387,6 +387,56 @@ export function formatWholeLyricsDocument(text) {
   return standardizeChordNotation(autoTagSongSections(removeExtraSpacesAndBrokenLines(text)));
 }
 
+/**
+ * Describe what Format Semua would change, so the user can confirm before the
+ * document is rewritten. Returns human-readable items (empty when nothing changes).
+ */
+export function summariseFormatChanges(before, after) {
+  const source = String(before ?? '');
+  const result = String(after ?? '');
+  if (source === result) return [];
+
+  const items = [];
+  const count = (text, regex) => (text.match(regex) || []).length;
+
+  const removedHidden = count(source, /[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g);
+  if (removedHidden > 0) items.push(`Menghapus ${removedHidden} karakter tak terlihat`);
+
+  const sourceTabs = count(source, /\t/g);
+  if (sourceTabs > 0) items.push(`Menghapus ${sourceTabs} tab`);
+
+  const sourceDoubleSpaces = count(source, / {2,}/g);
+  const resultDoubleSpaces = count(result, / {2,}/g);
+  if (sourceDoubleSpaces > resultDoubleSpaces) {
+    items.push(`Merapikan ${sourceDoubleSpaces - resultDoubleSpaces} spasi ganda`);
+  }
+
+  const sourceBlankRuns = count(source, /\n{3,}/g);
+  const resultBlankRuns = count(result, /\n{3,}/g);
+  if (sourceBlankRuns > resultBlankRuns) {
+    items.push(`Memadatkan ${sourceBlankRuns - resultBlankRuns} blok baris kosong`);
+  }
+
+  const sourceTagged = count(source, /^\s*(?:intro|verse|chorus|reff|refrain|bridge|outro|interlude|coda|pre[\s-]*chorus|post[\s-]*chorus)\b.*[:\-]\s*$/gim);
+  if (sourceTagged > 0) items.push(`Menormalkan ${sourceTagged} label bagian menjadi tag [Section]`);
+
+  const sourceChords = count(source, /\b[A-G][#b]?(?:maj|min|m|dim|aug|sus|add|M)?\d*/g);
+  const resultChords = count(result, /\b[A-G][#b]?(?:maj|min|m|dim|aug|sus|add|M)?\d*/g);
+  if (resultChords !== sourceChords) {
+    items.push('Menyeragamkan penulisan chord');
+  }
+
+  const sourceLines = source.split('\n').length;
+  const resultLines = result.split('\n').length;
+  if (sourceLines !== resultLines) {
+    const delta = sourceLines - resultLines;
+    items.push(delta > 0 ? `Mengurangi ${delta} baris` : `Menambah ${Math.abs(delta)} baris`);
+  }
+
+  if (!items.length) items.push('Merapikan penulisan lirik dan chord');
+  return items;
+}
+
 export function buildInsertNoteToken({
   note,
   keySignature = 'C',

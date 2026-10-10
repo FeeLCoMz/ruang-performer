@@ -10,6 +10,7 @@ import {
   removeExtraSpacesAndBrokenLines,
   replaceSelectionWithToken,
   standardizeChordNotation,
+  summariseFormatChanges,
   transposeLyricsText,
 } from '../utils/lyricsEditorUtils.js';
 import { handleExportPDF, handleExportText } from '../utils/songHandlers.js';
@@ -182,6 +183,39 @@ describe('lyricsEditorUtils', () => {
 
     // Caret insertion (no selection) must not swallow the user's line break.
     expect(result.nextText).toBe('Am F\n[Chorus]\nHello');
+  });
+
+  test('summariseFormatChanges reports nothing when the document is already tidy', () => {
+    const clean = '[Intro]\n| C | G |';
+    expect(summariseFormatChanges(clean, clean)).toEqual([]);
+  });
+
+  test('summariseFormatChanges describes copy-paste noise that will be cleaned', () => {
+    const messy = '[intro]\n\n\nCmajor7    aminor\t\t';
+    const cleaned = formatWholeLyricsDocument(messy);
+    const summary = summariseFormatChanges(messy, cleaned);
+
+    expect(summary.length).toBeGreaterThan(0);
+    // It should be human-readable, not a raw diff.
+    expect(summary.join(' ')).toMatch(/tab|spasi|baris|chord|bagian|Merapikan/i);
+  });
+
+  test('summariseFormatChanges counts hidden characters that will be removed', () => {
+    const withHidden = '\u200ECm D#\n\u200EA# Cm';
+    const cleaned = formatWholeLyricsDocument(withHidden);
+    const summary = summariseFormatChanges(withHidden, cleaned);
+
+    expect(summary.join(' ')).toMatch(/tak terlihat/i);
+  });
+
+  test('formatWholeLyricsDocument is idempotent so a second Apply is a no-op', () => {
+    const input = '[intro]\ncmajor7   aminor\nreff:  fmaj';
+    const once = formatWholeLyricsDocument(input);
+    const twice = formatWholeLyricsDocument(once);
+
+    expect(once).toBe(twice);
+    // And therefore the preview correctly reports "nothing to change".
+    expect(summariseFormatChanges(once, twice)).toEqual([]);
   });
 
   test('handleExportText applies the active transpose to chords and key metadata', async () => {

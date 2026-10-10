@@ -6,6 +6,7 @@ import {
   formatWholeLyricsDocument,
   insertLineAtCursor,
   removeExtraSpacesAndBrokenLines,
+  summariseFormatChanges,
 } from "../utils/lyricsEditorUtils.js";
 import { GM_SOUND_CATEGORIES, GM_SOUND_BANK, filterGmSoundBankByCategory, formatGmPatchOptionLabel } from '../utils/gmSoundbank.js';
 
@@ -226,11 +227,54 @@ export default function SongLyricsEditActions({
     }, 0);
   };
 
-  const runFormatWholeDocument =
-    handleFormatWholeDocument || (() => applyTextTransform(formatWholeLyricsDocument));
+  // Format Semua rewrites the whole document (cleanup + section tags + chord
+  // standardisation) and cannot be undone as one step, so it goes through a
+  // preview + explicit confirmation instead of applying immediately.
+  const [formatPreview, setFormatPreview] = useState(null);
+
+  const openFormatPreview = () => {
+    if (typeof setLyricsValue !== 'function') return;
+    const nextText =
+      typeof handleFormatWholeDocument === 'function'
+        ? null
+        : formatWholeLyricsDocument(lyricsValue);
+
+    // When the parent owns the transform we cannot preview it without applying,
+    // so fall back to the parent handler directly.
+    if (nextText === null) {
+      handleFormatWholeDocument();
+      return;
+    }
+
+    if (nextText === lyricsValue) {
+      setFormatPreview({ unchanged: true, before: lyricsValue, after: nextText, summary: [] });
+      return;
+    }
+
+    setFormatPreview({
+      unchanged: false,
+      before: lyricsValue,
+      after: nextText,
+      summary: summariseFormatChanges(lyricsValue, nextText),
+    });
+  };
+
+  const applyFormatPreview = () => {
+    if (!formatPreview) return;
+    applyTextTransform((text) => formatWholeLyricsDocument(text));
+    setFormatPreview(null);
+  };
 
   const handleOpenSearch = () => {
     lyricsRef?.current?.openSearchPanel?.();
+  };
+
+  const handleUndo = () => {
+    lyricsRef?.current?.undo?.();
+  };
+
+  const handleRedo = () => {
+    lyricsRef?.current?.redo?.();
   };
 
   return (
@@ -256,11 +300,31 @@ export default function SongLyricsEditActions({
               type="button"
               className="btn btn-secondary song-lyrics-format-ribbon-btn"
               disabled={disabled}
-              onClick={runFormatWholeDocument}
+              onClick={openFormatPreview}
               title="Rapikan seluruh dokumen: bersihkan teks, tag bagian, dan standarkan chord sekaligus"
             >
               <span className="song-lyrics-format-ribbon-icon" aria-hidden="true">🪄</span>
               <span className="song-lyrics-format-ribbon-label">Format Semua</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary song-lyrics-format-ribbon-btn"
+              disabled={disabled}
+              onClick={handleUndo}
+              title="Batalkan perubahan terakhir (Ctrl+Z)"
+            >
+              <span className="song-lyrics-format-ribbon-icon" aria-hidden="true">↶</span>
+              <span className="song-lyrics-format-ribbon-label">Undo</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary song-lyrics-format-ribbon-btn"
+              disabled={disabled}
+              onClick={handleRedo}
+              title="Ulangi perubahan yang dibatalkan (Ctrl+Shift+Z)"
+            >
+              <span className="song-lyrics-format-ribbon-icon" aria-hidden="true">↷</span>
+              <span className="song-lyrics-format-ribbon-label">Redo</span>
             </button>
             <button
               type="button"
@@ -511,6 +575,83 @@ export default function SongLyricsEditActions({
                   </ul>
                 </section>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {formatPreview && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pratinjau Format Semua"
+          onClick={() => setFormatPreview(null)}
+        >
+          <div
+            className="modal song-lyrics-format-preview-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="song-lyrics-metadata-help-header">
+              <h3>🪄 Pratinjau Format Semua</h3>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setFormatPreview(null)}
+                aria-label="Tutup pratinjau"
+                title="Tutup"
+              >
+                ✕
+              </button>
+            </div>
+
+            {formatPreview.unchanged ? (
+              <p className="song-lyrics-format-preview-unchanged">
+                Tidak ada yang perlu diubah — penulisan lirik sudah rapi.
+              </p>
+            ) : (
+              <>
+                <p className="song-lyrics-metadata-help-desc">
+                  Perubahan berikut akan diterapkan ke <b>seluruh</b> lirik. Tinjau dulu sebelum melanjutkan.
+                </p>
+
+                {formatPreview.summary.length > 0 && (
+                  <ul className="song-lyrics-format-preview-summary">
+                    {formatPreview.summary.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="song-lyrics-format-preview-compare">
+                  <div className="song-lyrics-format-preview-col">
+                    <span className="song-lyrics-format-preview-label">Sebelum</span>
+                    <pre className="song-lyrics-format-preview-text">{formatPreview.before}</pre>
+                  </div>
+                  <div className="song-lyrics-format-preview-col">
+                    <span className="song-lyrics-format-preview-label">Sesudah</span>
+                    <pre className="song-lyrics-format-preview-text is-after">{formatPreview.after}</pre>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="song-lyrics-format-preview-actions">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setFormatPreview(null)}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={applyFormatPreview}
+                disabled={formatPreview.unchanged}
+              >
+                ✓ Terapkan
+              </button>
             </div>
           </div>
         </div>

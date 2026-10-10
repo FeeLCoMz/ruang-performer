@@ -15,7 +15,7 @@ import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMark
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, formatWholeLyricsDocument, replaceSelectionWithToken, transposeLyricsText } from '../utils/lyricsEditorUtils.js';
 import { buildAddEditEditorActions } from '../utils/editorActionsUtils.js';
-import { analyseLyrics, computeSongCompleteness, extractSectionOverview } from '../utils/songFormUtils.js';
+import { analyseLyrics, computeSongCompleteness, extractSectionOverview, validateMusicalFields } from '../utils/songFormUtils.js';
 
 const SONG_KEY_OPTIONS = [
   'C', 'C#', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B',
@@ -294,6 +294,13 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       return;
     }
 
+    // Block submit on invalid musical fields rather than storing bad data.
+    if (hasFieldErrors) {
+      setError("Periksa kembali Key, Tempo, dan Time Signature.");
+      setOpenSections((prev) => ({ ...prev, musical: true }));
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -501,6 +508,14 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const serializedForm = useMemo(() => JSON.stringify(formSnapshot), [formSnapshot]);
   const hasUnsavedChanges = savedBaseline === null ? false : serializedForm !== savedBaseline;
 
+  // Inline field validation so the user sees problems while typing instead of
+  // only on submit (the previous behaviour accepted e.g. key "H" silently).
+  const fieldErrors = useMemo(
+    () => validateMusicalFields({ key: songKey, timeSignature, tempo }),
+    [songKey, timeSignature, tempo]
+  );
+  const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
+
   // Keep the latest dirty flag reachable from handlers defined earlier
   // (handleCancel) and from window listeners without re-registering them.
   const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
@@ -659,19 +674,21 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   <select
                     id="song-key"
                     name="key"
-                    className="form-input-field"
+                    className={`form-input-field${fieldErrors.key ? ' field-has-error' : ''}`}
                     value={songKey}
                     onChange={(e) => {
                       const nextKey = e.target.value;
                       setSongKey(nextKey);
                       setInsertNumberKeySignature(getNumericNotationKey(nextKey || 'C'));
                     }}
+                    aria-invalid={Boolean(fieldErrors.key)}
                   >
                     <option value="">— pilih key —</option>
                     {SONG_KEY_OPTIONS.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
                   </select>
+                  {fieldErrors.key && <span className="song-field-error">{fieldErrors.key}</span>}
                 </div>
 
                 <div>
@@ -686,10 +703,12 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                       placeholder="120"
                       min="40"
                       max="240"
-                      className="form-input-field"
+                      className={`form-input-field${fieldErrors.tempo ? ' field-has-error' : ''}`}
+                      aria-invalid={Boolean(fieldErrors.tempo)}
                     />
                     <TapTempo onTempo={setTempo} initialTempo={tempo} label="Tap" />
                   </div>
+                  {fieldErrors.tempo && <span className="song-field-error">{fieldErrors.tempo}</span>}
                 </div>
 
                 <div>
@@ -697,14 +716,18 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   <select
                     id="song-time-signature"
                     name="time_signature"
-                    className="form-input-field"
+                    className={`form-input-field${fieldErrors.timeSignature ? ' field-has-error' : ''}`}
                     value={timeSignature}
                     onChange={(e) => setTimeSignature(e.target.value)}
+                    aria-invalid={Boolean(fieldErrors.timeSignature)}
                   >
                     {TIME_SIGNATURE_OPTIONS.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
                   </select>
+                  {fieldErrors.timeSignature && (
+                    <span className="song-field-error">{fieldErrors.timeSignature}</span>
+                  )}
                 </div>
               </div>
 
@@ -1046,7 +1069,12 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             <button type="button" onClick={handleCancel} className="btn btn-secondary">
               Batal
             </button>
-            <button type="submit" disabled={loading} className="btn btn-primary">
+            <button
+              type="submit"
+              disabled={loading || hasFieldErrors}
+              className="btn btn-primary"
+              title={hasFieldErrors ? 'Perbaiki Key, Tempo, atau Time Signature dulu' : undefined}
+            >
               {loading
                 ? "⏳ Menyimpan..."
                 : isEditMode

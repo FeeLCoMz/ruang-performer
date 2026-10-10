@@ -11951,6 +11951,105 @@ body.dark-mode .cd-token {
   padding: var(--spacing-xl);
 }
 
+/* Format Semua preview: show before/after before rewriting the document */
+.song-lyrics-format-preview-modal {
+  width: min(980px, calc(100vw - 32px));
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+}
+
+.song-lyrics-format-preview-unchanged {
+  margin: 0;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: #dcfce7;
+  color: #166534;
+  font-weight: 600;
+}
+
+body.dark-mode .song-lyrics-format-preview-unchanged {
+  background: rgba(22, 101, 52, 0.25);
+  color: #86efac;
+}
+
+.song-lyrics-format-preview-summary {
+  margin: 0 0 var(--spacing-md);
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.song-lyrics-format-preview-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.song-lyrics-format-preview-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.song-lyrics-format-preview-label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.song-lyrics-format-preview-text {
+  margin: 0;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--primary-bg);
+  font-family: "Courier New", "JetBrains Mono", Courier, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.song-lyrics-format-preview-text.is-after {
+  border-color: color-mix(in srgb, var(--primary-accent) 45%, var(--border-color));
+  background: color-mix(in srgb, var(--primary-accent) 6%, var(--primary-bg));
+}
+
+.song-lyrics-format-preview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+}
+
+/* Inline validation for the musical-detail fields */
+.song-field-error {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: #dc2626;
+}
+
+body.dark-mode .song-field-error {
+  color: #fca5a5;
+}
+
+.field-has-error,
+.field-has-error:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+}
+
 .song-lyrics-metadata-help-header {
   display: flex;
   align-items: center;

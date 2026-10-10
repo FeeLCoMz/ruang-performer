@@ -4,6 +4,7 @@ import {
   buildSectionKey,
   computeSongCompleteness,
   extractSectionOverview,
+  validateMusicalFields,
 } from '../utils/songFormUtils.js';
 
 describe('songFormUtils', () => {
@@ -155,5 +156,52 @@ describe('songFormUtils', () => {
     test('Given a missing label, Then a fallback is used', () => {
       expect(buildSectionKey('', 1)).toBe('section-1');
     });
+  });
+});
+
+describe('validateMusicalFields', () => {
+  test('Given all fields empty, Then nothing is flagged (all optional)', () => {
+    const errors = validateMusicalFields({});
+    expect(errors).toEqual({ key: '', timeSignature: '', tempo: '' });
+  });
+
+  test('Given valid musical values, Then nothing is flagged', () => {
+    const errors = validateMusicalFields({ key: 'Am', timeSignature: '4/4', tempo: '120' });
+    expect(errors).toEqual({ key: '', timeSignature: '', tempo: '' });
+  });
+
+  test('Given an unknown key, Then the key is flagged', () => {
+    // "H" is not a note name; the app used to store it without complaint.
+    expect(validateMusicalFields({ key: 'H' }).key).not.toBe('');
+    expect(validateMusicalFields({ key: 'Cmajor' }).key).not.toBe('');
+  });
+
+  test('Given common key spellings, Then they are accepted', () => {
+    for (const key of ['C', 'F#', 'Bb', 'Am', 'F#m', 'Ebm']) {
+      expect(validateMusicalFields({ key }).key, key).toBe('');
+    }
+  });
+
+  test('Given a malformed time signature, Then it is flagged', () => {
+    expect(validateMusicalFields({ timeSignature: '5/3' }).timeSignature).not.toBe('');
+    expect(validateMusicalFields({ timeSignature: '44' }).timeSignature).not.toBe('');
+    expect(validateMusicalFields({ timeSignature: 'a/b' }).timeSignature).not.toBe('');
+  });
+
+  test('Given a standard time signature, Then it is accepted', () => {
+    for (const timeSignature of ['4/4', '3/4', '6/8', '12/8', '5/4', '7/8']) {
+      expect(validateMusicalFields({ timeSignature }).timeSignature, timeSignature).toBe('');
+    }
+  });
+
+  test('Given an out-of-range or non-numeric tempo, Then it is flagged', () => {
+    expect(validateMusicalFields({ tempo: 'abc' }).tempo).not.toBe('');
+    expect(validateMusicalFields({ tempo: '999' }).tempo).not.toBe('');
+    expect(validateMusicalFields({ tempo: '10' }).tempo).not.toBe('');
+  });
+
+  test('Given a typical tempo, Then it is accepted', () => {
+    expect(validateMusicalFields({ tempo: '120' }).tempo).toBe('');
+    expect(validateMusicalFields({ tempo: 96 }).tempo).toBe('');
   });
 });

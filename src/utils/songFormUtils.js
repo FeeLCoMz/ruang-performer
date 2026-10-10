@@ -167,3 +167,48 @@ export function buildSectionKey(label, occurrence) {
     .replace(/\s+/g, '-');
   return `${normalized}-${occurrence}`;
 }
+
+const VALID_KEY_REGEX = /^[A-G][#b]?m?$/;
+const VALID_TIME_DENOMINATORS = [1, 2, 4, 8, 16];
+
+/**
+ * Validate the musical fields that would otherwise be stored blindly.
+ * Every field is optional, so empty input is always accepted.
+ * Returns one message per field; an empty string means the value is fine.
+ */
+export function validateMusicalFields({ key, timeSignature, tempo }) {
+  const errors = { key: '', timeSignature: '', tempo: '' };
+
+  const trimmedKey = String(key ?? '').trim();
+  if (trimmedKey && !VALID_KEY_REGEX.test(trimmedKey)) {
+    errors.key = 'Format key tidak dikenal. Contoh: C, Am, F#, Bb.';
+  }
+
+  const trimmedTime = String(timeSignature ?? '').trim();
+  if (trimmedTime) {
+    const match = trimmedTime.match(/^(\d{1,2})\s*\/\s*(\d{1,2})$/);
+    if (!match) {
+      errors.timeSignature = 'Format birama harus angka/angka. Contoh: 4/4, 3/4, 6/8.';
+    } else {
+      const numerator = Number(match[1]);
+      const denominator = Number(match[2]);
+      if (numerator < 1 || numerator > 16) {
+        errors.timeSignature = 'Jumlah ketukan harus antara 1 dan 16.';
+      } else if (!VALID_TIME_DENOMINATORS.includes(denominator)) {
+        errors.timeSignature = 'Penyebut birama harus 1, 2, 4, 8, atau 16.';
+      }
+    }
+  }
+
+  const trimmedTempo = String(tempo ?? '').trim();
+  if (trimmedTempo) {
+    const numeric = Number(trimmedTempo);
+    if (!Number.isFinite(numeric)) {
+      errors.tempo = 'Tempo harus berupa angka.';
+    } else if (numeric < 40 || numeric > 240) {
+      errors.tempo = 'Tempo di luar rentang wajar (40-240 BPM).';
+    }
+  }
+
+  return errors;
+}
