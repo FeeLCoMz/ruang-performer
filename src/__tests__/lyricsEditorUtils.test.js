@@ -155,9 +155,33 @@ describe('lyricsEditorUtils', () => {
       label: '[Chorus]',
     });
 
-    // Replacing the selection leaves the following newline, so the label keeps its own line.
-    expect(result.nextText).toBe('[Chorus]\n\nHello');
+    // Replacing the selection must not leave a stray blank line: the inserted
+    // text already ends with its own newline, so the trailing one is consumed.
+    expect(result.nextText).toBe('[Chorus]\nHello');
     expect(result.nextText).not.toContain('Am F');
+  });
+
+  test('insertLineAtCursor keeps following lines when the selection spans a newline', () => {
+    const result = insertLineAtCursor({
+      text: 'Am F\nHello\nWorld',
+      selectionStart: 0,
+      selectionEnd: 11,
+      label: '[Chorus]',
+    });
+
+    expect(result.nextText).toBe('[Chorus]\nWorld');
+  });
+
+  test('insertLineAtCursor at a bare cursor keeps the existing newline intact', () => {
+    const result = insertLineAtCursor({
+      text: 'Am F\nHello',
+      selectionStart: 4,
+      selectionEnd: 4,
+      label: '[Chorus]',
+    });
+
+    // Caret insertion (no selection) must not swallow the user's line break.
+    expect(result.nextText).toBe('Am F\n[Chorus]\nHello');
   });
 
   test('handleExportText applies the active transpose to chords and key metadata', async () => {

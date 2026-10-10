@@ -750,6 +750,39 @@ Patch: Acoustic Grand Piano | Instrument: Keyboard | PC: 0 | CH: 1
     expect(parseInstrumentPatchLine('Catatan: intro masuk pelan')).toBe(null);
   });
 
+  test('parseInstrumentPatchLine rejects descriptor-only lines that name no sound', () => {
+    // These used to become instrument_patch with a guessed MIDI program 0
+    // (Acoustic Grand Piano), which could send a wrong Program Change on stage.
+    const descriptorOnly = [
+      'Layer: Warm Pad',
+      'Volume: 30%',
+      'Split: Bass',
+      'Scene: Verse',
+      'Zone: Lower',
+      'CH: 3',
+      'Bank: 0',
+    ];
+
+    for (const line of descriptorOnly) {
+      expect(parseInstrumentPatchLine(line), line).toBe(null);
+    }
+  });
+
+  test('parseInstrumentPatchLine still accepts a line that does name a sound', () => {
+    expect(parseInstrumentPatchLine('Patch: EP Soft')).toMatchObject({ type: 'instrument_patch' });
+    expect(parseInstrumentPatchLine('Preset: Ballad Keys')).toMatchObject({ type: 'instrument_patch' });
+    expect(parseInstrumentPatchLine('Instrument: Guitar')).toMatchObject({ type: 'instrument_patch' });
+    expect(parseInstrumentPatchLine('Sound: Strings')).toMatchObject({ type: 'instrument_patch' });
+    // Descriptor keys are still allowed as long as a patch key is also present.
+    expect(parseInstrumentPatchLine('Patch: EP Soft | Layer: Warm Pad | Volume: 30%')).toMatchObject({
+      type: 'instrument_patch',
+    });
+  });
+
+  test('parseInstrumentPatchLine does not infer a MIDI program from a bare Layer line', () => {
+    expect(parseInstrumentPatchLine('Layer: Warm Pad')).toBe(null);
+  });
+
   test('parseLines classifies metadata line separately from chord line', () => {
     const parsed = parseLines([
       '[Intro] (Intensitas 1 - Stage Piano + Warm Pad)',

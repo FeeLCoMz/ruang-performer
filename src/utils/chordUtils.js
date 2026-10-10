@@ -1336,6 +1336,16 @@ const INSTRUMENT_PATCH_KEYS = new Set([
   'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb'
 ]);
 
+/**
+ * Keys that genuinely name a sound. Without one of these, a line like
+ * "Layer: Warm Pad" or "Volume: 30%" is a descriptive note, NOT a patch.
+ * Treating those as patches made the MIDI inference fall back to program 0
+ * (Acoustic Grand Piano), which could send a wrong Program Change on stage.
+ */
+const PATCH_DEFINING_KEYS = new Set([
+  'patch', 'preset', 'sound', 'tone', 'instrument', 'instrumen', 'program', 'pc'
+]);
+
 const PRESET_CUE_SECTION_KEYWORDS = [
   'intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain',
   'pre-chorus', 'post-chorus', 'solo', 'musik', 'instrumental', 'hook', 'drop', 'ending', 'ending tag',
@@ -1566,6 +1576,12 @@ export const parseInstrumentPatchLine = (line) => {
   }
 
   if (!Object.keys(fields).length) return null;
+
+  // Require an explicit patch-ish key. A bare "Layer:", "Volume:", "Split:" or
+  // "Scene:" line carries no sound of its own, so it must not become a cue with
+  // a guessed MIDI program.
+  const hasPatchDefiningKey = Object.keys(fields).some((key) => PATCH_DEFINING_KEYS.has(key));
+  if (!hasPatchDefiningKey) return null;
 
   const patch = String(fields.patch || fields.preset || fields.sound || fields.tone || '').trim();
   const instrument = String(fields.instrument || '').trim();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 // import { usePermission } from "../hooks/usePermission.js";
 // import { PERMISSIONS } from "../utils/permissionUtils.js";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -361,6 +361,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
   // Cancel handler
   const handleCancel = () => {
+    if (!confirmDiscardChanges()) return;
     if (isEditMode) {
       navigate(`/songs/view/${id}`);
     } else {
@@ -499,6 +500,32 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
   const serializedForm = useMemo(() => JSON.stringify(formSnapshot), [formSnapshot]);
   const hasUnsavedChanges = savedBaseline === null ? false : serializedForm !== savedBaseline;
+
+  // Keep the latest dirty flag reachable from handlers defined earlier
+  // (handleCancel) and from window listeners without re-registering them.
+  const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
+  hasUnsavedChangesRef.current = hasUnsavedChanges;
+
+  /** Returns true when it is safe to leave the page, asking first if needed. */
+  const confirmDiscardChanges = useCallback(() => {
+    if (!hasUnsavedChangesRef.current) return true;
+    if (typeof window === 'undefined' || typeof window.confirm !== 'function') return true;
+    return window.confirm('Ada perubahan yang belum disimpan. Keluar tanpa menyimpan?');
+  }, []);
+
+  // Warn on browser refresh/close while there are unsaved edits.
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (!hasUnsavedChangesRef.current) return undefined;
+      event.preventDefault();
+      // Legacy browsers require returnValue to be set.
+      event.returnValue = '';
+      return '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   const toggleSection = (key) => {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));

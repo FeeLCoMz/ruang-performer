@@ -419,17 +419,39 @@ export function replaceSelectionWithToken({
 
 /**
  * Insert a section label on its own line at the cursor position.
- * When a selection range is provided, the selected text is replaced instead of
- * being left behind after the inserted line.
+ *
+ * When a selection range is provided the selected text is replaced. If the
+ * selection already ended on a line break, that line break is consumed instead
+ * of being left behind as a stray blank line.
  */
 export function insertLineAtCursor({ text, selectionStart, selectionEnd, label }) {
-  const safeStart = Number.isInteger(selectionStart) ? selectionStart : text.length;
+  const source = String(text ?? '');
+  const safeStart = Number.isInteger(selectionStart) ? selectionStart : source.length;
   const rawEnd = Number.isInteger(selectionEnd) ? selectionEnd : safeStart;
-  const safeEnd = Math.max(safeStart, rawEnd);
-  const beforeCursor = text.slice(0, safeStart);
-  const prefix = (beforeCursor.length === 0 || beforeCursor.endsWith('\n')) ? '' : '\n';
-  const insertion = `${prefix}${label}\n`;
-  const nextText = beforeCursor + insertion + text.slice(safeEnd);
+  let safeEnd = Math.max(safeStart, rawEnd);
+  const hasSelection = safeEnd > safeStart;
+
+  const beforeCursor = source.slice(0, safeStart);
+
+  // The label always lives on its own line, so it needs a break before it unless
+  // it already starts one. When the text after the insertion point begins with a
+  // newline we borrow that one instead of adding a second.
+  const needsLeadingBreak = beforeCursor.length > 0 && !beforeCursor.endsWith('\n');
+
+  // When a selection was replaced and it stopped right before a newline, consume
+  // that newline too so we do not leave a stray blank line behind. This must
+  // happen before we decide on the trailing break, otherwise a consumed newline
+  // would be mistaken for one that is still in the text.
+  if (hasSelection && source[safeEnd] === '\n') {
+    safeEnd += 1;
+  }
+
+  const afterCursor = source.slice(safeEnd);
+  const prefix = needsLeadingBreak ? '\n' : '';
+  const suffix = afterCursor.startsWith('\n') ? '' : '\n';
+  const insertion = `${prefix}${label}${suffix}`;
+
+  const nextText = beforeCursor + insertion + afterCursor;
   const nextCursor = safeStart + insertion.length;
   return { nextText, nextCursor };
 }

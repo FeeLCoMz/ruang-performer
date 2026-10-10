@@ -1103,14 +1103,18 @@ body.dark-mode .song-mood-badge.mood-peak {
 }
 
 .song-lyrics-bar-wrap-controls {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-  flex: 0 0 auto;
-  padding-top: 8px;
-  margin-top: 2px;
-  border-top: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
-  width: 100%;
+  padding: 6px var(--spacing-sm);
+  margin-top: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--secondary-bg);
+  /* No width:100% — this sits inside a wrapping flex row, and a full-width
+     inline-flex forced the "Terapkan" button onto its own line. */
+  max-width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -12002,16 +12006,6 @@ body.dark-mode .cd-token {
 .song-lyrics-metadata-help-item code {
   font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
   font-size: 12px;
-}
-
-.song-lyrics-bar-wrap-controls {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: 0 var(--spacing-sm);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--secondary-bg);
 }
 
 .song-lyrics-bar-wrap-label {
