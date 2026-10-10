@@ -11,8 +11,6 @@ export default function SongLyricsEditorPanel({
   disabled = false,
   editorActions = {},
   autoFocus = false,
-  showTips = true,
-  tipsText = "",
   showActions = true,
   showPreview = true,
   previewSong = null,
@@ -58,15 +56,6 @@ export default function SongLyricsEditorPanel({
   return (
     <>
       {error && <div className="song-lyrics-error">{error}</div>}
-      {showTips && (
-        <div className="song-lyrics-tips">
-          {tipsText || (
-            <>
-              💡 Tips: Blok teks dulu. Pilih <b>2/4/6 Bar/Baris</b> lalu klik <b>Terapkan</b> (atau <kbd>Ctrl+Shift+4</kbd> untuk cepat 4 bar), gunakan <b>Sejajarkan Bar</b> atau <kbd>Ctrl+Shift+B</kbd>.
-            </>
-          )}
-        </div>
-      )}
 
       {showActions && (
         <SongLyricsEditActions

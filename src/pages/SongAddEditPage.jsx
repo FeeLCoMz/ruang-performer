@@ -886,7 +886,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                     insertNotesToLyrics,
                   })}
                 autoFocus={false}
-                showTips={true}
                 previewSong={{ key: songKey, tempo }}
                 previewProps={{ showChords: true, keySignature: songKey || 'C' }}
               />

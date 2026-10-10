@@ -37,7 +37,6 @@ describe('lyrics editor workspace preview', () => {
           disabled={false}
           editorActions={{ showPianoControls: false }}
           autoFocus={false}
-          showTips={false}
           previewSong={{ title: 'Song A' }}
         />
       );
@@ -105,7 +104,6 @@ describe('lyrics editor workspace preview', () => {
           disabled={false}
           editorActions={{ showPianoControls: false }}
           autoFocus={false}
-          showTips={false}
           showActions={false}
           showPreview={false}
         />
@@ -167,7 +165,6 @@ describe('lyrics editor workspace preview', () => {
           disabled={false}
           editorActions={{ showPianoControls: false }}
           autoFocus={false}
-          showTips={false}
         />
       );
     }

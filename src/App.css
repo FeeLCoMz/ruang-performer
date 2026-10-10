@@ -12515,22 +12515,6 @@ body.dark-mode .lyrics-editor-dirty-badge.is-dirty {
   }
 }
 
-.song-lyrics-tips {
-  margin-bottom: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: #dbeafe;
-  color: #1e40af;
-  border-left: 4px solid var(--primary-accent);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-  animation: slideDown 0.3s ease-in;
-}
-
-body.dark-mode .song-lyrics-tips {
-  background: #1e3a5f;
-  color: #93c5fd;
-}
-
 .song-lyrics-error {
   padding: var(--spacing-lg);
   background: #fee2e2;

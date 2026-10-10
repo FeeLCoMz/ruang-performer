@@ -282,7 +282,6 @@ describe('Song lyrics shared editor rendering', () => {
             showPianoControls: false,
           }}
           autoFocus={false}
-          showTips={false}
         />
       );
     });
@@ -316,7 +315,6 @@ describe('Song lyrics shared editor rendering', () => {
             showPianoControls: false,
           }}
           autoFocus={false}
-          showTips={false}
         />
       );
     });
@@ -342,7 +340,6 @@ describe('Song lyrics shared editor rendering', () => {
             insertNotesEnabled: true,
           }}
           autoFocus={false}
-          showTips={false}
         />
       );
     });

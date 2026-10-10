@@ -178,7 +178,6 @@ export default function SongLyricsMainSection({
                 insertNotesToLyrics,
               })}
               autoFocus={true}
-              showTips={true}
               showActions={true}
               previewSong={song}
               baselineLyrics={song?.lyrics ?? null}
