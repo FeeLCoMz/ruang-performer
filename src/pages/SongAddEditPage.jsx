@@ -9,7 +9,6 @@ import AIAutofillModal from "../components/AIAutofillModal";
 import SongLyricsEditorPanel from "../components/SongLyricsEditorPanel.jsx";
 import SongFormSection from "../components/SongFormSection.jsx";
 import SongEditorPracticePanel from "../components/SongEditorPracticePanel.jsx";
-import FloatingYouTubePlayer from "../components/FloatingYouTubePlayer.jsx";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
 import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils.js';
@@ -80,7 +79,10 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [insertTrailingSpace, setInsertTrailingSpace] = useState(true);
   const [barsPerLine, setBarsPerLine] = useState(4);
   const [lyricsEditError, setLyricsEditError] = useState("");
-  const [showFloatingYouTubePlayer, setShowFloatingYouTubePlayer] = useState(false);
+
+  // Single source of truth for video playback, shared by the practice panel and
+  // the timestamp buttons inside the lyrics preview.
+  const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
 
   // Restructured editor state: collapsible sections + honest dirty tracking.
   const [openSections, setOpenSections] = useState({
@@ -101,6 +103,25 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [ytCurrentTime, setYtCurrentTime] = useState(0);
   const [ytDuration, setYtDuration] = useState(0);
   const normalizedYoutubeId = extractYouTubeId(youtubeId);
+
+  // Poll the player so the play/pause icon always reflects reality instead of a
+  // guess that drifts (which made the preview button seek when it should pause).
+  // Declared after normalizedYoutubeId: referencing it earlier put the value in
+  // its temporal dead zone and crashed the whole page on mount.
+  useEffect(() => {
+    if (!normalizedYoutubeId) {
+      setIsYoutubePlaying(false);
+      return undefined;
+    }
+
+    const interval = setInterval(() => {
+      const player = ytRef.current;
+      if (!player || typeof player.getPlayerState !== 'function') return;
+      setIsYoutubePlaying(player.getPlayerState() === 1);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [normalizedYoutubeId]);
 
   const areMarkersEqual = (first = [], second = []) => JSON.stringify(first) === JSON.stringify(second);
 
@@ -203,12 +224,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       setTimeMarkers(mergedMarkers);
     }
   }, [lyrics, timeMarkers]);
-
-  useEffect(() => {
-    if (!normalizedYoutubeId) {
-      setShowFloatingYouTubePlayer(false);
-    }
-  }, [normalizedYoutubeId]);
 
   const handleAIAutofill = async () => {
     if (!title.trim()) {
@@ -555,6 +570,33 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     setTimeout(() => setCopyFeedback(""), 2000);
   };
 
+  /** Play/pause from the lyrics preview, targeting the single player. */
+  const handleToggleYoutubePlay = () => {
+    const player = ytRef.current;
+    if (!player) return;
+    if (typeof player.handleTogglePlayPause === 'function') {
+      player.handleTogglePlayPause();
+      // Reflect the intent immediately; the poll corrects it if it disagrees.
+      setIsYoutubePlaying((prev) => !prev);
+    }
+  };
+
+  const handlePreviewSeek = (seconds) => {
+    const player = ytRef.current;
+    if (player && typeof player.handleSeek === 'function') {
+      player.handleSeek(seconds);
+      setIsYoutubePlaying(true);
+    }
+  };
+
+  const handlePreviewPause = () => {
+    const player = ytRef.current;
+    if (player && typeof player.handlePause === 'function') {
+      player.handlePause();
+      setIsYoutubePlaying(false);
+    }
+  };
+
   const handleJumpToSection = (lineIndex) => {
     if (!view?.dispatch || !view?.state) return;
     const targetLine = Math.min((lineIndex ?? 0) + 1, view.state.doc.lines);
@@ -857,16 +899,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   >
                     {copyFeedback || '⧉ Salin'}
                   </button>
-                  {normalizedYoutubeId && (
-                    <button
-                      type="button"
-                      className={`btn ${showFloatingYouTubePlayer ? 'btn-primary' : 'btn-secondary'}`}
-                      onClick={() => setShowFloatingYouTubePlayer((prev) => !prev)}
-                      title={showFloatingYouTubePlayer ? 'Tutup YouTube floating' : 'Buka YouTube floating'}
-                    >
-                      {showFloatingYouTubePlayer ? '🗗' : '🗖'} Video
-                    </button>
-                  )}
                 </div>
               }
             >
@@ -888,7 +920,15 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   })}
                 autoFocus={false}
                 previewSong={{ key: songKey, tempo }}
-                previewProps={{ showChords: true, keySignature: songKey || 'C' }}
+                previewProps={{
+                  showChords: true,
+                  keySignature: songKey || 'C',
+                  // Drive the one video player in the practice panel, so the
+                  // timestamp buttons in this preview really play/pause it.
+                  isPlaying: isYoutubePlaying,
+                  onTimestampClick: handlePreviewSeek,
+                  onTimestampPause: handlePreviewPause,
+                }}
               />
             </SongFormSection>
 
@@ -975,13 +1015,9 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               youtubeRef={ytRef}
               timeMarkers={timeMarkers}
               secondsToLabel={formatDuration}
-              showFloatingPlayer={showFloatingYouTubePlayer}
-              onOpenFloating={() => setShowFloatingYouTubePlayer((prev) => !prev)}
-              onSeek={(time) => {
-                if (ytRef.current && typeof ytRef.current.handleSeek === 'function') {
-                  ytRef.current.handleSeek(time);
-                }
-              }}
+              isPlaying={isYoutubePlaying}
+              onTogglePlay={handleToggleYoutubePlay}
+              onSeek={handlePreviewSeek}
             />
 
             <div className="song-editor-sidebar-card">
@@ -1115,25 +1151,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         onKeySelect={handleLyricsPianoKeySelect}
         helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${insertNumberKeySignature || getNumericNotationKey(songKey || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
         insertControls={pianoInsertControls}
-      />
-
-      <FloatingYouTubePlayer
-        isOpen={showFloatingYouTubePlayer}
-        videoId={normalizedYoutubeId}
-        youtubeRef={ytRef}
-        title="YouTube Floating"
-        timeMarkers={timeMarkers}
-        readonlyTimeMarkers={true}
-        onTimeUpdate={(t, d) => {
-          setYtCurrentTime(t);
-          if (typeof d === "number") setYtDuration(d);
-        }}
-        onClose={() => {
-          if (ytRef.current && typeof ytRef.current.handlePause === 'function') {
-            ytRef.current.handlePause();
-          }
-          setShowFloatingYouTubePlayer(false);
-        }}
       />
 
       {/* AI Autofill Modal */}

@@ -18,7 +18,7 @@
  *   - Layout responsif dengan CSS class standar
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import NumberToken from './NumberToken.jsx';
 import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
 
@@ -35,8 +35,26 @@ const getInstrumentTokenClass = (label = '') => {
   return 'cd-instrument-token--default';
   };
 
-  export default function ChordDisplay({ song, transpose = 0, zoom = 1, showChords = true, showChordNumbers = false, showJazzChords = false, showSimpleChords = false, keySignature = 'C', onTimestampClick, onTimestampPause, onPresetCueTrigger }) {
-  const [isPlaying, setIsPlaying] = useState(false);
+  export default function ChordDisplay({
+    song,
+    transpose = 0,
+    zoom = 1,
+    showChords = true,
+    showChordNumbers = false,
+    showJazzChords = false,
+    showSimpleChords = false,
+    keySignature = 'C',
+    onTimestampClick,
+    onTimestampPause,
+    onPresetCueTrigger,
+    /**
+     * Playback state owned by the parent, which is the only thing that can
+     * actually observe the player. When omitted, the button still seeks but
+     * never claims to be paused/playing, because a local guess would drift out
+     * of sync with the real video (it used to always reset to "not playing").
+     */
+    isPlaying = false,
+  }) {
 
   const formatInstrumentPatchText = (lineObj) => {
     const entries = Object.entries(lineObj?.fields || {});
@@ -178,22 +196,33 @@ const getInstrumentTokenClass = (label = '') => {
           const tokenText = t.isChord ? formatChordToken(t.token) : t.token;
           const seconds = typeof tokenText === 'string' ? parseTimestampToken(tokenText) : null;
           if (seconds !== null) {
+            const canPlay = typeof onTimestampClick === 'function';
             return (
               <span key={j} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <span style={{fontWeight: 600}}>{tokenText}</span>
                 <button
                   type="button"
                   className="btn"
+                  disabled={!canPlay}
                   onClick={() => {
-                    if (isPlaying) {
-                      onTimestampPause && onTimestampPause();
+                    if (!canPlay) return;
+                    // Pause only when the parent reports real playback; otherwise
+                    // seek here. The parent owns the state, so the icon and the
+                    // action can no longer drift apart.
+                    if (isPlaying && typeof onTimestampPause === 'function') {
+                      onTimestampPause();
                     } else {
-                      onTimestampClick && onTimestampClick(seconds);
+                      onTimestampClick(seconds);
                     }
-                    setIsPlaying(!isPlaying);
                   }}
-                  style={{ marginLeft: 4, color: 'var(--primary-accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1em' }}
-                  title={isPlaying ? 'Pause YouTube' : `Putar ke ${t.token.replace(/\[|\]/g, '')}`}
+                  style={{ marginLeft: 4, color: 'var(--primary-accent)', background: 'none', border: 'none', cursor: canPlay ? 'pointer' : 'default', fontSize: '1em', opacity: canPlay ? 1 : 0.4 }}
+                  title={
+                    !canPlay
+                      ? 'Tambahkan YouTube untuk memutar dari sini'
+                      : isPlaying
+                        ? 'Jeda video'
+                        : `Putar ke ${t.token.replace(/\[|\]/g, '')}`
+                  }
                 >
                   {isPlaying ? '⏸️' : '▶️'}
                 </button>

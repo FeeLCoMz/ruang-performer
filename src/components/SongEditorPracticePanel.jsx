@@ -17,12 +17,13 @@ export default function SongEditorPracticePanel({
   youtubeRef,
   timeMarkers = [],
   onSeek,
-  onOpenFloating,
-  showFloatingPlayer = false,
   secondsToLabel,
+  /** Playback state is owned by the parent so the lyrics preview can share it. */
+  isPlaying = false,
+  onTogglePlay,
+  currentTime = 0,
 }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [liveTime, setLiveTime] = useState(currentTime);
 
   // Poll the player so the progress label and marker highlighting stay live
   // without needing an extra callback from the YouTube API.
@@ -32,16 +33,19 @@ export default function SongEditorPracticePanel({
     const interval = setInterval(() => {
       const player = youtubeRef.current;
       if (!player) return;
-      if (typeof player.getPlayerState === 'function') {
-        setIsPlaying(player.getPlayerState() === 1);
-      }
       if (typeof player.currentTime === 'number') {
-        setCurrentTime(player.currentTime);
+        setLiveTime(player.currentTime);
       }
     }, 500);
 
     return () => clearInterval(interval);
   }, [youtubeId, youtubeRef]);
+
+  useEffect(() => {
+    if (typeof currentTime === 'number' && currentTime > 0) {
+      setLiveTime(currentTime);
+    }
+  }, [currentTime]);
 
   if (!youtubeId) return null;
 
@@ -57,11 +61,13 @@ export default function SongEditorPracticePanel({
       </div>
 
       <div className="song-practice-video">
+        {/* The single video player for the editor. The lyrics preview and the
+            timestamp buttons all drive this one instance through youtubeRef. */}
         <YouTubeViewer
           videoId={youtubeId}
           ref={youtubeRef}
           onTimeUpdate={(t) => {
-            if (typeof t === 'number') setCurrentTime(t);
+            if (typeof t === 'number') setLiveTime(t);
           }}
         />
       </div>
@@ -70,7 +76,7 @@ export default function SongEditorPracticePanel({
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => youtubeRef.current?.handleTogglePlayPause?.()}
+          onClick={() => onTogglePlay?.()}
           title={isPlaying ? 'Jeda video' : 'Putar video'}
           aria-label={isPlaying ? 'Jeda video' : 'Putar video'}
         >
@@ -88,7 +94,7 @@ export default function SongEditorPracticePanel({
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => youtubeRef.current?.handleSeek?.(Math.max(0, currentTime - 5))}
+          onClick={() => youtubeRef.current?.handleSeek?.(Math.max(0, liveTime - 5))}
           title="Mundur 5 detik"
           aria-label="Mundur 5 detik"
         >
@@ -97,14 +103,14 @@ export default function SongEditorPracticePanel({
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => youtubeRef.current?.handleSeek?.(currentTime + 5)}
+          onClick={() => youtubeRef.current?.handleSeek?.(liveTime + 5)}
           title="Maju 5 detik"
           aria-label="Maju 5 detik"
         >
           5s»
         </button>
         <span className="song-practice-time" title="Posisi video saat ini">
-          {format(Math.floor(currentTime))}
+          {format(Math.floor(liveTime))}
         </span>
       </div>
 
@@ -115,7 +121,7 @@ export default function SongEditorPracticePanel({
           </span>
           <ul className="song-practice-marker-list">
             {timeMarkers.map((marker, index) => {
-              const isNear = Math.abs((Number(marker.time) || 0) - currentTime) < 2;
+              const isNear = Math.abs((Number(marker.time) || 0) - liveTime) < 2;
               return (
                 <li key={marker.time ?? index}>
                   <button
@@ -134,16 +140,7 @@ export default function SongEditorPracticePanel({
         </div>
       )}
 
-      {onOpenFloating && (
-        <button
-          type="button"
-          className={`btn ${showFloatingPlayer ? 'btn-primary' : 'btn-secondary'} song-practice-float-btn`}
-          onClick={onOpenFloating}
-          title={showFloatingPlayer ? 'Tutup pemutar mengambang' : 'Buka pemutar mengambang (bisa digeser)'}
-        >
-          {showFloatingPlayer ? '🗗 Tutup Pemutar Mengambang' : '🗖 Pemutar Mengambang'}
-        </button>
-      )}
+
     </div>
   );
 }
