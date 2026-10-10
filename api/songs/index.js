@@ -507,7 +507,10 @@ export default async function handler(req, res) {
             key || null,
             tempoStr,
             genre || null,
-            (Array.isArray(item.timestamps) ? JSON.stringify(item.timestamps) : (item.timestamps || null)),
+            // The client sends `time_markers` (the same key the PUT handler reads).
+            // Reading `item.timestamps` here silently wrote null on every create,
+            // so time markers were lost whenever a song was added rather than edited.
+            (Array.isArray(item.time_markers) ? JSON.stringify(item.time_markers) : (item.time_markers || null)),
             item.time_signature || '4/4',
             item.arrangementStyle || null,
             item.keyboardPatch || null,

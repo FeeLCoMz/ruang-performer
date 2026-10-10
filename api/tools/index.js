@@ -39,11 +39,31 @@ export default async function handler(req, res) {
       await client.execute('DELETE FROM setlists');
       await client.execute('DELETE FROM bands');
       await client.execute('DELETE FROM users');
-      // Insert new data
+      // Insert new data.
+      //
+      // This list must mirror every column the export produces (the GET branch
+      // uses SELECT *). It previously carried only 6 columns, so an
+      // export -> import round trip silently destroyed lyrics, key, tempo,
+      // genre, time_signature, arrangement_style, keyboard_patch,
+      // sheet_music_xml and youtubeId for every song.
+      const songColumns = [
+        'id', 'title', 'artist', 'youtubeId', 'lyrics', 'key', 'tempo', 'genre',
+        'time_markers', 'time_signature', 'arrangement_style', 'keyboard_patch',
+        'sheet_music_xml', 'userId', 'bandId', 'createdAt', 'updatedAt',
+      ];
+      const jsonColumns = new Set(['time_markers']);
       for (const song of songs) {
+        const values = songColumns.map((column) => {
+          const value = song[column];
+          if (value === undefined) return null;
+          if (jsonColumns.has(column)) {
+            return typeof value === 'string' ? value : JSON.stringify(value ?? []);
+          }
+          return value;
+        });
         await client.execute(
-          'INSERT INTO songs (id, title, artist, userId, bandId, time_markers, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [song.id, song.title, song.artist, song.userId, song.bandId, JSON.stringify(song.time_markers), song.createdAt, song.updatedAt]
+          `INSERT INTO songs (${songColumns.join(', ')}) VALUES (${songColumns.map(() => '?').join(', ')})`,
+          values
         );
       }
       for (const setlist of setlists) {
