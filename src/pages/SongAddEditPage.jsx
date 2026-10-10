@@ -8,6 +8,7 @@ import VirtualPiano from "../components/VirtualPiano";
 import AIAutofillModal from "../components/AIAutofillModal";
 import SongLyricsEditorPanel from "../components/SongLyricsEditorPanel.jsx";
 import SongFormSection from "../components/SongFormSection.jsx";
+import SongEditorPracticePanel from "../components/SongEditorPracticePanel.jsx";
 import FloatingYouTubePlayer from "../components/FloatingYouTubePlayer.jsx";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
@@ -956,87 +957,33 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 </div>
               </div>
 
-              {normalizedYoutubeId && (
-                <div className="song-media-preview">
-                  <div className="song-media-preview-header">
-                    <span>🎥 Pratinjau Video</span>
-                    {ytDuration > 0 && (
-                      <span className="song-media-preview-time">
-                        {formatDuration(ytCurrentTime)} / {formatDuration(ytDuration)}
-                      </span>
-                    )}
-                  </div>
-                  {!showFloatingYouTubePlayer ? (
-                    <YouTubeViewer
-                      videoId={normalizedYoutubeId}
-                      ref={ytRef}
-                      onTimeUpdate={(t, d) => {
-                        setYtCurrentTime(t);
-                        if (typeof d === "number") setYtDuration(d);
-                      }}
-                    />
-                  ) : (
-                    <div className="media-empty-state">
-                      <span className="media-empty-icon">🪟</span>
-                      <p className="media-empty-text">YouTube sedang dibuka dalam mode floating.</p>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => setShowFloatingYouTubePlayer(false)}
-                      >
-                        Kembalikan ke panel
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className="form-hint">
+                Video referensi dan penanda waktunya ada di panel <b>🎧 Latihan</b> pada
+                sisi kanan, supaya tetap terlihat sambil mengedit lirik.
+              </div>
             </SongFormSection>
 
             {/* ---------- 5. Turunan otomatis (read-only) ---------- */}
-            <SongFormSection
-              id="song-derived"
-              icon="⏱️"
-              title="Time Markers (Otomatis)"
-              subtitle="Terbentuk dari penanda waktu di lirik"
-              badge={<span className="song-form-section-badge">{timeMarkers.length} marker</span>}
-              isOpen={openSections.derived}
-              onToggle={() => toggleSection('derived')}
-            >
-              {timeMarkers.length > 0 ? (
-                <ul className="song-derived-marker-list">
-                  {timeMarkers.map((marker, index) => (
-                    <li key={marker.time ?? index} className="song-derived-marker-item">
-                      <button
-                        type="button"
-                        className="song-derived-marker-seek"
-                        onClick={() => {
-                          if (ytRef.current && ytRef.current.handleSeek) {
-                            ytRef.current.handleSeek(marker.time);
-                          }
-                        }}
-                        disabled={!normalizedYoutubeId}
-                        title={normalizedYoutubeId ? 'Lompat ke waktu ini di video' : 'Tambahkan YouTube untuk seek'}
-                      >
-                        ▶
-                      </button>
-                      <code className="song-derived-marker-time">{formatDuration(marker.time)}</code>
-                      <span className="song-derived-marker-label">{marker.label || 'Tanpa label'}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="song-derived-empty">
-                  Belum ada marker. Tulis <code>[01:23]</code> atau <code>[1:02:03]</code> di dalam editor lirik,
-                  dan marker akan muncul di sini otomatis.
-                </div>
-              )}
-            </SongFormSection>
-
-
           </div>
 
-          {/* ---------- Sidebar: kelengkapan & struktur ---------- */}
+          {/* ---------- Sidebar: latihan, kelengkapan & struktur ---------- */}
           <aside className="song-editor-sidebar">
+            {/* Video + time markers stay pinned here so you can listen and scrub
+                while the lyrics editor remains in view. */}
+            <SongEditorPracticePanel
+              youtubeId={normalizedYoutubeId}
+              youtubeRef={ytRef}
+              timeMarkers={timeMarkers}
+              secondsToLabel={formatDuration}
+              showFloatingPlayer={showFloatingYouTubePlayer}
+              onOpenFloating={() => setShowFloatingYouTubePlayer((prev) => !prev)}
+              onSeek={(time) => {
+                if (ytRef.current && typeof ytRef.current.handleSeek === 'function') {
+                  ytRef.current.handleSeek(time);
+                }
+              }}
+            />
+
             <div className="song-editor-sidebar-card">
               <div className="song-completeness-head">
                 <span className="song-completeness-title">Kelengkapan Data</span>

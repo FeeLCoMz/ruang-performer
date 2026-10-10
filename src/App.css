@@ -5825,12 +5825,25 @@ body.dark-mode .lyrics-editor-textarea {
 }
 
 /* ---- Sidebar ---- */
+/* The sidebar itself scrolls with the page. Only the practice panel sticks, so
+   the video stays visible while the lyrics editor is scrolled — pinning the
+   whole column would trap the cards below it on short screens.
+
+   `align-self: stretch` is deliberate: a sticky child can only travel within
+   its parent box, so the sidebar must span the full grid row height or the
+   panel unsticks as soon as the cards below it end. */
 .song-editor-sidebar {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  align-self: stretch;
+  height: 100%;
+}
+
+.song-practice-panel {
   position: sticky;
   top: var(--spacing-lg);
+  z-index: 5;
 }
 
 .song-editor-sidebar-card {
@@ -5926,6 +5939,126 @@ body.dark-mode .lyrics-editor-textarea {
   font-size: var(--font-size-sm);
   color: #16a34a;
   font-weight: 600;
+}
+
+/* ---- Practice panel: pinned video + markers ---- */
+.song-practice-state {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.song-practice-state.is-playing {
+  color: #16a34a;
+}
+
+.song-practice-video {
+  margin-bottom: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #000;
+}
+
+.song-practice-video iframe,
+.song-practice-video > div {
+  width: 100%;
+  display: block;
+}
+
+.song-practice-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.song-practice-controls .btn {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  min-height: 30px;
+  min-width: 30px;
+  flex: 0 0 auto;
+}
+
+.song-practice-time {
+  margin-left: auto;
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.song-practice-markers {
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  padding-top: var(--spacing-sm);
+}
+
+.song-practice-markers-title {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.song-practice-marker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.song-practice-marker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.song-practice-marker:hover {
+  background: color-mix(in srgb, var(--primary-accent) 10%, transparent);
+}
+
+/* Highlights the marker nearest the playhead, so the current section is obvious. */
+.song-practice-marker.is-current {
+  background: color-mix(in srgb, var(--primary-accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--primary-accent) 35%, transparent);
+}
+
+.song-practice-marker code {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--primary-accent);
+  flex: 0 0 auto;
+}
+
+.song-practice-marker span {
+  font-size: var(--font-size-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-practice-float-btn {
+  width: 100%;
+  margin-top: var(--spacing-sm);
+  font-size: 0.78rem;
 }
 
 /* MIDI cue conflict warnings in the editor sidebar */
