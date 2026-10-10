@@ -326,6 +326,8 @@ export default async function handler(req, res) {
                 songs.genre,
                 songs.time_markers,
                 songs.time_signature,
+                songs.arrangement_style,
+                songs.keyboard_patch,
                 songs.userId,
                 songs.bandId,
                 songs.createdAt,
@@ -433,6 +435,12 @@ export default async function handler(req, res) {
         contributorName: row.contributorUsername, // alias agar frontend tetap pakai contributorName
         time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
         sheetMusicXml: row.sheet_music_xml || '',
+        // The editor reads camelCase. Without these the fields came back
+        // undefined, so reopening a song showed them empty and the next save
+        // wrote that emptiness back over the stored value — a silent, permanent
+        // loss of aransemen and keyboard patch.
+        arrangementStyle: row.arrangement_style || '',
+        keyboardPatch: row.keyboard_patch || '',
         canMarkMastery: true,
         practiceStats: {
           sessionCount: Number(row.practiceSessionCount || 0),

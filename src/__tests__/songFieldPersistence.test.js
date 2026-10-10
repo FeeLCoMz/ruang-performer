@@ -19,6 +19,7 @@ const read = (relPath) => readFileSync(join(here, '..', '..', 'api', relPath), '
 const createSrc = read('songs/index.js');
 const updateSrc = read('songs/[id].js');
 const toolsSrc = read('tools/index.js');
+const detailSrc = updateSrc; // songs/[id].js handles both GET-detail and PUT
 
 /**
  * Strip comments so assertions cannot be satisfied (or broken) by prose.
@@ -96,5 +97,43 @@ describe('song field persistence contract', () => {
     expect(toolsCode).not.toContain(
       'INSERT INTO songs (id, title, artist, userId, bandId, time_markers, createdAt, updatedAt)'
     );
+  });
+
+  describe('read paths return every field the editor needs', () => {
+    /** Pull the SELECT list out of a "let songsQuery = `SELECT ... FROM songs`" block. */
+    const selectedColumns = (src, startMarker) => {
+      const start = src.indexOf(startMarker);
+      const end = src.indexOf('FROM songs', start);
+      expect(start, `could not find ${startMarker}`).toBeGreaterThan(-1);
+      expect(end, 'could not find FROM songs').toBeGreaterThan(start);
+      return [...src.slice(start, end).matchAll(/songs\.(\w+)/g)].map((m) => m[1]);
+    };
+
+    test('list endpoint selects every persisted column', () => {
+      // Regression: arrangement_style and keyboard_patch were written by POST
+      // but never selected here, so the editor reopened them empty and the next
+      // save overwrote the stored value with that emptiness.
+      const columns = selectedColumns(createCode, 'let songsQuery =');
+      for (const column of SQL_COLUMNS) {
+        expect(columns, `list SELECT is missing ${column}`).toContain(column);
+      }
+    });
+
+    test('detail endpoint selects every persisted column', () => {
+      const selectBlock = detailSrc.slice(
+        detailSrc.indexOf('SELECT s.id'),
+        detailSrc.indexOf('FROM songs s')
+      );
+      for (const column of SQL_COLUMNS) {
+        expect(selectBlock, `detail SELECT is missing ${column}`).toContain(column);
+      }
+    });
+
+    test('list endpoint maps snake_case columns to the camelCase the editor reads', () => {
+      // The editor reads data.arrangementStyle / data.keyboardPatch. Selecting
+      // the column is not enough if the response never exposes those keys.
+      expect(createCode).toMatch(/arrangementStyle:\s*row\.arrangement_style/);
+      expect(createCode).toMatch(/keyboardPatch:\s*row\.keyboard_patch/);
+    });
   });
 });
