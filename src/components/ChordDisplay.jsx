@@ -54,6 +54,11 @@ const getInstrumentTokenClass = (label = '') => {
      * of sync with the real video (it used to always reset to "not playing").
      */
     isPlaying = false,
+    /**
+     * 1-based source line the caret is on. Rows parsed from that line get
+     * highlighted so the editor and preview stay visibly in sync.
+     */
+    activeLine = null,
   }) {
 
   const formatInstrumentPatchText = (lineObj) => {
@@ -134,6 +139,14 @@ const getInstrumentTokenClass = (label = '') => {
   const effectiveTranspose = showChordNumbers ? 0 : transpose;
   const parsedLines = parseLines(lines, effectiveTranspose);
 
+  /** Highlight class for a parsed row, compared by source line. */
+  const syncClass = (lineObj) => {
+    if (activeLine === null || lineObj.sourceLine !== activeLine) return '';
+    // Rows copied out of an earlier section only "belong" to the caret's line
+    // in a loose sense, so they get a quieter marker than typed lines.
+    return lineObj.isExpandedFromSection ? ' cd-sync-row is-expanded' : ' cd-sync-row';
+  };
+
   const renderPresetCueBadge = (lineObj, key) => {
     const hasMidiProgram = Number.isFinite(Number(lineObj?.midi?.program));
     const midiChannelLabel = Number.isFinite(Number(lineObj?.midi?.channel)) ? `CH ${lineObj.midi.channel}` : null;
@@ -143,7 +156,7 @@ const getInstrumentTokenClass = (label = '') => {
       : null;
 
     return (
-      <div key={key} className="cd-preset-cue">
+      <div key={key} className={`cd-preset-cue${syncClass(lineObj)}`}>
         <span className="cd-preset-cue-label">[{lineObj.label}]</span>
         <span className="cd-preset-cue-meta">
           {midiProgramLabel || 'Manual Cue'}
@@ -173,12 +186,12 @@ const getInstrumentTokenClass = (label = '') => {
     }
 
     if (lineObj.type === 'empty') {
-      renderedRows.push(<div key={i} className="cd-empty-line">&nbsp;</div>);
+      renderedRows.push(<div key={i} className={`cd-empty-line${syncClass(lineObj)}`}>&nbsp;</div>);
       return;
     }
     if (lineObj.type === 'structure') {
       renderedRows.push(
-        <div key={i} className="cd-section-struct">
+        <div key={i} className={`cd-section-struct${syncClass(lineObj)}`}>
           <span>{lineObj.label}</span>
           {lineObj.isRepeatedReference ? (
             <span className="cd-section-repeat-badge" title="Bagian ini diambil dari section sebelumnya">
@@ -197,25 +210,25 @@ const getInstrumentTokenClass = (label = '') => {
       return;
     }
     if (lineObj.type === 'instrument') {
-      renderedRows.push(<span key={i} className="cd-instrument-token cd-section-inst">{lineObj.label}</span>);
+      renderedRows.push(<span key={i} className={`cd-instrument-token cd-section-inst${syncClass(lineObj)}`}>{lineObj.label}</span>);
       return;
     }
     if (lineObj.type === 'modulation') {
-      renderedRows.push(<div key={i} className="cd-modulation">🔄 Modulasi ke {lineObj.label}</div>);
+      renderedRows.push(<div key={i} className={`cd-modulation${syncClass(lineObj)}`}>🔄 Modulasi ke {lineObj.label}</div>);
       return;
     }
     if (lineObj.type === 'instrument_patch') {
-      renderedRows.push(<span key={i} className="cd-instrument-token cd-instrument-patch">{formatInstrumentPatchText(lineObj)}</span>);
+      renderedRows.push(<span key={i} className={`cd-instrument-token cd-instrument-patch${syncClass(lineObj)}`}>{formatInstrumentPatchText(lineObj)}</span>);
       return;
     }
     if (lineObj.type === 'metadata') {
-      renderedRows.push(<div key={i} className="cd-metadata">{lineObj.text}</div>);
+      renderedRows.push(<div key={i} className={`cd-metadata${syncClass(lineObj)}`}>{lineObj.text}</div>);
       return;
     }
     if ((lineObj.type === 'chord' && showChords) || lineObj.type === 'number') {
       if (lineObj.type === 'chord') {
         renderedRows.push(
-          <div key={i} className="cd-chord">
+          <div key={i} className={`cd-chord${syncClass(lineObj)}`}>
             {lineObj.tokens.map((t, j) => {
               if (t.isSpace) return <span key={j}>{t.token}</span>;
               if (t.isBarline) return <span key={j} className="cd-barline-token">{t.token}</span>;
@@ -236,7 +249,7 @@ const getInstrumentTokenClass = (label = '') => {
       }
 
       renderedRows.push(
-        <div key={i} className="cd-number">
+        <div key={i} className={`cd-number${syncClass(lineObj)}`}>
           {lineObj.tokens.map((t, j) =>
             t.isSpace ? <span key={j}>{t.token}</span> : <NumberToken key={j} number={t.token} />
           )}
@@ -249,7 +262,7 @@ const getInstrumentTokenClass = (label = '') => {
     }
 
     renderedRows.push(
-      <div key={i} className="cd-lyrics">
+      <div key={i} className={`cd-lyrics${syncClass(lineObj)}`}>
         {lineObj.tokens.map((t, j) => {
           if (t.isChord && !showChords) {
             return null;

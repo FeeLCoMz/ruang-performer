@@ -9,18 +9,20 @@ describe('chordUtils', () => {
   test('parseLines splits a section label with inline chords into section and chord lines', () => {
     const parsed = parseLines(['Intro: Am..Em..F..C..'], 0);
     expect(parsed).toHaveLength(2);
-    expect(parsed[0]).toEqual({ type: 'structure', label: 'Intro' });
+    // toMatchObject, not toEqual: parseLines also tags every row with the
+    // source line it came from, which is what the editor/preview sync uses.
+    expect(parsed[0]).toMatchObject({ type: 'structure', label: 'Intro' });
     expect(parsed[1].type).toBe('chord');
   });
 
   test('parseLines preserves section and cue separation for single-line and multi-line input', () => {
     const separateLines = parseLines(['[Intro]', '[Keys: Acoustic Grand Piano | PC: 0 | CH: 1]', 'Hello'], 0);
-    expect(separateLines[0]).toEqual({ type: 'structure', label: 'Intro' });
+    expect(separateLines[0]).toMatchObject({ type: 'structure', label: 'Intro', sourceLine: 1 });
     expect(separateLines[1]).toMatchObject({ type: 'preset_cue', section: 'Keys', patch: 'Acoustic Grand Piano' });
     expect(separateLines[2]).toMatchObject({ type: 'lyrics' });
 
     const sameLine = parseLines(['[Intro] [Keys: Acoustic Grand Piano | PC: 0 | CH: 1]', 'Hello'], 0);
-    expect(sameLine[0]).toEqual({ type: 'structure', label: 'Intro' });
+    expect(sameLine[0]).toMatchObject({ type: 'structure', label: 'Intro', sourceLine: 1 });
     expect(sameLine[1]).toMatchObject({ type: 'preset_cue', section: 'Keys', patch: 'Acoustic Grand Piano' });
     expect(sameLine[2]).toMatchObject({ type: 'lyrics' });
   });
@@ -249,7 +251,7 @@ describe('chordUtils', () => {
 
   test('parseLines keeps bracket metadata tags renderable in mixed section lines', () => {
     const parsed = parseLines(['[Verse 2] [Style: Pop] [Cue: Fill Bell]'], 0);
-    expect(parsed[0]).toEqual({ type: 'structure', label: 'Verse 2' });
+    expect(parsed[0]).toMatchObject({ type: 'structure', label: 'Verse 2' });
     expect(parsed[1]).toMatchObject({ type: 'metadata', text: '[Style: Pop]' });
     expect(parsed[2]).toMatchObject({ type: 'metadata', text: '[Cue: Fill Bell]' });
   });
@@ -790,10 +792,15 @@ Patch: Acoustic Grand Piano | Instrument: Keyboard | PC: 0 | CH: 1
       'D | Bm | C | A'
     ], 0);
 
-    expect(parsed[0]).toEqual({ type: 'structure', label: 'Intro (Intensitas 1 - Stage Piano + Warm Pad)' });
-    expect(parsed[1]).toEqual({
+    expect(parsed[0]).toMatchObject({
+      type: 'structure',
+      label: 'Intro (Intensitas 1 - Stage Piano + Warm Pad)',
+      sourceLine: 1,
+    });
+    expect(parsed[1]).toMatchObject({
       type: 'instrument_patch',
       text: 'Patch: Stage Piano | Layer: Warm Pad (Volume 30%)',
+      sourceLine: 2,
       fields: {
         patch: 'Stage Piano',
         layer: 'Warm Pad (Volume 30%)',

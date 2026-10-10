@@ -34,6 +34,14 @@ export default function SongLyricsEditorPanel({
   baselineLyrics = null,
 }) {
   const [selectionRange, setSelectionRange] = React.useState({ start: null, end: null });
+  // Tracked separately from the character offsets: the preview syncs by line,
+  // and a line can hold many caret positions.
+  const [activeLine, setActiveLine] = React.useState(null);
+
+  const handleSelectionChange = React.useCallback((next) => {
+    setSelectionRange({ start: next.start, end: next.end });
+    if (Number.isInteger(next.lineNumber)) setActiveLine(next.lineNumber);
+  }, []);
   const {
     showSaveCancelButtons = false,
     savingLyrics = false,
@@ -50,7 +58,7 @@ export default function SongLyricsEditorPanel({
       editedLyrics={lyricsValue}
       setEditedLyrics={setLyricsValue}
       autoFocus={autoFocus}
-      onSelectionChange={setSelectionRange}
+      onSelectionChange={handleSelectionChange}
       disabled={disabled}
     />
   );
@@ -91,6 +99,7 @@ export default function SongLyricsEditorPanel({
           song={previewSong}
           previewProps={previewProps}
           baselineLyrics={baselineLyrics}
+          activeLine={activeLine}
         >
           {textarea}
         </LyricsEditorWorkspace>

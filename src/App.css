@@ -12273,6 +12273,47 @@ body.dark-mode .song-field-error {
   color: var(--text-primary);
 }
 
+/* ---- Editor/preview line sync ---- */
+/* Rows parsed from the line the caret is on. A left rule reads as "you are
+   here" without recolouring the lyrics themselves. */
+.cd-sync-row {
+  position: relative;
+  background: color-mix(in srgb, var(--primary-accent) 9%, transparent);
+  box-shadow: inset 3px 0 0 var(--primary-accent);
+  border-radius: 2px;
+}
+
+/* Rows expanded from a repeated section reference are a looser match: the caret
+   is on the reference, not on the copied body. Quieter so the distinction reads. */
+.cd-sync-row.is-expanded {
+  background: color-mix(in srgb, var(--primary-accent) 4%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--primary-accent) 40%, transparent);
+}
+
+body.dark-mode .cd-sync-row {
+  background: color-mix(in srgb, var(--primary-accent) 16%, transparent);
+}
+
+body.dark-mode .cd-sync-row.is-expanded {
+  background: color-mix(in srgb, var(--primary-accent) 8%, transparent);
+}
+
+.lyrics-editor-preview-follow {
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--primary-accent) 40%, var(--border-color));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
+  color: var(--primary-accent);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lyrics-editor-preview-follow:hover {
+  background: color-mix(in srgb, var(--primary-accent) 22%, transparent);
+}
+
 /* ---- Preview modal for "Rapikan Semua" ---- */
 .lyric-format-preview-head {
   display: flex;

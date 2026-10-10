@@ -542,12 +542,28 @@ export function parseLines(lines, transpose) {
   const sectionBodies = new Map();
   const sectionLabels = new Map();
 
+  /**
+   * Attach the 1-based source line a row came from.
+   *
+   * parseLines does not emit one row per input line: it splits compound lines
+   * and expands repeated section references, so a 10-line lyric can render as 13
+   * rows. Without this tag there is no way to map a rendered row back to the
+   * line the caret is on, which is what the editor/preview sync needs.
+   * `isExpandedFromSection` marks rows that were copied out of an earlier
+   * section rather than typed at that position.
+   */
+  const pushRow = (row, sourceLine, isExpandedFromSection = false) => {
+    if (!row) return;
+    parsed.push({ ...row, sourceLine, isExpandedFromSection });
+  };
+
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
+    const sourceLine = index + 1;
     const bracketChunks = splitBracketCompoundLine(line);
     if (bracketChunks) {
       bracketChunks.forEach((chunk) => {
-        parsed.push(parseLine(chunk, transpose));
+        pushRow(parseLine(chunk, transpose), sourceLine);
       });
       continue;
     }
@@ -575,20 +591,23 @@ export function parseLines(lines, transpose) {
       if (repeatedSectionLine?.type === 'structure') {
         repeatedSectionLine.isRepeatedReference = true;
       }
-      parsed.push(repeatedSectionLine);
+      pushRow(repeatedSectionLine, sourceLine);
       const storedSectionBody = sectionBodies.get(sectionKey) || [];
       storedSectionBody.forEach((sectionLine) => {
-        parsed.push(parseLine(sectionLine, transpose));
+        // These rows were copied out of an earlier section, so they do not sit
+        // at the reference's own line number. Tagging them lets the editor
+        // highlight only rows that genuinely belong to the caret's line.
+        pushRow(parseLine(sectionLine, transpose), sourceLine, true);
       });
       continue;
     }
 
     if (sectionChunks) {
       sectionChunks.forEach((chunk) => {
-        parsed.push(parseLine(chunk, transpose));
+        pushRow(parseLine(chunk, transpose), sourceLine);
       });
     } else {
-      parsed.push(parseLine(line, transpose));
+      pushRow(parseLine(line, transpose), sourceLine);
     }
 
     if (sectionKey) {

@@ -856,6 +856,29 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   />
                 </div>
               </div>
+
+              {/* Keyboard patch belongs with the musical detail: it describes how
+                  the song is played. It previously sat under "Video & Referensi",
+                  which hid it behind a collapsed section unrelated to its purpose. */}
+              <div className="song-musical-secondary">
+                <label className="form-label" htmlFor="song-keyboard-patch">
+                  🎹 Keyboard Patch
+                </label>
+                <textarea
+                  id="song-keyboard-patch"
+                  name="keyboardPatch"
+                  value={keyboardPatch}
+                  onChange={(e) => setKeyboardPatch(e.target.value)}
+                  placeholder="Contoh: EP Mark I untuk verse, Pad + Strings untuk chorus"
+                  rows={3}
+                  className="form-input-field"
+                />
+                <div className="form-hint">
+                  Catatan aransemen keyboard untuk lagu ini. Untuk memicu Program Change nyata
+                  saat perform, sisipkan cue di lirik dari editor: <b>Cue Keyboard</b> lalu{' '}
+                  <b>Sisipkan</b>. Konflik channel antar cue ditampilkan di panel samping.
+                </div>
+              </div>
            </SongFormSection>
 
             {/* ---------- 3. Lirik & chord (fokus utama) ---------- */}
@@ -957,23 +980,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   {normalizedYoutubeId && (
                     <div className="form-hint">Video terdeteksi: <code>{normalizedYoutubeId}</code></div>
                   )}
-                </div>
-
-                <div>
-                  <label className="form-label" htmlFor="song-keyboard-patch">Keyboard Patch</label>
-                  <textarea
-                    id="song-keyboard-patch"
-                    name="keyboardPatch"
-                    value={keyboardPatch}
-                    onChange={(e) => setKeyboardPatch(e.target.value)}
-                    placeholder="Contoh: EP Mark I, Pad, Strings"
-                    rows={3}
-                    className="form-input-field"
-                  />
-                  <div className="form-hint">
-                    Daftar patch/sound yang dipakai. Bisa juga ditulis langsung di lirik sebagai cue{' '}
-                    <code>[Keys: Stage Piano | PC: 0 | CH: 1]</code>.
-                  </div>
                 </div>
 
                 <div>

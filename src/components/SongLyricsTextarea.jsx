@@ -131,6 +131,26 @@ export default function SongLyricsTextarea({
       redo() {
         return redo({ state: view.state, dispatch: view.dispatch });
       },
+      /**
+       * 1-based line number the caret sits on, plus the visible line range.
+       * Used to keep the preview scrolled to whatever is being edited.
+       */
+      getCursorLineInfo() {
+        const { state } = view;
+        const head = state.selection.main.head;
+        const line = state.doc.lineAt(head);
+        const viewport = view.viewport || { from: 0, to: state.doc.length };
+        const topLine = state.doc.lineAt(viewport.from).number;
+        const bottomLine = state.doc.lineAt(Math.min(viewport.to, state.doc.length)).number;
+        return {
+          lineNumber: line.number,
+          lineFrom: line.from,
+          lineTo: line.to,
+          firstVisibleLine: topLine,
+          lastVisibleLine: bottomLine,
+          totalLines: state.doc.lines,
+        };
+      },
     };
 
     lyricsDisplayRef.current = facade;
@@ -139,11 +159,18 @@ export default function SongLyricsTextarea({
   const publishSelection = (view) => {
     if (typeof onSelectionChange !== "function" || !view) return;
     const { from, to } = view.state.selection.main;
-    onSelectionChange({ start: from, end: to });
+    const line = view.state.doc.lineAt(from);
+    onSelectionChange({
+      start: from,
+      end: to,
+      // 1-based line the caret is on, so consumers can sync without
+      // recomputing it from character offsets.
+      lineNumber: line.number,
+    });
   };
 
   const handleUpdate = (viewUpdate) => {
-    if (viewUpdate.selectionSet || viewUpdate.docChanged) {
+    if (viewUpdate.selectionSet || viewUpdate.docChanged || viewUpdate.viewportChanged) {
       publishSelection(viewUpdate.view);
     }
   };
