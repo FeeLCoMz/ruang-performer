@@ -3,12 +3,9 @@ import {
   applyTransformToSelection,
   autoAlignChordLyricPairs,
   autoTagSongSections,
-  detectSectionBadges,
   formatWholeLyricsDocument,
   insertLineAtCursor,
   removeExtraSpacesAndBrokenLines,
-  standardizeChordNotation,
-  transposeLyricsText,
 } from "../utils/lyricsEditorUtils.js";
 import { GM_SOUND_CATEGORIES, GM_SOUND_BANK, filterGmSoundBankByCategory, formatGmPatchOptionLabel } from '../utils/gmSoundbank.js';
 
@@ -17,19 +14,6 @@ const LAST_MIDI_CHANNEL_STORAGE_KEY = 'ruangperformer_last_midi_channel';
 const INSERT_KEY_OPTIONS = [
   'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb',
   'Am', 'Em', 'Bm', 'Dm', 'Gm', 'Cm'
-];
-
-const SECTION_LABELS = [
-  { label: "Intro", value: "[Intro]" },
-  { label: "Verse 1", value: "[Verse 1]" },
-  { label: "Verse 2", value: "[Verse 2]" },
-  { label: "Pre-Chorus", value: "[Pre-Chorus]" },
-  { label: "Post-Chorus", value: "[Post-Chorus]" },
-  { label: "Chorus", value: "[Chorus]" },
-  { label: "Bridge", value: "[Bridge]" },
-  { label: "Interlude", value: "[Interlude]" },
-  { label: "Outro", value: "[Outro]" },
-  { label: "Coda", value: "[Coda]" },
 ];
 
 const METADATA_HELP_ITEMS = [
@@ -128,7 +112,6 @@ export default function SongLyricsEditActions({
     return stored;
   });
   const metadataSections = useMemo(() => METADATA_HELP_ITEMS, []);
-  const detectedSectionBadges = useMemo(() => detectSectionBadges(lyricsValue), [lyricsValue]);
   const filteredGmSounds = useMemo(() => {
     const filtered = filterGmSoundBankByCategory(selectedGmCategory);
     return filtered.length ? filtered : GM_SOUND_BANK;
@@ -178,41 +161,7 @@ export default function SongLyricsEditActions({
       title: 'Deteksi Intro, Verse, Chorus, Bridge, dan normalisasi menjadi tag section',
       onClick: () => applyTextTransform(autoTagSongSections),
     },
-    {
-      icon: '♫',
-      label: 'Standarkan Chord',
-      title: 'Standarkan format penulisan chord seperti min/minor/Maj menjadi format yang konsisten',
-      onClick: () => applyTextTransform(standardizeChordNotation),
-    },
-    {
-      icon: '−',
-      label: 'Transpose -1',
-      title: 'Turunkan semua chord dalam teks satu semitone',
-      onClick: () => applyTextTransform((text) => transposeLyricsText(text, -1)),
-    },
-    {
-      icon: '+',
-      label: 'Transpose +1',
-      title: 'Naikkan semua chord dalam teks satu semitone',
-      onClick: () => applyTextTransform((text) => transposeLyricsText(text, 1)),
-    },
   ];
-
-  const handleInsertSection = (sectionLabel) => {
-    if (!lyricsRef?.current || typeof setLyricsValue !== 'function') return;
-    const el = lyricsRef.current;
-    const { nextText, nextCursor } = insertLineAtCursor({
-      text: lyricsValue,
-      selectionStart: el.selectionStart,
-      selectionEnd: el.selectionEnd,
-      label: sectionLabel,
-    });
-    setLyricsValue(nextText);
-    setTimeout(() => {
-      el.focus();
-      el.setSelectionRange(nextCursor, nextCursor);
-    }, 0);
-  };
 
   const applyTextTransform = (transformer) => {
     if (typeof setLyricsValue !== "function") return;
@@ -287,24 +236,6 @@ export default function SongLyricsEditActions({
   return (
     <>
       <div className="song-lyrics-edit-actions">
-        <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-sections">
-          <span className="song-lyrics-action-group-title">Section Builder</span>
-          <span className="song-lyrics-sections-label">Bagian:</span>
-          <div className="song-lyrics-section-chip-list" role="group" aria-label="Section templates">
-            {SECTION_LABELS.map(({ label, value }) => (
-              <button
-                key={value}
-                type="button"
-                className="btn btn-secondary song-lyrics-section-btn"
-                disabled={disabled}
-                title={`Sisipkan ${value}`}
-                onClick={() => handleInsertSection(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-format">
           <span className="song-lyrics-action-group-title">Quick Tools</span>
           <div className="song-lyrics-format-ribbon" role="group" aria-label="Format teks lirik">
@@ -366,28 +297,6 @@ export default function SongLyricsEditActions({
               Terapkan
             </button>
           </div>
-        </div>
-        <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-transpose">
-          <span className="song-lyrics-action-group-title">Quick Transpose</span>
-          <span className="song-lyrics-sections-label">Transpose Teks:</span>
-          <button
-            type="button"
-            onClick={() => applyTextTransform((text) => transposeLyricsText(text, -1))}
-            disabled={disabled}
-            className="btn btn-secondary"
-            title="Turunkan semua chord dalam teks satu semitone"
-          >
-            -1
-          </button>
-          <button
-            type="button"
-            onClick={() => applyTextTransform((text) => transposeLyricsText(text, 1))}
-            disabled={disabled}
-            className="btn btn-secondary"
-            title="Naikkan semua chord dalam teks satu semitone"
-          >
-            +1
-          </button>
         </div>
         <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-gm-cue">
           <span className="song-lyrics-action-group-title">Keyboard Patch Builder</span>
@@ -560,22 +469,6 @@ export default function SongLyricsEditActions({
           </div>
         )}
       </div>
-
-      {detectedSectionBadges.length > 0 && (
-        <div className="song-lyrics-detected-sections" aria-label="Bagian lagu terdeteksi">
-          <span className="song-lyrics-sections-label">Bagian Terdeteksi:</span>
-          {detectedSectionBadges.map((item) => (
-            <span
-              key={`${item.lineNumber}-${item.label}`}
-              className={`song-lyrics-section-detected-badge tone-${item.tone}`}
-              title={`Baris ${item.lineNumber}`}
-            >
-              {item.label}
-              <span className="song-lyrics-section-detected-line">L{item.lineNumber}</span>
-            </span>
-          ))}
-        </div>
-      )}
 
       {showMetadataHelp && (
         <div

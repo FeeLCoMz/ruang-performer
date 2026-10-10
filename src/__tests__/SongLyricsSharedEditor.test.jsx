@@ -243,12 +243,19 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-edit-actions')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-textarea')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-format-ribbon')).toBeTruthy();
-    expect(container.textContent).toContain('Post-Chorus');
 
     expect(container.textContent).toContain('Auto-Align');
     expect(container.textContent).toContain('Bersihkan Teks');
-    expect(container.textContent).toContain('Standarkan Chord');
     expect(container.textContent).toContain('Format Semua');
+
+    // Removed from the editor: Section Builder chips, detected-section badges,
+    // and the Standarkan Chord / transpose ribbon actions.
+    expect(container.querySelector('.song-lyrics-edit-actions-group-sections')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-section-chip-list')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-detected-sections')).toBeFalsy();
+    expect(container.textContent).not.toContain('Standarkan Chord');
+    expect(container.textContent).not.toContain('Transpose -1');
+    expect(container.textContent).not.toContain('Transpose +1');
   });
 
   test('Given lyrics editor, Then formatting text actions are grouped in a menu', async () => {
@@ -283,10 +290,9 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-format-ribbon')).toBeTruthy();
     expect(container.textContent).toContain('Auto-Align');
     expect(container.textContent).toContain('Bersihkan Teks');
-    expect(container.textContent).toContain('Standarkan Chord');
   });
 
-  test('Given lyrics editor quick tools ribbon, Then transpose actions are also available there', async () => {
+  test('Given lyrics editor quick tools ribbon, Then the removed actions are gone', async () => {
     await act(async () => {
       root.render(
         <SongLyricsEditorPanel
@@ -316,8 +322,9 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     expect(container.querySelector('.song-lyrics-format-ribbon')).toBeTruthy();
-    expect(container.textContent).toContain('Transpose -1');
-    expect(container.textContent).toContain('Transpose +1');
+    expect(container.textContent).not.toContain('Standarkan Chord');
+    expect(container.textContent).not.toContain('Transpose -1');
+    expect(container.textContent).not.toContain('Transpose +1');
   });
 
   test('Given piano insert number key selector is used, Then callback updates selected key', async () => {
@@ -361,7 +368,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(handleChange).toHaveBeenCalledWith('G');
   });
 
-  test('Given recognized section labels in edit mode, Then detector badges are shown', async () => {
+  test('Given recognized section labels in edit mode, Then no detected-section badges are rendered', async () => {
     await act(async () => {
       root.render(
         <SongLyricsMainSection
@@ -421,10 +428,10 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.querySelector('.song-lyrics-detected-sections')).toBeTruthy();
-    expect(container.textContent).toContain('Intro');
-    expect(container.textContent).toContain('Post-Chorus');
-    expect(container.textContent).toContain('Chorus');
+    // The detected-section badge strip was removed from the editor; sections are
+    // now surfaced by the structure sidebar in SongAddEditPage instead.
+    expect(container.querySelector('.song-lyrics-detected-sections')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-section-detected-badge')).toBeFalsy();
   });
 
   test('Given SongChordsLyricsToolbar in edit mode, Then toolbar does not render old edit action block', async () => {
