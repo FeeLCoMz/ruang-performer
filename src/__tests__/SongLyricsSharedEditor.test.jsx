@@ -327,8 +327,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).not.toContain('Transpose +1');
   });
 
-  test('Given piano insert number key selector is used, Then callback updates selected key', async () => {
-    const handleChange = vi.fn();
+  test('Given piano controls in the toolbar, Then insert settings are not duplicated there', async () => {
     await act(async () => {
       root.render(
         <SongLyricsEditorPanel
@@ -341,13 +340,6 @@ describe('Song lyrics shared editor rendering', () => {
             showPianoControls: true,
             onOpenPiano: noop,
             insertNotesEnabled: true,
-            onToggleInsertNotes: noop,
-            insertNoteFormat: 'number',
-            onChangeInsertNoteFormat: noop,
-            insertTrailingSpace: true,
-            onToggleInsertTrailingSpace: noop,
-            keySignature: 'C',
-            onChangeInsertNumberKeySignature: handleChange,
           }}
           autoFocus={false}
           showTips={false}
@@ -355,17 +347,20 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const keySelect = Array.from(container.querySelectorAll('select')).find((select) =>
-      select.getAttribute('aria-label') === 'Pilih key untuk angka chord'
+    // The piano entry point stays in the toolbar...
+    const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('🎹 Piano')
     );
+    expect(pianoButton).toBeTruthy();
 
-    expect(keySelect).toBeTruthy();
-    await act(async () => {
-      keySelect.value = 'G';
-      keySelect.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-
-    expect(handleChange).toHaveBeenCalledWith('G');
+    // ...but the insert configuration now lives inside the piano modal, so the
+    // toolbar must not render a second copy of it.
+    expect(container.querySelector('#lyrics-insert-format-select')).toBeFalsy();
+    expect(container.querySelector('#lyrics-insert-key-select')).toBeFalsy();
+    const toolbarKeySelect = Array.from(container.querySelectorAll('select')).find(
+      (select) => select.getAttribute('aria-label') === 'Pilih key untuk angka chord'
+    );
+    expect(toolbarKeySelect).toBeFalsy();
   });
 
   test('Given recognized section labels in edit mode, Then no detected-section badges are rendered', async () => {

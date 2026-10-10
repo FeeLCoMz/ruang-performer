@@ -212,3 +212,93 @@ export function validateMusicalFields({ key, timeSignature, tempo }) {
 
   return errors;
 }
+
+/**
+ * Find MIDI cue conflicts that would misbehave on stage.
+ *
+ * The dangerous case: two cues target the same channel with different programs,
+ * but the earlier one is never reset — so whichever fires last wins silently.
+ * Also flags a cue whose program/channel is out of MIDI range.
+ *
+ * Returns a list of { severity, lineNumber, message } plus per-channel usage.
+ */
+export function detectMidiCueConflicts(lyrics = '') {
+  const text = String(lyrics || '');
+  if (!text.trim()) return { conflicts: [], cueCount: 0, channels: {} };
+
+  const lines = text.split(/\r?\n/);
+  const cues = [];
+
+  lines.forEach((line, index) => {
+    const parsed = parsePresetCueLine(line);
+    if (!parsed?.midi) return;
+
+    // The cue parser clamps out-of-range values to defaults (PC 200 -> program 0,
+    // CH 20 -> channel 1), so range checking has to read the raw numbers from
+    // the source line. Otherwise a broken cue looks identical to a valid one.
+    const rawProgram = Number.parseInt((line.match(/\bPC\s*[:=]?\s*(-?\d+)/i) || [])[1], 10);
+    const rawChannel = Number.parseInt((line.match(/\bCH\s*[:=]?\s*(-?\d+)/i) || [])[1], 10);
+
+    const channel = Number.isFinite(rawChannel)
+      ? rawChannel
+      : Number.isFinite(Number(parsed.midi.channel))
+        ? Number(parsed.midi.channel)
+        : null;
+    const program = Number.isFinite(rawProgram)
+      ? rawProgram
+      : Number.isFinite(Number(parsed.midi.program))
+        ? Number(parsed.midi.program)
+        : null;
+
+    cues.push({
+      lineNumber: index + 1,
+      label: parsed.label,
+      channel,
+      program,
+    });
+  });
+
+  const conflicts = [];
+  const channels = {};
+
+  for (const cue of cues) {
+    if (cue.channel === null) continue;
+    if (!channels[cue.channel]) channels[cue.channel] = [];
+    channels[cue.channel].push(cue);
+
+    if (cue.channel < 1 || cue.channel > 16) {
+      conflicts.push({
+        severity: 'error',
+        lineNumber: cue.lineNumber,
+        message: `Channel ${cue.channel} di luar rentang MIDI (1-16) pada ${cue.label}.`,
+      });
+    }
+    if (cue.program !== null && (cue.program < 0 || cue.program > 127)) {
+      conflicts.push({
+        severity: 'error',
+        lineNumber: cue.lineNumber,
+        message: `Program ${cue.program} di luar rentang MIDI (0-127) pada ${cue.label}.`,
+      });
+    }
+  }
+
+  // Same channel, different programs: the later cue silently replaces the earlier.
+  for (const [channel, channelCues] of Object.entries(channels)) {
+    const withProgram = channelCues.filter((cue) => cue.program !== null);
+    if (withProgram.length < 2) continue;
+
+    const distinctPrograms = new Set(withProgram.map((cue) => cue.program));
+    if (distinctPrograms.size > 1) {
+      conflicts.push({
+        severity: 'warning',
+        lineNumber: withProgram[withProgram.length - 1].lineNumber,
+        message:
+          `Channel ${channel} dipakai ${withProgram.length} cue dengan program berbeda ` +
+          `(${withProgram.map((c) => c.label).join(' → ')}). ` +
+          'Cue terakhir akan menimpa yang sebelumnya.',
+      });
+    }
+  }
+
+  return { conflicts, cueCount: cues.length, channels };
+}

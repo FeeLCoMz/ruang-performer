@@ -66,7 +66,7 @@ describe('SongAddEditPage shared lyrics editor', () => {
     document.body.removeChild(container);
   });
 
-  test('Given add mode, Then shared lyrics editor actions include piano and insert controls', async () => {
+  test('Given add mode, Then the piano entry point is in the toolbar and stays disabled-agnostic', async () => {
     await act(async () => {
       root.render(<SongAddEditPage />);
     });
@@ -79,29 +79,27 @@ describe('SongAddEditPage shared lyrics editor', () => {
     );
     expect(pianoButton).toBeTruthy();
 
-    const insertToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Insert OFF')
-    );
-    expect(insertToggle).toBeTruthy();
-
-    await act(async () => {
-      insertToggle.click();
-    });
-
-    const insertOnToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Insert ON')
-    );
-    expect(insertOnToggle).toBeTruthy();
-
-    const formatSelect = container.querySelector('#lyrics-insert-format-select');
-    expect(formatSelect).toBeTruthy();
+    // Insert configuration moved into the piano modal, so the toolbar no longer
+    // renders its own copy of the format/key controls.
+    expect(container.querySelector('#lyrics-insert-format-select')).toBeFalsy();
+    expect(container.querySelector('#lyrics-insert-key-select')).toBeFalsy();
   });
 
-  test('Given add mode, When insert toggle is switched off, Then format controls are hidden', async () => {
+  test('Given add mode, When piano is opened, Then insert controls are available inside the modal', async () => {
     await act(async () => {
       root.render(<SongAddEditPage />);
     });
 
+    const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('🎹 Piano')
+    );
+    expect(pianoButton).toBeTruthy();
+
+    await act(async () => {
+      pianoButton.click();
+    });
+
+    // The insert toggle now lives with the keys it affects.
     const insertToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Insert OFF')
     );
@@ -115,6 +113,9 @@ describe('SongAddEditPage shared lyrics editor', () => {
       btn.textContent?.includes('Insert ON')
     );
     expect(insertOnToggle).toBeTruthy();
+
+    // Turning insert on reveals the format selector, still inside the modal.
+    expect(container.querySelector('#lyrics-insert-format-select')).toBeTruthy();
 
     await act(async () => {
       insertOnToggle.click();
@@ -124,18 +125,26 @@ describe('SongAddEditPage shared lyrics editor', () => {
       btn.textContent?.includes('Insert OFF')
     );
     expect(insertOffToggle).toBeTruthy();
-
-    const formatSelect = container.querySelector('#lyrics-insert-format-select');
-    expect(formatSelect).toBeFalsy();
+    expect(container.querySelector('#lyrics-insert-format-select')).toBeFalsy();
   });
 
-  test('Given add mode, When piano note is selected, Then note token is inserted into lyrics textarea', async () => {
+  test('Given add mode, When piano note is selected with insert on, Then the token lands in the lyrics editor', async () => {
     await act(async () => {
       root.render(<SongAddEditPage />);
     });
 
     const editorHost = container.querySelector('.song-lyrics-textarea-editor');
     expect(editorHost).toBeTruthy();
+
+    // The piano modal must be open first: the Insert toggle now lives inside it.
+    const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('🎹 Piano')
+    );
+    expect(pianoButton).toBeTruthy();
+
+    await act(async () => {
+      pianoButton.click();
+    });
 
     const insertToggle = Array.from(container.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Insert OFF')
@@ -144,13 +153,6 @@ describe('SongAddEditPage shared lyrics editor', () => {
 
     await act(async () => {
       insertToggle.click();
-    });
-
-    const pianoButton = container.querySelector('.song-lyrics-piano-controls button');
-    expect(pianoButton).toBeTruthy();
-
-    await act(async () => {
-      pianoButton.click();
     });
 
     const noteButton = Array.from(container.querySelectorAll('.piano-key')).find((btn) =>

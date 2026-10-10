@@ -28,12 +28,6 @@ export default function SongLyricsMainSection({
   onOpenPiano,
   insertNotesToLyrics,
   setInsertNotesToLyrics,
-  insertNoteFormat,
-  setInsertNoteFormat,
-  insertTrailingSpace,
-  setInsertTrailingSpace,
-  insertNumberKeySignature,
-  setInsertNumberKeySignature,
   showExportMenu,
   setShowExportMenu,
   handleExportText,
@@ -130,12 +124,6 @@ export default function SongLyricsMainSection({
             handleCancelEditLyrics={handleCancelEditLyrics}
             onOpenPiano={onOpenPiano}
             insertNotesToLyrics={insertNotesToLyrics}
-            setInsertNotesToLyrics={setInsertNotesToLyrics}
-            insertNoteFormat={insertNoteFormat}
-            setInsertNoteFormat={setInsertNoteFormat}
-            insertTrailingSpace={insertTrailingSpace}
-            setInsertTrailingSpace={setInsertTrailingSpace}
-            keySignature={insertNumberKeySignature}
             showExportMenu={showExportMenu}
             setShowExportMenu={setShowExportMenu}
             handleExportText={handleExportText}
@@ -188,13 +176,6 @@ export default function SongLyricsMainSection({
                 handleCancelEditLyrics,
                 onOpenPiano,
                 insertNotesToLyrics,
-                setInsertNotesToLyrics,
-                insertNoteFormat,
-                setInsertNoteFormat,
-                insertTrailingSpace,
-                setInsertTrailingSpace,
-                insertNumberKeySignature,
-                onChangeInsertNumberKeySignature: setInsertNumberKeySignature,
               })}
               autoFocus={true}
               showTips={true}

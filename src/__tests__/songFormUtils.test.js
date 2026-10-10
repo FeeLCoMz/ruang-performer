@@ -3,6 +3,7 @@ import {
   analyseLyrics,
   buildSectionKey,
   computeSongCompleteness,
+  detectMidiCueConflicts,
   extractSectionOverview,
   validateMusicalFields,
 } from '../utils/songFormUtils.js';
@@ -203,5 +204,88 @@ describe('validateMusicalFields', () => {
   test('Given a typical tempo, Then it is accepted', () => {
     expect(validateMusicalFields({ tempo: '120' }).tempo).toBe('');
     expect(validateMusicalFields({ tempo: 96 }).tempo).toBe('');
+  });
+});
+
+describe('detectMidiCueConflicts', () => {
+  test('Given no lyrics, Then nothing is reported', () => {
+    expect(detectMidiCueConflicts('')).toEqual({ conflicts: [], cueCount: 0, channels: {} });
+  });
+
+  test('Given lyrics without cues, Then cueCount is zero', () => {
+    const result = detectMidiCueConflicts('[Intro]\nC G\nHello world');
+    expect(result.cueCount).toBe(0);
+    expect(result.conflicts).toEqual([]);
+  });
+
+  test('Given a single valid cue, Then there is no conflict', () => {
+    const result = detectMidiCueConflicts('[Verse]\n[Keys: Stage Piano | PC: 0 | CH: 1]\nC G');
+    expect(result.cueCount).toBe(1);
+    expect(result.conflicts).toEqual([]);
+  });
+
+  test('Given two cues on one channel with different programs, Then the override is flagged', () => {
+    const lyrics = [
+      '[Verse 1]',
+      '[Keys: Stage Piano | PC: 0 | CH: 1]',
+      'Am F',
+      '[Chorus]',
+      '[Keys: Lead Saw | PC: 81 | CH: 1]',
+      'G C',
+    ].join('\n');
+
+    const result = detectMidiCueConflicts(lyrics);
+    expect(result.cueCount).toBe(2);
+
+    const warning = result.conflicts.find((c) => c.severity === 'warning');
+    expect(warning).toBeTruthy();
+    expect(warning.message).toContain('Channel 1');
+    expect(warning.message).toContain('menimpa');
+    // It should point at the cue that wins, so the user can jump there.
+    expect(warning.lineNumber).toBe(5);
+  });
+
+  test('Given two cues on one channel with the same program, Then nothing is flagged', () => {
+    const lyrics = '[Verse]\n[Keys: Stage Piano | PC: 0 | CH: 1]\n[Chorus]\n[Keys: Piano | PC: 0 | CH: 1]';
+    const result = detectMidiCueConflicts(lyrics);
+    expect(result.cueCount).toBe(2);
+    expect(result.conflicts.filter((c) => c.severity === 'warning')).toEqual([]);
+  });
+
+  test('Given cues on different channels, Then no override is flagged', () => {
+    const lyrics = '[Verse]\n[Keys: Stage Piano | PC: 0 | CH: 1]\n[Chorus]\n[Keys: Lead Saw | PC: 81 | CH: 2]';
+    const result = detectMidiCueConflicts(lyrics);
+    expect(result.conflicts.filter((c) => c.severity === 'warning')).toEqual([]);
+    expect(Object.keys(result.channels).sort()).toEqual(['1', '2']);
+  });
+
+  test('Given an out-of-range program, Then an error is reported', () => {
+    const result = detectMidiCueConflicts('[Keys: Broken | PC: 200 | CH: 1]');
+    const error = result.conflicts.find((c) => c.severity === 'error');
+    expect(error).toBeTruthy();
+    expect(error.message).toContain('200');
+  });
+
+  test('Given an out-of-range channel, Then an error is reported', () => {
+    const result = detectMidiCueConflicts('[Keys: Broken | PC: 0 | CH: 20]');
+    const error = result.conflicts.find((c) => c.severity === 'error');
+    expect(error).toBeTruthy();
+    expect(error.message).toContain('Channel 20');
+  });
+
+  test('Given cues across many sections, Then per-channel usage is reported', () => {
+    const lyrics = [
+      '[Intro]',
+      '[Keys: Pad | PC: 89 | CH: 3]',
+      '[Verse]',
+      '[Keys: Piano | PC: 0 | CH: 1]',
+      '[Chorus]',
+      '[Keys: Strings | PC: 48 | CH: 3]',
+    ].join('\n');
+
+    const result = detectMidiCueConflicts(lyrics);
+    expect(result.cueCount).toBe(3);
+    expect(result.channels['3']).toHaveLength(2);
+    expect(result.channels['1']).toHaveLength(1);
   });
 });

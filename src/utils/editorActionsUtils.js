@@ -12,13 +12,6 @@ function buildEditorActions({
   barsPerLineSelectId,
   onOpenPiano,
   insertNotesToLyrics,
-  setInsertNotesToLyrics,
-  insertNoteFormat,
-  setInsertNoteFormat,
-  insertTrailingSpace,
-  setInsertTrailingSpace,
-  keySignature,
-  onChangeInsertNumberKeySignature,
 }) {
   return {
     barsPerLine,
@@ -36,13 +29,6 @@ function buildEditorActions({
     showPianoControls: true,
     onOpenPiano,
     insertNotesEnabled: insertNotesToLyrics,
-    onToggleInsertNotes: setInsertNotesToLyrics,
-    insertNoteFormat,
-    onChangeInsertNoteFormat: setInsertNoteFormat,
-    insertTrailingSpace,
-    onToggleInsertTrailingSpace: setInsertTrailingSpace,
-    keySignature,
-    onChangeInsertNumberKeySignature,
   };
 }
 

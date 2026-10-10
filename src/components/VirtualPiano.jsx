@@ -14,7 +14,7 @@ function midiNumberToFrequency(midiNumber) {
   return 440 * (2 ** ((Number(midiNumber) - 69) / 12));
 }
 
-export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText }) {
+export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText, insertControls }) {
   const audioContextRef = useRef(null);
   const midiAccessRef = useRef(null);
   const dragStateRef = useRef(null);
@@ -255,6 +255,7 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText 
         <p style={{ marginBottom: 'var(--spacing-sm)', fontSize: '0.8em', color: 'var(--text-secondary)' }}>
           {midiStatus}
         </p>
+        {insertControls && <div className="piano-popup-insert-controls">{insertControls}</div>}
         <div className="virtual-piano">
           <div className="piano-keys">
             {keys.map((key) => (

@@ -14,12 +14,6 @@ describe('editorActionsUtils', () => {
       handleCancelEditLyrics: vi.fn(),
       onOpenPiano: vi.fn(),
       insertNotesToLyrics: true,
-      setInsertNotesToLyrics: vi.fn(),
-      insertNoteFormat: 'number',
-      setInsertNoteFormat: vi.fn(),
-      insertTrailingSpace: true,
-      setInsertTrailingSpace: vi.fn(),
-      insertNumberKeySignature: 'G',
     });
 
     expect(actions).toMatchObject({
@@ -29,10 +23,13 @@ describe('editorActionsUtils', () => {
       barsPerLineSelectId: 'bars-per-line',
       showPianoControls: true,
       insertNotesEnabled: true,
-      insertNoteFormat: 'number',
-      insertTrailingSpace: true,
-      keySignature: 'G',
     });
+
+    // Insert settings (format / key / trailing space) moved into the piano modal,
+    // so the toolbar config must no longer carry them.
+    expect(actions).not.toHaveProperty('insertNoteFormat');
+    expect(actions).not.toHaveProperty('keySignature');
+    expect(actions).not.toHaveProperty('onToggleInsertNotes');
   });
 
   test('buildAddEditEditorActions returns add/edit action config', () => {
@@ -44,12 +41,6 @@ describe('editorActionsUtils', () => {
       handleWrapBarsPerLine: vi.fn(),
       onOpenPiano: vi.fn(),
       insertNotesToLyrics: false,
-      setInsertNotesToLyrics: vi.fn(),
-      insertNoteFormat: 'plain',
-      setInsertNoteFormat: vi.fn(),
-      insertTrailingSpace: false,
-      setInsertTrailingSpace: vi.fn(),
-      keySignature: 'C',
     });
 
     expect(actions).toMatchObject({
@@ -59,9 +50,6 @@ describe('editorActionsUtils', () => {
       barsPerLineSelectId: 'bars-per-line-add-edit',
       showPianoControls: true,
       insertNotesEnabled: false,
-      insertNoteFormat: 'plain',
-      insertTrailingSpace: false,
-      keySignature: 'C',
     });
   });
 });

@@ -5928,6 +5928,70 @@ body.dark-mode .lyrics-editor-textarea {
   font-weight: 600;
 }
 
+/* MIDI cue conflict warnings in the editor sidebar */
+.song-midi-conflict-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.song-midi-conflict {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  border: 1px solid transparent;
+}
+
+.song-midi-conflict.is-warning {
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+.song-midi-conflict.is-error {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+body.dark-mode .song-midi-conflict.is-warning {
+  background: rgba(146, 64, 14, 0.25);
+  border-color: rgba(252, 211, 77, 0.35);
+  color: #fcd34d;
+}
+
+body.dark-mode .song-midi-conflict.is-error {
+  background: rgba(153, 27, 27, 0.25);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+.song-midi-conflict-jump {
+  flex: 0 0 auto;
+  padding: 0 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font-family: monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.song-midi-conflict-jump:hover {
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
 .song-section-nav-list {
   list-style: none;
   margin: 0;
@@ -12169,6 +12233,39 @@ body.dark-mode .song-field-error {
 
 .song-lyrics-piano-controls .btn {
   white-space: nowrap;
+}
+
+/* Read-only status pill: the Insert toggle now lives inside the piano modal. */
+.song-lyrics-piano-insert-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+  background: color-mix(in srgb, var(--secondary-bg) 70%, var(--card-bg));
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.song-lyrics-piano-insert-state.is-on {
+  border-color: color-mix(in srgb, var(--primary-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--primary-accent) 14%, transparent);
+  color: var(--primary-accent);
+}
+
+.piano-popup-insert-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border: 1px solid color-mix(in srgb, var(--border-color) 75%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--secondary-bg) 65%, var(--card-bg));
 }
 
 .song-lyrics-zoom-controls {

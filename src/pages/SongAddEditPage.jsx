@@ -15,20 +15,8 @@ import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMark
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, formatWholeLyricsDocument, replaceSelectionWithToken, transposeLyricsText } from '../utils/lyricsEditorUtils.js';
 import { buildAddEditEditorActions } from '../utils/editorActionsUtils.js';
-import { analyseLyrics, computeSongCompleteness, extractSectionOverview, validateMusicalFields } from '../utils/songFormUtils.js';
-
-const SONG_KEY_OPTIONS = [
-  'C', 'C#', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B',
-  'Cm', 'C#m', 'Dm', 'D#m', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Abm', 'Am', 'A#m', 'Bbm', 'Bm',
-];
-
-const TIME_SIGNATURE_OPTIONS = ['4/4', '3/4', '2/4', '6/8', '12/8', '5/4', '7/8'];
-
-const GENRE_OPTIONS = [
-  'Pop', 'Rock', 'Jazz', 'Blues', 'Country', 'Reggae', 'Funk', 'Soul', 'R&B',
-  'Dangdut', 'Keroncong', 'Campursari', 'Pop Indonesia', 'Metal', 'Punk',
-  'Folk', 'Acoustic', 'Gospel', 'Worship', 'Latin', 'Electronic',
-];
+import { analyseLyrics, computeSongCompleteness, detectMidiCueConflicts, extractSectionOverview, validateMusicalFields } from '../utils/songFormUtils.js';
+import { GENRE_OPTIONS, NUMBER_NOTATION_KEY_OPTIONS, SONG_KEY_OPTIONS, TIME_SIGNATURE_OPTIONS } from '../utils/songOptions.js';
 
 const formatDuration = (seconds) => {
   const safe = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -482,6 +470,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
   const lyricsAnalysis = useMemo(() => analyseLyrics(lyrics), [lyrics]);
   const sectionOverview = useMemo(() => extractSectionOverview(lyrics), [lyrics]);
+  const midiCues = useMemo(() => detectMidiCueConflicts(lyrics), [lyrics]);
 
   const formSnapshot = useMemo(
     () => ({
@@ -566,13 +555,73 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   };
 
   const handleJumpToSection = (lineIndex) => {
-    const view = lyricsTextareaRef.current;
     if (!view?.dispatch || !view?.state) return;
     const targetLine = Math.min((lineIndex ?? 0) + 1, view.state.doc.lines);
     const line = view.state.doc.line(targetLine);
     view.dispatch({ selection: { anchor: line.from }, scrollIntoView: true });
     view.focus();
   };
+
+  // Insert settings rendered inside the Virtual Piano modal, so configuring the
+  // insert format happens where the notes are actually being entered.
+  const pianoInsertControls = (
+    <>
+      <button
+        type="button"
+        className={`btn ${insertNotesToLyrics ? 'btn-primary' : 'btn-secondary'}`}
+        onClick={() => setInsertNotesToLyrics((prev) => !prev)}
+        aria-pressed={insertNotesToLyrics}
+        title="Tentukan apakah klik not disisipkan ke lirik atau hanya dibunyikan"
+      >
+        ✍ Insert {insertNotesToLyrics ? 'ON' : 'OFF'}
+      </button>
+
+      {insertNotesToLyrics && (
+        <>
+          <label className="song-lyrics-insert-format" htmlFor="lyrics-insert-format-select">
+            Format
+            <select
+              id="lyrics-insert-format-select"
+              className="song-lyrics-bar-wrap-select"
+              value={insertNoteFormat}
+              onChange={(e) => setInsertNoteFormat(e.target.value)}
+            >
+              <option value="bracket">[C]</option>
+              <option value="plain">C</option>
+              <option value="number">1-7</option>
+            </select>
+          </label>
+
+          {insertNoteFormat === 'number' && (
+            <label className="song-lyrics-insert-key" htmlFor="lyrics-insert-key-select">
+              Key
+              <select
+                id="lyrics-insert-key-select"
+                className="song-lyrics-bar-wrap-select"
+                value={insertNumberKeySignature || getNumericNotationKey(songKey || 'C')}
+                onChange={(e) => setInsertNumberKeySignature(e.target.value)}
+                aria-label="Pilih key untuk angka chord"
+              >
+                {NUMBER_NOTATION_KEY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          <button
+            type="button"
+            className={`btn ${insertTrailingSpace ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setInsertTrailingSpace((prev) => !prev)}
+            aria-pressed={insertTrailingSpace}
+            title="Tambahkan spasi otomatis setelah not yang disisipkan"
+          >
+            ␠ Spasi {insertTrailingSpace ? 'ON' : 'OFF'}
+          </button>
+        </>
+      )}
+    </>
+  );
 
   if (loadingData) {
     return (
@@ -833,16 +882,9 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   handleWrap4BarsPerLine,
                   handleFormatWholeDocument,
                   handleWrapBarsPerLine,
-                  onOpenPiano: () => setShowLyricsPiano(true),
-                  insertNotesToLyrics,
-                  setInsertNotesToLyrics,
-                  insertNoteFormat,
-                  setInsertNoteFormat,
-                  insertTrailingSpace,
-                  setInsertTrailingSpace,
-                  insertNumberKeySignature,
-                  setInsertNumberKeySignature,
-                })}
+                    onOpenPiano: () => setShowLyricsPiano(true),
+                    insertNotesToLyrics,
+                  })}
                 autoFocus={false}
                 showTips={true}
                 previewSong={{ key: songKey, tempo }}
@@ -1046,11 +1088,44 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 </ol>
               ) : (
                 <div className="song-derived-empty">
-                  Belum ada tag bagian. Gunakan tombol Section Builder di editor lirik,
-                  atau tombol <b>Tag Bagian</b> untuk mendeteksi otomatis.
+                  Belum ada tag bagian. Tulis <code>[Intro]</code>, <code>[Chorus]</code>, dan
+                  sejenisnya di editor lirik, atau tekan tombol <b>Tag Bagian</b> untuk
+                  mendeteksinya otomatis.
                 </div>
               )}
             </div>
+
+            {midiCues.cueCount > 0 && (
+              <div className="song-editor-sidebar-card">
+                <div className="song-completeness-head">
+                  <span className="song-completeness-title">Cue Keyboard MIDI</span>
+                  <span className="song-form-section-badge">{midiCues.cueCount}</span>
+                </div>
+
+                {midiCues.conflicts.length > 0 ? (
+                  <ul className="song-midi-conflict-list">
+                    {midiCues.conflicts.map((conflict) => (
+                      <li
+                        key={`${conflict.lineNumber}-${conflict.message}`}
+                        className={`song-midi-conflict is-${conflict.severity}`}
+                      >
+                        <button
+                          type="button"
+                          className="song-midi-conflict-jump"
+                          onClick={() => handleJumpToSection(conflict.lineNumber - 1)}
+                          title={`Lompat ke baris ${conflict.lineNumber}`}
+                        >
+                          L{conflict.lineNumber}
+                        </button>
+                        <span>{conflict.message}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="song-completeness-done">✓ Tidak ada konflik channel</p>
+                )}
+              </div>
+            )}
           </aside>
         </div>
 
@@ -1093,6 +1168,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         onClose={() => setShowLyricsPiano(false)}
         onKeySelect={handleLyricsPianoKeySelect}
         helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${insertNumberKeySignature || getNumericNotationKey(songKey || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
+        insertControls={pianoInsertControls}
       />
 
       <FloatingYouTubePlayer

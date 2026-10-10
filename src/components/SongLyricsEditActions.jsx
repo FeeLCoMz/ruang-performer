@@ -12,11 +12,6 @@ import { GM_SOUND_CATEGORIES, GM_SOUND_BANK, filterGmSoundBankByCategory, format
 
 const LAST_MIDI_CHANNEL_STORAGE_KEY = 'ruangperformer_last_midi_channel';
 
-const INSERT_KEY_OPTIONS = [
-  'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb',
-  'Am', 'Em', 'Bm', 'Dm', 'Gm', 'Cm'
-];
-
 const METADATA_HELP_ITEMS = [
   {
     title: "Struktur Lagu",
@@ -90,13 +85,6 @@ export default function SongLyricsEditActions({
   showPianoControls = false,
   onOpenPiano,
   insertNotesEnabled = false,
-  onToggleInsertNotes,
-  insertNoteFormat = "bracket",
-  onChangeInsertNoteFormat,
-  insertTrailingSpace = false,
-  onToggleInsertTrailingSpace,
-  keySignature = "",
-  onChangeInsertNumberKeySignature,
   lyricsRef,
   lyricsValue = "",
   setLyricsValue,
@@ -423,73 +411,33 @@ export default function SongLyricsEditActions({
               Insert Patch
             </button>
           </div>
-        </div>        {showPianoControls && (
+        </div>
+
+        {showPianoControls && (
           <div className="song-lyrics-edit-actions-group song-lyrics-piano-controls">
             <span className="song-lyrics-action-group-title">Piano Insert</span>
+            {/* Insert settings (format, key, trailing space) now live inside the
+                piano modal, where the user is actually inserting notes. Keeping
+                them here too meant two places to configure one behaviour. */}
             <button
               type="button"
               onClick={onOpenPiano}
               disabled={disabled}
               className="btn btn-secondary"
-              title="Buka Virtual Piano"
+              title="Buka Virtual Piano untuk memasukkan not ke lirik"
             >
               🎹 Piano
             </button>
-            <button
-              type="button"
-              className={`btn ${insertNotesEnabled ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => onToggleInsertNotes?.(!insertNotesEnabled)}
-              disabled={disabled}
-              title="Toggle insert not ke lirik"
-              aria-pressed={insertNotesEnabled}
+            <span
+              className={`song-lyrics-piano-insert-state${insertNotesEnabled ? ' is-on' : ''}`}
+              title={
+                insertNotesEnabled
+                  ? 'Not yang diklik akan disisipkan ke lirik'
+                  : 'Not hanya dibunyikan, tidak disisipkan ke lirik'
+              }
             >
               ✍ Insert {insertNotesEnabled ? 'ON' : 'OFF'}
-            </button>
-            {insertNotesEnabled && (
-              <>
-                <label className="song-lyrics-insert-format" htmlFor="lyrics-insert-format-select">
-                  Format
-                  <select
-                    id="lyrics-insert-format-select"
-                    className="song-lyrics-bar-wrap-select"
-                    value={insertNoteFormat}
-                    onChange={(e) => onChangeInsertNoteFormat?.(e.target.value)}
-                    disabled={disabled}
-                  >
-                    <option value="bracket">[C]</option>
-                    <option value="plain">C</option>
-                    <option value="number">1-7</option>
-                  </select>
-                </label>
-                {insertNoteFormat === "number" && (
-                  <label className="song-lyrics-insert-key" htmlFor="lyrics-insert-key-select">
-                    Key
-                    <select
-                      id="lyrics-insert-key-select"
-                      className="song-lyrics-bar-wrap-select"
-                      value={keySignature || 'C'}
-                      onChange={(e) => onChangeInsertNumberKeySignature?.(e.target.value)}
-                      disabled={disabled}
-                      aria-label="Pilih key untuk angka chord"
-                    >
-                      {INSERT_KEY_OPTIONS.map((option) => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                <button
-                  type="button"
-                  className={`btn ${insertTrailingSpace ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => onToggleInsertTrailingSpace?.(!insertTrailingSpace)}
-                  disabled={disabled}
-                  title="Toggle spasi otomatis setelah insert"
-                  aria-pressed={insertTrailingSpace}
-                >
-                  ␠ Spasi {insertTrailingSpace ? 'ON' : 'OFF'}
-                </button>
-              </>
-            )}
+            </span>
           </div>
         )}
         {(showMetadataHelpButton || showSaveCancelButtons) && (
