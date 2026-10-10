@@ -240,25 +240,14 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.querySelector('.song-lyrics-edit-actions')).toBeTruthy();
+    // Two separate bars: non-formatting tools, then formatting.
+    expect(container.querySelector('.lyric-editor-controls')).toBeTruthy();
+    expect(container.querySelector('.lyric-tools')).toBeTruthy();
+    expect(container.querySelector('.lyric-format')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-textarea')).toBeTruthy();
-    expect(container.querySelector('.song-lyrics-format-ribbon')).toBeTruthy();
-
-    expect(container.textContent).toContain('Auto-Align');
-    expect(container.textContent).toContain('Bersihkan Teks');
-    expect(container.textContent).toContain('Format Semua');
-
-    // Removed from the editor: Section Builder chips, detected-section badges,
-    // and the Standarkan Chord / transpose ribbon actions.
-    expect(container.querySelector('.song-lyrics-edit-actions-group-sections')).toBeFalsy();
-    expect(container.querySelector('.song-lyrics-section-chip-list')).toBeFalsy();
-    expect(container.querySelector('.song-lyrics-detected-sections')).toBeFalsy();
-    expect(container.textContent).not.toContain('Standarkan Chord');
-    expect(container.textContent).not.toContain('Transpose -1');
-    expect(container.textContent).not.toContain('Transpose +1');
   });
 
-  test('Given lyrics editor, Then formatting text actions are grouped in a menu', async () => {
+  test('Given lyrics editor, Then formatting actions are grouped by scope', async () => {
     await act(async () => {
       root.render(
         <SongLyricsEditorPanel
@@ -267,31 +256,32 @@ describe('Song lyrics shared editor rendering', () => {
           setLyricsValue={noop}
           error={null}
           disabled={false}
-          editorActions={{
-            barsPerLine: 4,
-            setBarsPerLine: noop,
-            handleAlignSelectedBarlines: noop,
-            handleWrap4BarsPerLine: noop,
-            handleWrapBarsPerLine: noop,
-            showMetadataHelpButton: true,
-            showSaveCancelButtons: false,
-            savingLyrics: false,
-            handleSaveLyrics: noop,
-            handleCancelEditLyrics: noop,
-            barsPerLineSelectId: 'bars-per-line',
-            showPianoControls: false,
-          }}
+          editorActions={{ showSaveCancelButtons: false, showPianoControls: false }}
           autoFocus={false}
         />
       );
     });
 
-    expect(container.querySelector('.song-lyrics-format-ribbon')).toBeTruthy();
-    expect(container.textContent).toContain('Auto-Align');
-    expect(container.textContent).toContain('Bersihkan Teks');
+    const groups = container.querySelectorAll('.lyric-format-group');
+    expect(groups).toHaveLength(2);
+
+    const titles = Array.from(container.querySelectorAll('.lyric-format-group-title')).map(
+      (el) => el.textContent
+    );
+    expect(titles).toEqual(['Seleksi', 'Dokumen']);
+
+    // Selection-scoped actions live in the first group.
+    expect(groups[0].textContent).toContain('Sejajarkan Bar');
+    expect(groups[0].textContent).toContain('Sejajarkan Chord');
+    expect(groups[0].textContent).toContain('Pecah Bar');
+
+    // Document-scoped actions live in the second.
+    expect(groups[1].textContent).toContain('Bersihkan Teks');
+    expect(groups[1].textContent).toContain('Tag Bagian');
+    expect(groups[1].textContent).toContain('Rapikan Semua');
   });
 
-  test('Given lyrics editor quick tools ribbon, Then the removed actions are gone', async () => {
+  test('Given no text selected, Then selection-only actions are disabled', async () => {
     await act(async () => {
       root.render(
         <SongLyricsEditorPanel
@@ -300,29 +290,75 @@ describe('Song lyrics shared editor rendering', () => {
           setLyricsValue={noop}
           error={null}
           disabled={false}
-          editorActions={{
-            barsPerLine: 4,
-            setBarsPerLine: noop,
-            handleAlignSelectedBarlines: noop,
-            handleWrap4BarsPerLine: noop,
-            handleWrapBarsPerLine: noop,
-            showMetadataHelpButton: true,
-            showSaveCancelButtons: false,
-            savingLyrics: false,
-            handleSaveLyrics: noop,
-            handleCancelEditLyrics: noop,
-            barsPerLineSelectId: 'bars-per-line',
-            showPianoControls: false,
-          }}
+          editorActions={{ showSaveCancelButtons: false, showPianoControls: false }}
           autoFocus={false}
         />
       );
     });
 
-    expect(container.querySelector('.song-lyrics-format-ribbon')).toBeTruthy();
-    expect(container.textContent).not.toContain('Standarkan Chord');
-    expect(container.textContent).not.toContain('Transpose -1');
-    expect(container.textContent).not.toContain('Transpose +1');
+    const selectionGroup = container.querySelector('.lyric-format-group');
+    const selectionButtons = Array.from(selectionGroup.querySelectorAll('button'));
+
+    expect(selectionButtons.length).toBeGreaterThan(0);
+    for (const button of selectionButtons) {
+      expect(button.disabled, `${button.textContent} should be disabled`).toBe(true);
+    }
+
+    // The document group stays usable without a selection.
+    const documentGroup = container.querySelectorAll('.lyric-format-group')[1];
+    const documentButtons = Array.from(documentGroup.querySelectorAll('button'));
+    for (const button of documentButtons) {
+      expect(button.disabled, `${button.textContent} should be enabled`).toBe(false);
+    }
+
+    expect(container.textContent).toContain('blok teks dulu');
+  });
+
+  test('Given the tools bar, Then history and search sit outside the format group', async () => {
+    await act(async () => {
+      root.render(
+        <SongLyricsEditorPanel
+          lyricsRef={{ current: null }}
+          lyricsValue={'[C]Hello'}
+          setLyricsValue={noop}
+          error={null}
+          disabled={false}
+          editorActions={{ showSaveCancelButtons: false, showPianoControls: false }}
+          autoFocus={false}
+        />
+      );
+    });
+
+    const tools = container.querySelector('.lyric-tools');
+    expect(tools.textContent).toContain('Undo');
+    expect(tools.textContent).toContain('Redo');
+    expect(tools.textContent).toContain('Cari');
+    expect(tools.textContent).toContain('Cue Keyboard');
+
+    // Formatting must not claim history actions as its own.
+    const format = container.querySelector('.lyric-format');
+    expect(format.textContent).not.toContain('Undo');
+    expect(format.textContent).not.toContain('Cari');
+  });
+
+  test('Given the old ribbon component is gone, Then its markup is absent', async () => {
+    await act(async () => {
+      root.render(
+        <SongLyricsEditorPanel
+          lyricsRef={{ current: null }}
+          lyricsValue={'[C]Hello'}
+          setLyricsValue={noop}
+          error={null}
+          disabled={false}
+          editorActions={{ showSaveCancelButtons: false, showPianoControls: false }}
+          autoFocus={false}
+        />
+      );
+    });
+
+    expect(container.querySelector('.song-lyrics-edit-actions')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-format-ribbon')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-bar-wrap-controls')).toBeFalsy();
   });
 
   test('Given piano controls in the toolbar, Then insert settings are not duplicated there', async () => {
@@ -346,7 +382,7 @@ describe('Song lyrics shared editor rendering', () => {
 
     // The piano entry point stays in the toolbar...
     const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('🎹 Piano')
+      btn.textContent?.includes('Piano')
     );
     expect(pianoButton).toBeTruthy();
 
@@ -1282,7 +1318,7 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     const pianoOpenButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('🎹 Piano')
+      btn.textContent?.includes('Piano')
     );
     expect(pianoOpenButton).toBeTruthy();
 

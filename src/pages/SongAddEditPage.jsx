@@ -909,15 +909,9 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 error={lyricsEditError}
                 disabled={loading}
                 editorActions={buildAddEditEditorActions({
-                  barsPerLine,
-                  setBarsPerLine,
-                  handleAlignSelectedBarlines,
-                  handleWrap4BarsPerLine,
-                  handleFormatWholeDocument,
-                  handleWrapBarsPerLine,
-                    onOpenPiano: () => setShowLyricsPiano(true),
-                    insertNotesToLyrics,
-                  })}
+                  onOpenPiano: () => setShowLyricsPiano(true),
+                  insertNotesToLyrics,
+                })}
                 autoFocus={false}
                 previewSong={{ key: songKey, tempo }}
                 previewProps={{

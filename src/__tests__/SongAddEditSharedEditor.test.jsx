@@ -66,18 +66,21 @@ describe('SongAddEditPage shared lyrics editor', () => {
     document.body.removeChild(container);
   });
 
-  test('Given add mode, Then the piano entry point is in the toolbar and stays disabled-agnostic', async () => {
+  test('Given add mode, Then the piano entry point is in the tools bar', async () => {
     await act(async () => {
       root.render(<SongAddEditPage />);
     });
 
-    const editorActions = container.querySelector('.song-lyrics-edit-actions');
-    expect(editorActions).toBeTruthy();
+    // Tools (history / search / cue / piano) are separate from formatting.
+    expect(container.querySelector('.lyric-editor-controls')).toBeTruthy();
+    expect(container.querySelector('.lyric-tools')).toBeTruthy();
+    expect(container.querySelector('.lyric-format')).toBeTruthy();
 
     const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('🎹 Piano')
+      btn.textContent?.includes('Piano')
     );
     expect(pianoButton).toBeTruthy();
+    expect(pianoButton.closest('.lyric-tools')).toBeTruthy();
 
     // Insert configuration moved into the piano modal, so the toolbar no longer
     // renders its own copy of the format/key controls.
@@ -91,7 +94,7 @@ describe('SongAddEditPage shared lyrics editor', () => {
     });
 
     const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('🎹 Piano')
+      btn.textContent?.includes('Piano')
     );
     expect(pianoButton).toBeTruthy();
 
@@ -138,7 +141,7 @@ describe('SongAddEditPage shared lyrics editor', () => {
 
     // The piano modal must be open first: the Insert toggle now lives inside it.
     const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('🎹 Piano')
+      btn.textContent?.includes('Piano')
     );
     expect(pianoButton).toBeTruthy();
 

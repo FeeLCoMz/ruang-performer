@@ -2,13 +2,8 @@ import { describe, test, expect, vi } from 'vitest';
 import { buildSongViewEditorActions, buildAddEditEditorActions } from '../utils/editorActionsUtils.js';
 
 describe('editorActionsUtils', () => {
-  test('buildSongViewEditorActions returns song-view edit action config', () => {
+  test('buildSongViewEditorActions carries only the non-formatting surface', () => {
     const actions = buildSongViewEditorActions({
-      barsPerLine: 4,
-      setBarsPerLine: vi.fn(),
-      handleAlignSelectedBarlines: vi.fn(),
-      handleWrap4BarsPerLine: vi.fn(),
-      handleWrapBarsPerLine: vi.fn(),
       savingLyrics: false,
       handleSaveLyrics: vi.fn(),
       handleCancelEditLyrics: vi.fn(),
@@ -16,41 +11,39 @@ describe('editorActionsUtils', () => {
       insertNotesToLyrics: true,
     });
 
-    // The metadata Help modal was removed: syntax help is now offered inline by
-    // editor autocomplete, so the toolbar must not carry a help button.
-    expect(actions).not.toHaveProperty('showMetadataHelpButton');
     expect(actions).toMatchObject({
-      barsPerLine: 4,
       showSaveCancelButtons: true,
-      barsPerLineSelectId: 'bars-per-line',
       showPianoControls: true,
       insertNotesEnabled: true,
     });
 
-    // Insert settings (format / key / trailing space) moved into the piano modal,
-    // so the toolbar config must no longer carry them.
-    expect(actions).not.toHaveProperty('insertNoteFormat');
-    expect(actions).not.toHaveProperty('keySignature');
-    expect(actions).not.toHaveProperty('onToggleInsertNotes');
+    // Formatting is handled inside LyricsFormatToolbar, which reads the lyrics
+    // state directly. Passing format handlers through here would mean two
+    // sources of truth for the same actions.
+    for (const key of [
+      'barsPerLine',
+      'setBarsPerLine',
+      'handleAlignSelectedBarlines',
+      'handleWrap4BarsPerLine',
+      'handleWrapBarsPerLine',
+      'handleFormatWholeDocument',
+      'barsPerLineSelectId',
+    ]) {
+      expect(actions, `${key} should no longer be part of the editor actions`).not.toHaveProperty(key);
+    }
   });
 
-  test('buildAddEditEditorActions returns add/edit action config', () => {
+  test('buildAddEditEditorActions returns add/edit config without formatting handlers', () => {
     const actions = buildAddEditEditorActions({
-      barsPerLine: 6,
-      setBarsPerLine: vi.fn(),
-      handleAlignSelectedBarlines: vi.fn(),
-      handleWrap4BarsPerLine: vi.fn(),
-      handleWrapBarsPerLine: vi.fn(),
       onOpenPiano: vi.fn(),
       insertNotesToLyrics: false,
     });
 
     expect(actions).toMatchObject({
-      barsPerLine: 6,
       showSaveCancelButtons: false,
-      barsPerLineSelectId: 'bars-per-line-add-edit',
       showPianoControls: true,
       insertNotesEnabled: false,
     });
+    expect(actions).not.toHaveProperty('barsPerLineSelectId');
   });
 });

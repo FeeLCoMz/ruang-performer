@@ -1,7 +1,23 @@
 import React from "react";
-import SongLyricsEditActions from "./SongLyricsEditActions.jsx";
 import SongLyricsTextarea from "./SongLyricsTextarea.jsx";
 import LyricsEditorWorkspace from "./LyricsEditorWorkspace.jsx";
+import LyricsFormatToolbar from "./LyricsFormatToolbar.jsx";
+import LyricsEditorTools from "./LyricsEditorTools.jsx";
+
+/**
+ * SongLyricsEditorPanel
+ *
+ * Layout contract for the lyrics editor:
+ *
+ *   [ Tools ]   history, search, MIDI cue, piano   <- not formatting
+ *   [ Format ]  selection vs document actions      <- formatting
+ *   [ Editor | Preview ]
+ *
+ * Tools and formatting used to be one flat ribbon of nine buttons, which mixed
+ * three different concerns (history, insertion, formatting). They are separate
+ * components now, stacked directly above the editor so every control sits next
+ * to the text it acts on.
+ */
 
 export default function SongLyricsEditorPanel({
   lyricsRef,
@@ -19,27 +35,13 @@ export default function SongLyricsEditorPanel({
 }) {
   const [selectionRange, setSelectionRange] = React.useState({ start: null, end: null });
   const {
-    barsPerLine = 4,
-    setBarsPerLine,
-    handleAlignSelectedBarlines,
-    handleWrap4BarsPerLine,
-    handleFormatWholeDocument,
-    handleWrapBarsPerLine,
     showSaveCancelButtons = false,
     savingLyrics = false,
     handleSaveLyrics,
     handleCancelEditLyrics,
-    barsPerLineSelectId = "bars-per-line",
     showPianoControls = false,
     onOpenPiano,
     insertNotesEnabled = false,
-    onToggleInsertNotes,
-    insertNoteFormat = "bracket",
-    onChangeInsertNoteFormat,
-    insertTrailingSpace = false,
-    onToggleInsertTrailingSpace,
-    keySignature = "",
-    onChangeInsertNumberKeySignature,
   } = editorActions;
 
   const textarea = (
@@ -58,34 +60,29 @@ export default function SongLyricsEditorPanel({
       {error && <div className="song-lyrics-error">{error}</div>}
 
       {showActions && (
-        <SongLyricsEditActions
-          disabled={disabled}
-          barsPerLine={barsPerLine}
-          setBarsPerLine={setBarsPerLine}
-          handleAlignSelectedBarlines={handleAlignSelectedBarlines}
-          handleWrap4BarsPerLine={handleWrap4BarsPerLine}
-          handleFormatWholeDocument={handleFormatWholeDocument}
-          handleWrapBarsPerLine={handleWrapBarsPerLine}
-          showSaveCancelButtons={showSaveCancelButtons}
-          savingLyrics={savingLyrics}
-          handleSaveLyrics={handleSaveLyrics}
-          handleCancelEditLyrics={handleCancelEditLyrics}
-          barsPerLineSelectId={barsPerLineSelectId}
-          showPianoControls={showPianoControls}
-          onOpenPiano={onOpenPiano}
-          insertNotesEnabled={insertNotesEnabled}
-          onToggleInsertNotes={onToggleInsertNotes}
-          insertNoteFormat={insertNoteFormat}
-          onChangeInsertNoteFormat={onChangeInsertNoteFormat}
-          insertTrailingSpace={insertTrailingSpace}
-          onToggleInsertTrailingSpace={onToggleInsertTrailingSpace}
-          keySignature={keySignature}
-          onChangeInsertNumberKeySignature={onChangeInsertNumberKeySignature}
-          lyricsRef={lyricsRef}
-          lyricsValue={lyricsValue}
-          setLyricsValue={setLyricsValue}
-          selectionRange={selectionRange}
-        />
+        <div className="lyric-editor-controls">
+          <LyricsEditorTools
+            disabled={disabled}
+            lyricsRef={lyricsRef}
+            lyricsValue={lyricsValue}
+            setLyricsValue={setLyricsValue}
+            showPianoControls={showPianoControls}
+            onOpenPiano={onOpenPiano}
+            insertNotesEnabled={insertNotesEnabled}
+            showSaveCancelButtons={showSaveCancelButtons}
+            savingLyrics={savingLyrics}
+            handleSaveLyrics={handleSaveLyrics}
+            handleCancelEditLyrics={handleCancelEditLyrics}
+          />
+
+          <LyricsFormatToolbar
+            disabled={disabled}
+            lyricsRef={lyricsRef}
+            lyricsValue={lyricsValue}
+            setLyricsValue={setLyricsValue}
+            selectionRange={selectionRange}
+          />
+        </div>
       )}
 
       {showPreview ? (

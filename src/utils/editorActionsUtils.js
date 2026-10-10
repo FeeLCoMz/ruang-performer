@@ -1,30 +1,23 @@
+/**
+ * Shape the editor-action props passed down to SongLyricsEditorPanel.
+ *
+ * Formatting actions are intentionally absent: LyricsFormatToolbar reads the
+ * lyrics state directly, so there is nothing for the page to wire up. What
+ * remains is the non-formatting surface (piano, save/cancel).
+ */
 function buildEditorActions({
-  barsPerLine,
-  setBarsPerLine,
-  handleAlignSelectedBarlines,
-  handleWrap4BarsPerLine,
-  handleFormatWholeDocument,
-  handleWrapBarsPerLine,
   showSaveCancelButtons,
   savingLyrics,
   handleSaveLyrics,
   handleCancelEditLyrics,
-  barsPerLineSelectId,
   onOpenPiano,
   insertNotesToLyrics,
 }) {
   return {
-    barsPerLine,
-    setBarsPerLine,
-    handleAlignSelectedBarlines,
-    handleWrap4BarsPerLine,
-    handleFormatWholeDocument,
-    handleWrapBarsPerLine,
     showSaveCancelButtons,
     savingLyrics,
     handleSaveLyrics,
     handleCancelEditLyrics,
-    barsPerLineSelectId,
     showPianoControls: true,
     onOpenPiano,
     insertNotesEnabled: insertNotesToLyrics,
@@ -32,18 +25,9 @@ function buildEditorActions({
 }
 
 export function buildSongViewEditorActions(params) {
-  return buildEditorActions({
-    ...params,
-    keySignature: params.insertNumberKeySignature,
-    showSaveCancelButtons: true,
-    barsPerLineSelectId: 'bars-per-line',
-  });
+  return buildEditorActions({ ...params, showSaveCancelButtons: true });
 }
 
 export function buildAddEditEditorActions(params) {
-  return buildEditorActions({
-    ...params,
-    showSaveCancelButtons: false,
-    barsPerLineSelectId: 'bars-per-line-add-edit',
-  });
+  return buildEditorActions({ ...params, showSaveCancelButtons: false });
 }

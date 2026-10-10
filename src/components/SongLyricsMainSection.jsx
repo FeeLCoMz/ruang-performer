@@ -166,12 +166,6 @@ export default function SongLyricsMainSection({
               error={editError}
               disabled={savingLyrics}
               editorActions={buildSongViewEditorActions({
-                barsPerLine,
-                setBarsPerLine,
-                handleAlignSelectedBarlines,
-                handleWrap4BarsPerLine,
-                handleFormatWholeDocument,
-                handleWrapBarsPerLine,
                 savingLyrics,
                 handleSaveLyrics,
                 handleCancelEditLyrics,
