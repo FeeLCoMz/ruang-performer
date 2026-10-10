@@ -12,62 +12,6 @@ import { GM_SOUND_CATEGORIES, GM_SOUND_BANK, filterGmSoundBankByCategory, format
 
 const LAST_MIDI_CHANNEL_STORAGE_KEY = 'ruangperformer_last_midi_channel';
 
-const METADATA_HELP_ITEMS = [
-  {
-    title: "Struktur Lagu",
-    description: "Penanda bagian lagu yang akan ditampilkan sebagai section.",
-    examples: ["[Intro]", "Verse:", "Chorus:", "Bridge:", "Outro:"],
-  },
-  {
-    title: "Label Instrumen",
-    description: "Baris nama instrumen untuk panduan pemain.",
-    examples: ["[Piano]", "Guitar:", "Brass:", "Vokal:"],
-  },
-  {
-    title: "Patch Instrumen",
-    description: "Metadata patch/layer keyboard dalam satu baris.",
-    examples: [
-      "Patch: Stage Piano | Layer: Warm Pad (Volume 30%)",
-      "Patch: EP Soft | Split: Bass",
-      "Preset: Ballad Keys | Scene: Verse",
-    ],
-  },
-  {
-    title: "Preset Cue MIDI",
-    description: "Patch keyboard yang bisa trigger Program Change otomatis/manual.",
-    examples: [
-      "[Keys: Acoustic Grand Piano | PC: 0 | CH: 1]",
-      "[Guitar: Lead 2 (sawtooth) | PC: 81 | CH: 2]",
-    ],
-  },
-  {
-    title: "Metadata Aransemen",
-    description: "Catatan perform berbasis key:value.",
-    examples: [
-      "Intensitas: 1",
-      "Cue: Drum masuk di bar 9",
-      "Notes: Main tipis di verse",
-      "FX: Hall Reverb",
-      "Feel: Half-time",
-    ],
-  },
-  {
-    title: "Modulasi",
-    description: "Perintah perubahan key di tengah lagu.",
-    examples: ["Modulation: G", "Key change: A"],
-  },
-  {
-    title: "Original Key",
-    description: "Informasi key asli lagu (tidak ikut ditranspose).",
-    examples: ["Original Key: C"],
-  },
-  {
-    title: "Timestamp",
-    description: "Penanda waktu yang bisa diklik di tampilan chord.",
-    examples: ["[01:23]", "[1:02:03]"],
-  },
-];
-
 export default function SongLyricsEditActions({
   disabled,
   barsPerLine,
@@ -76,7 +20,6 @@ export default function SongLyricsEditActions({
   handleWrap4BarsPerLine,
   handleFormatWholeDocument,
   handleWrapBarsPerLine,
-  showMetadataHelpButton = true,
   showSaveCancelButtons = false,
   savingLyrics = false,
   handleSaveLyrics,
@@ -90,7 +33,6 @@ export default function SongLyricsEditActions({
   setLyricsValue,
   selectionRange = { start: null, end: null },
 }) {
-  const [showMetadataHelp, setShowMetadataHelp] = useState(false);
   const [lastSelection, setLastSelection] = useState({ start: null, end: null });
   const [selectedGmCategory, setSelectedGmCategory] = useState('piano-keys');
   const [selectedGmProgram, setSelectedGmProgram] = useState(0);
@@ -100,7 +42,6 @@ export default function SongLyricsEditActions({
     if (!Number.isFinite(stored) || stored < 1 || stored > 16) return 1;
     return stored;
   });
-  const metadataSections = useMemo(() => METADATA_HELP_ITEMS, []);
   const filteredGmSounds = useMemo(() => {
     const filtered = filterGmSoundBankByCategory(selectedGmCategory);
     return filtered.length ? filtered : GM_SOUND_BANK;
@@ -440,20 +381,9 @@ export default function SongLyricsEditActions({
             </span>
           </div>
         )}
-        {(showMetadataHelpButton || showSaveCancelButtons) && (
+        {showSaveCancelButtons && (
           <div className="song-lyrics-edit-actions-group song-lyrics-edit-actions-group-meta">
             <span className="song-lyrics-action-group-title">Editor Actions</span>
-            {showMetadataHelpButton && (
-              <button
-                type="button"
-                onClick={() => setShowMetadataHelp(true)}
-                disabled={disabled}
-                className="btn btn-secondary"
-                title="Lihat daftar metadata yang didukung"
-              >
-                ❓ Help
-              </button>
-            )}
             {showSaveCancelButtons && (
               <>
                 <button
@@ -481,52 +411,6 @@ export default function SongLyricsEditActions({
           </div>
         )}
       </div>
-
-      {showMetadataHelp && (
-        <div
-          className="modal-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Panduan metadata lirik"
-          onClick={() => setShowMetadataHelp(false)}
-        >
-          <div
-            className="modal song-lyrics-metadata-help-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="song-lyrics-metadata-help-header">
-              <h3>Panduan Metadata Lirik</h3>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowMetadataHelp(false)}
-                aria-label="Tutup panduan metadata"
-                title="Tutup"
-              >
-                ✕
-              </button>
-            </div>
-            <p className="song-lyrics-metadata-help-desc">
-              Gunakan format metadata berikut langsung di area lirik/chord.
-            </p>
-            <div className="song-lyrics-metadata-help-list">
-              {metadataSections.map((item) => (
-                <section key={item.title} className="song-lyrics-metadata-help-item">
-                  <h4>{item.title}</h4>
-                  <p>{item.description}</p>
-                  <ul>
-                    {item.examples.map((example) => (
-                      <li key={`${item.title}-${example}`}>
-                        <code>{example}</code>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {formatPreview && (
         <div

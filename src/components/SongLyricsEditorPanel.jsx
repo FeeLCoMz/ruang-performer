@@ -27,7 +27,6 @@ export default function SongLyricsEditorPanel({
     handleWrap4BarsPerLine,
     handleFormatWholeDocument,
     handleWrapBarsPerLine,
-    showMetadataHelpButton = true,
     showSaveCancelButtons = false,
     savingLyrics = false,
     handleSaveLyrics,
@@ -78,7 +77,6 @@ export default function SongLyricsEditorPanel({
           handleWrap4BarsPerLine={handleWrap4BarsPerLine}
           handleFormatWholeDocument={handleFormatWholeDocument}
           handleWrapBarsPerLine={handleWrapBarsPerLine}
-          showMetadataHelpButton={showMetadataHelpButton}
           showSaveCancelButtons={showSaveCancelButtons}
           savingLyrics={savingLyrics}
           handleSaveLyrics={handleSaveLyrics}

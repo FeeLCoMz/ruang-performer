@@ -16,9 +16,11 @@ describe('editorActionsUtils', () => {
       insertNotesToLyrics: true,
     });
 
+    // The metadata Help modal was removed: syntax help is now offered inline by
+    // editor autocomplete, so the toolbar must not carry a help button.
+    expect(actions).not.toHaveProperty('showMetadataHelpButton');
     expect(actions).toMatchObject({
       barsPerLine: 4,
-      showMetadataHelpButton: true,
       showSaveCancelButtons: true,
       barsPerLineSelectId: 'bars-per-line',
       showPianoControls: true,
@@ -45,7 +47,6 @@ describe('editorActionsUtils', () => {
 
     expect(actions).toMatchObject({
       barsPerLine: 6,
-      showMetadataHelpButton: true,
       showSaveCancelButtons: false,
       barsPerLineSelectId: 'bars-per-line-add-edit',
       showPianoControls: true,

@@ -20,7 +20,6 @@ function buildEditorActions({
     handleWrap4BarsPerLine,
     handleFormatWholeDocument,
     handleWrapBarsPerLine,
-    showMetadataHelpButton: true,
     showSaveCancelButtons,
     savingLyrics,
     handleSaveLyrics,

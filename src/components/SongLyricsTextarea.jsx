@@ -4,7 +4,9 @@ import { EditorView, keymap } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
 import { history, historyKeymap, defaultKeymap, indentWithTab, undo, redo } from "@codemirror/commands";
 import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
+import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
 import { lyricsHighlighting, lyricsEditorTheme } from "../utils/lyricsHighlightExtension.js";
+import { lyricsCompletionSource } from "../utils/lyricsCompletion.js";
 
 const PLACEHOLDER =
   "Masukkan lirik dan chord...\nContoh:\n[C]Amazing grace how [F]sweet the [C]sound";
@@ -48,9 +50,24 @@ export default function SongLyricsTextarea({
     () => [
       history(),
       search({ top: true }),
+      // Inline syntax help: offers [Section] tags, Patch:/Modulation: metadata
+      // and MIDI cue templates as the user types, replacing the help modal.
+      autocompletion({
+        override: [lyricsCompletionSource],
+        activateOnTyping: true,
+        closeOnBlur: true,
+      }),
       // Enter keeps the default newline behaviour; no custom Enter binding here.
       // searchKeymap provides Ctrl+F / Ctrl+H / F3 navigation.
-      Prec.high(keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab])),
+      Prec.high(
+        keymap.of([
+          ...defaultKeymap,
+          ...historyKeymap,
+          ...searchKeymap,
+          ...completionKeymap,
+          indentWithTab,
+        ])
+      ),
       lyricsHighlighting,
       lyricsEditorTheme,
       EditorView.lineWrapping,

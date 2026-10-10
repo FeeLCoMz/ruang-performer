@@ -12008,13 +12008,6 @@ body.dark-mode .cd-token {
   }
 }
 
-.song-lyrics-metadata-help-modal {
-  width: min(860px, calc(100vw - 32px));
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: var(--spacing-xl);
-}
-
 /* Format Semua preview: show before/after before rewriting the document */
 .song-lyrics-format-preview-modal {
   width: min(980px, calc(100vw - 32px));
@@ -12112,63 +12105,6 @@ body.dark-mode .song-field-error {
 .field-has-error:focus {
   border-color: #dc2626 !important;
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
-}
-
-.song-lyrics-metadata-help-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
-}
-
-.song-lyrics-metadata-help-header h3 {
-  margin: 0;
-  font-size: var(--font-size-xl);
-}
-
-.song-lyrics-metadata-help-desc {
-  margin: 0 0 var(--spacing-lg) 0;
-  color: var(--text-secondary);
-}
-
-.song-lyrics-metadata-help-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--spacing-md);
-}
-
-.song-lyrics-metadata-help-item {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--primary-bg);
-  padding: var(--spacing-md);
-}
-
-.song-lyrics-metadata-help-item h4 {
-  margin: 0 0 var(--spacing-xs) 0;
-  font-size: var(--font-size-base);
-}
-
-.song-lyrics-metadata-help-item p {
-  margin: 0 0 var(--spacing-sm) 0;
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-}
-
-.song-lyrics-metadata-help-item ul {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.song-lyrics-metadata-help-item li {
-  margin-bottom: 4px;
-  color: var(--text-primary);
-}
-
-.song-lyrics-metadata-help-item code {
-  font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
-  font-size: 12px;
 }
 
 .song-lyrics-bar-wrap-label {
