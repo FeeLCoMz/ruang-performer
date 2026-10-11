@@ -6,7 +6,7 @@
 api/__tests__/
 api/ai.js
 api/index.js
-api/server.js
+api/server.cjs
 api/auth/change-password.js
 api/auth/delete-account.js
 api/auth/forgot-password.js
@@ -15,10 +15,6 @@ api/auth/user-audit-logs.js
 api/test-helpers/
 api/tools/
 api/users/
-api/youtube/
-
-temp-inspect-file.js
-temp-parse.js
 
 # === Database, test, and dev files ===
 db/
@@ -31,7 +27,6 @@ runMigration.js
 
 # === Config & build/test scripts ===
 jest.config.*
-jest.setup.js
 vitest.config.js
 vite.config.js
 

@@ -1,4 +1,0 @@
-{
-  "src": "/api/auth/user-audit-logs",
-  "dest": "/api/auth/user-audit-logs.js"
-}

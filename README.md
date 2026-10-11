@@ -141,15 +141,17 @@ Template: `.env.example`. Untuk lingkungan lokal, `api/index.js` memuat `.env.lo
 
 ## Setup Database
 
-Skema utama berada di [`db/schema.sql`](db/schema.sql). Perubahan schema berikutnya memakai file migrasi terpisah di `db/`:
+Seluruh skema database berada dalam satu file mandiri di [`db/schema.sql`](db/schema.sql). Untuk menyiapkan database baru, cukup jalankan satu perintah:
 
 ```bash
-node runMigration.js migration_add_time_signature_column.sql
+node runMigration.js schema.sql
 ```
 
-`runMigration.js` memecah file SQL per `;`, membuang komentar `--`, mengeksekusi statement secara berurutan, mengabaikan error nonfatal (`already exists`, `no such column`), lalu menampilkan struktur seluruh tabel.
+`runMigration.js` memecah file SQL per `;`, membuang komentar `--`, mengeksekusi statement secara berurutan, mengabaikan error nonfatal (`already exists`, `no such column`), lalu menampilkan struktur seluruh tabel. Karena semua statement memakai `IF NOT EXISTS`, perintah di atas aman dijalankan berulang.
 
-> **Peringatan:** sebelum menjalankan migrasi yang dapat menghapus kolom/tabel/data, selalu minta konfirmasi eksplisit pengguna terlebih dahulu.
+> **Upgrade DB produksi yang sudah berjalan:** `schema.sql` hanya untuk database baru — karena `CREATE TABLE IF NOT EXISTS`, menjalankannya pada DB yang sudah ada tidak mengubah tabel lama. Perubahan schema ke depan: tambahkan statement ke `db/schema.sql` lalu jalankan file itu ke produksi (perubahan aditif aman di-skip otomatis); untuk perubahan destruktif buat file migrasi terpisah + backup dulu. Prosedur lengkap: [`docs/DATABASE.md`](docs/DATABASE.md).
+
+> **Peringatan:** sebelum menjalankan skrip yang dapat menghapus kolom/tabel/data, selalu minta konfirmasi eksplisit pengguna terlebih dahulu.
 
 ## Skrip npm
 
@@ -165,7 +167,7 @@ node runMigration.js migration_add_time_signature_column.sql
 | `npm run lint` | ESLint pada `src/` |
 | `npm run format` | Prettier pada `src/` |
 | `npm run generate-icons` | Generate icon PWA |
-| `node runMigration.js <file>` | Jalankan migrasi DB |
+| `node runMigration.js <file>` | Jalankan SQL skema/migrasi DB |
 
 ## Struktur Proyek
 
@@ -185,7 +187,7 @@ node runMigration.js migration_add_time_signature_column.sql
 │   ├── tools/            # export/import, backup, restore
 │   ├── ai.js             # Integrasi Gemini
 │   └── __tests__/        # Jest + supertest
-├── db/                   # schema.sql + migrasi
+├── db/                   # schema.sql (skema tunggal & lengkap)
 ├── src/
 │   ├── main.jsx          # Entry React
 │   ├── App.jsx           # Router + state global

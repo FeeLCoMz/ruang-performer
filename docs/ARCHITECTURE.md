@@ -204,7 +204,7 @@ Kunci rate limit dibangkitkan per user (`userKeyGenerator`) atau per IP+endpoint
 | Komponen | PascalCase | `ChordDisplay.jsx` |
 | Util | camelCase | `transposeChord()` |
 | Rute API | sesuai HTTP verb | `index.js`, `[id].js` |
-| Migrasi | `migration_add_<fitur>.sql` | `migration_add_time_signature_column.sql` |
+| Skema DB | `db/schema.sql` (satu file, idempoten) | `db/schema.sql` |
 
 ## 9. Referensi Lintas
 

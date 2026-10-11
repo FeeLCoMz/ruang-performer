@@ -101,11 +101,11 @@ export default async function handler(req, res) {
 - **Permissions:** Role-based checks in `permissionUtils.js` (e.g., `canPerformAction('edit_setlist', role)`)
 - **JSON columns:** `setlists.songs` (array), `setlistSongMeta` (object), `songs.time_markers` (array)
 
-**Migration workflow:**
+**Schema workflow:**
 
 ```bash
-# Edit db/migrations_<name>.sql
-node runMigration.js migrations_<name>.sql
+# Semua skema ada di db/schema.sql (satu file, idempoten)
+node runMigration.js schema.sql
 ```
 
 Migrations split by `;`, skip `--` comments, run sequentially.

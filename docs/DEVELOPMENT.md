@@ -158,7 +158,7 @@ Contoh rewrite Vercel:
 | Hook | `use<Name>.js` | `usePermission.js` |
 | Util | camelCase | `transposeChord()` |
 | Test | `<Name>.test.js(x)` | `chordUtils.test.js` |
-| Migrasi | `migration_add_<fitur>.sql` | `migration_add_time_signature_column.sql` |
+| Skema DB | `db/schema.sql` (satu file, idempoten) | `db/schema.sql` |
 
 Struktur folder:
 
@@ -208,7 +208,7 @@ npm run test:unit          # Sekali jalan
 npm run test:unit:watch    # Mode watch
 ```
 
-Environment `jsdom`, globals dinyalakan. Cakupan saat ini: util (`chordUtils`, `permissionUtils`, `exportUtil`, `lyricsEditorUtils`, `setlistSmartAssistant`, `analyticsUtil`, dll.), hooks (`useChordStats`), dan komponen/halaman (`ChordDisplay`, `Sidebar`, `SongListPage`, `DashboardPage`, `AIAutofillModal`, dan lainnya).
+Environment `jsdom`, globals dinyalakan. Cakupan saat ini: util (`chordUtils`, `permissionUtils`, `exportUtil`, `lyricsEditorUtils`, `setlistSmartAssistant`, `analyticsUtil`, dll.), hooks (`useChordStats`), handler AI (`api.ai.test.js` — menguji `api/ai.js` secara terisolasi), dan komponen/halaman (`ChordDisplay`, `Sidebar`, `SongListPage`, `DashboardPage`, `AIAutofillModal`, dan lainnya).
 
 Helper tersedia di `src/__tests__/helpers/`:
 - `domTestUtils.js`
@@ -217,12 +217,20 @@ Helper tersedia di `src/__tests__/helpers/`:
 ### API (Jest + supertest)
 
 ```bash
-npx jest
+npm run test:api          # Sekali jalan
+npm run test:api:watch    # Mode watch
 ```
 
 - `NODE_ENV=test` membuat `verifyToken` otomatis meloloskan token dummy dan `getTursoClient()` mengembalikan mock.
-- Test mencakup songs, bands, setlists, gigs, AI, dan permission.
-- Helper: `api/test-helpers/setupEnv.js`, `api/test-helpers/jest.setup.api.js`
+- Test mencakup songs, bands, setlists, dan gigs (`api/__tests__/**/*.cjs`).
+- Helper: `api/test-helpers/setupEnv.cjs`, `api/test-helpers/jest.setup.api.js`
+
+**Catatan modul (penting):** root `package.json` memakai `"type": "module"`, sehingga `api/index.js` adalah ESM dan tidak bisa `require()` dari test CommonJS. Karena itu:
+- `api/server.cjs` adalah *loader* CommonJS yang memuat app lewat `import()` dinamis.
+- Test memanggil `const loadApp = require('../server')` lalu `app = await loadApp()` di dalam `beforeAll`.
+- Skrip `test:api` menjalankan Jest dengan flag `--experimental-vm-modules` (wajib untuk dynamic import di Jest) dan `--forceExit` (menutup handle ESM yang masih terbuka).
+
+`jest.config.cjs` hanya menangani test API ini: `testEnvironment: 'node'` dipakai agar global `fetch`/`Request` (undici) tetap tersedia untuk `@libsql/client` — di bawah `jsdom` global tersebut hilang dan menyebabkan `fetch is not defined`. Test di bawah `src/__tests__` **tidak** dijalankan Jest karena sudah ditangani Vitest.
 
 ---
 

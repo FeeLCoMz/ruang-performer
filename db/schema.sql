@@ -131,6 +131,25 @@ CREATE TABLE IF NOT EXISTS song_user_mastery (
 );
 
 
+-- Legacy per-member mastery table.
+-- Kept for backward compatibility: api/songs backend still backfills
+-- from this table into song_user_mastery when it exists.
+CREATE TABLE IF NOT EXISTS song_member_mastery (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  songId TEXT NOT NULL,
+  bandId TEXT NOT NULL,
+  userId TEXT NOT NULL,
+  mastered INTEGER NOT NULL DEFAULT 1,
+  masteredAt TEXT,
+  createdAt TEXT DEFAULT (datetime('now')),
+  updatedAt TEXT,
+  FOREIGN KEY (songId) REFERENCES songs(id) ON DELETE CASCADE,
+  FOREIGN KEY (bandId) REFERENCES bands(id) ON DELETE CASCADE,
+  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(songId, userId)
+);
+
+
 -- Practice sessions table
 CREATE TABLE IF NOT EXISTS practice_sessions (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -200,6 +219,8 @@ CREATE INDEX IF NOT EXISTS idx_setlist_songs_setlist_id_position ON setlist_song
 CREATE INDEX IF NOT EXISTS idx_band_song_preferences_bandId_songId ON band_song_preferences(bandId, songId);
 CREATE INDEX IF NOT EXISTS idx_song_user_mastery_songId ON song_user_mastery(songId);
 CREATE INDEX IF NOT EXISTS idx_song_user_mastery_userId ON song_user_mastery(userId);
+CREATE INDEX IF NOT EXISTS idx_song_member_mastery_songId ON song_member_mastery(songId);
+CREATE INDEX IF NOT EXISTS idx_song_member_mastery_bandId_userId ON song_member_mastery(bandId, userId);
 CREATE INDEX IF NOT EXISTS idx_practice_sessions_bandId ON practice_sessions(bandId);
 CREATE INDEX IF NOT EXISTS idx_band_song_practice_stats_band_song ON band_song_practice_stats(bandId, songId);
 CREATE INDEX IF NOT EXISTS idx_gigs_bandId ON gigs(bandId);

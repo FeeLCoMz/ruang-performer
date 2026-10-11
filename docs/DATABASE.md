@@ -106,7 +106,7 @@ Tabel relasi user↔band dengan **peran**. Inilah sumber kebenaran sistem permis
 | `youtubeId` | TEXT | untuk sinkronisasi video |
 | `key` | TEXT | kunci lagu |
 | `tempo` | TEXT | |
-| `time_signature` | TEXT | hasil migrasi `migration_add_time_signature_column.sql` |
+| `time_signature` | TEXT | Birama lagu (mis. `4/4`), default `4/4` |
 | `arrangement_style` | TEXT | |
 | `keyboard_patch` | TEXT | program MIDI |
 | `lyrics` | TEXT | lirik berkord |
@@ -166,6 +166,19 @@ Status "sudah hafal" per lagu per user.
 | --- | --- | --- |
 | `id` | TEXT PK | |
 | `songId`, `userId` | TEXT | FK **CASCADE**, NOT NULL |
+| `mastered` | INTEGER | NOT NULL default `1` |
+| `masteredAt` | TEXT | |
+| `createdAt` / `updatedAt` | TEXT | |
+| — | UNIQUE | `(songId, userId)` |
+
+### `song_member_mastery` (legacy)
+
+Tabel lama pelacakan hafal per anggota band. Dipertahankan untuk kompatibilitas mundur — backend (`api/songs`) melakukan backfill ke `song_user_mastery` bila tabel ini ada. Tidak dipakai untuk fitur baru.
+
+| Kolom | Tipe | Keterangan |
+| --- | --- | --- |
+| `id` | TEXT PK | |
+| `songId`, `bandId`, `userId` | TEXT | FK **CASCADE**, NOT NULL |
 | `mastered` | INTEGER | NOT NULL default `1` |
 | `masteredAt` | TEXT | |
 | `createdAt` / `updatedAt` | TEXT | |
@@ -235,16 +248,18 @@ Agregasi turunan dari `practice_sessions` untuk performa.
 | `idx_gigs_bandId` / `idx_gigs_status` | gigs |
 | `idx_users_role` | users |
 
-Migrasi indeks tambahan: `migration_add_setlist_performance_indexes.sql`, `migration_add_song_member_mastery.sql`, `migration_add_song_user_mastery.sql`, `migration_add_band_song_preferences.sql`.
+Daftar lengkap index ada di bagian akhir [`db/schema.sql`](../db/schema.sql), meliputi index setlist (`idx_setlists_userId_updatedAt`, `idx_setlists_bandId_updatedAt`), `band_song_preferences`, `song_user_mastery`, dan `song_member_mastery`.
 
 ---
 
-## Migrasi
+## Migrasi & Skema
 
 ### Menjalankan
 
+Seluruh skema (tabel, kolom, index) kini berada dalam satu file mandiri `db/schema.sql`. Untuk menyiapkan database baru cukup:
+
 ```bash
-node runMigration.js migration_add_time_signature_column.sql
+node runMigration.js schema.sql
 ```
 
 Runner melakukan:
@@ -256,21 +271,46 @@ Runner melakukan:
 6. **Mengabaikan** error nonfatal: `already exists`, `no such column`, `duplicate column name`
 7. Menampilkan `PRAGMA table_info` untuk seluruh tabel sebagai verifikasi
 
-> 🔴 **Wajib:** sebelum menjalankan migrasi yang bisa menghapus kolom, tabel, atau record, minta konfirmasi eksplisit pengguna terlebih dahulu.
+> Semua statement memakai `IF NOT EXISTS`, sehingga perintah di atas idempoten dan aman dijalankan berulang.
 
-### Daftar Migrasi
+> 🔴 **Wajib:** sebelum menjalankan skrip yang bisa menghapus kolom, tabel, atau record, minta konfirmasi eksplisit pengguna terlebih dahulu.
 
-| File | Perubahan |
-| --- | --- |
-| `migration_add_deletedAt_column.sql` | Menambah kolom soft delete |
-| `migration_add_isActive_column.sql` | Menambah flag aktif user |
-| `migration_add_band_members_deletedAt.sql` | Soft delete anggota band |
-| `migration_add_time_signature_column.sql` | Menambah `songs.time_signature` |
-| `migration_add_band_song_preferences.sql` | Tabel preferensi key per band |
-| `migration_add_song_user_mastery.sql` | Tabel mastery per user |
-| `migration_add_song_member_mastery.sql` | Tabel mastery per anggota |
-| `migration_add_practice_song_meta_and_stats.sql` | Metadata & statistik latihan |
-| `migration_add_setlist_performance_indexes.sql` | Index performa setlist |
+### Riwayat Perubahan Skema
+
+Migrasi bertahap (`migration_add_*.sql`) dahulu digunakan sebelum aplikasi masuk produksi. Saat ini seluruh perubahannya sudah dikonsolidasikan ke dalam `db/schema.sql` dan file migrasi terpisah sudah dihapus. Untuk perubahan schema ke depan, tambahkan langsung ke `db/schema.sql` dengan statement idempoten (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`) — atau buat file migrasi baru di `db/` bila perlu upgrade DB produksi yang sudah berjalan.
+
+### Upgrade DB Produksi yang Sudah Berjalan
+
+> ⚠️ **Penting:** `db/schema.sql` **hanya** untuk menyiapkan database baru. Karena semua tabel memakai `CREATE TABLE IF NOT EXISTS`, menjalankannya pada DB yang sudah ada **tidak akan mengubah** tabel yang sudah terbuat — kolom/tabel baru tidak akan muncul.
+
+DB produksi saat ini sudah berjalan dan tidak perlu menjalankan apa pun. Untuk memperkenalkan perubahan schema baru ke DB produksi, ikuti prosedur berikut:
+
+**1. Perubahan aditif (kolom/tabel/index baru):**
+
+```bash
+# a. Tambahkan statement ke db/schema.sql agar DB baru tetap lengkap
+#    (mis. ALTER TABLE songs ADD COLUMN foo TEXT; / CREATE TABLE IF NOT EXISTS ...)
+
+# b. Jalankan file yang sama ke DB produksi — hanya statement yang belum
+#    ada yang akan berefek; sisanya di-skip otomatis oleh runner
+node runMigration.js schema.sql
+```
+
+Runner mengabaikan error nonfatal (`no such column`, `duplicate column name`, `already exists`), sehingga `ALTER TABLE ... ADD COLUMN` pada kolom yang sudah ada akan di-skip tanpa menghentikan proses.
+
+**2. Perubahan destruktif (drop/rename kolom, ubah tipe, backfill data):**
+
+- Buat file migrasi terpisah di `db/` (mis. `migration_<tanggal>_<deskripsi>.sql`).
+- **Backup terlebih dahulu** lewat menu Tools → Backup Database, atau `scripts/backup-db.mjs`.
+- 🔴 **Wajib minta konfirmasi eksplisit pengguna** sebelum menjalankannya, lalu jalankan:
+
+```bash
+node runMigration.js migration_<tanggal>_<deskripsi>.sql
+```
+
+**3. Update dokumentasi:** setelah perubahan diterapkan, perbarui tabel di dokumen ini (dan `db/schema.sql` bila belum) agar tetap sinkron.
+
+> Tip: selalu uji perubahan pada database Turso terpisah/staging sebelum menjalankannya ke produksi.
 
 ---
 

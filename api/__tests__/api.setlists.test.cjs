@@ -4,8 +4,13 @@ require('../test-helpers/setupEnv.cjs');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const { getTursoClient } = require('../_turso.js');
-const serverModule = require('../server');
-const app = serverModule.default || serverModule;
+const loadApp = require('../server');
+
+let app;
+
+beforeAll(async () => {
+  app = await loadApp();
+});
 
 function createAuthToken() {
   const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';

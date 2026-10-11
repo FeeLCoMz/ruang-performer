@@ -1,11 +1,14 @@
 // Vitest tests for the /api/ai router and its Gemini model fallback logic.
 // These exercise api/ai.js in isolation: no database, no supertest server and
 // no real network calls (global.fetch is mocked per test).
+//
+// Lives under src/__tests__ so `npm run test:unit` (Vitest) collects it; the
+// Jest suite is reserved for the CommonJS API tests in api/__tests__/**/*.cjs.
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Readable } from 'node:stream';
 
-import handler, { buildGeminiModelCandidates } from '../ai.js';
+import handler, { buildGeminiModelCandidates } from '../../api/ai.js';
 
 /**
  * Build a minimal IncomingMessage-alike that readJson() can consume.
