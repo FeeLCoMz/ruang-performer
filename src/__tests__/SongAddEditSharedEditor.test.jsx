@@ -71,10 +71,22 @@ describe('SongAddEditPage shared lyrics editor', () => {
       root.render(<SongAddEditPage />);
     });
 
-    // Tools (history / search / cue / piano) are separate from formatting.
+    // Tools (history / search / cue / piano) are separate from formatting and
+    // live behind a toggle so formatting stays the primary surface.
     expect(container.querySelector('.lyric-editor-controls')).toBeTruthy();
-    expect(container.querySelector('.lyric-tools')).toBeTruthy();
     expect(container.querySelector('.lyric-format')).toBeTruthy();
+    expect(container.querySelector('.lyric-tools')).toBeFalsy();
+
+    const toolsToggle = container.querySelector('.lyric-editor-tools-toggle');
+    expect(toolsToggle).toBeTruthy();
+    expect(toolsToggle.getAttribute('aria-expanded')).toBe('false');
+
+    await act(async () => {
+      toolsToggle.click();
+    });
+
+    expect(container.querySelector('.lyric-tools')).toBeTruthy();
+    expect(toolsToggle.getAttribute('aria-expanded')).toBe('true');
 
     const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Piano')
@@ -91,6 +103,10 @@ describe('SongAddEditPage shared lyrics editor', () => {
   test('Given add mode, When piano is opened, Then insert controls are available inside the modal', async () => {
     await act(async () => {
       root.render(<SongAddEditPage />);
+    });
+
+    await act(async () => {
+      container.querySelector('.lyric-editor-tools-toggle').click();
     });
 
     const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
@@ -139,7 +155,12 @@ describe('SongAddEditPage shared lyrics editor', () => {
     const editorHost = container.querySelector('.song-lyrics-textarea-editor');
     expect(editorHost).toBeTruthy();
 
-    // The piano modal must be open first: the Insert toggle now lives inside it.
+    // The piano modal must be open first: the Insert toggle now lives inside it,
+    // and the piano entry point itself sits in the collapsible tools bar.
+    await act(async () => {
+      container.querySelector('.lyric-editor-tools-toggle').click();
+    });
+
     const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Piano')
     );

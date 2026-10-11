@@ -33,6 +33,7 @@ export default function SongLyricsEditorPanel({
   previewProps = {},
   baselineLyrics = null,
 }) {
+  const [isToolsOpen, setIsToolsOpen] = React.useState(false);
   const [selectionRange, setSelectionRange] = React.useState({ start: null, end: null });
   // Tracked separately from the character offsets: the preview syncs by line,
   // and a line can hold many caret positions.
@@ -69,19 +70,40 @@ export default function SongLyricsEditorPanel({
 
       {showActions && (
         <div className="lyric-editor-controls">
-          <LyricsEditorTools
-            disabled={disabled}
-            lyricsRef={lyricsRef}
-            lyricsValue={lyricsValue}
-            setLyricsValue={setLyricsValue}
-            showPianoControls={showPianoControls}
-            onOpenPiano={onOpenPiano}
-            insertNotesEnabled={insertNotesEnabled}
-            showSaveCancelButtons={showSaveCancelButtons}
-            savingLyrics={savingLyrics}
-            handleSaveLyrics={handleSaveLyrics}
-            handleCancelEditLyrics={handleCancelEditLyrics}
-          />
+          <div className="lyric-editor-controls-head">
+            <button
+              type="button"
+              className={`btn btn-secondary lyric-editor-tools-toggle${isToolsOpen ? ' is-open' : ''}`}
+              onClick={() => setIsToolsOpen((prev) => !prev)}
+              aria-expanded={isToolsOpen}
+              aria-controls="lyric-editor-tools-panel"
+              title="Riwayat, pencarian, cue keyboard, dan piano"
+            >
+              <span aria-hidden="true">{isToolsOpen ? '▾' : '▸'}</span>
+              Alat Editor
+            </button>
+            <span className="lyric-editor-controls-hint">
+              Format teks ada di bawah ini · riwayat &amp; cue di panel Alat
+            </span>
+          </div>
+
+          {isToolsOpen && (
+            <div id="lyric-editor-tools-panel" className="lyric-editor-tools-panel">
+              <LyricsEditorTools
+                disabled={disabled}
+                lyricsRef={lyricsRef}
+                lyricsValue={lyricsValue}
+                setLyricsValue={setLyricsValue}
+                showPianoControls={showPianoControls}
+                onOpenPiano={onOpenPiano}
+                insertNotesEnabled={insertNotesEnabled}
+                showSaveCancelButtons={showSaveCancelButtons}
+                savingLyrics={savingLyrics}
+                handleSaveLyrics={handleSaveLyrics}
+                handleCancelEditLyrics={handleCancelEditLyrics}
+              />
+            </div>
+          )}
 
           <LyricsFormatToolbar
             disabled={disabled}

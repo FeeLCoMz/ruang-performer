@@ -240,11 +240,23 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    // Two separate bars: non-formatting tools, then formatting.
+    // Two separate bars: non-formatting tools, then formatting. The tools bar
+    // is collapsed behind a toggle so formatting stays the primary surface.
     expect(container.querySelector('.lyric-editor-controls')).toBeTruthy();
-    expect(container.querySelector('.lyric-tools')).toBeTruthy();
     expect(container.querySelector('.lyric-format')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-textarea')).toBeTruthy();
+    expect(container.querySelector('.lyric-tools')).toBeFalsy();
+
+    const toolsToggle = container.querySelector('.lyric-editor-tools-toggle');
+    expect(toolsToggle).toBeTruthy();
+    expect(toolsToggle.getAttribute('aria-expanded')).toBe('false');
+
+    await act(async () => {
+      toolsToggle.click();
+    });
+
+    expect(container.querySelector('.lyric-tools')).toBeTruthy();
+    expect(toolsToggle.getAttribute('aria-expanded')).toBe('true');
   });
 
   test('Given lyrics editor, Then formatting actions are grouped by scope', async () => {
@@ -329,7 +341,18 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
+    // The tools bar is collapsed by default; open it before inspecting. The
+    // toggle deliberately keeps Edit Lirik, Undo and Save from competing with
+    // formatting for the same visual weight.
+    const toolsToggle = container.querySelector('.lyric-editor-tools-toggle');
+    expect(toolsToggle).toBeTruthy();
+
+    await act(async () => {
+      toolsToggle.click();
+    });
+
     const tools = container.querySelector('.lyric-tools');
+    expect(tools).toBeTruthy();
     expect(tools.textContent).toContain('Undo');
     expect(tools.textContent).toContain('Redo');
     expect(tools.textContent).toContain('Cari');
@@ -380,7 +403,15 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    // The piano entry point stays in the toolbar...
+    // The piano entry point stays in the tools bar, which lives behind the
+    // toggle so formatting stays the primary surface.
+    const toolsToggle = container.querySelector('.lyric-editor-tools-toggle');
+    expect(toolsToggle).toBeTruthy();
+
+    await act(async () => {
+      toolsToggle.click();
+    });
+
     const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
       btn.textContent?.includes('Piano')
     );
@@ -1208,6 +1239,11 @@ describe('Song lyrics shared editor rendering', () => {
       editorHost.querySelector('.cm-content').textContent = '[C]Hello updated';
     });
 
+    // Save lives in the collapsible tools bar.
+    await act(async () => {
+      container.querySelector('.lyric-editor-tools-toggle').click();
+    });
+
     const saveButton = Array.from(container.querySelectorAll('button')).find((button) =>
       button.getAttribute('aria-label') === 'Simpan' || button.title === 'Simpan'
     );
@@ -1315,6 +1351,11 @@ describe('Song lyrics shared editor rendering', () => {
   test('Given song view edit mode, When piano note is selected, Then lyrics state receives note token', async () => {
     await act(async () => {
       root.render(<SongViewEditorHarness />);
+    });
+
+    // The piano entry point now lives in the collapsible tools bar.
+    await act(async () => {
+      container.querySelector('.lyric-editor-tools-toggle').click();
     });
 
     const pianoOpenButton = Array.from(container.querySelectorAll('button')).find((btn) =>

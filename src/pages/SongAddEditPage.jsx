@@ -551,6 +551,23 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  /**
+   * Step navigator: reveal the target section, then scroll its header into view.
+   * Opening first matters because a collapsed section has no rendered body to
+   * scroll to.
+   */
+  const jumpToSection = (key) => {
+    setOpenSections((prev) => ({ ...prev, [key]: true }));
+
+    requestAnimationFrame(() => {
+      const header = document.getElementById(`song-${key}-header`);
+      const target = header?.closest('.song-form-section') || header;
+      target?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      // Move focus for keyboard users without stealing the caret from the editor.
+      header?.focus?.({ preventScroll: true });
+    });
+  };
+
   const handleQuickTranspose = (steps) => {
     setLyrics((prev) => transposeLyricsText(prev, steps));
   };
@@ -669,22 +686,96 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   if (loadingData) {
     return (
       <div className="page-container">
-        <div className="page-header">
-          <h1>{newVersionMode ? "Buat Versi Baru Lagu" : "Memuat Lagu"}</h1>
+        <div className="song-editor-hero" data-mode={newVersionMode ? 'version' : 'loading'}>
+          <div className="song-editor-hero-main">
+            <span className="song-editor-hero-eyebrow">
+              {newVersionMode ? '🧬 Versi Baru' : '⏳ Memuat'}
+            </span>
+            <h1 className="song-editor-hero-title">
+              {newVersionMode ? 'Buat Versi Baru Lagu' : 'Memuat Lagu…'}
+            </h1>
+          </div>
         </div>
         <div className="card">Memuat data lagu...</div>
       </div>
     );
   }
 
+  const editorMode = isEditMode ? 'edit' : newVersionMode ? 'version' : 'create';
+
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h1>{isEditMode ? "Edit Lagu" : newVersionMode ? "Buat Versi Baru Lagu" : "Tambah Lagu Baru"}</h1>
+      <header className="song-editor-hero" data-mode={editorMode}>
+        <div className="song-editor-hero-main">
+          <span className="song-editor-hero-eyebrow">
+            {isEditMode ? '✏️ Mode Edit' : newVersionMode ? '🧬 Versi Baru' : '➕ Lagu Baru'}
+          </span>
+          <h1 className="song-editor-hero-title">
+            {isEditMode
+              ? title.trim() || 'Edit Lagu'
+              : newVersionMode
+                ? 'Buat Versi Baru Lagu'
+                : 'Tambah Lagu Baru'}
+          </h1>
+          <p className="song-editor-hero-subtitle">
+            {isEditMode
+              ? 'Ubah detail lagu, lirik, dan chord. Perubahan disimpan sebagai revisi lagu yang ada.'
+              : 'Lengkapi identitas, detail musikal, lalu lirik dan chord. Bagian bertanda * wajib diisi.'}
+          </p>
+        </div>
+
+        {/* Live progress: the same completeness signal as the sidebar, surfaced
+            where the decision to keep filling the form is actually made. */}
+        <div className="song-editor-hero-progress">
+          <div className="song-editor-hero-progress-head">
+            <span>Kelengkapan</span>
+            <strong>{completeness.score}%</strong>
+          </div>
+          <div className="song-editor-hero-progress-track">
+            <div
+              className={`song-editor-hero-progress-fill level-${completenessScoreLevel(completeness.score)}`}
+              style={{ width: `${completeness.score}%` }}
+            />
+          </div>
+          <span className="song-editor-hero-progress-hint">
+            {completeness.missing.length > 0
+              ? `${completeness.missing.length} bagian belum lengkap`
+              : '✓ Semua data penting lengkap'}
+          </span>
+        </div>
         {error && (
           <div className="error-message song-edit-error-banner">{error}</div>
         )}
-      </div>
+      </header>
+
+      {/* One-glance map of the form. Jumping is cheaper than scrolling, and the
+          numbering gives the four steps a shared order in add and edit mode. */}
+      {!newVersionMode && (
+        <nav className="song-editor-steps" aria-label="Langkah pengisian lagu">
+          {[
+            { key: 'identity', step: 1, icon: '🎵', label: 'Identitas', done: Boolean(title.trim() && artist.trim()) },
+            { key: 'musical', step: 2, icon: '🎼', label: 'Musikal', done: Boolean(songKey && tempo) },
+            { key: 'lyrics', step: 3, icon: '🎤', label: 'Lirik & Chord', done: lyricsAnalysis.hasLyrics },
+            { key: 'media', step: 4, icon: '📺', label: 'Media', done: Boolean(normalizedYoutubeId || keyboardPatch.trim() || sheetMusicXml.trim()) },
+          ].map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`song-editor-step${item.done ? ' is-done' : ''}`}
+              onClick={() => jumpToSection(item.key)}
+              title={`Buka bagian ${item.label}`}
+            >
+              <span className="song-editor-step-index" aria-hidden="true">
+                {item.done ? '✓' : item.step}
+              </span>
+              <span className="song-editor-step-label">
+                <span aria-hidden="true">{item.icon}</span> {item.label}
+              </span>
+            </button>
+          ))}
+        </nav>
+      )}
+
       {newVersionMode && (
         <div className="card song-new-version-note">
           Form ini membuat versi baru dari lagu yang sudah ada. Ubah judul, aransemen, atau detail lain seperlunya sebelum menyimpan.
@@ -696,6 +787,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             <SongFormSection
               id="song-identity"
               icon="🎵"
+              step={1}
               title="Identitas Lagu"
               subtitle="Judul dan artist"
               isOpen={openSections.identity}
@@ -749,6 +841,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             <SongFormSection
               id="song-musical"
               icon="🎼"
+              step={2}
               title="Detail Musikal"
               subtitle="Key, tempo, birama, dan genre"
               badge={
@@ -885,6 +978,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             <SongFormSection
               id="song-lyrics"
               icon="🎤"
+              step={3}
               title="Lirik & Chord"
               subtitle="Editor utama dengan preview langsung"
               badge={
@@ -953,6 +1047,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             <SongFormSection
               id="song-media"
               icon="📺"
+              step={4}
               title="Video & Referensi"
               subtitle="YouTube, patch keyboard, dan partitur"
               badge={
@@ -1113,14 +1208,28 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
         <div className="song-editor-actionbar">
           <div className="song-editor-actionbar-status">
+            <span className={`song-editor-status-dot${loading ? ' is-saving' : hasUnsavedChanges ? ' is-dirty' : ' is-clean'}`} aria-hidden="true" />
             {loading ? (
               <span className="song-editor-status is-saving">⏳ Menyimpan…</span>
             ) : hasUnsavedChanges ? (
-              <span className="song-editor-status is-dirty">● Ada perubahan belum disimpan</span>
+              <span className="song-editor-status is-dirty">Ada perubahan belum disimpan</span>
             ) : (
-              <span className="song-editor-status is-clean">✓ Tersimpan</span>
+              <span className="song-editor-status is-clean">Tersimpan</span>
             )}
-            <span className="song-editor-status-hint"><kbd>Ctrl</kbd>+<kbd>S</kbd> simpan</span>
+            {/* A blocked submit is the one thing the user cannot infer from the
+                page, so say it plainly instead of leaving a dead button. */}
+            {hasFieldErrors && !loading ? (
+              <button
+                type="button"
+                className="song-editor-status-blocker"
+                onClick={() => jumpToSection('musical')}
+                title="Buka Detail Musikal"
+              >
+                ⚠ Perbaiki Key / Tempo / Time Signature
+              </button>
+            ) : (
+              <span className="song-editor-status-hint"><kbd>Ctrl</kbd>+<kbd>S</kbd> simpan</span>
+            )}
           </div>
           <div className="song-editor-actionbar-buttons">
             <button type="button" onClick={handleCancel} className="btn btn-secondary">
@@ -1129,7 +1238,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             <button
               type="submit"
               disabled={loading || hasFieldErrors}
-              className="btn btn-primary"
+              className="btn btn-primary song-editor-submit"
               title={hasFieldErrors ? 'Perbaiki Key, Tempo, atau Time Signature dulu' : undefined}
             >
               {loading

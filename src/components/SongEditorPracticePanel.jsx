@@ -1,5 +1,42 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import YouTubeViewer from "./YouTubeViewer.jsx";
+
+const VIDEO_HEIGHT_STORAGE_KEY = 'ruangperformer_practice_video_height_v1';
+const DETACHED_STORAGE_KEY = 'ruangperformer_practice_video_detached_v1';
+
+/** Height presets, in px. The video keeps a 16:9 box, so height drives width. */
+export const VIDEO_SIZE_PRESETS = [
+  { key: 'small', label: 'Kecil', height: 150 },
+  { key: 'medium', label: 'Sedang', height: 210 },
+  { key: 'large', label: 'Besar', height: 290 },
+];;
+
+const MIN_VIDEO_HEIGHT = 110;
+const MAX_VIDEO_HEIGHT = 480;
+
+const clampHeight = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return VIDEO_SIZE_PRESETS[1].height;
+  return Math.min(MAX_VIDEO_HEIGHT, Math.max(MIN_VIDEO_HEIGHT, Math.round(numeric)));
+};
+
+const readStoredHeight = () => {
+  if (typeof window === 'undefined') return VIDEO_SIZE_PRESETS[1].height;
+  try {
+    return clampHeight(window.localStorage.getItem(VIDEO_HEIGHT_STORAGE_KEY));
+  } catch {
+    return VIDEO_SIZE_PRESETS[1].height;
+  }
+};
+
+const readStoredDetached = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(DETACHED_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
 
 /**
  * SongEditorPracticePanel
@@ -11,6 +48,13 @@ import YouTubeViewer from "./YouTubeViewer.jsx";
  *
  * The panel shares the parent's `youtubeRef`, so it drives the same player as
  * the rest of the editor instead of creating a second one.
+ *
+ * The video can be resized two ways, because neither alone covers how people
+ * actually work here:
+ *   - a drag handle at the bottom edge, for fine control;
+ *   - size presets, because the sidebar is only 300px wide and a drag that
+ *     precise is fiddly on a trackpad.
+ * The chosen height is remembered between sessions.
  */
 export default function SongEditorPracticePanel({
   youtubeId,
@@ -22,8 +66,15 @@ export default function SongEditorPracticePanel({
   isPlaying = false,
   onTogglePlay,
   currentTime = 0,
+  /** Rendered instead of the inline video when the user detaches the player. */
+  detachedPlayer = null,
 }) {
   const [liveTime, setLiveTime] = useState(currentTime);
+  const [videoHeight, setVideoHeight] = useState(readStoredHeight);
+  const [isDetached, setIsDetached] = useState(readStoredDetached);
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeStateRef = useRef({ active: false, startY: 0, startHeight: 0 });
+  const videoBoxRef = useRef(null);
 
   // Poll the player so the progress label and marker highlighting stay live
   // without needing an extra callback from the YouTube API.
@@ -46,6 +97,68 @@ export default function SongEditorPracticePanel({
       setLiveTime(currentTime);
     }
   }, [currentTime]);
+
+  // Remember the chosen size and detach state between sessions.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(VIDEO_HEIGHT_STORAGE_KEY, String(videoHeight));
+    } catch {
+      // Storage can fail in private mode; the size still applies this session.
+    }
+  }, [videoHeight]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(DETACHED_STORAGE_KEY, String(isDetached));
+    } catch {
+      // Ignore.
+    }
+  }, [isDetached]);
+
+  // Drag-to-resize. Listeners live on window so the pointer can leave the small
+  // 6px handle without the drag dying mid-gesture.
+  useEffect(() => {
+    if (!isResizing) return undefined;
+
+    const handleMove = (clientY) => {
+      const state = resizeStateRef.current;
+      if (!state.active) return;
+      setVideoHeight(clampHeight(state.startHeight + (clientY - state.startY)));
+    };
+
+    const onMouseMove = (event) => handleMove(event.clientY);
+    const onTouchMove = (event) => {
+      const touch = event.touches?.[0];
+      if (touch) handleMove(touch.clientY);
+    };
+    const stop = () => {
+      resizeStateRef.current.active = false;
+      setIsResizing(false);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', stop);
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', stop);
+    window.addEventListener('touchcancel', stop);
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', stop);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', stop);
+      window.removeEventListener('touchcancel', stop);
+    };
+  }, [isResizing]);
+
+  const startResize = (clientY) => {
+    resizeStateRef.current = {
+      active: true,
+      startY: clientY,
+      startHeight: videoBoxRef.current?.offsetHeight || videoHeight,
+    };
+    setIsResizing(true);
+  };
 
   if (!youtubeId) return null;
 

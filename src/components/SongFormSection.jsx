@@ -8,6 +8,7 @@ import React from "react";
  * Props:
  *   - id: stable id used for aria-controls
  *   - icon, title, subtitle
+ *   - step: optional 1-based order badge, so the form reads as a numbered flow
  *   - badge: optional node (count, status pill)
  *   - isOpen, onToggle
  *   - actions: optional node rendered on the right of the header
@@ -16,6 +17,7 @@ import React from "react";
 export default function SongFormSection({
   id,
   icon,
+  step = null,
   title,
   subtitle,
   badge = null,
@@ -40,6 +42,9 @@ export default function SongFormSection({
           aria-controls={panelId}
         >
           <span className="song-form-section-chevron" aria-hidden="true">{isOpen ? "▾" : "▸"}</span>
+          {step !== null && (
+            <span className="song-form-section-step" aria-hidden="true">{step}</span>
+          )}
           <span className="song-form-section-icon" aria-hidden="true">{icon}</span>
           <span className="song-form-section-titles">
             <span className="song-form-section-title">{title}</span>

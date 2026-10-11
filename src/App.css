@@ -6143,6 +6143,71 @@ body.dark-mode .song-editor-actionbar {
   color: var(--text-secondary);
 }
 
+/* Status dot: mirrors the dirty/clean/saving text so the state reads at a
+   glance even when the label is truncated on narrow viewports. */
+.song-editor-status-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+  transition: background 0.2s ease;
+}
+
+.song-editor-status-dot.is-dirty {
+  color: #d97706;
+}
+
+.song-editor-status-dot.is-clean {
+  color: #16a34a;
+}
+
+.song-editor-status-dot.is-saving {
+  color: var(--text-secondary);
+  animation: song-editor-dot-pulse 1s ease-in-out infinite;
+}
+
+@keyframes song-editor-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Turns the "section incomplete" warning into the primary affordance: it
+   jumps the user straight to the offending section instead of only warning. */
+.song-editor-status-blocker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, #d97706 45%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, #d97706 12%, transparent);
+  color: #b45309;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.song-editor-status-blocker:hover {
+  background: color-mix(in srgb, #d97706 20%, transparent);
+}
+
+.song-editor-status-blocker:focus-visible {
+  outline: 2px solid #d97706;
+  outline-offset: 2px;
+}
+
+body.dark-mode .song-editor-status-blocker {
+  color: #fbbf24;
+  border-color: color-mix(in srgb, #fbbf24 45%, transparent);
+  background: color-mix(in srgb, #fbbf24 14%, transparent);
+}
+
 .song-editor-actionbar-buttons {
   display: flex;
   align-items: center;
@@ -12109,6 +12174,35 @@ body.dark-mode .song-field-error {
   margin-bottom: var(--spacing-md);
 }
 
+/* ---- Head row: one quiet toggle, so Format stays the loud surface ---- */
+.lyric-editor-controls-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.lyric-editor-tools-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.lyric-editor-tools-toggle.is-open {
+  border-color: color-mix(in srgb, var(--primary-accent) 45%, var(--border-color));
+  background: color-mix(in srgb, var(--primary-accent) 10%, transparent);
+}
+
+.lyric-editor-controls-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.lyric-editor-tools-panel {
+  animation: slideDown 0.15s ease-out;
+}
+
 /* ---- Tools bar ---- */
 .lyric-tools {
   display: flex;
@@ -12406,6 +12500,19 @@ body.dark-mode .lyric-format-preview-unchanged {
 }
 
 @media (max-width: 768px) {
+  .lyric-editor-controls-head {
+    align-items: stretch;
+  }
+
+  .lyric-editor-tools-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lyric-editor-controls-hint {
+    display: none;
+  }
+
   .lyric-tools,
   .lyric-format {
     flex-direction: column;
