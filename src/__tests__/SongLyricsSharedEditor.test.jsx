@@ -7,6 +7,7 @@ import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
+import SongChordsAnalyzer from '../components/SongChordsAnalyzer.jsx';
 import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
 import TransposeKeyControl from '../components/TransposeKeyControl.jsx';
 import VirtualPiano from '../components/VirtualPiano.jsx';
@@ -657,6 +658,57 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.cd-chord')).toBeFalsy();
     expect(container.textContent).toContain('Hello');
     expect(container.textContent).toContain('World');
+  });
+
+  test('Given the chord analyzer button, When clicked, Then the analysis modal opens and can be closed', async () => {
+    function AnalyzerHost() {
+      const [open, setOpen] = React.useState(false);
+      return (
+        <SongChordsAnalyzer
+          showChordAnalyzer={open}
+          setShowChordAnalyzer={setOpen}
+          chordStats={{
+            count: 4,
+            chords: ['C', 'G', 'Am', 'F'],
+            usageCounts: [
+              { chord: 'C', count: 2 },
+              { chord: 'G', count: 1 },
+              { chord: 'Am', count: 1 },
+            ],
+            detectedKey: { key: 'C', mode: 'major', confidence: 90, alternatives: [] },
+            modulation: { hasModulation: false, modulationCount: 0, transitions: [] },
+          }}
+          transpose={0}
+          songKey="C"
+          onApplyRecommendedTranspose={noop}
+        />
+      );
+    }
+
+    await act(async () => {
+      root.render(<AnalyzerHost />);
+    });
+
+    // Closed by default: no dialog, only the trigger button.
+    expect(container.querySelector('.song-lyrics-analyzer-modal')).toBeFalsy();
+    const openButton = Array.from(container.querySelectorAll('button')).find((b) => b.textContent?.includes('Analisis Chord'));
+    expect(openButton).toBeTruthy();
+
+    await act(async () => {
+      openButton.click();
+    });
+
+    expect(container.querySelector('.song-lyrics-analyzer-modal')).toBeTruthy();
+    expect(container.querySelector('.modal-overlay')).toBeTruthy();
+    expect(container.textContent).toContain('Total Chord');
+
+    const closeButton = container.querySelector('.song-lyrics-analyzer-modal-close');
+    expect(closeButton).toBeTruthy();
+    await act(async () => {
+      closeButton.click();
+    });
+
+    expect(container.querySelector('.song-lyrics-analyzer-modal')).toBeFalsy();
   });
 
   test('Given chord number mode is active, Then transpose does not change displayed numbers', async () => {

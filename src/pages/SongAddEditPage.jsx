@@ -60,7 +60,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [genre, setGenre] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [youtubeId, setYoutubeId] = useState("");
-  const [arrangementStyle, setArrangementStyle] = useState("");
   const [keyboardPatch, setKeyboardPatch] = useState("");
   const [timeMarkers, setTimeMarkers] = useState([]);
 
@@ -178,7 +177,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
           setGenre(data.genre || "");
           setLyrics(data.lyrics || "");
           setYoutubeId(extractYouTubeId(data.youtubeId || data.youtube_url || ""));
-          setArrangementStyle(data.arrangementStyle || "");
           setKeyboardPatch(
             Array.isArray(data.keyboardPatch)
               ? data.keyboardPatch.join(", ")
@@ -199,7 +197,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               genre: (data.genre || "").trim(),
               lyrics: (data.lyrics || "").trim(),
               youtubeId: extractYouTubeId(data.youtubeId || data.youtube_url || ""),
-              arrangementStyle: (data.arrangementStyle || "").trim(),
               keyboardPatch: (
                 Array.isArray(data.keyboardPatch)
                   ? data.keyboardPatch.join(", ")
@@ -257,7 +254,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         tempo: !!data.tempo,
         genre: !!data.genre,
         youtubeId: !!data.youtubeId,
-        arrangementStyle: !!data.arrangementStyle,
         keyboardPatch: !!data.keyboardPatch,
       });
       setShowAiModal(true);
@@ -278,8 +274,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     if (aiConfirmFields.tempo && aiResult.tempo) setTempo(aiResult.tempo.toString());
     if (aiConfirmFields.genre && aiResult.genre) setGenre(aiResult.genre);
     if (aiConfirmFields.youtubeId && aiResult.youtubeId) setYoutubeId(aiResult.youtubeId);
-    if (aiConfirmFields.arrangementStyle && aiResult.arrangementStyle)
-      setArrangementStyle(aiResult.arrangementStyle);
     if (aiConfirmFields.keyboardPatch && aiResult.keyboardPatch)
       setKeyboardPatch(
         Array.isArray(aiResult.keyboardPatch)
@@ -319,7 +313,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       genre: genre.trim(),
       lyrics: lyrics.trim(),
       youtubeId: extractYouTubeId(youtubeId),
-      arrangementStyle: arrangementStyle.trim(),
       keyboardPatch: keyboardPatch.trim(),
       time_markers: mergedMarkers,
       sheetMusicXml: sheetMusicXml,
@@ -497,11 +490,10 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       genre: genre.trim(),
       lyrics: lyrics.trim(),
       youtubeId: extractYouTubeId(youtubeId),
-      arrangementStyle: arrangementStyle.trim(),
       keyboardPatch: keyboardPatch.trim(),
       sheetMusicXml,
     }),
-    [title, artist, songKey, tempo, timeSignature, genre, lyrics, youtubeId, arrangementStyle, keyboardPatch, sheetMusicXml]
+    [title, artist, songKey, tempo, timeSignature, genre, lyrics, youtubeId, keyboardPatch, sheetMusicXml]
   );
 
   const completeness = useMemo(
@@ -935,18 +927,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   </datalist>
                 </div>
 
-                <div>
-                  <label className="form-label" htmlFor="song-arrangement">Gaya Aransemen</label>
-                  <input
-                    id="song-arrangement"
-                    name="arrangementStyle"
-                    type="text"
-                    value={arrangementStyle}
-                    onChange={(e) => setArrangementStyle(e.target.value)}
-                    placeholder="Contoh: full band, akustik, unplugged"
-                    className="form-input-field"
-                  />
-                </div>
               </div>
 
               {/* Keyboard patch belongs with the musical detail: it describes how
@@ -966,9 +946,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   className="form-input-field"
                 />
                 <div className="form-hint">
-                  Catatan aransemen keyboard untuk lagu ini. Untuk memicu Program Change nyata
-                  saat perform, sisipkan cue di lirik dari editor: <b>Cue Keyboard</b> lalu{' '}
-                  <b>Sisipkan</b>. Konflik channel antar cue ditampilkan di panel samping.
+                  Catatan aransemen keyboard untuk lagu ini.
                 </div>
               </div>
            </SongFormSection>

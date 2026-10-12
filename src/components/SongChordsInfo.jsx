@@ -24,7 +24,6 @@ export default function SongChordsInfo({
   isMetronomeActive,
   setIsMetronomeActive,
   genre,
-  arrangementStyle,
   keyboardPatch,
   detectedInstruments = [],
   showSongInfo,
@@ -233,12 +232,6 @@ export default function SongChordsInfo({
                     isMetronomeActive={isMetronomeActive}
                     setIsMetronomeActive={setIsMetronomeActive}
                   />
-                </div>
-              )}
-              {arrangementStyle && (
-                <div className="song-info-item song-info-block song-info-block-arrangement">
-                  <span className="song-info-label">🎷 Aransemen</span>
-                  <span className="song-info-value">{arrangementStyle}</span>
                 </div>
               )}
               {keyboardPatch && (

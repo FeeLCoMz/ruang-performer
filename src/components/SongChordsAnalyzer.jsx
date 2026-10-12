@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { transposeChord, recommendPianoFriendlyKey, getNoteIndex } from "../utils/chordUtils.js";
-import ExpandButton from "./ExpandButton.jsx";
 
 /**
  * SongChordsAnalyzer
- * Komponen analisis chord (total, unique, daftar chord)
+ * Komponen analisis chord (total, unique, daftar chord).
+ * Ditampilkan sebagai modal yang dibuka lewat tombol.
  */
 export default function SongChordsAnalyzer({
   showChordAnalyzer,
@@ -134,19 +134,49 @@ export default function SongChordsAnalyzer({
     setApplyNotice(`Transpose diterapkan ke ${formatted}.`);
   };
 
+  const handleClose = () => {
+    if (typeof setShowChordAnalyzer === "function") setShowChordAnalyzer(false);
+  };
+
   return (
-    <div className="song-panel">
-      <div className="song-lyrics-analyzer-header">
-        <ExpandButton
-          isExpanded={showChordAnalyzer}
-          setIsExpanded={setShowChordAnalyzer}
-          icon="🎵"
-          label="Analisis Chord"
-          ariaLabel={showChordAnalyzer ? "Sembunyikan analisis chord" : "Tampilkan analisis chord"}
-        />
-      </div>
+    <>
+      <button
+        type="button"
+        className="btn btn-secondary song-chord-analyzer-open-btn"
+        onClick={() => setShowChordAnalyzer?.(true)}
+        title="Tampilkan analisis chord"
+        aria-haspopup="dialog"
+      >
+        <span aria-hidden="true">🎵</span>
+        <span>Analisis Chord</span>
+      </button>
+
       {showChordAnalyzer && (
-        <>
+        <div
+          className="modal-overlay song-lyrics-analyzer-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Analisis Chord"
+          tabIndex={-1}
+          onClick={handleClose}
+          onKeyDown={(e) => { if (e.key === "Escape") handleClose(); }}
+        >
+          <div
+            className="modal-content song-lyrics-analyzer-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="song-lyrics-analyzer-modal-header">
+              <h2 className="song-lyrics-analyzer-modal-title">🎵 Analisis Chord</h2>
+              <button
+                type="button"
+                className="song-lyrics-analyzer-modal-close"
+                onClick={handleClose}
+                aria-label="Tutup analisis chord"
+                title="Tutup"
+              >
+                ✕
+              </button>
+            </div>
           <div className="song-lyrics-analyzer-grid">
             <div className="song-lyrics-analyzer-stat">
               <div className="song-lyrics-analyzer-stat-label">Total Chord</div>
@@ -221,8 +251,9 @@ export default function SongChordsAnalyzer({
               )}
             </div>
           </div>
-        </>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }

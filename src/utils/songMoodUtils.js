@@ -28,20 +28,6 @@ function getGenreAdjustment(genreText) {
   return 0;
 }
 
-function getStyleAdjustment(styleText) {
-  if (!styleText) return 0;
-
-  if (styleText.includes('stripped') || styleText.includes('akustik') || styleText.includes('acoustic')) {
-    return -1;
-  }
-
-  if (styleText.includes('full band') || styleText.includes('festival') || styleText.includes('anthem')) {
-    return 1;
-  }
-
-  return 0;
-}
-
 const LEVEL_TO_MOOD = [
   { tone: 'calm', label: 'Tenang' },
   { tone: 'warm', label: 'Hangat' },
@@ -53,10 +39,9 @@ const LEVEL_TO_MOOD = [
 export function inferSongMood(song) {
   const tempo = parseTempoValue(song?.tempo);
   const genreText = normalizeText(song?.genre);
-  const styleText = normalizeText(song?.arrangementStyle || song?.arrangement_style);
 
   const baseLevel = getBaseLevelFromTempo(tempo);
-  const adjustedLevel = Math.max(0, Math.min(4, baseLevel + getGenreAdjustment(genreText) + getStyleAdjustment(styleText)));
+  const adjustedLevel = Math.max(0, Math.min(4, baseLevel + getGenreAdjustment(genreText)));
 
   const mood = LEVEL_TO_MOOD[adjustedLevel] || { tone: 'neutral', label: 'Netral' };
   const sourceHint = tempo === null ? 'genre dan style' : `tempo ${tempo} BPM`;

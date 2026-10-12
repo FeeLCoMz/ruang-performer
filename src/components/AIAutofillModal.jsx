@@ -106,21 +106,6 @@ export default function AIAutofillModal({
               </label>
             )}
 
-            {/* Arrangement Style */}
-            {aiResult.arrangementStyle && (
-              <label className="ai-autofill-field">
-                <input
-                  type="checkbox"
-                  checked={aiConfirmFields.arrangementStyle || false}
-                  onChange={e => setAiConfirmFields(f => ({...f, arrangementStyle: e.target.checked}))}
-                  className="ai-autofill-checkbox"
-                />
-                <span className="ai-autofill-field-label">
-                  🎹 Gaya Aransemen: <span className="ai-autofill-field-value">{aiResult.arrangementStyle}</span>
-                </span>
-              </label>
-            )}
-
             {/* Keyboard Patch */}
             {aiResult.keyboardPatch && (
               <label className="ai-autofill-field">

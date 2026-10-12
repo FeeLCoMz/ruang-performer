@@ -13,9 +13,13 @@ describe('inferSongMood', () => {
     expect(mood.tone).toBe('energetic');
   });
 
-  test('falls back to genre/style hint when tempo is missing', () => {
-    const mood = inferSongMood({ genre: 'Acoustic worship', arrangementStyle: 'stripped' });
-    expect(mood.tone).toBe('calm');
+  test('falls back to genre hint when tempo is missing', () => {
+    const mood = inferSongMood({ genre: 'Acoustic worship' });
     expect(mood.sourceHint).toBe('genre dan style');
+    // Soft genres pull the level down from the tempo-less baseline.
+    expect(mood.tone).toBe('warm');
+
+    const energeticGenre = inferSongMood({ genre: 'Metal' });
+    expect(energeticGenre.tone).not.toBe(mood.tone);
   });
 });

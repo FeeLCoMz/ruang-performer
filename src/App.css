@@ -972,11 +972,57 @@ body.dark-mode .song-mood-badge.mood-peak {
   margin-top: 4px;
 }
 
-.song-lyrics-analyzer-header {
-  display: flex;
-  justify-content: space-between;
+.song-chord-analyzer-open-btn {
+  display: inline-flex;
   align-items: center;
+  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
+}
+
+.song-lyrics-analyzer-modal {
+  max-width: 720px;
+  max-height: 85vh;
+  max-height: 85dvh;
+  overflow-y: auto;
+}
+
+.song-lyrics-analyzer-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.song-lyrics-analyzer-modal-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.song-lyrics-analyzer-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.song-lyrics-analyzer-modal-close:hover {
+  border-color: var(--primary-accent);
+  color: var(--primary-accent);
 }
 
 .song-lyrics-export-menu-container {
