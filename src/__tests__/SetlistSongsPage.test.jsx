@@ -95,31 +95,55 @@ describe('SetlistSongsPage', () => {
     };
   }
 
-  test('filters songs by completed status', async () => {
-    const props = buildProps();
+  test('search narrows the list and the header keeps only the primary action', async () => {
+    const props = buildProps({
+      songs: [
+        { id: 'song-1', title: 'Lagu Sudah', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop' },
+        { id: 'song-2', title: 'Lagu Belum', artist: 'Artist B', key: 'G', tempo: '110', genre: 'Rock' },
+      ],
+    });
 
     await renderPage(root, props);
 
-    const statusFilter = container.querySelector('select[aria-label="Filter status dibawakan"]');
-    expect(statusFilter).toBeTruthy();
+    // The artist / genre / completed dropdowns were removed on purpose: the
+    // header now offers a single action plus a menu, and the text search is the
+    // only filter left in the toolbar.
+    expect(container.querySelector('select[aria-label="Filter status dibawakan"]')).toBeFalsy();
+    const filterSelects = container.querySelectorAll('.filter-row select');
+    const selectLabels = Array.from(filterSelects).map((el) => el.textContent || '');
+    expect(selectLabels.some((text) => text.includes('Artis:'))).toBe(false);
+    expect(selectLabels.some((text) => text.includes('Genre:'))).toBe(false);
+    expect(selectLabels.some((text) => text.includes('Dibawakan:'))).toBe(false);
 
+    // Only "Tambah Lagu" is outside the menu; the rest is inside a details menu.
+    const header = container.querySelector('.setlist-header-actions');
+    const directButtons = Array.from(header.querySelectorAll(':scope > button')).map(
+      (btn) => btn.textContent.trim(),
+    );
+    expect(directButtons).toEqual(['Tambah Lagu']);
+
+    const moreMenu = header.querySelector('details.setlist-header-more');
+    expect(moreMenu).toBeTruthy();
+    const menuText = moreMenu.querySelector('.setlist-header-more-menu').textContent;
+    expect(menuText).toContain('Bagikan');
+    expect(menuText).toContain('Copy Setlist');
+
+    // The search still filters.
+    const searchInput = container.querySelector('.search-input-main');
+    const nativeValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      'value',
+    ).set;
     await act(async () => {
-      statusFilter.value = 'completed';
-      statusFilter.dispatchEvent(new Event('change', { bubbles: true }));
+      // React tracks the input's value internally, so assigning .value directly
+      // is ignored. Going through the native setter makes React see the change.
+      nativeValueSetter.call(searchInput, 'Sudah');
+      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
       await flushPromises();
     });
 
     expect(findElementByText(container, 'Lagu Sudah')).toBeTruthy();
     expect(findElementByText(container, 'Lagu Belum')).toBeFalsy();
-
-    await act(async () => {
-      statusFilter.value = 'pending';
-      statusFilter.dispatchEvent(new Event('change', { bubbles: true }));
-      await flushPromises();
-    });
-
-    expect(findElementByText(container, 'Lagu Sudah')).toBeFalsy();
-    expect(findElementByText(container, 'Lagu Belum')).toBeTruthy();
   });
 
   test('shows sequential autoplay control for setlist videos and starts the first song', async () => {
@@ -417,15 +441,15 @@ describe('SetlistSongsPage', () => {
     expect(shareTextarea.value).toContain('Lihat detail & chord:');
   });
 
-  test('groups songs by artist when grouping option is selected', async () => {
+  test('replaces the grouping dropdown with a hide-played-songs switch', async () => {
     const props = buildProps({
       setlists: [
         {
           id: 'setlist-1',
-          name: 'Setlist Grup Artis',
+          name: 'Setlist Switch',
           userId: 'user-1',
           songs: ['song-1', 'song-2', 'song-3'],
-          completedSongs: {},
+          completedSongs: { 'song-2': true },
           setlistSongMeta: {},
         },
       ],
@@ -438,18 +462,37 @@ describe('SetlistSongsPage', () => {
 
     await renderPage(root, props);
 
-    const groupSelect = container.querySelector('select[aria-label="Kelompokkan daftar lagu"]');
-    expect(groupSelect).toBeTruthy();
+    // The sort and group dropdowns are gone: order always follows the user.
+    expect(container.querySelector('select[aria-label="Kelompokkan daftar lagu"]')).toBeFalsy();
+    const selects = Array.from(container.querySelectorAll('.filter-row select')).map(
+      (s) => s.textContent || '',
+    );
+    expect(selects.some((t) => t.includes('Urutkan:'))).toBe(false);
+    expect(selects.some((t) => t.includes('Kelompokkan:'))).toBe(false);
+
+    const toggle = container.querySelector('#hide-played-songs');
+    expect(toggle).toBeTruthy();
+    expect(toggle.checked).toBe(false);
+
+    // All three songs are listed while the switch is off.
+    const titles = () =>
+      Array.from(container.querySelectorAll('.song-item .song-title')).map((el) =>
+        el.textContent.trim(),
+      );
+    expect(titles().length).toBe(3);
 
     await act(async () => {
-      groupSelect.value = 'artist';
-      groupSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      toggle.click();
       await flushPromises();
     });
 
-    const groupHeaders = Array.from(container.querySelectorAll('.setlist-group-header')).map((el) => el.textContent || '');
-    expect(groupHeaders.some((text) => text.includes('Artist A'))).toBe(true);
-    expect(groupHeaders.some((text) => text.includes('Artist B'))).toBe(true);
+    // Switching it on filters OUT the song already performed.
+    const visible = titles();
+    expect(visible.length).toBe(2);
+    expect(visible.some((t) => t.startsWith('Beta'))).toBe(false);
+    // And the order is still the user's own, not re-sorted.
+    expect(visible[0].startsWith('Alpha')).toBe(true);
+    expect(visible[1].startsWith('Gamma')).toBe(true);
   });
 
   test('edits song order number and persists new custom order', async () => {
@@ -480,8 +523,20 @@ describe('SetlistSongsPage', () => {
     const songRows = container.querySelectorAll('.song-item');
     expect(songRows.length).toBe(3);
 
-    const secondSongOrderButton = songRows[1].querySelector('.song-order-edit-btn');
+    // The song NUMBER is the reorder control: one tap opens the prompt. Drag and
+    // a separate handle were both removed (drag never fires on touch).
+    expect(songRows[1].querySelector('.drag-handle-icon')).toBeFalsy();
+    expect(songRows[1].querySelector('.song-order-edit-btn')).toBeFalsy();
+    expect(songRows[1].getAttribute('draggable')).toBeFalsy();
+    expect(songRows[1].querySelector('.song-rail')).toBeTruthy();
+
+    const secondSongOrderButton = songRows[1].querySelector('.song-number-button');
     expect(secondSongOrderButton).toBeTruthy();
+    // It must be an accessible, focusable control, not a decorative glyph.
+    expect(secondSongOrderButton.tagName).toBe('BUTTON');
+    expect(secondSongOrderButton.getAttribute('aria-label')).toContain('Lagu Dua');
+    // And it must still read as the song's position.
+    expect(secondSongOrderButton.textContent.trim()).toBe('2');
 
     await act(async () => {
       secondSongOrderButton.click();

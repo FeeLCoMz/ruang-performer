@@ -3,7 +3,6 @@ import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
 import SetlistPoster from '../components/SetlistPoster.jsx';
-import DragHandleIcon from '../components/DragHandleIcon.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
 // html2canvas & jspdf dimuat secara lazy di dalam handler (dynamic import)
@@ -19,6 +18,7 @@ import { buildSmartSetlistPlan } from '../utils/setlistSmartAssistant.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
 import useMetronome from '../hooks/useMetronome.js';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
+import TimeMarkers from '../components/TimeMarkers.jsx';
 
 const SESSION_DIVIDER_META_FIELD = 'sessionDividerName';
 
@@ -77,13 +77,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
   // State untuk filter dan search
   const [searchText, setSearchText] = useState('');
-  const [filterArtist, setFilterArtist] = useState('');
-  const [filterGenre, setFilterGenre] = useState('');
-  const [filterCompletionStatus, setFilterCompletionStatus] = useState('all');
   const [filterSmartOnly, setFilterSmartOnly] = useState(false);
-  const [sortBy, setSortBy] = useState('custom');
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [groupBy, setGroupBy] = useState('none');
+  // The old "Kelompokkan" dropdown became this single switch. Grouping split the
+  // list into sections that no longer matched the running order.
+  const [hidePlayedSongs, setHidePlayedSongs] = useState(false);
 
   // State untuk modal tambah lagu (multi-select)
   const [showAddSong, setShowAddSong] = useState(false);
@@ -149,6 +146,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [activeVideoSong, setActiveVideoSong] = useState(null);
   const [isSequentialVideoMode, setIsSequentialVideoMode] = useState(false);
   const [isSequentialVideoLoop, setIsSequentialVideoLoop] = useState(false);
+  // Playback position of the inline player, so the song's time markers can show
+  // where you are and offer a jump to each section.
+  const [videoPlayback, setVideoPlayback] = useState({ time: 0, duration: 0 });
   const videoRef = useRef(null);
   const activeInlinePlayerRef = useRef(null);
 
@@ -206,37 +206,34 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const completedCount = (localOrder || []).filter((songId) => completedSongs[songId] === true).length;
   const uncompletedSongIds = (localOrder || []).filter((songId) => completedSongs[songId] !== true);
   const uncompletedCount = uncompletedSongIds.length;
-  let setlistSongs;
-  if (sortBy === 'custom') {
-    setlistSongs = (localOrder || []).map((id) => {
-      const song = availableSongsPool.find(item => item.id === id);
-      const meta = setlistSongMeta[id];
-      if (song) {
-        if (meta) {
-          return {
-            ...song,
-            key: meta.key || song.key,
-            tempo: meta.tempo || song.tempo,
-            genre: meta.genre || song.genre
-          };
-        }
-        return song;
-      } else {
-        // Lagu sudah dihapus dari database
+  // Songs always follow the user's own order (localOrder). The sort dropdown was
+  // removed: the order you arrange is the order you perform, and offering other
+  // sorts made the list disagree with the stage.
+  const setlistSongs = (localOrder || []).map((id) => {
+    const song = availableSongsPool.find((item) => item.id === id);
+    const meta = setlistSongMeta[id];
+    if (song) {
+      if (meta) {
         return {
-          id,
-          title: '[Lagu dihapus]',
-          artist: '',
-          key: '',
-          tempo: '',
-          genre: '',
-          deleted: true
+          ...song,
+          key: meta.key || song.key,
+          tempo: meta.tempo || song.tempo,
+          genre: meta.genre || song.genre,
         };
       }
-    });
-  } else {
-    setlistSongs = availableSongsPool.filter(song => (localOrder || []).includes(song.id));
-  }
+      return song;
+    }
+    // The song was deleted from the database.
+    return {
+      id,
+      title: '[Lagu dihapus]',
+      artist: '',
+      key: '',
+      tempo: '',
+      genre: '',
+      deleted: true,
+    };
+  });
 
   const sequentialVideoQueue = useMemo(
     () => (setlistSongs || []).filter((song) => hasYouTubeVideo(song)),
@@ -244,86 +241,22 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   );
   const hasSequentialVideoSet = sequentialVideoQueue.length > 0;
 
-  // Extract unique values untuk filter
-  const uniqueArtists = useMemo(() => {
-    const artists = setlistSongs.map(s => s.artist).filter(Boolean);
-    return [...new Set(artists)].sort();
-  }, [setlistSongs]);
-
-  const uniqueGenres = useMemo(() => {
-    const genres = setlistSongs.map(s => s.genre).filter(Boolean);
-    return [...new Set(genres)].sort();
-  }, [setlistSongs]);
-
-  // Filter dan sort lagu
+  // Filter lagu. Order is always the user's own (localOrder), so there is no
+  // sorting step here at all.
   const filteredSongs = useMemo(() => {
-    let result = setlistSongs.filter(song => {
-      const isCompleted = completedSongs?.[song.id] === true;
-      const matchSearch = !searchText ||
+    return setlistSongs.filter((song) => {
+      const matchSearch =
+        !searchText ||
         (song.title || '').toLowerCase().includes(searchText.toLowerCase()) ||
         (song.artist || '').toLowerCase().includes(searchText.toLowerCase());
-      const matchArtist = !filterArtist || song.artist === filterArtist;
-      const matchGenre = !filterGenre || song.genre === filterGenre;
-      const matchCompletion = filterCompletionStatus === 'all'
-        || (filterCompletionStatus === 'completed' ? isCompleted : !isCompleted);
       const matchSmart = !filterSmartOnly || setlistSongMeta?.[song.id]?.smartFeatured === true;
-      return matchSearch && matchArtist && matchGenre && matchCompletion && matchSmart;
+      // The "hide played songs" switch: when ON it filters OUT what is done.
+      const matchHidePlayed = !hidePlayedSongs || completedSongs?.[song.id] !== true;
+      return matchSearch && matchSmart && matchHidePlayed;
     });
+  }, [setlistSongs, searchText, filterSmartOnly, hidePlayedSongs, completedSongs, setlistSongMeta]);
 
-    // Sort (skip when custom to preserve manual order)
-    if (sortBy !== 'custom') {
-      result.sort((a, b) => {
-        let aVal, bVal;
-        switch (sortBy) {
-          case 'title':
-            aVal = a.title || '';
-            bVal = b.title || '';
-            break;
-          case 'artist':
-            aVal = a.artist || '';
-            bVal = b.artist || '';
-            break;
-          case 'setlistCount':
-            aVal = songUsageCountMap.get(a.id) || 0;
-            bVal = songUsageCountMap.get(b.id) || 0;
-            break;
-          case 'completedStatus':
-            // Prioritaskan lagu yang sudah dibawakan saat urut naik.
-            aVal = completedSongs?.[a.id] === true ? 0 : 1;
-            bVal = completedSongs?.[b.id] === true ? 0 : 1;
-            break;
-          case 'key':
-            aVal = a.key || '';
-            bVal = b.key || '';
-            break;
-          case 'tempo':
-            aVal = parseInt(a.tempo) || 0;
-            bVal = parseInt(b.tempo) || 0;
-            break;
-          case 'created':
-            aVal = new Date(a.createdAt || 0).getTime();
-            bVal = new Date(b.createdAt || 0).getTime();
-            break;
-          default:
-            return 0;
-        }
-
-        if (typeof aVal === 'string') {
-          aVal = aVal.toLowerCase();
-          bVal = bVal.toLowerCase();
-          return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-        } else {
-          return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
-        }
-      });
-    }
-
-    return result;
-  }, [setlistSongs, songUsageCountMap, completedSongs, searchText, filterArtist, filterGenre, filterCompletionStatus, filterSmartOnly, sortBy, sortOrder, setlistSongMeta]);
-
-  const hasActiveFilters = Boolean(
-    searchText || filterArtist || filterGenre || filterSmartOnly || filterCompletionStatus !== 'all'
-  );
+  const hasActiveFilters = Boolean(searchText || filterSmartOnly || hidePlayedSongs);
 
   const smartPlan = useMemo(() => {
     if (!Array.isArray(setlistSongs) || setlistSongs.length === 0) return null;
@@ -354,11 +287,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       .filter(Boolean);
   }, [localOrder, setlistSongMeta]);
 
+  // Rows are simply the filtered songs in the user's order, with session
+  // dividers interleaved. The sorting and grouping branches were removed.
   const filteredSongsWithDividers = useMemo(() => {
-    if (sortBy !== 'custom') {
-      return filteredSongs.map((song) => ({ type: 'song', song }));
-    }
-
     const rows = [];
     for (const song of filteredSongs) {
       const dividerName = (setlistSongMeta?.[song.id]?.[SESSION_DIVIDER_META_FIELD] || '').trim();
@@ -372,50 +303,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       rows.push({ type: 'song', song });
     }
     return rows;
-  }, [filteredSongs, setlistSongMeta, sortBy]);
+  }, [filteredSongs, setlistSongMeta]);
 
-  const displayedSongRows = useMemo(() => {
-    if (groupBy === 'none') return filteredSongsWithDividers;
-
-    const getGroupLabel = (song) => {
-      if (groupBy === 'artist') return (song.artist || '').trim() || 'Tanpa Artis';
-      if (groupBy === 'genre') return (song.genre || '').trim() || 'Tanpa Genre';
-      if (groupBy === 'key') return (song.key || '').trim() || 'Tanpa Key';
-      if (groupBy === 'completion') return completedSongs?.[song.id] === true ? 'Sudah Dibawakan' : 'Belum Dibawakan';
-      return 'Lainnya';
-    };
-
-    const groups = new Map();
-    filteredSongs.forEach((song) => {
-      const label = getGroupLabel(song);
-      if (!groups.has(label)) groups.set(label, []);
-      groups.get(label).push(song);
-    });
-
-    let labels = Array.from(groups.keys());
-    if (groupBy === 'completion') {
-      const desired = sortOrder === 'asc'
-        ? ['Sudah Dibawakan', 'Belum Dibawakan']
-        : ['Belum Dibawakan', 'Sudah Dibawakan'];
-      labels = desired.filter((label) => groups.has(label));
-    } else {
-      labels = labels.sort((a, b) => sortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a));
-    }
-
-    const rows = [];
-    labels.forEach((label) => {
-      const songsInGroup = groups.get(label) || [];
-      rows.push({
-        type: 'group',
-        key: `${groupBy}-${label}`,
-        label,
-        count: songsInGroup.length,
-      });
-      songsInGroup.forEach((song) => rows.push({ type: 'song', song }));
-    });
-
-    return rows;
-  }, [groupBy, filteredSongsWithDividers, filteredSongs, completedSongs, sortOrder]);
+  const displayedSongRows = filteredSongsWithDividers;
 
   const mergeCandidateSetlists = useMemo(() => {
     if (!Array.isArray(setlists)) return [];
@@ -546,6 +436,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
   useEffect(() => {
     if (!activeVideoSong) return;
+    // A new song starts from zero, so the marker progress bar does not briefly
+    // show the previous song's position.
+    setVideoPlayback({ time: 0, duration: 0 });
     let attempts = 0;
     const maxAttempts = 20;
     const intervalId = setInterval(() => {
@@ -621,10 +514,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
   function handleClearFilters() {
     setSearchText('');
-    setFilterArtist('');
-    setFilterGenre('');
-    setFilterCompletionStatus('all');
     setFilterSmartOnly(false);
+    setHidePlayedSongs(false);
   }
 
   // Generate share text
@@ -883,10 +774,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
   async function handleEditSongOrder(songId) {
     if (!canEdit) return;
-    if (sortBy !== 'custom' || groupBy !== 'none') {
-      setOrderError('Ubah urutan ke mode Custom dan nonaktifkan Group terlebih dahulu.');
-      return;
-    }
 
     const fromIdx = localOrder.indexOf(songId);
     if (fromIdx < 0) return;
@@ -1479,29 +1366,56 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           )}
         </div>
         <div className="setlist-header-actions setlist-header-actions-compact">
+          {/* Only the primary action sits outside. Everything else lives in the
+              menu, so the header states one job instead of offering seven
+              equally-weighted buttons. */}
           {canEdit && (
-            <div className="setlist-header-action-group setlist-header-primary-group" aria-label="Aksi utama setlist">
-              <button className="btn setlist-btn-primary" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
-                <span className="setlist-btn-icon" aria-hidden="true"><PlusIcon size={22} /></span>
-                <span className="setlist-btn-label">Tambah Lagu</span>
+            <button className="btn setlist-btn-primary" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
+              <span className="setlist-btn-icon" aria-hidden="true"><PlusIcon size={22} /></span>
+              <span className="setlist-btn-label">Tambah Lagu</span>
+            </button>
+          )}
+
+          <details className="setlist-header-more" aria-label="Aksi tambahan setlist">
+            <summary className="btn btn-secondary">⚙ Aksi Lainnya</summary>
+            <div className="setlist-header-more-menu">
+              <button
+                className="btn btn-secondary setlist-btn-ghost"
+                onClick={() => {
+                  setShareSessionFilter('all');
+                  setShowShareModal(true);
+                }}
+                title="Bagikan Setlist"
+              >
+                📤 Bagikan
               </button>
-              <button className="btn btn-secondary setlist-btn-secondary setlist-btn-mobile-icon" onClick={openMergeSetlistModal} title="Merge lagu dari setlist lain">
-                <span className="setlist-btn-icon" aria-hidden="true">🔀</span>
-                <span className="setlist-btn-label">Merge Setlist</span>
-              </button>
+              {canEdit && (
+                <button className="btn btn-secondary setlist-btn-ghost" onClick={openMergeSetlistModal} title="Merge lagu dari setlist lain">
+                  🔀 Merge Setlist
+                </button>
+              )}
+              {canEdit && (
+                <button className="btn setlist-btn-ghost" onClick={() => setShowSmartModal(true)} title="Urutkan otomatis berdasarkan key, tempo, energi, dan durasi">
+                  ✨ Smart Assistant
+                </button>
+              )}
+              {canEdit && (
+                <button className="btn btn-secondary setlist-btn-ghost" onClick={openAddSessionDivider} title="Tambah divider sesi">
+                  🧩 Divider Sesi
+                </button>
+              )}
               {hasSequentialVideoSet && (
                 <>
                   <button
-                    className={`btn ${isSequentialVideoLoop ? 'setlist-btn-primary' : 'btn-secondary'} setlist-btn-mobile-icon`}
+                    className={`btn ${isSequentialVideoLoop ? 'setlist-btn-primary' : 'btn-secondary'} setlist-btn-ghost`}
                     onClick={() => setIsSequentialVideoLoop((prev) => !prev)}
                     title={isSequentialVideoLoop ? 'Matikan loop playlist video' : 'Aktifkan loop playlist video'}
                     aria-label={isSequentialVideoLoop ? 'Matikan loop playlist video' : 'Aktifkan loop playlist video'}
                   >
-                    <span className="setlist-btn-icon" aria-hidden="true">🔁</span>
-                    <span className="setlist-btn-label">{isSequentialVideoLoop ? 'Loop On' : 'Loop'}</span>
+                    🔁 {isSequentialVideoLoop ? 'Loop On' : 'Loop Video'}
                   </button>
                   <button
-                    className={`btn ${isSequentialVideoMode ? 'setlist-btn-primary' : 'btn-secondary'} setlist-btn-mobile-icon`}
+                    className={`btn ${isSequentialVideoMode ? 'setlist-btn-primary' : 'btn-secondary'} setlist-btn-ghost`}
                     onClick={() => {
                       if (isSequentialVideoMode) {
                         handleCloseVideoPlayer();
@@ -1512,67 +1426,34 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     title={isSequentialVideoMode ? 'Hentikan pemutaran video berurutan' : 'Putar video setlist berurutan'}
                     aria-label={isSequentialVideoMode ? 'Hentikan pemutaran video setlist berurutan' : 'Putar video setlist berurutan'}
                   >
-                    <span className="setlist-btn-icon" aria-hidden="true">🎬</span>
-                    <span className="setlist-btn-label">{isSequentialVideoMode ? 'Berhenti' : 'Putar Berurutan'}</span>
+                    🎬 {isSequentialVideoMode ? 'Berhenti' : 'Putar Berurutan'}
                   </button>
                 </>
               )}
-              <button
-                className="btn setlist-btn-secondary setlist-btn-mobile-icon"
-                onClick={() => {
-                  setShareSessionFilter('all');
-                  setShowShareModal(true);
-                }}
-                title="Bagikan Setlist"
-              >
-                <span className="setlist-btn-icon" aria-hidden="true">📤</span>
-                <span className="setlist-btn-label">Bagikan</span>
-              </button>
-            </div>
-          )}
-
-          {canEdit && completedCount > 0 && (
-            <div className="setlist-header-action-group setlist-header-progress-group" aria-label="Aksi progres performa">
-              <button
-                className="btn btn-secondary setlist-btn-ghost"
-                onClick={handleResetCompletedSongs}
-                title="Reset semua status lagu dibawakan"
-              >
-                ↺ Reset Dibawakan
-              </button>
-            </div>
-          )}
-
-          {(
-            <details className="setlist-header-more" aria-label="Aksi tambahan setlist">
-              <summary className="btn btn-secondary">⚙ Aksi Lainnya</summary>
-              <div className="setlist-header-more-menu">
-                {canEdit && (
-                  <button className="btn setlist-btn-ghost" onClick={() => setShowSmartModal(true)} title="Urutkan otomatis berdasarkan key, tempo, energi, dan durasi">
-                    ✨ Smart Assistant
-                  </button>
-                )}
-                {canEdit && featuredSongIdsFromMeta.length > 0 && (
-                  <button
-                    className="btn btn-secondary setlist-btn-ghost"
-                    onClick={handleClearSmartPicks}
-                    title="Hapus semua badge Smart Pick dari setlist"
-                    disabled={smartApplying}
-                  >
-                    {smartApplying ? 'Memproses...' : 'Clear Smart Picks'}
-                  </button>
-                )}
-                {canEdit && (
-                  <button className="btn btn-secondary setlist-btn-ghost" onClick={openAddSessionDivider} title="Tambah divider sesi">
-                    🧩 Divider Sesi
-                  </button>
-                )}
-                <button className="btn setlist-btn-ghost" onClick={() => setShowCopyModal(true)} title="Copy Setlist">
-                  📋 Copy Setlist
+              {canEdit && featuredSongIdsFromMeta.length > 0 && (
+                <button
+                  className="btn btn-secondary setlist-btn-ghost"
+                  onClick={handleClearSmartPicks}
+                  title="Hapus semua badge Smart Pick dari setlist"
+                  disabled={smartApplying}
+                >
+                  {smartApplying ? 'Memproses...' : 'Clear Smart Picks'}
                 </button>
-              </div>
-            </details>
-          )}
+              )}
+              {canEdit && completedCount > 0 && (
+                <button
+                  className="btn btn-secondary setlist-btn-ghost"
+                  onClick={handleResetCompletedSongs}
+                  title="Reset semua status lagu dibawakan"
+                >
+                  ↺ Reset Dibawakan
+                </button>
+              )}
+              <button className="btn setlist-btn-ghost" onClick={() => setShowCopyModal(true)} title="Copy Setlist">
+                📋 Copy Setlist
+              </button>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -1587,79 +1468,36 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             className="search-input-main"
           />
           <div className="filter-row">
-            <select
-              value={filterArtist}
-              onChange={(e) => setFilterArtist(e.target.value)}
-              className="filter-select"
-            >
-              <option value="">Artis: Semua</option>
-              {uniqueArtists.map(artist => (
-                <option key={artist} value={artist}>{artist}</option>
-              ))}
-            </select>
-            <select
-              value={filterGenre}
-              onChange={(e) => setFilterGenre(e.target.value)}
-              className="filter-select"
-            >
-              <option value="">Genre: Semua</option>
-              {uniqueGenres.map(genre => (
-                <option key={genre} value={genre}>{genre}</option>
-              ))}
-            </select>
-            <select
-              value={filterCompletionStatus}
-              onChange={(e) => setFilterCompletionStatus(e.target.value)}
-              className="filter-select"
-              aria-label="Filter status dibawakan"
-            >
-              <option value="all">Dibawakan: Semua</option>
-              <option value="completed">Dibawakan: Sudah</option>
-              <option value="pending">Dibawakan: Belum</option>
-            </select>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="filter-select"
-            >
-              <option value="custom">Urutkan: Custom</option>
-              <option value="title">Urutkan: Judul</option>
-              <option value="artist">Urutkan: Artis</option>
-              <option value="completedStatus">Urutkan: Sudah Dibawakan</option>
-              <option value="setlistCount">Urutkan: Jumlah Setlist</option>
-              <option value="key">Urutkan: Kunci</option>
-              <option value="tempo">Urutkan: Tempo</option>
-              <option value="created">Urutkan: Tanggal</option>
-            </select>
-            <select
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.target.value)}
-              className="filter-select"
-              aria-label="Kelompokkan daftar lagu"
-            >
-              <option value="none">Kelompokkan: Tidak</option>
-              <option value="artist">Kelompokkan: Artis</option>
-              <option value="genre">Kelompokkan: Genre</option>
-              <option value="key">Kelompokkan: Key</option>
-              <option value="completion">Kelompokkan: Dibawakan</option>
-            </select>
-            <button
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="btn btn-secondary"
-              title={
-                sortBy === 'completedStatus'
-                  ? (sortOrder === 'asc' ? 'Sudah ke Belum' : 'Belum ke Sudah')
-                  : (sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun')
-              }
-            >
-              {sortBy === 'completedStatus'
-                ? (sortOrder === 'asc' ? '↑ Sudah→Belum' : '↓ Belum→Sudah')
-                : (sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A')}
-            </button>
+            {/* Songs always follow the user's own order, so there is no sort
+                control. The only list control left is this switch. */}
+            <label className="song-visibility-toggle" htmlFor="hide-played-songs">
+              <input
+                id="hide-played-songs"
+                type="checkbox"
+                className="song-visibility-checkbox"
+                checked={hidePlayedSongs}
+                onChange={(e) => setHidePlayedSongs(e.target.checked)}
+              />
+              <span className="song-visibility-track" aria-hidden="true">
+                <span className="song-visibility-knob" />
+              </span>
+              <span className="song-visibility-text">
+                <span className="song-visibility-label">
+                  {hidePlayedSongs ? 'Sembunyikan' : 'Tampilkan'} lagu sudah dibawakan
+                </span>
+                {completedCount > 0 && (
+                  <span className="song-visibility-count">
+                    {completedCount} dari {setlistSongs.length} lagu
+                  </span>
+                )}
+              </span>
+            </label>
             {featuredSongIdsFromMeta.length > 0 && (
               <button
-                onClick={() => setFilterSmartOnly(v => !v)}
+                type="button"
+                onClick={() => setFilterSmartOnly((v) => !v)}
                 className={`btn ${filterSmartOnly ? '' : 'btn-secondary'}`}
+                aria-pressed={filterSmartOnly}
                 title="Filter lagu Smart Pick"
               >
                 {filterSmartOnly ? '✨ Smart Pick Saja (Aktif)' : '✨ Smart Pick Saja'}
@@ -1667,6 +1505,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             )}
             {hasActiveFilters && (
               <button
+                type="button"
                 onClick={handleClearFilters}
                 className="btn btn-secondary"
               >
@@ -1702,23 +1541,14 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       ) : (
         <div className="song-list-container">
           {displayedSongRows.map((row) => {
-            if (row.type === 'group') {
-              return (
-                <div key={row.key} className="setlist-group-header">
-                  <span className="setlist-group-title">{row.label}</span>
-                  <span className="setlist-group-count">{row.count} lagu</span>
-                </div>
-              );
-            }
-
             if (row.type === 'divider') {
               return (
                 <div
                   key={`divider-${row.songId}`}
                   className="setlist-session-divider"
-                  draggable={sortBy === 'custom' && groupBy === 'none' && canEdit}
+                  draggable={canEdit}
                   onDragStart={e => {
-                    if (sortBy !== 'custom' || groupBy !== 'none' || !canEdit) return;
+                    if (!canEdit) return;
                     e.dataTransfer.setData('drag-type', 'session-divider');
                     e.dataTransfer.setData('divider-from-song-id', String(row.songId));
                     e.currentTarget.classList.add('dragging');
@@ -1727,7 +1557,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     e.currentTarget.classList.remove('dragging');
                   }}
                   onDragOver={e => {
-                    if (sortBy !== 'custom' || groupBy !== 'none' || !canEdit) return;
+                    if (!canEdit) return;
                     if (e.dataTransfer.getData('drag-type') !== 'session-divider') return;
                     e.preventDefault();
                     e.currentTarget.classList.add('drag-over');
@@ -1736,7 +1566,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     e.currentTarget.classList.remove('drag-over');
                   }}
                   onDrop={e => {
-                    if (sortBy !== 'custom' || groupBy !== 'none' || !canEdit) return;
+                    if (!canEdit) return;
                     e.preventDefault();
                     e.currentTarget.classList.remove('drag-over');
                     const dragType = e.dataTransfer.getData('drag-type');
@@ -1784,36 +1614,28 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               <React.Fragment key={song.id}>
                 <div
                   className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
-                  draggable={sortBy === 'custom' && groupBy === 'none'}
-                  onDragStart={e => {
-                    if (sortBy !== 'custom' || groupBy !== 'none') return;
-                    e.dataTransfer.setData('song-idx', String(customIdx));
-                    e.currentTarget.classList.add('dragging');
-                  }}
-                  onDragEnd={e => {
-                    e.currentTarget.classList.remove('dragging');
-                  }}
+                  /* Song-to-song reordering is done with the ⇅ button in the rail:
+                     HTML5 drag-and-drop does not fire on touch devices, so the
+                     old handle was a control that did nothing on a phone.
+                     Drop handling stays for session dividers, which are still
+                     draggable from their own handle. */
                   onDragOver={e => {
-                    if (sortBy !== 'custom' || groupBy !== 'none') return;
-                    e.preventDefault();
-                    e.currentTarget.classList.add('drag-over');
+                    if (e.dataTransfer.types.includes('drag-type')) {
+                      e.preventDefault();
+                      e.currentTarget.classList.add('drag-over');
+                    }
                   }}
                   onDragLeave={e => {
                     e.currentTarget.classList.remove('drag-over');
                   }}
                   onDrop={e => {
-                    if (sortBy !== 'custom' || groupBy !== 'none') return;
-                    e.preventDefault();
                     e.currentTarget.classList.remove('drag-over');
                     const dragType = e.dataTransfer.getData('drag-type');
                     if (dragType === 'session-divider') {
+                      e.preventDefault();
                       const fromSongId = e.dataTransfer.getData('divider-from-song-id');
                       handleMoveSessionDivider(fromSongId, song.id);
-                      return;
                     }
-                    const fromIdx = Number(e.dataTransfer.getData('song-idx'));
-                    const toIdx = customIdx;
-                    if (fromIdx !== toIdx) handleReorder(fromIdx, toIdx);
                   }}
                   onClick={() => navigate(`/setlists/${setlist.id}/songs/${song.id}`, {
                     state: {
@@ -1823,60 +1645,83 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     }
                   })}
                 >
-                  {/* Drag handle icon */}
-                  {sortBy === 'custom' && groupBy === 'none' && (
-                    <span className="drag-handle-icon" title="Seret untuk mengatur urutan">
-                      <DragHandleIcon size={18} />
-                    </span>
-                  )}
+                  {/* Left rail: the number IS the reorder control. One tap opens the
+                      reorder prompt, so there is no separate handle to aim at — and
+                      no drag, which never fires on touch devices. */}
+                  <div className="song-rail">
+                    {canEdit ? (
+                      <button
+                        type="button"
+                        className="song-number song-number-button"
+                        title={`Ubah urutan lagu (sekarang nomor ${displayOrderNumber})`}
+                        aria-label={`Ubah nomor urutan ${song.title}, sekarang nomor ${displayOrderNumber}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditSongOrder(song.id);
+                        }}
+                      >
+                        {displayOrderNumber}
+                      </button>
+                    ) : (
+                      <span className="song-number">{displayOrderNumber}</span>
+                    )}
+                  </div>
+
                   {/* Song Info */}
                   <div className="song-info">
-                    <div className="song-number-wrap">
-                      <div className="song-number">{displayOrderNumber}.</div>
-                      {canEdit && sortBy === 'custom' && groupBy === 'none' && (
-                        <button
-                          className="btn btn-secondary song-order-edit-btn"
-                          title="Edit nomor urutan lagu"
-                          aria-label={`Edit nomor urutan ${song.title}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditSongOrder(song.id);
-                          }}
-                        >
-                          #
-                        </button>
-                      )}
+                    <div className="song-heading">
+                      <h3 className="song-title">
+                        {song.title}
+                        {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
+                      </h3>
+
+                      {/* Status lives on the right of the title line, where it reads
+                          as the state of THIS row instead of another inline word. */}
+                      <div className="song-heading-status">
+                        {isSongPlaying(song.id) && (
+                          <span className="song-flag song-flag-live">▶ Live</span>
+                        )}
+                        {isCompleted && (
+                          <span className="song-flag song-flag-done" title="Sudah dibawakan">
+                            ✓ Dibawakan
+                          </span>
+                        )}
+                        {isSmartFeatured && (
+                          <span className="song-flag song-flag-smart" title="Blok show utama Smart Assistant">
+                            ✨ Smart Pick
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <h3 className="song-title">
-                      {song.title}
-                      {isCompleted && <span className="song-completed-badge" title="Sudah dibawakan" aria-label="Sudah dibawakan">✓</span>}
-                      {isSmartFeatured && <span className="smart-featured-badge">Smart Pick</span>}
-                      {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
-                    </h3>
+
+                    {/* Facts about the song, one chip each, so they scan as a row
+                        of labels rather than a sentence. */}
                     <div className="song-meta">
+                      {song.artist && <span className="song-chip">🎤 {song.artist}</span>}
                       <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood: ${mood.label} (${mood.sourceHint})`}>
                         {mood.label}
                       </span>
-                      {song.artist && <span>👤 {song.artist}</span>}
                       {song.key && (
-                        <span>
+                        <span className="song-chip">
                           🎹 {song.key}
                           {keyChanged && baseSong?.key ? ` (${baseSong.key})` : ''}
                         </span>
                       )}
                       {song.tempo && (
-                        <span>
+                        <span className="song-chip">
                           ⏱️ {song.tempo} BPM
                           {tempoChanged && baseSong?.tempo ? ` (${baseSong.tempo} BPM)` : ''}
                         </span>
                       )}
                       {song.genre && (
-                        <span>
+                        <span className="song-chip">
                           🎸 {song.genre}
                           {genreChanged && baseSong?.genre ? ` (${baseSong.genre})` : ''}
                         </span>
                       )}
-                      <span>📋 {songUsageCountMap.get(song.id) || 0} setlist</span>
+                      <span className="song-chip song-chip-muted">
+                        📋 {songUsageCountMap.get(song.id) || 0} setlist
+                      </span>
                     </div>
                   </div>
 
@@ -1983,9 +1828,37 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                           ref={videoRef}
                           videoId={song.youtubeId || song.youtube_url}
                           autoPlay={Boolean(activeVideoSong)}
+                          onTimeUpdate={(t, d) => {
+                            setVideoPlayback((prev) => ({
+                              time: typeof t === 'number' ? t : prev.time,
+                              duration: typeof d === 'number' ? d : prev.duration,
+                            }));
+                          }}
                           onStateChange={(event) => handleYouTubeStateChange(event, song.id)}
                         />
                       </div>
+                    )}
+
+                    {/* Time markers for the song being played, so you can jump to
+                        any section without scrubbing the video. Rendered read-only:
+                        the setlist page is for performing, not editing. */}
+                    {activeVideoSong?.id === song.id && (
+                      Array.isArray(song.time_markers) && song.time_markers.length > 0 ? (
+                        <div className="song-inline-player-markers">
+                          <TimeMarkers
+                            timeMarkers={song.time_markers}
+                            readonly
+                            onSeek={(seconds) => videoRef.current?.handleSeek?.(seconds)}
+                            currentTime={videoPlayback.time}
+                            duration={videoPlayback.duration}
+                          />
+                        </div>
+                      ) : (
+                        <div className="song-inline-player-markers-empty">
+                          Lagu ini belum punya time marker. Tambahkan di halaman editor lagu
+                          agar bagian-bagiannya bisa dilompati dari sini.
+                        </div>
+                      )
                     )}
                   </div>
                 )}

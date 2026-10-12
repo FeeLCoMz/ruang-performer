@@ -1432,30 +1432,159 @@ body.dark-mode .song-mood-badge.mood-peak {
 /* ========================================
    SONG NUMBER (SetlistSongsPage)
    ======================================== */
-.song-number {
-  font-weight: 600;
-  margin-right: 12px;
-  min-width: 24px;
-  display: inline-block;
-  color: var(--text-muted);
-  font-size: 1em;
+/* ---- Song row: left rail (drag + number) | content column ---- */
+.song-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  align-self: stretch;
+  padding-right: var(--spacing-md);
+  border-right: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
 }
 
-.song-number-wrap {
+/* The number doubles as the reorder control, so it must look tappable without
+   shouting: a quiet disc that hints at interaction on hover/focus. */
+.song-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.song-number-button {
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  background: color-mix(in srgb, var(--secondary-bg) 60%, transparent);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+}
+
+.song-number-button:hover {
+  border-color: var(--primary-accent);
+  background: color-mix(in srgb, var(--primary-accent) 16%, transparent);
+  color: var(--primary-accent);
+}
+
+.song-number-button:focus-visible {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
+.song-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.song-heading-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex: 0 0 auto;
+}
+
+/* Small state pills on the title line: quiet enough to sit beside the title
+   without competing with it. */
+.song-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.song-flag-done {
+  color: #4ade80;
+  background: color-mix(in srgb, #16a34a 16%, transparent);
+  border-color: color-mix(in srgb, #16a34a 38%, transparent);
+}
+
+.song-flag-smart {
+  color: #fbbf24;
+  background: color-mix(in srgb, #f59e0b 16%, transparent);
+  border-color: color-mix(in srgb, #f59e0b 38%, transparent);
+}
+
+.song-flag-live {
+  color: #38bdf8;
+  background: color-mix(in srgb, #0284c7 18%, transparent);
+  border-color: color-mix(in srgb, #0284c7 40%, transparent);
 }
 
 .song-order-edit-btn {
-  min-width: 26px;
-  height: 22px;
-  min-height: 22px;
-  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px dashed color-mix(in srgb, var(--border-color) 90%, transparent);
   border-radius: 999px;
-  font-size: 0.72rem;
-  line-height: 1;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
+
+.song-order-edit-btn:hover {
+  border-color: var(--primary-accent);
+  border-style: solid;
+  color: var(--primary-accent);
+}
+
+/* One chip per fact, so the meta line scans as labels, not a sentence. */
+.song-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--secondary-bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.song-chip-muted {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+.song-info {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.song-title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ========================================
    DRAG HANDLE ICON (DragHandleIcon.jsx)
    ======================================== */
@@ -1464,14 +1593,14 @@ body.dark-mode .song-mood-badge.mood-peak {
   align-items: center;
   justify-content: center;
   cursor: grab;
-  margin-right: 8px;
-  vertical-align: middle;
   color: var(--text-muted);
   transition: color var(--transition-fast);
 }
+
 .song-item.dragging .drag-handle-icon {
   color: var(--primary-accent);
 }
+
 .song-item:active .drag-handle-icon {
   cursor: grabbing;
 }
@@ -14091,6 +14220,400 @@ body.dark-mode .studio-error {
 
   .ed-dropdown-item {
     padding: 10px;
+    min-height: 44px;
+  }
+}
+
+/* ========================================
+   SETLIST SONGS PAGE — MOBILE
+   ========================================
+   Measured problems at 390px before this block:
+     - the filter row was a fixed 2-column grid, so "Kelompokkan: Tidak" was
+       clipped to "Kelompokkan: Tid"
+     - per-song action buttons were 30px tall, below the 44px touch minimum
+     - the drag handle sat alone at the top of the row, detached from the song
+     - "Aksi Lainnya" stretched full width and competed with the primary action
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* ---- Header: one clear primary action, menu tucked beside it ---- */
+  .setlist-header-actions {
+    width: 100%;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .setlist-header-actions .setlist-btn-primary {
+    flex: 1 1 auto;
+    min-height: 46px;
+    justify-content: center;
+  }
+
+  .setlist-header-actions .setlist-btn-label {
+    display: inline-flex;
+  }
+
+  /* The menu trigger stays a compact square so the primary button leads. */
+  .setlist-header-more {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .setlist-header-more > summary {
+    width: 46px;
+    height: 46px;
+    min-height: 46px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+    gap: 0;
+  }
+
+  /* Keep the gear glyph visible while hiding the words. */
+  .setlist-header-more > summary::before {
+    content: '⚙';
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  .setlist-header-more-menu {
+    position: absolute;
+    right: 0;
+    left: auto;
+    top: calc(100% + 6px);
+    min-width: min(280px, calc(100vw - 32px));
+    max-height: 60vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-md);
+  }
+
+  .setlist-header-more-menu .btn {
+    width: 100%;
+    justify-content: flex-start;
+    min-height: 44px;
+    text-align: left;
+  }
+
+  /* ---- Filters: let the selects size to their content ---- */
+  .filter-container {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .search-input-main {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Two per line, but wide enough that the longest label is not clipped. */
+  .filter-row .filter-select {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    max-width: none;
+  }
+
+  .filter-row .btn {
+    flex: 1 1 100%;
+    min-height: 44px;
+  }
+
+  .song-item {
+    /* align-items: stretch so every child (rail, info, actions) spans the full
+       card width. With the default `center`, the rail collapsed to its content
+       and floated in the middle of the card. */
+    align-items: stretch;
+    gap: 10px;
+    padding: var(--spacing-md);
+  }
+
+  /* The rail becomes a horizontal strip on top: reorder control and number on
+     one line, reading as the row's label. */
+  .song-item .song-rail {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    align-self: stretch;
+    width: 100%;
+    gap: 8px;
+    padding-right: 0;
+    padding-bottom: 8px;
+    border-right: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
+  }
+
+  .song-item .song-rail .song-number {
+    font-size: 0.95rem;
+  }
+
+  /* The number is the only reorder control now, so it has to meet the 44px
+     touch minimum on its own. */
+  .song-item .song-rail .song-number-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0;
+    font-size: 1rem;
+    border-radius: var(--radius-md);
+  }
+
+  .song-item .song-info {
+    width: 100%;
+  }
+
+  .song-item .song-heading {
+    align-items: flex-start;
+  }
+
+  .song-item .song-title {
+    font-size: 1.05rem;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.25;
+  }
+
+  /* Status pills drop below the title where there is room for them. */
+  .song-item .song-heading-status {
+    width: 100%;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .song-item .song-meta {
+    gap: 6px;
+    row-gap: 6px;
+    margin-top: 10px;
+    font-size: 0.75rem;
+  }
+
+  .song-item .song-chip,
+  .song-item .song-mood-badge {
+    font-size: 0.72rem;
+  }
+
+  .song-item .song-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent);
+  }
+
+  /* 44px targets: the old 30px circles were hard to hit accurately. */
+  .song-item .song-actions .btn,
+  .song-item .song-action-mini,
+  .song-list-container .song-actions .btn {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: var(--radius-md);
+    font-size: 1.05rem;
+  }
+
+  /* The row of actions keeps its semantics (blue = primary, red = danger) but
+     drops the filled backgrounds, so five saturated buttons stop reading as a
+     row of candy. Colour moves to the icon and border instead. */
+  .song-item .song-actions .btn:not(.btn-red),
+  .song-item .song-action-mini {
+    background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--primary-accent) 32%, transparent);
+    color: var(--primary-accent);
+  }
+
+  .song-item .song-actions .btn-secondary.song-action-mini {
+    background: color-mix(in srgb, var(--secondary-bg) 70%, transparent);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+  }
+
+  .song-item .song-actions .btn-red {
+    background: color-mix(in srgb, #dc2626 12%, transparent);
+    border-color: color-mix(in srgb, #dc2626 34%, transparent);
+    color: #f87171;
+  }
+
+  /* ---- Inline player ---- */
+  .song-inline-player-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .song-inline-player-actions {
+    justify-content: flex-start;
+  }
+
+  .song-inline-player-actions .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: var(--spacing-sm);
+  }
+
+  .filter-row .filter-select {
+    /* One per line on the narrowest phones: a clipped label is worse than a
+       taller filter block. */
+    flex: 1 1 100%;
+    min-height: 44px;
+  }
+
+  .song-item {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .song-item .song-title {
+    font-size: 1rem;
+  }
+}
+
+/* ========================================
+   SETLIST SONGS — VISIBILITY SWITCH + VIDEO MARKERS
+   ======================================== */
+
+/* The "show / hide played songs" switch that replaced the Kelompokkan dropdown.
+   A real checkbox is kept in the DOM for keyboard and screen-reader support; the
+   track and knob are drawn from it, so no JS state is needed. */
+.song-visibility-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--primary-bg);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.song-visibility-toggle:hover {
+  border-color: color-mix(in srgb, var(--primary-accent) 45%, var(--border-color));
+}
+
+.song-visibility-checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.song-visibility-track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-color) 85%, transparent);
+  transition: background var(--transition-fast);
+}
+
+.song-visibility-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.35);
+  transition: transform var(--transition-fast);
+}
+
+.song-visibility-checkbox:checked + .song-visibility-track {
+  background: var(--primary-accent);
+}
+
+.song-visibility-checkbox:checked + .song-visibility-track .song-visibility-knob {
+  transform: translateX(18px);
+}
+
+.song-visibility-checkbox:focus-visible + .song-visibility-track {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
+.song-visibility-text {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.song-visibility-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.song-visibility-count {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ---- Time markers under the inline video player ---- */
+.song-inline-player-markers {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+.song-inline-player-markers .time-markers {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.song-inline-player-markers .time-markers-progress {
+  font-variant-numeric: tabular-nums;
+}
+
+.song-inline-player-markers-empty {
+  margin-top: var(--spacing-md);
+  padding: 10px var(--spacing-md);
+  border: 1px dashed color-mix(in srgb, var(--border-color) 80%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .song-visibility-toggle {
+    width: 100%;
+    justify-content: flex-start;
+    min-height: 46px;
+  }
+
+  .song-visibility-label {
+    white-space: normal;
+  }
+
+  /* The marker rows are tap targets, so give them room on a phone. */
+  .song-inline-player-markers .time-marker-item {
+    min-height: 44px;
+  }
+
+  .song-inline-player-markers .time-marker-play-btn {
+    min-width: 44px;
     min-height: 44px;
   }
 }
