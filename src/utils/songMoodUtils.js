@@ -45,7 +45,7 @@ function getStyleAdjustment(styleText) {
 const LEVEL_TO_MOOD = [
   { tone: 'calm', label: 'Tenang' },
   { tone: 'warm', label: 'Hangat' },
-  { tone: 'groove', label: 'Groove' },
+  { tone: 'groove', label: 'Bersemangat' },
   { tone: 'energetic', label: 'Enerjik' },
   { tone: 'peak', label: 'Puncak' },
 ];

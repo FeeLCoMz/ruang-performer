@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { STORAGE_KEYS } from '../utils/storageKeys.js';
 
-const MIDI_OUTPUT_STORAGE_KEY = 'ruangperformer_midi_output_id';
-const MIDI_ENABLE_STORAGE_KEY = 'ruangperformer_midi_enable_program_change';
+const MIDI_OUTPUT_STORAGE_KEY = STORAGE_KEYS.MIDI_OUTPUT_ID;
+const MIDI_ENABLE_STORAGE_KEY = STORAGE_KEYS.MIDI_ENABLE_PROGRAM_CHANGE;
 
 const normalizeMidiProgram = (value) => {
   const numeric = Number.parseInt(String(value || '').trim(), 10);

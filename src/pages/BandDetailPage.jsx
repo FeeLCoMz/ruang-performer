@@ -18,6 +18,7 @@ export default function BandDetailPage() {
   const [inviteRole, setInviteRole] = useState('member');
   const [inviteError, setInviteError] = useState(null);
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [memberError, setMemberError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
@@ -45,7 +46,11 @@ export default function BandDetailPage() {
 
   const userBandInfo = band ? { role: band.role || band.userRole || (band.isOwner ? 'owner' : 'member') } : { role: 'member' };
   const { can } = usePermission(id, userBandInfo);
-  const canManageMembers = can('manage_members') || band?.isOwner || band?.userRole === 'admin';
+  const canManageMembers =
+    can(PERMISSIONS.MEMBER_INVITE) ||
+    can(PERMISSIONS.MEMBER_REMOVE) ||
+    band?.isOwner ||
+    band?.userRole === 'admin';
 
   useEffect(() => {
     loadBand();
@@ -67,13 +72,13 @@ export default function BandDetailPage() {
         description: data.description || '',
         genre: data.genre || ''
       });
-      
+
       // Load related data
       const [setlistsData, gigsData] = await Promise.all([
         apiClient.fetchSetLists().catch(() => []),
         apiClient.fetchGigs(id).catch(() => [])
       ]);
-      
+
       setSetlists((setlistsData || []).filter((s) => String(s.bandId) === String(id)));
       setGigs(gigsData || []);
     } catch (err) {
@@ -170,6 +175,16 @@ export default function BandDetailPage() {
 
   return (
     <div className="page-container band-detail-page">
+      {memberError && (
+        <div className="error-text" role="alert">
+          {memberError}
+          <button
+            type="button"
+            className="user-management-banner-close"
+            onClick={() => setMemberError(null)}
+          >×</button>
+        </div>
+      )}
       <div className="band-hero dashboard-card band-reveal band-reveal-1">
         <div className="band-hero-top">
           <button className="btn btn-secondary band-back-btn" onClick={() => navigate('/bands')}>
@@ -187,7 +202,7 @@ export default function BandDetailPage() {
               </button>
             )}
             {can(PERMISSIONS.BAND_DELETE) && (
-              <button className="btn danger" onClick={handleDelete} title="Hapus Band">
+              <button className="btn btn-red" onClick={handleDelete} title="Hapus Band">
                 <DeleteIcon size={18} /> Hapus
               </button>
             )}
@@ -260,15 +275,16 @@ export default function BandDetailPage() {
                       <EditIcon size={16} />
                     </button>
                     <button
-                      className="btn danger"
+                      className="btn btn-red"
                       title="Hapus Member"
                       onClick={async () => {
                         if (window.confirm(`Yakin ingin menghapus ${member.username} dari band?`)) {
                           try {
+                            setMemberError(null);
                             await apiClient.removeBandMember(id, member.userId || member.id);
                             await loadBand();
                           } catch (err) {
-                            alert(err.message || 'Gagal menghapus member');
+                            setMemberError(err.message || 'Gagal menghapus member');
                           }
                         }
                       }}

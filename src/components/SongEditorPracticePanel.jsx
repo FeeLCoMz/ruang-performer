@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import YouTubeViewer from "./YouTubeViewer.jsx";
+import { STORAGE_KEYS } from "../utils/storageKeys.js";
 
-const VIDEO_HEIGHT_STORAGE_KEY = 'ruangperformer_practice_video_height_v1';
-const DETACHED_STORAGE_KEY = 'ruangperformer_practice_video_detached_v1';
+const VIDEO_HEIGHT_STORAGE_KEY = STORAGE_KEYS.PRACTICE_VIDEO_HEIGHT;
+const DETACHED_STORAGE_KEY = STORAGE_KEYS.PRACTICE_VIDEO_DETACHED;
 
 /** Height presets, in px. The video keeps a 16:9 box, so height drives width. */
 export const VIDEO_SIZE_PRESETS = [

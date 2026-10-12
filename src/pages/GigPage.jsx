@@ -163,7 +163,7 @@ export default function GigPage() {
         setBands(bandsData || []);
         setSetlists(setlistsData || []);
       } catch (err) {
-        console.error('Failed to load data:', err);
+        console.error('Gagal memuat data:', err);
       }
     };
     loadInitialData();
@@ -177,7 +177,7 @@ export default function GigPage() {
         const data = await fetchGigs(selectedBandId || null);
         setGigs(Array.isArray(data) ? data : []);
       } catch (err) {
-        setError(err.message || 'Failed to load gigs');
+        setError(err.message || 'Gagal memuat daftar konser');
       } finally {
         setLoading(false);
       }
@@ -251,14 +251,14 @@ export default function GigPage() {
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
-    
+
     try {
       await deleteGig(deleteConfirm.id);
       const data = await fetchGigs(selectedBandId || null);
       setGigs(Array.isArray(data) ? data : []);
       setDeleteConfirm(null);
     } catch (err) {
-      console.error('Failed to delete:', err);
+      console.error('Gagal menghapus:', err);
     }
   };
 

@@ -139,11 +139,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [editSongTempo, setEditSongTempo] = useState('');
   const [editSongStyle, setEditSongStyle] = useState('');
   const [editSongKeyError, setEditSongKeyError] = useState('');
+  const [orderError, setOrderError] = useState('');
 
   // State untuk konfirmasi hapus
   const [confirmDeleteSongId, setConfirmDeleteSongId] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [deletingUncompleted, setDeletingUncompleted] = useState(false);
   const [metronomeTempo, setMetronomeTempo] = useState(120);
   const [metronomeSongId, setMetronomeSongId] = useState(null);
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
@@ -207,7 +207,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const completedCount = (localOrder || []).filter((songId) => completedSongs[songId] === true).length;
   const uncompletedSongIds = (localOrder || []).filter((songId) => completedSongs[songId] !== true);
   const uncompletedCount = uncompletedSongIds.length;
-  const allSongsCompleted = localOrder.length > 0 && completedCount === localOrder.length;
   let setlistSongs;
   if (sortBy === 'custom') {
     setlistSongs = (localOrder || []).map((id) => {
@@ -720,7 +719,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       })
       .catch((err) => {
         setPosterError('Gagal membuat poster. Coba lagi.');
-        console.error('html2canvas error:', err);
+        console.error('Gagal membuat poster (html2canvas):', err);
       })
       .finally(() => {
         setIsGeneratingPoster(false);
@@ -762,7 +761,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       })
       .catch((err) => {
         setPosterError('Gagal membuat PDF. Coba lagi.');
-        console.error('html2canvas/pdf error:', err);
+        console.error('Gagal membuat PDF poster:', err);
       })
       .finally(() => {
         setIsGeneratingPoster(false);
@@ -885,7 +884,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   async function handleEditSongOrder(songId) {
     if (!canEdit) return;
     if (sortBy !== 'custom' || groupBy !== 'none') {
-      window.alert('Ubah urutan ke mode Custom dan nonaktifkan Group terlebih dahulu.');
+      setOrderError('Ubah urutan ke mode Custom dan nonaktifkan Group terlebih dahulu.');
       return;
     }
 
@@ -902,7 +901,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
     const parsedTarget = Number.parseInt(String(input).trim(), 10);
     if (!Number.isFinite(parsedTarget) || parsedTarget < 1 || parsedTarget > localOrder.length) {
-      window.alert(`Nomor urutan harus antara 1 sampai ${localOrder.length}.`);
+      setOrderError(`Nomor urutan harus antara 1 sampai ${localOrder.length}.`);
       return;
     }
 
@@ -1267,34 +1266,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
   }
 
-  async function handleMarkAllSongsCompleted() {
-    if (!canEdit || !localOrder.length) return;
-
-    const nextCompletedSongs = {};
-    for (const songId of localOrder) {
-      nextCompletedSongs[songId] = true;
-    }
-
-    if (setSetlists) {
-      setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, completedSongs: nextCompletedSongs } : s));
-    }
-
-    try {
-      await fetch(`/api/setlists/${setlist.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authUtils.getAuthHeader() },
-        body: JSON.stringify({
-          ...setlist,
-          songs: localOrder,
-          setlistSongMeta,
-          completedSongs: nextCompletedSongs,
-        }),
-      });
-    } catch (e) {
-      console.error('Gagal menandai semua lagu sebagai dibawakan', e);
-    }
-  }
-
   async function handleResetCompletedSongs() {
     if (!canEdit || completedCount === 0) return;
 
@@ -1315,40 +1286,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       });
     } catch (e) {
       console.error('Gagal mereset status lagu dibawakan', e);
-    }
-  }
-
-  async function handleDeleteUncompletedSongs() {
-    if (!canEdit || uncompletedCount === 0) return;
-
-    const confirmed = window.confirm(`Hapus ${uncompletedCount} lagu yang belum ditandai dibawakan dari setlist ini? Lagu hanya dihapus dari setlist, tidak dari daftar lagu.`);
-    if (!confirmed) return;
-
-    setDeletingUncompleted(true);
-    try {
-      const keepSongIdSet = new Set((localOrder || []).filter((songId) => completedSongs[songId] === true));
-      const newOrder = (localOrder || []).filter((songId) => keepSongIdSet.has(songId));
-
-      const currentMeta = typeof setlist?.setlistSongMeta === 'object' && !Array.isArray(setlist.setlistSongMeta)
-        ? setlist.setlistSongMeta
-        : {};
-      const nextMeta = {};
-      for (const songId of newOrder) {
-        if (currentMeta[songId] && typeof currentMeta[songId] === 'object') {
-          nextMeta[songId] = { ...currentMeta[songId] };
-        }
-      }
-
-      const nextCompletedSongs = {};
-      for (const songId of newOrder) {
-        nextCompletedSongs[songId] = true;
-      }
-
-      await persistSetlistSongs(newOrder, nextMeta, nextCompletedSongs);
-    } catch (e) {
-      console.error('Gagal menghapus lagu yang belum dibawakan', e);
-    } finally {
-      setDeletingUncompleted(false);
     }
   }
 
@@ -1612,39 +1549,15 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             </div>
           )}
 
-          {canEdit && (
+          {canEdit && completedCount > 0 && (
             <div className="setlist-header-action-group setlist-header-progress-group" aria-label="Aksi progres performa">
-              {localOrder.length > 0 && !allSongsCompleted && (
-                <button className="btn btn-secondary setlist-btn-ghost" onClick={handleMarkAllSongsCompleted} title="Tandai semua lagu sudah dibawakan">
-                  ✅ Tandai Semua
-                </button>
-              )}
-              {(completedCount > 0 || uncompletedCount > 0) && (
-                <details className="setlist-inline-more" aria-label="Aksi progres tambahan">
-                  <summary className="btn btn-secondary setlist-btn-ghost">⋯</summary>
-                  <div className="setlist-inline-more-menu">
-                    {completedCount > 0 && (
-                      <button
-                        className="btn btn-secondary setlist-btn-ghost"
-                        onClick={handleResetCompletedSongs}
-                        title="Reset semua status lagu dibawakan"
-                      >
-                        ↺ Reset Dibawakan
-                      </button>
-                    )}
-                    {uncompletedCount > 0 && (
-                      <button
-                        className="btn btn-red setlist-btn-danger"
-                        onClick={handleDeleteUncompletedSongs}
-                        title="Hapus lagu yang belum ditandai dibawakan dari setlist ini saja"
-                        disabled={deletingUncompleted}
-                      >
-                        {deletingUncompleted ? 'Menghapus...' : '🗑 Hapus Belum Dibawakan'}
-                      </button>
-                    )}
-                  </div>
-                </details>
-              )}
+              <button
+                className="btn btn-secondary setlist-btn-ghost"
+                onClick={handleResetCompletedSongs}
+                title="Reset semua status lagu dibawakan"
+              >
+                ↺ Reset Dibawakan
+              </button>
             </div>
           )}
 
@@ -1780,6 +1693,17 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {orderError && (
+        <div className="error-text" role="alert">
+          {orderError}
+          <button
+            type="button"
+            className="user-management-banner-close"
+            onClick={() => setOrderError('')}
+          >×</button>
         </div>
       )}
 
@@ -2205,7 +2129,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               setlist={setlist}
               setlistSongs={setlistSongs}
               setlistRows={activeShareRows}
-              posterRef={posterRef}              
+              posterRef={posterRef}
             />
             <div className="filter-row">
               <select
@@ -2552,19 +2476,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         </div>
       )}
 
-      {/* FAB: tambah lagu cepat saat performance mode */}
-      {performanceMode && canEdit && (
-        <button
-          type="button"
-          className="setlist-fab-add-song"
-          onClick={() => setShowAddSong(true)}
-          title="Tambah lagu ke setlist"
-          aria-label="Tambah lagu ke setlist"
-        >
-          <PlusIcon size={22} />
-          <span className="setlist-fab-label">Tambah Lagu</span>
-        </button>
-      )}
     </div>
   );
 }

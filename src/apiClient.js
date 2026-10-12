@@ -28,7 +28,7 @@ export async function updateProfile(profileData) {
   return request('/auth/me', {
     method: 'PUT',
     body: profileData,
-    fallbackError: 'Failed to update profile',
+    fallbackError: 'Gagal memperbarui profil',
   });
 }
 
@@ -37,22 +37,22 @@ export async function changePassword(oldPassword, newPassword) {
   return request('/auth/change-password', {
     method: 'POST',
     body: { oldPassword, newPassword },
-    fallbackError: 'Failed to change password',
+    fallbackError: 'Gagal mengubah password',
   });
 }
 // Tools (Owner) API
 export async function backupDatabase() {
-  return request('/tools/backup', { expect: 'text', fallbackError: 'Failed to backup database' });
+  return request('/tools/backup', { expect: 'text', fallbackError: 'Gagal membackup database' });
 }
 export async function exportAllData() {
-  return request('/tools', { fallbackError: 'Failed to export data' });
+  return request('/tools', { fallbackError: 'Gagal mengekspor data' });
 }
 
 export async function importAllData({ songs, setlists, bands, users }) {
   return request('/tools', {
     method: 'POST',
     body: { songs, setlists, bands, users },
-    fallbackError: 'Failed to import data',
+    fallbackError: 'Gagal mengimpor data',
   });
 }
 const API_BASE = '/api';
@@ -86,7 +86,7 @@ async function request(path, options = {}) {
     authenticated = true,
     sendContentType = true,
     expect = 'json',
-    fallbackError = 'Request failed',
+    fallbackError = 'Permintaan gagal',
   } = options;
 
   const baseHeaders = sendContentType
@@ -131,7 +131,7 @@ export async function register(email, username, password) {
     method: 'POST',
     authenticated: false,
     body: { email, username, password },
-    fallbackError: 'Registration failed',
+    fallbackError: 'Pendaftaran gagal',
   });
 }
 
@@ -140,12 +140,12 @@ export async function login(email, password) {
     method: 'POST',
     authenticated: false,
     body: { email, password },
-    fallbackError: 'Login failed',
+    fallbackError: 'Login gagal',
   });
 }
 
 export async function getCurrentUser() {
-  return request('/auth/me', { fallbackError: 'Failed to get current user' });
+  return request('/auth/me', { fallbackError: 'Gagal mengambil data user saat ini' });
 }
 
 // Password Reset endpoints
@@ -154,7 +154,7 @@ export async function requestPasswordReset(email) {
     method: 'POST',
     authenticated: false,
     body: { email },
-    fallbackError: 'Failed to request password reset',
+    fallbackError: 'Gagal meminta reset password',
   });
 }
 
@@ -163,7 +163,7 @@ export async function resetPassword(token, email, newPassword) {
     method: 'POST',
     authenticated: false,
     body: { token, email, newPassword },
-    fallbackError: 'Failed to reset password',
+    fallbackError: 'Gagal mereset password',
   });
 }
 
@@ -179,7 +179,7 @@ export async function fetchSongs(options = {}) {
   const path = query ? `/songs?${query}` : '/songs';
 
   try {
-    const payload = await request(path, { fallbackError: 'Failed to fetch songs' });
+    const payload = await request(path, { fallbackError: 'Gagal mengambil daftar lagu' });
     const songs = Array.isArray(payload) ? payload : Array.isArray(payload?.songs) ? payload.songs : [];
     const trending = Array.isArray(payload?.trending) ? payload.trending : [];
 
@@ -203,7 +203,7 @@ export async function fetchSongs(options = {}) {
 
 export async function fetchSongById(id) {
   try {
-    const song = await request(`/songs/${id}`, { fallbackError: 'Failed to fetch song' });
+    const song = await request(`/songs/${id}`, { fallbackError: 'Gagal mengambil lagu' });
     await cacheSong(song).catch(() => {});
     return song;
   } catch (error) {
@@ -217,25 +217,25 @@ export async function fetchSongById(id) {
 }
 
 export async function addSong(song) {
-  return request('/songs', { method: 'POST', body: song, fallbackError: 'Failed to add song' });
+  return request('/songs', { method: 'POST', body: song, fallbackError: 'Gagal menambahkan lagu' });
 }
 
 export async function updateSong(id, song) {
-  return request(`/songs/${id}`, { method: 'PUT', body: song, fallbackError: 'Failed to update song' });
+  return request(`/songs/${id}`, { method: 'PUT', body: song, fallbackError: 'Gagal memperbarui lagu' });
 }
 
 export async function updateSongMastery(id, mastered = true) {
   return request(`/songs/${id}/mastery`, {
     method: 'PUT',
     body: { mastered },
-    fallbackError: 'Failed to update song mastery',
+    fallbackError: 'Gagal memperbarui status penguasaan lagu',
   });
 }
 
 export async function deleteSong(id) {
   const data = await request(`/songs/${id}`, {
     method: 'DELETE',
-    fallbackError: 'Failed to delete song',
+    fallbackError: 'Gagal menghapus lagu',
   });
   return data ?? undefined;
 }
@@ -246,7 +246,7 @@ export async function fetchSetLists(options = {}) {
   const path = params.toString() ? `/setlists?${params.toString()}` : '/setlists';
 
   try {
-    const setlists = await request(path, { fallbackError: 'Failed to fetch setlists' });
+    const setlists = await request(path, { fallbackError: 'Gagal mengambil daftar setlist' });
     if (Array.isArray(setlists) && !options.summary) {
       await cacheSetlists(setlists).catch(() => {});
     }
@@ -268,7 +268,7 @@ export async function fetchSetLists(options = {}) {
 
 export async function fetchSetListById(id) {
   try {
-    const setlist = await request(`/setlists/${id}`, { fallbackError: 'Failed to fetch setlist' });
+    const setlist = await request(`/setlists/${id}`, { fallbackError: 'Gagal mengambil setlist' });
     await cacheSetlist(setlist).catch(() => {});
     return setlist;
   } catch (error) {
@@ -334,13 +334,13 @@ export async function prefetchPerformanceData() {
 }
 
 export async function addSetList(setList) {
-  return request('/setlists', { method: 'POST', body: setList, fallbackError: 'Failed to add setlist' });
+  return request('/setlists', { method: 'POST', body: setList, fallbackError: 'Gagal menambahkan setlist' });
 }
 
 export async function deleteSetList(id) {
   const data = await request(`/setlists/${id}`, {
     method: 'DELETE',
-    fallbackError: 'Failed to delete setlist',
+    fallbackError: 'Gagal menghapus setlist',
   });
   return data ?? { id };
 }
@@ -349,7 +349,7 @@ export async function updateSetList(setList) {
   return request(`/setlists/${setList.id}`, {
     method: 'PUT',
     body: setList,
-    fallbackError: 'Failed to update setlist',
+    fallbackError: 'Gagal memperbarui setlist',
   });
 }
 
@@ -357,7 +357,7 @@ export async function askAI({ prompt, context, system, model } = {}) {
   return request('/ai', {
     method: 'POST',
     body: { prompt, context, system, model },
-    fallbackError: 'Failed to call AI',
+    fallbackError: 'Gagal memanggil AI',
   });
 }
 
@@ -369,7 +369,7 @@ export async function transcribeAudio(audioFile) {
     method: 'POST',
     sendContentType: false,
     body: formData,
-    fallbackError: 'Failed to transcribe audio',
+    fallbackError: 'Gagal mentranskripsi audio',
   });
 }
 
@@ -377,34 +377,34 @@ export async function aiSongSearch({ title, artist }) {
   return request('/ai/song-search', {
     method: 'POST',
     body: { title, artist },
-    fallbackError: 'Failed to search song',
+    fallbackError: 'Gagal mencari lagu',
   });
 }
 
 // Bands API
 export async function fetchBands() {
-  return request('/bands', { fallbackError: 'Failed to fetch bands' });
+  return request('/bands', { fallbackError: 'Gagal mengambil daftar band' });
 }
 
 export async function fetchBandById(id) {
-  return request(`/bands/${id}`, { fallbackError: 'Failed to fetch band' });
+  return request(`/bands/${id}`, { fallbackError: 'Gagal mengambil band' });
 }
 
 export async function createBand(band) {
-  return request('/bands', { method: 'POST', body: band, fallbackError: 'Failed to create band' });
+  return request('/bands', { method: 'POST', body: band, fallbackError: 'Gagal membuat band' });
 }
 
 export async function updateBand(id, band) {
-  return request(`/bands/${id}`, { method: 'PUT', body: band, fallbackError: 'Failed to update band' });
+  return request(`/bands/${id}`, { method: 'PUT', body: band, fallbackError: 'Gagal memperbarui band' });
 }
 
 export async function deleteBand(id) {
-  return request(`/bands/${id}`, { method: 'DELETE', fallbackError: 'Failed to delete band' });
+  return request(`/bands/${id}`, { method: 'DELETE', fallbackError: 'Gagal menghapus band' });
 }
 
 export async function fetchYoutubeTrending() {
   const data = await request('/songs?include=trending', {
-    fallbackError: 'Failed to fetch YouTube trending',
+    fallbackError: 'Gagal mengambil trending YouTube',
   });
   return {
     trending: Array.isArray(data?.trending) ? data.trending : []
@@ -416,21 +416,21 @@ export async function fetchGigs(bandId = null) {
   const path = bandId
     ? `/events/gig?bandId=${encodeURIComponent(bandId)}`
     : '/events/gig';
-  return request(path, { fallbackError: 'Failed to fetch gigs' });
+  return request(path, { fallbackError: 'Gagal mengambil daftar konser' });
 }
 
 export async function createGig(gig) {
-  return request('/events/gig', { method: 'POST', body: gig, fallbackError: 'Failed to create gig' });
+  return request('/events/gig', { method: 'POST', body: gig, fallbackError: 'Gagal membuat konser' });
 }
 
 export async function updateGig(id, gig) {
-  return request(`/events/gig/${id}`, { method: 'PUT', body: gig, fallbackError: 'Failed to update gig' });
+  return request(`/events/gig/${id}`, { method: 'PUT', body: gig, fallbackError: 'Gagal memperbarui konser' });
 }
 
 export async function deleteGig(id) {
   const data = await request(`/events/gig/${id}`, {
     method: 'DELETE',
-    fallbackError: 'Failed to delete gig',
+    fallbackError: 'Gagal menghapus konser',
   });
   // 204 No Content has no body
   return data ?? { success: true };
@@ -438,7 +438,7 @@ export async function deleteGig(id) {
 
 // List Gemini Models
 export async function listGeminiModels() {
-  return request('/ai/list-models', { fallbackError: 'Failed to list Gemini models' });
+  return request('/ai/list-models', { fallbackError: 'Gagal mengambil daftar model Gemini' });
 }
 
 // Band Members endpoints
@@ -447,25 +447,25 @@ export async function addBandMember(bandId, email, role) {
   return request(`/bands/${bandId}/members`, {
     method: 'POST',
     body: { email, role },
-    fallbackError: 'Failed to add band member',
+    fallbackError: 'Gagal menambahkan anggota band',
   });
 }
 export async function getBandMembers(bandId) {
-  return request(`/bands/${bandId}/members`, { fallbackError: 'Failed to fetch band members' });
+  return request(`/bands/${bandId}/members`, { fallbackError: 'Gagal mengambil anggota band' });
 }
 
 export async function updateMemberRole(bandId, userId, role) {
   return request(`/bands/${bandId}/members/${userId}`, {
     method: 'PATCH',
     body: { role },
-    fallbackError: 'Failed to update member role',
+    fallbackError: 'Gagal memperbarui role anggota',
   });
 }
 
 export async function removeBandMember(bandId, userId) {
   return request(`/bands/${bandId}/members/${userId}`, {
     method: 'DELETE',
-    fallbackError: 'Failed to remove member',
+    fallbackError: 'Gagal menghapus anggota',
   });
 }
 

@@ -7,18 +7,17 @@ import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
 import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
 import { lyricsHighlighting, lyricsEditorTheme } from "../utils/lyricsHighlightExtension.js";
 import { lyricsCompletionSource } from "../utils/lyricsCompletion.js";
+import { STORAGE_KEYS } from "../utils/storageKeys.js";
 
 const PLACEHOLDER =
   "Masukkan lirik dan chord...\nContoh:\n[C]Amazing grace how [F]sweet the [C]sound";
-
-const THEME_STORAGE_KEY = "ruangperformer_theme";
 
 const readThemeMode = () => {
   if (typeof document === "undefined") return "light";
   if (document.body.classList.contains("dark-mode")) return "dark";
   if (document.body.classList.contains("light-mode")) return "light";
   try {
-    return window.localStorage.getItem(THEME_STORAGE_KEY) === "dark" ? "dark" : "light";
+    return window.localStorage.getItem(STORAGE_KEYS.THEME) === "dark" ? "dark" : "light";
   } catch {
     return "light";
   }

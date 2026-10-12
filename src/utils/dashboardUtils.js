@@ -2,20 +2,20 @@ export function buildRecentActivities({ bandsData = [], setlistsData = [], songs
   const activities = [];
 
   if (bandsData.length > 0) {
-    activities.push({ icon: '🎸', text: `${bandsData.length} band terdaftar`, time: 'Recently' });
+    activities.push({ icon: '🎸', text: `${bandsData.length} band terdaftar`, time: 'Terbaru' });
   }
 
   if (setlistsData.length > 0) {
-    activities.push({ icon: '📋', text: `${setlistsData.length} setlist tersedia`, time: 'Recently' });
+    activities.push({ icon: '📋', text: `${setlistsData.length} setlist tersedia`, time: 'Terbaru' });
   }
 
   if (songsData.length > 0) {
-    activities.unshift({ icon: '🎵', text: `${songsData.length} lagu dalam database`, time: 'Always' });
+    activities.unshift({ icon: '🎵', text: `${songsData.length} lagu dalam database`, time: 'Selalu' });
   }
 
   if (gigsData.length > 0) {
     const completedGigs = gigsData.filter(g => new Date(g.date) < now).length;
-    activities.push({ icon: '🎤', text: `${completedGigs} gig telah selesai`, time: 'All time' });
+    activities.push({ icon: '🎤', text: `${completedGigs} gig telah selesai`, time: 'Sepanjang waktu' });
   }
 
   return activities.slice(0, 4);

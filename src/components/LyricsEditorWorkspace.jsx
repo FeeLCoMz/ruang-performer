@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ChordDisplay from "./ChordDisplay.jsx";
 import { parseLines } from "../utils/chordUtils.js";
+import { STORAGE_KEYS } from "../utils/storageKeys.js";
 
-const PREVIEW_MODE_STORAGE_KEY = "ruangperformer_lyrics_preview_mode";
+const PREVIEW_MODE_STORAGE_KEY = STORAGE_KEYS.LYRICS_PREVIEW_MODE;
 const PREVIEW_MODES = {
   OFF: "off",
   SPLIT: "split",

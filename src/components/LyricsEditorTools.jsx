@@ -6,8 +6,9 @@ import {
   filterGmSoundBankByCategory,
   formatGmPatchOptionLabel,
 } from "../utils/gmSoundbank.js";
+import { STORAGE_KEYS } from "../utils/storageKeys.js";
 
-const LAST_MIDI_CHANNEL_STORAGE_KEY = 'ruangperformer_last_midi_channel';
+const LAST_MIDI_CHANNEL_STORAGE_KEY = STORAGE_KEYS.LAST_MIDI_CHANNEL;
 
 /**
  * LyricsEditorTools

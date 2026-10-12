@@ -14,6 +14,7 @@ import PerformanceSongMeta from '../components/PerformanceSongMeta.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
+import { STORAGE_KEYS } from '../utils/storageKeys.js';
 import { List as VirtualList } from 'react-window';
 
 function VirtualSongRow({ index, style, ariaAttributes, songs, renderSongItem }) {
@@ -37,12 +38,13 @@ function VirtualSongRow({ index, style, ariaAttributes, songs, renderSongItem })
 export default function SongListPage({ songs, loading, error, onSongClick, onSongMasteryUpdated, performanceMode = false }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [masteryError, setMasteryError] = useState(null);
   const currentUserId = user?.userId || user?.id;
   const pageSize = performanceMode ? 120 : 60;
   // Restore state from localStorage
   const getPersistedState = () => {
     try {
-      const raw = localStorage.getItem('songListPageState');
+      const raw = localStorage.getItem(STORAGE_KEYS.SONG_LIST_PAGE_STATE);
       return raw ? JSON.parse(raw) : {};
     } catch {
       return {};
@@ -108,7 +110,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       sortOrder,
       masteryFilter,
     };
-    localStorage.setItem('songListPageState', JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEYS.SONG_LIST_PAGE_STATE, JSON.stringify(state));
   }, [search, filterArtist, filterKey, filterBand, filterSetlist, sortBy, sortOrder, masteryFilter]);
 
   useEffect(() => {
@@ -505,7 +507,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
         });
       }
     } catch (err) {
-      alert(err?.message || 'Gagal memperbarui status penguasaan lagu');
+      setMasteryError(err?.message || 'Gagal memperbarui status penguasaan lagu');
     } finally {
       setUpdatingMasterySongId(null);
     }
@@ -681,6 +683,17 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
         )}
       </div>
 
+      {masteryError && (
+        <div className="error-text" role="alert">
+          {masteryError}
+          <button
+            type="button"
+            className="user-management-banner-close"
+            onClick={() => setMasteryError(null)}
+          >×</button>
+        </div>
+      )}
+
       {/* Filters & Search */}
       {/* Search Bar + Voice Search: Selalu tampil */}
       <div className="filter-container song-filter-container">
@@ -695,6 +708,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
           <div className="song-search-voice-wrap">
             <VoiceSearchButton
               onResult={text => setSearch(text)}
+              onError={setMasteryError}
               disabled={loading}
             />
           </div>

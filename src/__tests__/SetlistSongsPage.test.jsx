@@ -288,59 +288,6 @@ describe('SetlistSongsPage', () => {
     );
   });
 
-  test('deletes songs that are not marked completed', async () => {
-    const setSetlists = vi.fn();
-    const props = buildProps({
-      setSetlists,
-      setlists: [
-        {
-          id: 'setlist-1',
-          name: 'Setlist Malam Ini',
-          userId: 'user-1',
-          songs: ['song-1', 'song-2', 'song-3'],
-          completedSongs: { 'song-1': true },
-          setlistSongMeta: {
-            'song-1': { key: 'C' },
-            'song-2': { key: 'G' },
-            'song-3': { key: 'A' },
-          },
-        },
-      ],
-      songs: [
-        { id: 'song-1', title: 'Lagu Jadi', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop' },
-        { id: 'song-2', title: 'Lagu Cadangan 1', artist: 'Artist B', key: 'G', tempo: '110', genre: 'Rock' },
-        { id: 'song-3', title: 'Lagu Cadangan 2', artist: 'Artist C', key: 'A', tempo: '100', genre: 'Jazz' },
-      ],
-    });
-
-    await renderPage(root, props);
-
-    const deleteButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Hapus Belum Dibawakan'));
-    expect(deleteButton).toBeTruthy();
-
-    await act(async () => {
-      deleteButton.click();
-      await flushPromises();
-    });
-
-    expect(window.confirm).toHaveBeenCalled();
-    expect(setSetlists).toHaveBeenCalled();
-
-    const updater = setSetlists.mock.calls[0][0];
-    const updatedSetlists = updater(props.setlists);
-    expect(updatedSetlists[0].songs).toEqual(['song-1']);
-    expect(updatedSetlists[0].completedSongs).toEqual({ 'song-1': true });
-    expect(updatedSetlists[0].setlistSongMeta).toEqual({ 'song-1': { key: 'C' } });
-
-    expect(fetchSpy).toHaveBeenCalledWith(
-      '/api/setlists/setlist-1',
-      expect.objectContaining({ method: 'PUT' })
-    );
-    expect(
-      fetchSpy.mock.calls.some(([url]) => String(url).includes('/api/songs'))
-    ).toBe(false);
-  });
-
   test('quick add creates a missing song from add-to-setlist modal', async () => {
     const props = buildProps({
       setlists: [

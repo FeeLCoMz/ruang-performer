@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
+import { PERMISSIONS } from '../utils/permissionUtils.js';
 
 export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceMode, setPerformanceMode }) {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
     { path: '/bands/manage', label: 'Band', icon: '🎸' },
     { path: '/gigs', label: 'Konser', icon: '🎤' },
     { path: '/youtube-trending', label: 'Trending', icon: '📺' },
-    ...(can && can('view_audit_log') ? [{ path: '/audit', label: 'Audit Log', icon: '📝' }] : []),
+    ...(can(PERMISSIONS.ADMIN_VIEW_LOGS) ? [{ path: '/audit', label: 'Audit Log', icon: '📝' }] : []),
     ...(user && user.role === 'owner' ? [{ path: '/tools', label: 'Tools', icon: '🛠️' }] : []),
   ];
 

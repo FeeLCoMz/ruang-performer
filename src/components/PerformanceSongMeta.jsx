@@ -21,7 +21,7 @@ export default function PerformanceSongMeta({ song, showNumber = false, extra = 
         className={`song-mood-badge mood-${mood.tone}`}
         title={`Mood: ${mood.label} (${mood.sourceHint})`}
       >
-        {mood.tone}
+        {mood.label}
       </span>
       {showNumber && song.number != null && <span className="song-performance-number">#{song.number}</span>}
       {song.artist && <span>👤 {song.artist}</span>}

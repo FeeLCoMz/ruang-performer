@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as apiClient from '../apiClient.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { getToken, getAuthHeader } from '../utils/auth.js';
 // No permission check needed, just check user.role === 'owner'
 
 export default function ToolsPage() {
@@ -13,7 +14,7 @@ export default function ToolsPage() {
         try {
           const res = await apiClient.getCurrentUser();
           if (res && res.user && res.user.role === 'owner') {
-            login(localStorage.getItem('authToken'), res.user);
+            login(getToken(), res.user);
           }
         } catch {}
       }
@@ -38,6 +39,7 @@ export default function ToolsPage() {
   const [backingUp, setBackingUp] = useState(false);
   const [backupError, setBackupError] = useState(null);
   const [backupSuccess, setBackupSuccess] = useState(null);
+  const [exportError, setExportError] = useState(null);
   const fileInputRef = useRef();
   const sqlInputRef = useRef();
   const [restoring, setRestoring] = useState(false);
@@ -66,7 +68,7 @@ export default function ToolsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + localStorage.getItem('authToken'),
+          ...getAuthHeader(),
         },
         body: JSON.stringify({ sql }),
       });
@@ -100,7 +102,7 @@ export default function ToolsPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      alert('Export gagal: ' + (e.message || e));
+      setExportError('Export gagal: ' + (e.message || e));
     }
     setExporting(false);
   };
@@ -183,6 +185,7 @@ export default function ToolsPage() {
           <h2>📤 Export Data</h2>
           <p>Ekspor seluruh data aplikasi ke file JSON untuk backup atau migrasi.</p>
           <button className="btn btn-secondary" onClick={handleExport} disabled={exporting}>{exporting ? 'Exporting...' : 'Export JSON'}</button>
+          {exportError && <div className="tools-feedback tools-feedback-error">{exportError}</div>}
         </div>
 
         <div className="tool-card">

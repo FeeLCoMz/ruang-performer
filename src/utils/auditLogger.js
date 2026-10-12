@@ -303,7 +303,7 @@ export function generateAuditReport(logs) {
     if (log.status === 'failed' && isSecurityAction(log.action)) {
       report.suspiciousActivity.push({
         log,
-        reason: 'Failed security action',
+        reason: 'Aksi keamanan gagal',
         confidence: 'high'
       });
     }
@@ -311,7 +311,7 @@ export function generateAuditReport(logs) {
     if (log.severity === SEVERITY_LEVELS.CRITICAL) {
       report.suspiciousActivity.push({
         log,
-        reason: 'Critical severity action',
+        reason: 'Aksi dengan tingkat kritis',
         confidence: 'medium'
       });
     }

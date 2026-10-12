@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import YouTubeViewer from './YouTubeViewer.jsx';
 import TimeMarkers from './TimeMarkers.jsx';
+import { STORAGE_KEYS } from '../utils/storageKeys.js';
 
-const FLOATING_PLAYER_POSITION_STORAGE_KEY = 'ruangperformer_floating_youtube_player_position_v1';
+const FLOATING_PLAYER_POSITION_STORAGE_KEY = STORAGE_KEYS.FLOATING_PLAYER_POSITION;
 const DEFAULT_PLAYER_WIDTH = 360;
 const DEFAULT_PLAYER_HEIGHT = 300;
 const MIN_PLAYER_WIDTH = 260;

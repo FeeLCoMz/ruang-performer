@@ -400,7 +400,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setSetlists(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
-        console.error('Failed to fetch setlists:', err);
+        console.error('Gagal mengambil daftar setlist:', err);
         setSetlists([]);
       })
       .finally(() => {
@@ -444,7 +444,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       const updatedSong = await fetchRes.json();
       setFetchedSong(updatedSong);
     } catch (err) {
-      console.error("Error updating time markers:", err);
+      console.error("Gagal memperbarui penanda waktu:", err);
     }
   };
 

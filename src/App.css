@@ -3511,46 +3511,6 @@ body.dark-mode .lyrics-editor-textarea {
   grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
-/* FAB tambah lagu cepat (performance mode) */
-.setlist-fab-add-song {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 900;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
-  border: none;
-  border-radius: 999px;
-  background: var(--primary-accent);
-  color: #fff;
-  font-size: var(--font-size-base);
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: var(--shadow-lg);
-  transition: transform var(--transition-fast);
-}
-
-.setlist-fab-add-song:hover {
-  transform: translateY(-2px);
-}
-
-.setlist-fab-add-song:active {
-  transform: scale(0.97);
-}
-
-@media (max-width: 480px) {
-  .setlist-fab-add-song {
-    padding: 14px;
-    border-radius: 50%;
-  }
-
-  .setlist-fab-add-song .setlist-fab-label {
-    display: none;
-  }
-}
-
 .setlist-filter-grid {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto auto;
@@ -7169,6 +7129,15 @@ body.dark-mode .song-editor-status-blocker {
   color: #155724;
   border-radius: 6px;
   border: 1px solid #c3e6cb;
+}
+
+.user-management-action-error {
+  padding: 12px;
+  margin-bottom: 16px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
 }
 
 .user-management-banner-close {
@@ -11731,81 +11700,6 @@ body.dark-mode .cd-token {
 
 /* ===== Performance Mode: Setlist List ===== */
 
-.page-container.performance-mode .setlist-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.page-container.performance-mode .setlist-stats-grid-compact {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.page-container.performance-mode .setlist-stats-grid-compact .setlist-stat-card {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 12px;
-}
-
-.page-container.performance-mode .setlist-stats-grid-compact .setlist-stat-label {
-  display: none;
-}
-
-.page-container.performance-mode .setlist-stats-grid-compact .setlist-stat-value {
-  font-size: 1.15rem;
-}
-
-.page-container.performance-mode .setlist-stat-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.page-container.performance-mode .setlist-stat-card-wide {
-  grid-column: span 2;
-}
-
-.page-container.performance-mode .setlist-stat-icon {
-  font-size: 1.1rem;
-  line-height: 1;
-}
-
-.page-container.performance-mode .setlist-stat-value {
-  font-size: 1.5rem;
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-}
-
-.page-container.performance-mode .setlist-stat-value-text {
-  font-size: 1rem;
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
-
-.page-container.performance-mode .setlist-stat-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-}
-
 .page-container.performance-mode .page-header .setlist-header-summary {
   margin-top: 2px;
 }
@@ -11843,13 +11737,6 @@ body.dark-mode .cd-token {
   background: rgba(148, 163, 184, 0.12);
   border: 1px solid rgba(148, 163, 184, 0.1);
 }
-
-@media (max-width: 720px) {
-  .page-container.performance-mode .setlist-stat-card-wide {
-    grid-column: span 1;
-  }
-}
-
 
 .page-container.performance-mode .page-header {
   position: sticky;

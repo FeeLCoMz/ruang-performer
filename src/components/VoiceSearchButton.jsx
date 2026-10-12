@@ -1,11 +1,14 @@
 import React, { useRef } from 'react';
 
-export default function VoiceSearchButton({ onResult, disabled }) {
+export default function VoiceSearchButton({ onResult, onError, disabled }) {
   const recognitionRef = useRef(null);
+  const reportError = (message) => {
+    if (typeof onError === 'function') onError(message);
+  };
 
   const handleStart = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert('Browser tidak mendukung fitur pencarian suara.');
+      reportError('Browser tidak mendukung fitur pencarian suara.');
       return;
     }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -18,7 +21,7 @@ export default function VoiceSearchButton({ onResult, disabled }) {
       if (onResult) onResult(transcript);
     };
     recognition.onerror = (event) => {
-      alert('Gagal mengenali suara: ' + event.error);
+      reportError('Gagal mengenali suara: ' + event.error);
     };
     recognitionRef.current = recognition;
     recognition.start();

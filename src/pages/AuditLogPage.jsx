@@ -52,7 +52,7 @@ export default function AuditLogPage() {
       setLogs(mockLogs);
       setReport(generateAuditReport(mockLogs));
     } catch (err) {
-      setError('Failed to load audit logs');
+      setError('Gagal memuat audit log');
       console.error(err);
     } finally {
       setLoading(false);
@@ -64,7 +64,7 @@ export default function AuditLogPage() {
   if (loading) {
     return (
       <div className="page-container">
-        <h1 className="audit-loading-title">Loading...</h1>
+        <h1 className="audit-loading-title">Memuat...</h1>
       </div>
     );
   }
@@ -72,25 +72,25 @@ export default function AuditLogPage() {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>Audit Log & Activity</h1>
+        <h1>Audit Log & Aktivitas</h1>
         <div className="audit-view-actions">
-          <button 
+          <button
             className={`btn audit-view-button ${view === 'timeline' ? 'is-active' : ''}`}
             onClick={() => setView('timeline')}
           >
-            Timeline
+            Linimasa
           </button>
-          <button 
+          <button
             className={`btn audit-view-button ${view === 'stats' ? 'is-active' : ''}`}
             onClick={() => setView('stats')}
           >
-            Statistics
+            Statistik
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="card card-error">
+        <div className="error-text">
           <p>{error}</p>
         </div>
       )}
@@ -99,42 +99,42 @@ export default function AuditLogPage() {
         <>
           {/* Filters */}
           <div className="card">
-            <h2>Filters</h2>
+            <h2>Filter</h2>
             <div className="filter-grid">
               <div>
                 <label className="form-label">
-                  Category
+                  Kategori
                 </label>
-                <select 
+                <select
                   value={filters.category}
                   onChange={(e) => setFilters({ ...filters, category: e.target.value })}
                   className="modal-input"
                 >
-                  <option value="">All Categories</option>
+                  <option value="">Semua Kategori</option>
                   <option value="USER">User</option>
                   <option value="BAND">Band</option>
                   <option value="MEMBER">Member</option>
-                  <option value="PERMISSION">Permission</option>
-                  <option value="SONG">Song</option>
+                  <option value="PERMISSION">Izin</option>
+                  <option value="SONG">Lagu</option>
                   <option value="SETLIST">Setlist</option>
-                  <option value="SECURITY">Security</option>
+                  <option value="SECURITY">Keamanan</option>
                 </select>
               </div>
 
               <div>
                 <label className="form-label">
-                  Severity
+                  Tingkat
                 </label>
-                <select 
+                <select
                   value={filters.severity}
                   onChange={(e) => setFilters({ ...filters, severity: e.target.value })}
                   className="modal-input"
                 >
-                  <option value="">All Levels</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="critical">Critical</option>
+                  <option value="">Semua Tingkat</option>
+                  <option value="low">Rendah</option>
+                  <option value="medium">Sedang</option>
+                  <option value="high">Tinggi</option>
+                  <option value="critical">Kritis</option>
                 </select>
               </div>
 
@@ -142,43 +142,43 @@ export default function AuditLogPage() {
                 <label className="form-label">
                   Status
                 </label>
-                <select 
+                <select
                   value={filters.status}
                   onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                   className="modal-input"
                 >
-                  <option value="">All Status</option>
-                  <option value="success">Success</option>
-                  <option value="failed">Failed</option>
+                  <option value="">Semua Status</option>
+                  <option value="success">Berhasil</option>
+                  <option value="failed">Gagal</option>
                 </select>
               </div>
             </div>
 
             <div className="form-actions">
-              <button 
+              <button
                 onClick={() => setFilters({
                   category: '', severity: '', status: '', startDate: '', endDate: ''
                 })}
                 className="btn btn-secondary"
               >
-                Clear Filters
+                Reset Filter
               </button>
-              <button 
+              <button
                 onClick={fetchAuditLogs}
                 className="btn btn-primary"
               >
-                Refresh
+                Muat Ulang
               </button>
             </div>
           </div>
 
           {/* Activity Timeline */}
           <div className="card">
-            <h2>Activity Timeline ({filteredLogs.length} events)</h2>
+            <h2>Linimasa Aktivitas ({filteredLogs.length} kejadian)</h2>
             <div className="activity-timeline">
               {filteredLogs.length === 0 ? (
                 <p className="audit-empty-state">
-                  No events found
+                  Tidak ada kejadian
                 </p>
               ) : (
                 filteredLogs.map((log) => (
@@ -202,7 +202,7 @@ export default function AuditLogPage() {
                         </span>
                         {log.status === 'failed' && (
                           <span className="badge audit-failed-badge">
-                            Failed
+                            Gagal
                           </span>
                         )}
                       </div>
@@ -228,22 +228,22 @@ export default function AuditLogPage() {
         <div className="audit-stats-grid">
           {/* Summary Stats */}
           <div className="card">
-            <h3>Summary</h3>
+            <h3>Ringkasan</h3>
             <div className="audit-stats-list">
               <div className="audit-stats-row">
-                <span>Total Events</span>
+                <span>Total Kejadian</span>
                 <strong className="audit-stats-total">{report?.totalEvents || 0}</strong>
               </div>
               <div className="audit-stats-row">
-                <span>Today</span>
+                <span>Hari Ini</span>
                 <strong>{report?.timeline?.today || 0}</strong>
               </div>
               <div className="audit-stats-row">
-                <span>This Week</span>
+                <span>Minggu Ini</span>
                 <strong>{report?.timeline?.thisWeek || 0}</strong>
               </div>
               <div className="audit-stats-row">
-                <span>This Month</span>
+                <span>Bulan Ini</span>
                 <strong>{report?.timeline?.thisMonth || 0}</strong>
               </div>
             </div>
@@ -251,7 +251,7 @@ export default function AuditLogPage() {
 
           {/* By Category */}
           <div className="card">
-            <h3>By Category</h3>
+            <h3>Berdasarkan Kategori</h3>
             <div className="audit-category-list">
               {Object.entries(report?.byCategory || {}).map(([category, count]) => (
                 <div key={category} className="audit-stats-row">
@@ -264,7 +264,7 @@ export default function AuditLogPage() {
 
           {/* By Severity */}
           <div className="card">
-            <h3>By Severity</h3>
+            <h3>Berdasarkan Tingkat</h3>
             <div className="audit-severity-list">
               {Object.entries(report?.bySeverity || {}).map(([severity, count]) => (
                 <div key={severity} className={`audit-severity-row ${getSeverityClass(severity)}`}>
@@ -280,7 +280,7 @@ export default function AuditLogPage() {
           {/* Suspicious Activity */}
           {(report?.suspiciousActivity || []).length > 0 && (
             <div className="card audit-suspicious-card">
-              <h3 className="audit-suspicious-title">⚠️ Suspicious Activity ({report.suspiciousActivity.length})</h3>
+              <h3 className="audit-suspicious-title">⚠️ Aktivitas Mencurigakan ({report.suspiciousActivity.length})</h3>
               <div className="audit-suspicious-list">
                 {report.suspiciousActivity.slice(0, 5).map((item, idx) => (
                   <div key={idx} className="audit-suspicious-item">

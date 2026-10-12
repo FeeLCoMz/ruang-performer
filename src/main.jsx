@@ -28,8 +28,6 @@ if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
   window.fetch = fetchWithAuth;
 }
 
-console.log('Mounting React app...');
-
 // Initialize Web Vitals monitoring
 initializeWebVitals();
 
@@ -44,11 +42,8 @@ if (typeof window !== 'undefined') {
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('Service Worker registered:', registration);
-      })
       .catch((error) => {
-        console.warn('Service Worker registration failed:', error);
+        console.warn('Registrasi Service Worker gagal:', error);
       });
   });
 }
@@ -64,7 +59,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('React error caught:', error, errorInfo);
+    console.error('Terjadi error pada React:', error, errorInfo);
   }
 
   render() {
@@ -80,7 +75,6 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
@@ -90,5 +84,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
-
-console.log('React app mounted');

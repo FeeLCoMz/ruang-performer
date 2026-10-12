@@ -63,7 +63,7 @@ export default function SetlistPage({
       const data = await fetchBands();
       setBands(data || []);
     } catch (err) {
-      console.error('Failed to load bands:', err);
+      console.error('Gagal memuat daftar band:', err);
     }
   }, []);
 
@@ -73,7 +73,7 @@ export default function SetlistPage({
       const data = await fetchSetLists();
       setAutoSourceSetlists(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to load setlist auto source:', err);
+      console.error('Gagal memuat sumber setlist otomatis:', err);
       setAutoSourceSetlists([]);
     } finally {
       setAutoSourceLoading(false);
@@ -92,14 +92,14 @@ export default function SetlistPage({
       loadAutoSourceSetlists();
     }
   }, [showCreateSetlist, loadAutoSourceSetlists]);
-  
+
   // Helper untuk refresh setlists dari API
   const refreshSetlists = async () => {
     try {
       const data = await fetchSetLists({ summary: true });
       setSetlists(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to refresh setlists:', err);
+      console.error('Gagal memperbarui daftar setlist:', err);
     }
   };
 
@@ -181,26 +181,6 @@ export default function SetlistPage({
 
   const hasActiveFilters = search || filterBand !== 'all';
 
-  // Statistik ringkas untuk performance mode
-  const performanceStats = useMemo(() => {
-    const list = filteredSetlists;
-    const totalSetlists = list.length;
-    const totalSongs = list.reduce(
-      (sum, setlist) => sum + (setlist.songCount ?? setlist.songs?.length ?? 0),
-      0,
-    );
-    const completedSongs = list.reduce((sum, setlist) => {
-      const completed = setlist.completedSongs;
-      if (!completed || typeof completed !== 'object' || Array.isArray(completed)) return sum;
-      return sum + Object.keys(completed).filter((id) => completed[id] === true).length;
-    }, 0);
-    return {
-      totalSetlists,
-      totalSongs,
-      completedSongs,
-    };
-  }, [filteredSetlists]);
-
   if (loadingSetlists) {
     return (
       <div className="page-container">
@@ -231,7 +211,9 @@ export default function SetlistPage({
           <h1>🎵 Setlist</h1>
           {isPerformanceMode ? (
             <div className="setlist-header-summary">
-              {performanceStats.totalSetlists} setlist • {performanceStats.totalSongs} lagu • {performanceStats.completedSongs} sudah dibawakan
+              {hasActiveFilters
+                ? `${filteredSetlists.length} dari ${setlists.length} setlist`
+                : `${setlists.length} setlist`}
             </div>
           ) : (
             <p>
@@ -255,27 +237,6 @@ export default function SetlistPage({
           )
         )}
       </div>
-
-      {/* Statistik ringkas - hanya di performance mode */}
-      {isPerformanceMode && performanceStats.totalSetlists > 0 && (
-        <div className="setlist-stats-grid setlist-stats-grid-compact" aria-label="Statistik setlist">
-          <div className="setlist-stat-card">
-            <span className="setlist-stat-icon" aria-hidden="true">📋</span>
-            <span className="setlist-stat-value">{performanceStats.totalSetlists}</span>
-            <span className="setlist-stat-label">Setlist</span>
-          </div>
-          <div className="setlist-stat-card">
-            <span className="setlist-stat-icon" aria-hidden="true">🎵</span>
-            <span className="setlist-stat-value">{performanceStats.totalSongs}</span>
-            <span className="setlist-stat-label">Total Lagu</span>
-          </div>
-          <div className="setlist-stat-card">
-            <span className="setlist-stat-icon" aria-hidden="true">✅</span>
-            <span className="setlist-stat-value">{performanceStats.completedSongs}</span>
-            <span className="setlist-stat-label">Sudah Dibawakan</span>
-          </div>
-        </div>
-      )}
 
       {/* Filters & Search */}
       <div className={`filter-container setlist-filter-container${isPerformanceMode ? ' setlist-filter-container-performance' : ''}`}>

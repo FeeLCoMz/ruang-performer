@@ -142,7 +142,7 @@ describe('request pipeline: error messages', () => {
   test('falls back to the caller default when the server gives no message', async () => {
     fetchMock.mockResolvedValue(makeResponse({ ok: false, status: 500, json: {} }));
 
-    await expect(addSong({})).rejects.toThrow('Failed to add song');
+    await expect(addSong({})).rejects.toThrow('Gagal menambahkan lagu');
   });
 
   test('does not crash when an error body is not valid JSON', async () => {
@@ -155,7 +155,7 @@ describe('request pipeline: error messages', () => {
       text: async () => '<html>Bad gateway</html>',
     });
 
-    await expect(updateSong('1', {})).rejects.toThrow('Failed to update song');
+    await expect(updateSong('1', {})).rejects.toThrow('Gagal memperbarui lagu');
   });
 
   test('surfaces the server message for a text response endpoint', async () => {

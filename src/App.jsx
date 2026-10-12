@@ -12,6 +12,7 @@ import Sidebar from "./components/Sidebar.jsx";
 import Toast from "./components/Toast.jsx";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import * as apiClient from "./apiClient.js";
+import { STORAGE_KEYS } from "./utils/storageKeys.js";
 
 // Lazy load non-critical pages for code splitting
 const SongListPage = lazy(() => import("./pages/SongListPage.jsx"));
@@ -90,7 +91,7 @@ function AppContent() {
   const [errorSetlists, setErrorSetlists] = useState(null);
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("ruangperformer_theme") || "dark";
+      return localStorage.getItem(STORAGE_KEYS.THEME) || "dark";
     }
     return "dark";
   });
@@ -100,14 +101,14 @@ function AppContent() {
   // Performance Mode state
   const [performanceMode, setPerformanceMode] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("ruangperformer_performance_mode") === "true";
+      return localStorage.getItem(STORAGE_KEYS.PERFORMANCE_MODE) === "true";
     }
     return false;
   });
   const hasPrefetchedPerformanceDataRef = useRef(false);
 
   useEffect(() => {
-    localStorage.setItem("ruangperformer_performance_mode", performanceMode ? "true" : "false");
+    localStorage.setItem(STORAGE_KEYS.PERFORMANCE_MODE, performanceMode ? "true" : "false");
     if (performanceMode) {
       document.body.classList.add("performance-mode");
     } else {
@@ -121,7 +122,7 @@ function AppContent() {
   useEffect(() => {
     document.body.classList.remove("dark-mode", "light-mode");
     document.body.classList.add(theme === "dark" ? "dark-mode" : "light-mode");
-    localStorage.setItem("ruangperformer_theme", theme);
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
   }, [theme]);
 
   useEffect(() => {
@@ -351,7 +352,7 @@ function AppContent() {
                               .then(() => {
                                 setSongs(songs.filter((s) => s.id !== id));
                               })
-                              .catch((err) => alert("Gagal menghapus lagu: " + err.message));
+                              .catch((err) => setToastMessage("Gagal menghapus lagu: " + err.message));
                           }
                         }
                       }}

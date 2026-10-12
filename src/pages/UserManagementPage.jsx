@@ -12,6 +12,7 @@ export default function UserManagementPage() {
   const [newPassword, setNewPassword] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [actionError, setActionError] = useState(null);
 
   useEffect(() => {
     if (user && user.role === 'owner') {
@@ -34,12 +35,13 @@ export default function UserManagementPage() {
   const handleToggleActive = async (userId, currentActive) => {
     if (!confirm(`${currentActive ? 'Nonaktifkan' : 'Aktifkan'} user ini?`)) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       await apiClient.updateUser(userId, { isActive: currentActive ? 0 : 1 });
       setSuccessMessage(`User berhasil ${currentActive ? 'dinonaktifkan' : 'diaktifkan'}`);
       loadUsers();
     } catch (err) {
-      alert(err.message || 'Gagal mengubah status user');
+      setActionError(err.message || 'Gagal mengubah status user');
     }
     setActionLoading(false);
   };
@@ -47,31 +49,33 @@ export default function UserManagementPage() {
   const handleChangeRole = async (userId, newRole) => {
     if (!confirm(`Ubah role user ini menjadi ${newRole}?`)) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       await apiClient.updateUser(userId, { role: newRole });
       setSuccessMessage('Role user berhasil diubah');
       loadUsers();
       setEditingUser(null);
     } catch (err) {
-      alert(err.message || 'Gagal mengubah role');
+      setActionError(err.message || 'Gagal mengubah role');
     }
     setActionLoading(false);
   };
 
   const handleResetPassword = async (userId) => {
     if (!newPassword || newPassword.length < 6) {
-      alert('Password minimal 6 karakter');
+      setActionError('Password minimal 6 karakter');
       return;
     }
     if (!confirm('Reset password user ini?')) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       await apiClient.resetUserPassword(userId, newPassword);
       setSuccessMessage('Password berhasil direset');
       setResetPasswordModal(null);
       setNewPassword('');
     } catch (err) {
-      alert(err.message || 'Gagal reset password');
+      setActionError(err.message || 'Gagal reset password');
     }
     setActionLoading(false);
   };
@@ -79,12 +83,13 @@ export default function UserManagementPage() {
   const handleDeleteUser = async (userId) => {
     if (!confirm('Hapus user ini? (soft delete)')) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       await apiClient.deleteUser(userId);
       setSuccessMessage('User berhasil dihapus');
       loadUsers();
     } catch (err) {
-      alert(err.message || 'Gagal menghapus user');
+      setActionError(err.message || 'Gagal menghapus user');
     }
     setActionLoading(false);
   };
@@ -129,6 +134,16 @@ export default function UserManagementPage() {
           <button
             className="user-management-banner-close"
             onClick={() => setSuccessMessage(null)}
+          >×</button>
+        </div>
+      )}
+
+      {actionError && (
+        <div className="user-management-action-error">
+          {actionError}
+          <button
+            className="user-management-banner-close"
+            onClick={() => setActionError(null)}
           >×</button>
         </div>
       )}
