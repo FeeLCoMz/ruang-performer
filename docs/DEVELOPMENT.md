@@ -175,19 +175,6 @@ src/
 
 ---
 
-## Performance Mode
-
-Setiap halaman atau komponen yang perlu menyesuaikan tampilan di Performance Mode harus:
-
-1. **Menerima prop `performanceMode`** yang diteruskan dari `src/App.jsx`.
-2. **Menerapkan conditional rendering** — sembunyikan tombol edit/tambah, filter, dan fitur non-esensial saat mode aktif.
-3. **Menambahkan class `performance-mode`** pada root container untuk styling khusus.
-4. **Tidak boleh** mengubah logika permission — hanya tampilan.
-
-Toggle Performance Mode harus tetap dapat diakses dari sidebar/header.
-
----
-
 ## Chord & Musik
 
 Selalu gunakan helper dari `src/utils/chordUtils.js`:

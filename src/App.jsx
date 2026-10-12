@@ -181,16 +181,28 @@ function AppContent() {
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
 
         <div className="app-container">
-          {/* Mobile Header dengan Hamburger */}
+          {/* Header mobile/tablet. Di smartphone drawer sidebar tidak dipakai,
+              jadi hamburger disembunyikan dan header hanya menampilkan branding. */}
           <header className="app-header-mobile">
             <button
               className="hamburger-btn"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              title="Toggle sidebar"
+              title="Buka menu"
+              aria-label="Buka menu"
             >
               ☰
             </button>
-            <h1 className="header-title">Ruang Performer</h1>
+            <div className="header-brand">
+              <img
+                className="header-brand-icon"
+                src="/icon-192x192.png"
+                alt=""
+                width="28"
+                height="28"
+                aria-hidden="true"
+              />
+              <h1 className="header-title">Ruang Performer</h1>
+            </div>
           </header>
         </div>
 
@@ -210,16 +222,6 @@ function AppContent() {
                       songs={songs}
                       loading={loadingSongs}
                       error={errorSongs}
-                      onSongMasteryUpdated={(songId, payload) => {
-                        setSongs((prevSongs) => (prevSongs || []).map((song) => {
-                          if (String(song.id) !== String(songId)) return song;
-                          return {
-                            ...song,
-                            masteredBy: Array.isArray(payload?.masteredBy) ? payload.masteredBy : [],
-                            isMasteredByCurrentUser: Boolean(payload?.isMasteredByCurrentUser),
-                          };
-                        }));
-                      }}
                       onSongClick={(action, id) => {
                         const from = location.pathname;
                         if (action === "add") navigate("/songs/add", { state: { from } });

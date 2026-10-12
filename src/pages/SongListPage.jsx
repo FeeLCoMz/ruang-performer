@@ -5,12 +5,10 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { canPerformAction, PERMISSIONS } from '../utils/permissionUtils.js';
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
-import DeleteIcon from '../components/DeleteIcon.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
-import { fetchSetLists, fetchBands, updateSongMastery } from '../apiClient.js';
+import { fetchSetLists } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
-import PerformanceSongMeta from '../components/PerformanceSongMeta.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
@@ -35,12 +33,12 @@ function VirtualSongRow({ index, style, ariaAttributes, songs, renderSongItem })
   );
 }
 
-export default function SongListPage({ songs, loading, error, onSongClick, onSongMasteryUpdated, performanceMode = false }) {
+export default function SongListPage({ songs, loading, error, onSongClick }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [masteryError, setMasteryError] = useState(null);
   const currentUserId = user?.userId || user?.id;
-  const pageSize = performanceMode ? 120 : 60;
+  const pageSize = 60;
   // Restore state from localStorage
   const getPersistedState = () => {
     try {
@@ -54,20 +52,13 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   const [search, setSearch] = useState(persisted.search || '');
   const [debouncedSearch, setDebouncedSearch] = useState(persisted.search || '');
   const [setlists, setSetlists] = useState([]);
-  const [bands, setBands] = useState([]);
   const [setlistsLoading, setSetlistsLoading] = useState(true);
-  const [filterArtist, setFilterArtist] = useState(persisted.filterArtist || 'all');
-  const [filterKey, setFilterKey] = useState(persisted.filterKey || 'all');
-  const [filterBand, setFilterBand] = useState(persisted.filterBand || 'all');
-  const [filterSetlist, setFilterSetlist] = useState(persisted.filterSetlist || 'all');
   const [sortBy, setSortBy] = useState(persisted.sortBy || 'updated');
   const [sortOrder, setSortOrder] = useState(persisted.sortOrder || 'desc');
-  const [masteryFilter, setMasteryFilter] = useState(persisted.masteryFilter || (persisted.showOnlyMastered ? 'mastered' : 'all'));
   const [metronomeTempo, setMetronomeTempo] = useState(120);
   const [metronomeSongId, setMetronomeSongId] = useState(null);
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
   const [activeVideoSong, setActiveVideoSong] = useState(null);
-  const [updatingMasterySongId, setUpdatingMasterySongId] = useState(null);
   const [visibleCount, setVisibleCount] = useState(pageSize);
   const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -102,24 +93,19 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   useEffect(() => {
     const state = {
       search,
-      filterArtist,
-      filterKey,
-      filterBand,
-      filterSetlist,
       sortBy,
       sortOrder,
-      masteryFilter,
     };
     localStorage.setItem(STORAGE_KEYS.SONG_LIST_PAGE_STATE, JSON.stringify(state));
-  }, [search, filterArtist, filterKey, filterBand, filterSetlist, sortBy, sortOrder, masteryFilter]);
+  }, [search, sortBy, sortOrder]);
 
   useEffect(() => {
     updatePageMeta(pageMetadata.songs);
-    // Fetch setlists for song usage count and fetch bands for filter options.
+    // Fetch setlists for song usage count.
     let mounted = true;
     setSetlistsLoading(true);
-    Promise.allSettled([fetchSetLists(), fetchBands()])
-      .then(([setlistsResult, bandsResult]) => {
+    Promise.allSettled([fetchSetLists()])
+      .then(([setlistsResult]) => {
         if (!mounted) return;
 
         if (setlistsResult.status === 'fulfilled') {
@@ -127,68 +113,10 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
         } else {
           setSetlists([]);
         }
-
-        if (bandsResult.status === 'fulfilled') {
-          setBands(Array.isArray(bandsResult.value) ? bandsResult.value : []);
-        } else {
-          setBands([]);
-        }
       })
       .finally(() => { if (mounted) setSetlistsLoading(false); });
     return () => { mounted = false; };
   }, []);
-
-  // Extract unique values for filters
-  const { artists, keys } = useMemo(() => {
-    const artistSet = new Set();
-    const keySet = new Set();
-
-    songs.forEach(song => {
-      if (song.artist) artistSet.add(song.artist);
-      if (song.key) keySet.add(song.key);
-    });
-
-    return {
-      artists: Array.from(artistSet).sort(),
-      keys: Array.from(keySet).sort(),
-    };
-  }, [songs]);
-
-  const bandOptions = useMemo(() => {
-    const map = new Map();
-
-    bands.forEach((band) => {
-      if (!band?.id) return;
-      map.set(String(band.id), {
-        id: String(band.id),
-        name: band.name || `Band ${band.id}`,
-        count: 0,
-      });
-    });
-
-    songs.forEach((song) => {
-      if (!song?.bandId) return;
-      const songBandId = String(song.bandId);
-      if (!map.has(songBandId)) {
-        map.set(songBandId, {
-          id: songBandId,
-          name: song.bandName || `Band ${song.bandId}`,
-          count: 0,
-        });
-      }
-      map.get(songBandId).count += 1;
-    });
-
-    return Array.from(map.values())
-      .map((band) => ({ ...band, label: `${band.name} (${band.count})` }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [bands, songs]);
-
-  // Extract setlist options for filter
-  const setlistOptions = useMemo(() => {
-    if (!Array.isArray(setlists)) return [];
-    return setlists.map(sl => ({ id: sl.id, name: sl.name || `Setlist ${sl.id}` }));
-  }, [setlists]);
 
   // Filter and sort songs
   const filteredSongs = useMemo(() => {
@@ -202,33 +130,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
         song.artist?.toLowerCase().includes(searchLower) ||
         song.genre?.toLowerCase().includes(searchLower)
       );
-    }
-
-    // Apply filters
-    if (filterArtist !== 'all') {
-      result = result.filter(song => song.artist === filterArtist);
-    }
-    if (filterKey !== 'all') {
-      result = result.filter(song => song.key === filterKey);
-    }
-    if (filterBand !== 'all') {
-      result = result.filter(song => String(song.bandId || '') === String(filterBand));
-    }
-    if (filterSetlist !== 'all') {
-      // Cari setlist yang dipilih
-      const selectedSetlist = setlists.find(sl => String(sl.id) === String(filterSetlist));
-      if (selectedSetlist && Array.isArray(selectedSetlist.songs)) {
-        const songIds = new Set(selectedSetlist.songs);
-        result = result.filter(song => songIds.has(song.id));
-      } else {
-        result = [];
-      }
-    }
-
-    if (masteryFilter === 'mastered') {
-      result = result.filter((song) => Boolean(song?.isMasteredByCurrentUser));
-    } else if (masteryFilter === 'unmastered') {
-      result = result.filter((song) => !song?.isMasteredByCurrentUser);
     }
 
     // Apply sorting
@@ -270,24 +171,19 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     });
 
     return result;
-  }, [songs, debouncedSearch, filterArtist, filterKey, filterBand, filterSetlist, setlists, masteryFilter, sortBy, sortOrder]);
+  }, [songs, debouncedSearch, sortBy, sortOrder]);
 
   useEffect(() => {
     setVisibleCount(pageSize);
-  }, [debouncedSearch, filterArtist, filterKey, filterBand, filterSetlist, masteryFilter, sortBy, sortOrder, pageSize]);
+  }, [debouncedSearch, sortBy, sortOrder, pageSize]);
 
   const handleClearFilters = () => {
     setSearch('');
-    setFilterArtist('all');
-    setFilterKey('all');
-    setFilterBand('all');
-    setFilterSetlist('all');
     setSortBy('updated');
     setSortOrder('desc');
-    setMasteryFilter('all');
   };
 
-  const hasActiveFilters = search || filterArtist !== 'all' || filterKey !== 'all' || filterBand !== 'all' || filterSetlist !== 'all' || masteryFilter !== 'all';
+  const hasActiveFilters = Boolean(search);
 
   // Optimized: Build a map of songId -> count of setlists using it
   const songSetlistCountMap = useMemo(() => {
@@ -315,8 +211,6 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
       if (!song?.id) return;
 
       let canEdit = false;
-      let canDelete = false;
-      let canDuplicate = false;
 
       if (song.userId) {
         canEdit = canPerformAction(
@@ -325,30 +219,12 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
           { role: user?.role || 'member', bandId: song.bandId || null },
           PERMISSIONS.SONG_EDIT
         ) || song.userId === currentUserId;
-
-        canDuplicate = canPerformAction(
-          user,
-          song.bandId || null,
-          { role: user?.role || 'member', bandId: song.bandId || null },
-          PERMISSIONS.SONG_CREATE
-        ) || canEdit;
-
-        const isContributor = song.userId === currentUserId;
-        const notInAnySetlist = getSetlistCount(song.id) === 0;
-        canDelete = (
-          canPerformAction(
-            user,
-            song.bandId || null,
-            { role: user?.role || 'member', bandId: song.bandId || null },
-            PERMISSIONS.SONG_DELETE
-          ) && isContributor
-        ) || (isContributor && notInAnySetlist);
       }
 
-      map[song.id] = { canEdit, canDelete, canDuplicate };
+      map[song.id] = { canEdit };
     });
     return map;
-  }, [filteredSongs, user, currentUserId, songSetlistCountMap]);
+  }, [filteredSongs, user, currentUserId]);
 
   const visibleSongs = useMemo(() => {
     return filteredSongs.slice(0, visibleCount);
@@ -487,31 +363,8 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     return songs.find((song) => song.id === metronomeSongId) || null;
   }, [metronomeSongId, songs]);
 
-  const shouldVirtualize = !activeVideoSong && !isNarrowViewport && filteredSongs.length >= (performanceMode ? 120 : 180);
-  const virtualRowHeight = isNarrowViewport
-    ? (performanceMode ? 210 : 230)
-    : (performanceMode ? 136 : 156);
-
-  async function handleToggleMastery(song, event) {
-    event.stopPropagation();
-    if (!song?.id || !song?.canMarkMastery || updatingMasterySongId === song.id) return;
-
-    const nextMasteredState = !song.isMasteredByCurrentUser;
-    try {
-      setUpdatingMasterySongId(song.id);
-      const result = await updateSongMastery(song.id, nextMasteredState);
-      if (typeof onSongMasteryUpdated === 'function') {
-        onSongMasteryUpdated(song.id, {
-          masteredBy: Array.isArray(result.masteredBy) ? result.masteredBy : [],
-          isMasteredByCurrentUser: Boolean(result.isMasteredByCurrentUser),
-        });
-      }
-    } catch (err) {
-      setMasteryError(err?.message || 'Gagal memperbarui status penguasaan lagu');
-    } finally {
-      setUpdatingMasterySongId(null);
-    }
-  }
+  const shouldVirtualize = !activeVideoSong && !isNarrowViewport && filteredSongs.length >= 180;
+  const virtualRowHeight = isNarrowViewport ? 230 : 156;
 
   function renderSongItem(song, style) {
     const isInlineVideoSong = activeVideoSong?.id === song.id;
@@ -520,7 +373,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
     return (
       <React.Fragment key={song.id}>
         <div
-          className={`song-item${performanceMode ? ' song-item-performance' : ''}${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
+          className={`song-item${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
           onClick={() => navigate(`/songs/view/${song.id}`)}
           style={style}
         >
@@ -530,27 +383,21 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
             </h3>
             <div className="song-meta">
-              {performanceMode ? (
-                <PerformanceSongMeta song={song} />
-              ) : (
-                <>
-                  <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
-                    {mood.label}
-                  </span>
-                  {song.artist && <span>👤 {song.artist}</span>}
-                  {song.key && <span>🎹 {song.key}</span>}
-                  {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
-                  {song.genre && <span>🎸 {song.genre}</span>}
-                  {song.bandId && <span>🎤 {song.bandName || '-'}</span>}
-                  <span className="song-setlist-count-meta">
-                    {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
-                  </span>
-                  {Array.isArray(song.masteredBy) && song.masteredBy.length > 0 && (
-                    <span className="song-mastery-summary">
-                      ✅ {song.masteredBy.length} kuasai
-                    </span>
-                  )}
-                </>
+              <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
+                {mood.label}
+              </span>
+              {song.artist && <span>👤 {song.artist}</span>}
+              {song.key && <span>🎹 {song.key}</span>}
+              {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
+              {song.genre && <span>🎸 {song.genre}</span>}
+              {song.bandId && <span>🎤 {song.bandName || '-'}</span>}
+              <span className="song-setlist-count-meta">
+                {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
+              </span>
+              {Array.isArray(song.masteredBy) && song.masteredBy.length > 0 && (
+                <span className="song-mastery-summary">
+                  ✅ {song.masteredBy.length} kuasai
+                </span>
               )}
             </div>
           </div>
@@ -577,58 +424,18 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
                 🎬
               </button>
             )}
-            {!performanceMode && (
-              <button
-                className={`btn ${song.isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
-                title={song.canMarkMastery
-                  ? (song.isMasteredByCurrentUser ? 'Batalkan penguasaan lagu' : 'Tandai lagu ini sudah dikuasai')
-                  : 'Anda belum bisa menandai lagu ini'}
-                onClick={(e) => handleToggleMastery(song, e)}
-                disabled={!song.canMarkMastery || updatingMasterySongId === song.id}
-              >
-                {updatingMasterySongId === song.id
-                  ? 'Menyimpan...'
-                  : (song.canMarkMastery
-                    ? (song.isMasteredByCurrentUser ? 'Sudah Kuasai' : 'Belum Kuasai')
-                    : 'Belum Bisa Tandai')}
-              </button>
-            )}
-            {!performanceMode && (() => {
+            {(() => {
               const permission = permissionsBySongId[song.id] || {};
               const canEdit = Boolean(permission.canEdit);
-              const canDelete = Boolean(permission.canDelete);
-              const canDuplicate = Boolean(permission.canDuplicate);
-              if (!canEdit && !canDelete && !canDuplicate) return null;
+              if (!canEdit) return null;
               return (
-                <>
-                  {canDuplicate && (
-                    <button
-                      onClick={() => onSongClick('newVersion', song.id)}
-                      className="btn btn-secondary"
-                      title="Buat versi baru"
-                    >
-                      Versi Baru
-                    </button>
-                  )}
-                  {canEdit && (
-                    <button
-                      onClick={() => onSongClick('edit', song.id)}
-                      className="btn"
-                      title="Edit"
-                    >
-                      <EditIcon size={16} />
-                    </button>
-                  )}
-                  {canDelete && (
-                    <button
-                      onClick={() => onSongClick('delete', song.id)}
-                      className="btn btn-red"
-                      title="Hapus"
-                    >
-                      <DeleteIcon size={16} />
-                    </button>
-                  )}
-                </>
+                <button
+                  onClick={() => onSongClick('edit', song.id)}
+                  className="btn"
+                  title="Edit"
+                >
+                  <EditIcon size={16} />
+                </button>
               );
             })()}
           </div>
@@ -664,23 +471,19 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
   }
 
   return (
-    <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}>
+    <div className="page-container">
       {/* Page Header */}
       <div className="page-header">
         <div>
           <h1>🎵 Lagu Saya</h1>
           <p>{filteredSongs.length} lagu</p>
-          {!performanceMode && (
-            <div className="song-mastery-overview" aria-live="polite">
-              <span className="song-mastery-overview-badge">✅ Dikuasai: {masteredStats.masteredAllCount}/{masteredStats.totalSongs} ({masteredStats.masteredPercent}%)</span>
-            </div>
-          )}
+          <div className="song-mastery-overview" aria-live="polite">
+            <span className="song-mastery-overview-badge">✅ Dikuasai: {masteredStats.masteredAllCount}/{masteredStats.totalSongs} ({masteredStats.masteredPercent}%)</span>
+          </div>
         </div>
-        {!performanceMode && (
-          <button className="btn" onClick={() => onSongClick('add')} title="Tambah lagu baru">
-            + Tambah
-          </button>
-        )}
+        <button className="btn" onClick={() => onSongClick('add')} title="Tambah lagu baru">
+          + Tambah
+        </button>
       </div>
 
       {masteryError && (
@@ -713,96 +516,38 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
             />
           </div>
         </div>
-        {/* Filter dan sort hanya jika !performanceMode */}
-        {!performanceMode && (
-          <div className="song-filter-grid">
-            {/* Filter by Setlist */}
-            <select
-              value={filterBand}
-              onChange={(e) => setFilterBand(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">Semua Band</option>
-              {bandOptions.map((band) => (
-                <option key={band.id} value={band.id}>{band.label}</option>
-              ))}
-            </select>
+        {/* Filter dan sort */}
+        <div className="song-filter-grid">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="filter-select"
+          >
+            <option value="title">Urutkan: Judul</option>
+            <option value="artist">Urutkan: Artis</option>
+            <option value="key">Urutkan: Kunci</option>
+            <option value="tempo">Urutkan: Tempo</option>
+            <option value="created">Urutkan: Tanggal dibuat</option>
+            <option value="updated">Urutkan: Tanggal diupdate</option>
+          </select>
 
-            <select
-              value={filterSetlist}
-              onChange={e => setFilterSetlist(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">Semua Setlist</option>
-              {setlistOptions.map(sl => (
-                <option key={sl.id} value={sl.id}>{sl.name}</option>
-              ))}
-            </select>
-            <select
-              value={filterArtist}
-              onChange={(e) => setFilterArtist(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">Semua Artis</option>
-              {artists.map(artist => (
-                <option key={artist} value={artist}>{artist}</option>
-              ))}
-            </select>
-
-            <select
-              value={filterKey}
-              onChange={(e) => setFilterKey(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">Semua Kunci</option>
-              {keys.map(key => (
-                <option key={key} value={key}>{key}</option>
-              ))}
-            </select>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="filter-select"
-            >
-              <option value="title">Urutkan: Judul</option>
-              <option value="artist">Urutkan: Artis</option>
-              <option value="key">Urutkan: Kunci</option>
-              <option value="tempo">Urutkan: Tempo</option>
-              <option value="created">Urutkan: Tanggal dibuat</option>
-              <option value="updated">Urutkan: Tanggal diupdate</option>
-            </select>
-
-            <select
-              value={masteryFilter}
-              onChange={(e) => setMasteryFilter(e.target.value)}
-              className="filter-select"
-              title="Filter status penguasaan lagu"
-              aria-label="Filter status penguasaan lagu"
-            >
-              <option value="all">Status: Semua Lagu</option>
-              <option value="mastered">Status: Sudah Dikuasai</option>
-              <option value="unmastered">Status: Belum Kuasai</option>
-            </select>
-
-            {hasActiveFilters && (
-              <button
-                onClick={handleClearFilters}
-                className="btn btn-secondary"
-              >
-                ✕ Reset
-              </button>
-            )}
-
+          {hasActiveFilters && (
             <button
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              onClick={handleClearFilters}
               className="btn btn-secondary"
-              title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
             >
-              {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+              ✕ Reset
             </button>
-          </div>
-        )}
+          )}
+
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="btn btn-secondary"
+            title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
+          >
+            {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+          </button>
+        </div>
       </div>
 
       {/* Song List */}
@@ -863,7 +608,7 @@ export default function SongListPage({ songs, loading, error, onSongClick, onSon
               </div>
             </div>
           )}
-          {!hasActiveFilters && !performanceMode && (
+          {!hasActiveFilters && (
             <button className="btn" onClick={() => onSongClick('add')}>
               <PlusIcon size={18} /> Tambah Lagu Pertama
             </button>

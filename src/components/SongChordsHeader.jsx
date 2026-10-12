@@ -10,12 +10,7 @@ export default function SongChordsHeader({
   onEdit,
   onShare,
   shareMessage,
-  performanceMode
 }) {
-  // Sembunyikan tombol aksi saat performanceMode aktif
-  if (performanceMode) {
-    return null;
-  }
   return (
     <div className="song-lyrics-header song-lyrics-header-row">
       {/* Tombol kembali dihapus */}

@@ -60,7 +60,7 @@ describe('SongListPage', () => {
     vi.restoreAllMocks();
   });
 
-  test('shows song counts in the band filter dropdown options', async () => {
+  test('shows the sort dropdown options', async () => {
     await act(async () => {
       root.render(
         <SongListPage
@@ -72,18 +72,17 @@ describe('SongListPage', () => {
           loading={false}
           error={null}
           onSongClick={() => {}}
-          onSongMasteryUpdated={() => {}}
         />
       );
       await flushPromises();
     });
 
     const options = Array.from(container.querySelectorAll('select')[0].querySelectorAll('option')).map((option) => option.textContent);
-    expect(options).toContain('Band One (2)');
-    expect(options).toContain('Band Two (1)');
+    expect(options).toContain('Urutkan: Judul');
+    expect(options).toContain('Urutkan: Artis');
   });
 
-  test('shows mood badge in normal and performance mode', async () => {
+  test('shows mood badge on each song row', async () => {
     const baseProps = {
       songs: [
         { id: 'song-1', title: 'Anthem', artist: 'Band A', key: 'C', tempo: '132', genre: 'Rock' },
@@ -91,17 +90,10 @@ describe('SongListPage', () => {
       loading: false,
       error: null,
       onSongClick: () => {},
-      onSongMasteryUpdated: () => {},
     };
 
     await act(async () => {
-      root.render(<SongListPage {...baseProps} performanceMode={false} />);
-      await flushPromises();
-    });
-    expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);
-
-    await act(async () => {
-      root.render(<SongListPage {...baseProps} performanceMode={true} />);
+      root.render(<SongListPage {...baseProps} />);
       await flushPromises();
     });
     expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);

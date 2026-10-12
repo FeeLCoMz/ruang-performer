@@ -15,7 +15,7 @@ import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMark
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, formatWholeLyricsDocument, replaceSelectionWithToken, transposeLyricsText } from '../utils/lyricsEditorUtils.js';
 import { buildAddEditEditorActions } from '../utils/editorActionsUtils.js';
-import { analyseLyrics, computeSongCompleteness, detectMidiCueConflicts, extractSectionOverview, validateMusicalFields } from '../utils/songFormUtils.js';
+import { analyseLyrics, computeSongCompleteness, extractSectionOverview, validateMusicalFields } from '../utils/songFormUtils.js';
 import { GENRE_OPTIONS, NUMBER_NOTATION_KEY_OPTIONS, SONG_KEY_OPTIONS, TIME_SIGNATURE_OPTIONS } from '../utils/songOptions.js';
 
 const formatDuration = (seconds) => {
@@ -486,7 +486,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
   const lyricsAnalysis = useMemo(() => analyseLyrics(lyrics), [lyrics]);
   const sectionOverview = useMemo(() => extractSectionOverview(lyrics), [lyrics]);
-  const midiCues = useMemo(() => detectMidiCueConflicts(lyrics), [lyrics]);
 
   const formSnapshot = useMemo(
     () => ({
@@ -1172,37 +1171,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               )}
             </div>
 
-            {midiCues.cueCount > 0 && (
-              <div className="song-editor-sidebar-card">
-                <div className="song-completeness-head">
-                  <span className="song-completeness-title">Cue Keyboard MIDI</span>
-                  <span className="song-form-section-badge">{midiCues.cueCount}</span>
-                </div>
-
-                {midiCues.conflicts.length > 0 ? (
-                  <ul className="song-midi-conflict-list">
-                    {midiCues.conflicts.map((conflict) => (
-                      <li
-                        key={`${conflict.lineNumber}-${conflict.message}`}
-                        className={`song-midi-conflict is-${conflict.severity}`}
-                      >
-                        <button
-                          type="button"
-                          className="song-midi-conflict-jump"
-                          onClick={() => handleJumpToSection(conflict.lineNumber - 1)}
-                          title={`Lompat ke baris ${conflict.lineNumber}`}
-                        >
-                          L{conflict.lineNumber}
-                        </button>
-                        <span>{conflict.message}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="song-completeness-done">✓ Tidak ada konflik channel</p>
-                )}
-              </div>
-            )}
           </aside>
         </div>
 

@@ -77,13 +77,13 @@ export default function SongLyricsEditorPanel({
               onClick={() => setIsToolsOpen((prev) => !prev)}
               aria-expanded={isToolsOpen}
               aria-controls="lyric-editor-tools-panel"
-              title="Riwayat, pencarian, cue keyboard, dan piano"
+              title="Riwayat, pencarian, dan piano"
             >
               <span aria-hidden="true">{isToolsOpen ? '▾' : '▸'}</span>
               Alat Editor
             </button>
             <span className="lyric-editor-controls-hint">
-              Format teks ada di bawah ini · riwayat &amp; cue di panel Alat
+              Format teks ada di bawah ini · riwayat &amp; pencarian di panel Alat
             </span>
           </div>
 
@@ -92,8 +92,6 @@ export default function SongLyricsEditorPanel({
               <LyricsEditorTools
                 disabled={disabled}
                 lyricsRef={lyricsRef}
-                lyricsValue={lyricsValue}
-                setLyricsValue={setLyricsValue}
                 showPianoControls={showPianoControls}
                 onOpenPiano={onOpenPiano}
                 insertNotesEnabled={insertNotesEnabled}

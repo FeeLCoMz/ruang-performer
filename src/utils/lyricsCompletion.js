@@ -87,20 +87,8 @@ const METADATA_COMPLETIONS = [
   },
 ];
 
-/** MIDI cue templates that actually trigger a Program Change. */
-const MIDI_CUE_COMPLETIONS = [
-  {
-    label: '[Keys:',
-    type: 'class',
-    detail: 'Cue patch MIDI',
-    info: 'Memicu Program Change ke keyboard. Contoh: [Keys: Stage Piano | PC: 0 | CH: 1]',
-    apply: '[Keys: ',
-  },
-];
-
 const ALL_COMPLETIONS = [
   ...SECTION_COMPLETIONS,
-  ...MIDI_CUE_COMPLETIONS,
   ...METADATA_COMPLETIONS,
 ];
 

@@ -272,7 +272,7 @@ function ShareAllTrendingModal({ isOpen, trending, onClose }) {
   );
 }
 
-export default function YouTubeTrendingPage({ performanceMode }) {
+export default function YouTubeTrendingPage() {
   const [trending, setTrending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -332,7 +332,7 @@ export default function YouTubeTrendingPage({ performanceMode }) {
           <h1>📺 Trending YouTube</h1>
           <p>Lagu musik paling populer di YouTube saat ini</p>
         </div>
-        {!performanceMode && trending.length > 0 && (
+        {trending.length > 0 && (
           <div className="youtube-trending-actions">
             <button
               className="btn btn-secondary"
@@ -363,7 +363,7 @@ export default function YouTubeTrendingPage({ performanceMode }) {
             <p className="youtube-trending-status-hint">Pastikan YouTube API key sudah dikonfigurasi.</p>
           </div>
         ) : (
-          <div className={`youtube-trending-grid ${performanceMode ? 'performance-mode' : ''}`}>
+          <div className="youtube-trending-grid">
             {trending.map((item, index) => (
               <div
                 key={item.videoId || index}
@@ -375,7 +375,7 @@ export default function YouTubeTrendingPage({ performanceMode }) {
                   rel="noreferrer"
                   className="youtube-trending-card"
                 >
-                  {!performanceMode && item.thumbnailUrl && (
+                  {item.thumbnailUrl && (
                     <div className="youtube-trending-thumb-wrap">
                       <img
                         className="youtube-trending-thumbnail"
@@ -387,7 +387,7 @@ export default function YouTubeTrendingPage({ performanceMode }) {
                     </div>
                   )}
                   <div className="youtube-trending-card-body">
-                    {(performanceMode || !item.thumbnailUrl) && (
+                    {!item.thumbnailUrl && (
                       <span className="youtube-trending-rank">#{index + 1}</span>
                     )}
                     <h2>{item.title}</h2>
@@ -400,8 +400,7 @@ export default function YouTubeTrendingPage({ performanceMode }) {
                     </p>
                   </div>
                 </a>
-                {!performanceMode && (
-                  <button
+                <button
                     className="youtube-trending-share-btn"
                     type="button"
                     onClick={(e) => handleShareClick(e, item)}

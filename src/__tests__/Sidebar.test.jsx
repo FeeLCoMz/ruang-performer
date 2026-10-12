@@ -33,8 +33,6 @@ describe('Sidebar', () => {
           <Sidebar
             isOpen
             onClose={() => {}}
-            performanceMode={false}
-            setPerformanceMode={() => {}}
           />
         </MemoryRouter>
       );

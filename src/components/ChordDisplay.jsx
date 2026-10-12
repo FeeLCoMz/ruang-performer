@@ -46,7 +46,6 @@ const getInstrumentTokenClass = (label = '') => {
     keySignature = 'C',
     onTimestampClick,
     onTimestampPause,
-    onPresetCueTrigger,
     /**
      * Playback state owned by the parent, which is the only thing that can
      * actually observe the player. When omitted, the button still seeks but
@@ -147,35 +146,11 @@ const getInstrumentTokenClass = (label = '') => {
     return lineObj.isExpandedFromSection ? ' cd-sync-row is-expanded' : ' cd-sync-row';
   };
 
-  const renderPresetCueBadge = (lineObj, key) => {
-    const hasMidiProgram = Number.isFinite(Number(lineObj?.midi?.program));
-    const midiChannelLabel = Number.isFinite(Number(lineObj?.midi?.channel)) ? `CH ${lineObj.midi.channel}` : null;
-    const midiProgramLabel = hasMidiProgram ? `PC ${lineObj.midi.program}` : null;
-    const midiBankLabel = Number.isFinite(Number(lineObj?.midi?.bankMsb))
-      ? `BANK ${lineObj.midi.bankMsb}/${Number.isFinite(Number(lineObj?.midi?.bankLsb)) ? lineObj.midi.bankLsb : 0}`
-      : null;
-
-    return (
-      <div key={key} className={`cd-preset-cue${syncClass(lineObj)}`}>
-        <span className="cd-preset-cue-label">[{lineObj.label}]</span>
-        <span className="cd-preset-cue-meta">
-          {midiProgramLabel || 'Manual Cue'}
-          {midiChannelLabel ? ` ${midiChannelLabel}` : ''}
-          {midiBankLabel ? ` ${midiBankLabel}` : ''}
-        </span>
-        {typeof onPresetCueTrigger === 'function' ? (
-          <button
-            type="button"
-            className="cd-preset-cue-trigger"
-            onClick={() => onPresetCueTrigger(lineObj)}
-            title={hasMidiProgram ? 'Kirim Program Change sekarang' : 'Cue ini belum punya Program Change'}
-          >
-            {hasMidiProgram ? 'Send MIDI' : 'No PC'}
-          </button>
-        ) : null}
-      </div>
-    );
-  };
+  const renderPresetCueBadge = (lineObj, key) => (
+    <div key={key} className={`cd-preset-cue${syncClass(lineObj)}`}>
+      <span className="cd-preset-cue-label">[{lineObj.label}]</span>
+    </div>
+  );
 
   const renderedRows = [];
 

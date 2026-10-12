@@ -632,60 +632,6 @@ export function parseLines(lines, transpose) {
   return parsed;
 }
 
-export function extractPresetCuesFromLyrics(lyricsText) {
-  if (typeof lyricsText !== 'string' || !lyricsText.trim()) return [];
-
-  const parsedLines = parseLines(lyricsText.split(/\r?\n/), 0);
-
-  return parsedLines
-    .filter((lineObj) => lineObj?.type === 'preset_cue')
-    .map((cue, index) => ({
-      ...cue,
-      id: `${index + 1}-${cue.section}-${cue.patch}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-'),
-    }));
-}
-
-export function extractMidiProgramCuesFromLyrics(lyricsText) {
-  if (typeof lyricsText !== 'string' || !lyricsText.trim()) return [];
-
-  const parsedLines = parseLines(lyricsText.split(/\r?\n/), 0);
-  let rowIndex = 0;
-
-  return parsedLines
-    .filter((lineObj) => lineObj?.midi && Number.isFinite(Number(lineObj?.midi?.program)))
-    .map((lineObj) => {
-      rowIndex += 1;
-
-      if (lineObj.type === 'preset_cue') {
-        const section = String(lineObj.section || '').trim();
-        const patch = String(lineObj.patch || '').trim();
-        return {
-          id: `preset-${rowIndex}-${section}-${patch}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-'),
-          type: 'preset_cue',
-          section,
-          patch,
-          label: lineObj.label || `${section}: ${patch}`,
-          midi: lineObj.midi,
-          text: lineObj.text,
-        };
-      }
-
-      const patch = String(lineObj?.fields?.patch || lineObj?.fields?.preset || lineObj?.fields?.sound || lineObj?.fields?.tone || 'Keyboard Patch').trim();
-      const instrument = String(lineObj?.fields?.instrument || '').trim();
-      const label = instrument ? `${patch} (${instrument})` : patch;
-
-      return {
-        id: `patch-${rowIndex}-${patch}`.toLowerCase().replace(/[^a-z0-9_-]+/g, '-'),
-        type: 'instrument_patch',
-        section: '',
-        patch,
-        label,
-        midi: lineObj.midi,
-        text: lineObj.text,
-      };
-    });
-}
-
 const NON_DISPLAY_INSTRUMENT_CUES = new Set([
   'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out'
 ]);

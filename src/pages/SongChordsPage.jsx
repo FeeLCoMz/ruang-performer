@@ -7,7 +7,6 @@ import SongChordsMediaPanel from '../components/SongChordsMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import FloatingYouTubePlayer from '../components/FloatingYouTubePlayer.jsx';
 import VirtualPiano from "../components/VirtualPiano.jsx";
-import SongMidiProgramPanel from '../components/SongMidiProgramPanel.jsx';
 import ExpandButton from '../components/ExpandButton.jsx';
 import { getAuthHeader } from "../utils/auth.js";
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -17,9 +16,8 @@ import { useSongFetch } from '../hooks/useSongFetch.js';
 import { handleExportText, handleExportPDF, handleShare } from '../utils/songHandlers.js';
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
-import useWebMidiProgramChange from '../hooks/useWebMidiProgramChange.js';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
-import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractMidiProgramCuesFromLyrics, extractDetectedInstrumentsFromLyrics, getTransposeSteps } from '../utils/chordUtils.js';
+import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractDetectedInstrumentsFromLyrics, getTransposeSteps } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import { buildInsertNoteToken, formatWholeLyricsDocument, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
 
@@ -31,7 +29,7 @@ import { buildInsertNoteToken, formatWholeLyricsDocument, replaceSelectionWithTo
  * Props:
  *   - song: (optional) data lagu yang diterima dari parent
  */
-export default function SongChordsPage({ song: songProp, performanceMode = false, activeSetlist = null }) {
+export default function SongChordsPage({ song: songProp, activeSetlist = null }) {
   // State untuk toggle tampilan partitur
   const [showSheetMusic, setShowSheetMusic] = useState(false);
   // =========================
@@ -107,12 +105,8 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const [transpose, setTranspose] = useState(0);
 
   useEffect(() => {
-    if (!performanceMode) return;
-
-    const originalKey = song?.key;
-    const targetKey = setlistSongData.key;
-    setTranspose(originalKey && targetKey ? getTransposeSteps(originalKey, targetKey) : 0);
-  }, [performanceMode, song?.key, setlistSongData.key]);
+    setTranspose(0);
+  }, [song?.id]);
 
   const [zoom, setZoom] = useState(1);
   const [showChords, setShowChords] = useState(true);
@@ -135,47 +129,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // Chord Analyzer state
   const [showChordAnalyzer, setShowChordAnalyzer] = useState(false);
   const chordStats = useChordStats(song?.lyrics);
-  const {
-    isSupported: isMidiSupported,
-    isAccessGranted: isMidiAccessGranted,
-    outputs: midiOutputs,
-    selectedOutputId,
-    setSelectedOutputId,
-    isEnabled: isMidiProgramChangeEnabled,
-    setIsEnabled: setIsMidiProgramChangeEnabled,
-    lastMessage: midiLastMessage,
-    requestAccess: requestMidiAccess,
-    sendProgramChange,
-  } = useWebMidiProgramChange();
-  const autoMidiCueSentRef = useRef('');
-  const lastAutoTimelineMarkerRef = useRef('');
-
-  const midiProgramCues = useMemo(() => {
-    return extractMidiProgramCuesFromLyrics(song?.lyrics || '');
-  }, [song?.lyrics]);
-
-  const firstMidiCue = useMemo(() => {
-    return midiProgramCues.find((cue) => Number.isFinite(Number(cue?.midi?.program))) || null;
-  }, [midiProgramCues]);
-
-  const normalizeSectionKey = (value = '') => {
-    return String(value || '')
-      .toLowerCase()
-      .replace(/[\[\]()]/g, '')
-      .replace(/[^a-z0-9]+/g, ' ')
-      .trim();
-  };
-
-  const cueBySectionKey = useMemo(() => {
-    const map = new Map();
-    midiProgramCues.forEach((cue) => {
-      if (!Number.isFinite(Number(cue?.midi?.program))) return;
-      const keyValue = normalizeSectionKey(cue?.section || cue?.patch || cue?.label || '');
-      if (!keyValue) return;
-      if (!map.has(keyValue)) map.set(keyValue, cue);
-    });
-    return map;
-  }, [midiProgramCues]);
 
   const pianoRecommendation = recommendPianoFriendlyKey({
     chords: chordStats.chords,
@@ -296,94 +249,11 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       return;
     }
 
-    if (!performanceMode && !isEditingLyrics) {
+    if (!isEditingLyrics) {
       setShowMiniVideoPlayer(false);
     }
-  }, [performanceMode, isEditingLyrics, youtubeId]);
+  }, [isEditingLyrics, youtubeId]);
 
-  useEffect(() => {
-    if (!song?.id) return;
-    if (!isMidiProgramChangeEnabled) return;
-    if (!firstMidiCue?.midi) return;
-
-    const autoSendKey = `${song.id}|${selectedOutputId || 'default'}`;
-    if (autoMidiCueSentRef.current === autoSendKey) return;
-
-    const sent = sendProgramChange(firstMidiCue.midi, `Auto cue ${firstMidiCue.label}`);
-    if (sent) {
-      autoMidiCueSentRef.current = autoSendKey;
-    }
-  }, [song?.id, selectedOutputId, isMidiProgramChangeEnabled, firstMidiCue, sendProgramChange]);
-
-  useEffect(() => {
-    if (!song?.id || !youtubeId) return undefined;
-    if (!isMidiProgramChangeEnabled) return undefined;
-    if (!cueBySectionKey.size) return undefined;
-
-    const normalizedMarkers = Array.isArray(timeMarkers)
-      ? timeMarkers
-          .map((marker) => {
-            const time = Number(marker?.time);
-            if (!Number.isFinite(time)) return null;
-            const label = String(marker?.label || '').trim();
-            if (!label) return null;
-
-            return {
-              id: marker?.id || `${song.id}-${time}-${label}`,
-              time,
-              label,
-              sectionKey: normalizeSectionKey(label),
-            };
-          })
-          .filter(Boolean)
-          .sort((a, b) => a.time - b.time)
-      : [];
-
-    if (!normalizedMarkers.length) return undefined;
-
-    const intervalId = setInterval(() => {
-      if (!youtubeRef.current || typeof youtubeRef.current.getPlayerState !== 'function') return;
-      const state = youtubeRef.current.getPlayerState();
-      if (state !== 1) return;
-
-      const currentTime = Number(youtubeRef.current.currentTime || 0);
-      if (!Number.isFinite(currentTime)) return;
-
-      let activeMarker = null;
-      for (let i = normalizedMarkers.length - 1; i >= 0; i -= 1) {
-        if (currentTime >= normalizedMarkers[i].time) {
-          activeMarker = normalizedMarkers[i];
-          break;
-        }
-      }
-      if (!activeMarker) return;
-
-      const markerKey = `${song.id}:${activeMarker.id}`;
-      if (lastAutoTimelineMarkerRef.current === markerKey) return;
-
-      const cueMatch = cueBySectionKey.get(activeMarker.sectionKey);
-      if (!cueMatch?.midi) {
-        lastAutoTimelineMarkerRef.current = markerKey;
-        return;
-      }
-
-      const sent = sendProgramChange(cueMatch.midi, `Timeline cue ${cueMatch.label}`);
-      if (sent) {
-        lastAutoTimelineMarkerRef.current = markerKey;
-      }
-    }, 300);
-
-    return () => clearInterval(intervalId);
-  }, [song?.id, youtubeId, timeMarkers, cueBySectionKey, isMidiProgramChangeEnabled, sendProgramChange]);
-
-  useEffect(() => {
-    lastAutoTimelineMarkerRef.current = '';
-  }, [song?.id]);
-
-  const handlePresetCueTrigger = (cue) => {
-    if (!cue?.midi) return;
-    sendProgramChange(cue.midi, `Manual cue ${cue.label}`);
-  };
   // (Efek autoscroll dipindah ke komponen AutoScrollBar)
 
   // Metronome effect now handled by useMetronome hook
@@ -396,7 +266,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   // Fetch setlists that contain this song only when we actually need the global list.
   // In a setlist route, the current setlist context already provides the relevant data.
   useEffect(() => {
-    if (!song?.id || performanceMode || setlistId) {
+    if (!song?.id || setlistId) {
       return;
     }
 
@@ -412,7 +282,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
       .finally(() => {
         setLoadingSetlists(false);
       });
-  }, [song?.id, performanceMode, setlistId]);
+  }, [song?.id, setlistId]);
 
   // Handler export & share di utils/songHandlers.js
 
@@ -455,25 +325,7 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   };
 
   const ensureMiniPlayerReady = (callback) => {
-    if (!performanceMode) {
-      callback?.();
-      return;
-    }
-
-    setShowMiniVideoPlayer(true);
-    let attempts = 0;
-    const maxAttempts = 24;
-    const intervalId = setInterval(() => {
-      attempts += 1;
-      if (youtubeRef.current) {
-        callback?.();
-        clearInterval(intervalId);
-        return;
-      }
-      if (attempts >= maxAttempts) {
-        clearInterval(intervalId);
-      }
-    }, 120);
+    callback?.();
   };
 
   const handlePlayYouTube = () => {
@@ -775,142 +627,66 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   };
 
   return (
-    <div className={`page-container${performanceMode ? ' performance-mode' : ''}`}> {/* Tambah class jika performanceMode */}
-      {performanceMode ? (
-        <div className="song-performance-top-panel">
-          <SongChordsInfo
-            originalKey={song?.key || key || ''}
-            targetKey={key || song?.key || ''}
-            lyricsOriginalKey={lyricsMetaKey}
-            transpose={transpose}
-            setTranspose={setTranspose}
-            timeSignature={timeSignature}
-            tempo={tempo}
-            scrollSpeed={scrollSpeed}
-            setScrollSpeed={setScrollSpeed}
-            isMetronomeActive={isMetronomeActive}
-            setIsMetronomeActive={setIsMetronomeActive}
-            genre={genre}
-            arrangementStyle={arrangementStyle}
-            keyboardPatch={keyboardPatch}
-            detectedInstruments={detectedInstruments}
-            showSongInfo={showSongInfo}
-            setShowSongInfo={setShowSongInfo}
-            title={song.title}
-            artist={artist}
-            contributor={song.contributor}
-            performanceMode={performanceMode}
-            performanceKeyOverride={setlistSongData.key || ''}
-            canEdit={can(PERMISSIONS.SONG_EDIT)}
-            onEdit={handleEdit}
-            onShare={() => handleShare(song, artist, setShareMessage)}
-            shareMessage={shareMessage}
-            masteredBy={song.masteredBy}
-            canMarkMastery={song.canMarkMastery}
-            isMasteredByCurrentUser={song.isMasteredByCurrentUser}
-            onToggleMastery={handleToggleMastery}
-            masteryUpdating={updatingMastery}
-            pianoRecommendation={pianoRecommendation}
-            onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-          />
+    <div className="page-container">
+      <SongChordsInfo
+        originalKey={song?.key || key || ''}
+        targetKey={key || song?.key || ''}
+        lyricsOriginalKey={lyricsMetaKey}
+        transpose={transpose}
+        setTranspose={setTranspose}
+        timeSignature={timeSignature}
+        tempo={tempo}
+        scrollSpeed={scrollSpeed}
+        setScrollSpeed={setScrollSpeed}
+        isMetronomeActive={isMetronomeActive}
+        setIsMetronomeActive={setIsMetronomeActive}
+        genre={genre}
+        arrangementStyle={arrangementStyle}
+        keyboardPatch={keyboardPatch}
+        detectedInstruments={detectedInstruments}
+        showSongInfo={showSongInfo}
+        setShowSongInfo={setShowSongInfo}
+        title={song.title}
+        artist={artist}
+        contributor={song.contributor}
+        performanceKeyOverride={setlistSongData.key || ''}
+        canEdit={can(PERMISSIONS.SONG_EDIT)}
+        onEdit={handleEdit}
+        onShare={() => handleShare(song, artist, setShareMessage)}
+        shareMessage={shareMessage}
+        masteredBy={song.masteredBy}
+        canMarkMastery={song.canMarkMastery}
+        isMasteredByCurrentUser={song.isMasteredByCurrentUser}
+        onToggleMastery={handleToggleMastery}
+        masteryUpdating={updatingMastery}
+        pianoRecommendation={pianoRecommendation}
+        onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+      />
 
-          <SongMidiProgramPanel
-            isSupported={isMidiSupported}
-            isAccessGranted={isMidiAccessGranted}
-            outputs={midiOutputs}
-            selectedOutputId={selectedOutputId}
-            setSelectedOutputId={setSelectedOutputId}
-            isEnabled={isMidiProgramChangeEnabled}
-            setIsEnabled={setIsMidiProgramChangeEnabled}
-            requestAccess={requestMidiAccess}
-            cueCount={midiProgramCues.length}
-            autoCueLabel={firstMidiCue?.label || ''}
-            lastMessage={midiLastMessage}
-            performanceMode={performanceMode}
-          />
-        </div>
-      ) : (
-        <>
-          <SongChordsInfo
-            originalKey={song?.key || key || ''}
-            targetKey={key || song?.key || ''}
-            lyricsOriginalKey={lyricsMetaKey}
-            transpose={transpose}
-            setTranspose={setTranspose}
-            timeSignature={timeSignature}
-            tempo={tempo}
-            scrollSpeed={scrollSpeed}
-            setScrollSpeed={setScrollSpeed}
-            isMetronomeActive={isMetronomeActive}
-            setIsMetronomeActive={setIsMetronomeActive}
-            genre={genre}
-            arrangementStyle={arrangementStyle}
-            keyboardPatch={keyboardPatch}
-            detectedInstruments={detectedInstruments}
-            showSongInfo={showSongInfo}
-            setShowSongInfo={setShowSongInfo}
-            title={song.title}
-            artist={artist}
-            contributor={song.contributor}
-            performanceMode={performanceMode}
-            performanceKeyOverride={setlistSongData.key || ''}
-            canEdit={can(PERMISSIONS.SONG_EDIT)}
-            onEdit={handleEdit}
-            onShare={() => handleShare(song, artist, setShareMessage)}
-            shareMessage={shareMessage}
-            masteredBy={song.masteredBy}
-            canMarkMastery={song.canMarkMastery}
-            isMasteredByCurrentUser={song.isMasteredByCurrentUser}
-            onToggleMastery={handleToggleMastery}
-            masteryUpdating={updatingMastery}
-            pianoRecommendation={pianoRecommendation}
-            onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-          />
-
-          <SongMidiProgramPanel
-            isSupported={isMidiSupported}
-            isAccessGranted={isMidiAccessGranted}
-            outputs={midiOutputs}
-            selectedOutputId={selectedOutputId}
-            setSelectedOutputId={setSelectedOutputId}
-            isEnabled={isMidiProgramChangeEnabled}
-            setIsEnabled={setIsMidiProgramChangeEnabled}
-            requestAccess={requestMidiAccess}
-            cueCount={midiProgramCues.length}
-            autoCueLabel={firstMidiCue?.label || ''}
-            lastMessage={midiLastMessage}
-            performanceMode={performanceMode}
-          />
-        </>
-      )}
-
-      {youtubeId && !performanceMode && !isEditingLyrics && (
+      {youtubeId && !isEditingLyrics && (
         <SongChordsMediaPanel
           mediaPanelExpanded={mediaPanelExpanded}
           setMediaPanelExpanded={setMediaPanelExpanded}
           youtubeId={youtubeId}
           youtubeRef={youtubeRef}
           timeMarkers={timeMarkers}
-          performanceMode={performanceMode}
           canEdit={can(PERMISSIONS.SONG_EDIT)}
           handleTimeMarkerUpdate={handleTimeMarkerUpdate}
         />
       )}
 
-      {youtubeId && (performanceMode || isEditingLyrics) && (
+      {youtubeId && isEditingLyrics && (
         <div className="song-media-panel-hidden" aria-hidden="true" />
       )}
 
-      {!performanceMode && (
-        <SongChordsAnalyzer
-          showChordAnalyzer={showChordAnalyzer}
-          setShowChordAnalyzer={setShowChordAnalyzer}
-          chordStats={chordStats}
-          transpose={transpose}
-          songKey={song?.key || key}
-          onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-        />
-      )}
+      <SongChordsAnalyzer
+        showChordAnalyzer={showChordAnalyzer}
+        setShowChordAnalyzer={setShowChordAnalyzer}
+        chordStats={chordStats}
+        transpose={transpose}
+        songKey={song?.key || key}
+        onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+      />
 
       {/* Lyrics Main Section */}
       <SongLyricsMainSection
@@ -952,7 +728,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setCurrentBeat={setCurrentBeat}
         zoom={zoom}
         setZoom={setZoom}
-        performanceMode={performanceMode}
         canEdit={can(PERMISSIONS.SONG_EDIT)}
         song={song}
         transpose={transpose}
@@ -975,7 +750,6 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         setShowJazzChords={setShowJazzChords}
         showSimpleChords={showSimpleChords}
         setShowSimpleChords={setShowSimpleChords}
-        onPresetCueTrigger={handlePresetCueTrigger}
         keySignature={key || song?.key || ''}
         originalKey={song?.key || key || ''}
         targetKey={key || song?.key || ''}
@@ -984,13 +758,13 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
         onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
       />
 
-      {youtubeId && (performanceMode || isEditingLyrics) && (
+      {youtubeId && isEditingLyrics && (
         <FloatingYouTubePlayer
           isOpen={showMiniVideoPlayer}
           videoId={youtubeId}
           youtubeRef={youtubeRef}
           timeMarkers={timeMarkers}
-          readonlyTimeMarkers={performanceMode || !can(PERMISSIONS.SONG_EDIT)}
+          readonlyTimeMarkers={!can(PERMISSIONS.SONG_EDIT)}
           onUpdateTimeMarkers={can(PERMISSIONS.SONG_EDIT) ? handleTimeMarkerUpdate : undefined}
           onClose={() => {
             if (youtubeRef.current && typeof youtubeRef.current.handlePause === 'function') {
@@ -1044,13 +818,12 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
             onPrev={handlePrev}
             onNext={handleNext}
             onOpenSetlist={handleOpenSetlist}
-            compact={performanceMode}
           />
         );
       })()}
 
       {/* Setlists containing this song */}
-      {!performanceMode && song.id && !loadingSetlists && setlists.length > 0 && (() => {
+      {song.id && !loadingSetlists && setlists.length > 0 && (() => {
         const containingSetlists = setlists.filter(setlist =>
           Array.isArray(setlist.songs) && setlist.songs.includes(song.id)
         );

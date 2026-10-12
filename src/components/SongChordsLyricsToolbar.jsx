@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import AutoScrollBar from "./AutoScrollBar.jsx";
 import SongChordsExportMenu from "./SongChordsExportMenu.jsx";
 import TransposeKeyControl from "./TransposeKeyControl.jsx";
 
@@ -8,7 +7,6 @@ import TransposeKeyControl from "./TransposeKeyControl.jsx";
  * Toolbar untuk kontrol lirik/chord: autoscroll, fullscreen, zoom, edit, export.
  * Props:
  *   - isEditingLyrics
- *   - performanceMode
  *   - canEdit
  *   - tempo
  *   - autoScrollActive
@@ -31,17 +29,12 @@ import TransposeKeyControl from "./TransposeKeyControl.jsx";
  */
 export default function SongChordsLyricsToolbar({
   isEditingLyrics,
-  performanceMode,
   canEdit,
   tempo,
-  timeSignature,
   autoScrollActive,
   scrollSpeed,
   setAutoScrollActive,
   setScrollSpeed,
-  lyricsDisplayRef,
-  currentBeat,
-  setCurrentBeat,
   transpose,
   setTranspose,
   originalKey = '',
@@ -72,8 +65,6 @@ export default function SongChordsLyricsToolbar({
   handleExportPDF,
   youtubeId,
   youtubeRef,
-  onPlayYouTube,
-  onRestartYouTube,
 }) {
   const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
   const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
@@ -82,7 +73,7 @@ export default function SongChordsLyricsToolbar({
   const normalizedTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
   const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
   const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
-  const toolbarClassName = `song-lyrics-toolbar ${performanceMode ? 'song-lyrics-toolbar--performance' : 'song-lyrics-toolbar--normal'}`;
+  const toolbarClassName = 'song-lyrics-toolbar song-lyrics-toolbar--normal';
 
   // Sync YouTube playing state
   useEffect(() => {
@@ -134,7 +125,7 @@ export default function SongChordsLyricsToolbar({
       <div className={toolbarClassName}>
         {!isEditingLyrics && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-actions">
-            {!performanceMode && canEdit && (
+            {canEdit && (
               <button
                 type="button"
                 onClick={handleEditLyrics}
@@ -146,8 +137,7 @@ export default function SongChordsLyricsToolbar({
               </button>
             )}
 
-            {!performanceMode && (
-              <div className="song-lyrics-export-menu-container">
+            <div className="song-lyrics-export-menu-container">
                 <button
                   type="button"
                   onClick={() => setShowExportMenu(!showExportMenu)}
@@ -157,14 +147,13 @@ export default function SongChordsLyricsToolbar({
                   <span aria-hidden="true">📥</span>
                   <span className="song-lyrics-toolbar-btn-label">Export</span>
                 </button>
-                <SongChordsExportMenu
-                  showExportMenu={showExportMenu}
-                  setShowExportMenu={setShowExportMenu}
-                  handleExportText={handleExportText}
-                  handleExportPDF={handleExportPDF}
-                />
-              </div>
-            )}
+              <SongChordsExportMenu
+                showExportMenu={showExportMenu}
+                setShowExportMenu={setShowExportMenu}
+                handleExportText={handleExportText}
+                handleExportPDF={handleExportPDF}
+              />
+            </div>
           </div>
         )}
 
@@ -174,14 +163,10 @@ export default function SongChordsLyricsToolbar({
               <>
                 <button
                   type="button"
-                  className={`btn btn-secondary song-lyrics-youtube-btn${!performanceMode ? ' song-lyrics-youtube-btn--normal' : ''}`}
+                  className="btn btn-secondary song-lyrics-youtube-btn song-lyrics-youtube-btn--normal"
                   title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
                   aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
                   onClick={() => {
-                    if (performanceMode && typeof onPlayYouTube === 'function') {
-                      onPlayYouTube();
-                      return;
-                    }
                     if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
                       youtubeRef.current.handleTogglePlayPause();
                       setTimeout(() => {
@@ -192,20 +177,14 @@ export default function SongChordsLyricsToolbar({
                   }}
                 >
                   <span aria-hidden="true">{isYoutubePlaying ? '⏸' : '▶'}</span>
-                  {!performanceMode && (
-                    <span className="song-lyrics-toolbar-btn-label">{isYoutubePlaying ? 'Pause' : 'Play'}</span>
-                  )}
+                  <span className="song-lyrics-toolbar-btn-label">{isYoutubePlaying ? 'Pause' : 'Play'}</span>
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-secondary song-lyrics-youtube-btn${!performanceMode ? ' song-lyrics-youtube-btn--normal' : ''}`}
+                  className="btn btn-secondary song-lyrics-youtube-btn song-lyrics-youtube-btn--normal"
                   title="Putar dari awal"
                   aria-label="Putar dari awal"
                   onClick={() => {
-                    if (performanceMode && typeof onRestartYouTube === 'function') {
-                      onRestartYouTube();
-                      return;
-                    }
                     if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
                       youtubeRef.current.handleSeek(0);
                       setTimeout(() => {
@@ -216,7 +195,7 @@ export default function SongChordsLyricsToolbar({
                   }}
                 >
                   <span aria-hidden="true">↺</span>
-                  {!performanceMode && <span className="song-lyrics-toolbar-btn-label">Restart</span>}
+                  <span className="song-lyrics-toolbar-btn-label">Restart</span>
                 </button>
               </>
             )}
@@ -247,24 +226,7 @@ export default function SongChordsLyricsToolbar({
           </div>
         )}
 
-        {!isEditingLyrics && performanceMode && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-autoscroll">
-            <AutoScrollBar
-              tempo={parseInt(tempo, 10) || 120}
-              timeSignature={timeSignature || '4/4'}
-              active={autoScrollActive}
-              speed={scrollSpeed}
-              onToggle={() => setAutoScrollActive(!autoScrollActive)}
-              onSpeedChange={setScrollSpeed}
-              lyricsDisplayRef={lyricsDisplayRef}
-              currentBeat={currentBeat}
-              setCurrentBeat={setCurrentBeat}
-              compactMode={performanceMode}
-            />
-          </div>
-        )}
-
-        {!isEditingLyrics && !performanceMode && (
+        {!isEditingLyrics && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-autoscroll">
             <div className="song-lyrics-tempo-minimal" title={`Tempo ${normalizedTempo} BPM`}>
               <span
@@ -306,18 +268,7 @@ export default function SongChordsLyricsToolbar({
           </div>
         )}
 
-        {!isEditingLyrics && performanceMode && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-tempo-led-compact" title={`Tempo ${normalizedTempo} BPM`}>
-            <span
-              className="song-info-tempo-led"
-              style={{ animationDuration: `${Math.round(60000 / normalizedTempo)}ms` }}
-              aria-hidden="true"
-            />
-            <span className="song-lyrics-tempo-led-compact-text">{normalizedTempo}</span>
-          </div>
-        )}
-
-        {!isEditingLyrics && !performanceMode && (
+        {!isEditingLyrics && (
           <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">
             <div className="song-lyrics-transpose-controls" title="Transpose lirik/chord">
               {(originalKey || targetKey) ? (

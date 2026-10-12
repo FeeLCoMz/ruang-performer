@@ -17,12 +17,6 @@ describe('lyricsCompletionOptions', () => {
     }
   });
 
-  test('Given the MIDI cue template, Then it is offered with the bracket prefix', () => {
-    expect(labels).toContain('[Keys:');
-    const cue = lyricsCompletionOptions.find((option) => option.label === '[Keys:');
-    expect(cue.apply).toBe('[Keys: ');
-  });
-
   test('Given metadata keys, Then the syntaxes from the removed help modal are all present', () => {
     // These were the entries in the old "Panduan Metadata Lirik" modal.
     for (const key of [

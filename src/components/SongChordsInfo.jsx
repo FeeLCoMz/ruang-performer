@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import TransposeKeyControl from "./TransposeKeyControl.jsx";
 import ExpandButton from "./ExpandButton.jsx";
 import TempoControl from "./TempoControl.jsx";
@@ -32,7 +32,6 @@ export default function SongChordsInfo({
   title,
   artist,
   contributor,
-  performanceMode,
   performanceKeyOverride = '',
   canEdit = false,
   onEdit,
@@ -50,19 +49,16 @@ export default function SongChordsInfo({
     .map((entry) => entry?.username)
     .filter(Boolean)
     .join(', ');
-  const showActions = !performanceMode;
-  const showMetadata = performanceMode || showSongInfo;
-  const showMinimalMetadata = performanceMode;
+  const showActions = true;
+  const showMetadata = showSongInfo;
   const showKeyEasyRecommendation = !!pianoRecommendation?.recommendedKey;
   const metadataItems = [];
-  const performanceMetadataItems = [];
   const detectedInstrumentList = Array.isArray(detectedInstruments) ? detectedInstruments.filter(Boolean) : [];
   const hasAdvancedInfo = Boolean(
     timeSignature || genre || arrangementStyle || keyboardPatch || lyricsOriginalKey
     || detectedInstrumentList.length > 0
     || (Array.isArray(masteredBy) && masteredBy.length > 0) || canMarkMastery
   );
-  const [isKeyboardistKeyCollapsed, setIsKeyboardistKeyCollapsed] = useState(true);
   // Info lanjutan (detail sekunder) disembunyikan secara default agar ringkas.
   const [showAdvancedInfo, setShowAdvancedInfo] = useState(false);
   const handleCopyInstruments = async () => {
@@ -98,89 +94,24 @@ export default function SongChordsInfo({
   const recommendedTransposeText = recommendedTranspose > 0
     ? `+${recommendedTranspose}`
     : `${recommendedTranspose}`;
-  const compactRecommendedTransposeText = recommendedTranspose === 0
-    ? 'pas'
-    : (recommendedTranspose > 0 ? `+${recommendedTranspose}` : `${recommendedTranspose}`);
-  const hasPerformanceKeyOverride = performanceMode && Boolean(performanceKeyOverride);
-  const baseDisplayKey = hasPerformanceKeyOverride
-    ? performanceKeyOverride
-    : (targetKey || originalKey || '');
+  const baseDisplayKey = targetKey || originalKey || '';
   const transposedDisplayKey = (() => {
-    if (hasPerformanceKeyOverride) return baseDisplayKey;
     if (!baseDisplayKey || !transpose) return baseDisplayKey;
     const shifted = transposeChord(baseDisplayKey, transpose);
     return shifted || baseDisplayKey;
   })();
 
-  useEffect(() => {
-    setIsKeyboardistKeyCollapsed(true);
-  }, [pianoRecommendation?.recommendedKey, performanceMode]);
-
   if (baseDisplayKey) {
     metadataItems.push(`Key: ${transposedDisplayKey}`);
   }
-  if (performanceMode) {
-    if (baseDisplayKey) {
-      performanceMetadataItems.push({
-        key: 'key',
-        icon: '🎹',
-        render: (
-          <TransposeKeyControl
-            key="performance-key"
-            originalKey={originalKey || baseDisplayKey}
-            targetKey={targetKey || originalKey || baseDisplayKey}
-            transpose={transpose || 0}
-            onTransposeChange={setTranspose}
-            compact
-          />
-        ),
-      });
-    }
-    if (showKeyEasyRecommendation) {
-      performanceMetadataItems.push({
-        key: 'easy-key',
-        render: (
-          <>
-            <span className="song-info-inline-icon" aria-hidden="true">🎹</span>
-            <span className="song-info-inline-label">Key Mudah</span>
-            <button
-              type="button"
-              className="btn btn-secondary song-info-piano-reco-btn song-info-inline-button"
-              onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
-              disabled={typeof onApplyRecommendedTranspose !== 'function' || pianoRecommendation.transposeFromCurrent === 0}
-              title="Terapkan key mudah"
-              aria-label="Gunakan key mudah yang disarankan"
-            >
-              {pianoRecommendation.recommendedKey}
-            </button>
-            <span className="song-info-inline-value">
-              {compactRecommendedTransposeText}
-            </span>
-          </>
-        ),
-      });
-    }
-  }
-  if (performanceMode && originalKey && originalKey !== transposedDisplayKey) {
-    metadataItems.push(`Nada Asli: ${originalKey}`);
-  }
   if (tempo) {
     metadataItems.push(`Tempo: ${tempo}`);
-    if (performanceMode) {
-      performanceMetadataItems.push({ key: 'tempo', icon: '⏱️', text: tempo });
-    }
   }
   if (timeSignature) {
     metadataItems.push(`Time: ${timeSignature}`);
-    if (performanceMode) {
-      performanceMetadataItems.push({ key: 'time', icon: '🎼', text: timeSignature });
-    }
   }
   if (genre) {
     metadataItems.push(`Genre: ${genre}`);
-    if (performanceMode) {
-      performanceMetadataItems.push({ key: 'genre', icon: '🎸', text: genre });
-    }
   }
   if (lyricsOriginalKey) {
     metadataItems.push(`Original: ${lyricsOriginalKey}`);
@@ -188,36 +119,12 @@ export default function SongChordsInfo({
   if (detectedInstrumentList.length) {
     const instrumentText = detectedInstrumentList.join(', ');
     metadataItems.push(`Instrumen: ${instrumentText}`);
-    if (performanceMode) {
-      performanceMetadataItems.push({
-        key: 'instruments',
-        icon: '🎼',
-        fullWidth: true,
-        render: (
-          <>
-            <span className="song-info-inline-icon" aria-hidden="true">🎼</span>
-            <span className="song-info-inline-label">Instrumen</span>
-            <span className="song-info-instrument-badge-list">
-              {detectedInstrumentList.map((instrument, instrumentIdx) => (
-                <span
-                  key={`${instrument}-${instrumentIdx}`}
-                  className="song-info-instrument-badge"
-                  title={`Instrumen: ${instrument}`}
-                >
-                  {instrument}
-                </span>
-              ))}
-            </span>
-          </>
-        ),
-      });
-    }
   }
 
   return (
-    <div className={`song-panel${performanceMode ? ' song-panel-performance' : ''}`}>
+    <div className="song-panel">
       {/* Judul dan artis selalu di atas info lain */}
-      {(title || artist || contributor || !performanceMode) && (
+      {(title || artist || contributor) && (
         <div className="song-title-artist-block">
           {title && (
             <h1 className="song-title-main">{title}</h1>
@@ -234,27 +141,6 @@ export default function SongChordsInfo({
           )}
           {shareMessage && showActions && (
             <div className="info-text song-info-share-message">{shareMessage}</div>
-          )}
-          {performanceMode && showMetadata && (
-            <div className="song-info-inline-strip song-info-priority">
-              <div className="song-info-inline-chip-list">
-                {performanceMetadataItems.map((item) => (
-                  <div
-                    key={item.key}
-                    className={`song-info-inline-chip${item.key === 'key' ? ' song-info-inline-chip-key' : ''}${item.fullWidth ? ' song-info-inline-chip-full' : ''}`}
-                  >
-                    {item.render ? (
-                      item.render
-                    ) : (
-                      <>
-                        <span className="song-info-inline-icon" aria-hidden="true">{item.icon}</span>
-                        <span className="song-info-inline-value">{item.text}</span>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
           )}
         </div>
       )}
@@ -291,41 +177,9 @@ export default function SongChordsInfo({
           </div>
         </div>
       )}
-      {!performanceMode && showMetadata && (
-        <div className={`song-info-compact-grid ${showMinimalMetadata ? 'song-info-compact-grid-minimal' : ''}`}>
-          {showMinimalMetadata ? (
-            <>
-              <div className="song-info-item song-info-priority song-info-inline-strip">
-                <span className="song-info-inline-text">
-                  {metadataItems.join(' • ')}
-                </span>
-              </div>
-              {!showKeyEasyRecommendation && null}
-              {!performanceMode && showKeyEasyRecommendation && (
-                <div className="song-info-item song-info-piano-reco-item">
-                  <span className="song-info-label">🎹 Key Mudah</span>
-                  <div className="song-info-piano-reco-body">
-                    <button
-                      type="button"
-                      className="btn btn-secondary song-info-piano-reco-btn"
-                      onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
-                      disabled={typeof onApplyRecommendedTranspose !== 'function' || pianoRecommendation.transposeFromCurrent === 0}
-                      title="Terapkan key mudah"
-                      aria-label="Gunakan key mudah yang disarankan"
-                    >
-                      {pianoRecommendation.recommendedKey}
-                    </button>
-                    <span className="song-info-piano-reco-distance">
-                      {pianoRecommendation.transposeFromCurrent === 0
-                        ? 'Key dasar sudah cocok.'
-                        : `Jarak dari key dasar: ${recommendedTransposeText} semitone`}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
+      {showMetadata && (
+        <div className="song-info-compact-grid">
+          <>
               {(originalKey || targetKey) && (
                 <div className="song-info-item song-info-priority song-info-key">
                   <span className="song-info-label">🎹 Key</span>
@@ -337,7 +191,7 @@ export default function SongChordsInfo({
                   />
                 </div>
               )}
-              {!performanceMode && showKeyEasyRecommendation && (
+              {showKeyEasyRecommendation && (
                 <div className="song-info-item song-info-piano-reco-item">
                   <span className="song-info-label">🎹 Key Mudah</span>
                   <div className="song-info-piano-reco-body">
@@ -365,13 +219,13 @@ export default function SongChordsInfo({
                   <span className="song-info-value">{lyricsOriginalKey}</span>
                 </div>
               )}
-              {!showMinimalMetadata && showAdvancedInfo && timeSignature && (
+              {showAdvancedInfo && timeSignature && (
                 <div className="song-info-item">
                   <span className="song-info-label">🎼 Time</span>
                   <span className="song-info-value">{timeSignature}</span>
                 </div>
               )}
-              {!showMinimalMetadata && showAdvancedInfo && genre && (
+              {showAdvancedInfo && genre && (
                 <div className="song-info-item">
                   <span className="song-info-label">🎸 Genre</span>
                   <span className="song-info-value">{genre}</span>
@@ -389,7 +243,7 @@ export default function SongChordsInfo({
                   />
                 </div>
               )}
-              {!showMinimalMetadata && hasAdvancedInfo && (
+              {hasAdvancedInfo && (
                 <button
                   type="button"
                   className="btn btn-secondary song-info-advanced-toggle"
@@ -402,19 +256,19 @@ export default function SongChordsInfo({
                   <span>{showAdvancedInfo ? 'Sembunyikan Info Lanjutan' : 'Info Lanjutan'}</span>
                 </button>
               )}
-              {!showMinimalMetadata && showAdvancedInfo && arrangementStyle && (
+              {showAdvancedInfo && arrangementStyle && (
                 <div className="song-info-item song-info-block song-info-block-arrangement">
                   <span className="song-info-label">🎷 Aransemen</span>
                   <span className="song-info-value">{arrangementStyle}</span>
                 </div>
               )}
-              {!showMinimalMetadata && showAdvancedInfo && keyboardPatch && (
+              {showAdvancedInfo && keyboardPatch && (
                 <div className="song-info-item song-info-block song-info-block-keyboard">
                   <span className="song-info-label">🎹 Keyboard Patch</span>
                   <span className="song-info-value">{keyboardPatch}</span>
                 </div>
               )}
-              {!showMinimalMetadata && showAdvancedInfo && detectedInstrumentList.length > 0 && (
+              {showAdvancedInfo && detectedInstrumentList.length > 0 && (
                 <div className="song-info-item song-info-block song-info-block-instruments">
                   <div className="song-info-block-header">
                     <span className="song-info-label">🎼 Instrumen</span>
@@ -437,7 +291,7 @@ export default function SongChordsInfo({
                   </div>
                 </div>
               )}
-              {!showMinimalMetadata && showAdvancedInfo && (
+              {showAdvancedInfo && (
                 <div className="song-info-item song-info-mastery-block song-info-mastery-block-full">
                   <span className="song-info-label">✅ Sudah Dikuasai</span>
                   <span className="song-info-value song-info-mastery-count">
@@ -466,8 +320,7 @@ export default function SongChordsInfo({
                   )}
                 </div>
               )}
-            </>
-          )}
+          </>
         </div>
       )}
     </div>

@@ -42,7 +42,6 @@ export default function SongLyricsMainSection({
   setCurrentBeat,
   zoom,
   setZoom,
-  performanceMode,
   canEdit,
   song,
   transpose,
@@ -55,7 +54,6 @@ export default function SongLyricsMainSection({
   setShowJazzChords,
   showSimpleChords,
   setShowSimpleChords,
-  onPresetCueTrigger,
   originalKey = '',
   targetKey = '',
   performanceKeyOverride = '',
@@ -79,19 +77,16 @@ export default function SongLyricsMainSection({
   return (
     <div className="song-panel song-lyrics-main">
       <div className="song-lyrics-main-header">
-        {!performanceMode && (
-          <ExpandButton
-            isExpanded={lyricsPanelExpanded}
-            setIsExpanded={setLyricsPanelExpanded}
-            icon="🎤"
-            label="Lirik & Chord"
-            ariaLabel={lyricsPanelExpanded ? 'Sembunyikan panel lirik' : 'Tampilkan panel lirik'}
-          />
-        )}
-        {(lyricsPanelExpanded || performanceMode) && (
+        <ExpandButton
+          isExpanded={lyricsPanelExpanded}
+          setIsExpanded={setLyricsPanelExpanded}
+          icon="🎤"
+          label="Lirik & Chord"
+          ariaLabel={lyricsPanelExpanded ? 'Sembunyikan panel lirik' : 'Tampilkan panel lirik'}
+        />
+        {lyricsPanelExpanded && (
           <SongChordsLyricsToolbar
             isEditingLyrics={isEditingLyrics}
-            performanceMode={performanceMode}
             canEdit={canEdit}
             tempo={tempo}
             timeSignature={timeSignature}
@@ -190,7 +185,6 @@ export default function SongLyricsMainSection({
               lyricsDisplayRef={lyricsDisplayRef}
               song={song}
               tempo={tempo}
-              performanceMode={performanceMode}
               transpose={transpose}
               setTranspose={setTranspose}
               showChords={showChords}
@@ -211,7 +205,6 @@ export default function SongLyricsMainSection({
               isYoutubePlaying={isYoutubePlaying}
               timeSignature={timeSignature}
               currentBeat={currentBeat}
-              onPresetCueTrigger={onPresetCueTrigger}
               originalKey={originalKey}
               targetKey={targetKey}
               performanceKeyOverride={performanceKeyOverride}

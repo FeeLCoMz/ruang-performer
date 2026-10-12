@@ -43,7 +43,6 @@ export default function SongChordsLyricsDisplay({
   setEditedLyrics,
   song,
   tempo,
-  performanceMode = false,
   transpose,
   setTranspose,
   showChords,
@@ -65,7 +64,6 @@ export default function SongChordsLyricsDisplay({
   onYoutubePlayingChange,
   currentBeat = 0,
   timeSignature = '4/4',
-  onPresetCueTrigger,
   originalKey = '',
   targetKey = '',
   performanceKeyOverride = '',
@@ -168,7 +166,7 @@ export default function SongChordsLyricsDisplay({
       controlsHideTimerRef.current = null;
     }
     return;
-  }, [isFullscreen, controlsVisible, transpose, autoScrollActive, scrollSpeed, performanceMode]);
+  }, [isFullscreen, controlsVisible, transpose, autoScrollActive, scrollSpeed]);
 
   useEffect(() => {
     const el = lyricsDisplayRef?.current;
@@ -520,14 +518,13 @@ export default function SongChordsLyricsDisplay({
           </div>
         </div>
       )}
-      {isFullscreen && !performanceMode && (
+      {isFullscreen && (
       <div
         className={`song-lyrics-fullscreen-quick-controls${controlsVisible ? ' is-visible' : ''}`}
         role="group"
         aria-label="Kontrol fullscreen lirik"
       >
-        {!performanceMode && (
-          <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Transpose">
+        <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Transpose">
             <span className="song-lyrics-fullscreen-control-label">Tr</span>
             <button
               type="button"
@@ -561,8 +558,6 @@ export default function SongChordsLyricsDisplay({
               0
             </button>
           </div>
-        )}
-        {!performanceMode && (
         <div
           className={`song-lyrics-fullscreen-autoscroll-rail${controlsVisible ? ' is-visible' : ''}`}
           role="group"
@@ -620,7 +615,6 @@ export default function SongChordsLyricsDisplay({
             </button>
           </div>
         </div>
-        )}
         {youtubeId && youtubeRef && (
           <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="YouTube">
             <button
@@ -667,8 +661,7 @@ export default function SongChordsLyricsDisplay({
           >
             Chord: {currentChordModeLabel}
           </span>
-          {!performanceMode && (
-            <button
+          <button
               type="button"
               className="btn btn-secondary"
               onClick={() => setControlsVisible(false)}
@@ -720,7 +713,6 @@ export default function SongChordsLyricsDisplay({
             youtubeRef.current.handlePause();
           }
         }}
-        onPresetCueTrigger={onPresetCueTrigger}
       />
     </div>
   );

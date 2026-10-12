@@ -91,7 +91,6 @@ describe('SetlistSongsPage', () => {
       setActiveSetlist: vi.fn(),
       loadingSetlists: false,
       userBandInfo: null,
-      performanceMode: false,
       ...overrides,
     };
   }
@@ -172,34 +171,14 @@ describe('SetlistSongsPage', () => {
     expect(container.querySelector('button[aria-label="Aktifkan loop playlist video"]')).toBeTruthy();
   });
 
-  test('hides drag handle icon in performance mode', async () => {
-    const props = buildProps({ performanceMode: true });
-
-    await renderPage(root, props);
-
-    expect(container.querySelector('.drag-handle-icon')).toBeFalsy();
-  });
-
-  test('hides setlist usage metadata in performance mode while keeping key and tempo', async () => {
-    const props = buildProps({ performanceMode: true });
-
-    await renderPage(root, props);
+  test('shows song key, tempo, and setlist usage metadata', async () => {
+    await renderPage(root, buildProps());
 
     const metaBlocks = Array.from(container.querySelectorAll('.song-meta')).map((el) => el.textContent || '');
     expect(metaBlocks.length).toBeGreaterThan(0);
-    metaBlocks.forEach((metaText) => {
-      expect(metaText).not.toContain('📋');
-      expect(metaText).not.toContain('🎸');
-    });
     expect(metaBlocks[0]).toContain('🎹 C');
     expect(metaBlocks[0]).toContain('⏱️ 120 BPM');
-  });
-
-  test('shows mood badge in both normal and performance mode', async () => {
-    await renderPage(root, buildProps({ performanceMode: false }));
-    expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);
-
-    await renderPage(root, buildProps({ performanceMode: true }));
+    expect(metaBlocks[0]).toContain('📋');
     expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);
   });
 

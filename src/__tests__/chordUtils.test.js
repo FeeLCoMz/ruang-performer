@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, parsePresetCueLine, extractPresetCuesFromLyrics, extractMidiProgramCuesFromLyrics, extractDetectedInstrumentsFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils';
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, parsePresetCueLine, extractDetectedInstrumentsFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils';
 
 describe('chordUtils', () => {
   test('splitSectionLabelWithChords separates section label and chord line', () => {
@@ -602,7 +602,7 @@ describe('chordUtils', () => {
     const ncToken = tokens.find(t => t.token.includes('N.C.'));
     const amToken = tokens.find(t => t.token === 'Bm');
     const gToken = tokens.find(t => t.token === 'A');
-    
+
     expect(ncToken.token).toBe('N.C.');
     expect(amToken).toBeDefined();
     expect(gToken).toBeDefined();
@@ -653,42 +653,6 @@ describe('chordUtils', () => {
     });
   });
 
-  test('extractPresetCuesFromLyrics returns cue list in order', () => {
-    const cues = extractPresetCuesFromLyrics(`
-[Verse: Acoustic Piano]
-| C | G |
-[Chorus: Lead Synth + Strings | PC: 80 | CH: 1]
-| Am | F |
-`);
-
-    expect(cues).toHaveLength(2);
-    expect(cues[0].label).toBe('Verse: Acoustic Piano');
-    expect(cues[0].midi).toBeTruthy();
-    expect(cues[0].midi.channel).toBe(1);
-    expect(Number.isFinite(cues[0].midi.program)).toBe(true);
-    expect(cues[1].label).toBe('Chorus: Lead Synth + Strings');
-    expect(cues[1].midi).toEqual({ program: 80, channel: 1 });
-  });
-
-  test('extractMidiProgramCuesFromLyrics includes keyboard patch metadata lines', () => {
-    const cues = extractMidiProgramCuesFromLyrics(`
-Patch: Acoustic Grand Piano | Instrument: Keyboard | PC: 0 | CH: 1
-[Chorus: Lead 2 (sawtooth) | PC: 81 | CH: 2]
-`);
-
-    expect(cues).toHaveLength(2);
-    expect(cues[0]).toMatchObject({
-      type: 'instrument_patch',
-      patch: 'Acoustic Grand Piano',
-      midi: { program: 0, channel: 1 },
-    });
-    expect(cues[1]).toMatchObject({
-      type: 'preset_cue',
-      patch: 'Lead 2 (sawtooth)',
-      midi: { program: 81, channel: 2 },
-    });
-  });
-
   test('parsePresetCueLine accepts [Keys: ...] and [Guitar: ...] notation', () => {
     const keysCue = parsePresetCueLine('[Keys: EP Soft]');
     expect(keysCue).toMatchObject({
@@ -705,46 +669,6 @@ Patch: Acoustic Grand Piano | Instrument: Keyboard | PC: 0 | CH: 1
       section: 'Guitar',
       patch: 'Crunch Lead',
       midi: { program: 30, channel: 3 },
-    });
-  });
-
-  test('extractMidiProgramCuesFromLyrics picks up [Keys: ...] and [Guitar: ...] cues', () => {
-    const cues = extractMidiProgramCuesFromLyrics(`
-[Keys: Acoustic Grand Piano | PC: 0 | CH: 1]
-[Guitar: Distortion Guitar | PC: 30 | CH: 2]
-`);
-
-    expect(cues).toHaveLength(2);
-    expect(cues[0]).toMatchObject({
-      type: 'preset_cue',
-      section: 'Keys',
-      patch: 'Acoustic Grand Piano',
-      midi: { program: 0, channel: 1 },
-    });
-    expect(cues[1]).toMatchObject({
-      type: 'preset_cue',
-      section: 'Guitar',
-      patch: 'Distortion Guitar',
-      midi: { program: 30, channel: 2 },
-    });
-  });
-
-  test('extractMidiProgramCuesFromLyrics auto-detects program change from [Keys: Piano] and [Guitar: Distortion]', () => {
-    const cues = extractMidiProgramCuesFromLyrics(`
-[Keys: Piano]
-[Guitar: Distortion]
-`);
-
-    expect(cues).toHaveLength(2);
-    expect(cues[0]).toMatchObject({
-      section: 'Keys',
-      patch: 'Piano',
-      midi: { program: 0, channel: 1 },
-    });
-    expect(cues[1]).toMatchObject({
-      section: 'Guitar',
-      patch: 'Distortion',
-      midi: { program: 30, channel: 2 },
     });
   });
 

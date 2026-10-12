@@ -114,27 +114,15 @@ Tabel `practice_sessions` mencatat sesi latihan per band: tanggal, durasi, lagu 
 
 ---
 
-## 8. Mode Tampilan
+## 8. Tema Tampilan
 
-Tiga mode utama, dikendalikan dari sidebar/header:
-
-### Theme
-`dark` / `light` → class `dark-mode` / `light-mode` pada `<body>`, disimpan di `localStorage` key `ruangperformer_theme`.
-
-### Performance Mode 🎤
-Untuk penggunaan di panggung:
-- UI disederhanakan, kontrol non-esensial disembunyikan
-- Navigasi cepat Lagu & Setlist di header
-- **Prefetch otomatis**: `prefetchPerformanceData()` mengunduh seluruh setlist & lagu ke cache offline
-- Disimpan di `ruangperformer_performance_mode`
-
-> ⚠️ Performance Mode hanya mengubah tampilan. **Logika permission tidak boleh diubah** di mode ini.
+Aplikasi memakai mode gelap permanen — class `dark-mode` diterapkan pada `<body>`.
 
 ---
 
 ## 9. Offline
 
-`src/utils/offlineCache.js` menyimpan data penting (setlist & lagu) agar tetap bisa diakses tanpa koneksi. Cache terisi otomatis saat Performance Mode dinyalakan.
+`src/utils/offlineCache.js` menyimpan data penting (setlist & lagu) agar tetap bisa diakses tanpa koneksi.
 
 ---
 
@@ -168,8 +156,7 @@ Server menyediakan `POST /api/extract-chord` sebagai proxy untuk melewati batasa
 
 | Alat | Lokasi |
 | --- | --- |
-| Virtual piano | `VirtualPiano.jsx` — keyboard interaktif |
-| Kontrol MIDI | `useWebMidiProgramChange.js` — ganti program keyboard via Web MIDI API |
+| Virtual piano | `VirtualPiano.jsx` — keyboard interaktif (input MIDI didukung) |
 | Metronom | `useMetronome.js` |
 | Tap tempo | `TapTempo.jsx` |
 | Kontrol tempo | `TempoControl.jsx` |

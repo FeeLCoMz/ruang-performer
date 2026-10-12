@@ -7,9 +7,7 @@ import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import ChordDisplay from '../components/ChordDisplay.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
-import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
 import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
-import SongMidiProgramPanel from '../components/SongMidiProgramPanel.jsx';
 import TransposeKeyControl from '../components/TransposeKeyControl.jsx';
 import VirtualPiano from '../components/VirtualPiano.jsx';
 import SongChordsPage from '../pages/SongChordsPage.jsx';
@@ -99,8 +97,7 @@ function SongViewEditorHarness() {
         setCurrentBeat={noop}
         zoom={1}
         setZoom={noop}
-        performanceMode={false}
-        canEdit={true}
+                canEdit={true}
         song={{ lyrics: editedLyrics }}
         transpose={0}
         setTranspose={noop}
@@ -220,8 +217,7 @@ describe('Song lyrics shared editor rendering', () => {
           setCurrentBeat={noop}
           zoom={1}
           setZoom={noop}
-          performanceMode={false}
-          canEdit={true}
+                    canEdit={true}
           song={{ lyrics: '[C]Hello' }}
           transpose={0}
           setTranspose={noop}
@@ -356,7 +352,6 @@ describe('Song lyrics shared editor rendering', () => {
     expect(tools.textContent).toContain('Undo');
     expect(tools.textContent).toContain('Redo');
     expect(tools.textContent).toContain('Cari');
-    expect(tools.textContent).toContain('Cue Keyboard');
 
     // Formatting must not claim history actions as its own.
     const format = container.querySelector('.lyric-format');
@@ -467,8 +462,7 @@ describe('Song lyrics shared editor rendering', () => {
           setCurrentBeat={noop}
           zoom={1}
           setZoom={noop}
-          performanceMode={false}
-          canEdit={true}
+                    canEdit={true}
           song={{ lyrics: '[Intro]\nAm F\nPost Chorus:\nChorus:' }}
           transpose={0}
           setTranspose={noop}
@@ -498,8 +492,7 @@ describe('Song lyrics shared editor rendering', () => {
       root.render(
         <SongChordsLyricsToolbar
           isEditingLyrics={true}
-          performanceMode={false}
-          canEdit={true}
+                    canEdit={true}
           tempo={120}
           timeSignature={'4/4'}
           autoScrollActive={false}
@@ -561,8 +554,7 @@ describe('Song lyrics shared editor rendering', () => {
         <SongChordsInfo
           title="Song A"
           artist="Artist A"
-          performanceMode={false}
-          showSongInfo={true}
+                    showSongInfo={true}
           setShowSongInfo={noop}
           keyboardPatch="Stage Piano"
           detectedInstruments={['Gitar', 'Sax', 'Piano']}
@@ -586,37 +578,13 @@ describe('Song lyrics shared editor rendering', () => {
     expect(clipboard.writeText).toHaveBeenCalledWith('Keyboard Patch: Stage Piano\nInstrumen: Gitar, Sax, Piano');
   });
 
-  test('Given performance mode is active, Then detected instruments render as separate badges', async () => {
+  test('Given mastery info is present, Then it renders as a full-width row inside advanced info', async () => {
     await act(async () => {
       root.render(
         <SongChordsInfo
           title="Song A"
           artist="Artist A"
-          performanceMode={true}
-          showSongInfo={true}
-          setShowSongInfo={noop}
-          originalKey="C"
-          targetKey="C"
-          transpose={0}
-          setTranspose={noop}
-          detectedInstruments={['Gitar', 'Sax', 'Piano']}
-        />
-      );
-    });
-
-    const badges = Array.from(container.querySelectorAll('.song-info-instrument-badge'));
-    expect(badges.map((node) => node.textContent)).toEqual(['Gitar', 'Sax', 'Piano']);
-    expect(container.querySelector('.song-info-instrument-badge-list')).toBeTruthy();
-  });
-
-  test('Given normal mode is active, Then mastery info renders as a full-width row inside advanced info', async () => {
-    await act(async () => {
-      root.render(
-        <SongChordsInfo
-          title="Song A"
-          artist="Artist A"
-          performanceMode={false}
-          showSongInfo={true}
+                    showSongInfo={true}
           setShowSongInfo={noop}
           originalKey="C"
           targetKey="D"
@@ -649,8 +617,7 @@ describe('Song lyrics shared editor rendering', () => {
         <SongChordsInfo
           title="Song A"
           artist="Artist A"
-          performanceMode={false}
-          showSongInfo={true}
+                    showSongInfo={true}
           setShowSongInfo={noop}
           timeSignature="4/4"
           genre="Rock"
@@ -678,333 +645,6 @@ describe('Song lyrics shared editor rendering', () => {
     expect(genreItem.textContent).toContain('Rock');
     expect(genreItem.textContent).not.toContain('4/4');
     expect(container.querySelector('.song-info-split-row')).toBeFalsy();
-  });
-
-  test('Given performance mode is active, Then song info metadata remains visible', async () => {
-    await act(async () => {
-      root.render(
-        <SongChordsInfo
-          title="Song A"
-          artist="Artist A"
-          contributor="Contributor"
-          performanceMode={true}
-          canEdit={true}
-          onEdit={noop}
-          onShare={noop}
-          shareMessage="Shared"
-          showSongInfo={true}
-          setShowSongInfo={noop}
-          originalKey="C"
-          targetKey="D"
-          tempo="120"
-          timeSignature="4/4"
-          genre="Rock"
-        />
-      );
-    });
-
-    expect(container.querySelector('.song-title-actions')).toBeFalsy();
-    expect(container.querySelector('.song-title-artist-block > .song-info-inline-strip')).toBeTruthy();
-    expect(container.querySelector('.song-title-artist-block .song-info-compact-grid')).toBeFalsy();
-    expect(container.textContent).toContain('Song A');
-    expect(container.textContent).toContain('Artist A');
-    expect(container.textContent).toContain('−');
-    expect(container.textContent).toContain('⏱️');
-    expect(container.textContent).toContain('🎸');
-    expect(container.textContent).not.toContain('Key');
-    expect(container.textContent).not.toContain('Tempo');
-    expect(container.textContent).not.toContain('Genre');
-  });
-
-  test('Given performance mode transpose is set, Then key metadata reflects transposed key', async () => {
-    await act(async () => {
-      root.render(
-        <SongChordsInfo
-          title="Song A"
-          artist="Artist A"
-          performanceMode={true}
-          showSongInfo={true}
-          setShowSongInfo={noop}
-          originalKey="C"
-          targetKey="C"
-          transpose={2}
-          setTranspose={noop}
-          tempo="120"
-          timeSignature="4/4"
-        />
-      );
-    });
-
-    expect(container.textContent).toContain('D');
-    expect(container.textContent).not.toContain('Key:');
-  });
-
-  test('Given performance mode is active, Then song info uses icon chips and key transpose controls are available', async () => {
-    const setTranspose = vi.fn();
-
-    await act(async () => {
-      root.render(
-        <SongChordsInfo
-          title="Song A"
-          artist="Artist A"
-          performanceMode={true}
-          showSongInfo={true}
-          setShowSongInfo={noop}
-          originalKey="C"
-          targetKey="C"
-          transpose={0}
-          setTranspose={setTranspose}
-          tempo="120"
-          timeSignature="4/4"
-          genre="Rock"
-        />
-      );
-    });
-
-    expect(container.querySelector('.transpose-key-control-compact')).toBeTruthy();
-    const upButton = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'Transpose up');
-    expect(upButton).toBeTruthy();
-    expect(container.textContent).not.toContain('Key:');
-
-    await act(async () => {
-      upButton.click();
-    });
-
-    expect(setTranspose).toHaveBeenCalledWith(1);
-  });
-
-  test('Given performance mode is active, Then original song key is also displayed', async () => {
-    await act(async () => {
-      root.render(
-        <SongChordsInfo
-          title="Song A"
-          artist="Artist A"
-          performanceMode={true}
-          showSongInfo={true}
-          setShowSongInfo={noop}
-          originalKey="C"
-          targetKey="D"
-          transpose={2}
-          setTranspose={noop}
-          tempo="120"
-          timeSignature="4/4"
-        />
-      );
-    });
-
-    expect(container.textContent).toContain('D');
-    expect(container.textContent).toContain('C');
-    expect(container.textContent).not.toContain('Key:');
-  });
-
-  test('Given performance mode is active with piano recommendation, Then key easy button is visible in song info', async () => {
-    const onApplyRecommendedTranspose = vi.fn();
-
-    await act(async () => {
-      root.render(
-        <SongChordsInfo
-          title="Song A"
-          artist="Artist A"
-          contributor="Contributor"
-          performanceMode={true}
-          canEdit={true}
-          onEdit={noop}
-          onShare={noop}
-          shareMessage="Shared"
-          showSongInfo={true}
-          setShowSongInfo={noop}
-          pianoRecommendation={{ recommendedKey: 'C', transposeFromCurrent: 2 }}
-          onApplyRecommendedTranspose={onApplyRecommendedTranspose}
-        />
-      );
-    });
-
-    expect(container.querySelector('.song-title-artist-block .song-info-inline-strip')).toBeTruthy();
-    expect(container.textContent).toContain('Key Mudah');
-    expect(container.textContent).toContain('+2');
-
-    const keyButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent?.trim() === 'C');
-    expect(keyButton).toBeTruthy();
-    await act(async () => {
-      keyButton.click();
-    });
-
-    expect(onApplyRecommendedTranspose).toHaveBeenCalledWith(2);
-  });
-
-  test('Given performance mode is active, Then toolbar keeps only essential controls', async () => {
-    const onPlayYouTube = vi.fn();
-
-    await act(async () => {
-      root.render(
-        <SongChordsLyricsToolbar
-          isEditingLyrics={false}
-          performanceMode={true}
-          canEdit={true}
-          tempo={120}
-          timeSignature={'4/4'}
-          autoScrollActive={false}
-          scrollSpeed={120}
-          setAutoScrollActive={noop}
-          setScrollSpeed={noop}
-          lyricsDisplayRef={{ current: null }}
-          currentBeat={0}
-          setCurrentBeat={noop}
-          transpose={0}
-          setTranspose={noop}
-          zoom={1}
-          setZoom={noop}
-          showChordNumbers={false}
-          setShowChordNumbers={noop}
-          showJazzChords={false}
-          setShowJazzChords={noop}
-          showSimpleChords={false}
-          setShowSimpleChords={noop}
-          keySignature={'C'}
-          handleEditLyrics={noop}
-          savingLyrics={false}
-          handleSaveLyrics={noop}
-          handleAlignSelectedBarlines={noop}
-          handleWrap4BarsPerLine={noop}
-          barsPerLine={4}
-          setBarsPerLine={noop}
-          handleWrapBarsPerLine={noop}
-          handleCancelEditLyrics={noop}
-          onOpenPiano={noop}
-          insertNotesToLyrics={true}
-          setInsertNotesToLyrics={noop}
-          insertNoteFormat={'bracket'}
-          setInsertNoteFormat={noop}
-          insertTrailingSpace={true}
-          setInsertTrailingSpace={noop}
-          showExportMenu={false}
-          setShowExportMenu={noop}
-          handleExportText={noop}
-          handleExportPDF={noop}
-          youtubeId={'dQw4w9WgXcQ'}
-          youtubeRef={{ current: null }}
-          onPlayYouTube={onPlayYouTube}
-          onRestartYouTube={noop}
-        />
-      );
-    });
-
-    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.title === 'Edit Lirik')).toBe(false);
-    expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
-    expect(container.querySelector('.song-lyrics-transpose-controls-compact')).toBeFalsy();
-    expect(container.querySelector('.song-lyrics-toolbar-group-tempo-led-compact')).toBeTruthy();
-    expect(container.querySelector('.song-lyrics-chord-style-menu-container')).toBeFalsy();
-    expect(Array.from(container.querySelectorAll('button')).some((btn) => btn.textContent?.includes('Full screen'))).toBe(true);
-    expect(container.querySelector('.auto-scroll-bar-compact')).toBeTruthy();
-    expect(container.querySelector('.auto-scroll-tempo-slider')).toBeFalsy();
-    expect(container.querySelector('.auto-scroll-menu-toggle')).toBeFalsy();
-    expect(container.querySelector('.auto-scroll-beats-minimal')).toBeFalsy();
-
-    const playButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.title === 'Play YouTube');
-    expect(playButton).toBeTruthy();
-    await act(async () => {
-      playButton.click();
-    });
-    expect(onPlayYouTube).toHaveBeenCalled();
-  });
-
-  test('Given performance mode is active, Then the lyrics and chord collapse button is hidden', async () => {
-    await act(async () => {
-      root.render(
-        <SongLyricsMainSection
-          isEditingLyrics={false}
-          lyricsDisplayRef={{ current: null }}
-          editedLyrics={'[C]Hello'}
-          setEditedLyrics={noop}
-          editError={null}
-          handleEditLyrics={noop}
-          savingLyrics={false}
-          handleSaveLyrics={noop}
-          handleAlignSelectedBarlines={noop}
-          handleWrap4BarsPerLine={noop}
-          barsPerLine={4}
-          setBarsPerLine={noop}
-          handleWrapBarsPerLine={noop}
-          handleCancelEditLyrics={noop}
-          onOpenPiano={noop}
-          insertNotesToLyrics={false}
-          setInsertNotesToLyrics={noop}
-          insertNoteFormat={'bracket'}
-          setInsertNoteFormat={noop}
-          insertTrailingSpace={false}
-          setInsertTrailingSpace={noop}
-          insertNumberKeySignature={'C'}
-          showExportMenu={false}
-          setShowExportMenu={noop}
-          handleExportText={noop}
-          handleExportPDF={noop}
-          tempo={120}
-          timeSignature={'4/4'}
-          autoScrollActive={false}
-          scrollSpeed={120}
-          setAutoScrollActive={noop}
-          setScrollSpeed={noop}
-          currentBeat={0}
-          setCurrentBeat={noop}
-          zoom={1}
-          setZoom={noop}
-          performanceMode={true}
-          canEdit={true}
-          song={{ lyrics: '[C]Hello' }}
-          transpose={0}
-          setTranspose={noop}
-          showChordNumbers={false}
-          setShowChordNumbers={noop}
-          showJazzChords={false}
-          setShowJazzChords={noop}
-          showSimpleChords={false}
-          setShowSimpleChords={noop}
-          keySignature={'C'}
-          showSheetMusic={false}
-          setShowSheetMusic={noop}
-          youtubeRef={{ current: null }}
-          youtubeId={null}
-          loading={false}
-        />
-      );
-    });
-
-    expect(container.querySelector('.expand-button')).toBeFalsy();
-  });
-
-  test('Given performance mode is active in player view, Then transpose and sheet music controls are hidden', async () => {
-    await act(async () => {
-      root.render(
-        <SongChordsLyricsDisplay
-          isEditingLyrics={false}
-          lyricsDisplayRef={{ current: null }}
-          editedLyrics={''}
-          setEditedLyrics={noop}
-          song={{ lyrics: '[C]Hello', tempo: '120', sheetMusicXml: '<xml />' }}
-          performanceMode={true}
-          transpose={0}
-          setTranspose={noop}
-          showChords={true}
-          zoom={1}
-          setZoom={noop}
-          showChordNumbers={false}
-          showJazzChords={false}
-          showSimpleChords={false}
-          keySignature={'C'}
-          autoScrollActive={false}
-          scrollSpeed={120}
-          setAutoScrollActive={noop}
-          setScrollSpeed={noop}
-          showSheetMusic={true}
-          setShowSheetMusic={noop}
-          youtubeRef={{ current: null }}
-          youtubeId={null}
-        />
-      );
-    });
-
-    expect(container.querySelector('.song-lyrics-fullscreen-control-row[aria-label="Transpose"]')).toBeFalsy();
-    expect(Array.from(container.querySelectorAll('button')).some((button) => button.textContent?.includes('Lihat Partitur'))).toBe(false);
   });
 
   test('Given transpose is changed manually, Then it stays applied instead of being overridden by the target key', async () => {
@@ -1078,113 +718,8 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('5');
   });
 
-  test('Given performance mode is active, Then the MIDI ready badge is hidden', async () => {
-    await act(async () => {
-      root.render(
-        <SongMidiProgramPanel
-          performanceMode={true}
-          isSupported={true}
-          isAccessGranted={true}
-          outputs={[]}
-          selectedOutputId=""
-          setSelectedOutputId={noop}
-          isEnabled={false}
-          setIsEnabled={noop}
-          requestAccess={noop}
-          cueCount={0}
-          autoCueLabel=""
-          lastMessage="MIDI siap"
-        />
-      );
-    });
-
-    expect(container.querySelector('.song-midi-support-badge')).toBeFalsy();
-  });
-
-  test('Given performance mode is active, Then the MIDI panel uses the compact performance layout class', async () => {
-    await act(async () => {
-      root.render(
-        <SongMidiProgramPanel
-          performanceMode={true}
-          isSupported={true}
-          isAccessGranted={true}
-          outputs={[]}
-          selectedOutputId=""
-          setSelectedOutputId={noop}
-          isEnabled={false}
-          setIsEnabled={noop}
-          requestAccess={noop}
-          cueCount={2}
-          autoCueLabel="Lead"
-          lastMessage="MIDI siap"
-        />
-      );
-    });
-
-    expect(container.querySelector('.song-midi-panel--performance')).toBeTruthy();
-  });
-
-  test('Given performance mode is active, Then the YouTube media panel stays mounted but hidden', async () => {
-    await act(async () => {
-      root.render(
-        <MemoryRouter initialEntries={['/songs/view/1']}>
-          <Routes>
-            <Route path="/songs/view/:id" element={<SongChordsPage performanceMode={true} />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
-
-    expect(container.querySelector('.song-media-panel-hidden')).toBeTruthy();
-  });
-
-  test('Given performance mode is active and a song has a YouTube video, Then the mini player stays hidden until the play control is clicked', async () => {
-    await act(async () => {
-      root.render(
-        <MemoryRouter initialEntries={['/songs/view/1']}>
-          <Routes>
-            <Route path="/songs/view/:id" element={<SongChordsPage performanceMode={true} />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
-
-    expect(container.querySelector('[data-testid="floating-youtube-player"]')).toBeNull();
-
-    const playButton = Array.from(container.querySelectorAll('button')).find((button) =>
-      button.title === 'Play YouTube'
-    );
-
-    expect(playButton).toBeTruthy();
-
-    await act(async () => {
-      playButton.click();
-    });
-
-    expect(container.querySelector('[data-testid="floating-youtube-player"]')).toBeTruthy();
-  });
-
-  
-
-  test('Given performance mode is active in a setlist view, Then setlist navigator uses compact buttons', async () => {
-    await act(async () => {
-      root.render(
-        <MemoryRouter initialEntries={['/setlists/10/songs/1']}>
-          <Routes>
-            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
-
-    const navigator = container.querySelector('[data-testid="setlist-navigator"]');
-    expect(navigator).toBeTruthy();
-    expect(navigator.textContent).toContain('compact');
-    expect(navigator.textContent).toContain('has-open-setlist');
-  });
-
   test('Given lyrics are saved from a setlist route, Then the app remains on the setlist song route', async () => {
-    let currentLocation; 
+    let currentLocation;
     function LocationProbe() {
       currentLocation = useLocation();
       return null;
@@ -1264,7 +799,7 @@ describe('Song lyrics shared editor rendering', () => {
           state: { setlistId: 10, setlist: { id: 10, songs: [{ id: '1' }, { id: '2' }] } },
         }]}>
           <Routes>
-            <Route path="/songs/view/:id" element={<SongChordsPage performanceMode={false} />} />
+            <Route path="/songs/view/:id" element={<SongChordsPage />} />
           </Routes>
         </MemoryRouter>
       );
@@ -1273,7 +808,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('[data-testid="setlist-navigator"]')).toBeNull();
   });
 
-  test('Given performance mode opens a song from a setlist, Then chords follow the setlist key', async () => {
+  test('Given a song is opened from a setlist, Then keyboard key recommendation uses the original song key', async () => {
     await act(async () => {
       root.render(
         <MemoryRouter initialEntries={[{
@@ -1281,26 +816,7 @@ describe('Song lyrics shared editor rendering', () => {
           state: { setlistSong: { key: 'D' } },
         }]}>
           <Routes>
-            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
-
-    expect(container.querySelector('.cd-chord')?.textContent).toBe('D A G');
-    expect(container.textContent).toContain('D');
-    expect(container.textContent).not.toContain('Key:');
-  });
-
-  test('Given a setlist key override, Then keyboard key recommendation is relative to that override', async () => {
-    await act(async () => {
-      root.render(
-        <MemoryRouter initialEntries={[{
-          pathname: '/setlists/10/songs/1',
-          state: { setlistSong: { key: 'D' } },
-        }]}>
-          <Routes>
-            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={true} />} />
+            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage />} />
           </Routes>
         </MemoryRouter>
       );
@@ -1311,35 +827,7 @@ describe('Song lyrics shared editor rendering', () => {
     );
     expect(keyEasyButton).toBeTruthy();
     expect(container.textContent).toContain('Key Mudah');
-    expect(container.textContent).toContain('-2');
-
-    await act(async () => {
-      keyEasyButton.click();
-    });
-
-    expect(container.querySelector('.cd-chord')?.textContent).toBe('C G F');
-  });
-
-  test('Given normal mode opens a song from a setlist, Then keyboard key recommendation uses the original song key', async () => {
-    await act(async () => {
-      root.render(
-        <MemoryRouter initialEntries={[{
-          pathname: '/setlists/10/songs/1',
-          state: { setlistSong: { key: 'D' } },
-        }]}>
-          <Routes>
-            <Route path="/setlists/:setlistId/songs/:id" element={<SongChordsPage performanceMode={false} />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
-
-    const keyEasyButton = Array.from(container.querySelectorAll('button')).find((button) =>
-      button.textContent?.trim() === 'C'
-    );
-    expect(keyEasyButton).toBeTruthy();
-    expect(container.textContent).toContain('Key Mudah');
-    expect(container.textContent).toContain('-2 semitone');
+    expect(container.textContent).toContain('+5 semitone');
 
     await act(async () => {
       keyEasyButton.click();

@@ -13,7 +13,6 @@ export default function SongChordsMediaPanel({
   youtubeId,
   youtubeRef,
   timeMarkers,
-  performanceMode,
   canEdit,
   handleTimeMarkerUpdate,
 }) {
@@ -69,7 +68,7 @@ export default function SongChordsMediaPanel({
                 timeMarkers={timeMarkers}
                 currentTime={ytCurrentTime}
                 duration={ytDuration}
-                readonly={performanceMode || !canEdit}
+                readonly={!canEdit}
                 compactUI={true}
                 onUpdate={handleTimeMarkerUpdate}
                 onSeek={(time, opts) => {

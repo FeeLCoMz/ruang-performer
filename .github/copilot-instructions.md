@@ -189,21 +189,6 @@ src/
 ---
 
 
-## Copilot Performance Mode Toggle Policy (ADDITIONAL)
-
-**ALWAYS** dukung dan propagasikan prop `performanceMode` untuk setiap halaman atau komponen yang menerima/menggunakan mode ini dari App.jsx.
-
-- Jika user meminta fitur, perubahan, atau logika terkait "performance mode":
-  - Pastikan prop `performanceMode` diteruskan dari App.jsx ke halaman/komponen terkait (misal: SetlistSongsPage, SetlistPage, dsb).
-  - Terapkan conditional rendering pada UI: sembunyikan tombol edit/tambah, filter, dan fitur non-esensial saat `performanceMode` aktif.
-  - Tambahkan className khusus (misal: `performance-mode`) pada root container untuk styling mode ini.
-  - Jangan ubah logika permission, hanya UI/UX yang disederhanakan.
-  - Pastikan toggle performance mode tetap bisa diakses dari App.jsx (sidebar/topbar).
-
-**JANGAN** menambah/mengubah fitur performance mode tanpa meneruskan prop dan menyesuaikan tampilan sesuai standar di atas.
-
----
-
 ## Copilot Chord Handling Policy (ADDITIONAL)
 
 **ALWAYS** gunakan helper/fungsi dari `chordUtils.js` terlebih dahulu untuk setiap permintaan, fitur, atau logika yang berhubungan dengan chord, transposisi, parsing chord, atau notasi musik.
