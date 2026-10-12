@@ -269,6 +269,64 @@ export default function SongChordsLyricsDisplay({
         ? 'Simple'
         : 'Default';
 
+  // Autoscroll: menggeser konten lirik secara bertahap mengikuti tempo.
+  // Kecepatan (BPM) x ketukan per bar -> tinggi baris terukur = piksel/detik.
+  useEffect(() => {
+    const container = lyricsDisplayRef?.current;
+    if (!autoScrollActive || !container) return undefined;
+
+    let rafId = null;
+    let lastTs = null;
+    let accumulator = 0;
+    let lineStep = 0;
+
+    const measureLineStep = () => {
+      const lineEl = container.querySelector('.cd-chord, .cd-number, .cd-lyrics-line');
+      if (!lineEl) return 0;
+      const rect = lineEl.getBoundingClientRect();
+      const style = window.getComputedStyle(lineEl);
+      const lineHeight = parseFloat(style.lineHeight)
+        || parseFloat(style.fontSize) * 1.6
+        || rect.height
+        || 24;
+      return Math.max(8, Math.round(lineHeight));
+    };
+
+    lineStep = measureLineStep() || 24;
+
+    const tick = (ts) => {
+      if (lastTs === null) lastTs = ts;
+      const deltaMs = ts - lastTs;
+      lastTs = ts;
+
+      // Piksel per detik: satu baris per bar (beatsPerBar ketukan).
+      const beatsPerSecond = normalizedScrollSpeed / 60;
+      const pixelsPerSecond = (beatsPerSecond / beatsPerBar) * lineStep;
+      accumulator += (pixelsPerSecond * deltaMs) / 1000;
+
+      if (accumulator >= 1) {
+        const wholePixels = Math.floor(accumulator);
+        accumulator -= wholePixels;
+        const maxScroll = container.scrollHeight - container.clientHeight;
+        if (maxScroll > 0) {
+          if (container.scrollTop >= maxScroll - 1) {
+            setAutoScrollActive(false);
+            return;
+          }
+          container.scrollTop = Math.min(maxScroll, container.scrollTop + wholePixels);
+        }
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+  }, [autoScrollActive, normalizedScrollSpeed, beatsPerBar, lyricsDisplayRef, setAutoScrollActive, song?.id, showChords, showChordNumbers, showJazzChords, showSimpleChords, zoom]);
+
+  // Indikator ketukan visual saat autoscroll nonaktif.
   useEffect(() => {
     if (autoScrollActive) return undefined;
     const intervalDuration = Math.max(120, Math.round(60000 / normalizedBpm));
@@ -278,14 +336,6 @@ export default function SongChordsLyricsDisplay({
 
     return () => clearInterval(intervalId);
   }, [autoScrollActive, normalizedBpm, beatsPerBar]);
-
-  useEffect(() => {
-    if (!autoScrollActive) return;
-    const safeBeat = Number.isFinite(Number(currentBeat))
-      ? ((Number(currentBeat) % beatsPerBar) + beatsPerBar) % beatsPerBar
-      : 0;
-    setVisualBeat(safeBeat);
-  }, [autoScrollActive, currentBeat, beatsPerBar]);
 
   const activeVisualBeat = autoScrollActive
     ? (Number.isFinite(Number(currentBeat))

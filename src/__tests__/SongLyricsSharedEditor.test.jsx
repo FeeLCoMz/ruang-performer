@@ -375,8 +375,11 @@ describe('Song lyrics shared editor rendering', () => {
 
     const labels = Array.from(container.querySelectorAll('button')).map((b) => (b.textContent || '').trim()).join(' ');
     expect(labels).toContain('Autoscroll');
-    expect(labels).toContain('Angka');
-    expect(labels).toContain('Style');
+    // Satu tombol mode chord: label menampilkan mode aktif.
+    expect(labels).toContain('Chord');
+    expect(labels).not.toContain('Angka');
+    expect(labels).not.toContain('Style');
+    expect(container.querySelector('.song-lyrics-chord-style-badge')).toBeFalsy();
     // Removed controls must not come back.
     expect(labels).not.toContain('Edit Lirik');
     expect(labels).not.toContain('Full screen');
@@ -384,6 +387,49 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
     expect(container.querySelector('.song-lyrics-tempo-minimal')).toBeFalsy();
     expect(container.querySelector('.song-lyrics-export-menu-container')).toBeFalsy();
+  });
+
+  test('Given the chord mode button, When a mode is picked, Then the label and handler reflect it', async () => {
+    const setShowChordNumbers = vi.fn();
+    const setShowJazzChords = vi.fn();
+    const setShowSimpleChords = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <SongChordsLyricsToolbar
+          autoScrollActive={false}
+          setAutoScrollActive={noop}
+          showChordNumbers={false}
+          setShowChordNumbers={setShowChordNumbers}
+          showJazzChords={false}
+          setShowJazzChords={setShowJazzChords}
+          showSimpleChords={false}
+          setShowSimpleChords={setShowSimpleChords}
+          youtubeId={null}
+          youtubeRef={{ current: null }}
+        />
+      );
+    });
+
+    const modeButton = container.querySelector('.song-lyrics-toolbar-group-chords button');
+    expect(modeButton).toBeTruthy();
+    expect(modeButton.textContent).toContain('Chord');
+
+    await act(async () => {
+      modeButton.click();
+    });
+
+    const angkaItem = Array.from(container.querySelectorAll('.song-lyrics-chord-style-item'))
+      .find((b) => b.textContent.trim() === 'Angka');
+    expect(angkaItem).toBeTruthy();
+
+    await act(async () => {
+      angkaItem.click();
+    });
+
+    expect(setShowChordNumbers).toHaveBeenCalledWith(true);
+    expect(setShowJazzChords).toHaveBeenCalledWith(false);
+    expect(setShowSimpleChords).toHaveBeenCalledWith(false);
   });
 
   test('Given detected instruments are present, Then a copy button is visible for registration memory', async () => {

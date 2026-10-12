@@ -1045,40 +1045,10 @@ body.dark-mode .song-mood-badge.mood-peak {
   gap: var(--spacing-xs);
 }
 
-.song-lyrics-chord-style-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: var(--secondary-bg);
-  color: var(--text-secondary);
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.song-lyrics-chord-style-badge.mode-default {
-  border-color: color-mix(in srgb, var(--border-color) 80%, transparent);
-  background: color-mix(in srgb, var(--secondary-bg) 80%, transparent);
-}
-
-.song-lyrics-chord-style-badge.mode-jazz {
-  border-color: rgba(59, 130, 246, 0.55);
-  background: rgba(59, 130, 246, 0.14);
-  color: #1d4ed8;
-}
-
-.song-lyrics-chord-style-badge.mode-simple {
-  border-color: rgba(16, 185, 129, 0.55);
-  background: rgba(16, 185, 129, 0.14);
-  color: #047857;
-}
-
-.song-lyrics-chord-style-badge.mode-number {
-  border-color: rgba(245, 158, 11, 0.6);
-  background: rgba(245, 158, 11, 0.16);
-  color: #b45309;
+.song-lyrics-toolbar-btn-caret {
+  font-size: 0.7em;
+  opacity: 0.75;
+  margin-left: 2px;
 }
 
 .song-lyrics-chord-style-menu {
@@ -11966,36 +11936,6 @@ body.dark-mode .song-lyrics-error {
   color: #b45309;
 }
 
-body.dark-mode .song-lyrics-chord-style-badge {
-  border-color: rgba(148, 163, 184, 0.45);
-  background: rgba(15, 23, 42, 0.7);
-  color: #e2e8f0;
-}
-
-body.dark-mode .song-lyrics-chord-style-badge.mode-default {
-  border-color: rgba(148, 163, 184, 0.55);
-  background: rgba(30, 41, 59, 0.75);
-  color: #e2e8f0;
-}
-
-body.dark-mode .song-lyrics-chord-style-badge.mode-jazz {
-  border-color: rgba(96, 165, 250, 0.8);
-  background: rgba(30, 64, 175, 0.35);
-  color: #bfdbfe;
-}
-
-body.dark-mode .song-lyrics-chord-style-badge.mode-simple {
-  border-color: rgba(52, 211, 153, 0.82);
-  background: rgba(4, 120, 87, 0.34);
-  color: #a7f3d0;
-}
-
-body.dark-mode .song-lyrics-chord-style-badge.mode-number {
-  border-color: rgba(251, 191, 36, 0.82);
-  background: rgba(180, 83, 9, 0.32);
-  color: #fde68a;
-}
-
 body.dark-mode .song-lyrics-fullscreen-style-badge {
   border-color: rgba(148, 163, 184, 0.5);
   background: rgba(15, 23, 42, 0.72);
@@ -12643,10 +12583,6 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
 
   .song-lyrics-toolbar-group-chords {
     justify-content: flex-start;
-  }
-
-  .song-lyrics-chord-style-badge {
-    display: none;
   }
 
   .song-lyrics-zoom-controls {

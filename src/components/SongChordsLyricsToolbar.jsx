@@ -23,8 +23,21 @@ export default function SongChordsLyricsToolbar({
   const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
   const [isYoutubeReady, setIsYoutubeReady] = useState(false);
   const chordStyleMenuRef = useRef(null);
-  const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
-  const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
+  // Satu mode chord aktif: 'default' | 'number' | 'jazz' | 'simple'
+  const currentChordMode = showChordNumbers
+    ? 'number'
+    : showJazzChords
+      ? 'jazz'
+      : showSimpleChords
+        ? 'simple'
+        : 'default';
+  const CHORD_MODE_LABELS = {
+    default: 'Chord',
+    number: 'Angka',
+    jazz: 'Jazz',
+    simple: 'Simple',
+  };
+  const currentChordModeLabel = CHORD_MODE_LABELS[currentChordMode];
   const toolbarClassName = 'song-lyrics-toolbar song-lyrics-toolbar--normal';
 
   // Sync YouTube playing state
@@ -65,10 +78,10 @@ export default function SongChordsLyricsToolbar({
     };
   }, [showChordStyleMenu]);
 
-  const applyChordStyle = (style) => {
-    setShowChordNumbers(false);
-    setShowJazzChords(style === 'jazz');
-    setShowSimpleChords(style === 'simple');
+  const applyChordMode = (mode) => {
+    setShowChordNumbers(mode === 'number');
+    setShowJazzChords(mode === 'jazz');
+    setShowSimpleChords(mode === 'simple');
     setShowChordStyleMenu(false);
   };
 
@@ -130,73 +143,61 @@ export default function SongChordsLyricsToolbar({
       </div>
 
       <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">
-        <button
-          type="button"
-          className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
-          title={showChordNumbers ? 'Chord (angka) - aktif' : 'Toggle angka chord'}
-          onClick={() => {
-            setShowChordNumbers((prev) => {
-              const next = !prev;
-              if (next) {
-                setShowJazzChords(false);
-                setShowSimpleChords(false);
-              }
-              return next;
-            });
-          }}
-        >
-          <span aria-hidden="true">🔢</span>
-          <span className="song-lyrics-toolbar-btn-label">Angka</span>
-        </button>
-
-            <div className="song-lyrics-chord-style-menu-container" ref={chordStyleMenuRef}>
+        <div className="song-lyrics-chord-style-menu-container" ref={chordStyleMenuRef}>
+          <button
+            type="button"
+            className={`btn ${currentChordMode === 'default' ? 'btn-secondary' : 'btn-primary'} song-lyrics-toolbar-btn`}
+            title={`Tampilan chord: ${currentChordModeLabel} (klik untuk ganti)`}
+            onClick={() => setShowChordStyleMenu((prev) => !prev)}
+            aria-haspopup="menu"
+            aria-expanded={showChordStyleMenu}
+          >
+            <span aria-hidden="true">🎼</span>
+            <span className="song-lyrics-toolbar-btn-label">{currentChordModeLabel}</span>
+            <span className="song-lyrics-toolbar-btn-caret" aria-hidden="true">▾</span>
+          </button>
+          {showChordStyleMenu && (
+            <div className="song-lyrics-chord-style-menu" role="menu" aria-label="Pilih tampilan chord">
               <button
-                className={`btn ${showJazzChords || showSimpleChords ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
-                title={`Style chord: ${currentChordStyleLabel}`}
-                onClick={() => setShowChordStyleMenu((prev) => !prev)}
                 type="button"
-                aria-haspopup="menu"
-                aria-expanded={showChordStyleMenu}
+                className={`song-lyrics-chord-style-item${currentChordMode === 'default' ? ' active' : ''}`}
+                onClick={() => applyChordMode('default')}
+                role="menuitemradio"
+                aria-checked={currentChordMode === 'default'}
               >
-                <span aria-hidden="true">🎼</span>
-                <span className="song-lyrics-toolbar-btn-label">Style</span>
+                Chord
               </button>
-              <span
-                className={`song-lyrics-chord-style-badge mode-${currentChordStyleKey}`}
-                title={`Style chord aktif: ${currentChordStyleLabel}`}
+              <button
+                type="button"
+                className={`song-lyrics-chord-style-item${currentChordMode === 'number' ? ' active' : ''}`}
+                onClick={() => applyChordMode('number')}
+                role="menuitemradio"
+                aria-checked={currentChordMode === 'number'}
               >
-                Style: {currentChordStyleLabel}
-              </span>
-              {showChordStyleMenu && (
-                <div className="song-lyrics-chord-style-menu" role="menu" aria-label="Pilih style chord">
-                  <button
-                    type="button"
-                    className={`song-lyrics-chord-style-item${!showJazzChords && !showSimpleChords ? ' active' : ''}`}
-                    onClick={() => applyChordStyle('default')}
-                    role="menuitem"
-                  >
-                    Default
-                  </button>
-                  <button
-                    type="button"
-                    className={`song-lyrics-chord-style-item${showJazzChords ? ' active' : ''}`}
-                    onClick={() => applyChordStyle('jazz')}
-                    role="menuitem"
-                  >
-                    Jazz
-                  </button>
-                  <button
-                    type="button"
-                    className={`song-lyrics-chord-style-item${showSimpleChords ? ' active' : ''}`}
-                    onClick={() => applyChordStyle('simple')}
-                    role="menuitem"
-                  >
-                    Simple
-                  </button>
-                </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
+                Angka
+              </button>
+              <button
+                type="button"
+                className={`song-lyrics-chord-style-item${currentChordMode === 'jazz' ? ' active' : ''}`}
+                onClick={() => applyChordMode('jazz')}
+                role="menuitemradio"
+                aria-checked={currentChordMode === 'jazz'}
+              >
+                Jazz
+              </button>
+              <button
+                type="button"
+                className={`song-lyrics-chord-style-item${currentChordMode === 'simple' ? ' active' : ''}`}
+                onClick={() => applyChordMode('simple')}
+                role="menuitemradio"
+                aria-checked={currentChordMode === 'simple'}
+              >
+                Simple
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
