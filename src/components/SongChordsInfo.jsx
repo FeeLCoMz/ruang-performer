@@ -1,6 +1,7 @@
 import React from "react";
 import TransposeKeyControl from "./TransposeKeyControl.jsx";
 import TempoControl from "./TempoControl.jsx";
+import SongChordsExportMenu from "./SongChordsExportMenu.jsx";
 import { transposeChord } from "../utils/chordUtils.js";
 
 /**
@@ -40,6 +41,10 @@ export default function SongChordsInfo({
   masteryUpdating = false,
   pianoRecommendation = null,
   onApplyRecommendedTranspose,
+  showExportMenu = false,
+  setShowExportMenu,
+  handleExportText,
+  handleExportPDF,
 }) {
   const masteredNames = (Array.isArray(masteredBy) ? masteredBy : [])
     .map((entry) => entry?.username)
@@ -147,6 +152,25 @@ export default function SongChordsInfo({
                 <span aria-hidden="true">✎</span>
               </button>
             )}
+            <div className="song-info-export-wrap">
+              <button
+                type="button"
+                className="btn btn-secondary song-detail-action-btn"
+                title="Export"
+                aria-label="Export lagu"
+                aria-haspopup="menu"
+                aria-expanded={showExportMenu}
+                onClick={() => setShowExportMenu?.(!showExportMenu)}
+              >
+                <span aria-hidden="true">📥</span>
+              </button>
+              <SongChordsExportMenu
+                showExportMenu={showExportMenu}
+                setShowExportMenu={setShowExportMenu}
+                handleExportText={handleExportText}
+                handleExportPDF={handleExportPDF}
+              />
+            </div>
             <button
               type="button"
               onClick={onShare}

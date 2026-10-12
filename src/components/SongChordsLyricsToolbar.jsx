@@ -1,68 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
-import SongChordsExportMenu from "./SongChordsExportMenu.jsx";
-import TransposeKeyControl from "./TransposeKeyControl.jsx";
 
 /**
  * SongChordsLyricsToolbar
- * Toolbar untuk kontrol lirik/chord: autoscroll, fullscreen, zoom, edit, export.
- * Props:
- *   - isEditingLyrics
- *   - canEdit
- *   - tempo
- *   - autoScrollActive
- *   - scrollSpeed
- *   - setAutoScrollActive
- *   - setScrollSpeed
- *   - lyricsDisplayRef
- *   - currentBeat
- *   - setCurrentBeat
- *   - zoom
- *   - setZoom
- *   - handleEditLyrics
- *   - savingLyrics
- *   - handleSaveLyrics
- *   - handleCancelEditLyrics
- *   - showExportMenu
- *   - setShowExportMenu
- *   - handleExportText
- *   - handleExportPDF
+ * Toolbar untuk panel lirik/chord: kontrol chord (angka & style),
+ * pemutaran YouTube, dan autoscroll.
+ *
+ * Catatan: kontrol edit lirik, transpose, tempo, dan fullscreen sudah dihapus.
  */
 export default function SongChordsLyricsToolbar({
-  isEditingLyrics,
-  canEdit,
-  tempo,
   autoScrollActive,
-  scrollSpeed,
   setAutoScrollActive,
-  setScrollSpeed,
-  transpose,
-  setTranspose,
-  originalKey = '',
-  targetKey = '',
-  zoom,
-  setZoom,
   showChordNumbers,
   setShowChordNumbers,
   showJazzChords,
   setShowJazzChords,
   showSimpleChords,
   setShowSimpleChords,
-  keySignature,
-  handleEditLyrics,
-  savingLyrics,
-  handleSaveLyrics,
-  handleAlignSelectedBarlines,
-  handleWrap4BarsPerLine,
-  barsPerLine,
-  setBarsPerLine,
-  handleWrapBarsPerLine,
-  handleCancelEditLyrics,
-  onOpenPiano,
-  insertNotesToLyrics,
-  showExportMenu,
-  setShowExportMenu,
-  handleExportText,
-  handleExportPDF,
   youtubeId,
   youtubeRef,
 }) {
@@ -70,7 +23,6 @@ export default function SongChordsLyricsToolbar({
   const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
   const [isYoutubeReady, setIsYoutubeReady] = useState(false);
   const chordStyleMenuRef = useRef(null);
-  const normalizedTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
   const currentChordStyleLabel = showJazzChords ? 'Jazz' : showSimpleChords ? 'Simple' : 'Default';
   const currentChordStyleKey = showJazzChords ? 'jazz' : showSimpleChords ? 'simple' : 'default';
   const toolbarClassName = 'song-lyrics-toolbar song-lyrics-toolbar--normal';
@@ -121,208 +73,81 @@ export default function SongChordsLyricsToolbar({
   };
 
   return (
-    <>
-      <div className={toolbarClassName}>
-        {!isEditingLyrics && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-actions">
-            {canEdit && (
-              <button
-                type="button"
-                onClick={handleEditLyrics}
-                className="btn btn-primary song-lyrics-toolbar-btn"
-                title="Edit Lirik"
-              >
-                <span aria-hidden="true">✏️</span>
-                <span className="song-lyrics-toolbar-btn-label">Edit Lirik</span>
-              </button>
-            )}
+    <div className={toolbarClassName}>
+      {youtubeId && youtubeRef && (
+        <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-view">
+          <button
+            type="button"
+            className="btn btn-secondary song-lyrics-youtube-btn song-lyrics-youtube-btn--normal"
+            title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
+            aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
+            onClick={() => {
+              if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
+                youtubeRef.current.handleTogglePlayPause();
+                setTimeout(() => {
+                  const state = youtubeRef.current?.getPlayerState?.();
+                  setIsYoutubePlaying(state === 1);
+                }, 100);
+              }
+            }}
+          >
+            <span aria-hidden="true">{isYoutubePlaying ? '⏸' : '▶'}</span>
+            <span className="song-lyrics-toolbar-btn-label">{isYoutubePlaying ? 'Pause' : 'Play'}</span>
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary song-lyrics-youtube-btn song-lyrics-youtube-btn--normal"
+            title="Putar dari awal"
+            aria-label="Putar dari awal"
+            onClick={() => {
+              if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
+                youtubeRef.current.handleSeek(0);
+                setTimeout(() => {
+                  const state = youtubeRef.current?.getPlayerState?.();
+                  setIsYoutubePlaying(state === 1);
+                }, 50);
+              }
+            }}
+          >
+            <span aria-hidden="true">↺</span>
+            <span className="song-lyrics-toolbar-btn-label">Restart</span>
+          </button>
+        </div>
+      )}
 
-            <div className="song-lyrics-export-menu-container">
-                <button
-                  type="button"
-                  onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="btn btn-secondary song-lyrics-toolbar-btn"
-                  title="Export"
-                >
-                  <span aria-hidden="true">📥</span>
-                  <span className="song-lyrics-toolbar-btn-label">Export</span>
-                </button>
-              <SongChordsExportMenu
-                showExportMenu={showExportMenu}
-                setShowExportMenu={setShowExportMenu}
-                handleExportText={handleExportText}
-                handleExportPDF={handleExportPDF}
-              />
-            </div>
-          </div>
-        )}
+      <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-autoscroll">
+        <button
+          type="button"
+          className={`btn song-lyrics-toolbar-btn ${autoScrollActive ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setAutoScrollActive(!autoScrollActive)}
+          title={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
+          aria-label={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
+          aria-pressed={autoScrollActive}
+        >
+          <span aria-hidden="true">↕</span>
+          <span className="song-lyrics-toolbar-btn-label">Autoscroll</span>
+        </button>
+      </div>
 
-        {!isEditingLyrics && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-view">
-            {youtubeId && youtubeRef && (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-secondary song-lyrics-youtube-btn song-lyrics-youtube-btn--normal"
-                  title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-                  aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-                  onClick={() => {
-                    if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
-                      youtubeRef.current.handleTogglePlayPause();
-                      setTimeout(() => {
-                        const state = youtubeRef.current?.getPlayerState?.();
-                        setIsYoutubePlaying(state === 1);
-                      }, 100);
-                    }
-                  }}
-                >
-                  <span aria-hidden="true">{isYoutubePlaying ? '⏸' : '▶'}</span>
-                  <span className="song-lyrics-toolbar-btn-label">{isYoutubePlaying ? 'Pause' : 'Play'}</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary song-lyrics-youtube-btn song-lyrics-youtube-btn--normal"
-                  title="Putar dari awal"
-                  aria-label="Putar dari awal"
-                  onClick={() => {
-                    if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
-                      youtubeRef.current.handleSeek(0);
-                      setTimeout(() => {
-                        const state = youtubeRef.current?.getPlayerState?.();
-                        setIsYoutubePlaying(state === 1);
-                      }, 50);
-                    }
-                  }}
-                >
-                  <span aria-hidden="true">↺</span>
-                  <span className="song-lyrics-toolbar-btn-label">Restart</span>
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
-        {!isEditingLyrics && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-fullscreen">
-            <button
-              type="button"
-              className="btn btn-primary song-lyrics-fullscreen-btn song-lyrics-toolbar-btn"
-              title="Tampilkan lirik layar penuh"
-              aria-label="Buka layar penuh"
-              onClick={() => {
-                const el = document.querySelector(".song-lyrics-display");
-                if (el && el.requestFullscreen) {
-                  el.requestFullscreen();
-                } else if (el && el.webkitRequestFullscreen) {
-                  el.webkitRequestFullscreen();
-                } else if (el && el.msRequestFullscreen) {
-                  el.msRequestFullscreen();
-                }
-              }}
-            >
-              <span aria-hidden="true">⛶</span>
-              <span className="song-lyrics-fullscreen-btn-label">Full screen</span>
-            </button>
-          </div>
-        )}
-
-        {!isEditingLyrics && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-autoscroll">
-            <div className="song-lyrics-tempo-minimal" title={`Tempo ${normalizedTempo} BPM`}>
-              <span
-                className="song-info-tempo-led"
-                style={{ animationDuration: `${Math.round(60000 / normalizedTempo)}ms` }}
-                aria-hidden="true"
-              />
-              <button
-                type="button"
-                className="btn btn-secondary song-lyrics-tempo-step-btn"
-                onClick={() => setScrollSpeed((prev) => Math.max(40, (Number(prev) || normalizedTempo) - 1))}
-                title="Tempo turun 1 BPM"
-                aria-label="Tempo turun 1 BPM"
-              >
-                −
-              </button>
-              <span className="song-lyrics-tempo-value" aria-live="polite">
-                {Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedTempo))}
-              </span>
-              <button
-                type="button"
-                className="btn btn-secondary song-lyrics-tempo-step-btn"
-                onClick={() => setScrollSpeed((prev) => Math.min(240, (Number(prev) || normalizedTempo) + 1))}
-                title="Tempo naik 1 BPM"
-                aria-label="Tempo naik 1 BPM"
-              >
-                +
-              </button>
-              <button
-                type="button"
-                className={`btn song-lyrics-tempo-as-btn ${autoScrollActive ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setAutoScrollActive(!autoScrollActive)}
-                title={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
-                aria-label={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
-              >
-                <span aria-hidden="true">↕</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {!isEditingLyrics && (
-          <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">
-            <div className="song-lyrics-transpose-controls" title="Transpose lirik/chord">
-              {(originalKey || targetKey) ? (
-                <TransposeKeyControl
-                  originalKey={originalKey || targetKey}
-                  targetKey={targetKey || originalKey}
-                  transpose={transpose}
-                  onTransposeChange={setTranspose}
-                  compact
-                />
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setTranspose((prev) => prev - 1)}
-                    title="Transpose turun 1 semitone"
-                    aria-label="Transpose turun"
-                  >
-                    −
-                  </button>
-                  <span className="song-lyrics-transpose-value" aria-live="polite">
-                    {transpose > 0 ? `+${transpose}` : transpose}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setTranspose((prev) => prev + 1)}
-                    title="Transpose naik 1 semitone"
-                    aria-label="Transpose naik"
-                  >
-                    +
-                  </button>
-                </>
-              )}
-            </div>
-
-            <button
-              className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
-              title={showChordNumbers ? 'Chord (angka) - aktif' : 'Toggle angka chord'}
-              onClick={() => {
-                setShowChordNumbers((prev) => {
-                  const next = !prev;
-                  if (next) {
-                    setShowJazzChords(false);
-                    setShowSimpleChords(false);
-                  }
-                  return next;
-                });
-              }}
-            >
-              <span aria-hidden="true">🔢</span>
-              <span className="song-lyrics-toolbar-btn-label">Angka</span>
-            </button>
+      <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">
+        <button
+          type="button"
+          className={`btn ${showChordNumbers ? 'btn-primary' : 'btn-secondary'} song-lyrics-toolbar-btn`}
+          title={showChordNumbers ? 'Chord (angka) - aktif' : 'Toggle angka chord'}
+          onClick={() => {
+            setShowChordNumbers((prev) => {
+              const next = !prev;
+              if (next) {
+                setShowJazzChords(false);
+                setShowSimpleChords(false);
+              }
+              return next;
+            });
+          }}
+        >
+          <span aria-hidden="true">🔢</span>
+          <span className="song-lyrics-toolbar-btn-label">Angka</span>
+        </button>
 
             <div className="song-lyrics-chord-style-menu-container" ref={chordStyleMenuRef}>
               <button
@@ -369,11 +194,9 @@ export default function SongChordsLyricsToolbar({
                     Simple
                   </button>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }

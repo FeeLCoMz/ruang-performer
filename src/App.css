@@ -101,9 +101,7 @@
 .song-artist-main .song-contributor-main {
   margin-top: 0;
   font-size: inherit;
-}
-
-@media (max-width: 600px){
+}@media (max-width: 600px){
   .song-title-main {
     font-size: 1.3rem;
   }
@@ -1038,10 +1036,6 @@ body.dark-mode .song-mood-badge.mood-peak {
 .song-lyrics-analyzer-modal-close:hover {
   border-color: var(--primary-accent);
   color: var(--primary-accent);
-}
-
-.song-lyrics-export-menu-container {
-  position: relative;
 }
 
 .song-lyrics-chord-style-menu-container {
@@ -10110,13 +10104,10 @@ body.dark-mode .cd-token {
   .song-info-value {
     font-size: var(--font-size-sm);
   }
-}
-
-@media (max-width: 480px){
+}@media (max-width: 480px){
   .song-info-item-wide {
     flex-basis: 100%;
-  }
-}
+  }}
 
 /* Responsive - Media Panel */
 @media (max-width: 1200px) {
@@ -10665,10 +10656,6 @@ body.dark-mode .cd-token {
   color: var(--text-primary);
 }
 
-.song-lyrics-mini-player-reopen {
-  margin-left: auto;
-}
-
 .song-lyrics-toolbar {
   display: flex;
   gap: var(--spacing-md);
@@ -10706,18 +10693,12 @@ body.dark-mode .cd-token {
   flex: 0 0 auto;
 }
 
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-actions .song-lyrics-toolbar-btn,
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-view .song-lyrics-youtube-btn--normal,
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-fullscreen .song-lyrics-fullscreen-btn {
+.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-view .song-lyrics-youtube-btn--normal {
   min-width: 112px;
 }
 
 .song-lyrics-toolbar--normal .btn {
   min-height: 36px;
-}
-
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-fullscreen {
-  margin-left: 0;
 }
 
 .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-view {
@@ -10736,10 +10717,6 @@ body.dark-mode .cd-token {
 .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-chords,
 .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-autoscroll {
   align-self: center;
-}
-
-.song-lyrics-toolbar--normal .song-lyrics-transpose-controls {
-  min-height: 36px;
 }
 
 .song-lyrics-toolbar--normal .song-lyrics-chord-style-menu-container {
@@ -10770,10 +10747,6 @@ body.dark-mode .cd-token {
   white-space: nowrap;
 }
 
-.song-lyrics-toolbar-group-actions {
-  order: 4;
-}
-
 .song-lyrics-toolbar-group-chords {
   order: 1;
 }
@@ -10789,34 +10762,6 @@ body.dark-mode .cd-token {
 
 .song-lyrics-toolbar-group-tempo-led-compact {
   order: 2;
-}
-
-.song-lyrics-toolbar-group-fullscreen {
-  order: 5;
-  margin-left: 0;
-}
-
-.song-lyrics-fullscreen-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 0;
-  min-height: 36px;
-  height: 36px;
-  padding: 0 0.85rem;
-  font-weight: 700;
-  border-radius: var(--radius-md);
-  box-shadow: none;
-}
-
-.song-lyrics-fullscreen-btn span:first-child {
-  font-size: 1.05rem;
-  line-height: 1;
-}
-
-.song-lyrics-fullscreen-btn-label {
-  white-space: nowrap;
 }
 
 .song-lyrics-youtube-btn {
@@ -10864,71 +10809,6 @@ body.dark-mode .cd-token {
   text-align: center;
 }
 
-.song-lyrics-transpose-controls {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-}
-
-.song-lyrics-transpose-controls .transpose-key-control-compact {
-  gap: var(--spacing-xs);
-}
-
-.song-lyrics-transpose-controls .transpose-key-control-compact .song-info-key-display {
-  min-width: 92px;
-}
-
-.song-lyrics-transpose-controls .transpose-key-control-compact .btn {
-  min-width: 34px;
-  min-height: 36px;
-  height: 36px;
-  padding: 0 8px;
-}
-
-.song-lyrics-transpose-controls .key-transpose-reset {
-  width: 34px;
-  height: 36px;
-}
-
-/* Kontrol tempo minimalis di panel lirik & chord */
-.song-lyrics-tempo-minimal {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.song-lyrics-tempo-minimal .song-info-tempo-led {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 auto;
-}
-
-.song-lyrics-tempo-step-btn {
-  min-width: 34px;
-  min-height: 36px;
-  height: 36px;
-  padding: 0 8px;
-}
-
-.song-lyrics-tempo-value {
-  min-width: 34px;
-  text-align: center;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.song-lyrics-tempo-as-btn {
-  min-width: 34px;
-  min-height: 36px;
-  height: 36px;
-  padding: 0 8px;
-}
-
 /* Instrumen sebagai badge di performance mode */
 .song-info-instrument-badge-list {
   display: inline-flex;
@@ -10950,14 +10830,6 @@ body.dark-mode .cd-token {
   font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
-}
-
-.song-lyrics-transpose-value {
-  min-width: 58px;
-  text-align: center;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-size: var(--font-size-sm);
 }
 
 
@@ -12650,22 +12522,6 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   flex-wrap: wrap;
 }
 
-/* Export Menu */
-.song-lyrics-export-menu {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: var(--spacing-sm);
-  min-width: 150px;
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
-  animation: slideUpModal 0.2s ease;
-}
-
 .song-lyrics-export-item {
   display: flex;
   align-items: center;
@@ -12750,11 +12606,6 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
     align-items: flex-start;
   }
 
-  .song-lyrics-mini-player-reopen {
-    margin-left: 0;
-    width: 100%;
-  }
-
   .song-lyrics-toolbar {
     width: 100%;
     flex-direction: column;
@@ -12784,18 +12635,12 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
     grid-column: 1 / -1;
   }
 
-  .song-lyrics-toolbar--normal .song-lyrics-fullscreen-btn {
-    min-width: 100%;
-  }
-
   .song-lyrics-toolbar--normal .song-lyrics-youtube-btn--normal {
     min-width: 86px;
     padding: 0 0.55rem;
   }
 
-  .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-actions .song-lyrics-toolbar-btn,
-  .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-view .song-lyrics-youtube-btn--normal,
-  .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-fullscreen .song-lyrics-fullscreen-btn {
+  .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-view .song-lyrics-youtube-btn--normal {
     min-width: 100%;
   }
 
@@ -12807,23 +12652,6 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   .song-lyrics-toolbar--normal .song-lyrics-toolbar-btn {
     padding: 0 0.55rem;
     gap: 4px;
-  }
-
-  .song-lyrics-toolbar--normal .song-lyrics-transpose-controls {
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .song-lyrics-toolbar--normal .song-lyrics-transpose-controls .btn {
-    min-width: 34px;
-    min-height: 34px;
-    height: 34px;
-    padding: 0 8px;
-  }
-
-  .song-lyrics-toolbar--normal .song-lyrics-transpose-controls {
-    width: 100%;
-    justify-content: space-between;
   }
 
   .song-lyrics-toolbar--normal .song-lyrics-chord-style-menu-container {
@@ -12845,21 +12673,12 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
     justify-content: flex-start;
   }
 
-  .song-lyrics-toolbar-group-fullscreen {
-    justify-content: flex-start;
-  }
-
   .song-lyrics-toolbar-group-chords {
     justify-content: space-between;
   }
 
   .song-lyrics-chord-style-badge {
     display: none;
-  }
-
-  .song-lyrics-transpose-controls {
-    width: 100%;
-    justify-content: center;
   }
 
   .song-lyrics-zoom-controls {
@@ -12926,16 +12745,8 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
     grid-column: 1 / -1;
   }
 
-  .song-lyrics-toolbar--normal .song-lyrics-fullscreen-btn-label,
-  .song-lyrics-toolbar--normal .song-lyrics-youtube-btn--normal .song-lyrics-toolbar-btn-label,
-  .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-actions .song-lyrics-toolbar-btn-label {
+  .song-lyrics-toolbar--normal .song-lyrics-youtube-btn--normal .song-lyrics-toolbar-btn-label {
     display: none;
-  }
-
-  .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-actions .song-lyrics-toolbar-btn,
-  .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-fullscreen .song-lyrics-fullscreen-btn {
-    min-width: 40px;
-    justify-content: center;
   }
 
   .song-lyrics-toolbar--normal .song-lyrics-youtube-btn--normal {

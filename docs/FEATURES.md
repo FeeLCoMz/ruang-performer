@@ -54,7 +54,10 @@ Ditulis di dalam lirik, misalnya `[00:32]`. Dipakai untuk **sinkronisasi video Y
 Kolom `sheet_music_xml` (MusicXML) dirender oleh **OpenSheetMusicDisplay** melalui `SongSheetMusic.jsx`.
 
 ### Analisis Kord
-`SongChordsAnalyzer.jsx` + `useChordStats.js` menampilkan statistik pemakaian kord (kord yang paling sering muncul, tingkat kesulitan, progresi umum).
+`SongChordsAnalyzer.jsx` + `useChordStats.js` menampilkan statistik pemakaian kord (kord yang paling sering muncul, tingkat kesulitan, progresi umum) dalam **modal** yang dibuka lewat tombol "Analisis Chord".
+
+### Panel Lirik & Chord (Song View)
+Panel lirik/chord di halaman song view bersifat **read-only**. Kontrol edit lirik, transpose, tempo, dan fullscreen tidak tersedia di sini; penyuntingan dilakukan lewat halaman tambah/edit lagu. Yang tetap ada: kontrol chord (Angka & Style), pemutaran YouTube, dan autoscroll. Tombol **Export** berada di header info lagu (sebaris dengan Edit & Bagikan).
 
 ### Mood & Genre
 `src/utils/songMoodUtils.js` mengelompokkan lagu berdasarkan mood/genre untuk penyaringan.

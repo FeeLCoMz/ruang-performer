@@ -2,52 +2,24 @@ import React, { useState } from "react";
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
 import ExpandButton from './ExpandButton.jsx';
-import SongLyricsEditorPanel from './SongLyricsEditorPanel.jsx';
-import { buildSongViewEditorActions } from '../utils/editorActionsUtils.js';
 
 /**
  * SongLyricsMainSection
- * Komponen utama untuk menampilkan lirik, chord, dan toolbar
+ * Komponen utama untuk menampilkan lirik dan chord (read-only).
  */
 export default function SongLyricsMainSection({
-  isEditingLyrics,
   lyricsDisplayRef,
-  editedLyrics,
-  setEditedLyrics,
-  editError,
-  handleEditLyrics,
-  savingLyrics,
-  handleSaveLyrics,
-  handleAlignSelectedBarlines,
-  handleWrap4BarsPerLine,
-  handleFormatWholeDocument,
-  barsPerLine,
-  setBarsPerLine,
-  handleWrapBarsPerLine,
-  handleCancelEditLyrics,
-  onOpenPiano,
-  insertNotesToLyrics,
-  setInsertNotesToLyrics,
-  showExportMenu,
-  setShowExportMenu,
-  handleExportText,
-  handleExportPDF,
   tempo,
   timeSignature,
   autoScrollActive,
   scrollSpeed,
   setAutoScrollActive,
-  setScrollSpeed,
-  currentBeat,
-  setCurrentBeat,
   zoom,
   setZoom,
-  canEdit,
   song,
   transpose,
   setTranspose,
   showChords,
-  setShowChords,
   showChordNumbers,
   setShowChordNumbers,
   showJazzChords,
@@ -56,7 +28,6 @@ export default function SongLyricsMainSection({
   setShowSimpleChords,
   originalKey = '',
   targetKey = '',
-  performanceKeyOverride = '',
   pianoRecommendation = null,
   onApplyRecommendedTranspose,
   keySignature,
@@ -65,10 +36,6 @@ export default function SongLyricsMainSection({
   youtubeRef,
   youtubeId,
   isYoutubePlaying = false,
-  showMiniVideoPlayer = false,
-  onOpenMiniVideoPlayer,
-  onPlayYouTube,
-  onRestartYouTube,
   loading = false
 }) {
   // Expand/collapse state for lyrics panel
@@ -86,60 +53,17 @@ export default function SongLyricsMainSection({
         />
         {lyricsPanelExpanded && (
           <SongChordsLyricsToolbar
-            isEditingLyrics={isEditingLyrics}
-            canEdit={canEdit}
-            tempo={tempo}
-            timeSignature={timeSignature}
             autoScrollActive={autoScrollActive}
-            scrollSpeed={scrollSpeed}
             setAutoScrollActive={setAutoScrollActive}
-            setScrollSpeed={setScrollSpeed}
-            lyricsDisplayRef={lyricsDisplayRef}
-            currentBeat={currentBeat}
-            setCurrentBeat={setCurrentBeat}
-            transpose={transpose}
-            setTranspose={setTranspose}
-            originalKey={originalKey}
-            targetKey={targetKey}
-            zoom={zoom}
-            setZoom={setZoom}
             showChordNumbers={showChordNumbers}
             setShowChordNumbers={setShowChordNumbers}
             showJazzChords={showJazzChords}
             setShowJazzChords={setShowJazzChords}
             showSimpleChords={showSimpleChords}
             setShowSimpleChords={setShowSimpleChords}
-            handleEditLyrics={handleEditLyrics}
-            savingLyrics={savingLyrics}
-            handleSaveLyrics={handleSaveLyrics}
-            handleAlignSelectedBarlines={handleAlignSelectedBarlines}
-            handleWrap4BarsPerLine={handleWrap4BarsPerLine}
-            barsPerLine={barsPerLine}
-            setBarsPerLine={setBarsPerLine}
-            handleWrapBarsPerLine={handleWrapBarsPerLine}
-            handleCancelEditLyrics={handleCancelEditLyrics}
-            onOpenPiano={onOpenPiano}
-            insertNotesToLyrics={insertNotesToLyrics}
-            showExportMenu={showExportMenu}
-            setShowExportMenu={setShowExportMenu}
-            handleExportText={handleExportText}
-            handleExportPDF={handleExportPDF}
             youtubeId={youtubeId}
             youtubeRef={youtubeRef}
-            onPlayYouTube={onPlayYouTube}
-            onRestartYouTube={onRestartYouTube}
           />
-        )}
-
-        {isEditingLyrics && youtubeId && !showMiniVideoPlayer && (
-          <button
-            type="button"
-            className="btn btn-secondary song-lyrics-mini-player-reopen"
-            onClick={onOpenMiniVideoPlayer}
-            title="Buka mini video player"
-          >
-            🗖 Buka Mini Video
-          </button>
         )}
       </div>
 
@@ -153,35 +77,8 @@ export default function SongLyricsMainSection({
               <div className="skeleton-line" style={{ width: '60%' }} />
               <div className="skeleton-line" style={{ width: '85%' }} />
             </div>
-          ) : isEditingLyrics ? (
-            <SongLyricsEditorPanel
-              lyricsRef={lyricsDisplayRef}
-              lyricsValue={editedLyrics}
-              setLyricsValue={setEditedLyrics}
-              error={editError}
-              disabled={savingLyrics}
-              editorActions={buildSongViewEditorActions({
-                savingLyrics,
-                handleSaveLyrics,
-                handleCancelEditLyrics,
-                onOpenPiano,
-                insertNotesToLyrics,
-              })}
-              autoFocus={true}
-              showActions={true}
-              previewSong={song}
-              baselineLyrics={song?.lyrics ?? null}
-              previewProps={{
-                showChords,
-                showChordNumbers,
-                showJazzChords,
-                showSimpleChords,
-                keySignature: keySignature || song?.key || 'C',
-              }}
-            />
           ) : (
             <SongChordsLyricsDisplay
-              isEditingLyrics={isEditingLyrics}
               lyricsDisplayRef={lyricsDisplayRef}
               song={song}
               tempo={tempo}
@@ -197,17 +94,14 @@ export default function SongLyricsMainSection({
               autoScrollActive={autoScrollActive}
               scrollSpeed={scrollSpeed}
               setAutoScrollActive={setAutoScrollActive}
-              setScrollSpeed={setScrollSpeed}
               showSheetMusic={showSheetMusic}
               setShowSheetMusic={setShowSheetMusic}
               youtubeRef={youtubeRef}
               youtubeId={youtubeId}
               isYoutubePlaying={isYoutubePlaying}
               timeSignature={timeSignature}
-              currentBeat={currentBeat}
               originalKey={originalKey}
               targetKey={targetKey}
-              performanceKeyOverride={performanceKeyOverride}
               pianoRecommendation={pianoRecommendation}
               onApplyRecommendedTranspose={onApplyRecommendedTranspose}
             />

@@ -10,7 +10,6 @@ import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import SongChordsAnalyzer from '../components/SongChordsAnalyzer.jsx';
 import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
 import TransposeKeyControl from '../components/TransposeKeyControl.jsx';
-import VirtualPiano from '../components/VirtualPiano.jsx';
 import SongChordsPage from '../pages/SongChordsPage.jsx';
 
 vi.mock('../components/SetlistSongNavigator.jsx', () => ({
@@ -53,77 +52,6 @@ vi.mock('../apiClient.js', () => ({
 }));
 
 function noop() {}
-
-function SongViewEditorHarness() {
-  const [editedLyrics, setEditedLyrics] = React.useState('');
-  const [showLyricsPiano, setShowLyricsPiano] = React.useState(false);
-  const lyricsDisplayRef = React.useRef(null);
-
-  return (
-    <>
-      <SongLyricsMainSection
-        isEditingLyrics={true}
-        lyricsDisplayRef={lyricsDisplayRef}
-        editedLyrics={editedLyrics}
-        setEditedLyrics={setEditedLyrics}
-        editError={null}
-        handleEditLyrics={noop}
-        savingLyrics={false}
-        handleSaveLyrics={noop}
-        handleAlignSelectedBarlines={noop}
-        handleWrap4BarsPerLine={noop}
-        barsPerLine={4}
-        setBarsPerLine={noop}
-        handleWrapBarsPerLine={noop}
-        handleCancelEditLyrics={noop}
-        onOpenPiano={() => setShowLyricsPiano(true)}
-        insertNotesToLyrics={true}
-        setInsertNotesToLyrics={noop}
-        insertNoteFormat={'bracket'}
-        setInsertNoteFormat={noop}
-        insertTrailingSpace={true}
-        setInsertTrailingSpace={noop}
-        insertNumberKeySignature={'C'}
-        showExportMenu={false}
-        setShowExportMenu={noop}
-        handleExportText={noop}
-        handleExportPDF={noop}
-        tempo={120}
-        timeSignature={'4/4'}
-        autoScrollActive={false}
-        scrollSpeed={120}
-        setAutoScrollActive={noop}
-        setScrollSpeed={noop}
-        currentBeat={0}
-        setCurrentBeat={noop}
-        zoom={1}
-        setZoom={noop}
-                canEdit={true}
-        song={{ lyrics: editedLyrics }}
-        transpose={0}
-        setTranspose={noop}
-        showChordNumbers={false}
-        setShowChordNumbers={noop}
-        showJazzChords={false}
-        setShowJazzChords={noop}
-        showSimpleChords={false}
-        setShowSimpleChords={noop}
-        keySignature={'C'}
-        showSheetMusic={false}
-        setShowSheetMusic={noop}
-        youtubeRef={{ current: null }}
-        loading={false}
-      />
-      <VirtualPiano
-        isOpen={showLyricsPiano}
-        onClose={() => setShowLyricsPiano(false)}
-        onKeySelect={(note) => {
-          setEditedLyrics((prev) => `${prev}[${note}] `);
-        }}
-      />
-    </>
-  );
-}
 
 describe('Song lyrics shared editor rendering', () => {
   let container;
@@ -178,50 +106,22 @@ describe('Song lyrics shared editor rendering', () => {
     document.body.removeChild(container);
   });
 
-  test('Given SongLyricsMainSection in edit mode, Then shared editor actions and textarea are rendered', async () => {
+  test('Given SongLyricsMainSection, Then the lyrics toolbars and display are rendered without the editor', async () => {
     await act(async () => {
       root.render(
         <SongLyricsMainSection
-          isEditingLyrics={true}
           lyricsDisplayRef={{ current: null }}
-          editedLyrics={'[C]Hello'}
-          setEditedLyrics={noop}
-          editError={null}
-          handleEditLyrics={noop}
-          savingLyrics={false}
-          handleSaveLyrics={noop}
-          handleAlignSelectedBarlines={noop}
-          handleWrap4BarsPerLine={noop}
-          barsPerLine={4}
-          setBarsPerLine={noop}
-          handleWrapBarsPerLine={noop}
-          handleCancelEditLyrics={noop}
-          onOpenPiano={noop}
-          insertNotesToLyrics={true}
-          setInsertNotesToLyrics={noop}
-          insertNoteFormat={'bracket'}
-          setInsertNoteFormat={noop}
-          insertTrailingSpace={true}
-          setInsertTrailingSpace={noop}
-          insertNumberKeySignature={'C'}
-          showExportMenu={false}
-          setShowExportMenu={noop}
-          handleExportText={noop}
-          handleExportPDF={noop}
           tempo={120}
           timeSignature={'4/4'}
           autoScrollActive={false}
           scrollSpeed={120}
           setAutoScrollActive={noop}
-          setScrollSpeed={noop}
-          currentBeat={0}
-          setCurrentBeat={noop}
           zoom={1}
           setZoom={noop}
-                    canEdit={true}
           song={{ lyrics: '[C]Hello' }}
           transpose={0}
           setTranspose={noop}
+          showChords={true}
           showChordNumbers={false}
           setShowChordNumbers={noop}
           showJazzChords={false}
@@ -237,23 +137,18 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    // Two separate bars: non-formatting tools, then formatting. The tools bar
-    // is collapsed behind a toggle so formatting stays the primary surface.
-    expect(container.querySelector('.lyric-editor-controls')).toBeTruthy();
-    expect(container.querySelector('.lyric-format')).toBeTruthy();
-    expect(container.querySelector('.song-lyrics-textarea')).toBeTruthy();
-    expect(container.querySelector('.lyric-tools')).toBeFalsy();
+    // Read-only view: chord display is present, the inline editor is gone.
+    expect(container.querySelector('.song-lyrics-toolbar')).toBeTruthy();
+    expect(container.querySelector('.song-lyrics-display')).toBeTruthy();
+    expect(container.querySelector('.lyric-editor-controls')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-textarea-editor')).toBeFalsy();
 
-    const toolsToggle = container.querySelector('.lyric-editor-tools-toggle');
-    expect(toolsToggle).toBeTruthy();
-    expect(toolsToggle.getAttribute('aria-expanded')).toBe('false');
-
-    await act(async () => {
-      toolsToggle.click();
-    });
-
-    expect(container.querySelector('.lyric-tools')).toBeTruthy();
-    expect(toolsToggle.getAttribute('aria-expanded')).toBe('true');
+    // The removed controls must not be offered.
+    const buttonLabels = Array.from(container.querySelectorAll('button')).map((b) => b.textContent || '').join(' ');
+    expect(buttonLabels).not.toContain('Edit Lirik');
+    expect(buttonLabels).not.toContain('Full screen');
+    expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-tempo-minimal')).toBeFalsy();
   });
 
   test('Given lyrics editor, Then formatting actions are grouped by scope', async () => {
@@ -423,50 +318,22 @@ describe('Song lyrics shared editor rendering', () => {
     expect(toolbarKeySelect).toBeFalsy();
   });
 
-  test('Given recognized section labels in edit mode, Then no detected-section badges are rendered', async () => {
+  test('Given recognized section labels, Then no detected-section badges are rendered', async () => {
     await act(async () => {
       root.render(
         <SongLyricsMainSection
-          isEditingLyrics={true}
           lyricsDisplayRef={{ current: null }}
-          editedLyrics={'[Intro]\nAm F\nPost Chorus:\nChorus:'}
-          setEditedLyrics={noop}
-          editError={null}
-          handleEditLyrics={noop}
-          savingLyrics={false}
-          handleSaveLyrics={noop}
-          handleAlignSelectedBarlines={noop}
-          handleWrap4BarsPerLine={noop}
-          barsPerLine={4}
-          setBarsPerLine={noop}
-          handleWrapBarsPerLine={noop}
-          handleCancelEditLyrics={noop}
-          onOpenPiano={noop}
-          insertNotesToLyrics={true}
-          setInsertNotesToLyrics={noop}
-          insertNoteFormat={'bracket'}
-          setInsertNoteFormat={noop}
-          insertTrailingSpace={true}
-          setInsertTrailingSpace={noop}
-          insertNumberKeySignature={'C'}
-          showExportMenu={false}
-          setShowExportMenu={noop}
-          handleExportText={noop}
-          handleExportPDF={noop}
           tempo={120}
           timeSignature={'4/4'}
           autoScrollActive={false}
           scrollSpeed={120}
           setAutoScrollActive={noop}
-          setScrollSpeed={noop}
-          currentBeat={0}
-          setCurrentBeat={noop}
           zoom={1}
           setZoom={noop}
-                    canEdit={true}
           song={{ lyrics: '[Intro]\nAm F\nPost Chorus:\nChorus:' }}
           transpose={0}
           setTranspose={noop}
+          showChords={true}
           showChordNumbers={false}
           setShowChordNumbers={noop}
           showJazzChords={false}
@@ -488,57 +355,35 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-section-detected-badge')).toBeFalsy();
   });
 
-  test('Given SongChordsLyricsToolbar in edit mode, Then toolbar does not render old edit action block', async () => {
+  test('Given SongChordsLyricsToolbar, Then only chord/youtube/autoscroll controls are rendered', async () => {
     await act(async () => {
       root.render(
         <SongChordsLyricsToolbar
-          isEditingLyrics={true}
-                    canEdit={true}
-          tempo={120}
-          timeSignature={'4/4'}
           autoScrollActive={false}
-          scrollSpeed={120}
           setAutoScrollActive={noop}
-          setScrollSpeed={noop}
-          lyricsDisplayRef={{ current: null }}
-          currentBeat={0}
-          setCurrentBeat={noop}
-          transpose={0}
-          setTranspose={noop}
-          zoom={1}
-          setZoom={noop}
           showChordNumbers={false}
           setShowChordNumbers={noop}
           showJazzChords={false}
           setShowJazzChords={noop}
           showSimpleChords={false}
           setShowSimpleChords={noop}
-          keySignature={'C'}
-          handleEditLyrics={noop}
-          savingLyrics={false}
-          handleSaveLyrics={noop}
-          handleAlignSelectedBarlines={noop}
-          handleWrap4BarsPerLine={noop}
-          barsPerLine={4}
-          setBarsPerLine={noop}
-          handleWrapBarsPerLine={noop}
-          handleCancelEditLyrics={noop}
-          onOpenPiano={noop}
-          insertNotesToLyrics={true}
-          setInsertNotesToLyrics={noop}
-          insertNoteFormat={'bracket'}
-          setInsertNoteFormat={noop}
-          insertTrailingSpace={true}
-          setInsertTrailingSpace={noop}
-          showExportMenu={false}
-          setShowExportMenu={noop}
-          handleExportText={noop}
-          handleExportPDF={noop}
+          youtubeId={null}
+          youtubeRef={{ current: null }}
         />
       );
     });
 
-    expect(container.querySelector('.song-lyrics-edit-actions')).toBeFalsy();
+    const labels = Array.from(container.querySelectorAll('button')).map((b) => (b.textContent || '').trim()).join(' ');
+    expect(labels).toContain('Autoscroll');
+    expect(labels).toContain('Angka');
+    expect(labels).toContain('Style');
+    // Removed controls must not come back.
+    expect(labels).not.toContain('Edit Lirik');
+    expect(labels).not.toContain('Full screen');
+    expect(labels).not.toContain('Export');
+    expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-tempo-minimal')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-export-menu-container')).toBeFalsy();
   });
 
   test('Given detected instruments are present, Then a copy button is visible for registration memory', async () => {
@@ -740,27 +585,12 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('5');
   });
 
-  test('Given lyrics are saved from a setlist route, Then the app remains on the setlist song route', async () => {
+  test('Given a setlist song route, Then the song view renders read-only with chords and without the lyrics editor', async () => {
     let currentLocation;
     function LocationProbe() {
       currentLocation = useLocation();
       return null;
     }
-
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ ok: true }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          id: '1',
-          title: 'Song A',
-          key: 'G',
-          lyrics: '[C]Hello updated',
-        }),
-      });
 
     await act(async () => {
       root.render(
@@ -780,37 +610,15 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const editButton = Array.from(container.querySelectorAll('button')).find((button) =>
-      button.textContent?.includes('Edit')
-    );
-    expect(editButton).toBeTruthy();
-
-    await act(async () => {
-      editButton.click();
-    });
-
-    const editorHost = container.querySelector('.song-lyrics-textarea-editor');
-    expect(editorHost).toBeTruthy();
-
-    await act(async () => {
-      editorHost.querySelector('.cm-content').textContent = '[C]Hello updated';
-    });
-
-    // Save lives in the collapsible tools bar.
-    await act(async () => {
-      container.querySelector('.lyric-editor-tools-toggle').click();
-    });
-
-    const saveButton = Array.from(container.querySelectorAll('button')).find((button) =>
-      button.getAttribute('aria-label') === 'Simpan' || button.title === 'Simpan'
-    );
-    expect(saveButton).toBeTruthy();
-
-    await act(async () => {
-      saveButton.click();
-    });
-
+    // Stays on the setlist route and shows the chord display, not the editor.
     expect(currentLocation.pathname).toBe('/setlists/10/songs/1');
+    expect(container.querySelector('.song-lyrics-display')).toBeTruthy();
+    expect(container.querySelector('.song-lyrics-textarea-editor')).toBeFalsy();
+
+    const editLyricsButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Edit Lirik')
+    );
+    expect(editLyricsButton).toBeFalsy();
   });
 
   test('Given a song is opened outside the setlist route, Then the navigation panel stays hidden', async () => {
@@ -857,36 +665,5 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     expect(container.querySelector('.cd-chord')?.textContent).toBe('C G F');
-  });
-
-  test('Given song view edit mode, When piano note is selected, Then lyrics state receives note token', async () => {
-    await act(async () => {
-      root.render(<SongViewEditorHarness />);
-    });
-
-    // The piano entry point now lives in the collapsible tools bar.
-    await act(async () => {
-      container.querySelector('.lyric-editor-tools-toggle').click();
-    });
-
-    const pianoOpenButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Piano')
-    );
-    expect(pianoOpenButton).toBeTruthy();
-
-    await act(async () => {
-      pianoOpenButton.click();
-    });
-
-    const noteButton = Array.from(container.querySelectorAll('.piano-key')).find((btn) =>
-      btn.textContent?.trim() === 'C'
-    );
-    expect(noteButton).toBeTruthy();
-
-    await act(async () => {
-      noteButton.click();
-    });
-
-    expect(container.querySelector('.cm-content').textContent).toBe('[C] ');
   });
 });

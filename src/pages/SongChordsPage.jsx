@@ -5,11 +5,8 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import SetlistSongNavigator from "../components/SetlistSongNavigator.jsx";
 import SongChordsMediaPanel from '../components/SongChordsMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
-import FloatingYouTubePlayer from '../components/FloatingYouTubePlayer.jsx';
-import VirtualPiano from "../components/VirtualPiano.jsx";
 import ExpandButton from '../components/ExpandButton.jsx';
-import { getAuthHeader } from "../utils/auth.js";
-import { useAuth } from '../contexts/AuthContext.jsx';
+import { getAuthHeader } from "../utils/auth.js";import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
 import { useSongFetch } from '../hooks/useSongFetch.js';
@@ -17,9 +14,7 @@ import { handleExportText, handleExportPDF, handleShare } from '../utils/songHan
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
-import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers, recommendPianoFriendlyKey, extractDetectedInstrumentsFromLyrics, getTransposeSteps } from '../utils/chordUtils.js';
-import { getNumericNotationKey } from '../utils/notationUtils.js';
-import { buildInsertNoteToken, formatWholeLyricsDocument, replaceSelectionWithToken } from '../utils/lyricsEditorUtils.js';
+import { recommendPianoFriendlyKey, extractDetectedInstrumentsFromLyrics } from '../utils/chordUtils.js';
 
 /**
  * SongChordsPage
@@ -113,18 +108,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
   const [showJazzChords, setShowJazzChords] = useState(false);
   const [showSimpleChords, setShowSimpleChords] = useState(false);
 
-  // In-place editing state
-  const [isEditingLyrics, setIsEditingLyrics] = useState(false);
-  const [editedLyrics, setEditedLyrics] = useState("");
-  const [savingLyrics, setSavingLyrics] = useState(false);
-  const [editError, setEditError] = useState(null);
-  const [barsPerLine, setBarsPerLine] = useState(4);
-  const [showLyricsPiano, setShowLyricsPiano] = useState(false);
-  const [insertNotesToLyrics, setInsertNotesToLyrics] = useState(false);
-  const [insertNoteFormat, setInsertNoteFormat] = useState('number');
-  const [insertNumberKeySignature, setInsertNumberKeySignature] = useState(() => getNumericNotationKey(key || song?.key || 'C'));
-  const [insertTrailingSpace, setInsertTrailingSpace] = useState(true);
-
   // Chord Analyzer state
   const [showChordAnalyzer, setShowChordAnalyzer] = useState(false);
   const chordStats = useChordStats(song?.lyrics);
@@ -154,7 +137,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
 
   // Media panel collapse state (default: collapsed)
   const [mediaPanelExpanded, setMediaPanelExpanded] = useState(false);
-  const [showMiniVideoPlayer, setShowMiniVideoPlayer] = useState(false);
   // Setlist yang memuat lagu ini (default: collapsed)
   const [showContainingSetlists, setShowContainingSetlists] = useState(false);
 
@@ -233,23 +215,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
 
     return () => clearInterval(intervalId);
   }, [autoPlayVideo, youtubeId]);
-
-  useEffect(() => {
-    if (isEditingLyrics && youtubeId) {
-      setShowMiniVideoPlayer(true);
-    }
-  }, [isEditingLyrics, youtubeId]);
-
-  useEffect(() => {
-    if (!youtubeId) {
-      setShowMiniVideoPlayer(false);
-      return;
-    }
-
-    if (!isEditingLyrics) {
-      setShowMiniVideoPlayer(false);
-    }
-  }, [isEditingLyrics, youtubeId]);
 
   // (Efek autoscroll dipindah ke komponen AutoScrollBar)
 
@@ -341,43 +306,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
     });
   };
 
-  // Handle lyrics save
   // Handler export & share di utils/songHandlers.js
-
-  // Keyboard shortcut for saving lyrics (Ctrl+S / Cmd+S)
-  // MUST be before any conditional returns
-  useEffect(() => {
-    if (!isEditingLyrics) {
-      // Don't set up listeners if not editing
-      return;
-    }
-
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        handleSaveLyrics();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "b") {
-        e.preventDefault();
-        handleAlignSelectedBarlines();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "4") {
-        e.preventDefault();
-        handleWrap4BarsPerLine();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "f") {
-        e.preventDefault();
-        handleFormatWholeDocument();
-      }
-      if (e.key === "Escape") {
-        handleCancelEditLyrics();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEditingLyrics, editedLyrics, song?.id]);
 
   const handleBack = () => {
     if (setlistId) {
@@ -442,12 +371,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
     navigate(`/songs/edit/${song.id}`);
   };
 
-  const handleEditLyrics = () => {
-    setEditedLyrics(song.lyrics || "");
-    setIsEditingLyrics(true);
-    setEditError(null);
-  };
-
   const handleToggleMastery = async () => {
     if (!song?.id || !song?.canMarkMastery || updatingMastery) return;
 
@@ -461,166 +384,10 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
         isMasteredByCurrentUser: Boolean(payload.isMasteredByCurrentUser),
       }));
     } catch (err) {
-      setEditError(err?.message || 'Gagal memperbarui status penguasaan lagu');
+      setToastMessage(err?.message || 'Gagal memperbarui status penguasaan lagu');
     } finally {
       setUpdatingMastery(false);
     }
-  };
-
-  const handleCancelEditLyrics = () => {
-    setIsEditingLyrics(false);
-    setShowLyricsPiano(false);
-    setEditedLyrics("");
-    setEditError(null);
-  };
-
-  const handleSaveLyrics = async () => {
-    if (!song.id) return;
-
-    setSavingLyrics(true);
-    setEditError(null);
-
-    try {
-      const mergedTimeMarkers = mergeDetectedTimestampsIntoMarkers(editedLyrics, timeMarkers);
-
-      const res = await fetch(`/api/songs/${song.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        },
-        body: JSON.stringify({
-          ...song,
-          lyrics: editedLyrics,
-          time_markers: mergedTimeMarkers,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Gagal menyimpan lirik");
-      }
-
-      // API returns only { id }, so fetch fresh data
-      const fetchRes = await fetch(`/api/songs/${song.id}`, {
-        headers: getAuthHeader(),
-      });
-
-      if (!fetchRes.ok) {
-        throw new Error("Gagal memuat data terbaru");
-      }
-
-      const updatedSong = await fetchRes.json();
-      setFetchedSong(updatedSong);
-      setIsEditingLyrics(false);
-      setShowLyricsPiano(false);
-      setEditedLyrics("");
-
-      // Tetap di route setlist agar navigasi antar lagu setlist tetap tersedia
-      if (setlistId) {
-        navigate(`/setlists/${setlistId}/songs/${song.id}`, {
-          state: {
-            setlistId,
-            setlist: setlistData || { id: setlistId, songs: [] },
-            setlistSong: setlistSongData || song,
-          },
-          replace: true,
-        });
-      }
-    } catch (err) {
-      setEditError(err.message);
-    } finally {
-      setSavingLyrics(false);
-    }
-  };
-
-  const handleAlignSelectedBarlines = () => {
-    const textarea = lyricsDisplayRef.current;
-    if (!textarea || typeof textarea.selectionStart !== 'number' || typeof textarea.selectionEnd !== 'number') {
-      return;
-    }
-
-    const selectionStart = textarea.selectionStart;
-    const selectionEnd = textarea.selectionEnd;
-    if (selectionStart === selectionEnd) return;
-
-    const selectedText = editedLyrics.slice(selectionStart, selectionEnd);
-    const alignedText = alignSelectedBarlines(selectedText);
-    if (alignedText === selectedText) return;
-
-    const nextLyrics = `${editedLyrics.slice(0, selectionStart)}${alignedText}${editedLyrics.slice(selectionEnd)}`;
-    setEditedLyrics(nextLyrics);
-
-    // Restore focus and keep transformed text selected for quick iteration.
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(selectionStart, selectionStart + alignedText.length);
-    });
-  };
-
-  const handleWrapBarsPerLine = (targetBarsPerLine = barsPerLine) => {
-    const textarea = lyricsDisplayRef.current;
-    if (!textarea) return;
-
-    const hasSelection = typeof textarea.selectionStart === 'number'
-      && typeof textarea.selectionEnd === 'number'
-      && textarea.selectionStart !== textarea.selectionEnd;
-    if (!hasSelection) return;
-
-    const selectionStart = textarea.selectionStart;
-    const selectionEnd = textarea.selectionEnd;
-    const selectedText = editedLyrics.slice(selectionStart, selectionEnd);
-    if (!selectedText) return;
-
-    const wrappedText = wrapBarsPerLine(selectedText, targetBarsPerLine);
-    const alignedText = alignSelectedBarlines(wrappedText);
-    if (alignedText === selectedText) return;
-
-    const nextLyrics = `${editedLyrics.slice(0, selectionStart)}${alignedText}${editedLyrics.slice(selectionEnd)}`;
-    setEditedLyrics(nextLyrics);
-
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(selectionStart, selectionStart + alignedText.length);
-    });
-  };
-
-  const handleWrap4BarsPerLine = () => handleWrapBarsPerLine(4);
-
-  // Whole-document tidy-up: clean copy-paste noise, tag sections, standardise chords.
-  const handleFormatWholeDocument = () => {
-    setEditedLyrics((prev) => formatWholeLyricsDocument(prev));
-  };
-
-  const handleLyricsPianoKeySelect = (note) => {
-    if (!isEditingLyrics || !insertNotesToLyrics) return;
-
-    const textarea = lyricsDisplayRef.current;
-    const token = buildInsertNoteToken({
-      note,
-      keySignature: insertNumberKeySignature || key || song?.key || 'C',
-      insertNoteFormat,
-      insertTrailingSpace,
-    });
-
-    const selectionStart = textarea?.selectionStart;
-    const selectionEnd = textarea?.selectionEnd;
-
-    setEditedLyrics((prev) => replaceSelectionWithToken({
-      text: prev,
-      selectionStart,
-      selectionEnd,
-      token,
-    }).nextText);
-
-    requestAnimationFrame(() => {
-      if (!textarea || typeof textarea.selectionStart !== 'number' || typeof textarea.selectionEnd !== 'number') {
-        return;
-      }
-      textarea.focus();
-      const cursor = selectionStart + token.length;
-      textarea.setSelectionRange(cursor, cursor);
-    });
   };
 
   return (
@@ -655,9 +422,13 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
         masteryUpdating={updatingMastery}
         pianoRecommendation={pianoRecommendation}
         onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+        showExportMenu={showExportMenu}
+        setShowExportMenu={setShowExportMenu}
+        handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
+        handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
       />
 
-      {youtubeId && !isEditingLyrics && (
+      {youtubeId && (
         <SongChordsMediaPanel
           mediaPanelExpanded={mediaPanelExpanded}
           setMediaPanelExpanded={setMediaPanelExpanded}
@@ -667,10 +438,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
           canEdit={can(PERMISSIONS.SONG_EDIT)}
           handleTimeMarkerUpdate={handleTimeMarkerUpdate}
         />
-      )}
-
-      {youtubeId && isEditingLyrics && (
-        <div className="song-media-panel-hidden" aria-hidden="true" />
       )}
 
       <SongChordsAnalyzer
@@ -684,59 +451,23 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
 
       {/* Lyrics Main Section */}
       <SongLyricsMainSection
-        isEditingLyrics={isEditingLyrics}
         lyricsDisplayRef={lyricsDisplayRef}
-        editedLyrics={editedLyrics}
-        setEditedLyrics={setEditedLyrics}
-        editError={editError}
-        handleEditLyrics={handleEditLyrics}
-        savingLyrics={savingLyrics}
-        handleSaveLyrics={handleSaveLyrics}
-        handleAlignSelectedBarlines={handleAlignSelectedBarlines}
-        handleWrap4BarsPerLine={handleWrap4BarsPerLine}
-        handleFormatWholeDocument={handleFormatWholeDocument}
-        barsPerLine={barsPerLine}
-        setBarsPerLine={setBarsPerLine}
-        handleWrapBarsPerLine={handleWrapBarsPerLine}
-        handleCancelEditLyrics={handleCancelEditLyrics}
-        onOpenPiano={() => setShowLyricsPiano(true)}
-        insertNotesToLyrics={insertNotesToLyrics}
-        setInsertNotesToLyrics={setInsertNotesToLyrics}
-        insertNoteFormat={insertNoteFormat}
-        setInsertNoteFormat={setInsertNoteFormat}
-        insertTrailingSpace={insertTrailingSpace}
-        setInsertTrailingSpace={setInsertTrailingSpace}
-        insertNumberKeySignature={insertNumberKeySignature}
-        setInsertNumberKeySignature={setInsertNumberKeySignature}
-        showExportMenu={showExportMenu}
-        setShowExportMenu={setShowExportMenu}
-        handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
-        handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
         tempo={tempo}
         timeSignature={timeSignature}
         autoScrollActive={autoScrollActive}
         scrollSpeed={scrollSpeed}
         setAutoScrollActive={setAutoScrollActive}
-        setScrollSpeed={setScrollSpeed}
-        currentBeat={currentBeat}
-        setCurrentBeat={setCurrentBeat}
         zoom={zoom}
         setZoom={setZoom}
-        canEdit={can(PERMISSIONS.SONG_EDIT)}
         song={song}
         transpose={transpose}
         setTranspose={setTranspose}
         showChords={showChords}
-        setShowChords={setShowChords}
         showSheetMusic={showSheetMusic}
         setShowSheetMusic={setShowSheetMusic}
         youtubeRef={youtubeRef}
         youtubeId={youtubeId}
         isYoutubePlaying={isYoutubePlaying}
-        showMiniVideoPlayer={showMiniVideoPlayer}
-        onOpenMiniVideoPlayer={() => setShowMiniVideoPlayer(true)}
-        onPlayYouTube={handlePlayYouTube}
-        onRestartYouTube={handleRestartYouTube}
         loading={loading}
         showChordNumbers={showChordNumbers}
         setShowChordNumbers={setShowChordNumbers}
@@ -747,33 +478,8 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
         keySignature={key || song?.key || ''}
         originalKey={song?.key || key || ''}
         targetKey={key || song?.key || ''}
-        performanceKeyOverride={setlistSongData.key || ''}
         pianoRecommendation={pianoRecommendation}
         onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-      />
-
-      {youtubeId && isEditingLyrics && (
-        <FloatingYouTubePlayer
-          isOpen={showMiniVideoPlayer}
-          videoId={youtubeId}
-          youtubeRef={youtubeRef}
-          timeMarkers={timeMarkers}
-          readonlyTimeMarkers={!can(PERMISSIONS.SONG_EDIT)}
-          onUpdateTimeMarkers={can(PERMISSIONS.SONG_EDIT) ? handleTimeMarkerUpdate : undefined}
-          onClose={() => {
-            if (youtubeRef.current && typeof youtubeRef.current.handlePause === 'function') {
-              youtubeRef.current.handlePause();
-            }
-            setShowMiniVideoPlayer(false);
-          }}
-        />
-      )}
-
-      <VirtualPiano
-        isOpen={showLyricsPiano}
-        onClose={() => setShowLyricsPiano(false)}
-        onKeySelect={handleLyricsPianoKeySelect}
-        helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${insertNumberKeySignature || getNumericNotationKey(key || song?.key || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
       />
 
       {/* Setlist Navigation (if in setlist context) */}
