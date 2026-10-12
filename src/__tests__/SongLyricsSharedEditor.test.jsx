@@ -555,8 +555,6 @@ describe('Song lyrics shared editor rendering', () => {
         <SongChordsInfo
           title="Song A"
           artist="Artist A"
-                    showSongInfo={true}
-          setShowSongInfo={noop}
           keyboardPatch="Stage Piano"
           detectedInstruments={['Gitar', 'Sax', 'Piano']}
         />
@@ -579,8 +577,6 @@ describe('Song lyrics shared editor rendering', () => {
         <SongChordsInfo
           title="Song A"
           artist="Artist A"
-                    showSongInfo={true}
-          setShowSongInfo={noop}
           originalKey="C"
           targetKey="D"
           tempo="120"
@@ -603,15 +599,13 @@ describe('Song lyrics shared editor rendering', () => {
         <SongChordsInfo
           title="Song A"
           artist="Artist A"
-                    showSongInfo={true}
-          setShowSongInfo={noop}
           timeSignature="4/4"
           genre="Rock"
         />
       );
     });
 
-    const items = Array.from(container.querySelectorAll('.song-info-compact-grid .song-info-item'));
+    const items = Array.from(container.querySelectorAll('.song-info-chip-row .song-info-item'));
     const timeItem = items.find((item) => item.textContent.includes('Time'));
     const genreItem = items.find((item) => item.textContent.includes('Genre'));
 
@@ -855,7 +849,8 @@ describe('Song lyrics shared editor rendering', () => {
     );
     expect(keyEasyButton).toBeTruthy();
     expect(container.textContent).toContain('Key Mudah');
-    expect(container.textContent).toContain('+5 semitone');
+    // Jarak transpose kini ada di tooltip tombol, bukan teks terpisah.
+    expect(keyEasyButton.getAttribute('title')).toContain('+5 semitone');
 
     await act(async () => {
       keyEasyButton.click();

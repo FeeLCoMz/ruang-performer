@@ -146,8 +146,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
   // Export menu state
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  // State untuk menampilkan/menyembunyikan info lagu
-  const [showSongInfo, setShowSongInfo] = useState(true);
 
   // Share state
   const [shareMessage, setShareMessage] = useState("");
@@ -642,8 +640,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
         genre={genre}
         keyboardPatch={keyboardPatch}
         detectedInstruments={detectedInstruments}
-        showSongInfo={showSongInfo}
-        setShowSongInfo={setShowSongInfo}
         title={song.title}
         artist={artist}
         contributor={song.contributor}
