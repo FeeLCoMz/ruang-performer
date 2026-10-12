@@ -432,6 +432,51 @@ describe('Song lyrics shared editor rendering', () => {
     expect(setShowSimpleChords).toHaveBeenCalledWith(false);
   });
 
+  test('Given the autoscroll speed control, When a BPM is typed or stepped, Then setScrollSpeed receives clamped values', async () => {
+    const setScrollSpeed = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <SongChordsLyricsToolbar
+          autoScrollActive={true}
+          setAutoScrollActive={noop}
+          scrollSpeed={120}
+          setScrollSpeed={setScrollSpeed}
+          tempo={120}
+          showChordNumbers={false}
+          setShowChordNumbers={noop}
+          showJazzChords={false}
+          setShowJazzChords={noop}
+          showSimpleChords={false}
+          setShowSimpleChords={noop}
+          youtubeId={null}
+          youtubeRef={{ current: null }}
+        />
+      );
+    });
+
+    const input = container.querySelector('.song-lyrics-autoscroll-input');
+    expect(input).toBeTruthy();
+    expect(input.value).toBe('120');
+
+    // Typing a precise value.
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      setter.call(input, '137');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(setScrollSpeed).toHaveBeenCalledWith(137);
+
+    // Stepping up from the current prop value.
+    setScrollSpeed.mockClear();
+    const stepButtons = container.querySelectorAll('.song-lyrics-autoscroll-step');
+    expect(stepButtons.length).toBe(2);
+    await act(async () => {
+      stepButtons[1].click();
+    });
+    expect(setScrollSpeed).toHaveBeenCalledWith(121);
+  });
+
   test('Given detected instruments are present, Then a copy button is visible for registration memory', async () => {
     const clipboard = {
       writeText: vi.fn().mockResolvedValue(undefined),

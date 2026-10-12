@@ -10705,6 +10705,9 @@ body.dark-mode .cd-token {
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .song-lyrics-toolbar-group-chords {
@@ -10730,14 +10733,16 @@ body.dark-mode .cd-token {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   border-radius: 999px;
   font-size: 1.05rem;
   line-height: 1;
+  box-sizing: border-box;
 }
 
 .song-lyrics-youtube-btn--normal {
   width: auto;
-  min-width: 98px;
+  min-width: 0;
   height: 36px;
   padding: 0 0.7rem;
   border-radius: var(--radius-md);
@@ -10746,6 +10751,68 @@ body.dark-mode .cd-token {
 
 .song-lyrics-toolbar-group-autoscroll {
   order: 4;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+/* Kontrol kecepatan autoscroll presisi */
+.song-lyrics-autoscroll-speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--secondary-bg);
+}
+
+.song-lyrics-autoscroll-step,
+.song-lyrics-autoscroll-reset {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+}
+
+.song-lyrics-autoscroll-input {
+  width: 52px;
+  height: 28px;
+  padding: 0 4px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+/* Sembunyikan spinner input number agar rapi */
+.song-lyrics-autoscroll-input::-webkit-outer-spin-button,
+.song-lyrics-autoscroll-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.song-lyrics-autoscroll-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.song-lyrics-autoscroll-unit {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
 }
 
 .song-lyrics-toolbar-group-tempo-led-compact {
@@ -12638,9 +12705,8 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
 
 
   .song-lyrics-toolbar--normal .song-lyrics-youtube-btn--normal {
-    min-width: 40px;
-    width: 40px;
-    padding: 0;
+    width: auto;
+    min-width: 0;
   }
 
 

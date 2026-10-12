@@ -10,6 +10,9 @@ import React, { useEffect, useRef, useState } from "react";
 export default function SongChordsLyricsToolbar({
   autoScrollActive,
   setAutoScrollActive,
+  scrollSpeed,
+  setScrollSpeed,
+  tempo,
   showChordNumbers,
   setShowChordNumbers,
   showJazzChords,
@@ -39,6 +42,16 @@ export default function SongChordsLyricsToolbar({
   };
   const currentChordModeLabel = CHORD_MODE_LABELS[currentChordMode];
   const toolbarClassName = 'song-lyrics-toolbar song-lyrics-toolbar--normal';
+
+  const baseTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
+  const currentScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || baseTempo));
+
+  const setScrollSpeedClamped = (next) => {
+    if (typeof setScrollSpeed !== 'function') return;
+    const numeric = Number(next);
+    if (!Number.isFinite(numeric)) return;
+    setScrollSpeed(Math.max(40, Math.min(240, Math.round(numeric))));
+  };
 
   // Sync YouTube playing state
   useEffect(() => {
@@ -140,6 +153,53 @@ export default function SongChordsLyricsToolbar({
           <span aria-hidden="true">↕</span>
           <span className="song-lyrics-toolbar-btn-label">Autoscroll</span>
         </button>
+
+        <div className="song-lyrics-autoscroll-speed" role="group" aria-label="Kecepatan autoscroll">
+          <button
+            type="button"
+            className="btn btn-secondary song-lyrics-autoscroll-step"
+            onClick={() => setScrollSpeedClamped(currentScrollSpeed - 1)}
+            disabled={currentScrollSpeed <= 40}
+            aria-label="Kurangi kecepatan autoscroll 1 BPM"
+            title="-1 BPM"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            className="song-lyrics-autoscroll-input"
+            value={currentScrollSpeed}
+            min={40}
+            max={240}
+            step={1}
+            inputMode="numeric"
+            onChange={(e) => setScrollSpeedClamped(e.target.value)}
+            aria-label="Kecepatan autoscroll (BPM)"
+            title="Kecepatan autoscroll dalam BPM"
+          />
+          <span className="song-lyrics-autoscroll-unit" aria-hidden="true">BPM</span>
+          <button
+            type="button"
+            className="btn btn-secondary song-lyrics-autoscroll-step"
+            onClick={() => setScrollSpeedClamped(currentScrollSpeed + 1)}
+            disabled={currentScrollSpeed >= 240}
+            aria-label="Tambah kecepatan autoscroll 1 BPM"
+            title="+1 BPM"
+          >
+            +
+          </button>
+          {currentScrollSpeed !== baseTempo && (
+            <button
+              type="button"
+              className="btn btn-secondary song-lyrics-autoscroll-reset"
+              onClick={() => setScrollSpeedClamped(baseTempo)}
+              title={`Kembalikan ke tempo lagu (${baseTempo} BPM)`}
+              aria-label={`Reset ke tempo lagu ${baseTempo} BPM`}
+            >
+              ⟲
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">

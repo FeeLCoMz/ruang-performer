@@ -14,6 +14,7 @@ export default function SongLyricsMainSection({
   autoScrollActive,
   scrollSpeed,
   setAutoScrollActive,
+  setScrollSpeed,
   zoom,
   setZoom,
   song,
@@ -55,6 +56,9 @@ export default function SongLyricsMainSection({
           <SongChordsLyricsToolbar
             autoScrollActive={autoScrollActive}
             setAutoScrollActive={setAutoScrollActive}
+            scrollSpeed={scrollSpeed}
+            setScrollSpeed={setScrollSpeed}
+            tempo={tempo}
             showChordNumbers={showChordNumbers}
             setShowChordNumbers={setShowChordNumbers}
             showJazzChords={showJazzChords}

@@ -457,6 +457,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
         autoScrollActive={autoScrollActive}
         scrollSpeed={scrollSpeed}
         setAutoScrollActive={setAutoScrollActive}
+        setScrollSpeed={setScrollSpeed}
         zoom={zoom}
         setZoom={setZoom}
         song={song}
