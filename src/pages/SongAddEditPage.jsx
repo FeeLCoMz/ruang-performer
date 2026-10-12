@@ -7,8 +7,7 @@ import TapTempo from "../components/TapTempo";
 import VirtualPiano from "../components/VirtualPiano";
 import AIAutofillModal from "../components/AIAutofillModal";
 import SongLyricsEditorPanel from "../components/SongLyricsEditorPanel.jsx";
-import SongFormSection from "../components/SongFormSection.jsx";
-import SongEditorPracticePanel from "../components/SongEditorPracticePanel.jsx";
+import SongStudioTopbar, { StudioMediaColumn } from "../components/SongStudioLayout.jsx";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
 import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils.js';
@@ -674,6 +673,299 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     </>
   );
 
+  /**
+   * The studio arrangement: a sticky command bar, all the song's facts in one
+   * dense grid, the media column beside the lyrics editor, and the rendered
+   * song underneath. Every control here is the same one the stepped layout uses
+   * — this only places them where they are needed while building a song.
+   */
+  const statusText = loading
+    ? 'Menyimpan…'
+    : hasUnsavedChanges
+      ? 'Ada perubahan belum disimpan'
+      : 'Tersimpan';
+
+  const studioLayout = (
+    <div className="studio-shell">
+      <SongStudioTopbar
+        modeLabel={isEditMode ? 'EDITOR LIRIK & CHORD' : newVersionMode ? 'VERSI BARU' : 'LAGU BARU'}
+        eyebrowIcon={isEditMode ? '📝' : newVersionMode ? '🧬' : '➕'}
+        title={title.trim() || (isEditMode ? 'Edit Lagu' : newVersionMode ? 'Buat Versi Baru' : 'Tambah Lagu Baru')}
+        isEditMode={isEditMode}
+        newVersionMode={newVersionMode}
+        loading={loading}
+        hasFieldErrors={hasFieldErrors}
+        hasUnsavedChanges={hasUnsavedChanges}
+        statusText={statusText}
+        onCancel={handleCancel}
+        onFixFields={() => jumpToSection('musical')}
+      />
+
+      {newVersionMode && (
+        <div className="studio-note">
+          <span aria-hidden="true">🧬</span>
+          Form ini membuat versi baru dari lagu yang sudah ada. Ubah judul, aransemen,
+          atau detail lain seperlunya sebelum menyimpan.
+        </div>
+      )}
+
+      {error && <div className="error-message studio-error" role="alert">{error}</div>}
+
+      <div className="studio-body">
+        {/* INFORMASI UTAMA — every fact that identifies the song, in one grid.
+            Columns are explicit rather than auto-fit so the rows line up (Judul
+            next to Artis, BPM next to Time Signature, Nada Dasar next to Genre),
+            instead of reflowing into an uneven arrangement at each width. */}
+        <section className="studio-card studio-info">
+          <div className="studio-card-head">
+            <span className="studio-card-title">INFORMASI UTAMA</span>
+            <button
+              type="button"
+              onClick={handleAIAutofill}
+              disabled={aiLoading}
+              className="btn btn-secondary song-ai-autofill-btn"
+              title="Isi otomatis data lagu dari AI (judul wajib diisi)"
+            >
+              🤖 {aiLoading ? 'Mencari…' : 'AI Autofill'}
+            </button>
+          </div>
+
+          <div className="studio-fields">
+            <label className="studio-field">
+              <span className="studio-field-label">
+                Judul Lagu <span className="required-asterisk">*</span>
+              </span>
+              <input
+                id="song-title"
+                name="title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                placeholder="Masukkan judul lagu"
+                className="form-input-field"
+              />
+            </label>
+
+            <label className="studio-field">
+              <span className="studio-field-label">Artis / Band</span>
+              <input
+                id="song-artist"
+                name="artist"
+                type="text"
+                value={artist}
+                onChange={(e) => setArtist(e.target.value)}
+                placeholder="Nama artist atau band"
+                className="form-input-field"
+              />
+            </label>
+
+            <label className="studio-field">
+              <span className="studio-field-label">BPM / Tempo</span>
+              <div className="song-field-inline">
+                <input
+                  id="song-tempo"
+                  name="tempo"
+                  type="number"
+                  value={tempo}
+                  onChange={(e) => setTempo(e.target.value)}
+                  placeholder="120"
+                  min="40"
+                  max="240"
+                  className={`form-input-field${fieldErrors.tempo ? ' field-has-error' : ''}`}
+                  aria-invalid={Boolean(fieldErrors.tempo)}
+                />
+                <TapTempo onTempo={setTempo} initialTempo={tempo} label="Tap" />
+              </div>
+              {fieldErrors.tempo && <span className="song-field-error">{fieldErrors.tempo}</span>}
+            </label>
+
+            <label className="studio-field">
+              <span className="studio-field-label">Time Signature</span>
+              <select
+                id="song-time-signature"
+                name="time_signature"
+                className={`form-input-field${fieldErrors.timeSignature ? ' field-has-error' : ''}`}
+                value={timeSignature}
+                onChange={(e) => setTimeSignature(e.target.value)}
+                aria-invalid={Boolean(fieldErrors.timeSignature)}
+              >
+                {TIME_SIGNATURE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+              {fieldErrors.timeSignature && (
+                <span className="song-field-error">{fieldErrors.timeSignature}</span>
+              )}
+            </label>
+
+            <label className="studio-field">
+              <span className="studio-field-label">Nada Dasar (Key)</span>
+              <select
+                id="song-key"
+                name="key"
+                className={`form-input-field${fieldErrors.key ? ' field-has-error' : ''}`}
+                value={songKey}
+                onChange={(e) => {
+                  const nextKey = e.target.value;
+                  setSongKey(nextKey);
+                  setInsertNumberKeySignature(getNumericNotationKey(nextKey || 'C'));
+                }}
+                aria-invalid={Boolean(fieldErrors.key)}
+              >
+                <option value="">— pilih key —</option>
+                {SONG_KEY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+              {fieldErrors.key && <span className="song-field-error">{fieldErrors.key}</span>}
+            </label>
+
+            <label className="studio-field">
+              <span className="studio-field-label">Genre / Mood</span>
+              <input
+                id="song-genre"
+                name="genre"
+                type="text"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+                placeholder="Pop, Rock, Jazz, dll"
+                className="form-input-field"
+                list="song-genre-options"
+              />
+              <datalist id="song-genre-options">
+                {GENRE_OPTIONS.map((option) => (
+                  <option key={option} value={option} />
+                ))}
+              </datalist>
+            </label>
+
+            <label className="studio-field studio-field-span">
+              <span className="studio-field-label">YouTube URL atau ID</span>
+              <input
+                id="song-youtube"
+                name="youtubeId"
+                type="text"
+                value={youtubeId}
+                onChange={(e) => setYoutubeId(e.target.value)}
+                placeholder="https://youtube.com/watch?v=... atau dQw4w9WgXcQ"
+                className="form-input-field"
+              />
+              {normalizedYoutubeId && (
+                <span className="form-hint">Video terdeteksi: <code>{normalizedYoutubeId}</code></span>
+              )}
+            </label>
+          </div>
+        </section>
+
+        <div className="studio-columns">
+          <StudioMediaColumn
+            youtubeId={normalizedYoutubeId}
+            youtubeRef={ytRef}
+            timeMarkers={timeMarkers}
+            secondsToLabel={formatDuration}
+            isPlaying={isYoutubePlaying}
+            onTogglePlay={handleToggleYoutubePlay}
+            onSeek={handlePreviewSeek}
+            onUpdateMarkers={setTimeMarkers}
+            currentTime={ytCurrentTime}
+            duration={ytDuration}
+            getCurrentYouTubeTime={() =>
+              typeof ytRef.current?.currentTime === 'number' ? ytRef.current.currentTime : 0
+            }
+          />
+
+          <div className="studio-editor">
+            <div className="studio-panel-head">
+              <span className="studio-panel-title">🎤 Editor Lirik &amp; Chord</span>
+              <div className="song-lyrics-quick-transpose" role="group" aria-label="Transpose cepat">
+                <span className="song-lyrics-quick-transpose-label">Transpose</span>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => handleQuickTranspose(-1)}
+                  title="Turunkan semua chord 1 semitone"
+                >
+                  −1
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => handleQuickTranspose(1)}
+                  title="Naikkan semua chord 1 semitone"
+                >
+                  +1
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleCopyLyrics}
+                  title="Salin seluruh lirik ke clipboard"
+                >
+                  {copyFeedback || '⧉ Salin'}
+                </button>
+              </div>
+            </div>
+
+            <SongLyricsEditorPanel
+              lyricsRef={lyricsTextareaRef}
+              lyricsValue={lyrics}
+              setLyricsValue={setLyrics}
+              error={lyricsEditError}
+              disabled={loading}
+              editorActions={buildAddEditEditorActions({
+                onOpenPiano: () => setShowLyricsPiano(true),
+                insertNotesToLyrics,
+              })}
+              autoFocus={false}
+              previewSong={{ key: songKey, tempo, lyrics }}
+              previewProps={{
+                showChords: true,
+                keySignature: songKey || 'C',
+                isPlaying: isYoutubePlaying,
+                onTimestampClick: handlePreviewSeek,
+                onTimestampPause: handlePreviewPause,
+              }}
+            />
+          </div>
+        </div>
+
+        <section className="studio-card studio-extras">
+          <div className="studio-card-head">
+            <span className="studio-card-title">INFORMASI TAMBAHAN</span>
+          </div>
+          <div className="studio-fields">
+            <label className="studio-field studio-field-span">
+              <span className="studio-field-label">🎹 Keyboard Patch</span>
+              <textarea
+                id="song-keyboard-patch"
+                name="keyboardPatch"
+                value={keyboardPatch}
+                onChange={(e) => setKeyboardPatch(e.target.value)}
+                placeholder="Contoh: EP Mark I untuk verse, Pad + Strings untuk chorus"
+                rows={2}
+                className="form-input-field"
+              />
+            </label>
+
+            <label className="studio-field studio-field-span">
+              <span className="studio-field-label">Partitur (MusicXML)</span>
+              <textarea
+                id="song-sheet-music"
+                name="sheetMusicXml"
+                value={sheetMusicXml}
+                onChange={(e) => setSheetMusicXml(e.target.value)}
+                placeholder="Paste MusicXML di sini..."
+                rows={5}
+                className="form-input-field song-sheetmusic-textarea"
+              />
+            </label>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+
   if (loadingData) {
     return (
       <div className="page-container">
@@ -694,512 +986,16 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
   const editorMode = isEditMode ? 'edit' : newVersionMode ? 'version' : 'create';
 
+  // The studio arrangement is the only layout. The stepped flow was removed at
+  // the user's request: maintaining two arrangements of the same form split
+  // every change across both, and the studio view already covers the phone
+  // case (the columns simply stack).
   return (
     <div className="page-container">
-      <header className="song-editor-hero" data-mode={editorMode}>
-        <div className="song-editor-hero-main">
-          <span className="song-editor-hero-eyebrow">
-            {isEditMode ? '✏️ Mode Edit' : newVersionMode ? '🧬 Versi Baru' : '➕ Lagu Baru'}
-          </span>
-          <h1 className="song-editor-hero-title">
-            {isEditMode
-              ? title.trim() || 'Edit Lagu'
-              : newVersionMode
-                ? 'Buat Versi Baru Lagu'
-                : 'Tambah Lagu Baru'}
-          </h1>
-          <p className="song-editor-hero-subtitle">
-            {isEditMode
-              ? 'Ubah detail lagu, lirik, dan chord. Perubahan disimpan sebagai revisi lagu yang ada.'
-              : 'Lengkapi identitas, detail musikal, lalu lirik dan chord. Bagian bertanda * wajib diisi.'}
-          </p>
-        </div>
-
-        {/* Live progress: the same completeness signal as the sidebar, surfaced
-            where the decision to keep filling the form is actually made. */}
-        <div className="song-editor-hero-progress">
-          <div className="song-editor-hero-progress-head">
-            <span>Kelengkapan</span>
-            <strong>{completeness.score}%</strong>
-          </div>
-          <div className="song-editor-hero-progress-track">
-            <div
-              className={`song-editor-hero-progress-fill level-${completenessScoreLevel(completeness.score)}`}
-              style={{ width: `${completeness.score}%` }}
-            />
-          </div>
-          <span className="song-editor-hero-progress-hint">
-            {completeness.missing.length > 0
-              ? `${completeness.missing.length} bagian belum lengkap`
-              : '✓ Semua data penting lengkap'}
-          </span>
-        </div>
-        {error && (
-          <div className="error-message song-edit-error-banner">{error}</div>
-        )}
-      </header>
-
-      {/* One-glance map of the form. Jumping is cheaper than scrolling, and the
-          numbering gives the four steps a shared order in add and edit mode. */}
-      {!newVersionMode && (
-        <nav className="song-editor-steps" aria-label="Langkah pengisian lagu">
-          {[
-            { key: 'identity', step: 1, icon: '🎵', label: 'Identitas', done: Boolean(title.trim() && artist.trim()) },
-            { key: 'musical', step: 2, icon: '🎼', label: 'Musikal', done: Boolean(songKey && tempo) },
-            { key: 'lyrics', step: 3, icon: '🎤', label: 'Lirik & Chord', done: lyricsAnalysis.hasLyrics },
-            { key: 'media', step: 4, icon: '📺', label: 'Media', done: Boolean(normalizedYoutubeId || keyboardPatch.trim() || sheetMusicXml.trim()) },
-          ].map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={`song-editor-step${item.done ? ' is-done' : ''}`}
-              onClick={() => jumpToSection(item.key)}
-              title={`Buka bagian ${item.label}`}
-            >
-              <span className="song-editor-step-index" aria-hidden="true">
-                {item.done ? '✓' : item.step}
-              </span>
-              <span className="song-editor-step-label">
-                <span aria-hidden="true">{item.icon}</span> {item.label}
-              </span>
-            </button>
-          ))}
-        </nav>
-      )}
-
-      {newVersionMode && (
-        <div className="card song-new-version-note">
-          Form ini membuat versi baru dari lagu yang sudah ada. Ubah judul, aransemen, atau detail lain seperlunya sebelum menyimpan.
-        </div>
-      )}
-      <form ref={formRef} onSubmit={handleSubmit} className="song-editor-form">
-        <div className="song-editor-layout">
-          <div className="song-editor-main">
-            <SongFormSection
-              id="song-identity"
-              icon="🎵"
-              step={1}
-              title="Identitas Lagu"
-              subtitle="Judul dan artist"
-              isOpen={openSections.identity}
-              onToggle={() => toggleSection('identity')}
-              incomplete={!title.trim() || !artist.trim()}
-              actions={
-                <button
-                  type="button"
-                  onClick={handleAIAutofill}
-                  disabled={aiLoading}
-                  className="btn btn-secondary song-ai-autofill-btn"
-                  title="Isi otomatis data lagu dari AI (judul wajib diisi)"
-                >
-                  🤖 {aiLoading ? 'Mencari…' : 'AI Autofill'}
-                </button>
-              }
-            >
-              <div className="form-grid-2col">
-                <div>
-                  <label className="form-label-required" htmlFor="song-title">
-                    Judul Lagu <span className="required-asterisk">*</span>
-                  </label>
-                  <input
-                    id="song-title"
-                    name="title"
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                    placeholder="Masukkan judul lagu"
-                    className="form-input-field"
-                  />
-                </div>
-
-                <div>
-                  <label className="form-label" htmlFor="song-artist">Artist / Band</label>
-                  <input
-                    id="song-artist"
-                    name="artist"
-                    type="text"
-                    value={artist}
-                    onChange={(e) => setArtist(e.target.value)}
-                    placeholder="Nama artist atau band"
-                    className="form-input-field"
-                  />
-                </div>
-              </div>
-            </SongFormSection>
-
-
-            <SongFormSection
-              id="song-musical"
-              icon="🎼"
-              step={2}
-              title="Detail Musikal"
-              subtitle="Key, tempo, birama, dan genre"
-              badge={
-                <span className="song-form-section-badge">
-                  {songKey || '—'} · {tempo || '—'} BPM
-                </span>
-              }
-              isOpen={openSections.musical}
-              onToggle={() => toggleSection('musical')}
-              incomplete={!songKey || !tempo}
-            >
-              <div className="form-grid-3col">
-                <div>
-                  <label className="form-label" htmlFor="song-key">Key</label>
-                  <select
-                    id="song-key"
-                    name="key"
-                    className={`form-input-field${fieldErrors.key ? ' field-has-error' : ''}`}
-                    value={songKey}
-                    onChange={(e) => {
-                      const nextKey = e.target.value;
-                      setSongKey(nextKey);
-                      setInsertNumberKeySignature(getNumericNotationKey(nextKey || 'C'));
-                    }}
-                    aria-invalid={Boolean(fieldErrors.key)}
-                  >
-                    <option value="">— pilih key —</option>
-                    {SONG_KEY_OPTIONS.map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                  {fieldErrors.key && <span className="song-field-error">{fieldErrors.key}</span>}
-                </div>
-
-                <div>
-                  <label className="form-label" htmlFor="song-tempo">Tempo (BPM)</label>
-                  <div className="song-field-inline">
-                    <input
-                      id="song-tempo"
-                      name="tempo"
-                      type="number"
-                      value={tempo}
-                      onChange={(e) => setTempo(e.target.value)}
-                      placeholder="120"
-                      min="40"
-                      max="240"
-                      className={`form-input-field${fieldErrors.tempo ? ' field-has-error' : ''}`}
-                      aria-invalid={Boolean(fieldErrors.tempo)}
-                    />
-                    <TapTempo onTempo={setTempo} initialTempo={tempo} label="Tap" />
-                  </div>
-                  {fieldErrors.tempo && <span className="song-field-error">{fieldErrors.tempo}</span>}
-                </div>
-
-                <div>
-                  <label className="form-label" htmlFor="song-time-signature">Time Signature</label>
-                  <select
-                    id="song-time-signature"
-                    name="time_signature"
-                    className={`form-input-field${fieldErrors.timeSignature ? ' field-has-error' : ''}`}
-                    value={timeSignature}
-                    onChange={(e) => setTimeSignature(e.target.value)}
-                    aria-invalid={Boolean(fieldErrors.timeSignature)}
-                  >
-                    {TIME_SIGNATURE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                  {fieldErrors.timeSignature && (
-                    <span className="song-field-error">{fieldErrors.timeSignature}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="form-grid-2col song-musical-secondary">
-                <div>
-                  <label className="form-label" htmlFor="song-genre">Genre</label>
-                  <input
-                    id="song-genre"
-                    name="genre"
-                    type="text"
-                    value={genre}
-                    onChange={(e) => setGenre(e.target.value)}
-                    placeholder="Pop, Rock, Jazz, dll"
-                    className="form-input-field"
-                    list="song-genre-options"
-                  />
-                  <datalist id="song-genre-options">
-                    {GENRE_OPTIONS.map((option) => (
-                      <option key={option} value={option} />
-                    ))}
-                  </datalist>
-                </div>
-
-              </div>
-
-              {/* Keyboard patch belongs with the musical detail: it describes how
-                  the song is played. It previously sat under "Video & Referensi",
-                  which hid it behind a collapsed section unrelated to its purpose. */}
-              <div className="song-musical-secondary">
-                <label className="form-label" htmlFor="song-keyboard-patch">
-                  🎹 Keyboard Patch
-                </label>
-                <textarea
-                  id="song-keyboard-patch"
-                  name="keyboardPatch"
-                  value={keyboardPatch}
-                  onChange={(e) => setKeyboardPatch(e.target.value)}
-                  placeholder="Contoh: EP Mark I untuk verse, Pad + Strings untuk chorus"
-                  rows={3}
-                  className="form-input-field"
-                />
-                <div className="form-hint">
-                  Catatan aransemen keyboard untuk lagu ini.
-                </div>
-              </div>
-           </SongFormSection>
-
-            {/* ---------- 3. Lirik & chord (fokus utama) ---------- */}
-            <SongFormSection
-              id="song-lyrics"
-              icon="🎤"
-              step={3}
-              title="Lirik & Chord"
-              subtitle="Editor utama dengan preview langsung"
-              badge={
-                <span className="song-form-section-badge">
-                  {lyricsAnalysis.lineCount} baris · {sectionOverview.length} bagian
-                </span>
-              }
-              isOpen={openSections.lyrics}
-              onToggle={() => toggleSection('lyrics')}
-              incomplete={!lyricsAnalysis.hasLyrics}
-              actions={
-                <div className="song-lyrics-quick-transpose" role="group" aria-label="Transpose cepat">
-                  <span className="song-lyrics-quick-transpose-label">Transpose</span>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => handleQuickTranspose(-1)}
-                    title="Turunkan semua chord 1 semitone"
-                  >
-                    −1
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => handleQuickTranspose(1)}
-                    title="Naikkan semua chord 1 semitone"
-                  >
-                    +1
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={handleCopyLyrics}
-                    title="Salin seluruh lirik ke clipboard"
-                  >
-                    {copyFeedback || '⧉ Salin'}
-                  </button>
-                </div>
-              }
-            >
-              <SongLyricsEditorPanel
-                lyricsRef={lyricsTextareaRef}
-                lyricsValue={lyrics}
-                setLyricsValue={setLyrics}
-                error={lyricsEditError}
-                disabled={loading}
-                editorActions={buildAddEditEditorActions({
-                  onOpenPiano: () => setShowLyricsPiano(true),
-                  insertNotesToLyrics,
-                })}
-                autoFocus={false}
-                previewSong={{ key: songKey, tempo }}
-                previewProps={{
-                  showChords: true,
-                  keySignature: songKey || 'C',
-                  // Drive the one video player in the practice panel, so the
-                  // timestamp buttons in this preview really play/pause it.
-                  isPlaying: isYoutubePlaying,
-                  onTimestampClick: handlePreviewSeek,
-                  onTimestampPause: handlePreviewPause,
-                }}
-              />
-            </SongFormSection>
-
-            {/* ---------- 4. Media & referensi ---------- */}
-            <SongFormSection
-              id="song-media"
-              icon="📺"
-              step={4}
-              title="Video & Referensi"
-              subtitle="YouTube, patch keyboard, dan partitur"
-              badge={
-                <span className="song-form-section-badge">
-                  {[normalizedYoutubeId && '🎬', keyboardPatch.trim() && '🎹', sheetMusicXml.trim() && '🎼']
-                    .filter(Boolean)
-                    .join(' ') || 'kosong'}
-                </span>
-              }
-              isOpen={openSections.media}
-              onToggle={() => toggleSection('media')}
-            >
-              <div className="song-field-stack">
-                <div>
-                  <label className="form-label" htmlFor="song-youtube">YouTube URL atau ID</label>
-                  <input
-                    id="song-youtube"
-                    name="youtubeId"
-                    type="text"
-                    value={youtubeId}
-                    onChange={(e) => setYoutubeId(e.target.value)}
-                    placeholder="https://youtube.com/watch?v=... atau dQw4w9WgXcQ"
-                    className="form-input-field"
-                  />
-                  {normalizedYoutubeId && (
-                    <div className="form-hint">Video terdeteksi: <code>{normalizedYoutubeId}</code></div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="form-label" htmlFor="song-sheet-music">Partitur (MusicXML)</label>
-                  <textarea
-                    id="song-sheet-music"
-                    name="sheetMusicXml"
-                    value={sheetMusicXml}
-                    onChange={(e) => setSheetMusicXml(e.target.value)}
-                    placeholder="Paste MusicXML di sini..."
-                    rows={8}
-                    className="form-input-field song-sheetmusic-textarea"
-                  />
-                  <div className="form-hint">Hanya format MusicXML. Gunakan software notasi musik untuk ekspor MusicXML.</div>
-                </div>
-              </div>
-
-              <div className="form-hint">
-                Video referensi dan penanda waktunya ada di panel <b>🎧 Latihan</b> pada
-                sisi kanan, supaya tetap terlihat sambil mengedit lirik.
-              </div>
-            </SongFormSection>
-
-            {/* ---------- 5. Turunan otomatis (read-only) ---------- */}
-          </div>
-
-          {/* ---------- Sidebar: latihan, kelengkapan & struktur ---------- */}
-          <aside className="song-editor-sidebar">
-            {/* Video + time markers stay pinned here so you can listen and scrub
-                while the lyrics editor remains in view. */}
-            <SongEditorPracticePanel
-              youtubeId={normalizedYoutubeId}
-              youtubeRef={ytRef}
-              timeMarkers={timeMarkers}
-              secondsToLabel={formatDuration}
-              isPlaying={isYoutubePlaying}
-              onTogglePlay={handleToggleYoutubePlay}
-              onSeek={handlePreviewSeek}
-            />
-
-            <div className="song-editor-sidebar-card">
-              <div className="song-completeness-head">
-                <span className="song-completeness-title">Kelengkapan Data</span>
-                <span className={`song-completeness-score level-${completenessScoreLevel(completeness.score)}`}>
-                  {completeness.score}%
-                </span>
-              </div>
-              <div className="song-completeness-bar">
-                <div
-                  className={`song-completeness-bar-fill level-${completenessScoreLevel(completeness.score)}`}
-                  style={{ width: `${completeness.score}%` }}
-                />
-              </div>
-              {completeness.missing.length > 0 ? (
-                <ul className="song-completeness-list">
-                  {completeness.missing.map((item) => (
-                    <li key={item} className="song-completeness-item">
-                      <span className="song-completeness-dot" aria-hidden="true">○</span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="song-completeness-done">✓ Semua data penting sudah lengkap</p>
-              )}
-            </div>
-
-            <div className="song-editor-sidebar-card">
-              <div className="song-completeness-head">
-                <span className="song-completeness-title">Struktur Lagu</span>
-                <span className="song-form-section-badge">{sectionOverview.length}</span>
-              </div>
-              {sectionOverview.length > 0 ? (
-                <ol className="song-section-nav-list">
-                  {sectionOverview.map((section) => (
-                    <li key={section.key}>
-                      <button
-                        type="button"
-                        className="song-section-nav-item"
-                        onClick={() => handleJumpToSection(section.lineIndex)}
-                        title={`Lompat ke baris ${section.lineNumber}`}
-                      >
-                        <span className="song-section-nav-label">{section.label}</span>
-                        <span className="song-section-nav-line">L{section.lineNumber}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <div className="song-derived-empty">
-                  Belum ada tag bagian. Tulis <code>[Intro]</code>, <code>[Chorus]</code>, dan
-                  sejenisnya di editor lirik, atau tekan tombol <b>Tag Bagian</b> untuk
-                  mendeteksinya otomatis.
-                </div>
-              )}
-            </div>
-
-          </aside>
-        </div>
-
-        <div className="song-editor-actionbar">
-          <div className="song-editor-actionbar-status">
-            <span className={`song-editor-status-dot${loading ? ' is-saving' : hasUnsavedChanges ? ' is-dirty' : ' is-clean'}`} aria-hidden="true" />
-            {loading ? (
-              <span className="song-editor-status is-saving">⏳ Menyimpan…</span>
-            ) : hasUnsavedChanges ? (
-              <span className="song-editor-status is-dirty">Ada perubahan belum disimpan</span>
-            ) : (
-              <span className="song-editor-status is-clean">Tersimpan</span>
-            )}
-            {/* A blocked submit is the one thing the user cannot infer from the
-                page, so say it plainly instead of leaving a dead button. */}
-            {hasFieldErrors && !loading ? (
-              <button
-                type="button"
-                className="song-editor-status-blocker"
-                onClick={() => jumpToSection('musical')}
-                title="Buka Detail Musikal"
-              >
-                ⚠ Perbaiki Key / Tempo / Time Signature
-              </button>
-            ) : (
-              <span className="song-editor-status-hint"><kbd>Ctrl</kbd>+<kbd>S</kbd> simpan</span>
-            )}
-          </div>
-          <div className="song-editor-actionbar-buttons">
-            <button type="button" onClick={handleCancel} className="btn btn-secondary">
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={loading || hasFieldErrors}
-              className="btn btn-primary song-editor-submit"
-              title={hasFieldErrors ? 'Perbaiki Key, Tempo, atau Time Signature dulu' : undefined}
-            >
-              {loading
-                ? "⏳ Menyimpan..."
-                : isEditMode
-                  ? "💾 Simpan Perubahan"
-                  : newVersionMode
-                    ? "🧬 Simpan Versi Baru"
-                    : "➕ Tambah Lagu"}
-            </button>
-          </div>
-        </div>
+      <form ref={formRef} onSubmit={handleSubmit} className="studio-form">
+        {studioLayout}
       </form>
 
-      {/* Virtual Piano Popup */}
       <VirtualPiano
         isOpen={showLyricsPiano}
         onClose={() => setShowLyricsPiano(false)}
@@ -1208,7 +1004,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         insertControls={pianoInsertControls}
       />
 
-      {/* AI Autofill Modal */}
       {showAiModal && aiResult && (
         <AIAutofillModal
           aiResult={aiResult}

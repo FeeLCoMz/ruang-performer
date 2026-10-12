@@ -66,36 +66,66 @@ describe('SongAddEditPage shared lyrics editor', () => {
     document.body.removeChild(container);
   });
 
-  test('Given add mode, Then the piano entry point is in the tools bar', async () => {
+  /** Open a top-level editor menu by its visible label. */
+  function openMenu(scope, label) {
+    const trigger = [...scope.querySelectorAll('.ed-menu-trigger')].find(
+      (btn) => btn.textContent.replace(/[▾\s]/g, '') === label,
+    );
+    if (!trigger) return null;
+    trigger.click();
+    return scope.querySelector('.ed-dropdown');
+  }
+
+  /**
+   * Click a menu trigger and wait for the dropdown to render. React commits the
+   * open state asynchronously, so a bare click() leaves the DOM unchanged and
+   * the caller sees null.
+   */
+  async function openMenuAsync(label) {
+    await act(async () => {
+      openMenu(container, label);
+    });
+    return container.querySelector('.ed-dropdown');
+  }
+
+  /** Labels of the items inside the currently open dropdown. */
+  function menuItemLabels() {
+    return [...container.querySelectorAll('.ed-dropdown-item-label')].map((el) =>
+      el.textContent.trim(),
+    );
+  }
+
+  /** The open dropdown's item whose label contains `text`. */
+  function menuItemByText(text) {
+    return [...container.querySelectorAll('.ed-dropdown-item')].find((btn) =>
+      btn.textContent.includes(text),
+    );
+  }
+
+  test('Given add mode, Then the editor commands live in the menu bar', async () => {
     await act(async () => {
       root.render(<SongAddEditPage />);
     });
 
-    // Tools (history / search / cue / piano) are separate from formatting and
-    // live behind a toggle so formatting stays the primary surface.
+    // The editor uses a menu bar now: one row of labelled menus instead of a
+    // ribbon of mixed buttons, and nothing hidden behind a disclosure toggle.
     expect(container.querySelector('.lyric-editor-controls')).toBeTruthy();
     expect(container.querySelector('.lyric-format')).toBeTruthy();
-    expect(container.querySelector('.lyric-tools')).toBeFalsy();
+    expect(container.querySelector('.ed-menubar')).toBeTruthy();
 
-    const toolsToggle = container.querySelector('.lyric-editor-tools-toggle');
-    expect(toolsToggle).toBeTruthy();
-    expect(toolsToggle.getAttribute('aria-expanded')).toBe('false');
-
-    await act(async () => {
-      toolsToggle.click();
-    });
-
-    expect(container.querySelector('.lyric-tools')).toBeTruthy();
-    expect(toolsToggle.getAttribute('aria-expanded')).toBe('true');
-
-    const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Piano')
+    const menuLabels = [...container.querySelectorAll('.ed-menu-trigger')].map((b) =>
+      b.textContent.replace(/[▾\s]/g, ''),
     );
-    expect(pianoButton).toBeTruthy();
-    expect(pianoButton.closest('.lyric-tools')).toBeTruthy();
+    // Every group is present and visible without opening a drawer first.
+    expect(menuLabels).toEqual(expect.arrayContaining(['Riwayat', 'Format', 'Dokumen', 'Sisip']));
 
-    // Insert configuration moved into the piano modal, so the toolbar no longer
-    // renders its own copy of the format/key controls.
+    // The commands that used to be hidden behind "Alat" are now menu items.
+    const historyDropdown = await openMenuAsync('Riwayat');
+    expect(historyDropdown).toBeTruthy();
+    const historyItems = menuItemLabels();
+    expect(historyItems).toEqual(expect.arrayContaining(['Batalkan', 'Ulangi', 'Cari / Ganti']));
+
+    // Insert configuration still lives in the piano modal, not the toolbar.
     expect(container.querySelector('#lyrics-insert-format-select')).toBeFalsy();
     expect(container.querySelector('#lyrics-insert-key-select')).toBeFalsy();
   });
@@ -106,12 +136,10 @@ describe('SongAddEditPage shared lyrics editor', () => {
     });
 
     await act(async () => {
-      container.querySelector('.lyric-editor-tools-toggle').click();
+      openMenu(container, 'Sisip');
     });
 
-    const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Piano')
-    );
+    const pianoButton = menuItemByText('Virtual Piano');
     expect(pianoButton).toBeTruthy();
 
     await act(async () => {
@@ -155,15 +183,13 @@ describe('SongAddEditPage shared lyrics editor', () => {
     const editorHost = container.querySelector('.song-lyrics-textarea-editor');
     expect(editorHost).toBeTruthy();
 
-    // The piano modal must be open first: the Insert toggle now lives inside it,
-    // and the piano entry point itself sits in the collapsible tools bar.
+    // The piano modal must be open first: the Insert toggle lives inside it, and
+    // the piano entry point is a menu item under Sisip.
     await act(async () => {
-      container.querySelector('.lyric-editor-tools-toggle').click();
+      openMenu(container, 'Sisip');
     });
 
-    const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Piano')
-    );
+    const pianoButton = menuItemByText('Virtual Piano');
     expect(pianoButton).toBeTruthy();
 
     await act(async () => {

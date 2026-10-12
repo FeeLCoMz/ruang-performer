@@ -189,7 +189,15 @@ function buildDecorations(view) {
   return builder.finish();
 }
 
-/** CodeMirror extension that paints lyrics/chord structure. */
+/**
+ * CodeMirror extension that paints lyrics/chord structure.
+ *
+ * Rebuilds only when the DOCUMENT or the viewport actually changed. CodeMirror
+ * fires many update events that are neither (selection-only moves, focus blur,
+ * height measurement), and re-decorating the entire document on those was pure
+ * waste — on a long lyric it is the main cost of typing. The viewport guard also
+ * keeps the work proportional to what is on screen, not to the doc length.
+ */
 export const lyricsHighlighting = ViewPlugin.fromClass(
   class {
     constructor(view) {
@@ -197,7 +205,9 @@ export const lyricsHighlighting = ViewPlugin.fromClass(
     }
 
     update(update) {
-      this.decorations = buildDecorations(update.view);
+      if (update.docChanged || update.viewportChanged) {
+        this.decorations = buildDecorations(update.view);
+      }
     }
   },
   { decorations: (instance) => instance.decorations }

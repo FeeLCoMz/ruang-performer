@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import EditorMenuBar from "./EditorMenuBar.jsx";
 import {
   applyTransformToSelection,
   autoAlignChordLyricPairs,
@@ -12,17 +13,20 @@ import { alignSelectedBarlines, wrapBarsPerLine } from "../utils/chordUtils.js";
 /**
  * LyricsFormatToolbar
  *
- * Formatting actions for the lyrics editor, grouped by SCOPE because that is
- * the distinction that actually decides whether pressing a button does anything:
+ * The lyrics editor's menu bar. Commands are grouped the way a text editor
+ * groups them, and NOTHING is hidden behind a disclosure toggle - the previous
+ * design parked undo/redo/search/piano behind an "Alat" drawer, which hid
+ * exactly the commands that are needed most.
  *
- *   - "Seleksi" acts on the highlighted text only. With nothing selected these
- *     do nothing useful, so they are disabled until there is a selection.
- *   - "Dokumen" acts on the whole lyric. These are the ones you reach for right
- *     after pasting, before touching anything else.
+ * Groups:
+ *   Riwayat  - undo / redo / search
+ *   Format   - actions on the highlighted selection
+ *   Dokumen  - actions on the whole lyric
+ *   Sisip    - insertion aids (piano, notes)
+ *   Tampilan - editor / split / preview mode
  *
- * History (undo/redo), search and MIDI cues live elsewhere on purpose: they are
- * not formatting, and mixing them in made the old ribbon a flat wall of nine
- * equally-weighted buttons.
+ * Every group renders through the same EditorMenuBar item shape, so the menus,
+ * items, separators and shortcut hints are visually identical throughout.
  */
 export default function LyricsFormatToolbar({
   disabled = false,
@@ -30,18 +34,31 @@ export default function LyricsFormatToolbar({
   lyricsValue = "",
   setLyricsValue,
   selectionRange = { start: null, end: null },
+  /** Non-formatting hooks owned by the page. */
+  showPianoControls = false,
+  onOpenPiano,
+  insertNotesEnabled = false,
+  showSaveCancelButtons = false,
+  savingLyrics = false,
+  handleSaveLyrics,
+  handleCancelEditLyrics,
+  /** Preview mode, owned by the workspace. */
+  previewMode = null,
+  onPreviewModeChange,
+  previewModes = null,
 }) {
   const hasSelection =
     Number.isInteger(selectionRange?.start) &&
     Number.isInteger(selectionRange?.end) &&
     selectionRange.end > selectionRange.start;
 
+
   const [barsPerLine, setBarsPerLine] = useState(4);
   const [formatPreview, setFormatPreview] = useState(null);
 
   /** Apply a transformer to the current selection, restoring it afterwards. */
   const applyToSelection = (transformer) => {
-    if (typeof setLyricsValue !== "function") return;
+    if (typeof setLyricsValue !== 'function') return;
 
     const el = lyricsRef?.current;
     const liveStart = Number.isInteger(el?.selectionStart) ? el.selectionStart : selectionRange.start;
@@ -93,66 +110,52 @@ export default function LyricsFormatToolbar({
     setFormatPreview(null);
   };
 
-  const selectionActions = useMemo(
+  /** True when a selection-scoped command cannot run yet. */
+  const noSelection = disabled || !hasSelection;
+  const noSelectionHint = 'Blok sebagian teks lirik dulu';
+
+  const selectionMenuItems = useMemo(
     () => [
       {
         key: 'align-bars',
-        icon: '∥',
+        icon: '||',
         label: 'Sejajarkan Bar',
         title: 'Rapikan posisi garis bar (|) pada teks yang dipilih',
-        onClick: () => applyToSelection(alignSelectedBarlines),
+        shortcut: 'Ctrl+Shift+B',
+        disabled: noSelection,
+        disabledHint: noSelectionHint,
+        onSelect: () => applyToSelection(alignSelectedBarlines),
       },
       {
         key: 'auto-align',
-        icon: '⇅',
+        icon: 'S',
         label: 'Sejajarkan Chord',
         title: 'Geser chord agar sejajar dengan suku kata di baris lirik bawahnya',
-        onClick: () => applyToSelection(autoAlignChordLyricPairs),
+        disabled: noSelection,
+        disabledHint: noSelectionHint,
+        onSelect: () => applyToSelection(autoAlignChordLyricPairs),
       },
+      { type: 'separator' },
       {
         key: 'wrap-bars',
-        icon: '↩',
+        icon: 'W',
         label: 'Pecah Bar',
+        hint: barsPerLine + ' bar/baris',
         title: 'Pecah chord menjadi beberapa bar per baris pada teks yang dipilih',
-        onClick: () => applyToSelection((text) => wrapBarsPerLine(text, barsPerLine)),
+        shortcut: 'Ctrl+Shift+4',
+        disabled: noSelection,
+        disabledHint: noSelectionHint,
+        onSelect: () => applyToSelection((text) => wrapBarsPerLine(text, barsPerLine)),
       },
-    ],
-    // applyToSelection closes over the current text/selection, so the list has
-    // to be rebuilt whenever those change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lyricsValue, selectionRange, barsPerLine, disabled]
-  );
-
-  return (
-    <div className="lyric-format">
-      <div className="lyric-format-group">
-        <div className="lyric-format-group-head">
-          <span className="lyric-format-group-title">Seleksi</span>
-          <span className="lyric-format-group-hint">
-            {hasSelection ? 'teks terpilih' : 'blok teks dulu'}
-          </span>
-        </div>
-
-        <div className="lyric-format-actions">
-          {selectionActions.map((action) => (
-            <button
-              key={action.key}
-              type="button"
-              className="btn btn-secondary lyric-format-btn"
-              disabled={disabled || !hasSelection}
-              onClick={action.onClick}
-              title={hasSelection ? action.title : 'Blok sebagian teks lirik dulu'}
-            >
-              <span aria-hidden="true">{action.icon}</span>
-              {action.label}
-            </button>
-          ))}
-
-          <label className="lyric-format-bars" htmlFor="lyric-format-bars-per-line">
-            Bar/Baris
+      {
+        key: 'bars-per-line',
+        type: 'custom',
+        render: (
+          <label className="ed-dropdown-field" htmlFor="lyric-format-bars-per-line">
+            <span>Bar per baris</span>
             <select
               id="lyric-format-bars-per-line"
-              className="lyric-format-select"
+              className="ed-dropdown-select"
               value={barsPerLine}
               onChange={(e) => setBarsPerLine(Number(e.target.value))}
               disabled={disabled}
@@ -163,50 +166,157 @@ export default function LyricsFormatToolbar({
               <option value={6}>6</option>
             </select>
           </label>
-        </div>
-      </div>
+        ),
+      },
+    ],
+    // applyToSelection closes over the current text/selection, so the list has
+    // to be rebuilt whenever those change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lyricsValue, selectionRange, barsPerLine, disabled]
+  );
 
-      <div className="lyric-format-group">
-        <div className="lyric-format-group-head">
-          <span className="lyric-format-group-title">Dokumen</span>
-          <span className="lyric-format-group-hint">seluruh lirik</span>
-        </div>
+  const historyMenuItems = [
+    {
+      key: 'undo',
+      icon: 'U',
+      label: 'Batalkan',
+      shortcut: 'Ctrl+Z',
+      disabled,
+      onSelect: () => lyricsRef?.current?.undo?.(),
+    },
+    {
+      key: 'redo',
+      icon: 'R',
+      label: 'Ulangi',
+      shortcut: 'Ctrl+Shift+Z',
+      disabled,
+      onSelect: () => lyricsRef?.current?.redo?.(),
+    },
+    { type: 'separator' },
+    {
+      key: 'find',
+      icon: 'F',
+      label: 'Cari / Ganti',
+      shortcut: 'Ctrl+F',
+      disabled,
+      onSelect: () => lyricsRef?.current?.openSearchPanel?.(),
+    },
+  ];
 
-        <div className="lyric-format-actions">
-          <button
-            type="button"
-            className="btn btn-secondary lyric-format-btn"
-            disabled={disabled}
-            onClick={() => applyToSelection(removeExtraSpacesAndBrokenLines)}
-            title="Hapus spasi ganda, tab, baris kosong menumpuk, dan karakter tersembunyi dari hasil copy-paste"
-          >
-            <span aria-hidden="true">✨</span>
-            Bersihkan Teks
-          </button>
+  const documentMenuItems = [
+    {
+      key: 'clean',
+      icon: 'B',
+      label: 'Bersihkan Teks',
+      title: 'Hapus spasi ganda, tab, baris kosong menumpuk, dan karakter tersembunyi dari hasil copy-paste',
+      disabled,
+      onSelect: () => applyToSelection(removeExtraSpacesAndBrokenLines),
+    },
+    {
+      key: 'tag',
+      icon: 'T',
+      label: 'Tag Bagian',
+      title: 'Deteksi Intro, Verse, Chorus, Bridge, dan ubah menjadi tag [Section]',
+      disabled,
+      onSelect: () => applyToSelection(autoTagSongSections),
+    },
+    { type: 'separator' },
+    {
+      key: 'tidy',
+      icon: 'X',
+      label: 'Rapikan Semua...',
+      hint: 'dengan pratinjau',
+      title: 'Rapikan seluruh dokumen sekaligus: bersihkan teks, tag bagian, dan seragamkan chord',
+      disabled,
+      onSelect: openFormatPreview,
+    },
+  ];
 
-          <button
-            type="button"
-            className="btn btn-secondary lyric-format-btn"
-            disabled={disabled}
-            onClick={() => applyToSelection(autoTagSongSections)}
-            title="Deteksi Intro, Verse, Chorus, Bridge, dan ubah menjadi tag [Section]"
-          >
-            <span aria-hidden="true">🏷</span>
-            Tag Bagian
-          </button>
+  const insertMenuItems = [
+    {
+      key: 'piano',
+      icon: 'P',
+      label: 'Virtual Piano...',
+      title: 'Buka Virtual Piano untuk memasukkan not ke lirik',
+      disabled: disabled || !showPianoControls,
+      hint: showPianoControls ? (insertNotesEnabled ? 'insert ON' : 'insert OFF') : 'tidak tersedia',
+      onSelect: () => onOpenPiano?.(),
+    },
+  ];
 
-          <button
-            type="button"
-            className="btn btn-primary lyric-format-btn"
-            disabled={disabled}
-            onClick={openFormatPreview}
-            title="Rapikan seluruh dokumen sekaligus: bersihkan teks, tag bagian, dan seragamkan chord"
-          >
-            <span aria-hidden="true">🪄</span>
-            Rapikan Semua
-          </button>
-        </div>
-      </div>
+  const viewMenuItems = previewModes
+    ? [
+        {
+          key: 'editor',
+          icon: 'E',
+          label: 'Editor saja',
+          title: 'Sembunyikan preview, editor pakai lebar penuh',
+          active: previewMode === previewModes.OFF,
+          disabled,
+          onSelect: () => onPreviewModeChange?.(previewModes.OFF),
+        },
+        {
+          key: 'split',
+          icon: 'S',
+          label: 'Editor + Preview',
+          title: 'Tampilkan editor dan preview berdampingan',
+          active: previewMode === previewModes.SPLIT,
+          disabled,
+          onSelect: () => onPreviewModeChange?.(previewModes.SPLIT),
+        },
+        {
+          key: 'preview',
+          icon: 'V',
+          label: 'Preview saja',
+          title: 'Tampilkan preview saja (lebih lebar)',
+          active: previewMode === previewModes.PREVIEW,
+          disabled,
+          onSelect: () => onPreviewModeChange?.(previewModes.PREVIEW),
+        },
+      ]
+    : [];
+
+  const menus = [
+    { key: 'riwayat', label: 'Riwayat', items: historyMenuItems },
+    { key: 'format', label: 'Format', items: selectionMenuItems },
+    { key: 'dokumen', label: 'Dokumen', items: documentMenuItems },
+  ];
+
+  if (showPianoControls || showSaveCancelButtons) {
+    menus.push({
+      key: 'sisip',
+      label: 'Sisip',
+      items: showSaveCancelButtons
+        ? [
+            ...insertMenuItems,
+            { type: 'separator' },
+            {
+              key: 'save',
+              icon: 'K',
+              label: savingLyrics ? 'Menyimpan...' : 'Simpan Lirik',
+              disabled: disabled || savingLyrics,
+              onSelect: () => handleSaveLyrics?.(),
+            },
+            {
+              key: 'cancel',
+              icon: 'Z',
+              label: 'Batal Edit',
+              disabled,
+              onSelect: () => handleCancelEditLyrics?.(),
+            },
+          ]
+        : insertMenuItems,
+    });
+  }
+
+  if (viewMenuItems.length > 0) {
+    menus.push({ key: 'tampilan', label: 'Tampilan', items: viewMenuItems });
+  }
+
+  return (
+    <div className="lyric-format">
+      <EditorMenuBar menus={menus} ariaLabel="Menu editor lirik" />
+
 
       {formatPreview && (
         <div
@@ -229,13 +339,13 @@ export default function LyricsFormatToolbar({
                 aria-label="Tutup pratinjau"
                 title="Tutup"
               >
-                ✕
+                ✕"
               </button>
             </div>
 
             {formatPreview.unchanged ? (
               <p className="lyric-format-preview-unchanged">
-                Tidak ada yang perlu diubah — penulisan lirik sudah rapi.
+                Tidak ada yang perlu diubah - penulisan lirik sudah rapi.
               </p>
             ) : (
               <>
@@ -274,7 +384,7 @@ export default function LyricsFormatToolbar({
                 onClick={applyFormatPreview}
                 disabled={formatPreview.unchanged}
               >
-                ✓ Terapkan
+                ✕ Terapkan
               </button>
             </div>
           </div>

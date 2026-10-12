@@ -3,9 +3,43 @@ import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
-import LyricsEditorWorkspace from '../components/LyricsEditorWorkspace.jsx';
+import LyricsEditorWorkspace, { PREVIEW_MODES } from '../components/LyricsEditorWorkspace.jsx';
 
 function noop() {}
+
+/**
+ * Drives the workspace the way the panel does: the PARENT owns the preview
+ * mode, so the mode switcher lives here. This is the contract that keeps the
+ * editor's Tampilan menu and the visible layout from disagreeing.
+ */
+function ControlledWorkspace({ initialMode, previewLyrics }) {
+  const [mode, setMode] = React.useState(initialMode);
+  return (
+    <>
+      <button type="button" className="test-mode-off" onClick={() => setMode(PREVIEW_MODES.OFF)}>
+        off
+      </button>
+      <button type="button" className="test-mode-split" onClick={() => setMode(PREVIEW_MODES.SPLIT)}>
+        split
+      </button>
+      <button
+        type="button"
+        className="test-mode-preview"
+        onClick={() => setMode(PREVIEW_MODES.PREVIEW)}
+      >
+        preview
+      </button>
+      <LyricsEditorWorkspace
+        previewLyrics={previewLyrics}
+        song={{}}
+        previewMode={mode}
+        onPreviewModeChange={setMode}
+      >
+        <textarea className="song-lyrics-textarea" readOnly />
+      </LyricsEditorWorkspace>
+    </>
+  );
+}
 
 describe('lyrics editor workspace preview', () => {
   let container;
@@ -46,21 +80,21 @@ describe('lyrics editor workspace preview', () => {
     expect(container.querySelector('.lyrics-editor-pane .song-lyrics-textarea')).toBeTruthy();
     expect(container.querySelector('.lyrics-editor-preview .cd')).toBeTruthy();
     expect(container.querySelector('.lyrics-editor-preview').textContent).toContain('Hello world');
-    expect(container.textContent).toContain('1 bagian');
+    // The "N baris · N bagian" stats were removed from this bar: they duplicated
+    // the badge in the section header right above it.
+    expect(container.querySelector('.lyrics-editor-workspace-stats')).toBeFalsy();
   });
 
   test('Given preview is toggled off, Then the editor takes the full width', async () => {
     await act(async () => {
       root.render(
-        <LyricsEditorWorkspace previewLyrics={'C G'} song={{}}>
-          <textarea className="song-lyrics-textarea" readOnly />
-        </LyricsEditorWorkspace>
+        <ControlledWorkspace initialMode={PREVIEW_MODES.SPLIT} previewLyrics={'C G'} />
       );
     });
 
-    const offButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Editor')
-    );
+    // Preview mode is controlled by the parent now; the caller renders the
+    // mode switcher. This asserts the workspace honours the mode it is given.
+    const offButton = container.querySelector('.test-mode-off');
     expect(offButton).toBeTruthy();
 
     await act(async () => {
@@ -75,15 +109,12 @@ describe('lyrics editor workspace preview', () => {
   test('Given preview-only mode, Then the textarea is hidden but preview stays', async () => {
     await act(async () => {
       root.render(
-        <LyricsEditorWorkspace previewLyrics={'Am F'} song={{}}>
-          <textarea className="song-lyrics-textarea" readOnly />
-        </LyricsEditorWorkspace>
+        <ControlledWorkspace initialMode={PREVIEW_MODES.SPLIT} previewLyrics={'Am F'} />
       );
     });
 
-    const previewButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Preview')
-    );
+    const previewButton = container.querySelector('.test-mode-preview');
+    expect(previewButton).toBeTruthy();
 
     await act(async () => {
       previewButton.click();

@@ -1,22 +1,24 @@
 import React from "react";
 import SongLyricsTextarea from "./SongLyricsTextarea.jsx";
-import LyricsEditorWorkspace from "./LyricsEditorWorkspace.jsx";
+import LyricsEditorWorkspace, { PREVIEW_MODES } from "./LyricsEditorWorkspace.jsx";
 import LyricsFormatToolbar from "./LyricsFormatToolbar.jsx";
-import LyricsEditorTools from "./LyricsEditorTools.jsx";
 
 /**
  * SongLyricsEditorPanel
  *
  * Layout contract for the lyrics editor:
  *
- *   [ Tools ]   history, search, MIDI cue, piano   <- not formatting
- *   [ Format ]  selection vs document actions      <- formatting
+ *   [ Menu bar ]  Riwayat / Format / Dokumen / Sisip / Tampilan
  *   [ Editor | Preview ]
  *
- * Tools and formatting used to be one flat ribbon of nine buttons, which mixed
- * three different concerns (history, insertion, formatting). They are separate
- * components now, stacked directly above the editor so every control sits next
- * to the text it acts on.
+ * There is exactly ONE row of controls, and it is a menu bar rather than a
+ * ribbon: the editor's commands outgrew the flat-button form, and the previous
+ * "Alat" drawer hid undo/redo/search/piano behind a toggle. Everything is a
+ * menu item now, styled consistently and visible on demand.
+ *
+ * Preview mode lives here rather than inside the workspace so the toolbar menu
+ * and the workspace share one source of truth — otherwise "Tampilan" would
+ * silently disagree with what is on screen.
  */
 
 export default function SongLyricsEditorPanel({
@@ -33,11 +35,27 @@ export default function SongLyricsEditorPanel({
   previewProps = {},
   baselineLyrics = null,
 }) {
-  const [isToolsOpen, setIsToolsOpen] = React.useState(false);
   const [selectionRange, setSelectionRange] = React.useState({ start: null, end: null });
   // Tracked separately from the character offsets: the preview syncs by line,
   // and a line can hold many caret positions.
   const [activeLine, setActiveLine] = React.useState(null);
+  // Shared with the toolbar's Tampilan menu so the menu and the visible layout
+  // cannot drift apart.
+  const [previewMode, setPreviewMode] = React.useState(() => {
+    if (typeof window === 'undefined') return PREVIEW_MODES.SPLIT;
+    const stored = window.localStorage.getItem('songEditor.previewMode');
+    return stored === PREVIEW_MODES.OFF || stored === PREVIEW_MODES.SPLIT || stored === PREVIEW_MODES.PREVIEW
+      ? stored
+      : PREVIEW_MODES.SPLIT;
+  });
+
+  React.useEffect(() => {
+    try {
+      window.localStorage.setItem('songEditor.previewMode', previewMode);
+    } catch {
+      // Storage can fail in private mode; the choice still applies this session.
+    }
+  }, [previewMode]);
 
   const handleSelectionChange = React.useCallback((next) => {
     setSelectionRange({ start: next.start, end: next.end });
@@ -53,16 +71,34 @@ export default function SongLyricsEditorPanel({
     insertNotesEnabled = false,
   } = editorActions;
 
-  const textarea = (
-    <SongLyricsTextarea
-      lyricsDisplayRef={lyricsRef}
-      editedLyrics={lyricsValue}
-      setEditedLyrics={setLyricsValue}
-      autoFocus={autoFocus}
-      onSelectionChange={handleSelectionChange}
-      disabled={disabled}
-    />
+  /**
+   * The editor element, memoised.
+   *
+   * This is the hot path: the parent re-renders on EVERY keystroke (the lyrics
+   * value, the selection range and the active line all change together). Without
+   * this memo a fresh element is built each time and React walks the editor
+   * subtree on every character — which is what made typing feel heavy, and gave
+   * the editor a chance to remount and lose the caret.
+   *
+   * The stable pieces (`lyricsRef`, `handleSelectionChange`) are refs/callbacks;
+   * `setLyricsValue` and `autoFocus` are stable for the page's lifetime.
+   */
+  const editorElement = React.useMemo(
+    () => (
+      <SongLyricsTextarea
+        lyricsDisplayRef={lyricsRef}
+        editedLyrics={lyricsValue}
+        setEditedLyrics={setLyricsValue}
+        autoFocus={autoFocus}
+        onSelectionChange={handleSelectionChange}
+        disabled={disabled}
+      />
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lyricsValue, disabled]
   );
+
+  const textarea = editorElement;
 
   return (
     <>
@@ -70,45 +106,22 @@ export default function SongLyricsEditorPanel({
 
       {showActions && (
         <div className="lyric-editor-controls">
-          <div className="lyric-editor-controls-head">
-            <button
-              type="button"
-              className={`btn btn-secondary lyric-editor-tools-toggle${isToolsOpen ? ' is-open' : ''}`}
-              onClick={() => setIsToolsOpen((prev) => !prev)}
-              aria-expanded={isToolsOpen}
-              aria-controls="lyric-editor-tools-panel"
-              title="Riwayat, pencarian, dan piano"
-            >
-              <span aria-hidden="true">{isToolsOpen ? '▾' : '▸'}</span>
-              Alat Editor
-            </button>
-            <span className="lyric-editor-controls-hint">
-              Format teks ada di bawah ini · riwayat &amp; pencarian di panel Alat
-            </span>
-          </div>
-
-          {isToolsOpen && (
-            <div id="lyric-editor-tools-panel" className="lyric-editor-tools-panel">
-              <LyricsEditorTools
-                disabled={disabled}
-                lyricsRef={lyricsRef}
-                showPianoControls={showPianoControls}
-                onOpenPiano={onOpenPiano}
-                insertNotesEnabled={insertNotesEnabled}
-                showSaveCancelButtons={showSaveCancelButtons}
-                savingLyrics={savingLyrics}
-                handleSaveLyrics={handleSaveLyrics}
-                handleCancelEditLyrics={handleCancelEditLyrics}
-              />
-            </div>
-          )}
-
           <LyricsFormatToolbar
             disabled={disabled}
             lyricsRef={lyricsRef}
             lyricsValue={lyricsValue}
             setLyricsValue={setLyricsValue}
             selectionRange={selectionRange}
+            showPianoControls={showPianoControls}
+            onOpenPiano={onOpenPiano}
+            insertNotesEnabled={insertNotesEnabled}
+            showSaveCancelButtons={showSaveCancelButtons}
+            savingLyrics={savingLyrics}
+            handleSaveLyrics={handleSaveLyrics}
+            handleCancelEditLyrics={handleCancelEditLyrics}
+            previewMode={previewMode}
+            previewModes={PREVIEW_MODES}
+            onPreviewModeChange={setPreviewMode}
           />
         </div>
       )}
@@ -120,6 +133,8 @@ export default function SongLyricsEditorPanel({
           previewProps={previewProps}
           baselineLyrics={baselineLyrics}
           activeLine={activeLine}
+          previewMode={previewMode}
+          onPreviewModeChange={setPreviewMode}
         >
           {textarea}
         </LyricsEditorWorkspace>

@@ -106,6 +106,32 @@ describe('Song lyrics shared editor rendering', () => {
     document.body.removeChild(container);
   });
 
+  /** Click a top-level editor menu and wait for React to render its dropdown. */
+  async function openMenuAsync(label) {
+    const trigger = [...container.querySelectorAll('.ed-menu-trigger')].find(
+      (btn) => btn.textContent.replace(/[▾\s]/g, '') === label,
+    );
+    if (!trigger) return null;
+    await act(async () => {
+      trigger.click();
+    });
+    return container.querySelector('.ed-dropdown');
+  }
+
+  /** Labels of the items in the currently open dropdown. */
+  function menuItemLabels() {
+    return [...container.querySelectorAll('.ed-dropdown-item-label')].map((el) =>
+      el.textContent.trim(),
+    );
+  }
+
+  /** The open dropdown's item whose label contains `text`. */
+  function menuItemByText(text) {
+    return [...container.querySelectorAll('.ed-dropdown-item')].find((item) =>
+      item.textContent.includes(text)
+    );
+  }
+
   test('Given SongLyricsMainSection, Then the lyrics toolbars and display are rendered without the editor', async () => {
     await act(async () => {
       root.render(
@@ -151,7 +177,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-tempo-minimal')).toBeFalsy();
   });
 
-  test('Given lyrics editor, Then formatting actions are grouped by scope', async () => {
+  test('Given lyrics editor, Then commands are grouped into dropdown menus', async () => {
     await act(async () => {
       root.render(
         <SongLyricsEditorPanel
@@ -166,23 +192,31 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const groups = container.querySelectorAll('.lyric-format-group');
-    expect(groups).toHaveLength(2);
-
-    const titles = Array.from(container.querySelectorAll('.lyric-format-group-title')).map(
-      (el) => el.textContent
+    // Commands are grouped into menus now, not boxed into scope groups.
+    const menuLabels = [...container.querySelectorAll('.ed-menu-trigger')].map((b) =>
+      b.textContent.replace(/[▾\s]/g, ''),
     );
-    expect(titles).toEqual(['Seleksi', 'Dokumen']);
+    expect(menuLabels).toEqual(expect.arrayContaining(['Riwayat', 'Format', 'Dokumen']));
 
-    // Selection-scoped actions live in the first group.
-    expect(groups[0].textContent).toContain('Sejajarkan Bar');
-    expect(groups[0].textContent).toContain('Sejajarkan Chord');
-    expect(groups[0].textContent).toContain('Pecah Bar');
+    // Selection-scoped commands live under Format.
+    await openMenuAsync('Format');
+    const formatItems = menuItemLabels();
+    expect(formatItems).toEqual(
+      expect.arrayContaining(['Sejajarkan Bar', 'Sejajarkan Chord', 'Pecah Bar']),
+    );
+    // The hint is a separate element, so it never bleeds into the label text.
+    const hints = [...container.querySelectorAll('.ed-dropdown-item-hint')].map((el) =>
+      el.textContent.trim(),
+    );
+    expect(hints.some((h) => h.includes('bar/baris'))).toBe(true);
+    expect(formatItems).not.toContain('Pecah Bar4 bar/baris');
 
-    // Document-scoped actions live in the second.
-    expect(groups[1].textContent).toContain('Bersihkan Teks');
-    expect(groups[1].textContent).toContain('Tag Bagian');
-    expect(groups[1].textContent).toContain('Rapikan Semua');
+    // Document-scoped commands live under Dokumen.
+    await openMenuAsync('Dokumen');
+    const documentItems = menuItemLabels();
+    expect(documentItems).toEqual(
+      expect.arrayContaining(['Bersihkan Teks', 'Tag Bagian', 'Rapikan Semua...']),
+    );
   });
 
   test('Given no text selected, Then selection-only actions are disabled', async () => {
@@ -200,25 +234,24 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const selectionGroup = container.querySelector('.lyric-format-group');
-    const selectionButtons = Array.from(selectionGroup.querySelectorAll('button'));
-
-    expect(selectionButtons.length).toBeGreaterThan(0);
-    for (const button of selectionButtons) {
-      expect(button.disabled, `${button.textContent} should be disabled`).toBe(true);
+    await openMenuAsync('Format');
+    const selectionItems = [...container.querySelectorAll('.ed-dropdown-item')];
+    expect(selectionItems.length).toBeGreaterThan(0);
+    for (const item of selectionItems) {
+      // Every item in Format acts on a selection, so all are disabled without one.
+      expect(item.disabled, `${item.textContent} should be disabled`).toBe(true);
     }
 
-    // The document group stays usable without a selection.
-    const documentGroup = container.querySelectorAll('.lyric-format-group')[1];
-    const documentButtons = Array.from(documentGroup.querySelectorAll('button'));
-    for (const button of documentButtons) {
-      expect(button.disabled, `${button.textContent} should be enabled`).toBe(false);
+    // The document menu stays usable without a selection.
+    await openMenuAsync('Dokumen');
+    const documentItems = [...container.querySelectorAll('.ed-dropdown-item')];
+    expect(documentItems.length).toBeGreaterThan(0);
+    for (const item of documentItems) {
+      expect(item.disabled, `${item.textContent} should be enabled`).toBe(false);
     }
-
-    expect(container.textContent).toContain('blok teks dulu');
   });
 
-  test('Given the tools bar, Then history and search sit outside the format group', async () => {
+  test('Given the tools bar, Then history and search sit in their own menu', async () => {
     await act(async () => {
       root.render(
         <SongLyricsEditorPanel
@@ -233,26 +266,17 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    // The tools bar is collapsed by default; open it before inspecting. The
-    // toggle deliberately keeps Edit Lirik, Undo and Save from competing with
-    // formatting for the same visual weight.
-    const toolsToggle = container.querySelector('.lyric-editor-tools-toggle');
-    expect(toolsToggle).toBeTruthy();
+    // History is a visible menu now, not something hidden behind a toggle.
+    const historyDropdown = await openMenuAsync('Riwayat');
+    expect(historyDropdown).toBeTruthy();
+    const historyItems = menuItemLabels();
+    expect(historyItems).toEqual(expect.arrayContaining(['Batalkan', 'Ulangi', 'Cari / Ganti']));
 
-    await act(async () => {
-      toolsToggle.click();
-    });
-
-    const tools = container.querySelector('.lyric-tools');
-    expect(tools).toBeTruthy();
-    expect(tools.textContent).toContain('Undo');
-    expect(tools.textContent).toContain('Redo');
-    expect(tools.textContent).toContain('Cari');
-
-    // Formatting must not claim history actions as its own.
-    const format = container.querySelector('.lyric-format');
-    expect(format.textContent).not.toContain('Undo');
-    expect(format.textContent).not.toContain('Cari');
+    // History must not claim a place inside Format's scope.
+    await openMenuAsync('Format');
+    const formatItems = menuItemLabels();
+    expect(formatItems).not.toContain('Batalkan');
+    expect(formatItems).not.toContain('Cari / Ganti');
   });
 
   test('Given the old ribbon component is gone, Then its markup is absent', async () => {
@@ -294,18 +318,10 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    // The piano entry point stays in the tools bar, which lives behind the
-    // toggle so formatting stays the primary surface.
-    const toolsToggle = container.querySelector('.lyric-editor-tools-toggle');
-    expect(toolsToggle).toBeTruthy();
-
-    await act(async () => {
-      toolsToggle.click();
-    });
-
-    const pianoButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.textContent?.includes('Piano')
-    );
+    // The piano entry point is a menu item under Sisip, reachable without
+    // opening any drawer.
+    await openMenuAsync('Sisip');
+    const pianoButton = menuItemByText('Virtual Piano');
     expect(pianoButton).toBeTruthy();
 
     // ...but the insert configuration now lives inside the piano modal, so the

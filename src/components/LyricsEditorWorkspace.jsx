@@ -4,7 +4,7 @@ import { parseLines } from "../utils/chordUtils.js";
 import { STORAGE_KEYS } from "../utils/storageKeys.js";
 
 const PREVIEW_MODE_STORAGE_KEY = STORAGE_KEYS.LYRICS_PREVIEW_MODE;
-const PREVIEW_MODES = {
+export const PREVIEW_MODES = {
   OFF: "off",
   SPLIT: "split",
   PREVIEW: "preview",
@@ -33,19 +33,40 @@ export default function LyricsEditorWorkspace({
   baselineLyrics = null,
   /** 1-based line the caret is on in the editor. Drives preview highlighting. */
   activeLine = null,
+  /**
+   * Preview mode. Controlled by the parent so the editor's Tampilan menu and
+   * this workspace cannot disagree; falls back to the stored value when used
+   * standalone.
+   */
+  previewMode: controlledMode = null,
+  onPreviewModeChange,
 }) {
-  const [previewMode, setPreviewMode] = useState(readStoredMode);
+  const [uncontrolledMode, setUncontrolledMode] = useState(readStoredMode);
+  const previewMode = controlledMode ?? uncontrolledMode;
+  const setPreviewMode = (next) => {
+    if (typeof onPreviewModeChange === 'function') onPreviewModeChange(next);
+    else setUncontrolledMode(next);
+  };
   const previewScrollRef = useRef(null);
   const followRef = useRef(true);
   const [isFollowing, setIsFollowing] = useState(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Only persist when this component owns the mode; a controlled parent
+    // already stores it, and writing here would race that decision.
+    if (controlledMode !== null) return;
     window.localStorage.setItem(PREVIEW_MODE_STORAGE_KEY, previewMode);
-  }, [previewMode]);
+  }, [previewMode, controlledMode]);
 
   const showPreview = previewMode !== PREVIEW_MODES.OFF;
   const hideEditor = previewMode === PREVIEW_MODES.PREVIEW;
+
+  /** Parse the lyric once per text change and share it across both consumers. */
+  const parsedRows = useMemo(
+    () => (previewLyrics ? parseLines(previewLyrics.split(/\r?\n/), 0) : []),
+    [previewLyrics]
+  );
 
   /**
    * Rows parsed from the caret's own line get a stronger highlight than rows
@@ -54,16 +75,15 @@ export default function LyricsEditorWorkspace({
    */
   const parsedRowIndexes = useMemo(() => {
     if (activeLine === null) return { direct: [], expanded: [] };
-    const rows = parseLines(previewLyrics.split(/\r?\n/), 0);
     const direct = [];
     const expanded = [];
-    rows.forEach((row, index) => {
+    parsedRows.forEach((row, index) => {
       if (row.sourceLine !== activeLine) return;
       if (row.isExpandedFromSection) expanded.push(index);
       else direct.push(index);
     });
     return { direct, expanded };
-  }, [previewLyrics, activeLine]);
+  }, [parsedRows, activeLine]);
 
   // Keep the preview scrolled to whatever is being edited. Disengages as soon
   // as the user scrolls the preview themselves, so it never fights them.
@@ -101,10 +121,6 @@ export default function LyricsEditorWorkspace({
   };
 
   const previewSong = { ...(song || {}), lyrics: previewLyrics };
-  const lineCount = previewLyrics ? previewLyrics.split(/\r?\n/).length : 0;
-  const sectionCount = previewLyrics
-    ? parseLines(previewLyrics.split(/\r?\n/), 0).filter((line) => line.type === "structure").length
-    : 0;
   const isDirty = typeof baselineLyrics === "string" && baselineLyrics !== previewLyrics;
 
   return (
@@ -115,7 +131,6 @@ export default function LyricsEditorWorkspace({
     >
       <div className="lyrics-editor-workspace-bar">
         <span className="lyrics-editor-workspace-title">✍️ Editor</span>
-        <span className="lyrics-editor-workspace-stats">{lineCount} baris · {sectionCount} bagian</span>
         {typeof baselineLyrics === "string" && (
           <span
             className={`lyrics-editor-dirty-badge${isDirty ? " is-dirty" : ""}`}
@@ -124,35 +139,6 @@ export default function LyricsEditorWorkspace({
             {isDirty ? "● Belum disimpan" : "✓ Tersimpan"}
           </span>
         )}
-        <div className="lyrics-editor-preview-toggle" role="group" aria-label="Mode tampilan editor lirik">
-          <button
-            type="button"
-            className={`btn ${previewMode === PREVIEW_MODES.OFF ? "btn-primary" : "btn-secondary"}`}
-            onClick={() => setPreviewMode(PREVIEW_MODES.OFF)}
-            aria-pressed={previewMode === PREVIEW_MODES.OFF}
-            title="Sembunyikan preview, editor pakai lebar penuh"
-          >
-            ✍️ Editor
-          </button>
-          <button
-            type="button"
-            className={`btn ${previewMode === PREVIEW_MODES.SPLIT ? "btn-primary" : "btn-secondary"}`}
-            onClick={() => setPreviewMode(PREVIEW_MODES.SPLIT)}
-            aria-pressed={previewMode === PREVIEW_MODES.SPLIT}
-            title="Tampilkan editor dan preview berdampingan"
-          >
-            ⇋ Split
-          </button>
-          <button
-            type="button"
-            className={`btn ${previewMode === PREVIEW_MODES.PREVIEW ? "btn-primary" : "btn-secondary"}`}
-            onClick={() => setPreviewMode(PREVIEW_MODES.PREVIEW)}
-            aria-pressed={previewMode === PREVIEW_MODES.PREVIEW}
-            title="Tampilkan preview saja (lebih lebar)"
-          >
-            👁 Preview
-          </button>
-        </div>
       </div>
 
       <div className="lyrics-editor-workspace-body">

@@ -18,7 +18,7 @@
  *   - Layout responsif dengan CSS class standar
  */
 
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import NumberToken from './NumberToken.jsx';
 import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
 
@@ -35,7 +35,7 @@ const getInstrumentTokenClass = (label = '') => {
   return 'cd-instrument-token--default';
   };
 
-  export default function ChordDisplay({
+const ChordDisplayBase = memo(function ChordDisplay({
     song,
     transpose = 0,
     zoom = 1,
@@ -134,9 +134,17 @@ const getInstrumentTokenClass = (label = '') => {
     );
   }
 
-  const lines = song.lyrics.split(/\r?\n/);
+  const lines = useMemo(() => song.lyrics.split(/\r?\n/), [song.lyrics]);
   const effectiveTranspose = showChordNumbers ? 0 : transpose;
-  const parsedLines = parseLines(lines, effectiveTranspose);
+  // Parsing the whole lyric is the expensive part of a render, and in the
+  // editor this component re-renders on every keystroke. Memoising on the
+  // actual inputs keeps typing cheap: the text still changes per keystroke, but
+  // unrelated re-renders (preview toggle, follow state, playback state) no
+  // longer re-parse the document.
+  const parsedLines = useMemo(
+    () => parseLines(lines, effectiveTranspose),
+    [lines, effectiveTranspose]
+  );
 
   /** Highlight class for a parsed row, compared by source line. */
   const syncClass = (lineObj) => {
@@ -264,4 +272,12 @@ const getInstrumentTokenClass = (label = '') => {
       {renderedRows}
     </div>
   );
-}
+});
+
+/**
+ * Memoised so the editor's live preview does not re-render — and re-parse the
+ * whole lyric — on every unrelated parent render (preview mode toggle, follow
+ * state, video playback polling). Props are compared shallowly, which is
+ * correct here: they are primitives or a stable `song` object.
+ */
+export default ChordDisplayBase;
