@@ -662,15 +662,14 @@ export default function SongChordsLyricsDisplay({
             Chord: {currentChordModeLabel}
           </span>
           <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setControlsVisible(false)}
-              aria-label="Sembunyikan kontrol"
-              title="Sembunyikan kontrol"
-            >
-              ─
-            </button>
-          )}
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setControlsVisible(false)}
+            aria-label="Sembunyikan kontrol"
+            title="Sembunyikan kontrol"
+          >
+            ─
+          </button>
         </div>
       </div>
       )}

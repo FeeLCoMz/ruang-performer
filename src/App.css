@@ -9584,19 +9584,6 @@ body.dark-mode .cd-token {
   gap: var(--spacing-md);
 }
 
-.song-info-advanced-toggle {
-  grid-column: 1 / -1;
-  justify-content: flex-start;
-  gap: var(--spacing-xs);
-  font-weight: 600;
-  font-size: var(--font-size-sm);
-}
-
-.song-info-advanced-toggle span:first-child {
-  min-width: 16px;
-  text-align: center;
-}
-
 .song-info-item {
   display: flex;
   flex-direction: column;
@@ -9962,7 +9949,7 @@ body.dark-mode .cd-token {
   font-size: var(--font-size-xs);
 }
 
-/* Rapikan konten info lanjutan: blok full-width tanpa dekorasi berlapis */
+/* Blok full-width tanpa dekorasi berlapis */
 .song-info-block,
 .song-info-mastery-block-full {
   gap: 4px;

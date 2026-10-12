@@ -562,12 +562,6 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const toggle = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('Info Lanjutan'));
-    expect(toggle).toBeTruthy();
-    await act(async () => {
-      toggle.click();
-    });
-
     const copyButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'Copy');
     expect(copyButton).toBeTruthy();
 
@@ -578,7 +572,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(clipboard.writeText).toHaveBeenCalledWith('Keyboard Patch: Stage Piano\nInstrumen: Gitar, Sax, Piano');
   });
 
-  test('Given mastery info is present, Then it renders as a full-width row inside advanced info', async () => {
+  test('Given mastery info is present, Then it renders as a full-width row', async () => {
     await act(async () => {
       root.render(
         <SongChordsInfo
@@ -599,19 +593,10 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    // Mastery kini berada di dalam info lanjutan (tersembunyi secara default).
-    expect(container.querySelector('.song-info-mastery-block-full')).toBeFalsy();
-
-    const toggle = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('Info Lanjutan'));
-    expect(toggle).toBeTruthy();
-    await act(async () => {
-      toggle.click();
-    });
-
     expect(container.querySelector('.song-info-mastery-block-full')).toBeTruthy();
   });
 
-  test('Given normal mode is active, Then time and genre render as separate info items inside advanced info', async () => {
+  test('Given time and genre are present, Then they render as separate info items', async () => {
     await act(async () => {
       root.render(
         <SongChordsInfo
@@ -623,15 +608,6 @@ describe('Song lyrics shared editor rendering', () => {
           genre="Rock"
         />
       );
-    });
-
-    // Info lanjutan disembunyikan secara default.
-    expect(Array.from(container.querySelectorAll('.song-info-compact-grid .song-info-item')).some((item) => item.textContent.includes('Genre'))).toBe(false);
-
-    const toggle = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('Info Lanjutan'));
-    expect(toggle).toBeTruthy();
-    await act(async () => {
-      toggle.click();
     });
 
     const items = Array.from(container.querySelectorAll('.song-info-compact-grid .song-info-item'));
