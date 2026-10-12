@@ -4,6 +4,14 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    // The API tests under api/__tests__ belong to Jest, not Vitest: they
+    // require('../server'), the CommonJS shim that loads the ESM app through
+    // dynamic import(), which needs --experimental-vm-modules (see
+    // jest.config.cjs and `npm run test:api`). Without this exclusion Vitest
+    // still collected those .cjs files, failed to resolve the shim, and reported
+    // them as four broken test files with "0 test" - noise that looked like
+    // real breakage in every run of `npm run test:unit`.
+    exclude: ['**/node_modules/**', '**/dist/**', 'api/__tests__/**'],
     environmentOptions: {
       jsdom: {
         pretendToBeVisual: true,
