@@ -9,6 +9,7 @@ import DashboardPage from "./pages/DashboardPage.jsx";
 import NotFound from "./components/NotFound.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import Sidebar from "./components/Sidebar.jsx";
+import MobileBottomNav from "./components/MobileBottomNav.jsx";
 import Toast from "./components/Toast.jsx";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import * as apiClient from "./apiClient.js";
@@ -223,6 +224,7 @@ function AppContent() {
           performanceMode={performanceMode}
           setPerformanceMode={setPerformanceMode}
         />
+        <MobileBottomNav />
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
 
         <div className="app-container">

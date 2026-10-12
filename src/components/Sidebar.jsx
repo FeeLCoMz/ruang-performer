@@ -1,42 +1,17 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { usePermission } from '../hooks/usePermission.js';
-import { PERMISSIONS } from '../utils/permissionUtils.js';
+import { useNavItems } from '../hooks/useNavItems.js';
 
 export default function Sidebar({ isOpen, onClose, performanceMode, setPerformanceMode }) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { logout, user } = useAuth();
-  // ...invitation logic removed...
-
-  // Ambil info band dan role user jika ada (untuk permission)
-  // Di sidebar global, kita asumsikan role global (user.role) untuk audit log
-  const userBandInfo = user && user.role ? { role: user.role } : null;
-  const { can } = usePermission(null, userBandInfo);
-
-  const navItems = [
-    { path: '/', label: 'Dashboard', icon: '🏠' },
-    { path: '/songs', label: 'Lagu', icon: '🎵' },
-    { path: '/setlists', label: 'Setlist', icon: '📋' },
-    { path: '/bands/manage', label: 'Band', icon: '🎸' },
-    { path: '/gigs', label: 'Konser', icon: '🎤' },
-    { path: '/youtube-trending', label: 'Trending', icon: '📺' },
-    ...(can(PERMISSIONS.ADMIN_VIEW_LOGS) ? [{ path: '/audit', label: 'Audit Log', icon: '📝' }] : []),
-    ...(user && user.role === 'owner' ? [{ path: '/tools', label: 'Tools', icon: '🛠️' }] : []),
-  ];
+  const { logout } = useAuth();
+  const { items: navItems, isActive } = useNavItems();
 
   // Saat Performance Mode aktif, tampilkan hanya menu Lagu dan Setlist
   const visibleNavItems = performanceMode
     ? navItems.filter((item) => item.path === '/songs' || item.path === '/setlists')
-    : navItems;
-
-  const isActive = (path) => {
-    if (path === '/') return location.pathname === '/';
-    // Exact match untuk /bands agar tidak konflik dengan /bands/manage
-    if (path === '/bands') return location.pathname === '/bands';
-    return location.pathname.startsWith(path);
-  };
+    : navItems.filter((item) => item.path !== 'logout');
 
   const handleNavClick = (path) => {
     navigate(path);
