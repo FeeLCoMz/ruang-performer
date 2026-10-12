@@ -590,7 +590,7 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.querySelector('.song-info-mastery-block-full')).toBeTruthy();
+    expect(container.querySelector('.song-info-mastery-row')).toBeTruthy();
   });
 
   test('Given time and genre are present, Then they render as separate info items', async () => {
@@ -845,7 +845,7 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     const keyEasyButton = Array.from(container.querySelectorAll('button')).find((button) =>
-      button.textContent?.trim() === 'C'
+      button.getAttribute('aria-label') === 'Gunakan key mudah yang disarankan'
     );
     expect(keyEasyButton).toBeTruthy();
     expect(container.textContent).toContain('Key Mudah');
