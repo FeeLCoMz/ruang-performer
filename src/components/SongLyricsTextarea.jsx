@@ -7,21 +7,11 @@ import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
 import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
 import { lyricsHighlighting, lyricsEditorTheme } from "../utils/lyricsHighlightExtension.js";
 import { lyricsCompletionSource } from "../utils/lyricsCompletion.js";
-import { STORAGE_KEYS } from "../utils/storageKeys.js";
-
 const PLACEHOLDER =
   "Masukkan lirik dan chord...\nContoh:\n[C]Amazing grace how [F]sweet the [C]sound";
 
-const readThemeMode = () => {
-  if (typeof document === "undefined") return "light";
-  if (document.body.classList.contains("dark-mode")) return "dark";
-  if (document.body.classList.contains("light-mode")) return "light";
-  try {
-    return window.localStorage.getItem(STORAGE_KEYS.THEME) === "dark" ? "dark" : "light";
-  } catch {
-    return "light";
-  }
-};
+// Aplikasi selalu memakai mode gelap.
+const THEME_MODE = "dark";
 
 /**
  * SongLyricsTextarea
@@ -43,7 +33,6 @@ export default function SongLyricsTextarea({
 }) {
   const viewRef = useRef(null);
   const cmRef = useRef(null);
-  const themeMode = readThemeMode();
 
   const extensions = useMemo(
     () => [
@@ -175,7 +164,7 @@ export default function SongLyricsTextarea({
   };
 
   return (
-    <div className="song-lyrics-textarea-editor" data-theme={themeMode}>
+    <div className="song-lyrics-textarea-editor" data-theme={THEME_MODE}>
       <CodeMirror
         ref={cmRef}
         value={editedLyrics ?? ""}

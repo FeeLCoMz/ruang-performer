@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
 
-export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceMode, setPerformanceMode }) {
+export default function Sidebar({ isOpen, onClose, performanceMode, setPerformanceMode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
@@ -77,16 +77,8 @@ export default function Sidebar({ isOpen, onClose, theme, setTheme, performanceM
           </button>
         </div>
 
-        {/* Theme & Performance Mode toggle buttons */}
+        {/* Performance Mode toggle button */}
         <div className="sidebar-controls">
-          <button
-            className={`btn btn-secondary sidebar-control-btn ${theme === 'dark' ? 'dark' : 'light'}`}
-            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-            title="Ganti mode gelap/terang"
-            aria-label="Toggle dark mode"
-          >
-            {theme === 'dark' ? '🌙' : '☀️'}
-          </button>
           <button
             className={`btn btn-secondary sidebar-control-btn sidebar-performance-btn ${performanceMode ? 'active' : ''}`}
             onClick={() => setPerformanceMode(v => !v)}

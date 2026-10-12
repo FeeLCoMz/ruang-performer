@@ -89,13 +89,6 @@ function AppContent() {
   const [loadingSetlists, setLoadingSetlists] = useState(false);
   const [errorSongs, setErrorSongs] = useState(null);
   const [errorSetlists, setErrorSetlists] = useState(null);
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(STORAGE_KEYS.THEME) || "dark";
-    }
-    return "dark";
-  });
-
   const [activeSetlist, setActiveSetlist] = useState(null);
 
   // Performance Mode state
@@ -120,10 +113,10 @@ function AppContent() {
 
   // ALL HOOKS MUST BE HERE - BEFORE ANY CONDITIONAL LOGIC
   useEffect(() => {
-    document.body.classList.remove("dark-mode", "light-mode");
-    document.body.classList.add(theme === "dark" ? "dark-mode" : "light-mode");
-    localStorage.setItem(STORAGE_KEYS.THEME, theme);
-  }, [theme]);
+    // Aplikasi selalu memakai mode gelap.
+    document.body.classList.remove("light-mode");
+    document.body.classList.add("dark-mode");
+  }, []);
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
@@ -227,8 +220,6 @@ function AppContent() {
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          theme={theme}
-          setTheme={setTheme}
           performanceMode={performanceMode}
           setPerformanceMode={setPerformanceMode}
         />
@@ -268,14 +259,6 @@ function AppContent() {
                   >
                     🎤
                   </button>
-                  <button
-                    className={`btn btn-secondary header-icon-btn ${theme === 'dark' ? 'dark' : 'light'}`}
-                    onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-                    title="Ganti mode gelap/terang"
-                    aria-label="Toggle dark mode"
-                  >
-                    {theme === 'dark' ? '🌙' : '☀️'}
-                  </button>
                 </div>
               </>
             ) : (
@@ -297,13 +280,6 @@ function AppContent() {
                 }
               >
                 {performanceMode ? "🎤 Performance" : "🎶 Normal"}
-              </button>
-              <button
-                className={`btn btn-secondary ${theme === "dark" ? "dark" : "light"}`}
-                onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-                title="Ganti mode gelap/terang"
-              >
-                {theme === "dark" ? "🌙" : "☀️"}
               </button>
             </div>
               </>

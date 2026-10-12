@@ -5,7 +5,6 @@
  * instead of being scattered across components as raw strings.
  */
 export const STORAGE_KEYS = {
-  THEME: 'ruangperformer_theme',
   PERFORMANCE_MODE: 'ruangperformer_performance_mode',
   MIDI_OUTPUT_ID: 'ruangperformer_midi_output_id',
   MIDI_ENABLE_PROGRAM_CHANGE: 'ruangperformer_midi_enable_program_change',

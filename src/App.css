@@ -1667,17 +1667,17 @@ body.dark-mode .number-token {
    1. ROOT VARIABLES & THEMES
    ======================================== */
 :root {
-  /* Colors */
+  /* Colors (mode gelap permanen) */
   --primary-accent: #3b82f6;
-  --chord-bright: #ffd966;
+  --chord-bright: #e5ff00;
   --primary-accent-dark: #1e40af;
-  --primary-bg: #f8fafc;
-  --secondary-bg: #f1f5f9;
-  --card-bg: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --border-color: #e2e8f0;
+  --primary-bg: #0f172a;
+  --secondary-bg: #1e293b;
+  --card-bg: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
   --error: #dc2626;
   --success: #16a34a;
   --warning: #f59e0b;
@@ -1714,18 +1714,6 @@ body.dark-mode .number-token {
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
-}
-
-/* Dark Mode */
-body.dark-mode {
-  --primary-bg: #0f172a;
-  --secondary-bg: #1e293b;
-  --card-bg: #1e293b;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --border-color: #334155;
-  --chord-bright: #e5ff00;
 }
 
 /* ========================================

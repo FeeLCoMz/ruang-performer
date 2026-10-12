@@ -33,8 +33,6 @@ describe('Sidebar', () => {
           <Sidebar
             isOpen
             onClose={() => {}}
-            theme="dark"
-            setTheme={() => {}}
             performanceMode={false}
             setPerformanceMode={() => {}}
           />

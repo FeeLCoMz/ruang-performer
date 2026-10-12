@@ -204,8 +204,8 @@ export const lyricsHighlighting = ViewPlugin.fromClass(
 );
 
 /**
- * CodeMirror theme tuned to the app's CSS variables, so the editor follows
- * light/dark mode. Each `cm-lyr-*` class is styled from App.css.
+ * CodeMirror theme tuned to the app's CSS variables. Each `cm-lyr-*` class is
+ * styled from App.css.
  */
 export const lyricsEditorTheme = EditorView.theme({
   '&': { fontSize: '14px', backgroundColor: 'transparent' },
