@@ -42,6 +42,12 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
   const { id: songId, setlistId: routeSetlistId } = useParams();
   const { user } = useAuth();
 
+  // Tutup partitur saat berpindah lagu supaya state tidak terbawa ke lagu berikutnya
+  const sheetMusicSongId = songProp?.id;
+  useEffect(() => {
+    setShowSheetMusic(false);
+  }, [sheetMusicSongId]);
+
   // =========================
   // 2. Permission Handling
   // =========================

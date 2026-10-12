@@ -661,6 +661,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--primary-bg);
 }
 .page-loader-center {
@@ -679,6 +680,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 .header-actions {
   display: flex;
@@ -1742,6 +1744,7 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ========================================
@@ -1753,6 +1756,7 @@ body {
   top: 0;
   width: 260px;
   height: 100vh;
+  height: 100dvh;
   background: var(--card-bg);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -3132,6 +3136,7 @@ body.dark-mode .lyrics-editor-textarea {
     top: 0;
     transform: translateX(-100%);
     height: 100vh;
+    height: 100dvh;
     z-index: 1000;
   }
 
@@ -3188,6 +3193,7 @@ body.dark-mode .lyrics-editor-textarea {
     justify-content: space-between;
     gap: 8px;
     padding: 8px 10px;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
   }
 
   .app-header-mobile.app-header-mobile-performance .header-nav {
@@ -3199,9 +3205,11 @@ body.dark-mode .lyrics-editor-textarea {
   .app-header-mobile.app-header-mobile-performance .header-nav-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    min-height: 38px;
-    height: 38px;
+    min-height: 44px;
+    height: 44px;
+    min-width: 44px;
     padding: 0 12px;
     border-radius: 12px;
     font-size: 0.86rem;
@@ -3225,9 +3233,9 @@ body.dark-mode .lyrics-editor-textarea {
   }
 
   .app-header-mobile.app-header-mobile-performance .header-icon-btn {
-    min-width: 38px;
-    min-height: 38px;
-    height: 38px;
+    min-width: 44px;
+    min-height: 44px;
+    height: 44px;
     padding: 0 6px;
     border-radius: 12px;
     font-size: 1.05rem;
@@ -3262,7 +3270,8 @@ body.dark-mode .lyrics-editor-textarea {
     justify-content: center;
     gap: 2px;
     min-width: 0;
-    padding: 6px 2px;
+    min-height: 48px;
+    padding: 8px 2px;
     border: none;
     border-radius: 12px;
     background: transparent;
@@ -3270,6 +3279,8 @@ body.dark-mode .lyrics-editor-textarea {
     font-size: 0.7rem;
     font-weight: 600;
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
     transition: background var(--transition-fast), color var(--transition-fast);
   }
 
@@ -3284,11 +3295,17 @@ body.dark-mode .lyrics-editor-textarea {
   }
 
   .mobile-bottom-nav-label {
+    font-size: 0.65rem;
     line-height: 1.1;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* Sheet "Other": jaga target sentuh item tetap nyaman di jempol */
+  .mobile-bottom-nav-sheet-item {
+    min-height: 44px;
   }
 
   /* Sheet "Other" */
@@ -3304,7 +3321,9 @@ body.dark-mode .lyrics-editor-textarea {
   .mobile-bottom-nav-sheet {
     width: 100%;
     max-height: 60vh;
+    max-height: 60dvh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 8px 8px calc(12px + env(safe-area-inset-bottom, 0px));
     background: var(--card-bg);
     border-top: 1px solid var(--border-color);
@@ -3325,6 +3344,7 @@ body.dark-mode .lyrics-editor-textarea {
     align-items: center;
     gap: 12px;
     width: 100%;
+    min-height: 48px;
     padding: 12px 14px;
     border: none;
     border-radius: 12px;
@@ -3334,6 +3354,8 @@ body.dark-mode .lyrics-editor-textarea {
     font-weight: 600;
     text-align: left;
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .mobile-bottom-nav-sheet-item.active {
@@ -3369,6 +3391,7 @@ body.dark-mode .lyrics-editor-textarea {
     width: 95%;
     padding: var(--spacing-lg);
     max-height: 85vh;
+    max-height: 85dvh;
   }
 
   .modal-content h2,
@@ -3380,6 +3403,7 @@ body.dark-mode .lyrics-editor-textarea {
     width: 95%;
     padding: var(--spacing-lg);
     max-height: 80vh;
+    max-height: 80dvh;
   }
 
   .modal-title {
@@ -3454,6 +3478,20 @@ body.dark-mode .lyrics-editor-textarea {
   .song-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+}
+
+/* Prevent iOS auto-zoom on focus: form controls must be >= 16px on mobile */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Textareas that opt into a smaller visual size still need 16px to avoid zoom */
+  .lyrics-editor-textarea {
+    font-size: 16px;
   }
 }
 
@@ -7545,6 +7583,7 @@ body.dark-mode .song-editor-status-blocker {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--primary-bg);
 }
 
@@ -7614,6 +7653,7 @@ body.dark-mode .song-editor-status-blocker {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(135deg, var(--primary-accent) 0%, #1e40af 100%);
   padding: 20px;
 }
@@ -14412,4 +14452,104 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   background: #cffafe;
   border: 1px solid #67e8f9;
   vertical-align: middle;
+}
+
+/* ========================================
+   MOBILE-FIRST POLISH
+   ======================================== */
+
+/* Guard against accidental horizontal scroll on small screens.
+   Containers that intentionally scroll horizontally re-enable it locally. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Error state for lazily-loaded sheet music (OSMD) */
+.sheet-music-error {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  text-align: center;
+  padding: 12px;
+}
+
+/* On touch devices there is no hover state: gate hover-only effects so they
+   never "stick" after a tap. :active and :focus-visible remain for feedback. */
+@media (hover: none) {
+  .card:hover,
+  .stat-card:hover,
+  .song-item:hover,
+  .setlist-item:hover,
+  .list-item:hover,
+  .event-item:hover,
+  .dashboard-band-card:hover,
+  .band-item:hover,
+  .band-linked-item:hover,
+  .tool-card:hover,
+  .youtube-trending-card:hover {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .btn:hover:not(:disabled),
+  .btn-primary:hover:not(:disabled),
+  .btn-secondary:hover:not(:disabled),
+  .btn-red:hover:not(:disabled),
+  .login-submit-btn:hover:not(:disabled),
+  .expand-button:hover:not(:disabled) {
+    filter: none;
+  }
+}
+
+/* ===== Partitur (OSMD) di layar kecil =====
+   OSMD merender partitur sebagai <svg> dengan lebar tetap. Pada layar sempit
+   ini bisa melebar keluar viewport dan memicu scroll horizontal. Batasi
+   container dan biarkan SVG menyesuaikan, dengan scroll horizontal lokal
+   jika masih lebih lebar (mis. partitur banyak birama). */
+.sheet-music-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheet-music-container svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .sheet-music-container {
+    padding: var(--spacing-sm);
+  }
+
+  .sheet-music-container svg {
+    width: 100%;
+  }
+}
+
+/* ========================================
+   16. MOBILE ACCESSIBILITY & PERFORMANCE
+   ======================================== */
+/* Kurangi animasi/transisi bagi pengguna yang memintanya (mobile low-end & aksesibilitas) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Hilangkan delay tap 300ms pada elemen interaktif di perangkat sentuh */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+[role="button"] {
+  touch-action: manipulation;
 }

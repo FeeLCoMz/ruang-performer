@@ -6,8 +6,8 @@ import SetlistPoster from '../components/SetlistPoster.jsx';
 import DragHandleIcon from '../components/DragHandleIcon.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+// html2canvas & jspdf dimuat secara lazy di dalam handler (dynamic import)
+// agar tidak memberatkan bundle awal di perangkat mobile.
 
 import * as authUtils from '../utils/auth.js';
 import { cacheSetlist, getSetlist as getSetlistOffline } from '../utils/offlineCache.js';
@@ -696,7 +696,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setTimeout(() => setShareCopied(false), 1500);
   }
 
-  function handleDownloadPoster() {
+  async function handleDownloadPoster() {
     if (!posterRef.current || !setlist) return;
     setIsGeneratingPoster(true);
     setPosterError('');
@@ -705,28 +705,27 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       .replace(/[\/:*?"<>|]+/g, '')
       .trim();
 
-    html2canvas(posterRef.current, {
-      backgroundColor: '#0f172a',
-      scale: 2,
-      useCORS: true
-    })
-      .then((canvas) => {
-        const dataUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.download = `${safeName || 'setlist'}-poster.png`;
-        link.href = dataUrl;
-        link.click();
-      })
-      .catch((err) => {
-        setPosterError('Gagal membuat poster. Coba lagi.');
-        console.error('Gagal membuat poster (html2canvas):', err);
-      })
-      .finally(() => {
-        setIsGeneratingPoster(false);
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(posterRef.current, {
+        backgroundColor: '#0f172a',
+        scale: 2,
+        useCORS: true
       });
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `${safeName || 'setlist'}-poster.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      setPosterError('Gagal membuat poster. Coba lagi.');
+      console.error('Gagal membuat poster (html2canvas):', err);
+    } finally {
+      setIsGeneratingPoster(false);
+    }
   }
 
-  function handleDownloadPDF() {
+  async function handleDownloadPDF() {
     if (!posterRef.current || !setlist) return;
     setIsGeneratingPoster(true);
     setPosterError('');
@@ -735,37 +734,39 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       .replace(/[\/:*?"<>|]+/g, '')
       .trim();
 
-    html2canvas(posterRef.current, {
-      backgroundColor: '#0f172a',
-      scale: 2,
-      useCORS: true
-    })
-      .then((canvas) => {
-        const imgData = canvas.toDataURL('image/png');
-        // Ukuran poster default: 1080x1350 px, konversi ke mm (A4: 210x297mm)
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        // Hitung rasio agar poster fit di A4
-        const imgProps = { width: canvas.width, height: canvas.height };
-        let pdfWidth = pageWidth;
-        let pdfHeight = (imgProps.height * pageWidth) / imgProps.width;
-        if (pdfHeight > pageHeight) {
-          pdfHeight = pageHeight;
-          pdfWidth = (imgProps.width * pageHeight) / imgProps.height;
-        }
-        const x = (pageWidth - pdfWidth) / 2;
-        const y = (pageHeight - pdfHeight) / 2;
-        pdf.addImage(imgData, 'PNG', x, y, pdfWidth, pdfHeight);
-        pdf.save(`${safeName || 'setlist'}-poster.pdf`);
-      })
-      .catch((err) => {
-        setPosterError('Gagal membuat PDF. Coba lagi.');
-        console.error('Gagal membuat PDF poster:', err);
-      })
-      .finally(() => {
-        setIsGeneratingPoster(false);
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      const canvas = await html2canvas(posterRef.current, {
+        backgroundColor: '#0f172a',
+        scale: 2,
+        useCORS: true
       });
+      const imgData = canvas.toDataURL('image/png');
+      // Ukuran poster default: 1080x1350 px, konversi ke mm (A4: 210x297mm)
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      // Hitung rasio agar poster fit di A4
+      const imgProps = { width: canvas.width, height: canvas.height };
+      let pdfWidth = pageWidth;
+      let pdfHeight = (imgProps.height * pageWidth) / imgProps.width;
+      if (pdfHeight > pageHeight) {
+        pdfHeight = pageHeight;
+        pdfWidth = (imgProps.width * pageHeight) / imgProps.height;
+      }
+      const x = (pageWidth - pdfWidth) / 2;
+      const y = (pageHeight - pdfHeight) / 2;
+      pdf.addImage(imgData, 'PNG', x, y, pdfWidth, pdfHeight);
+      pdf.save(`${safeName || 'setlist'}-poster.pdf`);
+    } catch (err) {
+      setPosterError('Gagal membuat PDF. Coba lagi.');
+      console.error('Gagal membuat PDF poster:', err);
+    } finally {
+      setIsGeneratingPoster(false);
+    }
   }
 
   // Handler copy setlist

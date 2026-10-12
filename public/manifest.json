@@ -7,7 +7,7 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "background_color": "#0f0f0f",
   "theme_color": "#667eea",
   "prefer_related_applications": false,
@@ -24,6 +24,11 @@
     { "src": "/icon-512x512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "categories": ["music", "productivity"],
+  "shortcuts": [
+    { "name": "Setlist", "short_name": "Setlist", "url": "/?page=setlist" },
+    { "name": "Konser", "short_name": "Konser", "url": "/?page=konser" },
+    { "name": "Lagu", "short_name": "Lagu", "url": "/?page=songs" }
+  ],
   "screenshots": [
     { "src": "/screenshots/screenshot1.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },
     { "src": "/screenshots/screenshot2.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow" },

@@ -3,15 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNavItems } from '../hooks/useNavItems.js';
 
-export default function Sidebar({ isOpen, onClose, performanceMode, setPerformanceMode }) {
+export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { items: navItems, isActive } = useNavItems();
 
-  // Saat Performance Mode aktif, tampilkan hanya menu Lagu dan Setlist
-  const visibleNavItems = performanceMode
-    ? navItems.filter((item) => item.path === '/songs' || item.path === '/setlists')
-    : navItems.filter((item) => item.path !== 'logout');
+  const visibleNavItems = navItems.filter((item) => item.path !== 'logout');
 
   const handleNavClick = (path) => {
     navigate(path);
@@ -49,18 +46,6 @@ export default function Sidebar({ isOpen, onClose, performanceMode, setPerforman
             aria-label="Tutup menu"
           >
             ✕
-          </button>
-        </div>
-
-        {/* Performance Mode toggle button */}
-        <div className="sidebar-controls">
-          <button
-            className={`btn btn-secondary sidebar-control-btn sidebar-performance-btn ${performanceMode ? 'active' : ''}`}
-            onClick={() => setPerformanceMode(v => !v)}
-            title={performanceMode ? 'Nonaktifkan Performance Mode' : 'Aktifkan Performance Mode'}
-            aria-label="Toggle performance mode"
-          >
-            {performanceMode ? '🎤 Performance' : '🎶 Normal'}
           </button>
         </div>
 

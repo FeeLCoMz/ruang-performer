@@ -99,8 +99,7 @@ export const PERMISSIONS = {
   GIG_EDIT: 'gig:edit',
 
   // Admin permissions
-  ADMIN_MANAGE_ROLES: 'admin:manage_roles',
-  ADMIN_VIEW_LOGS: 'admin:view_logs'
+  ADMIN_MANAGE_ROLES: 'admin:manage_roles'
 };
 
 // Define roles and their permissions
@@ -134,8 +133,7 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.GIG_EDIT,
 
     // Admin
-    PERMISSIONS.ADMIN_MANAGE_ROLES,
-    PERMISSIONS.ADMIN_VIEW_LOGS
+    PERMISSIONS.ADMIN_MANAGE_ROLES
   ],
   admin: [
     // Band management (no delete)
@@ -161,22 +159,19 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.SETLIST_VIEW,
 
     // Gig management
-    PERMISSIONS.GIG_EDIT,
-
-    // View logs
-    PERMISSIONS.ADMIN_VIEW_LOGS
+    PERMISSIONS.GIG_EDIT
   ],
   member: [
     // Band viewing
     PERMISSIONS.BAND_VIEW,
-    
+
     // Member viewing
     PERMISSIONS.MEMBER_VIEW,
-    
+
     // Song management (limited)
     PERMISSIONS.SONG_CREATE,
     PERMISSIONS.SONG_VIEW,
-    
+
     // Setlist viewing
     PERMISSIONS.SETLIST_VIEW
   ]
@@ -305,6 +300,5 @@ export const PERMISSION_NAMES = {
   [PERMISSIONS.SETLIST_EDIT]: 'Edit Setlists',
   [PERMISSIONS.SETLIST_DELETE]: 'Delete Setlists',
   [PERMISSIONS.SETLIST_VIEW]: 'View Setlists',
-  [PERMISSIONS.ADMIN_MANAGE_ROLES]: 'Manage Roles',
-  [PERMISSIONS.ADMIN_VIEW_LOGS]: 'View Audit Logs'
+  [PERMISSIONS.ADMIN_MANAGE_ROLES]: 'Manage Roles'
 };

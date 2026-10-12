@@ -25,6 +25,19 @@ export default defineConfig({
     sourcemap: false,
     minify: 'esbuild',
     chunkSizeWarningLimit: 1000,
+    // Jangan preload lib berat yang hanya dipakai lewat dynamic import.
+    // Tanpa ini, Vite menambahkan <link rel="modulepreload"> untuk
+    // pdf-vendor (jspdf/html2canvas) & music-display-vendor (OSMD) ke
+    // index.html sehingga tetap diunduh saat startup -> merusak
+    // tujuan code-splitting, terutama di jaringan mobile.
+    modulePreload: {
+      resolveDependencies(filename, deps) {
+        const skip = ['pdf-vendor', 'music-display-vendor', 'fabric-vendor'];
+        return deps.filter(
+          (dep) => !skip.some((name) => dep.includes(name))
+        );
+      }
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {

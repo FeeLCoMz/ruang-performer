@@ -1,10 +1,10 @@
-import { toJpeg } from 'html-to-image';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+// Library berat (html-to-image, html2canvas, jspdf) di-load secara dinamis
+// hanya saat fitur ekspor dipakai, agar bundle awal tetap ringan di mobile.
 
 export async function downloadCalendarAsJPG(elementRef, filename = 'jadwal-konser.jpg') {
   if (!elementRef) return;
   try {
+    const { toJpeg } = await import('html-to-image');
     const dataUrl = await toJpeg(elementRef, {
       cacheBust: true,
       pixelRatio: 2,
@@ -24,6 +24,11 @@ export async function downloadCalendarAsJPG(elementRef, filename = 'jadwal-konse
 export async function downloadCalendarAsPDF(elementRef, title = 'Jadwal Konser') {
   if (!elementRef) return;
   try {
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf')
+    ]);
+
     const canvas = await html2canvas(elementRef, {
       scale: 2,
       backgroundColor: '#0f172a',
@@ -70,6 +75,7 @@ export async function downloadCalendarAsPDF(elementRef, title = 'Jadwal Konser')
 
 export async function downloadScheduleAsPDF(scheduleText, title = 'Jadwal Konser') {
   try {
+    const { default: jsPDF } = await import('jspdf');
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',

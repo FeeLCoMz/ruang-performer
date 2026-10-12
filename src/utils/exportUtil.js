@@ -1,6 +1,6 @@
 // utils/exportUtil.js
 // Utility for exporting data to PDF and CSV
-import jsPDF from 'jspdf';
+// jsPDF di-load secara dinamis agar tidak memberatkan bundle awal di mobile.
 
 export function exportToCSV(filename, rows) {
   if (!Array.isArray(rows) || rows.length === 0) return;
@@ -17,8 +17,8 @@ export function exportToCSV(filename, rows) {
   document.body.removeChild(link);
 }
 
-export function exportToPDF(filename, rows, title = '', jsPDFClass) {
-  const PDFClass = jsPDFClass || jsPDF;
+export async function exportToPDF(filename, rows, title = '', jsPDFClass) {
+  const PDFClass = jsPDFClass || (await import('jspdf')).default;
   const doc = new PDFClass();
   if (title) doc.text(title, 10, 10);
   if (!Array.isArray(rows) || rows.length === 0) {

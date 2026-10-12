@@ -693,8 +693,9 @@ export default function SongChordsLyricsDisplay({
           {showSheetMusic ? 'Sembunyikan Partitur' : 'Lihat Partitur'}
         </button>
       )}
-      {/* Tampilkan partitur jika diaktifkan */}
-        {!performanceMode && showSheetMusic && song?.sheetMusicXml && (
+      {/* Tampilkan partitur jika diaktifkan. Performance mode tetap boleh
+          menampilkan partitur karena ini justru fitur yang dibutuhkan saat tampil. */}
+      {showSheetMusic && song?.sheetMusicXml && (
         <SongSheetMusic sheetMusicXml={song.sheetMusicXml} />
       )}
       <ChordDisplay

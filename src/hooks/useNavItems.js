@@ -1,7 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { usePermission } from './usePermission.js';
-import { PERMISSIONS } from '../utils/permissionUtils.js';
 
 /**
  * Definisi menu navigasi utama aplikasi.
@@ -25,12 +23,9 @@ export function useNavItems() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const userBandInfo = user && user.role ? { role: user.role } : null;
-  const { can } = usePermission(null, userBandInfo);
 
   const items = [
     ...NAV_ITEMS,
-    ...(can(PERMISSIONS.ADMIN_VIEW_LOGS) ? [{ path: '/audit', label: 'Audit Log', icon: '📝' }] : []),
     ...(user && user.role === 'owner' ? [{ path: '/tools', label: 'Tools', icon: '🛠️' }] : []),
     { path: 'logout', label: 'Logout', icon: '🚪' },
   ];

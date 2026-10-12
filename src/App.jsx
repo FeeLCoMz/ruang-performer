@@ -1,5 +1,5 @@
 import ToolsPage from "./pages/ToolsPage.jsx";
-import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from "react-router-dom";
 
 // Eager load critical pages
@@ -13,7 +13,6 @@ import MobileBottomNav from "./components/MobileBottomNav.jsx";
 import Toast from "./components/Toast.jsx";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import * as apiClient from "./apiClient.js";
-import { STORAGE_KEYS } from "./utils/storageKeys.js";
 
 // Lazy load non-critical pages for code splitting
 const SongListPage = lazy(() => import("./pages/SongListPage.jsx"));
@@ -25,7 +24,6 @@ const BandDetailPage = lazy(() => import("./pages/BandDetailPage.jsx"));
 const BandManagementPage = lazy(() => import("./pages/BandManagementPage.jsx"));
 const GigPage = lazy(() => import("./pages/GigPage.jsx"));
 const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx"));
-const AuditLogPage = lazy(() => import("./pages/AuditLogPage.jsx"));
 const UserManagementPage = lazy(() => import("./pages/UserManagementPage.jsx"));
 
 // Loading fallback component
@@ -92,26 +90,6 @@ function AppContent() {
   const [errorSetlists, setErrorSetlists] = useState(null);
   const [activeSetlist, setActiveSetlist] = useState(null);
 
-  // Performance Mode state
-  const [performanceMode, setPerformanceMode] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(STORAGE_KEYS.PERFORMANCE_MODE) === "true";
-    }
-    return false;
-  });
-  const hasPrefetchedPerformanceDataRef = useRef(false);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PERFORMANCE_MODE, performanceMode ? "true" : "false");
-    if (performanceMode) {
-      document.body.classList.add("performance-mode");
-    } else {
-      document.body.classList.remove("performance-mode");
-    }
-  }, [performanceMode]);
-
-
-
   // ALL HOOKS MUST BE HERE - BEFORE ANY CONDITIONAL LOGIC
   useEffect(() => {
     // Aplikasi selalu memakai mode gelap.
@@ -152,29 +130,6 @@ function AppContent() {
         });
     }
   }, [location.pathname, isLoading, isAuthenticated]);
-
-  useEffect(() => {
-    if (isLoading || !isAuthenticated || !performanceMode) {
-      return;
-    }
-
-    if (hasPrefetchedPerformanceDataRef.current) {
-      return;
-    }
-
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      return;
-    }
-
-    hasPrefetchedPerformanceDataRef.current = true;
-    apiClient.prefetchPerformanceData()
-      .then(({ setlists: totalSetlists = 0, songs: totalSongs = 0 } = {}) => {
-        setToastMessage(`Mode perform siap offline: ${totalSetlists} setlist, ${totalSongs} lagu disimpan.`);
-      })
-      .catch(() => {
-        hasPrefetchedPerformanceDataRef.current = false;
-      });
-  }, [isLoading, isAuthenticated, performanceMode]);
 
   // CONDITIONAL LOGIC AFTER ALL HOOKS
   if (isLoading) {
@@ -221,50 +176,13 @@ function AppContent() {
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          performanceMode={performanceMode}
-          setPerformanceMode={setPerformanceMode}
         />
         <MobileBottomNav />
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
 
         <div className="app-container">
           {/* Mobile Header dengan Hamburger */}
-          <header className={`app-header-mobile${performanceMode ? ' app-header-mobile-performance' : ''}`}>
-            {performanceMode ? (
-              <>
-                <nav className="header-nav" aria-label="Navigasi cepat performance">
-                  <button
-                    className={`btn header-nav-btn ${location.pathname.startsWith('/songs') ? 'active' : ''}`}
-                    onClick={() => navigate('/songs')}
-                    title="Lagu"
-                    aria-label="Menu Lagu"
-                  >
-                    <span className="header-nav-icon" aria-hidden="true">🎵</span>
-                    <span className="header-nav-label">Lagu</span>
-                  </button>
-                  <button
-                    className={`btn header-nav-btn ${location.pathname.startsWith('/setlists') ? 'active' : ''}`}
-                    onClick={() => navigate('/setlists')}
-                    title="Setlist"
-                    aria-label="Menu Setlist"
-                  >
-                    <span className="header-nav-icon" aria-hidden="true">📋</span>
-                    <span className="header-nav-label">Setlist</span>
-                  </button>
-                </nav>
-                <div className="header-actions header-actions-compact">
-                  <button
-                    className="btn btn-secondary header-icon-btn active"
-                    onClick={() => setPerformanceMode(false)}
-                    title="Nonaktifkan Performance Mode"
-                    aria-label="Nonaktifkan performance mode"
-                  >
-                    🎤
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
+          <header className="app-header-mobile">
             <button
               className="hamburger-btn"
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -273,19 +191,6 @@ function AppContent() {
               ☰
             </button>
             <h1 className="header-title">Ruang Performer</h1>
-            <div className="header-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
-              <button
-                className={`btn btn-secondary ${performanceMode ? " active" : ""}`}
-                onClick={() => setPerformanceMode((v) => !v)}
-                title={
-                  performanceMode ? "Nonaktifkan Performance Mode" : "Aktifkan Performance Mode"
-                }
-              >
-                {performanceMode ? "🎤 Performance" : "🎶 Normal"}
-              </button>
-            </div>
-              </>
-            )}
           </header>
         </div>
 
@@ -305,7 +210,6 @@ function AppContent() {
                       songs={songs}
                       loading={loadingSongs}
                       error={errorSongs}
-                      performanceMode={performanceMode}
                       onSongMasteryUpdated={(songId, payload) => {
                         setSongs((prevSongs) => (prevSongs || []).map((song) => {
                           if (String(song.id) !== String(songId)) return song;
@@ -403,7 +307,7 @@ function AppContent() {
               />
               <Route
                 path="/songs/view/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} />}
               />
               <Route
                 path="/setlists/:id"
@@ -416,13 +320,12 @@ function AppContent() {
                     setSetlists={setSetlists}
                     setLoadingSetlists={setLoadingSetlists}
                     userBandInfo={userBandInfo}
-                    performanceMode={performanceMode}
                   />
                 }
               />
               <Route
                 path="/setlists/:setlistId/songs/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} />}
               />
               <Route
                 path="/setlists"
@@ -458,19 +361,15 @@ function AppContent() {
                       setActiveSetlist(setlist);
                       navigate(`/setlists/${setlist.id}`);
                     }}
-                    isPerformanceMode={performanceMode}
                   />
                 }
               />
               <Route path="/gigs" element={<GigPage />} />
-              <Route path="/youtube-trending" element={<YouTubeTrendingPage performanceMode={performanceMode} />} />
+              <Route path="/youtube-trending" element={<YouTubeTrendingPage />} />
               <Route path="/bands/manage" element={<BandManagementPage />} />
               <Route path="/bands" element={<Navigate to="/bands/manage" replace />} />
               <Route path="/bands/:id" element={<BandDetailPage />} />
-              {/* Performance Mode routes */}
-              {/* Performance Mode routes removed */}
               {/* InvitationPage and PendingInvitationsPage removed */}
-              <Route path="/audit-logs" element={<AuditLogPage />} />
               <Route path="/tools" element={<ToolsPage />} />
               <Route path="/user-management" element={<UserManagementPage />} />
               <Route path="*" element={<NotFound />} />
@@ -498,10 +397,10 @@ function EditSongRoute({ onSongUpdated }) {
 }
 
 // SongLyricsRoute component
-function SongLyricsRoute({ songs, activeSetlist, performanceMode }) {
+function SongLyricsRoute({ songs, activeSetlist }) {
   const { id } = useParams();
   const song = Array.isArray(songs) ? songs.find((s) => String(s.id) === String(id)) : null;
-  return <SongChordsPage song={song} activeSetlist={activeSetlist} performanceMode={performanceMode} />;
+  return <SongChordsPage song={song} activeSetlist={activeSetlist} />;
 }
 
 export default App;

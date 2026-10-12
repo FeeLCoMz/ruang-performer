@@ -24,6 +24,25 @@ export default function MobileBottomNav() {
     setOtherOpen(false);
   }, []);
 
+  // Android back button / browser back should close the "Other" sheet first,
+  // instead of leaving the current page.
+  useEffect(() => {
+    if (!otherOpen) return undefined;
+
+    const handlePopState = () => setOtherOpen(false);
+    window.history.pushState({ mobileNavSheet: true }, '');
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // If the sheet was closed by tapping an item/overlay (not via back),
+      // remove the extra history entry we pushed.
+      if (window.history.state?.mobileNavSheet) {
+        window.history.back();
+      }
+    };
+  }, [otherOpen]);
+
   const handlePrimaryClick = (path) => {
     setOtherOpen(false);
     navigate(path);

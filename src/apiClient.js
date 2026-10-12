@@ -11,12 +11,6 @@ import {
   getSetlist as getCachedSetlist,
 } from './utils/offlineCache.js';
 
-export async function getUserAuditLogs() {
-  const data = await request('/auth/user-audit-logs', {
-    fallbackError: 'Gagal mengambil audit log',
-  });
-  return data.logs;
-}
 export async function deleteAccount() {
   return request('/auth/delete-account', {
     method: 'DELETE',
@@ -279,58 +273,6 @@ export async function fetchSetListById(id) {
 
     throw error;
   }
-}
-
-export async function prefetchPerformanceData() {
-  const setlists = await fetchSetLists();
-
-  // Fetch detail for each setlist so songs order, metadata, and completion state are cached.
-  const uniqueSetlistIds = Array.from(
-    new Set(
-      (setlists || [])
-        .map((setlist) => setlist?.id)
-        .filter(Boolean)
-    )
-  );
-
-  const detailedSetlists = await Promise.all(
-    uniqueSetlistIds.map(async (setlistId) => {
-      try {
-        return await fetchSetListById(setlistId);
-      } catch {
-        return null;
-      }
-    })
-  );
-
-  const availableSetlists = detailedSetlists.filter(Boolean);
-  if (availableSetlists.length > 0) {
-    await cacheSetlists(availableSetlists).catch(() => {});
-  }
-
-  const songIds = new Set();
-  availableSetlists.forEach((setlist) => {
-    (setlist?.songs || []).forEach((songId) => {
-      if (songId) {
-        songIds.add(songId);
-      }
-    });
-  });
-
-  await Promise.all(
-    Array.from(songIds).map(async (songId) => {
-      try {
-        await fetchSongById(songId);
-      } catch {
-        // Skip unavailable songs and continue prefetch for the rest.
-      }
-    })
-  );
-
-  return {
-    setlists: availableSetlists.length,
-    songs: songIds.size,
-  };
 }
 
 export async function addSetList(setList) {
