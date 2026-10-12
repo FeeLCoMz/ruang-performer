@@ -630,7 +630,12 @@ describe('Song lyrics shared editor rendering', () => {
 
     expect(container.querySelector('.song-lyrics-analyzer-modal')).toBeTruthy();
     expect(container.querySelector('.modal-overlay')).toBeTruthy();
-    expect(container.textContent).toContain('Total Chord');
+    // Statistik yang tersisa: Unique Chord & Estimasi Key.
+    expect(container.textContent).toContain('Unique Chord');
+    expect(container.textContent).toContain('Estimasi Key');
+    // Total Chord & Modulasi sudah dihapus.
+    expect(container.textContent).not.toContain('Total Chord');
+    expect(container.textContent).not.toContain('Modulasi');
 
     const closeButton = container.querySelector('.song-lyrics-analyzer-modal-close');
     expect(closeButton).toBeTruthy();

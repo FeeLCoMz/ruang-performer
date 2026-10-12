@@ -102,16 +102,6 @@ export default function SongChordsAnalyzer({
       if (relationPriorityDiff !== 0) return relationPriorityDiff;
       return a.key.localeCompare(b.key);
     });
-  const modulationInfo = chordStats?.modulation || { hasModulation: false, modulationCount: 0, transitions: [] };
-  const displayedModulationTransitions = (modulationInfo.transitions || []).map((transition) => {
-    const fromKey = transpose !== 0 ? transposeChord(transition.fromKey, transpose) : transition.fromKey;
-    const toKey = transpose !== 0 ? transposeChord(transition.toKey, transpose) : transition.toKey;
-    return {
-      ...transition,
-      fromKey,
-      toKey,
-    };
-  });
 
   const pianoRecommendation = recommendPianoFriendlyKey({
     chords: chordStats.chords,
@@ -179,10 +169,6 @@ export default function SongChordsAnalyzer({
             </div>
           <div className="song-lyrics-analyzer-grid">
             <div className="song-lyrics-analyzer-stat">
-              <div className="song-lyrics-analyzer-stat-label">Total Chord</div>
-              <div className="song-lyrics-analyzer-stat-value">{chordStats.count}</div>
-            </div>
-            <div className="song-lyrics-analyzer-stat">
               <div className="song-lyrics-analyzer-stat-label">Unique Chord</div>
               <div className="song-lyrics-analyzer-stat-value">{chordStats.chords.length}</div>
             </div>
@@ -211,28 +197,6 @@ export default function SongChordsAnalyzer({
                     ))}
                   </div>
                 </>
-              )}
-            </div>
-            <div className="song-lyrics-analyzer-stat">
-              <div className="song-lyrics-analyzer-stat-label">Modulasi</div>
-              <div className={`song-lyrics-analyzer-stat-value ${modulationInfo.hasModulation ? 'song-lyrics-analyzer-modulation-yes' : 'song-lyrics-analyzer-modulation-no'}`}>
-                {modulationInfo.hasModulation ? `Ya (${modulationInfo.modulationCount}x)` : 'Tidak'}
-              </div>
-              {displayedModulationTransitions.length > 0 && (
-                <div className="song-lyrics-analyzer-modulation-list" aria-label="Daftar modulasi terdeteksi">
-                  {displayedModulationTransitions.map((item, idx) => (
-                    <span
-                      key={`${item.fromKey}-${item.toKey}-${item.startLine}-${idx}`}
-                      className="song-lyrics-analyzer-modulation-item"
-                      title={`Akurasi deteksi ${item.confidence}%`}
-                    >
-                      {item.fromKey} {"->"} {item.toKey} (L{item.startLine})
-                    </span>
-                  ))}
-                </div>
-              )}
-              {!displayedModulationTransitions.length && modulationInfo.hasModulation && (
-                <div className="song-lyrics-analyzer-stat-subvalue">Terdeteksi dari perubahan key antar bagian chord.</div>
               )}
             </div>
           </div>

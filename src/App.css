@@ -993,10 +993,24 @@ body.dark-mode .song-mood-badge.mood-peak {
 }
 
 .song-lyrics-analyzer-modal {
-  max-width: 720px;
+  max-width: 560px;
+  width: 100%;
   max-height: 85vh;
   max-height: 85dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* Ruang untuk safe-area iPhone */
+  padding: 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+.song-lyrics-analyzer-modal-overlay {
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 .song-lyrics-analyzer-modal-header {
@@ -1007,6 +1021,11 @@ body.dark-mode .song-mood-badge.mood-peak {
   margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-md);
   border-bottom: 2px solid var(--border-color);
+  position: sticky;
+  top: -20px;
+  background: var(--card-bg);
+  z-index: 2;
+  padding-top: 4px;
 }
 
 .song-lyrics-analyzer-modal-title {
@@ -1014,21 +1033,22 @@ body.dark-mode .song-mood-badge.mood-peak {
   font-size: var(--font-size-xl);
   font-weight: 700;
   color: var(--text-primary);
+  min-width: 0;
 }
 
 .song-lyrics-analyzer-modal-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   padding: 0;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--secondary-bg);
   color: var(--text-primary);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-lg);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
@@ -12112,41 +12132,36 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   margin-bottom: var(--spacing-lg);
 }
 
-/* Mobile: analisis chord dipadatkan jadi satu baris statistik ringkas */
-@media (max-width: 768px) {
+/* Mobile: modal analisis chord dibuat satu kolom agar mudah dibaca */
+@media (max-width: 600px) {
   .song-lyrics-analyzer-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-    margin-bottom: var(--spacing-sm);
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
   }
 
   .song-lyrics-analyzer-stat {
-    padding: 6px 8px;
-    border-left-width: 3px;
+    padding: 10px 12px;
     text-align: left;
   }
 
   .song-lyrics-analyzer-stat-label {
-    font-size: 0.62rem;
-    margin-bottom: 2px;
-    letter-spacing: 0.2px;
+    font-size: 0.72rem;
+    margin-bottom: 4px;
   }
 
   .song-lyrics-analyzer-stat-value {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-lg);
   }
 
-  /* Detail sekunder disembunyikan di mobile agar tidak makan ruang */
-  .song-lyrics-analyzer-stat-subvalue,
-  .song-lyrics-analyzer-key-alt-list,
-  .song-lyrics-analyzer-modulation-list,
-  .song-lyrics-analyzer-modulation-item {
-    display: none;
+  /* Alternatif key tetap tampil; hanya penjelasan panjang yang dibatasi */
+  .song-lyrics-analyzer-key-alt-list {
+    justify-content: flex-start;
   }
 
   .song-lyrics-analyzer-key-alt-badge {
-    padding: 2px 6px;
-    font-size: 0.62rem;
+    padding: 4px 8px;
+    font-size: 0.72rem;
   }
 
   .song-lyrics-analyzer-chords {
@@ -12154,18 +12169,42 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   }
 
   .song-lyrics-analyzer-chords-label {
-    margin-bottom: 6px;
-    font-size: 0.66rem;
+    margin-bottom: 8px;
+    font-size: 0.72rem;
   }
 
   .song-lyrics-analyzer-chords-list {
-    gap: 6px;
+    gap: 8px;
   }
 
   .song-lyrics-analyzer-chord-tag {
-    padding: 4px 6px 4px 8px;
-    font-size: var(--font-size-xs);
-    gap: 6px;
+    padding: 6px 8px 6px 10px;
+    font-size: var(--font-size-sm);
+    gap: 8px;
+  }
+}
+
+/* Layar sangat kecil: modal memakai hampir seluruh lebar */
+@media (max-width: 480px) {
+  .song-lyrics-analyzer-modal-overlay {
+    padding: 8px;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .song-lyrics-analyzer-modal {
+    max-height: 90vh;
+    max-height: 90dvh;
+    padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .song-lyrics-analyzer-modal-header {
+    top: -16px;
+  }
+
+  .song-lyrics-analyzer-modal-title {
+    font-size: var(--font-size-lg);
   }
 }
 
