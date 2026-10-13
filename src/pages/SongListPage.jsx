@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { canPerformAction, PERMISSIONS } from '../utils/permissionUtils.js';
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
+import SongCard from '../components/SongCard.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { fetchSetLists } from '../apiClient.js';
@@ -205,6 +206,13 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     return songSetlistCountMap[songId] || 0;
   }
 
+  // Helper: apakah lagu sudah dikuasai oleh user yang sedang login
+  function isMasteredByCurrentUser(song) {
+    if (song?.isMasteredByCurrentUser) return true;
+    if (!currentUserId || !Array.isArray(song?.masteredBy)) return false;
+    return song.masteredBy.includes(currentUserId);
+  }
+
   const permissionsBySongId = useMemo(() => {
     const map = {};
     filteredSongs.forEach((song) => {
@@ -279,18 +287,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   function resolveTempo(song) {
     const parsed = parseInt(song?.tempo, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 120;
-  }
-
-  function handleToggleMetronome(song, e) {
-    e.stopPropagation();
-    if (isMetronomeActive && metronomeSongId === song.id) {
-      setIsMetronomeActive(false);
-      setMetronomeSongId(null);
-      return;
-    }
-    setMetronomeTempo(resolveTempo(song));
-    setMetronomeSongId(song.id);
-    setIsMetronomeActive(true);
   }
 
   function handlePlayVideo(song, e) {
@@ -369,77 +365,80 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   function renderSongItem(song, style) {
     const isInlineVideoSong = activeVideoSong?.id === song.id;
     const mood = inferSongMood(song);
+    const mastered = isMasteredByCurrentUser(song);
 
     return (
       <React.Fragment key={song.id}>
-        <div
-          className={`song-item${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
-          onClick={() => navigate(`/songs/view/${song.id}`)}
+        <SongCard
           style={style}
-        >
-          <div className="song-info">
-            <h3 className="song-title">
-              {song.title}
-              {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
-            </h3>
-            <div className="song-meta">
+          title={song.title}
+          isPlaying={isSongPlaying(song.id)}
+          onClick={() => navigate(`/songs/view/${song.id}`)}
+          headingStatus={(
+            <span
+              className={`song-mastery-chip mastery-${mastered ? 'ready' : 'none'}`}
+              title={mastered ? 'Status: Dikuasai' : 'Status: Belum diulik'}
+            >
+              <span aria-hidden="true">{mastered ? '🟢' : '🔴'}</span>
+              {mastered ? 'Dikuasai' : 'Belum Diulik'}
+            </span>
+          )}
+          metaPrimary={(
+            <div className="song-meta-line song-meta-line-primary">
+              {song.artist && <span className="song-chip">👤 {song.artist}</span>}
+              {song.bandId && <span className="song-chip">🎤 {song.bandName || '-'}</span>}
+              {song.genre && <span className="song-chip">🎸 {song.genre}</span>}
+            </div>
+          )}
+          metaDetail={(
+            <div className="song-meta-line song-meta-line-detail">
+              {song.key && <span className="song-chip">🎹 {song.key}</span>}
+              {song.tempo && <span className="song-chip">⏱️ {song.tempo} BPM</span>}
               <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
                 {mood.label}
               </span>
-              {song.artist && <span>👤 {song.artist}</span>}
-              {song.key && <span>🎹 {song.key}</span>}
-              {song.tempo && <span>⏱️ {song.tempo} BPM</span>}
-              {song.genre && <span>🎸 {song.genre}</span>}
-              {song.bandId && <span>🎤 {song.bandName || '-'}</span>}
-              <span className="song-setlist-count-meta">
+              <span className="song-chip song-chip-muted song-setlist-count-meta">
                 {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
               </span>
               {Array.isArray(song.masteredBy) && song.masteredBy.length > 0 && (
-                <span className="song-mastery-summary">
+                <span className="song-chip song-mastery-summary">
                   ✅ {song.masteredBy.length} kuasai
                 </span>
               )}
             </div>
-          </div>
-
-          <div
-            className="song-actions"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="btn btn-secondary song-action-mini"
-              title="Play metronom"
-              aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
-              onClick={(e) => handleToggleMetronome(song, e)}
-            >
-              {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
-            </button>
-            {hasYouTubeVideo(song) && (
-              <button
-                className="btn btn-secondary song-action-mini"
-                title="Play video"
-                aria-label="Play video"
-                onClick={(e) => handlePlayVideo(song, e)}
-              >
-                🎬
-              </button>
-            )}
-            {(() => {
-              const permission = permissionsBySongId[song.id] || {};
-              const canEdit = Boolean(permission.canEdit);
-              if (!canEdit) return null;
-              return (
+          )}
+          actions={(
+            <>
+              {hasYouTubeVideo(song) && (
                 <button
-                  onClick={() => onSongClick('edit', song.id)}
-                  className="btn"
-                  title="Edit"
+                  className="btn btn-secondary song-action-btn"
+                  title="Putar video referensi"
+                  aria-label="Play video"
+                  onClick={(e) => handlePlayVideo(song, e)}
                 >
-                  <EditIcon size={16} />
+                  <span aria-hidden="true">🎬</span>
+                  <span className="song-action-btn-label">Video</span>
                 </button>
-              );
-            })()}
-          </div>
-        </div>
+              )}
+              {(() => {
+                const permission = permissionsBySongId[song.id] || {};
+                const canEdit = Boolean(permission.canEdit);
+                if (!canEdit) return null;
+                return (
+                  <button
+                    onClick={() => onSongClick('edit', song.id)}
+                    className="btn song-action-btn"
+                    title="Edit lirik & chord"
+                    aria-label="Edit lirik dan chord"
+                  >
+                    <EditIcon size={16} />
+                    <span className="song-action-btn-label">Edit</span>
+                  </button>
+                );
+              })()}
+            </>
+          )}
+        />
 
         {isInlineVideoSong && (
           <div ref={activeInlinePlayerRef} className="song-inline-player card song-inline-player-inline">
@@ -481,9 +480,17 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
             <span className="song-mastery-overview-badge">✅ Dikuasai: {masteredStats.masteredAllCount}/{masteredStats.totalSongs} ({masteredStats.masteredPercent}%)</span>
           </div>
         </div>
-        <button className="btn" onClick={() => onSongClick('add')} title="Tambah lagu baru">
-          + Tambah
-        </button>
+        <div className="page-header-actions">
+          <button
+            className="btn song-add-btn"
+            onClick={() => onSongClick('add')}
+            title="Tambah lagu baru"
+            aria-label="Tambah lagu baru"
+          >
+            <PlusIcon size={18} />
+            <span className="song-add-btn-label">Tambah</span>
+          </button>
+        </div>
       </div>
 
       {masteryError && (
@@ -516,37 +523,44 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
             />
           </div>
         </div>
-        {/* Filter dan sort */}
-        <div className="song-filter-grid">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="filter-select"
+        {/* Filter dan sort — satu baris ringkas */}
+        <div className="song-filter-toolbar">
+          <label className="song-sort-control">
+            <span className="song-sort-icon" aria-hidden="true">⇅</span>
+            <span className="sr-only">Urutkan berdasarkan</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select song-sort-select"
+              title="Urutkan berdasarkan"
+            >
+              <option value="title">Judul</option>
+              <option value="artist">Artis</option>
+              <option value="key">Kunci</option>
+              <option value="tempo">Tempo</option>
+              <option value="created">Tanggal dibuat</option>
+              <option value="updated">Tanggal diupdate</option>
+            </select>
+          </label>
+
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="btn btn-secondary song-sort-order-btn"
+            title={sortOrder === 'asc' ? 'Urutan naik (A-Z)' : 'Urutan turun (Z-A)'}
+            aria-label={sortOrder === 'asc' ? 'Urutan naik' : 'Urutan turun'}
           >
-            <option value="title">Urutkan: Judul</option>
-            <option value="artist">Urutkan: Artis</option>
-            <option value="key">Urutkan: Kunci</option>
-            <option value="tempo">Urutkan: Tempo</option>
-            <option value="created">Urutkan: Tanggal dibuat</option>
-            <option value="updated">Urutkan: Tanggal diupdate</option>
-          </select>
+            <span aria-hidden="true">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+          </button>
 
           {hasActiveFilters && (
             <button
               onClick={handleClearFilters}
-              className="btn btn-secondary"
+              className="btn btn-secondary song-filter-reset-btn"
+              title="Hapus semua filter"
             >
               ✕ Reset
             </button>
           )}
-
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="btn btn-secondary"
-            title={sortOrder === 'asc' ? 'Urut Naik' : 'Urut Turun'}
-          >
-            {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
-          </button>
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import DeleteIcon from '../components/DeleteIcon.jsx';
 import SetlistPoster from '../components/SetlistPoster.jsx';
+import SongCard from '../components/SongCard.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
 // html2canvas & jspdf dimuat secara lazy di dalam handler (dynamic import)
@@ -1612,30 +1613,34 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             const mood = inferSongMood(song);
             return (
               <React.Fragment key={song.id}>
-                <div
-                  className={`song-item${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}${isSongPlaying(song.id) ? ' song-item-playing' : ''}`}
+                <SongCard
+                  title={song.title}
+                  className={`${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}`}
+                  isPlaying={isSongPlaying(song.id)}
                   /* Song-to-song reordering is done with the ⇅ button in the rail:
                      HTML5 drag-and-drop does not fire on touch devices, so the
                      old handle was a control that did nothing on a phone.
                      Drop handling stays for session dividers, which are still
                      draggable from their own handle. */
-                  onDragOver={e => {
-                    if (e.dataTransfer.types.includes('drag-type')) {
-                      e.preventDefault();
-                      e.currentTarget.classList.add('drag-over');
-                    }
-                  }}
-                  onDragLeave={e => {
-                    e.currentTarget.classList.remove('drag-over');
-                  }}
-                  onDrop={e => {
-                    e.currentTarget.classList.remove('drag-over');
-                    const dragType = e.dataTransfer.getData('drag-type');
-                    if (dragType === 'session-divider') {
-                      e.preventDefault();
-                      const fromSongId = e.dataTransfer.getData('divider-from-song-id');
-                      handleMoveSessionDivider(fromSongId, song.id);
-                    }
+                  dragProps={{
+                    onDragOver: (e) => {
+                      if (e.dataTransfer.types.includes('drag-type')) {
+                        e.preventDefault();
+                        e.currentTarget.classList.add('drag-over');
+                      }
+                    },
+                    onDragLeave: (e) => {
+                      e.currentTarget.classList.remove('drag-over');
+                    },
+                    onDrop: (e) => {
+                      e.currentTarget.classList.remove('drag-over');
+                      const dragType = e.dataTransfer.getData('drag-type');
+                      if (dragType === 'session-divider') {
+                        e.preventDefault();
+                        const fromSongId = e.dataTransfer.getData('divider-from-song-id');
+                        handleMoveSessionDivider(fromSongId, song.id);
+                      }
+                    },
                   }}
                   onClick={() => navigate(`/setlists/${setlist.id}/songs/${song.id}`, {
                     state: {
@@ -1644,63 +1649,61 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                       setlistSong: song
                     }
                   })}
-                >
-                  {/* Left rail: the number IS the reorder control. One tap opens the
-                      reorder prompt, so there is no separate handle to aim at — and
-                      no drag, which never fires on touch devices. */}
-                  <div className="song-rail">
-                    {canEdit ? (
-                      <button
-                        type="button"
-                        className="song-number song-number-button"
-                        title={`Ubah urutan lagu (sekarang nomor ${displayOrderNumber})`}
-                        aria-label={`Ubah nomor urutan ${song.title}, sekarang nomor ${displayOrderNumber}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditSongOrder(song.id);
-                        }}
-                      >
-                        {displayOrderNumber}
-                      </button>
-                    ) : (
-                      <span className="song-number">{displayOrderNumber}</span>
-                    )}
-                  </div>
-
-                  {/* Song Info */}
-                  <div className="song-info">
-                    <div className="song-heading">
-                      <h3 className="song-title">
-                        {song.title}
-                        {isSongPlaying(song.id) && <span className="song-playing-badge">LIVE</span>}
-                      </h3>
-
-                      {/* Status lives on the right of the title line, where it reads
-                          as the state of THIS row instead of another inline word. */}
-                      <div className="song-heading-status">
-                        {isSongPlaying(song.id) && (
-                          <span className="song-flag song-flag-live">▶ Live</span>
-                        )}
-                        {isCompleted && (
-                          <span className="song-flag song-flag-done" title="Sudah dibawakan">
-                            ✓ Dibawakan
-                          </span>
-                        )}
-                        {isSmartFeatured && (
-                          <span className="song-flag song-flag-smart" title="Blok show utama Smart Assistant">
-                            ✨ Smart Pick
-                          </span>
-                        )}
-                      </div>
+                  leadingSlot={(
+                    /* Left rail: the number IS the reorder control. One tap opens the
+                        reorder prompt, so there is no separate handle to aim at — and
+                        no drag, which never fires on touch devices. */
+                    <div className="song-rail">
+                      {canEdit ? (
+                        <button
+                          type="button"
+                          className="song-number song-number-button"
+                          title={`Ubah urutan lagu (sekarang nomor ${displayOrderNumber})`}
+                          aria-label={`Ubah nomor urutan ${song.title}, sekarang nomor ${displayOrderNumber}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditSongOrder(song.id);
+                          }}
+                        >
+                          {displayOrderNumber}
+                        </button>
+                      ) : (
+                        <span className="song-number">{displayOrderNumber}</span>
+                      )}
                     </div>
-
-                    {/* Facts about the song, one chip each, so they scan as a row
-                        of labels rather than a sentence. */}
-                    <div className="song-meta">
-                      {song.artist && <span className="song-chip">🎤 {song.artist}</span>}
-                      <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood: ${mood.label} (${mood.sourceHint})`}>
-                        {mood.label}
-                      </span>
+                  )}
+                  headingStatus={(
+                    /* Status lives on the right of the title line, where it reads
+                        as the state of THIS row instead of another inline word. */
+                    <div className="song-heading-status">
+                      {isSongPlaying(song.id) && (
+                        <span className="song-flag song-flag-live">▶ Live</span>
+                      )}
+                      {isCompleted && (
+                        <span className="song-flag song-flag-done" title="Sudah dibawakan">
+                          ✓ Dibawakan
+                        </span>
+                      )}
+                      {isSmartFeatured && (
+                        <span className="song-flag song-flag-smart" title="Blok show utama Smart Assistant">
+                          ✨ Smart Pick
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  metaPrimary={(
+                    <div className="song-meta-line song-meta-line-primary">
+                      {song.artist && <span className="song-chip">👤 {song.artist}</span>}
+                      {song.genre && (
+                        <span className="song-chip">
+                          🎸 {song.genre}
+                          {genreChanged && baseSong?.genre ? ` (${baseSong.genre})` : ''}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  metaDetail={(
+                    <div className="song-meta-line song-meta-line-detail">
                       {song.key && (
                         <span className="song-chip">
                           🎹 {song.key}
@@ -1713,71 +1716,63 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                           {tempoChanged && baseSong?.tempo ? ` (${baseSong.tempo} BPM)` : ''}
                         </span>
                       )}
-                      {song.genre && (
-                        <span className="song-chip">
-                          🎸 {song.genre}
-                          {genreChanged && baseSong?.genre ? ` (${baseSong.genre})` : ''}
-                        </span>
-                      )}
+                      <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood: ${mood.label} (${mood.sourceHint})`}>
+                        {mood.label}
+                      </span>
                       <span className="song-chip song-chip-muted">
                         📋 {songUsageCountMap.get(song.id) || 0} setlist
                       </span>
                     </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div
-                    className="song-actions"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={(e) => handleToggleMetronome(song, e)}
-                      className="btn btn-secondary song-action-mini"
-                      title="Play metronom"
-                      aria-label={isMetronomeActive && metronomeSongId === song.id ? 'Stop metronom' : 'Start metronom'}
-                    >
-                      {isMetronomeActive && metronomeSongId === song.id ? '⏹' : '⏱'}
-                    </button>
-                    {hasYouTubeVideo(song) && (
-                      <button
-                        onClick={(e) => handlePlayVideo(song, e)}
-                        className="btn btn-secondary song-action-mini"
-                        title="Play video"
-                        aria-label="Play video"
-                      >
-                        🎬
-                      </button>
-                    )}
-                    {canEdit && (
-                      <button
-                        onClick={() => handleToggleSongCompleted(song.id)}
-                        className={`btn song-action-mini ${isCompleted ? '' : 'btn-secondary'}`}
-                        title={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
-                        aria-label={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
-                      >
-                        {isCompleted ? '✅' : '☑'}
-                      </button>
-                    )}
-                    {canEdit && (
-                      <>
+                  )}
+                  actions={(
+                    <>
+                      {hasYouTubeVideo(song) && (
                         <button
-                          onClick={() => openEditSong(song.id)}
-                          className="btn"
-                          title="Edit detail lagu di setlist"
+                          onClick={(e) => handlePlayVideo(song, e)}
+                          className="btn btn-secondary song-action-btn"
+                          title="Putar video referensi"
+                          aria-label="Play video"
                         >
-                          <EditIcon size={16} />
+                          <span aria-hidden="true">🎬</span>
+                          <span className="song-action-btn-label">Video</span>
                         </button>
+                      )}
+                      {canEdit && (
                         <button
-                          onClick={() => handleDeleteSongFromSetlist(song.id)}
-                          className="btn btn-red"
-                          title="Hapus dari setlist"
+                          onClick={() => handleToggleSongCompleted(song.id)}
+                          className={`btn song-action-btn ${isCompleted ? '' : 'btn-secondary'}`}
+                          title={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
+                          aria-label={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
                         >
-                          <DeleteIcon size={16} />
+                          <span aria-hidden="true">{isCompleted ? '✅' : '☑'}</span>
+                          <span className="song-action-btn-label">{isCompleted ? 'Batal' : 'Dibawakan'}</span>
                         </button>
-                      </>
-                    )}
-                  </div>
-                </div>
+                      )}
+                      {canEdit && (
+                        <>
+                          <button
+                            onClick={() => openEditSong(song.id)}
+                            className="btn song-action-btn"
+                            title="Edit detail lagu di setlist"
+                            aria-label="Edit detail lagu di setlist"
+                          >
+                            <EditIcon size={16} />
+                            <span className="song-action-btn-label">Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSongFromSetlist(song.id)}
+                            className="btn btn-red song-action-btn"
+                            title="Hapus dari setlist"
+                            aria-label="Hapus dari setlist"
+                          >
+                            <DeleteIcon size={16} />
+                            <span className="song-action-btn-label">Hapus</span>
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                />
 
                 {isInlinePlayerSong && (
                   <div

@@ -78,8 +78,8 @@ describe('SongListPage', () => {
     });
 
     const options = Array.from(container.querySelectorAll('select')[0].querySelectorAll('option')).map((option) => option.textContent);
-    expect(options).toContain('Urutkan: Judul');
-    expect(options).toContain('Urutkan: Artis');
+    expect(options).toContain('Judul');
+    expect(options).toContain('Artis');
   });
 
   test('shows mood badge on each song row', async () => {
