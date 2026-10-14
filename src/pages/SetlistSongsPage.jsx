@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import * as chordUtils from '../utils/chordUtils.js';
 import { buildSmartSetlistPlan } from '../utils/setlistSmartAssistant.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
+import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
 import useMetronome from '../hooks/useMetronome.js';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import TimeMarkers from '../components/TimeMarkers.jsx';
@@ -517,13 +518,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
   // Early returns AFTER all hooks
   if (isLoading) {
+    /* Lazy load: skeleton kartu lagu, konsisten dengan halaman daftar lagu */
     return (
-      <div className="main-content">
-        <div className="card">
-          <div className="loading-skeleton setlist-loading-skeleton-title" />
-          <div className="loading-skeleton setlist-loading-skeleton-line-60" />
-          <div className="loading-skeleton setlist-loading-skeleton-line-40" />
-        </div>
+      <div className="main-content page-container">
+        <SongListSkeleton count={6} />
       </div>
     );
   }
