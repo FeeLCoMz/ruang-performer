@@ -1,5 +1,5 @@
 import ToolsPage from "./pages/ToolsPage.jsx";
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from "react-router-dom";
 
 // Eager load critical pages
@@ -151,6 +151,17 @@ function AppContent() {
         });
     }
   }, [location.pathname, isLoading, isAuthenticated]);
+
+  // Keluar dari mode setlist: saat menu berpindah ke halaman di luar setlist
+  // (mis. halaman Lagu, Konser, dsb.), setlist aktif direset agar Info lagu
+  // kembali membaca data lagu master, bukan setlistSongMeta setlist sebelumnya.
+  const activeSetlistRef = useRef(null);
+  activeSetlistRef.current = activeSetlist;
+  useEffect(() => {
+    if (!location.pathname.startsWith("/setlists") && activeSetlistRef.current) {
+      setActiveSetlist(null);
+    }
+  }, [location.pathname]);
 
   // CONDITIONAL LOGIC AFTER ALL HOOKS
   if (isLoading) {
