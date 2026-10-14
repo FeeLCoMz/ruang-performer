@@ -210,6 +210,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // Songs always follow the user's own order (localOrder). The sort dropdown was
   // removed: the order you arrange is the order you perform, and offering other
   // sorts made the list disagree with the stage.
+  // Saat refresh, array `songs` global belum tentu terload — tanpa guard ini
+  // semua lagu setlist sempat ditandai "[Lagu dihapus]" padahal hanya belum
+  // ter-fetch. "Dihapus" hanya benar bila daftar lagu global sudah terload.
+  const songsLoaded = Array.isArray(songs) && songs.length > 0;
   const setlistSongs = (localOrder || []).map((id) => {
     const song = availableSongsPool.find((item) => item.id === id);
     const meta = setlistSongMeta[id];
@@ -223,6 +227,18 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         };
       }
       return song;
+    }
+    if (!songsLoaded) {
+      // Belum terload — placeholder tanpa klaim "dihapus"
+      return {
+        id,
+        title: 'Memuat…',
+        artist: '',
+        key: '',
+        tempo: '',
+        genre: '',
+        loadingPlaceholder: true,
+      };
     }
     // The song was deleted from the database.
     return {
@@ -1540,11 +1556,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           <p>
             {hasActiveFilters ? 'Tidak ada lagu yang cocok dengan filter' : 'Setlist ini belum berisi lagu'}
           </p>
-          {!hasActiveFilters && setlistSongs.length === 0 && canEdit && (
-            <button className="btn setlist-empty-add-btn" onClick={() => setShowAddSong(true)}>
-              <PlusIcon size={18} /> Tambah Lagu Pertama
-            </button>
-          )}
+          {/* Tombol "Tambah Lagu Pertama" dihapus — tambah lagu cukup lewat
+              tombol tambah di header. */}
         </div>
       ) : (
         <div className="song-list-container">
