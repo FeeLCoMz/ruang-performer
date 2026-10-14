@@ -27,6 +27,30 @@ const YouTubeViewer = React.forwardRef(({
   const [duration, setDuration] = useState(0);
   const containerIdRef = useRef(`youtube-player-${Math.random().toString(36).slice(2,9)}`);
   const mountedRef = useRef(false);
+  // Player disimpan juga di ref agar aksi seek/pause dari imperative handle
+  // tidak pernah memakai closure yang telat (root cause: tombol ±5 detik
+  // menghitung dari currentTime state yang stale dan lompat ke 0/5 detik).
+  const playerRef = useRef(null);
+
+  const getLiveTime = () => {
+    const p = playerRef.current;
+    if (p && typeof p.getCurrentTime === 'function') {
+      try {
+        const t = Number(p.getCurrentTime());
+        if (Number.isFinite(t) && t > 0) return t;
+      } catch {}
+    }
+    return null;
+  };
+
+  const doSeek = (time) => {
+    const p = playerRef.current;
+    if (!p || typeof p.seekTo !== 'function') return;
+    try {
+      p.seekTo(Math.max(0, time), true);
+      if (typeof p.playVideo === 'function') p.playVideo();
+    } catch {}
+  };
 
   // Expose currentTime and handleSeek to parent via ref
   React.useImperativeHandle(ref, () => ({
@@ -60,14 +84,13 @@ const YouTubeViewer = React.forwardRef(({
       }
       return -1; // uninitialized
     },
-    handleSeek: (time) => {
-      if (player && typeof player.seekTo === 'function') {
-        player.seekTo(time, true);
-        if (typeof player.playVideo === 'function') {
-          player.playVideo();
-        }
-      }
-    }
+    handleSeek: (time) => doSeek(time),
+    /** Seek relatif dari posisi live player: ±delta detik. Anti-stale. */
+    handleSeekOffset: (deltaSeconds) => {
+      const live = getLiveTime();
+      const base = live !== null ? live : Number(currentTime) || 0;
+      doSeek(base + Number(deltaSeconds));
+    },
   }), [currentTime, player]);
 
   useEffect(() => {
@@ -145,6 +168,7 @@ const YouTubeViewer = React.forwardRef(({
       events: {
         onReady: (event) => {
           setPlayer(event.target);
+          playerRef.current = event.target;
           try {
             const d = event.target.getDuration?.() || 0;
             setDuration(Number.isFinite(d) ? d : 0);
@@ -173,7 +197,7 @@ const YouTubeViewer = React.forwardRef(({
     if (!player) return;
     const interval = setInterval(() => {
       try {
-        const t = player.getCurrentTime?.() || 0;
+        const t = playerRef.current?.getCurrentTime?.() || 0;
         const d = player.getDuration?.() || duration;
         setCurrentTime(Number.isFinite(t) ? t : 0);
         setDuration(Number.isFinite(d) ? d : 0);

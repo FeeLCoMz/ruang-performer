@@ -100,6 +100,7 @@ export function StudioMediaColumn({
   currentTime,
   duration,
   getCurrentYouTubeTime,
+  onTimeUpdate,
 }) {
   const format = typeof secondsToLabel === 'function' ? secondsToLabel : (v) => String(v);
 
@@ -120,7 +121,7 @@ export function StudioMediaColumn({
             <YouTubeViewer
               videoId={youtubeId}
               ref={youtubeRef}
-              onTimeUpdate={() => {}}
+              onTimeUpdate={onTimeUpdate}
             />
           </div>
 
@@ -146,7 +147,11 @@ export function StudioMediaColumn({
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => youtubeRef.current?.handleSeek?.(Math.max(0, (currentTime || 0) - 5))}
+              onClick={() => {
+                // Seek relatif: hitung dari posisi live player (bukan state
+                // currentTime yang bisa stale → lompat ke 0 / 5 detik awal).
+                youtubeRef.current?.handleSeekOffset?.(-5);
+              }}
               title="Mundur 5 detik"
               aria-label="Mundur 5 detik"
             >
@@ -155,7 +160,9 @@ export function StudioMediaColumn({
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => youtubeRef.current?.handleSeek?.((currentTime || 0) + 5)}
+              onClick={() => {
+                youtubeRef.current?.handleSeekOffset?.(5);
+              }}
               title="Maju 5 detik"
               aria-label="Maju 5 detik"
             >

@@ -53,6 +53,12 @@ export default function SongChordsMediaPanel({
         getCurrentYouTubeTime={() =>
           typeof youtubeRef.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0
         }
+        onTimeUpdate={(t, d) => {
+          // Pelacak posisi pemutaran agar tombol «5s / 5s» dan label waktu
+          // menghitung dari posisi yang benar, bukan selalu dari 0.
+          if (typeof t === 'number' && Number.isFinite(t)) setYtCurrentTime(t);
+          if (typeof d === 'number' && Number.isFinite(d)) setYtDuration(d);
+        }}
       />
     </div>
   );

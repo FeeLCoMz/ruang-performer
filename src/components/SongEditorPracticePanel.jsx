@@ -208,7 +208,11 @@ export default function SongEditorPracticePanel({
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => youtubeRef.current?.handleSeek?.(Math.max(0, liveTime - 5))}
+          onClick={() => {
+            // Seek relatif dari posisi live player agar tidak lompat ke 0/awal
+            // ketika state liveTime telat satu interval polling.
+            youtubeRef.current?.handleSeekOffset?.(-5);
+          }}
           title="Mundur 5 detik"
           aria-label="Mundur 5 detik"
         >
@@ -217,7 +221,7 @@ export default function SongEditorPracticePanel({
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => youtubeRef.current?.handleSeek?.(liveTime + 5)}
+          onClick={() => youtubeRef.current?.handleSeekOffset?.(5)}
           title="Maju 5 detik"
           aria-label="Maju 5 detik"
         >
