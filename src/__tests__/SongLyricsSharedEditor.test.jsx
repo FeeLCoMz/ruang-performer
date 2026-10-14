@@ -48,6 +48,7 @@ vi.mock('../hooks/usePermission.js', () => ({
 
 vi.mock('../apiClient.js', () => ({
   fetchSetLists: vi.fn().mockResolvedValue([]),
+  fetchSetListById: vi.fn().mockResolvedValue(null),
   updateSongMastery: vi.fn(),
 }));
 
@@ -790,8 +791,11 @@ describe('Song lyrics shared editor rendering', () => {
     expect(keyEasyButton).toBeTruthy();
     // Tombol kini menampilkan rekomendasi langsung (💡 + key), label "Key Mudah"
     // dipindah ke tooltip. Jarak transpose ada di tooltip.
+    // Auto-apply transpose (key master G -> key setlist D = -5) sudah diterapkan
+    // sejak mount di level halaman, jadi jarak rekomendasi dihitung dari posisi
+    // saat ini: D -> C = -2 semitone (sebelumnya +5 dari key master G).
     expect(keyEasyButton.textContent).toContain('💡');
-    expect(keyEasyButton.getAttribute('title')).toContain('+5 semitone');
+    expect(keyEasyButton.getAttribute('title')).toContain('-2 semitone');
 
     await act(async () => {
       keyEasyButton.click();

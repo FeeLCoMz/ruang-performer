@@ -4058,6 +4058,12 @@ body.dark-mode .lyrics-editor-textarea {
   margin-bottom: 8px;
 }
 
+.modal-hint {
+  font-size: 0.85em;
+  color: var(--text-muted, #94a3b8);
+  margin: -4px 0 8px;
+}
+
 .modal-list-spaced {
   margin-bottom: 8px;
 }

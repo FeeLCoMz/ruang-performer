@@ -516,6 +516,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const closeMergeSetlistModal = () => setShowMergeSetlistModal(false);
   const closeEditSongModal = () => setEditSongId(null);
 
+  // Key asli lagu master untuk ditampilkan sebagai hint di modal edit
+  const editSongModalBaseKey = editSongId != null
+    ? baseSongMap.get(editSongId)?.key || ''
+    : '';
+
   // Early returns AFTER all hooks
   if (isLoading) {
     /* Lazy load: skeleton kartu lagu, konsisten dengan halaman daftar lagu */
@@ -2342,8 +2347,19 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           >
             <div className="modal-title">Edit Detail Lagu di Setlist</div>
             <label>Key
-              <input type="text" value={editSongKey} onChange={e => setEditSongKey(e.target.value)} className="modal-input modal-input-tight" />
+              <input type="text" value={editSongKey} list="song-key-options" onChange={e => setEditSongKey(e.target.value)} className="modal-input modal-input-tight" placeholder="mis. C, Am, F#m" />
+              <datalist id="song-key-options">
+                {['C','D','E','F','G','A','B'].map(root => [
+                  root,
+                  `${root}m`,
+                  `${root}#`,
+                  `${root}#m`,
+                  `${root}b`,
+                  `${root}bm`,
+                ]).flat().map(k => <option key={k} value={k} />)}
+              </datalist>
             </label>
+            {editSongModalBaseKey && <div className="modal-hint">Key asli lagu: {editSongModalBaseKey}</div>}
             {editSongKeyError && <div className="error-text modal-error-bottom">{editSongKeyError}</div>}
             <label>Tempo
               <input type="text" value={editSongTempo} onChange={e => setEditSongTempo(e.target.value)} className="modal-input modal-input-tight" />

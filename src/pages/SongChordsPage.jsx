@@ -13,8 +13,8 @@ import { SongDetailSkeleton } from '../components/LoadingSkeleton.jsx';
 import { handleExportText, handleExportPDF, handleShare } from '../utils/songHandlers.js';
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
-import { fetchSetLists, updateSongMastery, deleteSong } from '../apiClient.js';
-import { recommendPianoFriendlyKey, extractDetectedInstrumentsFromLyrics } from '../utils/chordUtils.js';
+import { fetchSetLists, fetchSetListById, updateSongMastery, deleteSong } from '../apiClient.js';
+import { recommendPianoFriendlyKey, extractDetectedInstrumentsFromLyrics, getTransposeSteps } from '../utils/chordUtils.js';
 import { extractSectionOverview } from '../utils/songFormUtils.js';
 
 /**
@@ -61,15 +61,50 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
   // =========================
   // 4. State: Setlist Context
   // =========================
-  // Metadata lagu dalam setlist (jika ada)
+  // Metadata lagu dalam setlist (jika ada). Sumber utama: state rute yang
+  // dikirim dari SetlistSongsPage. Fallback: setlistSongMeta pada setlist
+  // aktif — penting karena location.state hilang saat refresh / buka link
+  // langsung, tanpa fallback ini key kembali ke key lagu master.
+  // Jika setlist aktif sama sekali belum terload (link langsung di sesi baru),
+  // state directLinkedSetlist (di-fetch di bawah) mengisi perannya.
+  const [directLinkedSetlist, setDirectLinkedSetlist] = useState(null);
   const isSetlistRoute = typeof location?.pathname === 'string' && location.pathname.startsWith('/setlists/');
-  const setlistSongData = isSetlistRoute ? (location.state?.setlistSong || {}) : {};
   const setlistId = isSetlistRoute ? (location.state?.setlistId || activeSetlist?.id || routeSetlistId || null) : null;
   // Setlist aktif untuk navigasi antar lagu di panel lirik: dari state rute,
   // fallback ke activeSetlist dari parent.
   const navSetlist = isSetlistRoute
-    ? (location.state?.setlist || activeSetlist || null)
+    ? (location.state?.setlist || activeSetlist || directLinkedSetlist)
     : (activeSetlist || null);
+  const setlistSongDataFallback = (() => {
+    // Endpoint daftar setlist memakai nama field setlistSongMeta, endpoint
+    // detail /:id memakai songKeys (plus alias setlistSongMeta setelah
+    // perbaikan backend). Baca keduanya agar refresh / link langsung tetap
+    // mendapat key override.
+    const metaSource = navSetlist?.setlistSongMeta || navSetlist?.songKeys || {};
+    const meta = metaSource?.[songId];
+    if (!meta || typeof meta !== 'object') return {};
+    return {
+      key: meta.key,
+      tempo: meta.tempo,
+      genre: meta.genre,
+    };
+  })();
+  // Ketika setlist aktif, Info tab HARUS membaca setlistSongMeta lagu ini
+  // terlebih dahulu — tidak peduli lagu dibuka dari route setlist maupun dari
+  // /songs/view/:id sementara setlist masih aktif (location.state tidak ada).
+  const activeSetlistSongIds = navSetlist && Array.isArray(navSetlist.songs)
+    ? navSetlist.songs.map((s) => String(typeof s === 'object' && s !== null ? s.id : s))
+    : null;
+  const isInActiveSetlist = Boolean(
+    isSetlistRoute
+    || (activeSetlistSongIds && activeSetlistSongIds.includes(String(songId)))
+  );
+  const setlistSongData = isInActiveSetlist
+    // setlistSongMeta (fallback) SELALU menang: location.state.setlistSong bisa
+    // berasal dari pool lagu master (mis. navigasi antar lagu lewat footer
+    // setlist), yang key-nya belum override — meta setlist harusnya otoritatif.
+    ? { ...(location.state?.setlistSong || {}), ...setlistSongDataFallback }
+    : {};
   const autoStartMetronome = isSetlistRoute && location.state?.autoStartMetronome === true;
   const autoPlayVideo = isSetlistRoute && location.state?.autoPlayVideo === true;
 
@@ -123,9 +158,26 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
 
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, Number(tempo) || 120);
 
+  // Saat pindah lagu: reset transpose DAN auto-apply ke key setlist lagu baru.
+  // Auto-apply harus di level halaman (bukan hanya di TransposeKeyControl tab
+  // Info) karena kontrol transpose di toolbar lirik memakai disableAutoApply —
+  // tanpa ini, pindah lagu saat berada di tab Lirik membuat transpose tetap 0
+  // dan tampilan kembali ke key lagu master.
+  const autoAppliedKeyPairRef = React.useRef(null);
   useEffect(() => {
-    setTranspose(0);
-  }, [song?.id]);
+    const originalSongKey = song?.key || '';
+    const targetSetlistKey = setlistSongData.key || '';
+    const keyPair = `${song?.id}::${originalSongKey}::${targetSetlistKey}`;
+    if (autoAppliedKeyPairRef.current === keyPair) return;
+    autoAppliedKeyPairRef.current = keyPair;
+
+    if (!originalSongKey || !targetSetlistKey) {
+      setTranspose(0);
+      return;
+    }
+    const steps = getTransposeSteps(originalSongKey, targetSetlistKey);
+    setTranspose(steps === null ? 0 : steps);
+  }, [song?.id, song?.key, setlistSongData.key]);
 
   const [zoom, setZoom] = useState(1);
   const [showChords] = useState(true);
@@ -266,6 +318,24 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
         setLoadingSetlists(false);
       });
   }, [song?.id, setlistId]);
+
+  // Setlist aktif belum terload (mis. buka link langsung ke lagu dalam setlist
+  // di sesi baru): ambil setlist berdasarkan routeSetlistId supaya
+  // setlistSongMeta (key/tempo/genre override) tetap bisa dipakai.
+  // State directLinkedSetlist dideklarasikan di bagian Setlist Context di atas.
+  useEffect(() => {
+    if (!isSetlistRoute || !routeSetlistId || navSetlist) {
+      return;
+    }
+    let cancelled = false;
+    if (typeof fetchSetListById !== 'function') return undefined;
+    fetchSetListById(routeSetlistId)
+      .then((data) => {
+        if (!cancelled && data) setDirectLinkedSetlist(data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isSetlistRoute, routeSetlistId, navSetlist]);
 
   // Handler export & share di utils/songHandlers.js
 

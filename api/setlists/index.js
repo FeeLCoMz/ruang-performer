@@ -204,6 +204,10 @@ export default async function handler(req, res) {
             bandName: row.bandName,
             songs,
             songKeys,
+            // Alias agar konsumen (SongChordsPage offline/direct-link) dapat
+            // membaca meta override key dengan field yang sama seperti endpoint
+            // daftar setlist.
+            setlistSongMeta: songKeys,
             completedSongs: (() => {
               try { return row.completedSongs ? JSON.parse(row.completedSongs) : {}; } catch (e) { return {}; }
             })(),
