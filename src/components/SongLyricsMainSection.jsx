@@ -1,9 +1,37 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
+import { STORAGE_KEYS } from '../utils/storageKeys.js';
+
+const MIN_FONT_SCALE = 0.85;
+const MAX_FONT_SCALE = 1.6;
+const clampFontScale = (value) => Math.min(MAX_FONT_SCALE, Math.max(MIN_FONT_SCALE, Number(value) || 1));
+
+const readStoredBool = (key, fallback = false) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return raw === '1';
+  } catch {
+    return fallback;
+  }
+};
+
+const readStoredFontScale = () => {
+  try {
+    const raw = Number(localStorage.getItem(STORAGE_KEYS.LYRICS_FONT_SCALE));
+    return Number.isFinite(raw) && raw > 0 ? clampFontScale(raw) : 1;
+  } catch {
+    return 1;
+  }
+};
 
 /**
  * SongLyricsMainSection
  * Komponen utama untuk menampilkan lirik dan chord (read-only).
+ * Memuat toolbar panel lirik: key/tempo, autoscroll, gaya chord, YouTube,
+ * plus kontrol tampilan panggung (font size, mode panggung, mode fokus,
+ * lock layar) dan navigasi lagu setlist.
  */
 export default function SongLyricsMainSection({
   lyricsDisplayRef,
@@ -13,6 +41,10 @@ export default function SongLyricsMainSection({
   scrollSpeed,
   setAutoScrollActive,
   setScrollSpeed,
+  autoScrollMode,
+  setAutoScrollMode,
+  manualSpeedLevel,
+  setManualSpeedLevel,
   zoom,
   setZoom,
   song,
@@ -36,13 +68,78 @@ export default function SongLyricsMainSection({
   youtubeRef,
   youtubeId,
   isYoutubePlaying = false,
+  setlistNav = null,
   loading = false
 }) {
+  // Preferensi tampilan panggung, dipersist di localStorage lintas sesi.
+  const [fontScale, setFontScaleState] = useState(readStoredFontScale);
+  const [stageMode, setStageModeState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_STAGE_MODE));
+  const [focusMode, setFocusModeState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_FOCUS_MODE));
+  const [screenLocked, setScreenLockedState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_LOCK));
+
+  const setFontScale = (next) => {
+    const clamped = clampFontScale(next);
+    setFontScaleState(clamped);
+    try {
+      localStorage.setItem(STORAGE_KEYS.LYRICS_FONT_SCALE, String(clamped));
+    } catch { /* ignore */ }
+  };
+  const setStageMode = (next) => {
+    setStageModeState(Boolean(next));
+    try {
+      localStorage.setItem(STORAGE_KEYS.LYRICS_STAGE_MODE, next ? '1' : '0');
+    } catch { /* ignore */ }
+  };
+  const setFocusMode = (next) => {
+    setFocusModeState(Boolean(next));
+    try {
+      localStorage.setItem(STORAGE_KEYS.LYRICS_FOCUS_MODE, next ? '1' : '0');
+    } catch { /* ignore */ }
+  };
+  const setScreenLocked = (next) => {
+    setScreenLockedState(Boolean(next));
+    try {
+      localStorage.setItem(STORAGE_KEYS.LYRICS_LOCK, next ? '1' : '0');
+    } catch { /* ignore */ }
+  };
+
+  // Mode tampilan diterapkan pada elemen panel lirik (bukan body) supaya
+  // tidak mengganggu performance-mode global dari app header.
+  useEffect(() => {
+    const panel = lyricsDisplayRef?.current;
+    if (!panel) return;
+    panel.classList.toggle('lyrics-stage-mode', stageMode);
+    panel.classList.toggle('lyrics-focus-mode', focusMode);
+    panel.classList.toggle('lyrics-screen-locked', screenLocked);
+  }, [lyricsDisplayRef, stageMode, focusMode, screenLocked, loading]);
+
   return (
     <div className="song-panel song-lyrics-main">
-      {/* Toolbar lirik dihapus: transpose/autoscroll/chord/YouTube tersedia
-          di tab Info, panel media, dan kontrol fullscreen. Panel ini murni
-          menampilkan lirik. */}
+      <SongChordsLyricsToolbar
+        originalKey={originalKey}
+        targetKey={targetKey}
+        transpose={transpose}
+        setTranspose={setTranspose}
+        tempo={tempo}
+        autoScrollActive={autoScrollActive}
+        setAutoScrollActive={setAutoScrollActive}
+        scrollSpeed={scrollSpeed}
+        setScrollSpeed={setScrollSpeed}
+        tempo={tempo}
+        autoScrollMode={autoScrollMode}
+        setAutoScrollMode={setAutoScrollMode}
+        manualSpeedLevel={manualSpeedLevel}
+        setManualSpeedLevel={setManualSpeedLevel}
+        fontScale={fontScale}
+        setFontScale={setFontScale}
+        stageMode={stageMode}
+        setStageMode={setStageMode}
+        focusMode={focusMode}
+        setFocusMode={setFocusMode}
+        screenLocked={screenLocked}
+        setScreenLocked={setScreenLocked}
+        setlistNav={setlistNav}
+      />
 
         {loading ? (
             <div className="lyrics-loading-skeleton">
@@ -79,6 +176,9 @@ export default function SongLyricsMainSection({
               targetKey={targetKey}
               pianoRecommendation={pianoRecommendation}
               onApplyRecommendedTranspose={onApplyRecommendedTranspose}
+              fontScale={fontScale}
+              focusMode={focusMode}
+              screenLocked={screenLocked}
             />
         )}
     </div>

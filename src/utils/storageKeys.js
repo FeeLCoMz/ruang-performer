@@ -11,6 +11,12 @@ export const STORAGE_KEYS = {
   LYRICS_PREVIEW_MODE: 'ruangperformer_lyrics_preview_mode',
   SONG_LIST_PAGE_STATE: 'songListPageState',
   PERFORMANCE_MODE: 'ruangperformer_performance_mode',
+  // Preferensi panel lirik (dipakai lintas sesi): ukuran font lirik,
+  // mode panggung (kontras tinggi), mode fokus, dan lock layar.
+  LYRICS_FONT_SCALE: 'ruangperformer_lyrics_font_scale_v1',
+  LYRICS_STAGE_MODE: 'ruangperformer_lyrics_stage_mode_v1',
+  LYRICS_FOCUS_MODE: 'ruangperformer_lyrics_focus_mode_v1',
+  LYRICS_LOCK: 'ruangperformer_lyrics_lock_v1',
 };
 
 export default STORAGE_KEYS;

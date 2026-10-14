@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from 'react';
 import TransposeKeyControl from './TransposeKeyControl.jsx';
 import {
   AUTO_SCROLL_MODES,
@@ -11,37 +11,47 @@ import {
 
 /**
  * SongChordsLyricsToolbar
- * Toolbar untuk panel lirik/chord: kontrol chord (angka & style),
- * pemutaran YouTube, dan autoscroll.
+ * Toolbar panel lirik/chord: key/transpose + LED tempo, autoscroll lirik
+ * (on/off + mode Musik/Manual + kecepatan), kontrol tampilan panggung
+ * (font size, mode panggung, mode fokus, lock layar), dan navigasi lagu
+ * setlist.
  *
- * Catatan: kontrol edit lirik, transpose, tempo, dan fullscreen sudah dihapus.
+ * Kontrol lama lain (gaya chord, YouTube) dihapus dari toolbar: tersedia di
+ * panel media dan kontrol fullscreen perf.
  */
 export default function SongChordsLyricsToolbar({
-  autoScrollActive,
-  setAutoScrollActive,
-  scrollSpeed,
-  setScrollSpeed,
-  tempo,
+  // Key & tempo
   originalKey = '',
   targetKey = '',
   transpose = 0,
   setTranspose,
-  onTempoChange,
+  tempo,
+  // Autoscroll lirik
+  autoScrollActive = false,
+  setAutoScrollActive,
+  scrollSpeed,
+  setScrollSpeed,
   autoScrollMode: autoScrollModeProp,
   setAutoScrollMode,
   manualSpeedLevel: manualSpeedLevelProp,
   setManualSpeedLevel,
-  showChordNumbers,
-  setShowChordNumbers,
-  showJazzChords,
-  setShowJazzChords,
-  showSimpleChords,
-  setShowSimpleChords,
-  youtubeId,
-  youtubeRef,
+  // Grup tampilan panggung: font, mode panggung, mode fokus, lock
+  fontScale = 1,
+  setFontScale,
+  stageMode = false,
+  setStageMode,
+  focusMode = false,
+  setFocusMode,
+  screenLocked = false,
+  setScreenLocked,
+  // Navigasi setlist (opsional — hanya di konteks setlist)
+  setlistNav = null,
 }) {
-  const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
-  // Mode autoscroll & level manual (fallback lokal bila parent belum kelola).
+  const MIN_FONT_SCALE = 0.85;
+  const MAX_FONT_SCALE = 1.6;
+  const clampFontScale = (value) => Math.min(MAX_FONT_SCALE, Math.max(MIN_FONT_SCALE, Number(value) || 1));
+
+  // Autoscroll: fallback lokal bila parent belum kelola mode/level.
   const [autoScrollModeLocal, setAutoScrollModeLocal] = useState(AUTO_SCROLL_MODES.MUSICAL);
   const [manualSpeedLevelLocal, setManualSpeedLevelLocal] = useState(DEFAULT_MANUAL_SPEED_LEVEL);
   const autoScrollMode = normalizeAutoScrollMode(autoScrollModeProp || autoScrollModeLocal);
@@ -49,25 +59,6 @@ export default function SongChordsLyricsToolbar({
   const manualSpeedLevel = clampManualSpeedLevel(manualSpeedLevelProp || manualSpeedLevelLocal);
   const setManualSpeedLevelSafe = setManualSpeedLevel || setManualSpeedLevelLocal;
   const isManualMode = autoScrollMode === AUTO_SCROLL_MODES.MANUAL;
-  const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
-  const [isYoutubeReady, setIsYoutubeReady] = useState(false);
-  const chordStyleMenuRef = useRef(null);
-  // Satu mode chord aktif: 'default' | 'number' | 'jazz' | 'simple'
-  const currentChordMode = showChordNumbers
-    ? 'number'
-    : showJazzChords
-      ? 'jazz'
-      : showSimpleChords
-        ? 'simple'
-        : 'default';
-  const CHORD_MODE_LABELS = {
-    default: 'Chord',
-    number: 'Angka',
-    jazz: 'Jazz',
-    simple: 'Simple',
-  };
-  const currentChordModeLabel = CHORD_MODE_LABELS[currentChordMode];
-  const toolbarClassName = 'song-lyrics-toolbar song-lyrics-toolbar--normal';
 
   const baseTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
   const currentScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || baseTempo));
@@ -79,118 +70,41 @@ export default function SongChordsLyricsToolbar({
     setScrollSpeed(Math.max(40, Math.min(240, Math.round(numeric))));
   };
 
-  // Sync YouTube playing state
-  useEffect(() => {
-    if (!youtubeRef?.current) {
-      setIsYoutubeReady(false);
-      setIsYoutubePlaying(false);
-      return;
-    }
-
-    const syncPlaybackState = () => {
-      const state = youtubeRef.current?.getPlayerState?.();
-      const nextPlaying = state === 1;
-      setIsYoutubePlaying(nextPlaying);
-      setIsYoutubeReady(true);
-    };
-
-    syncPlaybackState();
-    const interval = setInterval(syncPlaybackState, 500);
-    return () => clearInterval(interval);
-  }, [youtubeRef, youtubeId]);
-
-  useEffect(() => {
-    if (!showChordStyleMenu) return undefined;
-
-    const handlePointerDown = (event) => {
-      if (!chordStyleMenuRef.current?.contains(event.target)) {
-        setShowChordStyleMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('touchstart', handlePointerDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('touchstart', handlePointerDown);
-    };
-  }, [showChordStyleMenu]);
-
-  const applyChordMode = (mode) => {
-    setShowChordNumbers(mode === 'number');
-    setShowJazzChords(mode === 'jazz');
-    setShowSimpleChords(mode === 'simple');
-    setShowChordStyleMenu(false);
-  };
-
   return (
-    <div className={toolbarClassName}>
-      {/* Key (shared komponen dengan tab Info) + tempo read-only: dipindah dari
-          main header. Tempo hanya tampil sebagai info, tidak bisa diubah. */}
-      {(originalKey || targetKey) && (
-        <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-key">
-          <TransposeKeyControl
-            originalKey={originalKey}
-            targetKey={targetKey}
-            transpose={transpose}
-            onTransposeChange={setTranspose}
-            compact
-            disableAutoApply
-          />
-          {tempo && (
-            <span className="song-lyrics-tempo-chip" title={`Tempo ${tempo} BPM`}>
-              ⏱️ {tempo} BPM
-            </span>
-          )}
-        </div>
-      )}
-      {youtubeId && youtubeRef && (
-        <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-view">
-          <button
-            type="button"
-            className="btn btn-secondary song-lyrics-youtube-btn song-lyrics-youtube-btn--normal"
-            title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-            aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-            onClick={() => {
-              if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
-                youtubeRef.current.handleTogglePlayPause();
-                setTimeout(() => {
-                  const state = youtubeRef.current?.getPlayerState?.();
-                  setIsYoutubePlaying(state === 1);
-                }, 100);
-              }
-            }}
-          >
-            <span aria-hidden="true">{isYoutubePlaying ? '⏸' : '▶'}</span>
-            <span className="song-lyrics-toolbar-btn-label">{isYoutubePlaying ? 'Pause' : 'Play'}</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary song-lyrics-youtube-btn song-lyrics-youtube-btn--normal"
-            title="Putar dari awal"
-            aria-label="Putar dari awal"
-            onClick={() => {
-              if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
-                youtubeRef.current.handleSeek(0);
-                setTimeout(() => {
-                  const state = youtubeRef.current?.getPlayerState?.();
-                  setIsYoutubePlaying(state === 1);
-                }, 50);
-              }
-            }}
-          >
-            <span aria-hidden="true">↺</span>
-            <span className="song-lyrics-toolbar-btn-label">Restart</span>
-          </button>
-        </div>
-      )}
+    <div className="song-lyrics-toolbar song-lyrics-toolbar--normal">
+      {/* Key/Transpose — grup mandiri, langsung di baris utama (akses cepat) */}
+      <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-key" role="group" aria-label="Transpose key">
+        <TransposeKeyControl
+          originalKey={originalKey}
+          targetKey={targetKey}
+          transpose={transpose}
+          onTransposeChange={(next) => setTranspose?.(Number(next) || 0)}
+          compact
+          disableAutoApply
+        />
+      </div>
 
-      <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-autoscroll">
+      {/* LED tempo — elemen mandiri (read-only info) */}
+      <div
+        className="song-lyrics-tempo-led-compact"
+        title={`Tempo ${baseTempo} BPM`}
+      >
+        <span
+          className="song-info-tempo-led"
+          style={{ animationDuration: `${Math.round(60000 / baseTempo)}ms` }}
+          aria-hidden="true"
+        />
+        <span className="song-lyrics-tempo-led-compact-text" aria-live="polite">
+          {baseTempo}
+        </span>
+      </div>
+
+      {/* Autoscroll lirik: on/off + mode Musik (BPM) / Manual (Level 1-10) */}
+      <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-autoscroll" role="group" aria-label="Autoscroll lirik">
         <button
           type="button"
           className={`btn song-lyrics-toolbar-btn ${autoScrollActive ? 'btn-primary' : 'btn-secondary'}`}
-          onClick={() => setAutoScrollActive(!autoScrollActive)}
+          onClick={() => setAutoScrollActive?.(!autoScrollActive)}
           title={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
           aria-label={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
           aria-pressed={autoScrollActive}
@@ -200,13 +114,12 @@ export default function SongChordsLyricsToolbar({
         </button>
 
         <div className="song-lyrics-autoscroll-speed" role="group" aria-label="Kecepatan autoscroll">
-          {/* Switchable Mode: MUSICAL (BPM) / MANUAL (Level 1-10) */}
           <button
             type="button"
             className={`btn btn-secondary song-lyrics-autoscroll-mode${isManualMode ? ' is-manual' : ''}`}
             onClick={() => setAutoScrollModeSafe(isManualMode ? AUTO_SCROLL_MODES.MUSICAL : AUTO_SCROLL_MODES.MANUAL)}
             aria-label={`Mode autoscroll: ${isManualMode ? 'Manual (Level)' : 'Musik (BPM)'}. Klik untuk ganti.`}
-            title={isManualMode ? 'Mode Manual: kecepatan dari slider (Level 1-10)' : 'Mode Musik: kecepatan mengikuti tempo lagu (BPM)'}
+            title={isManualMode ? 'Mode Manual: kecepatan dari level (1-10)' : 'Mode Musik: kecepatan mengikuti tempo lagu (BPM)'}
           >
             <span aria-hidden="true">{isManualMode ? '≡' : '♪'}</span>
             <span className="song-lyrics-autoscroll-mode-label">{isManualMode ? 'Manual' : 'Musik'}</span>
@@ -290,62 +203,74 @@ export default function SongChordsLyricsToolbar({
         </div>
       </div>
 
-      <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-chords">
-        <div className="song-lyrics-chord-style-menu-container" ref={chordStyleMenuRef}>
+      {/* Grup tampilan: font size, mode panggung, mode fokus, lock layar */}
+      <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-viewmode" role="group" aria-label="Tampilan lirik">
+        <div className="song-lyrics-font-control" role="group" aria-label="Ukuran font lirik">
           <button
             type="button"
-            className={`btn ${currentChordMode === 'default' ? 'btn-secondary' : 'btn-primary'} song-lyrics-toolbar-btn`}
-            title={`Tampilan chord: ${currentChordModeLabel} (klik untuk ganti)`}
-            onClick={() => setShowChordStyleMenu((prev) => !prev)}
-            aria-haspopup="menu"
-            aria-expanded={showChordStyleMenu}
+            className="btn btn-secondary song-lyrics-font-btn"
+            onClick={() => setFontScale?.(clampFontScale(Number(fontScale) - 0.1))}
+            disabled={Number(fontScale) <= MIN_FONT_SCALE || typeof setFontScale !== 'function'}
+            aria-label="Perkecil font lirik"
+            title="Perkecil font lirik"
           >
-            <span aria-hidden="true">🎼</span>
-            <span className="song-lyrics-toolbar-btn-label">{currentChordModeLabel}</span>
-            <span className="song-lyrics-toolbar-btn-caret" aria-hidden="true">▾</span>
+            A−
           </button>
-          {showChordStyleMenu && (
-            <div className="song-lyrics-chord-style-menu" role="menu" aria-label="Pilih tampilan chord">
-              <button
-                type="button"
-                className={`song-lyrics-chord-style-item${currentChordMode === 'default' ? ' active' : ''}`}
-                onClick={() => applyChordMode('default')}
-                role="menuitemradio"
-                aria-checked={currentChordMode === 'default'}
-              >
-                Chord
-              </button>
-              <button
-                type="button"
-                className={`song-lyrics-chord-style-item${currentChordMode === 'number' ? ' active' : ''}`}
-                onClick={() => applyChordMode('number')}
-                role="menuitemradio"
-                aria-checked={currentChordMode === 'number'}
-              >
-                Angka
-              </button>
-              <button
-                type="button"
-                className={`song-lyrics-chord-style-item${currentChordMode === 'jazz' ? ' active' : ''}`}
-                onClick={() => applyChordMode('jazz')}
-                role="menuitemradio"
-                aria-checked={currentChordMode === 'jazz'}
-              >
-                Jazz
-              </button>
-              <button
-                type="button"
-                className={`song-lyrics-chord-style-item${currentChordMode === 'simple' ? ' active' : ''}`}
-                onClick={() => applyChordMode('simple')}
-                role="menuitemradio"
-                aria-checked={currentChordMode === 'simple'}
-              >
-                Simple
-              </button>
-            </div>
-          )}
+          <span
+            className="song-lyrics-font-value"
+            aria-live="polite"
+            title="Ukuran font lirik"
+          >
+            {Math.round(Number(fontScale) * 100)}%
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary song-lyrics-font-btn"
+            onClick={() => setFontScale?.(clampFontScale(Number(fontScale) + 0.1))}
+            disabled={Number(fontScale) >= MAX_FONT_SCALE || typeof setFontScale !== 'function'}
+            aria-label="Perbesar font lirik"
+            title="Perbesar font lirik"
+          >
+            A+
+          </button>
         </div>
+        <button
+          type="button"
+          className={`btn song-lyrics-toolbar-btn${stageMode ? ' btn-primary' : ' btn-secondary'}`}
+          onClick={() => setStageMode?.(!stageMode)}
+          aria-pressed={stageMode}
+          aria-label={stageMode ? 'Matikan mode panggung' : 'Nyalakan mode panggung'}
+          title={stageMode ? 'Mode panggung aktif: kontras tinggi & font besar' : 'Mode panggung: kontras tinggi untuk panggung redup'}
+        >
+          <span aria-hidden="true">🌙</span>
+          <span className="song-lyrics-toolbar-btn-label">Panggung</span>
+        </button>
+        <button
+          type="button"
+          className={`btn song-lyrics-toolbar-btn${focusMode ? ' btn-primary' : ' btn-secondary'}`}
+          onClick={() => setFocusMode?.(!focusMode)}
+          aria-pressed={focusMode}
+          aria-label={focusMode ? 'Matikan mode fokus' : 'Nyalakan mode fokus'}
+          title={focusMode ? 'Mode fokus aktif: baris aktif disorot' : 'Mode fokus: sorot bagian aktif lirik'}
+        >
+          <span aria-hidden="true">🎯</span>
+          <span className="song-lyrics-toolbar-btn-label">Fokus</span>
+        </button>
+        <button
+          type="button"
+          className={`btn song-lyrics-toolbar-btn${screenLocked ? ' btn-primary' : ' btn-secondary'}`}
+          onClick={() => setScreenLocked?.(!screenLocked)}
+          aria-pressed={screenLocked}
+          aria-label={screenLocked ? 'Buka kunci layar' : 'Kunci layar'}
+          title={screenLocked ? 'Layar terkunci: sentuhan tak sengaja diabaikan' : 'Kunci layar: cegah sentuhan tak sengaja'}
+        >
+          <span aria-hidden="true">{screenLocked ? '🔒' : '🔓'}</span>
+          <span className="song-lyrics-toolbar-btn-label">{screenLocked ? 'Terkunci' : 'Kunci'}</span>
+        </button>
       </div>
+
+      {/* Navigasi setlist dipindah ke SetlistNavFooter (sticky footer di atas
+          bottom nav, mobile) — lihat SetlistNavFooter.jsx */}
     </div>
   );
 }

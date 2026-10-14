@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import SongChordsAnalyzer from '../components/SongChordsAnalyzer.jsx';
 import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
+import SetlistNavFooter from '../components/SetlistNavFooter.jsx';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import SongChordsMediaPanel from '../components/SongChordsMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
@@ -24,7 +25,7 @@ import { extractSectionOverview } from '../utils/songFormUtils.js';
  * Props:
  *   - song: (optional) data lagu yang diterima dari parent
  */
-export default function SongChordsPage({ song: songProp, activeSetlist = null }) {
+export default function SongChordsPage({ song: songProp, activeSetlist = null, songs: songsProp = null }) {
   // State untuk toggle tampilan partitur
   const [showSheetMusic, setShowSheetMusic] = useState(false);
   // =========================
@@ -64,6 +65,11 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
   const isSetlistRoute = typeof location?.pathname === 'string' && location.pathname.startsWith('/setlists/');
   const setlistSongData = isSetlistRoute ? (location.state?.setlistSong || {}) : {};
   const setlistId = isSetlistRoute ? (location.state?.setlistId || activeSetlist?.id || routeSetlistId || null) : null;
+  // Setlist aktif untuk navigasi antar lagu di panel lirik: dari state rute,
+  // fallback ke activeSetlist dari parent.
+  const navSetlist = isSetlistRoute
+    ? (location.state?.setlist || activeSetlist || null)
+    : (activeSetlist || null);
   const autoStartMetronome = isSetlistRoute && location.state?.autoStartMetronome === true;
   const autoPlayVideo = isSetlistRoute && location.state?.autoPlayVideo === true;
 
@@ -310,6 +316,67 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
       navigate('/songs');
     }
   };
+
+  // Navigasi antar lagu dalam setlist (tombol di toolbar panel lirik).
+  // Urutan mengikuti daftar lagu setlist aktif; lagu non-setlist tidak
+  // menampilkan grup navigasi ini.
+  const setlistNav = useMemo(() => {
+    const songList = Array.isArray(navSetlist?.songs) && navSetlist.songs.length
+      && typeof navSetlist.songs[0] === 'object'
+      ? navSetlist.songs
+      : null;
+    const idList = !songList && Array.isArray(navSetlist?.songs) ? navSetlist.songs : null;
+    const pool = Array.isArray(songsProp) ? songsProp : [];
+
+    let orderedSongs = null;
+    if (songList) {
+      orderedSongs = songList;
+    } else if (idList) {
+      const byId = new Map(pool.map((s) => [String(s.id), s]));
+      orderedSongs = idList.map((sid) => byId.get(String(sid))).filter(Boolean);
+    }
+    if (!orderedSongs || !orderedSongs.length) return null;
+
+    const currentId = String(song?.id ?? '');
+    const index = orderedSongs.findIndex((s) => String(s?.id) === currentId);
+    if (index === -1) return null;
+
+    const go = (nextIndex) => {
+      const target = orderedSongs[nextIndex];
+      if (!target) return;
+      navigate(`/setlists/${navSetlist.id}/songs/${target.id}`, {
+        state: {
+          setlistId: navSetlist.id,
+          setlist: navSetlist,
+          setlistSong: target,
+        },
+      });
+    };
+
+    return {
+      hasPrev: index > 0,
+      hasNext: index < orderedSongs.length - 1,
+      songNumber: index + 1,
+      totalSongs: orderedSongs.length,
+      prevTitle: orderedSongs[index - 1]?.title || '',
+      nextTitle: orderedSongs[index + 1]?.title || '',
+      setlistName: navSetlist.name || '',
+      onPrev: () => go(index - 1),
+      onNext: () => go(index + 1),
+      goToSong: (songId) => {
+        const nextIndex = orderedSongs.findIndex((s) => String(s?.id) === String(songId));
+        if (nextIndex !== -1) go(nextIndex);
+      },
+      // Daftar lagu untuk sheet pilih-lagu (footer): nomor, judul, key, aktif
+      songs: orderedSongs.map((s, i) => ({
+        id: String(s?.id),
+        number: i + 1,
+        title: s?.title || '',
+        key: s?.key || s?.performanceKey || '',
+        isCurrent: String(s?.id) === currentId,
+      })),
+    };
+  }, [navSetlist, songsProp, song?.id, navigate]);
 
   // Show loading state — lazy load: skeleton, bukan halaman penuh yang berkedip
   if (loading) {
@@ -599,8 +666,12 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
                 onKeyChange={handleSongKeyChange}
                 pianoRecommendation={pianoRecommendation}
                 onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+                setlistNav={setlistNav}
               />
       )}
+
+      {/* Footer sticky: navigasi lagu setlist (di atas bottom nav, mobile) */}
+      <SetlistNavFooter setlistNav={setlistNav} />
     </div>
   );
 }

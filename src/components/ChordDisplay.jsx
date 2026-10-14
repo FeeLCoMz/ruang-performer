@@ -74,6 +74,8 @@ const ChordDisplayBase = memo(function ChordDisplay({
      * highlighted so the editor and preview stay visibly in sync.
      */
     activeLine = null,
+    /** Mode fokus: kunci bagian aktif — baris di luar bagian itu diredupkan. */
+    focusSectionKey = null,
   }) {
 
   const formatInstrumentPatchText = (lineObj) => {
@@ -174,6 +176,15 @@ const ChordDisplayBase = memo(function ChordDisplay({
 
   const renderedRows = [];
 
+  // Mode fokus: baris dikelompokkan per bagian (section). Baris setelah
+  // section aktif sampai section berikutnya tetap penuh; sisanya diredupkan.
+  let currentFocusSection = null;
+  const focusRowClass = () => {
+    if (focusSectionKey === null) return '';
+    if (currentFocusSection === focusSectionKey) return '';
+    return ' cd-focus-dim';
+  };
+
   parsedLines.forEach((lineObj, i) => {
     if (lineObj?.type === 'preset_cue') {
       renderedRows.push(renderPresetCueBadge(lineObj, `preset-cue-${i}`));
@@ -181,12 +192,19 @@ const ChordDisplayBase = memo(function ChordDisplay({
     }
 
     if (lineObj.type === 'empty') {
-      renderedRows.push(<div key={i} className={`cd-empty-line${syncClass(lineObj)}`}>&nbsp;</div>);
+      renderedRows.push(<div key={i} className={`cd-empty-line${syncClass(lineObj)}${focusRowClass()}`}>&nbsp;</div>);
       return;
     }
     if (lineObj.type === 'structure') {
+      currentFocusSection = `${i}:${lineObj.label}`;
+      const isFocusActive = focusSectionKey !== null && currentFocusSection === focusSectionKey;
+      const isFocusDim = focusSectionKey !== null && !isFocusActive;
       renderedRows.push(
-        <div key={i} className={`cd-section-struct${syncClass(lineObj)}`}>
+        <div
+          key={i}
+          className={`cd-section-struct${syncClass(lineObj)}${isFocusActive ? ' cd-focus-active' : ''}${isFocusDim ? ' cd-focus-dim' : ''}`}
+          data-section-key={currentFocusSection}
+        >
           <span className="cd-section-struct-label">
             <span className="cd-section-struct-icon" aria-hidden="true">{getSectionIcon(lineObj.label)}</span>
             {lineObj.label}
@@ -226,7 +244,7 @@ const ChordDisplayBase = memo(function ChordDisplay({
     if ((lineObj.type === 'chord' && showChords) || lineObj.type === 'number') {
       if (lineObj.type === 'chord') {
         renderedRows.push(
-          <div key={i} className={`cd-chord${syncClass(lineObj)}`}>
+          <div key={i} className={`cd-chord${syncClass(lineObj)}${focusRowClass()}`}>
             {lineObj.tokens.map((t, j) => {
               if (t.isSpace) return <span key={j}>{t.token}</span>;
               if (t.isBarline) return <span key={j} className="cd-barline-token">{t.token}</span>;
@@ -247,7 +265,7 @@ const ChordDisplayBase = memo(function ChordDisplay({
       }
 
       renderedRows.push(
-        <div key={i} className={`cd-number${syncClass(lineObj)}`}>
+        <div key={i} className={`cd-number${syncClass(lineObj)}${focusRowClass()}`}>
           {lineObj.tokens.map((t, j) =>
             t.isSpace ? <span key={j}>{t.token}</span> : <NumberToken key={j} number={t.token} />
           )}
@@ -260,7 +278,7 @@ const ChordDisplayBase = memo(function ChordDisplay({
     }
 
     renderedRows.push(
-      <div key={i} className={`cd-lyrics${syncClass(lineObj)}`}>
+      <div key={i} className={`cd-lyrics${syncClass(lineObj)}${focusRowClass()}`}>
         {lineObj.tokens.map((t, j) => {
           if (t.isChord && !showChords) {
             return null;

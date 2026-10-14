@@ -3479,11 +3479,12 @@ body.dark-mode .lyrics-editor-textarea {
     color: var(--primary-accent);
   }
 
-  /* Beri ruang agar konten tidak tertutup bottom nav */
+  /* Beri ruang agar konten tidak tertutup bottom nav + footer setlistnav
+     (jika footer tampil, ia menumpuk di atas bottom nav ~60px) */
   .main-content {
     padding: var(--spacing-sm);
     margin-left: 0px;
-    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(136px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -11375,129 +11376,64 @@ body.dark-mode .cd-token {
   flex-wrap: wrap;
 }
 
-/* Urutan visual grup toolbar: Key+Tempo → Autoscroll → Chord → Play YouTube */
+/* Urutan visual grup toolbar (prioritas perform): Key → Tempo LED →
+   Autoscroll → Viewmode. Key & tempo grup terpisah; semua di baris utama. */
 .song-lyrics-toolbar-group-key { order: 1; }
 .song-lyrics-toolbar-group-autoscroll { order: 2; }
-.song-lyrics-toolbar-group-chords { order: 3; }
-.song-lyrics-toolbar-group-view { order: 4; }
+.song-lyrics-toolbar-group-viewmode { order: 3; }
+.song-lyrics-tempo-led-compact { order: 4; }
 
-.song-lyrics-toolbar-group {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  flex-wrap: wrap;
-}
-
-.song-lyrics-toolbar--normal {
-  width: 100%;
-  gap: 6px;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-}
-
-/* Grup tanpa latar/padding: hanya gap antar tombol, tanpa ruang kosong */
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group {
-  min-height: 0;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  gap: 6px;
-}
-
-/* Grup key/tempo tidak meregang — cukup selebar isinya */
+/* Grup key tidak meregang — cukup selebar isinya */
 .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-key {
-  flex: 0 1 auto;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   gap: 6px;
 }
 
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-view {
+.song-lyrics-toolbar--normal .transpose-key-control-compact {
   flex: 0 0 auto;
 }
 
-.song-lyrics-toolbar--normal .btn {
-  min-height: 36px;
-}
-
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-autoscroll {
-  flex: 0 0 auto;
-  padding: 0;
-}
-
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-chords {
-  flex: 0 0 auto;
-}
-
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-chords,
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-autoscroll,
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-view {
-  align-self: center;
-}
-
-.song-lyrics-toolbar--normal .song-lyrics-chord-style-menu-container {
-  min-height: 36px;
-}
-
-.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-autoscroll .auto-scroll-controls {
-  flex-wrap: wrap;
-}
-
-.song-lyrics-toolbar-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 36px;
-  height: 36px;
-  padding: 0 0.75rem;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  line-height: 1;
-}
-
-.song-lyrics-toolbar-btn-label {
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  line-height: 1;
+.song-lyrics-toolbar--normal .transpose-key-control-compact .song-info-key-display {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
 }
 
-/* (urutan grup dipindah ke atas, dekat .song-lyrics-toolbar) */
+/* Di layar sempit, LED tempo menyusut duluan (angka B PM bisa dipendekkan)
+   tapi tetap di baris yang sama dengan key. */
+@media (max-width: 480px) {
+  .song-lyrics-toolbar--normal .song-lyrics-tempo-led-compact {
+    padding: 0 5px;
+    gap: 4px;
+  }
 
-.song-lyrics-youtube-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
+  .song-lyrics-toolbar--normal .song-lyrics-tempo-led-compact-text {
+    font-size: 0.72rem;
+  }
+
+  .song-lyrics-toolbar--normal .transpose-key-control-compact .song-info-key-display {
+    font-size: 0.78rem;
+  }
+}
+
+/* LED tempo compact di toolbar (pulse mengikuti BPM lagu) */
+.song-lyrics-tempo-led-compact {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 6px;
-  border-radius: 999px;
-  font-size: 1.05rem;
-  line-height: 1;
-  box-sizing: border-box;
-}
-
-.song-lyrics-youtube-btn--normal {
-  width: auto;
-  min-width: 0;
-  height: 36px;
-  padding: 0 0.7rem;
+  padding: 0 8px;
+  height: 34px;
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  font-size: 0.95rem;
+  background: var(--secondary-bg);
 }
 
-.song-lyrics-toolbar-group-autoscroll {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
+.song-lyrics-tempo-led-compact-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 24px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Kontrol kecepatan autoscroll presisi */
@@ -11513,10 +11449,10 @@ body.dark-mode .cd-token {
 
 .song-lyrics-autoscroll-step,
 .song-lyrics-autoscroll-reset {
-  width: 28px;
-  min-width: 28px;
-  height: 28px;
-  min-height: 28px;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -11528,7 +11464,7 @@ body.dark-mode .cd-token {
 
 .song-lyrics-autoscroll-input {
   width: 52px;
-  height: 28px;
+  height: 34px;
   padding: 0 4px;
   text-align: center;
   font-weight: 700;
@@ -11558,24 +11494,262 @@ body.dark-mode .cd-token {
   letter-spacing: 0.04em;
 }
 
-.song-lyrics-toolbar-group-tempo-led-compact {
+/* Switchable Mode autoscroll: MUSICAL / MANUAL (toolbar & fullscreen) */
+.song-lyrics-autoscroll-mode {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0 8px;
-  height: 34px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--secondary-bg);
+  font-size: var(--font-size-xs);
 }
 
-.song-lyrics-tempo-led-compact-text {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  min-width: 24px;
-  text-align: center;
+.song-lyrics-autoscroll-mode.is-manual {
+  border-color: var(--primary-accent);
 }
+
+.song-lyrics-autoscroll-mode-label {
+  font-weight: 600;
+}
+
+/* Di HP, label teks tombol autoscroll ("Autoscroll") dan mode
+   ("Musik"/"Manual") disembunyikan — ikon saja, seperti tombol lainnya.
+   Menu overflow (⋮): grup jarang-dipakai disembunyikan sampai tombol ⋮
+   ditekan. Tombol ⋮ sendiri hanya ada di mobile (desktop: tampil normal). */
+@media (max-width: 768px) {
+  .song-lyrics-toolbar-group-autoscroll .song-lyrics-toolbar-btn-label,
+  .song-lyrics-autoscroll-mode-label {
+    display: none;
+  }
+
+  /* (Menu overflow ⋮ dihapus: key/tempo kini selalu tampil di baris utama
+     karena transpose & autoscroll harus bisa diakses cepat saat perform.) */
+}
+
+/* ========================================
+   SETLIST NAV FOOTER (mobile)
+   Footer sticky navigasi lagu setlist — duduk tepat di atas bottom nav.
+   Muncul di semua tab halaman lagu saat lagu dibuka dari setlist.
+   ======================================== */
+.setlist-nav-footer {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .setlist-nav-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    /* Tinggi bottom nav: padding 6px + item 48px + safe area */
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px) * 0);
+    background: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.18);
+  }
+
+  .setlist-nav-footer-btn {
+    min-width: 44px;
+    min-height: 44px;
+    height: 44px;
+    padding: 0 0.9rem;
+    font-size: 1.05rem;
+    border-radius: 999px;
+  }
+
+  .setlist-nav-footer-info {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  /* Tombol info (posisi lagu) bisa diklik: buka sheet daftar lagu */
+  .setlist-nav-footer-info-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--secondary-bg);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .setlist-nav-footer-info-icon {
+    font-size: 1rem;
+    color: var(--primary-accent);
+  }
+}
+
+/* Sheet daftar lagu setlist (dibuka dari footer ☰) */
+.setlist-nav-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+}
+
+.setlist-nav-sheet {
+  width: 100%;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.35);
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
+
+.setlist-nav-sheet-handle {
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-color);
+  margin: 10px auto 6px;
+  flex: 0 0 auto;
+}
+
+.setlist-nav-sheet-title {
+  padding: 4px 16px 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  flex: 0 0 auto;
+}
+
+.setlist-nav-sheet-list {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.setlist-nav-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.setlist-nav-sheet-item:active {
+  background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
+}
+
+.setlist-nav-sheet-item.active {
+  background: color-mix(in srgb, var(--primary-accent) 14%, transparent);
+  font-weight: 700;
+}
+
+.setlist-nav-sheet-item-number {
+  flex: 0 0 1.8em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.setlist-nav-sheet-item-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setlist-nav-sheet-item-key {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-accent) 14%, transparent);
+  color: var(--primary-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.setlist-nav-sheet-item-playing {
+  flex: 0 0 auto;
+  color: var(--primary-accent);
+  font-size: 0.8rem;
+}
+
+@media (min-width: 769px) {
+  .setlist-nav-sheet-overlay {
+    display: none;
+  }
+}
+
+.song-lyrics-toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  /* Grup utuh: kontrol serumpun tidak pernah pecah baris. Hanya grup
+     (blok) yang pindah baris di toolbar — bukan tombol individual. */
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.song-lyrics-toolbar {
+  /* Toolbar yang wrap: baris baru = grup utuh berikutnya */
+  row-gap: 6px;
+}
+
+.song-lyrics-toolbar--normal {
+  width: 100%;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+}
+
+/* Area sentuh aman untuk live: tombol ≥ 38px, gap antar tombol ≥ 6px
+   supaya tangan gemetar/keringat tidak salah tekan. */
+.song-lyrics-toolbar--normal .btn {
+  min-height: 38px;
+}
+
+
+.song-lyrics-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  height: 38px;
+  padding: 0 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.song-lyrics-toolbar-btn-label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* (urutan grup dipindah ke atas, dekat .song-lyrics-toolbar) */
 
 /* Instrumen sebagai badge di performance mode */
 .song-info-instrument-badge-list {
@@ -13397,32 +13571,18 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
     justify-content: flex-start;
   }
 
-  .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-view,
-  .song-lyrics-toolbar--normal .song-lyrics-youtube-btn--normal {
-    min-width: 0;
-  }
-
-  /* Mobile: tombol lirik & chord dipadatkan agar tidak menumpuk */
-  .song-lyrics-toolbar--normal .song-lyrics-toolbar-btn,
-  .song-lyrics-toolbar--normal .song-lyrics-youtube-btn--normal {
+  /* Mobile: tombol lirik dipadatkan tapi tetap >= 38px (area sentuh aman) */
+  .song-lyrics-toolbar--normal .song-lyrics-toolbar-btn {
     padding: 0 0.6rem;
     gap: 4px;
     min-width: 0;
-    min-height: 32px;
-    height: 32px;
+    min-height: 38px;
+    height: 38px;
     font-size: 0.76rem;
   }
 
   .song-lyrics-toolbar--normal .song-lyrics-toolbar-btn-label {
     font-size: 0.72rem;
-  }
-
-  .song-lyrics-toolbar--normal .song-lyrics-chord-style-menu-container {
-    width: auto;
-  }
-
-  .song-lyrics-toolbar-group-chords {
-    justify-content: flex-start;
   }
 
   .song-lyrics-zoom-controls {
@@ -13474,12 +13634,6 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   .song-lyrics-controls-section,
   .song-lyrics-main {
     padding: var(--spacing-lg);
-  }
-
-
-  .song-lyrics-toolbar--normal .song-lyrics-youtube-btn--normal {
-    width: auto;
-    min-width: 0;
   }
 
 
@@ -15324,21 +15478,8 @@ body.dark-mode .studio-error {
   }
 }
 
-/* Switchable Mode autoscroll: MUSICAL / MANUAL */
-.song-lyrics-autoscroll-mode {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--font-size-xs);
-}
-
-.song-lyrics-autoscroll-mode.is-manual {
-  border-color: var(--primary-accent);
-}
-
-.song-lyrics-autoscroll-mode-label {
-  font-weight: 600;
-}
+/* (Mode autoscroll MUSICAL/MANUAL tetap hidup di kontrol fullscreen perf,
+   style-nya di .song-lyrics-fullscreen-perf-mode-btn / rail-mode-btn.) */
 
 .song-lyrics-fullscreen-perf-mode-btn.is-manual,
 .song-lyrics-fullscreen-rail-mode-btn.is-manual {
@@ -15408,4 +15549,128 @@ body.performance-mode .sidebar-performance-btn.active {
   background: color-mix(in srgb, var(--primary-accent) 25%, transparent);
   border-color: var(--primary-accent);
   color: var(--text-primary);
+}
+
+/* ========================================
+   LYRICS PANEL VIEW MODES (toolbar panel lirik)
+   Font scale, mode panggung, mode fokus, lock layar.
+   Diterapkan pada .song-lyrics-display via class toggle.
+   ======================================== */
+/* Font scale dari tombol A- / A+ (default 1) */
+.song-lyrics-display {
+  --lyrics-font-scale: 1;
+}
+
+.song-lyrics-display .cd {
+  font-size: calc(clamp(0.75rem, 4vw, 1rem) * var(--lyrics-font-scale));
+}
+
+body.performance-mode .song-lyrics-display .cd {
+  font-size: calc(clamp(1rem, 4.5vw, 1.25rem) * var(--lyrics-font-scale));
+}
+
+/* Mode panggung: kontras tinggi & teks lebih besar untuk panggung redup.
+   Lokal pada panel, tidak mengubah performance-mode global. */
+.song-lyrics-display.lyrics-stage-mode {
+  background: #05070d;
+  border-color: #4b5880;
+}
+
+.song-lyrics-display.lyrics-stage-mode .cd {
+  color: #ffffff;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
+  font-weight: 600;
+}
+
+.song-lyrics-display.lyrics-stage-mode .cd-token {
+  color: #ffd479;
+}
+
+/* Mode fokus: baris di luar bagian aktif diredupkan; header bagian aktif
+   disorot dengan aksen. Mengikuti pattern cd-sync-row (aturan kiri). */
+.song-lyrics-display .cd .cd-focus-dim {
+  opacity: 0.32;
+  transition: opacity 0.2s ease;
+}
+
+.song-lyrics-display .cd .cd-focus-active {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Lock layar: sentuhan tak sengaja tidak mengubah tampilan.
+   Wheel diblok di JS; klik/pointer-select dimatikan di sini. */
+.song-lyrics-display.lyrics-screen-locked {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  cursor: default;
+}
+
+.song-lyrics-display.lyrics-screen-locked .cd-timestamp-btn {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Toolbar panel lirik: grup tampilan & navigasi setlist */
+.song-lyrics-toolbar-group-viewmode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.song-lyrics-font-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.song-lyrics-font-btn {
+  min-height: 36px;
+  padding: 0 0.6rem;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.song-lyrics-font-value {
+  min-width: 3.2em;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.song-lyrics-setlistnav-info {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 3.4em;
+  text-align: center;
+}
+
+/* (setlistnav di toolbar sudah dipindah ke SetlistNavFooter — sticky footer
+   di atas bottom nav. Style grup ini hanya sisa desktop; tak lagi dipakai.) */
+
+/* Urutan visual grup toolbar: viewmode → setlist nav (didefinisikan di atas,
+   dekat .song-lyrics-toolbar). */
+
+@media (max-width: 768px) {
+  .song-lyrics-toolbar-group-viewmode .song-lyrics-toolbar-btn-label,
+  .song-lyrics-toolbar-group-setlistnav .song-lyrics-toolbar-btn-label {
+    display: none;
+  }
+
+  /* Angka persentase font cukup sebagai nilai kecil, tanpa tanda % agar hemat */
+  .song-lyrics-font-value {
+    min-width: 2.6em;
+    font-size: 0.68rem;
+  }
+
+  .song-lyrics-font-btn {
+    padding: 0 0.45rem;
+  }
 }

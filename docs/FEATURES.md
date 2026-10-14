@@ -57,7 +57,19 @@ Kolom `sheet_music_xml` (MusicXML) dirender oleh **OpenSheetMusicDisplay** melal
 `SongChordsAnalyzer.jsx` + `useChordStats.js` menampilkan statistik pemakaian kord (kord yang paling sering muncul, tingkat kesulitan, progresi umum) dalam **modal** yang dibuka lewat tombol "Analisis Chord".
 
 ### Panel Lirik & Chord (Song View)
-Panel lirik/chord di halaman song view bersifat **read-only**. Kontrol edit lirik, transpose, tempo, dan fullscreen tidak tersedia di sini; penyuntingan dilakukan lewat halaman tambah/edit lagu. Yang tetap ada: kontrol chord (Angka & Style), pemutaran YouTube, dan autoscroll. Tombol **Export** berada di header info lagu (sebaris dengan Edit & Bagikan).
+Panel lirik/chord di halaman song view bersifat **read-only**. Kontrol edit lirik dan fullscreen tidak tersedia di sini; penyuntingan dilakukan lewat halaman tambah/edit lagu. Toolbar panel memuat **key/transpose + LED tempo**, **autoscroll lirik** (on/off + mode Musik/Manual + kecepatan), dan kontrol tampilan panggung (di bawah); pemutaran YouTube di panel media & kontrol fullscreen perf. Tombol **Export** berada di header info lagu (sebaris dengan Edit & Bagikan).
+
+**Autoscroll lirik** di toolbar panel: gerak halus via requestAnimationFrame. Dua mode kecepatan — *Musik* (BPM mengikuti tempo lagu, dihitung dari tinggi baris + jumlah bar/chord per baris) dan *Manual* (level 1–10, 10–100 px/s). Reset kembali ke tempo lagu / level default.
+
+Kontrol tampilan panggung di toolbar panel lirik (preferensi dipersist di localStorage):
+
+| Kontrol | Fungsi |
+| --- | --- |
+| Font A− / A+ | Skala font lirik 85%–160%, realtime di panel |
+| 🌙 Panggung | Mode kontras tinggi lokal di panel (teks putih, latar lebih gelap) |
+| 🎯 Fokus | Sorot bagian (section) aktif, baris lain diredupkan |
+| 🔓 Kunci | Lock layar — blok wheel/tap agar sentuhan tak sengaja tidak mengubah tampilan |
+| ←/→ navigasi | Pindah lagu sebelumnya/berikutnya (hanya saat lagu dibuka dari setlist) |
 
 ### Mood & Genre
 `src/utils/songMoodUtils.js` mengelompokkan lagu berdasarkan mood/genre untuk penyaringan.

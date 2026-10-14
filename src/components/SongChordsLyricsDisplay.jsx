@@ -89,6 +89,10 @@ export default function SongChordsLyricsDisplay({
   performanceKeyOverride = '',
   pianoRecommendation = null,
   onApplyRecommendedTranspose,
+  // Tampilan panggung dari toolbar: skala font, mode fokus, lock layar.
+  fontScale = 1,
+  focusMode = false,
+  screenLocked = false,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
   const handleExitFullscreenRef = useRef(null);
@@ -114,6 +118,57 @@ export default function SongChordsLyricsDisplay({
   useEffect(() => {
     zoomRef.current = zoom;
   }, [zoom]);
+
+  // Font scale dari toolbar diterapkan sebagai CSS var: .cd memakai
+  // font-size skala ini, tidak mengganggu zoom pinch/wheel.
+  useEffect(() => {
+    const el = lyricsDisplayRef?.current;
+    if (!el) return;
+    el.style.setProperty('--lyrics-font-scale', String(Number(fontScale) || 1));
+  }, [lyricsDisplayRef, fontScale]);
+
+  // Lock layar: matikan interaksi pointer & wheel di panel supaya sentuhan
+  // tak sengaja (scroll/tap saat perangkat dipegang) tidak mengubah tampilan.
+  useEffect(() => {
+    const el = lyricsDisplayRef?.current;
+    if (!el) return undefined;
+    if (!screenLocked) return undefined;
+    const blockWheel = (e) => e.preventDefault();
+    el.addEventListener('wheel', blockWheel, { passive: false });
+    return () => el.removeEventListener('wheel', blockWheel);
+  }, [lyricsDisplayRef, screenLocked]);
+
+  // Mode fokus: sorot bagian (section) aktif — baris lirik sebelum section
+  // berikutnya diredupkan, section aktif tetap penuh. Dikelola via class
+  // pada baris section dan container (lihat CSS lyrics-focus-mode).
+  const [activeFocusSection, setActiveFocusSection] = useState(null);
+  useEffect(() => {
+    if (!focusMode) {
+      setActiveFocusSection(null);
+      return;
+    }
+    const container = lyricsDisplayRef?.current;
+    if (!container) return undefined;
+    const sections = Array.from(container.querySelectorAll('.cd-section-struct'));
+    if (!sections.length) return undefined;
+
+    const updateActive = () => {
+      const viewTop = container.getBoundingClientRect().top;
+      let current = null;
+      for (const el of sections) {
+        if (el.getBoundingClientRect().top <= viewTop + container.clientHeight * 0.3) {
+          current = el;
+        } else {
+          break;
+        }
+      }
+      setActiveFocusSection(current ? current.getAttribute('data-section-key') : null);
+    };
+
+    updateActive();
+    container.addEventListener('scroll', updateActive, { passive: true });
+    return () => container.removeEventListener('scroll', updateActive);
+  }, [focusMode, lyricsDisplayRef, song?.id, song?.lyrics]);
 
 
   useEffect(() => {
@@ -865,6 +920,7 @@ export default function SongChordsLyricsDisplay({
         showSimpleChords={showSimpleChords}
         keySignature={keySignature || song?.key || 'C'}
         isPlaying={isYoutubePlaying}
+        focusSectionKey={focusMode ? activeFocusSection : null}
         onTimestampClick={(seconds) => {
           if (youtubeRef && youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
             youtubeRef.current.handleSeek(seconds);

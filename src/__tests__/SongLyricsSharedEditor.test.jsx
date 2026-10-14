@@ -163,8 +163,8 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    // Read-only view: chord display is present, toolbar & inline editor are gone.
-    expect(container.querySelector('.song-lyrics-toolbar')).toBeFalsy();
+    // Read-only view: chord display, toolbar (tanpa editor), dan display ada.
+    expect(container.querySelector('.song-lyrics-toolbar')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-display')).toBeTruthy();
     expect(container.querySelector('.lyric-editor-controls')).toBeFalsy();
     expect(container.querySelector('.song-lyrics-textarea-editor')).toBeFalsy();
@@ -175,6 +175,10 @@ describe('Song lyrics shared editor rendering', () => {
     expect(buttonLabels).not.toContain('Full screen');
     expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
     expect(container.querySelector('.song-lyrics-tempo-minimal')).toBeFalsy();
+    // Kontrol tampilan panggung baru tersedia di toolbar; kontrol lama tidak.
+    expect(buttonLabels).toContain('Panggung');
+    expect(buttonLabels).toContain('Fokus');
+    expect(buttonLabels).toContain('Kunci');
   });
 
   test('Given lyrics editor, Then commands are grouped into dropdown menus', async () => {
@@ -371,125 +375,164 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-section-detected-badge')).toBeFalsy();
   });
 
-  test('Given SongChordsLyricsToolbar, Then only chord/youtube/autoscroll controls are rendered', async () => {
+  test('Given SongChordsLyricsToolbar, Then key/transpose, autoscroll and view-mode controls are rendered', async () => {
     await act(async () => {
       root.render(
         <SongChordsLyricsToolbar
+          originalKey="C"
+          targetKey="D"
+          transpose={2}
+          setTranspose={noop}
+          tempo={120}
           autoScrollActive={false}
           setAutoScrollActive={noop}
-          showChordNumbers={false}
-          setShowChordNumbers={noop}
-          showJazzChords={false}
-          setShowJazzChords={noop}
-          showSimpleChords={false}
-          setShowSimpleChords={noop}
-          youtubeId={null}
-          youtubeRef={{ current: null }}
+          scrollSpeed={120}
+          setScrollSpeed={noop}
+          fontScale={1}
+          setFontScale={noop}
+          stageMode={false}
+          setStageMode={noop}
+          focusMode={false}
+          setFocusMode={noop}
+          screenLocked={false}
+          setScreenLocked={noop}
         />
       );
     });
 
     const labels = Array.from(container.querySelectorAll('button')).map((b) => (b.textContent || '').trim()).join(' ');
+    // Key/transpose: key asli → target + LED tempo mengikuti BPM.
+    expect(container.querySelector('.transpose-key-control')).toBeTruthy();
+    expect(container.querySelector('.song-info-key-display').textContent).toContain('D');
+    expect(container.querySelector('.song-lyrics-tempo-led-compact').textContent).toContain('120');
+    // Autoscroll lirik di toolbar.
     expect(labels).toContain('Autoscroll');
-    // Satu tombol mode chord: label menampilkan mode aktif.
-    expect(labels).toContain('Chord');
-    expect(labels).not.toContain('Angka');
-    expect(labels).not.toContain('Style');
-    expect(container.querySelector('.song-lyrics-chord-style-badge')).toBeFalsy();
-    // Removed controls must not come back.
+    expect(container.querySelector('.song-lyrics-autoscroll-speed')).toBeTruthy();
+    // Kontrol tampilan panggung dirender.
+    expect(labels).toContain('Panggung');
+    expect(labels).toContain('Fokus');
+    expect(labels).toContain('Kunci');
+    expect(container.querySelector('.song-lyrics-font-control')).toBeTruthy();
+    // Kontrol lama (non-autoscroll) dihapus dari toolbar dan tidak kembali.
+    expect(labels).not.toContain('Chord');
+    expect(labels).not.toContain('Play');
     expect(labels).not.toContain('Edit Lirik');
     expect(labels).not.toContain('Full screen');
     expect(labels).not.toContain('Export');
-    expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
-    expect(container.querySelector('.song-lyrics-tempo-minimal')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-chord-style-menu-container')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-youtube-btn')).toBeFalsy();
     expect(container.querySelector('.song-lyrics-export-menu-container')).toBeFalsy();
   });
 
-  test('Given the chord mode button, When a mode is picked, Then the label and handler reflect it', async () => {
-    const setShowChordNumbers = vi.fn();
-    const setShowJazzChords = vi.fn();
-    const setShowSimpleChords = vi.fn();
-
+  test('Given the setlist nav is provided, Then toolbar does NOT render it (pindah ke footer sticky)', async () => {
     await act(async () => {
       root.render(
         <SongChordsLyricsToolbar
-          autoScrollActive={false}
-          setAutoScrollActive={noop}
-          showChordNumbers={false}
-          setShowChordNumbers={setShowChordNumbers}
-          showJazzChords={false}
-          setShowJazzChords={setShowJazzChords}
-          showSimpleChords={false}
-          setShowSimpleChords={setShowSimpleChords}
-          youtubeId={null}
-          youtubeRef={{ current: null }}
+          fontScale={1}
+          setFontScale={noop}
+          setlistNav={{
+            hasPrev: true,
+            hasNext: false,
+            songNumber: 2,
+            totalSongs: 5,
+            prevTitle: 'Lagu A',
+            nextTitle: 'Lagu C',
+            onPrev: noop,
+            onNext: noop,
+          }}
         />
       );
     });
 
-    const modeButton = container.querySelector('.song-lyrics-toolbar-group-chords button');
-    expect(modeButton).toBeTruthy();
-    expect(modeButton.textContent).toContain('Chord');
-
-    await act(async () => {
-      modeButton.click();
-    });
-
-    const angkaItem = Array.from(container.querySelectorAll('.song-lyrics-chord-style-item'))
-      .find((b) => b.textContent.trim() === 'Angka');
-    expect(angkaItem).toBeTruthy();
-
-    await act(async () => {
-      angkaItem.click();
-    });
-
-    expect(setShowChordNumbers).toHaveBeenCalledWith(true);
-    expect(setShowJazzChords).toHaveBeenCalledWith(false);
-    expect(setShowSimpleChords).toHaveBeenCalledWith(false);
+    // Navigasi setlist kini hidup di SetlistNavFooter (sticky footer mobile),
+    // bukan di toolbar panel lirik.
+    expect(container.querySelector('.song-lyrics-toolbar-group-setlistnav')).toBeFalsy();
+    expect(container.querySelector('.setlist-nav-footer')).toBeFalsy();
   });
 
-  test('Given the autoscroll speed control, When a BPM is typed or stepped, Then setScrollSpeed receives clamped values', async () => {
+  test('Given SetlistNavFooter, Then prev/next render with position info and disabled states', async () => {
+    const SetlistNavFooter = (await import('../components/SetlistNavFooter.jsx')).default;
+
+    await act(async () => {
+      root.render(
+        <SetlistNavFooter
+          setlistNav={{
+            hasPrev: true,
+            hasNext: false,
+            songNumber: 2,
+            totalSongs: 5,
+            prevTitle: 'Lagu A',
+            nextTitle: 'Lagu C',
+            onPrev: noop,
+            onNext: noop,
+          }}
+        />
+      );
+    });
+
+    const footer = container.querySelector('.setlist-nav-footer');
+    expect(footer).toBeTruthy();
+    expect(footer.textContent).toContain('Lagu 2/5');
+    const buttons = footer.querySelectorAll('button');
+    expect(buttons.length).toBe(3);
+    expect(buttons[0].disabled).toBe(false);
+    expect(buttons[2].disabled).toBe(true);
+  });
+
+  test('Given SetlistNavFooter without nav, Then nothing renders', async () => {
+    const SetlistNavFooter = (await import('../components/SetlistNavFooter.jsx')).default;
+
+    await act(async () => {
+      root.render(<SetlistNavFooter setlistNav={null} />);
+    });
+
+    expect(container.querySelector('.setlist-nav-footer')).toBeFalsy();
+  });
+
+  test('Given no setlist nav, Then the navigation group is not rendered', async () => {
+    await act(async () => {
+      root.render(
+        <SongChordsLyricsToolbar
+          fontScale={1}
+          setFontScale={noop}
+        />
+      );
+    });
+
+    expect(container.querySelector('.song-lyrics-toolbar-group-setlistnav')).toBeFalsy();
+  });
+
+  test('Given autoscroll on toolbar, When toggled or stepped, Then handlers receive updated values', async () => {
+    const setAutoScrollActive = vi.fn();
     const setScrollSpeed = vi.fn();
 
     await act(async () => {
       root.render(
         <SongChordsLyricsToolbar
-          autoScrollActive={true}
-          setAutoScrollActive={noop}
+          autoScrollActive={false}
+          setAutoScrollActive={setAutoScrollActive}
           scrollSpeed={120}
           setScrollSpeed={setScrollSpeed}
           tempo={120}
-          showChordNumbers={false}
-          setShowChordNumbers={noop}
-          showJazzChords={false}
-          setShowJazzChords={noop}
-          showSimpleChords={false}
-          setShowSimpleChords={noop}
-          youtubeId={null}
-          youtubeRef={{ current: null }}
+          fontScale={1}
+          setFontScale={noop}
         />
       );
     });
 
-    const input = container.querySelector('.song-lyrics-autoscroll-input');
-    expect(input).toBeTruthy();
-    expect(input.value).toBe('120');
+    const group = container.querySelector('.song-lyrics-toolbar-group-autoscroll');
+    expect(group).toBeTruthy();
 
-    // Typing a precise value.
-    await act(async () => {
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-      setter.call(input, '137');
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    expect(setScrollSpeed).toHaveBeenCalledWith(137);
+    // Toggle on/off.
+    const toggle = group.querySelector('.song-lyrics-toolbar-btn');
+    expect(toggle.textContent).toContain('Autoscroll');
+    await act(async () => { toggle.click(); });
+    expect(setAutoScrollActive).toHaveBeenCalledWith(true);
 
-    // Stepping up from the current prop value.
-    setScrollSpeed.mockClear();
-    const stepButtons = container.querySelectorAll('.song-lyrics-autoscroll-step');
+    // Step kecepatan +1 BPM dari 120.
+    const stepButtons = group.querySelectorAll('.song-lyrics-autoscroll-step');
     expect(stepButtons.length).toBe(2);
-    await act(async () => {
-      stepButtons[1].click();
-    });
+    await act(async () => { stepButtons[1].click(); });
     expect(setScrollSpeed).toHaveBeenCalledWith(121);
   });
 
