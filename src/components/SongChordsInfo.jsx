@@ -29,13 +29,10 @@ export default function SongChordsInfo({
   title,
   artist,
   contributor,
-  performanceKeyOverride = '',
-  performanceMode = false,
   canEdit = false,
   onEdit,
   onShare,
   shareMessage,
-  masteredBy = [],
   canMarkMastery = false,
   isMasteredByCurrentUser = false,
   onToggleMastery,
@@ -48,9 +45,7 @@ export default function SongChordsInfo({
   handleExportPDF,
 }) {
   const showActions = true;
-  // Tab panel: 'info' (song info) | 'media' | 'lyrics'. Media hanya bisa
-  // dipilih jika lagu punya video; di mode performance tab disembunyikan.
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab] = useState('info');
 
   // Level penguasaan lagu: Belum Diulik / Perlu Latihan / Dikuasai.
   const MASTERY_LEVELS = [
@@ -100,7 +95,7 @@ export default function SongChordsInfo({
   }
 
   return (
-    <div className={`song-panel${performanceMode ? ' song-panel-performance' : ''}`}>
+    <div className="song-panel">
       {/* Header satu baris: judul/artis di kiri, aksi di kanan */}
       <div className="song-header-row">
         <div className="song-title-artist-block">
@@ -130,7 +125,7 @@ export default function SongChordsInfo({
             <div className="info-text song-info-share-message">{shareMessage}</div>
           )}
         </div>
-        {showActions && !performanceMode && (
+        {showActions && (
           <div className="song-info-header-actions">
             {canEdit && (
               <button
@@ -228,15 +223,15 @@ export default function SongChordsInfo({
           </div>
         )}
 
-        {/* Asli key saja — time signature sudah terintegrasi dengan Tempo */}
-        {!performanceMode && lyricsOriginalKey && (
+        {/* Asli key — time signature terintegrasi dengan Tempo */}
+        {lyricsOriginalKey && (
           <div className="song-info-chip-row">
             <span className="song-info-item song-info-item-plain">🎵 Asli: {lyricsOriginalKey}</span>
           </div>
         )}
 
         {/* Detail tambahan (patch keyboard, instrumen) — hanya di tab Info */}
-        {activeTab === 'info' && !performanceMode && (keyboardPatch || detectedInstrumentList.length > 0) && (
+        {activeTab === 'info' && (keyboardPatch || detectedInstrumentList.length > 0) && (
           <div className="song-info-chip-row">
             {keyboardPatch && (
               <span className="song-info-item song-info-item-wide">
@@ -261,7 +256,6 @@ export default function SongChordsInfo({
 
         {/* Baris mastery — 3 level: Belum Diulik / Perlu Latihan / Dikuasai.
             Chip status = dropdown pilihan; klik membuka pilihan level. */}
-        {!performanceMode && (
         <div className="song-info-control-row song-info-mastery-row">
           <div className="song-info-mastery-picker" title="Pilih status penguasaan lagu">
             {MASTERY_LEVELS.map((level) => (
@@ -283,7 +277,6 @@ export default function SongChordsInfo({
             {masteryUpdating && <span className="song-info-mastery-saving">Menyimpan…</span>}
           </div>
         </div>
-        )}
       </div>
     </div>
   );

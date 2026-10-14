@@ -67,7 +67,6 @@ export default function SongChordsLyricsDisplay({
   originalKey = '',
   targetKey = '',
   performanceKeyOverride = '',
-  performanceMode = false,
   pianoRecommendation = null,
   onApplyRecommendedTranspose,
 }) {
@@ -389,7 +388,7 @@ export default function SongChordsLyricsDisplay({
   handleExitFullscreenRef.current = handleExitFullscreen;
 
   return (
-    <div className={`song-lyrics-display${performanceMode ? ' song-lyrics-display-performance' : ''}`} ref={lyricsDisplayRef}>
+    <div className="song-lyrics-display" ref={lyricsDisplayRef}>
       {isFullscreen && (
         <>
           <div className="song-lyrics-fullscreen-tempo-led-inline" title={`Tempo ${normalizedBpm} BPM`}>

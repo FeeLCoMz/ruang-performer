@@ -50,57 +50,6 @@ function AppContent() {
   // State for userBandInfo (array of user's bands with role)
   const [userBandInfo, setUserBandInfo] = useState([]);
   const [addSongSearch, setAddSongSearch] = useState("");
-  // Mode performance global: bisa di-switch kapan saja dari app header.
-  const [performanceMode, setPerformanceMode] = useState(() => {
-    try {
-      return localStorage.getItem('setlistSongs.performanceMode') === 'true';
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem('setlistSongs.performanceMode', String(performanceMode));
-    } catch {
-      /* localStorage tidak tersedia — abaikan */
-    }
-  }, [performanceMode]);
-
-  // Toggle dari app header: set state + broadcast ke halaman aktif agar UI
-  // langsung berubah tanpa perlu reload.
-  const togglePerformanceMode = () => {
-    setPerformanceMode((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('setlistSongs.performanceMode', String(next));
-      } catch {
-        /* ignore */
-      }
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('performance-mode-change', { detail: next }));
-      }
-      return next;
-    });
-  };
-
-  // Sinkron dengan tombol Exit Performance di halaman lagu.
-  useEffect(() => {
-    const handler = (e) => {
-      if (typeof e?.detail === 'boolean') setPerformanceMode(e.detail);
-    };
-    window.addEventListener('performance-mode-change', handler);
-    return () => window.removeEventListener('performance-mode-change', handler);
-  }, []);
-
-  // Judul & penyanyi lagu aktif untuk app header di mode performance.
-  const [performanceSong, setPerformanceSong] = useState(null);
-  useEffect(() => {
-    const handler = (e) => {
-      setPerformanceSong(e?.detail || null);
-    };
-    window.addEventListener('performance-song-change', handler);
-    return () => window.removeEventListener('performance-song-change', handler);
-  }, []);
   // Only call useAuth ONCE and destructure all needed values
   const { user, isAuthenticated, isLoading } = useAuth();
   // Fetch user bands on mount (or when authenticated)
@@ -228,75 +177,24 @@ function AppContent() {
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
-        <MobileBottomNav performanceMode={performanceMode} />
+        <MobileBottomNav />
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
 
-        <div className={`app-container${performanceMode ? ' performance-mode-app' : ''}`}>
+        <div className="app-container">
           {/* Header mobile/tablet. Di smartphone drawer sidebar tidak dipakai,
               jadi hamburger disembunyikan dan header hanya menampilkan branding. */}
-          <header className={`app-header-mobile${performanceMode ? ' performance-app-header' : ''}`}>
-            {performanceMode && performanceSong?.title ? (
-              /* Mode performance: header = navigasi lagu + identitas lagu aktif.
-                 ◀/▶ pindah lagu (dikirim sebagai event; dock/halaman yang tahu
-                 urutan setlist), judul di tengah. */
-              <div className="performance-header-nav">
-                <button
-                  type="button"
-                  className="performance-header-nav-btn"
-                  onClick={() => window.dispatchEvent(new CustomEvent('performance-action', { detail: { action: 'song-prev' } }))}
-                  title="Lagu sebelumnya"
-                  aria-label="Lagu sebelumnya"
-                >
-                  ◀
-                </button>
-                <div className="performance-header-song">
-                  <button
-                    type="button"
-                    className="performance-header-title-btn"
-                    onClick={() => window.dispatchEvent(new CustomEvent('performance-action', { detail: { action: 'song-list' } }))}
-                    title="Ganti lagu (buka daftar lagu setlist)"
-                    aria-label={`Lagu aktif: ${performanceSong.title}. Tap untuk ganti lagu.`}
-                  >
-                    <h1 className="performance-header-title">{performanceSong.title}</h1>
-                    {performanceSong.artist && (
-                      <span className="performance-header-artist">{performanceSong.artist}</span>
-                    )}
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  className="performance-header-nav-btn"
-                  onClick={() => window.dispatchEvent(new CustomEvent('performance-action', { detail: { action: 'song-next' } }))}
-                  title="Lagu berikutnya"
-                  aria-label="Lagu berikutnya"
-                >
-                  ▶
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="header-brand">
-                  <img
-                    className="header-brand-icon"
-                    src="/icon-192x192.png"
-                    alt=""
-                    width="28"
-                    height="28"
-                    aria-hidden="true"
-                  />
-                  <h1 className="header-title">Ruang Performer</h1>
-                </div>
-                <button
-                  type="button"
-                  className={`btn ${performanceMode ? 'btn-performance-active' : 'btn-secondary'} header-performance-toggle`}
-                  onClick={togglePerformanceMode}
-                  title={performanceMode ? 'Keluar dari mode performance' : 'Aktifkan mode performance (tampilan manggung)'}
-                  aria-pressed={performanceMode}
-                >
-                  🎤
-                </button>
-              </>
-            )}
+          <header className="app-header-mobile">
+            <div className="header-brand">
+              <img
+                className="header-brand-icon"
+                src="/icon-192x192.png"
+                alt=""
+                width="28"
+                height="28"
+                aria-hidden="true"
+              />
+              <h1 className="header-title">Ruang Performer</h1>
+            </div>
           </header>
         </div>
 
@@ -403,7 +301,7 @@ function AppContent() {
               />
               <Route
                 path="/songs/view/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} />}
               />
               <Route
                 path="/setlists/:id"
@@ -421,7 +319,7 @@ function AppContent() {
               />
               <Route
                 path="/setlists/:setlistId/songs/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} />}
               />
               <Route
                 path="/setlists/:id"
@@ -439,7 +337,7 @@ function AppContent() {
               />
               <Route
                 path="/setlists/:setlistId/songs/:id"
-                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} performanceMode={performanceMode} />}
+                element={<SongLyricsRoute songs={songs} activeSetlist={activeSetlist} />}
               />
               <Route
                 path="/setlists"
@@ -511,10 +409,10 @@ function EditSongRoute({ onSongUpdated }) {
 }
 
 // SongLyricsRoute component
-function SongLyricsRoute({ songs, activeSetlist, performanceMode }) {
+function SongLyricsRoute({ songs, activeSetlist }) {
   const { id } = useParams();
   const song = Array.isArray(songs) ? songs.find((s) => String(s.id) === String(id)) : null;
-  return <SongChordsPage song={song} activeSetlist={activeSetlist} songs={songs} performanceMode={performanceMode} />;
+  return <SongChordsPage song={song} activeSetlist={activeSetlist} songs={songs} />;
 }
 
 export default App;

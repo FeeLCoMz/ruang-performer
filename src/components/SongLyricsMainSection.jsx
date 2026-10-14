@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
-import ExpandButton from './ExpandButton.jsx';
 
 /**
  * SongLyricsMainSection
@@ -37,17 +36,11 @@ export default function SongLyricsMainSection({
   youtubeRef,
   youtubeId,
   isYoutubePlaying = false,
-  performanceMode = false,
   loading = false
 }) {
-  // Expand/collapse state for lyrics panel — selalu terbuka, state dipertahankan
-  // agar transisi dari versi lama tidak menghilangkan panel.
-  const [lyricsPanelExpanded] = useState(true);
-
   return (
-    <div className={`song-panel song-lyrics-main${performanceMode ? ' song-panel-performance' : ''}`}>
-      {!performanceMode && (
-        <div className="song-lyrics-main-header">
+    <div className="song-panel song-lyrics-main">
+      <div className="song-lyrics-main-header">
           {/* Key & tempo aktif: identitas musik lagu, tanpa judul panel */}
           <div className="song-lyrics-main-keytempo">
             <span className="song-lyrics-key-chip" title={`Key ${keySignature || '-'}`}>
@@ -75,11 +68,8 @@ export default function SongLyricsMainSection({
             youtubeRef={youtubeRef}
           />
         </div>
-      )}
 
-      {(
-        <>
-          {loading ? (
+        {loading ? (
             <div className="lyrics-loading-skeleton">
               <div className="skeleton-line" style={{ width: '80%' }} />
               <div className="skeleton-line" style={{ width: '90%' }} />
@@ -112,13 +102,10 @@ export default function SongLyricsMainSection({
               timeSignature={timeSignature}
               originalKey={originalKey}
               targetKey={targetKey}
-              performanceMode={performanceMode}
               pianoRecommendation={pianoRecommendation}
               onApplyRecommendedTranspose={onApplyRecommendedTranspose}
             />
-          )}
-        </>
-      )}
+        )}
     </div>
   );
 }
