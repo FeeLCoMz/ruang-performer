@@ -11384,30 +11384,32 @@ body.dark-mode .cd-token {
 .song-lyrics-toolbar-group {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   flex-wrap: wrap;
 }
 
 .song-lyrics-toolbar--normal {
   width: 100%;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
+  gap: 6px;
+  padding: 0;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
 }
 
+/* Grup tanpa latar/padding: hanya gap antar tombol, tanpa ruang kosong */
 .song-lyrics-toolbar--normal .song-lyrics-toolbar-group {
-  min-height: 42px;
-  padding: 3px 6px;
+  min-height: 0;
+  padding: 0;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
+  gap: 6px;
 }
 
-/* Grup key/tempo: satu chip per item, align dengan tombol lain */
+/* Grup key/tempo tidak meregang — cukup selebar isinya */
 .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-key {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   flex-wrap: wrap;
   gap: 6px;
 }
@@ -13379,11 +13381,12 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
     gap: 0.4rem;
   }
 
-  /* Di HP toolbar tampil satu kolom per grup agar tidak menumpuk acak */
+  /* Di HP toolbar tampil rapat: grup mengalir wrap satu baris, bukan kolom */
   .song-lyrics-toolbar--normal {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 6px;
   }
 
@@ -13391,10 +13394,6 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
     width: auto;
     min-width: 0;
     min-height: 0;
-    justify-content: flex-start;
-  }
-
-  .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-key {
     justify-content: flex-start;
   }
 
