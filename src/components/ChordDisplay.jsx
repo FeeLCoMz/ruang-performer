@@ -290,8 +290,11 @@ const ChordDisplayBase = memo(function ChordDisplay({
   const fitMeasureKey = `${song?.id || ''}|${song?.lyrics?.length || 0}`;
 
   useEffect(() => {
-    const container = containerRef.current;
-    const content = container?.querySelector(':scope > .cd');
+    // Kontainer ukur = induk terdekat (.song-lyrics-display milik
+    // SongChordsLyricsDisplay). Komponen ini sendiri tidak merender wrapper —
+    // panel scroll berasal dari induk.
+    const container = containerRef?.current?.closest?.('.song-lyrics-display');
+    const content = containerRef?.current;
     if (!container || !content) return undefined;
 
     const measure = () => {
@@ -314,14 +317,16 @@ const ChordDisplayBase = memo(function ChordDisplay({
 
   const effectiveScale = Math.min(zoom, fitScale);
 
+  // Tanpa wrapper: induk (.song-lyrics-display di SongChordsLyricsDisplay)
+  // sudah jadi panel scroll. Dua elemen ber-class sama bertumpuk menciptakan
+  // pembungkus duplikat (padding/scroll ganda).
   return (
-    <div className="song-lyrics-display" ref={containerRef}>
-      <div
-        className={`cd${fitScale < 1 ? ' cd-fit-width' : ''}`}
-        style={{ transform: `scale(${effectiveScale})`, transformOrigin: 'top left' }}
-      >
-        {renderedRows}
-      </div>
+    <div
+      ref={containerRef}
+      className={`cd${fitScale < 1 ? ' cd-fit-width' : ''}`}
+      style={{ transform: `scale(${effectiveScale})`, transformOrigin: 'top left' }}
+    >
+      {renderedRows}
     </div>
   );
 });
