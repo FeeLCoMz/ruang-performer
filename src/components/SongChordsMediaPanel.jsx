@@ -1,105 +1,59 @@
-import React, { useState } from "react";
-import YouTubeViewer from "./YouTubeViewer.jsx";
-import TimeMarkers from "./TimeMarkers.jsx";
-import ExpandButton from "./ExpandButton.jsx";
+import React, { useState } from 'react';
+import { StudioMediaColumn } from './SongStudioLayout.jsx';
 
 /**
  * SongChordsMediaPanel
- * Komponen media panel (YouTube, time markers)
+ *
+ * Konten tab Media di halaman song view. Sengaja memakai komponen yang sama
+ * dengan halaman song add/edit (StudioMediaColumn) — video, kontrol play,
+ * dan time markers — supaya tampilan dan perilakunya identik di kedua halaman.
  */
 export default function SongChordsMediaPanel({
-  mediaPanelExpanded,
-  setMediaPanelExpanded,
   youtubeId,
   youtubeRef,
   timeMarkers,
   canEdit,
   handleTimeMarkerUpdate,
 }) {
+  const hasYouTube = Boolean(youtubeId);
+  // Posisi & durasi video dilacak di sini agar time marker & label waktu akurat.
   const [ytCurrentTime, setYtCurrentTime] = useState(0);
   const [ytDuration, setYtDuration] = useState(0);
-  const hasYouTube = Boolean(youtubeId);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  if (!hasYouTube) {
+    return (
+      <div className="song-panel media-panel">
+        <div className="media-empty-state">
+          <span className="media-empty-icon">📹</span>
+          <p className="media-empty-text">Tidak ada video YouTube</p>
+          <p className="media-empty-hint">Tambahkan YouTube URL di edit song</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="song-panel">
-      <div className="media-panel-header">
-        <div className="media-panel-header-content">
-          <ExpandButton
-            isExpanded={mediaPanelExpanded}
-            setIsExpanded={setMediaPanelExpanded}
-            icon="📺"
-            label="Panel Media"
-            ariaLabel={mediaPanelExpanded ? "Sembunyikan panel" : "Tampilkan panel"}
-          />
-        </div>
-      </div>
-      <div
-        className={`media-panel-content media-panel-grid ${hasYouTube ? '' : 'media-panel-grid-single'}`}
-        style={{ display: mediaPanelExpanded ? 'grid' : 'none' }}
-      >
-        {/* YouTube Video Section - Left */}
-        <div className="media-section media-video-section">
-          <div className="media-section-body">
-            {hasYouTube ? (
-              <YouTubeViewer
-                ref={youtubeRef}
-                videoId={youtubeId}
-                onTimeUpdate={(time, duration) => {
-                  setYtCurrentTime(time);
-                  if (typeof duration === "number") {
-                    setYtDuration(duration);
-                  }
-                }}
-              />
-            ) : (
-              <div className="media-empty-state">
-                <span className="media-empty-icon">📹</span>
-                <p className="media-empty-text">Tidak ada video YouTube</p>
-                <p className="media-empty-hint">Tambahkan YouTube URL di edit song</p>
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Time Markers Section - Right */}
-        {hasYouTube && (
-          <div className="media-section media-markers-section">
-            <div className="media-section-body">
-              <TimeMarkers
-                timeMarkers={timeMarkers}
-                currentTime={ytCurrentTime}
-                duration={ytDuration}
-                readonly={!canEdit}
-                compactUI={true}
-                onUpdate={handleTimeMarkerUpdate}
-                onSeek={(time, opts) => {
-                  if (
-                    opts &&
-                    opts.pause &&
-                    youtubeRef.current &&
-                    youtubeRef.current.handlePause
-                  ) {
-                    youtubeRef.current.handlePause();
-                    return;
-                  }
-                  if (
-                    typeof time === "number" &&
-                    youtubeRef.current &&
-                    youtubeRef.current.handleSeek
-                  ) {
-                    youtubeRef.current.handleSeek(time);
-                  }
-                }}
-                getCurrentYouTubeTime={() => {
-                  if (youtubeRef.current && typeof youtubeRef.current.currentTime === "number") {
-                    return youtubeRef.current.currentTime;
-                  }
-                  return 0;
-                }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+    <div className="song-panel media-panel">
+      <StudioMediaColumn
+        youtubeId={youtubeId}
+        youtubeRef={youtubeRef}
+        timeMarkers={timeMarkers}
+        isPlaying={isPlaying}
+        onTogglePlay={() => {
+          if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
+            youtubeRef.current.handleTogglePlayPause();
+          }
+          setIsPlaying((prev) => !prev);
+        }}
+        onSeek={(time) => youtubeRef.current?.handleSeek?.(time)}
+        onUpdateMarkers={canEdit ? handleTimeMarkerUpdate : undefined}
+        currentTime={ytCurrentTime}
+        duration={ytDuration}
+        getCurrentYouTubeTime={() =>
+          typeof youtubeRef.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0
+        }
+      />
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { useNavItems } from '../hooks/useNavItems.js';
  * Sticky bottom navigation untuk perangkat mobile. Menampilkan menu penting
  * secara langsung, sisanya (termasuk Logout) dibuka lewat tombol "Other".
  */
-export default function MobileBottomNav() {
+export default function MobileBottomNav({ performanceMode = false }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { items, isActive } = useNavItems();
@@ -42,6 +42,121 @@ export default function MobileBottomNav() {
       }
     };
   }, [otherOpen]);
+
+  // Nilai key & tempo aktif, dilaporkan oleh halaman lagu lewat event.
+  const [perfState, setPerfState] = useState(null);
+  useEffect(() => {
+    const handler = (e) => {
+      setPerfState(e?.detail || null);
+    };
+    window.addEventListener('performance-state', handler);
+    return () => window.removeEventListener('performance-state', handler);
+  }, []);
+
+  // Saat mode performance aktif, nav bawah diganti kontrol performance:
+  // atur key (transpose) dan tempo (metronom/autoscroll) — dikirim sebagai
+  // event yang didengarkan halaman lagu (SongChordsPage), karena state
+  // kontrol itu dimiliki halaman. Nilai key/tempo aktif dilaporkan balik
+  // oleh halaman via event performance-state agar bisa ditampilkan di sini.
+  // Di halaman non-lagu, kontrol tetap tampil tapi nonaktif.
+  if (performanceMode) {
+    const isOnSongPage = /^\/setlists\/[^/]+\/songs\//.test(window.location?.pathname || '')
+      || /^\/songs\/view\//.test(window.location?.pathname || '');
+
+    const emitPerformanceAction = (action, payload = {}) => {
+      if (!isOnSongPage) return;
+      window.dispatchEvent(new CustomEvent('performance-action', { detail: { action, ...payload } }));
+    };
+
+    return (
+      <nav className="performance-nav" aria-label="Kontrol performance">
+        {/* Key: turun / tampil nilai / naik */}
+        <button
+          type="button"
+          className="performance-nav-btn performance-nav-step"
+          disabled={!isOnSongPage}
+          onClick={() => emitPerformanceAction('transpose', { delta: -1 })}
+          title="Turunkan key 1 semitone"
+          aria-label="Turunkan key 1 semitone"
+        >
+          ♭
+        </button>
+        <button
+          type="button"
+          className="performance-nav-btn performance-nav-value"
+          disabled={!isOnSongPage}
+          onClick={() => emitPerformanceAction('transpose-reset')}
+          title="Reset key ke asli"
+          aria-label={`Key aktif: ${perfState?.key || '-'}. Tap untuk reset.`}
+        >
+          <span className="performance-nav-value-label">Key</span>
+          <span className="performance-nav-value-text">{perfState?.key || '-'}</span>
+        </button>
+        <button
+          type="button"
+          className="performance-nav-btn performance-nav-step"
+          disabled={!isOnSongPage}
+          onClick={() => emitPerformanceAction('transpose', { delta: 1 })}
+          title="Naikkan key 1 semitone"
+          aria-label="Naikkan key 1 semitone"
+        >
+          ♯
+        </button>
+
+        {/* Tempo: turun / tampil nilai / naik */}
+        <button
+          type="button"
+          className="performance-nav-btn performance-nav-step"
+          disabled={!isOnSongPage}
+          onClick={() => emitPerformanceAction('tempo', { delta: -5 })}
+          title="Kurangi tempo 5 BPM"
+          aria-label="Kurangi tempo 5 BPM"
+        >
+          −
+        </button>
+        <button
+          type="button"
+          className="performance-nav-btn performance-nav-value"
+          disabled={!isOnSongPage}
+          onClick={() => emitPerformanceAction('metronome-toggle')}
+          title={`Tempo ${perfState?.tempo || '-'} BPM. Tap untuk nyalakan/metronom.`}
+          aria-label={`Tempo ${perfState?.tempo || '-'} BPM`}
+        >
+          <span className="performance-nav-value-label">Tempo</span>
+          <span className="performance-nav-value-text">{perfState?.tempo || '-'}</span>
+        </button>
+        <button
+          type="button"
+          className="performance-nav-btn performance-nav-step"
+          disabled={!isOnSongPage}
+          onClick={() => emitPerformanceAction('tempo', { delta: 5 })}
+          title="Naikkan tempo 5 BPM"
+          aria-label="Naikkan tempo 5 BPM"
+        >
+          +
+        </button>
+
+        {/* Exit */}
+        <button
+          type="button"
+          className="performance-nav-btn performance-nav-exit"
+          onClick={() => {
+            try {
+              localStorage.setItem('setlistSongs.performanceMode', 'false');
+            } catch {
+              /* ignore */
+            }
+            window.dispatchEvent(new CustomEvent('performance-mode-change', { detail: false }));
+          }}
+          title="Keluar dari mode performance"
+          aria-label="Keluar dari mode performance"
+        >
+          ✕
+          <span className="performance-nav-exit-label">Exit</span>
+        </button>
+      </nav>
+    );
+  }
 
   const handlePrimaryClick = (path) => {
     setOtherOpen(false);

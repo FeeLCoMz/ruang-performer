@@ -1,8 +1,8 @@
-import React from "react";
-import TransposeKeyControl from "./TransposeKeyControl.jsx";
-import TempoControl from "./TempoControl.jsx";
-import SongChordsExportMenu from "./SongChordsExportMenu.jsx";
-import { transposeChord } from "../utils/chordUtils.js";
+import React, { useState } from 'react';
+import TransposeKeyControl from './TransposeKeyControl.jsx';
+import TempoControl from './TempoControl.jsx';
+import SongChordsExportMenu from './SongChordsExportMenu.jsx';
+import { transposeChord } from '../utils/chordUtils.js';
 
 /**
  * SongChordsInfo
@@ -30,6 +30,7 @@ export default function SongChordsInfo({
   artist,
   contributor,
   performanceKeyOverride = '',
+  performanceMode = false,
   canEdit = false,
   onEdit,
   onShare,
@@ -46,43 +47,27 @@ export default function SongChordsInfo({
   handleExportText,
   handleExportPDF,
 }) {
-  const masteredNames = (Array.isArray(masteredBy) ? masteredBy : [])
-    .map((entry) => entry?.username)
-    .filter(Boolean)
-    .join(', ');
   const showActions = true;
+  // Tab panel: 'info' (song info) | 'media' | 'lyrics'. Media hanya bisa
+  // dipilih jika lagu punya video; di mode performance tab disembunyikan.
+  const [activeTab, setActiveTab] = useState('info');
+
+  // Level penguasaan lagu: Belum Diulik / Perlu Latihan / Dikuasai.
+  const MASTERY_LEVELS = [
+    { value: 'none', label: 'Belum Diulik', icon: '🔴' },
+    { value: 'learning', label: 'Perlu Latihan', icon: '🟡' },
+    { value: 'ready', label: 'Dikuasai', icon: '🟢' },
+  ];
+  const currentMasteryLevel = isMasteredByCurrentUser ? 'ready' : 'none';
+  const handleMasteryLevelChange = (level) => {
+    if (!onToggleMastery) return;
+    if (level === currentMasteryLevel) return; // klik level aktif = no-op
+    onToggleMastery(level);
+  };
   const showKeyEasyRecommendation = !!pianoRecommendation?.recommendedKey;
   const metadataItems = [];
   const detectedInstrumentList = Array.isArray(detectedInstruments) ? detectedInstruments.filter(Boolean) : [];
-  const handleCopyInstruments = async () => {
-    const parts = [];
-    if (keyboardPatch) parts.push(`Keyboard Patch: ${keyboardPatch}`);
-    if (detectedInstrumentList.length) parts.push(`Instrumen: ${detectedInstrumentList.join(', ')}`);
-    if (!parts.length) return;
 
-    const copyText = parts.join('\n');
-
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(copyText);
-        return;
-      }
-
-      if (typeof document !== 'undefined') {
-        const textarea = document.createElement('textarea');
-        textarea.value = copyText;
-        textarea.setAttribute('readonly', '');
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
-    } catch (error) {
-      console.warn('Gagal menyalin instrumen lagu:', error);
-    }
-  };
   const recommendedTranspose = Number(pianoRecommendation?.transposeFromCurrent || 0);
   const recommendedTransposeText = recommendedTranspose > 0
     ? `+${recommendedTranspose}`
@@ -115,16 +100,22 @@ export default function SongChordsInfo({
   }
 
   return (
-    <div className="song-panel">
+    <div className={`song-panel${performanceMode ? ' song-panel-performance' : ''}`}>
       {/* Header satu baris: judul/artis di kiri, aksi di kanan */}
       <div className="song-header-row">
         <div className="song-title-artist-block">
           {title && (
             <h1 className="song-title-main">{title}</h1>
           )}
-          {(artist || contributor) && (
+          {(artist || contributor || genre) && (
             <p className="song-artist-main">
               {artist && <span className="song-artist-name">{artist}</span>}
+              {artist && genre && <span className="song-meta-sep" aria-hidden="true">·</span>}
+              {genre && (
+                <span className="song-genre-inline" title={`Genre: ${genre}`}>
+                  <span aria-hidden="true">🎸</span> {genre}
+                </span>
+              )}
               {artist && contributor && <span className="song-meta-sep" aria-hidden="true">·</span>}
               {contributor && showActions && (
                 <span className="song-contributor-main" title={`Kontributor: ${contributor}`}>
@@ -139,7 +130,7 @@ export default function SongChordsInfo({
             <div className="info-text song-info-share-message">{shareMessage}</div>
           )}
         </div>
-        {showActions && (
+        {showActions && !performanceMode && (
           <div className="song-info-header-actions">
             {canEdit && (
               <button
@@ -185,7 +176,8 @@ export default function SongChordsInfo({
       </div>
 
       <div className="song-info-panel">
-        {/* Baris kontrol: Key & Tempo (label kiri, kontrol kanan) */}
+        {/* Baris kontrol: Key & Tempo (label kiri, kontrol kanan). Key Mudah
+            terintegrasi di baris Key agar aksi transpose lengkap di satu tempat. */}
         {(originalKey || targetKey || tempo) && (
           <div className="song-info-control-rows">
             {(originalKey || targetKey) && (
@@ -199,12 +191,29 @@ export default function SongChordsInfo({
                     onTransposeChange={setTranspose}
                     compact
                   />
+                  {showKeyEasyRecommendation && (
+                    <button
+                      type="button"
+                      className={`btn ${pianoRecommendation.transposeFromCurrent === 0 ? 'btn-secondary' : ''} song-info-key-easy-btn`}
+                      onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
+                      disabled={typeof onApplyRecommendedTranspose !== 'function' || pianoRecommendation.transposeFromCurrent === 0}
+                      title={pianoRecommendation.transposeFromCurrent === 0
+                        ? 'Key dasar sudah cocok'
+                        : `Key mudah: ${pianoRecommendation.recommendedKey} (${recommendedTransposeText} semitone)`}
+                      aria-label="Gunakan key mudah yang disarankan"
+                    >
+                      💡 {pianoRecommendation.recommendedKey}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
+        {/* Tempo + time signature terintegrasi: label menampilkan keduanya */}
             {tempo && (
               <div className="song-info-control-row">
-                <span className="song-info-row-label">⏱️ Tempo</span>
+                <span className="song-info-row-label">
+                  ⏱️ Tempo{timeSignature ? ` • ${timeSignature}` : ''}
+                </span>
                 <div className="song-info-row-control">
                   <TempoControl
                     tempo={tempo}
@@ -219,42 +228,16 @@ export default function SongChordsInfo({
           </div>
         )}
 
-        {/* Chip status ringkas: nilai teks polos */}
-        {(timeSignature || genre || lyricsOriginalKey || detectedInstrumentList.length > 0 || keyboardPatch) && (
+        {/* Asli key saja — time signature sudah terintegrasi dengan Tempo */}
+        {!performanceMode && lyricsOriginalKey && (
           <div className="song-info-chip-row">
-            {showKeyEasyRecommendation && (
-              <button
-                type="button"
-                className="btn btn-secondary song-info-piano-reco-btn song-info-item"
-                onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
-                disabled={typeof onApplyRecommendedTranspose !== 'function' || pianoRecommendation.transposeFromCurrent === 0}
-                title={pianoRecommendation.transposeFromCurrent === 0
-                  ? 'Key dasar sudah cocok'
-                  : `Key mudah: ${pianoRecommendation.recommendedKey} (${recommendedTransposeText} semitone)`}
-                aria-label="Gunakan key mudah yang disarankan"
-              >
-                <span className="song-info-label">💡 Key Mudah</span>
-                <span className="song-info-value">{pianoRecommendation.recommendedKey}</span>
-              </button>
-            )}
-            {timeSignature && (
-              <span className="song-info-item">
-                <span className="song-info-label">🎼 Time</span>
-                <span className="song-info-value">{timeSignature}</span>
-              </span>
-            )}
-            {genre && (
-              <span className="song-info-item">
-                <span className="song-info-label">🎸 Genre</span>
-                <span className="song-info-value">{genre}</span>
-              </span>
-            )}
-            {lyricsOriginalKey && (
-              <span className="song-info-item">
-                <span className="song-info-label">🎵 Nada Asli</span>
-                <span className="song-info-value">{lyricsOriginalKey}</span>
-              </span>
-            )}
+            <span className="song-info-item song-info-item-plain">🎵 Asli: {lyricsOriginalKey}</span>
+          </div>
+        )}
+
+        {/* Detail tambahan (patch keyboard, instrumen) — hanya di tab Info */}
+        {activeTab === 'info' && !performanceMode && (keyboardPatch || detectedInstrumentList.length > 0) && (
+          <div className="song-info-chip-row">
             {keyboardPatch && (
               <span className="song-info-item song-info-item-wide">
                 <span className="song-info-label">🎹 Patch</span>
@@ -265,51 +248,42 @@ export default function SongChordsInfo({
               <span className="song-info-item">
                 <span className="song-info-label">🎼 Instrumen</span>
                 <span className="song-info-chip-list" aria-label="Daftar instrumen terdeteksi">
-                  {detectedInstrumentList.map((instrument) => (
-                    <span key={`${instrument}-${Math.random()}`} className="song-info-chip">
+                  {detectedInstrumentList.map((instrument, i) => (
+                    <span key={`${instrument}-${i}`} className="song-info-chip">
                       {instrument}
                     </span>
                   ))}
                 </span>
-                <button
-                  type="button"
-                  className="btn btn-secondary song-info-copy-btn"
-                  onClick={handleCopyInstruments}
-                  title="Salin instrumen dan keyboard patch"
-                  aria-label="Salin instrumen dan keyboard patch"
-                >
-                  Copy
-                </button>
               </span>
             )}
           </div>
         )}
 
-        {/* Baris mastery */}
+        {/* Baris mastery — 3 level: Belum Diulik / Perlu Latihan / Dikuasai.
+            Chip status = dropdown pilihan; klik membuka pilihan level. */}
+        {!performanceMode && (
         <div className="song-info-control-row song-info-mastery-row">
-          <span className="song-info-row-label">✅ Dikuasai</span>
+          <div className="song-info-mastery-picker" title="Pilih status penguasaan lagu">
+            {MASTERY_LEVELS.map((level) => (
+              <button
+                key={level.value}
+                type="button"
+                className={`song-mastery-chip mastery-${level.value}${currentMasteryLevel === level.value ? ' selected' : ''}`}
+                onClick={() => handleMasteryLevelChange(level.value)}
+                disabled={!canMarkMastery || masteryUpdating}
+                aria-pressed={currentMasteryLevel === level.value}
+                title={canMarkMastery ? `Set status: ${level.label}` : 'Anda belum bisa menandai lagu ini'}
+              >
+                <span aria-hidden="true">{level.icon}</span>
+                {level.label}
+              </button>
+            ))}
+          </div>
           <div className="song-info-row-control">
-            <span className="song-info-mastery-count">
-              {Array.isArray(masteredBy) ? masteredBy.length : 0} orang
-            </span>
-            {masteredNames && (
-              <span className="song-info-mastery-members" title={masteredNames}>{masteredNames}</span>
-            )}
-            <button
-              type="button"
-              className={`btn song-info-mastery-btn ${isMasteredByCurrentUser ? '' : 'btn-secondary'}`}
-              onClick={onToggleMastery}
-              disabled={!canMarkMastery || masteryUpdating}
-              title={canMarkMastery ? 'Tandai lagu ini sudah dikuasai' : 'Anda belum bisa menandai lagu ini'}
-            >
-              {masteryUpdating
-                ? 'Menyimpan...'
-                : (canMarkMastery
-                  ? (isMasteredByCurrentUser ? 'Sudah Kuasai' : 'Belum Kuasai')
-                  : 'Belum Bisa Tandai')}
-            </button>
+            {masteryUpdating && <span className="song-info-mastery-saving">Menyimpan…</span>}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

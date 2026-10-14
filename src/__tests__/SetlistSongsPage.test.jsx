@@ -115,11 +115,13 @@ describe('SetlistSongsPage', () => {
     expect(selectLabels.some((text) => text.includes('Genre:'))).toBe(false);
     expect(selectLabels.some((text) => text.includes('Dibawakan:'))).toBe(false);
 
-    // Only "Tambah Lagu" is outside the menu; the rest is inside a details menu.
+    // Only "Tambah Lagu" sits outside the menu, plus the performance toggle.
     const header = container.querySelector('.setlist-header-actions');
     const directButtons = Array.from(header.querySelectorAll(':scope > button')).map(
       (btn) => btn.textContent.trim(),
     );
+    // Setelah tombol mode performance dihapus dari header setlist, hanya
+    // "Tambah Lagu" yang tersisa di luar menu aksi.
     expect(directButtons).toEqual(['Tambah Lagu']);
 
     const moreMenu = header.querySelector('details.setlist-header-more');

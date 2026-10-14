@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import SongChordsAnalyzer from '../components/SongChordsAnalyzer.jsx';
 import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
-import { useNavigate, useLocation, useParams } from "react-router-dom";
-import SetlistSongNavigator from "../components/SetlistSongNavigator.jsx";
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import PerformanceDock from '../components/PerformanceDock.jsx';
 import SongChordsMediaPanel from '../components/SongChordsMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
-import ExpandButton from '../components/ExpandButton.jsx';
-import { getAuthHeader } from "../utils/auth.js";import { useAuth } from '../contexts/AuthContext.jsx';
+import { getAuthHeader } from '../utils/auth.js';import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
 import { useSongFetch } from '../hooks/useSongFetch.js';
@@ -14,7 +13,7 @@ import { handleExportText, handleExportPDF, handleShare } from '../utils/songHan
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
-import { recommendPianoFriendlyKey, extractDetectedInstrumentsFromLyrics } from '../utils/chordUtils.js';
+import { recommendPianoFriendlyKey, extractDetectedInstrumentsFromLyrics, transposeChord } from '../utils/chordUtils.js';
 
 /**
  * SongChordsPage
@@ -24,7 +23,7 @@ import { recommendPianoFriendlyKey, extractDetectedInstrumentsFromLyrics } from 
  * Props:
  *   - song: (optional) data lagu yang diterima dari parent
  */
-export default function SongChordsPage({ song: songProp, activeSetlist = null }) {
+export default function SongChordsPage({ song: songProp, activeSetlist = null, songs: songsProp = [], performanceMode: performanceModeProp = false }) {
   // State untuk toggle tampilan partitur
   const [showSheetMusic, setShowSheetMusic] = useState(false);
   // =========================
@@ -86,30 +85,127 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
       lyricsForExport = lyricsClean.replace(/^Original\s+Key:.*$/im, '').replace(/^\s*\n/, '');
     }
   }
-  const artist = setlistSongData.artist || song?.artist || "";
-  const key = setlistSongData.key || song?.key || "";
-  const tempo = setlistSongData.tempo || song?.tempo || "";
-  const genre = setlistSongData.genre || song?.genre || "";
-  const keyboardPatch = setlistSongData.keyboardPatch || song?.keyboardPatch || song?.keyboard_patch || "";
-  const timeSignature = setlistSongData.time_signature || song?.time_signature || "4/4";
-  const youtubeId = song?.youtubeId || song?.youtube_url || "";
+  const artist = setlistSongData.artist || song?.artist || '';
+  const key = setlistSongData.key || song?.key || '';
+  const tempo = setlistSongData.tempo || song?.tempo || '';
+  const genre = setlistSongData.genre || song?.genre || '';
+  const keyboardPatch = setlistSongData.keyboardPatch || song?.keyboardPatch || song?.keyboard_patch || '';
+  const timeSignature = setlistSongData.time_signature || song?.time_signature || '4/4';
+  const youtubeId = song?.youtubeId || song?.youtube_url || '';
   const timeMarkers = song?.time_markers || [];
 
-  // Transpose state
+  // Mode performance dikendalikan dari app header (prop dari App), jadi bisa
+  // di-switch kapan saja — termasuk untuk lagu di luar setlist.
+  const performanceMode = Boolean(performanceModeProp);
+
+  // Transpose & tempo & metronom — dideklarasikan SEBELUM efek yang memakainya.
   const [transpose, setTranspose] = useState(0);
+  // Tempo yang bisa diatur dari bottom nav performance (tanpa mengubah data lagu).
+  const [tempoState, setTempoState] = useState(() => Number(tempo) || 120);
+  useEffect(() => {
+    setTempoState(Number(tempo) || 120);
+  }, [tempo, song?.id]);
+
+  const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, tempoState);
 
   useEffect(() => {
     setTranspose(0);
   }, [song?.id]);
 
+  // Saat mode performance aktif, app header menampilkan judul & penyanyi
+  // lagu aktif (bukan branding) — App mendengarkan event ini.
+  useEffect(() => {
+    if (!performanceMode) return undefined;
+    window.dispatchEvent(new CustomEvent('performance-song-change', {
+      detail: { title: song?.title || '', artist: artist || '' },
+    }));
+    return undefined;
+  }, [performanceMode, song?.id, song?.title, artist]);
+
+  // Laporkan key & tempo aktif ke bottom nav performance.
+  const performanceKey = useMemo(() => {
+    const base = key || song?.key || '';
+    if (!base || !transpose) return base;
+    try {
+      return transposeChord(base, transpose) || base;
+    } catch {
+      return base;
+    }
+  }, [key, song?.key, transpose]);
+
+  useEffect(() => {
+    if (!performanceMode) return undefined;
+    window.dispatchEvent(new CustomEvent('performance-state', {
+      detail: { key: performanceKey || '-', tempo: tempoState || '-', metronomeActive: isMetronomeActive },
+    }));
+    return undefined;
+  }, [performanceMode, performanceKey, tempoState, isMetronomeActive]);
+  // Kontrol dari bottom nav performance: transpose (♭/♯/reset), tempo (metronom),
+  // dan autoscroll. Dikirim sebagai event karena nav berada di luar halaman,
+  // sedangkan state kontrol ini dimiliki halaman lagu.
+  useEffect(() => {
+    if (!performanceMode) return undefined;
+    const handler = (e) => {
+      const { action, delta } = e?.detail || {};
+      switch (action) {
+        case 'transpose':
+          setTranspose((prev) => Math.max(-11, Math.min(11, (prev || 0) + (Number(delta) || 0))));
+          break;
+        case 'transpose-reset':
+          setTranspose(0);
+          break;
+        case 'song-prev':
+        case 'song-next': {
+          // Pindah lagu sesuai urutan setlist aktif.
+          const arr = Array.isArray(setlistData?.songs) ? setlistData.songs : [];
+          const idx = arr.findIndex((s) => String(s.id || s._id) === String(song.id));
+          if (idx < 0) break;
+          const targetIdx = action === 'song-prev' ? idx - 1 : idx + 1;
+          const target = arr[targetIdx];
+          if (target) {
+            const targetSong = (Array.isArray(songsProp) ? songsProp : []).find((s) => String(s.id) === String(target.id || target._id)) || target;
+            navigate(`/setlists/${setlistId}/songs/${target.id || target._id}`, {
+              state: { setlistId, setlist: setlistData, setlistSong: targetSong },
+            });
+          }
+          break;
+        }
+        case 'song-list': {
+          // Buka daftar lagu setlist (PerformanceDock panel) — cukup navigate
+          // kembali ke halaman setlist dengan fokus lagu aktif.
+          if (setlistId) {
+            navigate(`/setlists/${setlistId}`, {
+              state: { setlistId, setlist: setlistData, focusSongId: song.id },
+            });
+          }
+          break;
+        }
+        case 'tempo':
+          setTempoState((prev) => Math.max(40, Math.min(240, (Number(prev) || Number(tempo) || 120) + (Number(delta) || 0))));
+          break;
+        case 'metronome-toggle':
+          setIsMetronomeActive((prev) => !prev);
+          break;
+        case 'autoscroll-toggle':
+          setAutoScrollActive((prev) => !prev);
+          break;
+        case 'autoscroll-speed':
+          setScrollSpeed((prev) => Math.max(40, Math.min(240, (Number(prev) || 120) + (Number(delta) || 0))));
+          break;
+        default:
+          break;
+      }
+    };
+    window.addEventListener('performance-action', handler);
+    return () => window.removeEventListener('performance-action', handler);
+  }, [performanceMode, tempo, setlistData, setlistId, song?.id, songsProp, navigate]);
+
   const [zoom, setZoom] = useState(1);
-  const [showChords, setShowChords] = useState(true);
+  const [showChords] = useState(true);
   const [showChordNumbers, setShowChordNumbers] = useState(false);
   const [showJazzChords, setShowJazzChords] = useState(false);
   const [showSimpleChords, setShowSimpleChords] = useState(false);
 
-  // Chord Analyzer state
-  const [showChordAnalyzer, setShowChordAnalyzer] = useState(false);
   const chordStats = useChordStats(song?.lyrics);
 
   const pianoRecommendation = recommendPianoFriendlyKey({
@@ -131,18 +227,13 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
 
 
   // Share state
-  const [shareMessage, setShareMessage] = useState("");
+  const [shareMessage, setShareMessage] = useState('');
   const [updatingMastery, setUpdatingMastery] = useState(false);
 
 
   // Media panel collapse state (default: collapsed)
-  const [mediaPanelExpanded, setMediaPanelExpanded] = useState(false);
-  // Setlist yang memuat lagu ini (default: collapsed)
-  const [showContainingSetlists, setShowContainingSetlists] = useState(false);
+  const [activeTab, setActiveTab] = useState('info');
 
-  // Metronome state for quick access
-  const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, tempo);
-  const audioContextRef = useRef(null); // (optional: can be removed if not used elsewhere)
   const youtubeRef = useRef(null);
   const autoMetronomeStartedRef = useRef(false);
   const autoVideoPlayStartedRef = useRef(false);
@@ -152,7 +243,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
   // Auto Scroll state
   const [autoScrollActive, setAutoScrollActive] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(parseInt(tempo) || 120);
-  const [currentBeat, setCurrentBeat] = useState(0);
   const lyricsDisplayRef = useRef(null);
 
   // Real playback state for the timestamp play buttons. Without this the button
@@ -191,8 +281,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
   useEffect(() => {
     if (!autoPlayVideo || autoVideoPlayStartedRef.current || !youtubeId) return;
 
-    setMediaPanelExpanded(true);
-
+    // Panel media kini selalu terbuka (tab), cukup mulai play video-nya.
     let attempts = 0;
     const maxAttempts = 20;
     const intervalId = setInterval(() => {
@@ -254,9 +343,9 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
 
     try {
       const res = await fetch(`/api/songs/${song.id}`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...getAuthHeader(),
         },
         body: JSON.stringify({
@@ -267,7 +356,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || "Gagal menyimpan time marker");
+        throw new Error(errorData.error || 'Gagal menyimpan time marker');
       }
 
       // Fetch fresh data
@@ -276,34 +365,14 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
       });
 
       if (!fetchRes.ok) {
-        throw new Error("Gagal memuat data terbaru");
+        throw new Error('Gagal memuat data terbaru');
       }
 
       const updatedSong = await fetchRes.json();
       setFetchedSong(updatedSong);
     } catch (err) {
-      console.error("Gagal memperbarui penanda waktu:", err);
+      console.error('Gagal memperbarui penanda waktu:', err);
     }
-  };
-
-  const ensureMiniPlayerReady = (callback) => {
-    callback?.();
-  };
-
-  const handlePlayYouTube = () => {
-    ensureMiniPlayerReady(() => {
-      if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
-        youtubeRef.current.handleTogglePlayPause();
-      }
-    });
-  };
-
-  const handleRestartYouTube = () => {
-    ensureMiniPlayerReady(() => {
-      if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
-        youtubeRef.current.handleSeek(0);
-      }
-    });
   };
 
   // Handler export & share di utils/songHandlers.js
@@ -312,7 +381,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
     if (setlistId) {
       navigate(`/setlists/${setlistId}`);
     } else {
-      navigate("/songs");
+      navigate('/songs');
     }
   };
 
@@ -371,86 +440,207 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
     navigate(`/songs/edit/${song.id}`);
   };
 
-  const handleToggleMastery = async () => {
+  const handleToggleMastery = async (level = null) => {
     if (!song?.id || !song?.canMarkMastery || updatingMastery) return;
 
-    const nextMasteredState = !song.isMasteredByCurrentUser;
+    // Level target: 'none' | 'learning' | 'ready'. API saat ini hanya
+    // mendukung boolean mastered; 'learning' dipetakan ke belum-kuasai.
+    // Ganti ke endpoint bertahap bila backend menambah dukungan level.
+    const targetMastered = level === null ? !song.isMasteredByCurrentUser : (level === 'ready');
+    if (targetMastered === Boolean(song.isMasteredByCurrentUser)) return;
     try {
       setUpdatingMastery(true);
-      const payload = await updateSongMastery(song.id, nextMasteredState);
+      const payload = await updateSongMastery(song.id, targetMastered);
       setFetchedSong((prev) => ({
         ...(prev || song),
         masteredBy: Array.isArray(payload.masteredBy) ? payload.masteredBy : [],
         isMasteredByCurrentUser: Boolean(payload.isMasteredByCurrentUser),
       }));
     } catch (err) {
-      setToastMessage(err?.message || 'Gagal memperbarui status penguasaan lagu');
+      console.error('Gagal memperbarui status penguasaan lagu:', err);
     } finally {
       setUpdatingMastery(false);
     }
   };
 
   return (
-    <div className="page-container">
-      <SongChordsInfo
-        originalKey={song?.key || key || ''}
-        targetKey={key || song?.key || ''}
-        lyricsOriginalKey={lyricsMetaKey}
-        transpose={transpose}
-        setTranspose={setTranspose}
-        timeSignature={timeSignature}
-        tempo={tempo}
-        scrollSpeed={scrollSpeed}
-        setScrollSpeed={setScrollSpeed}
-        isMetronomeActive={isMetronomeActive}
-        setIsMetronomeActive={setIsMetronomeActive}
-        genre={genre}
-        keyboardPatch={keyboardPatch}
-        detectedInstruments={detectedInstruments}
-        title={song.title}
-        artist={artist}
-        contributor={song.contributor}
-        performanceKeyOverride={setlistSongData.key || ''}
-        canEdit={can(PERMISSIONS.SONG_EDIT)}
-        onEdit={handleEdit}
-        onShare={() => handleShare(song, artist, setShareMessage)}
-        shareMessage={shareMessage}
-        masteredBy={song.masteredBy}
-        canMarkMastery={song.canMarkMastery}
-        isMasteredByCurrentUser={song.isMasteredByCurrentUser}
-        onToggleMastery={handleToggleMastery}
-        masteryUpdating={updatingMastery}
-        pianoRecommendation={pianoRecommendation}
-        onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-        showExportMenu={showExportMenu}
-        setShowExportMenu={setShowExportMenu}
-        handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
-        handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
-      />
-
-      {youtubeId && (
-        <SongChordsMediaPanel
-          mediaPanelExpanded={mediaPanelExpanded}
-          setMediaPanelExpanded={setMediaPanelExpanded}
-          youtubeId={youtubeId}
-          youtubeRef={youtubeRef}
-          timeMarkers={timeMarkers}
+    <div className={`page-container${performanceMode ? ' setlist-performance-mode song-chords-performance-mode' : ''}`}>
+      {performanceMode && (
+        /* Mode performance: song info tetap di luar tab (key/tempo saja) */
+        <SongChordsInfo
+          originalKey={song?.key || key || ''}
+          targetKey={key || song?.key || ''}
+          lyricsOriginalKey={lyricsMetaKey}
+          transpose={transpose}
+          setTranspose={setTranspose}
+          timeSignature={timeSignature}
+          tempo={tempo}
+          scrollSpeed={scrollSpeed}
+          setScrollSpeed={setScrollSpeed}
+          isMetronomeActive={isMetronomeActive}
+          setIsMetronomeActive={setIsMetronomeActive}
+          genre={genre}
+          keyboardPatch={keyboardPatch}
+          detectedInstruments={detectedInstruments}
+          title={song.title}
+          artist={artist}
+          contributor={song.contributor}
+          performanceKeyOverride={setlistSongData.key || ''}
+          performanceMode={performanceMode}
           canEdit={can(PERMISSIONS.SONG_EDIT)}
-          handleTimeMarkerUpdate={handleTimeMarkerUpdate}
+          onEdit={handleEdit}
+          onShare={() => handleShare(song, artist, setShareMessage)}
+          shareMessage={shareMessage}
+          masteredBy={song.masteredBy}
+          canMarkMastery={song.canMarkMastery}
+          isMasteredByCurrentUser={song.isMasteredByCurrentUser}
+          onToggleMastery={handleToggleMastery}
+          masteryUpdating={updatingMastery}
+          pianoRecommendation={pianoRecommendation}
+          onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+          showExportMenu={showExportMenu}
+          setShowExportMenu={setShowExportMenu}
+          handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
+          handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
         />
       )}
 
-      <SongChordsAnalyzer
-        showChordAnalyzer={showChordAnalyzer}
-        setShowChordAnalyzer={setShowChordAnalyzer}
-        chordStats={chordStats}
-        transpose={transpose}
-        songKey={song?.key || key}
-        onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-      />
+      {/* Tab panel: Info | Media | Lirik — mode normal */}
+      {!performanceMode && (
+        <div className="song-tabs">
+          <div className="song-tabs-bar" role="tablist" aria-label="Panel lagu">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'info'}
+              className={`song-tabs-tab${activeTab === 'info' ? ' active' : ''}`}
+              onClick={() => setActiveTab('info')}
+            >
+              ℹ️ Info
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'media'}
+              className={`song-tabs-tab${activeTab === 'media' ? ' active' : ''}`}
+              onClick={() => setActiveTab('media')}
+              disabled={!youtubeId}
+              title={youtubeId ? 'Panel media (video & time markers)' : 'Lagu ini belum punya video YouTube'}
+            >
+              📺 Media
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'lyrics'}
+              className={`song-tabs-tab${activeTab === 'lyrics' ? ' active' : ''}`}
+              onClick={() => setActiveTab('lyrics')}
+            >
+              🎤 Lirik
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'analyzer'}
+              className={`song-tabs-tab${activeTab === 'analyzer' ? ' active' : ''}`}
+              onClick={() => setActiveTab('analyzer')}
+            >
+              🎵 Analisis
+            </button>
+          </div>
 
-      {/* Lyrics Main Section */}
-      <SongLyricsMainSection
+          {activeTab === 'info' && (
+            <SongChordsInfo
+              originalKey={song?.key || key || ''}
+              targetKey={key || song?.key || ''}
+              lyricsOriginalKey={lyricsMetaKey}
+              transpose={transpose}
+              setTranspose={setTranspose}
+              timeSignature={timeSignature}
+              tempo={tempo}
+              scrollSpeed={scrollSpeed}
+              setScrollSpeed={setScrollSpeed}
+              isMetronomeActive={isMetronomeActive}
+              setIsMetronomeActive={setIsMetronomeActive}
+              genre={genre}
+              keyboardPatch={keyboardPatch}
+              detectedInstruments={detectedInstruments}
+              title={song.title}
+              artist={artist}
+              contributor={song.contributor}
+              performanceKeyOverride={setlistSongData.key || ''}
+              performanceMode={false}
+              canEdit={can(PERMISSIONS.SONG_EDIT)}
+              onEdit={handleEdit}
+              onShare={() => handleShare(song, artist, setShareMessage)}
+              shareMessage={shareMessage}
+              masteredBy={song.masteredBy}
+              canMarkMastery={song.canMarkMastery}
+              isMasteredByCurrentUser={song.isMasteredByCurrentUser}
+              onToggleMastery={handleToggleMastery}
+              masteryUpdating={updatingMastery}
+              pianoRecommendation={pianoRecommendation}
+              onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+              showExportMenu={showExportMenu}
+              setShowExportMenu={setShowExportMenu}
+              handleExportText={() => handleExportText(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
+              handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
+            />
+          )}
+
+          {/* Setlist yang memuat lagu ini — selalu terbuka, hanya di tab Info */}
+          {activeTab === 'info' && song.id && !loadingSetlists && setlists.length > 0 && (() => {
+            const containingSetlists = setlists.filter((sl) =>
+              Array.isArray(sl.songs) && sl.songs.includes(song.id)
+            );
+            if (containingSetlists.length === 0) return null;
+            return (
+              <div className="song-panel song-containing-setlists expanded">
+                <div className="song-containing-setlists-header">
+                  <span className="song-containing-setlists-title">📋 Setlist yang Memuat Lagu Ini ({containingSetlists.length})</span>
+                </div>
+                <div className="song-containing-setlists-list">
+                  {containingSetlists.map((sl) => (
+                    <button
+                      key={sl.id}
+                      type="button"
+                      className="song-containing-setlist-item"
+                      onClick={() => navigate(`/setlists/${sl.id}`)}
+                      title={sl.name}
+                    >
+                      <span className="song-containing-setlist-name">{sl.name}</span>
+                      <span className="song-containing-setlist-count">{sl.songs?.length || 0} lagu</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {activeTab === 'media' && youtubeId && (
+            <SongChordsMediaPanel
+              youtubeId={youtubeId}
+              youtubeRef={youtubeRef}
+              timeMarkers={timeMarkers}
+              canEdit={can(PERMISSIONS.SONG_EDIT)}
+              handleTimeMarkerUpdate={handleTimeMarkerUpdate}
+            />
+          )}
+
+          {activeTab === 'analyzer' && (
+            <SongChordsAnalyzer
+              chordStats={chordStats}
+              transpose={transpose}
+              songKey={song?.key || key}
+              song={song}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Lirik & chord — mode normal: hanya di tab Lirik. Mode performance: selalu. */}
+      {(performanceMode || activeTab === 'lyrics') && (
+        <SongLyricsMainSection
         lyricsDisplayRef={lyricsDisplayRef}
         tempo={tempo}
         timeSignature={timeSignature}
@@ -477,89 +667,28 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
         showSimpleChords={showSimpleChords}
         setShowSimpleChords={setShowSimpleChords}
         keySignature={key || song?.key || ''}
+        performanceMode={performanceMode}
         originalKey={song?.key || key || ''}
         targetKey={key || song?.key || ''}
         pianoRecommendation={pianoRecommendation}
         onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-      />
+        />
+      )}
 
-      {/* Setlist Navigation (if in setlist context) */}
-      {setlistId && (() => {
-        const songsArr = Array.isArray(setlistData?.songs) ? setlistData.songs : [];
-        const idx = songsArr.findIndex((s) => (s.id || s._id) === song.id);
-        const totalSongs = songsArr.length;
-        const songNumber = idx >= 0 ? idx + 1 : null;
-        const navPrev = idx > 0 ? songsArr[idx - 1] : null;
-        const navNext = idx < totalSongs - 1 && idx >= 0 ? songsArr[idx + 1] : null;
-        const handlePrev = () => {
-          if (navPrev) {
-            navigate(`/setlists/${setlistId}/songs/${navPrev.id || navPrev._id}`, {
-              state: { setlistId, setlist: setlistData, setlistSong: navPrev },
-            });
-          }
-        };
-        const handleNext = () => {
-          if (navNext) {
-            navigate(`/setlists/${setlistId}/songs/${navNext.id || navNext._id}`, {
-              state: { setlistId, setlist: setlistData, setlistSong: navNext },
-            });
-          }
-        };
-        const handleOpenSetlist = () => {
-          navigate(`/setlists/${setlistId}`, {
-            state: { setlistId, setlist: setlistData, focusSongId: song.id },
-          });
-        };
+      {/* Dock performance (hanya mode performance, dalam konteks setlist) */}
+      {setlistId && performanceMode && (() => {
+        const dockSongs = Array.isArray(songsProp) && songsProp.length > 0
+          ? songsProp
+          : (Array.isArray(setlistData?.songs) ? setlistData.songs : []);
         return (
-          <SetlistSongNavigator
-            navPrev={!!navPrev}
-            navNext={!!navNext}
-            songNumber={songNumber}
-            totalSongs={totalSongs || undefined}
-            onPrev={handlePrev}
-            onNext={handleNext}
-            onOpenSetlist={handleOpenSetlist}
+          <PerformanceDock
+            setlist={setlistData}
+            songs={dockSongs}
+            currentSongId={song.id}
           />
         );
       })()}
 
-      {/* Setlists containing this song */}
-      {song.id && !loadingSetlists && setlists.length > 0 && (() => {
-        const containingSetlists = setlists.filter(setlist =>
-          Array.isArray(setlist.songs) && setlist.songs.includes(song.id)
-        );
-        if (containingSetlists.length === 0) return null;
-        return (
-          <div className="song-panel song-containing-setlists">
-            <div className="song-containing-setlists-header">
-              <ExpandButton
-                isExpanded={showContainingSetlists}
-                setIsExpanded={setShowContainingSetlists}
-                icon="📋"
-                label={`Setlist yang Memuat Lagu Ini`}
-                badge={containingSetlists.length}
-                ariaLabel={showContainingSetlists ? 'Sembunyikan setlist' : 'Tampilkan setlist'}
-              />
-            </div>
-            {showContainingSetlists && (
-              <div className="song-containing-setlists-list">
-                {containingSetlists.map(setlist => (
-                  <button
-                    key={setlist.id}
-                    type="button"
-                    className="song-containing-setlist-item"
-                    onClick={() => navigate(`/setlists/${setlist.id}`)}
-                    title={setlist.name}
-                  >
-                    <span className="song-containing-setlist-name">{setlist.name}</span>
-                    <span className="song-containing-setlist-count">{setlist.songs?.length || 0} lagu</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })()}
     </div>
   );
 }

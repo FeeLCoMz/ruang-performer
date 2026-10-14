@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
 import ExpandButton from './ExpandButton.jsx';
@@ -37,22 +37,28 @@ export default function SongLyricsMainSection({
   youtubeRef,
   youtubeId,
   isYoutubePlaying = false,
+  performanceMode = false,
   loading = false
 }) {
-  // Expand/collapse state for lyrics panel
-  const [lyricsPanelExpanded, setLyricsPanelExpanded] = useState(true);
+  // Expand/collapse state for lyrics panel — selalu terbuka, state dipertahankan
+  // agar transisi dari versi lama tidak menghilangkan panel.
+  const [lyricsPanelExpanded] = useState(true);
 
   return (
-    <div className="song-panel song-lyrics-main">
-      <div className="song-lyrics-main-header">
-        <ExpandButton
-          isExpanded={lyricsPanelExpanded}
-          setIsExpanded={setLyricsPanelExpanded}
-          icon="🎤"
-          label="Lirik & Chord"
-          ariaLabel={lyricsPanelExpanded ? 'Sembunyikan panel lirik' : 'Tampilkan panel lirik'}
-        />
-        {lyricsPanelExpanded && (
+    <div className={`song-panel song-lyrics-main${performanceMode ? ' song-panel-performance' : ''}`}>
+      {!performanceMode && (
+        <div className="song-lyrics-main-header">
+          {/* Key & tempo aktif: identitas musik lagu, tanpa judul panel */}
+          <div className="song-lyrics-main-keytempo">
+            <span className="song-lyrics-key-chip" title={`Key ${keySignature || '-'}`}>
+              🎹 {keySignature || '-'}
+            </span>
+            {tempo && (
+              <span className="song-lyrics-tempo-chip" title={`Tempo ${tempo} BPM`}>
+                ⏱️ {tempo} BPM
+              </span>
+            )}
+          </div>
           <SongChordsLyricsToolbar
             autoScrollActive={autoScrollActive}
             setAutoScrollActive={setAutoScrollActive}
@@ -68,10 +74,10 @@ export default function SongLyricsMainSection({
             youtubeId={youtubeId}
             youtubeRef={youtubeRef}
           />
-        )}
-      </div>
+        </div>
+      )}
 
-      {lyricsPanelExpanded && (
+      {(
         <>
           {loading ? (
             <div className="lyrics-loading-skeleton">
@@ -106,6 +112,7 @@ export default function SongLyricsMainSection({
               timeSignature={timeSignature}
               originalKey={originalKey}
               targetKey={targetKey}
+              performanceMode={performanceMode}
               pianoRecommendation={pianoRecommendation}
               onApplyRecommendedTranspose={onApplyRecommendedTranspose}
             />

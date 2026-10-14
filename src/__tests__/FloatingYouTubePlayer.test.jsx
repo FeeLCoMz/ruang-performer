@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { describe, test, expect } from 'vitest';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';

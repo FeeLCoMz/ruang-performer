@@ -3746,6 +3746,12 @@ body.dark-mode .lyrics-editor-textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* Performance mode: filter ringkas (band + urutan) */
@@ -3763,6 +3769,40 @@ body.dark-mode .lyrics-editor-textarea {
   grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto auto;
   gap: 12px;
   align-items: center;
+}
+
+/* Baris filter setlist: label kecil di atas kontrol */
+.setlist-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.setlist-filter-label {
+  font-size: 0.72em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.setlist-filter-grid .filter-select {
+  width: 100%;
+  min-width: 0;
+  cursor: pointer;
+}
+
+/* Badge jumlah hasil filter */
+.setlist-filter-count {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 2px 10px;
+  white-space: nowrap;
+  justify-self: end;
 }
 
 /* Tombol di baris filter tidak ikut melar */
@@ -4904,17 +4944,42 @@ body.dark-mode .song-mastery-chip.mastery-ready {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--spacing-lg);
-  transition: all var(--transition-fast);
+  gap: var(--spacing-md);
+  transition: border-color var(--transition-fast), background var(--transition-fast),
+    transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .setlist-item:hover {
   border-color: var(--primary-accent);
   background: var(--primary-bg);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Indikator sisi kiri saat hover */
+.setlist-item {
+  position: relative;
+}
+
+.setlist-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--primary-accent);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.setlist-item:hover::before {
+  opacity: 1;
 }
 
 .setlist-info {
@@ -4929,21 +4994,646 @@ body.dark-mode .song-mastery-chip.mastery-ready {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
 }
 
 .setlist-meta {
   display: flex;
-  gap: var(--spacing-md);
-  font-size: 0.85em;
+  gap: var(--spacing-xs);
+  font-size: 0.8em;
   color: var(--text-muted);
   flex-wrap: wrap;
   margin-top: 4px;
+  align-items: center;
+}
+
+/* Deskripsi setlist: potong satu baris agar kartu tetap ringkas */
+.setlist-meta-desc {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+/* Badge meta setlist (band & jumlah lagu) */
+.setlist-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+
+.setlist-meta-badge.setlist-meta-band {
+  color: var(--primary-accent);
+  border-color: var(--primary-accent);
 }
 
 .setlist-actions {
   display: flex;
   gap: var(--spacing-sm);
   flex-shrink: 0;
+}
+
+/* Baris statistik di header halaman detail setlist */
+.setlist-header-stats {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-xs);
+}
+
+.setlist-header-stats .setlist-meta-badge {
+  font-size: 0.85em;
+}
+
+/* ========================================
+   Mode Performance — tampilan ringkas & kontras
+   tinggi untuk dipakai saat manggung di panggung.
+   ======================================== */
+.setlist-performance-mode .page-header {
+  margin-bottom: var(--spacing-md);
+}
+
+.setlist-performance-mode .setlist-header-stats .setlist-meta-badge {
+  font-size: 0.95em;
+  padding: 4px 14px;
+}
+
+.setlist-performance-mode .filter-container,
+.setlist-performance-mode .song-visibility-count {
+  display: none;
+}
+
+.setlist-performance-mode .song-item {
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.setlist-performance-mode .song-item .song-meta-line-detail,
+.setlist-performance-mode .song-item .song-chip-muted {
+  display: none;
+}
+
+/* Chip utama lebih besar & kontras: mudah dibaca dari kejauhan */
+.setlist-performance-mode .song-item .song-chip {
+  font-size: 1.05em;
+  font-weight: 600;
+  padding: 4px 12px;
+}
+
+.setlist-performance-mode .song-item .song-title {
+  font-size: 1.25em;
+}
+
+.setlist-performance-mode .song-item .song-number {
+  font-size: 1.2em;
+}
+
+/* Flag status (Live/Dibawakan/Smart Pick) lebih mencolok */
+.setlist-performance-mode .song-flag {
+  font-size: 1em;
+  padding: 4px 12px;
+}
+
+.setlist-performance-toggle {
+  white-space: nowrap;
+}
+
+/* ========================================
+   Mode Performance — Song view (halaman chord)
+   Ikuti mode performance halaman setlist: bersih,
+   besar, dan kontras untuk dibaca di panggung.
+   ======================================== */
+.song-chords-performance-mode .song-panel {
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+/* Sembunyikan panel sekunder: media YouTube & analyzer bisa dibuka
+   manual di mode normal; di panggung cukup lirik + chord saja. */
+.song-chords-performance-mode .song-containing-setlists,
+.song-chords-performance-mode .song-info-chip-row {
+  display: none;
+}
+
+/* Chip key & tempo lebih besar dan kontras */
+.song-chords-performance-mode .song-info-row-label,
+.song-chords-performance-mode .song-info-value {
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+/* Tombol keluar mode performance: selalu terlihat di header info lagu */
+.song-performance-exit-btn {
+  flex-shrink: 0;
+  font-weight: 700;
+  white-space: nowrap;
+  border-color: var(--primary-accent);
+}
+
+/* Lirik tampil penuh tanpa scroll horizontal: blok lirik wrap, tabel chord
+   (jika ada) tetap boleh di-scroll sendiri di dalam kontainernya. */
+.song-chords-performance-mode .song-lyrics-display {
+  overflow-x: hidden;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Lirik selebar mungkin: di mode performance, padding halaman & panel
+   dirapatkan agar lirik memakai lebar layar selebar mungkin — penting saat
+   dibaca dari kejauhan di panggung. */
+.song-chords-performance-mode {
+  padding: var(--spacing-sm) !important;
+  max-width: none !important;
+}
+
+.song-chords-performance-mode .song-lyrics-main {
+  padding: var(--spacing-md);
+}
+
+.song-chords-performance-mode .song-panel {
+  margin-bottom: var(--spacing-md);
+}
+
+.song-chords-performance-mode .song-lyrics-display pre,
+.song-chords-performance-mode .song-lyrics-display code {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+.song-chords-performance-mode .song-lyrics-display table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Lirik & chord lebih besar agar terbaca dari kejauhan */
+.song-chords-performance-mode .song-lyrics-display {
+  font-size: 1.15em;
+}
+
+/* Setlist navigator tetap tersedia (pindah lagu), dibuat lebih besar */
+.song-chords-performance-mode .setlist-song-navigator {
+  font-size: 1.1em;
+}
+
+/* Toolbar chord (toggle angka chord/jazz/simple) disembunyikan saat tampil */
+.song-lyrics-main.song-panel-performance .song-lyrics-main-header {
+  min-height: 1px;
+}
+
+/* ========================================
+   PerformanceDock — bar mengambang di bawah layar
+   Navigasi cepat antar lagu, daftar setlist,
+   dan pencarian lagu untuk request dadakan.
+   ======================================== */
+.performance-dock {
+  position: fixed;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1400;
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 6px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  max-width: calc(100vw - 24px);
+}
+
+.performance-dock .btn {
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 1.05em;
+  border-radius: 999px;
+}
+
+.performance-dock-nav-btn {
+  font-weight: 700;
+}
+
+.performance-dock-nav-btn:disabled {
+  opacity: 0.35;
+}
+
+.performance-dock-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* Panel overlay */
+.performance-dock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.performance-dock-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg, 16px) var(--radius-lg, 16px) 0 0;
+  width: min(560px, 100vw);
+  max-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.performance-dock-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 700;
+  font-size: 1.05em;
+}
+
+.performance-dock-panel-body {
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+  overscroll-behavior: contain;
+}
+
+/* Baris lagu: target sentuh besar, mudah ditap di panggung */
+.performance-dock-song-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px var(--spacing-md);
+  color: var(--text-primary);
+  font-size: 1.05em;
+  cursor: pointer;
+}
+
+.performance-dock-song-row:hover:not(:disabled),
+.performance-dock-song-row:focus-visible {
+  background: var(--primary-bg);
+}
+
+.performance-dock-song-row.current {
+  background: var(--primary-accent);
+  color: #fff;
+}
+
+.performance-dock-song-row.deleted {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.performance-dock-song-number {
+  font-weight: 700;
+  min-width: 2em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.performance-dock-song-row.current .performance-dock-song-number {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.performance-dock-song-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.performance-dock-song-done {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.performance-dock-song-inlist,
+.performance-dock-song-request {
+  flex-shrink: 0;
+}
+
+/* Baris hasil pencarian + tombol tambah-ke-setlist */
+.performance-dock-song-row-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.performance-dock-song-row-wrap .performance-dock-song-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.performance-dock-add-btn {
+  flex-shrink: 0;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 999px;
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+.performance-dock-add-btn:disabled {
+  opacity: 0.5;
+}
+
+.performance-dock-error {
+  color: #f87171;
+}
+
+.performance-dock-search-wrap {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.performance-dock-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px var(--spacing-md);
+  font-size: 1.05em;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--primary-bg);
+  color: var(--text-primary);
+}
+
+.performance-dock-hint {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.95em;
+}
+
+/* Mobile: dock menghindari bottom nav aplikasi */
+@media (max-width: 768px) {
+  .performance-dock {
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + 56px);
+  }
+}
+
+/* Mode performance: dock menggantikan bottom nav, jadi menempel ke bawah */
+.performance-mode-app .performance-dock {
+  bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+/* ========================================
+   PerformanceNav — bar kontrol bawah khusus mode performance.
+   Sengaja dibedakan total dari MobileBottomNav biasa (navigasi aplikasi):
+   latar aksen gelap, tombol terpisah berbentuk pil, nilai Key/Tempo besar.
+   ======================================== */
+.performance-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--primary-accent) 18%, var(--card-bg));
+  border-top: 2px solid var(--primary-accent);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.performance-nav-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--transition-fast), opacity var(--transition-fast);
+}
+
+.performance-nav-btn:active:not(:disabled) {
+  background: color-mix(in srgb, var(--primary-accent) 18%, var(--card-bg));
+}
+
+.performance-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Tombol nilai (Key/Tempo): label kecil di atas nilai besar, warna aksen */
+.performance-nav-value {
+  border-color: var(--primary-accent);
+}
+
+.performance-nav-value-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.performance-nav-value-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary-accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+/* Tombol Exit: merah, lebih kecil, di ujung */
+.performance-nav-exit {
+  flex: 0 0 auto;
+  min-width: 48px;
+  color: #f87171;
+  border-color: #f87171;
+  font-size: 1rem;
+}
+
+.performance-nav-exit-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Dock lagu menghindari performance nav yang kini selalu tampil */
+.performance-mode-app .performance-dock {
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 68px);
+}
+
+/* Beri ruang agar konten terakhir tidak tertutup performance nav */
+.performance-mode-app .main-content {
+  padding-bottom: 96px;
+}
+
+/* App header mode performance: navigasi lagu + identitas lagu aktif */
+.performance-app-header {
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.performance-header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  min-width: 0;
+}
+
+.performance-header-nav-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-primary);
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 1.05em;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.performance-header-nav-btn:active {
+  background: var(--primary-bg);
+}
+
+.performance-header-song {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.performance-header-title-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.performance-header-title {
+  margin: 0;
+  font-size: 1.05em;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.performance-header-artist {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Page container mode performance: hanya berisi lirik — panel info lagu,
+   navigator lama, dan panel sekunder tidak dirender/disembunyikan supaya
+   lirik memenuhi seluruh area konten. */
+.song-chords-performance-mode .song-panel:not(.song-lyrics-main),
+.song-chords-performance-mode .setlist-song-navigator {
+  display: none;
+}
+
+.song-chords-performance-mode .song-lyrics-main {
+  margin-bottom: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+.song-chords-performance-mode .song-lyrics-main-header {
+  display: none;
+}
+
+/* Beri ruang agar konten terakhir tidak tertutup dock di mode performance */
+.performance-mode-app .main-content {
+  padding-bottom: 88px;
+}
+
+/* Toggle 🎤 di app header — selalu terjangkau untuk switch kapan saja */
+.header-performance-toggle {
+  flex-shrink: 0;
+  margin-left: auto;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+/* Tombol aktif: warna solid agar state terlihat jelas (bukan sekadar ring). */
+.header-performance-toggle[aria-pressed="true"],
+.header-performance-toggle.btn-performance-active {
+  background: var(--primary-accent);
+  border-color: var(--primary-accent);
+  color: #fff;
+}
+
+/* Jangan tampilkan toggle 🎤 di desktop; di sana mode performance di-switch
+   dari halaman yang mendukung (mis. setlist songs), bukan dari app header. */
+@media (min-width: 769px) {
+  .header-performance-toggle {
+    display: none !important;
+  }
+}
+
+/* Link pencarian Google saat lagu tidak ditemukan di koleksi */
+.performance-dock-google-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--spacing-sm);
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--primary-accent);
+  color: var(--primary-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.performance-dock-google-link:hover {
+  background: var(--primary-accent);
+  color: #fff;
 }
 
 /* Mobile: setlist lebih rapi dan ringkas */
@@ -4967,8 +5657,17 @@ body.dark-mode .song-mastery-chip.mastery-ready {
   }
 
   .setlist-meta {
-    gap: var(--spacing-sm);
-    font-size: 0.78em;
+    gap: var(--spacing-xs);
+    font-size: 0.75em;
+  }
+
+  /* Deskripsi boleh wrap di mobile, tapi tetap maksimal dua baris */
+  .setlist-meta-desc {
+    flex-basis: 100%;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 
   .setlist-actions {
@@ -10846,6 +11545,208 @@ body.dark-mode .cd-token {
 .song-lyrics-control-group {
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* Baris aksi media & analisis chord — satu baris di bawah song info */
+.song-actions-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.song-actions-row-btn {
+  flex: 0 1 auto;
+  min-height: 40px;
+}
+
+/* Tab panel Info | Media | Lirik — mode normal */
+.song-tabs {
+  margin-bottom: var(--spacing-lg);
+}
+
+.song-tabs-bar {
+  display: flex;
+  gap: var(--spacing-xs);
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.song-tabs-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 10px var(--spacing-md);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.song-tabs-tab.active {
+  color: var(--primary-accent);
+  border-bottom-color: var(--primary-accent);
+}
+
+.song-tabs-tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Key Mudah terintegrasi dengan kontrol Key */
+.song-info-key-easy-btn {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* Mastery 3-level picker: chip pilihan (Belum Diulik / Perlu Latihan / Dikuasai) */
+.song-info-mastery-picker {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.song-info-mastery-picker .song-mastery-chip {
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity var(--transition-fast), border-color var(--transition-fast);
+}
+
+.song-info-mastery-picker .song-mastery-chip:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.song-info-mastery-picker .song-mastery-chip.selected {
+  opacity: 1;
+  border-width: 2px;
+  font-weight: 700;
+}
+
+.song-info-mastery-picker .song-mastery-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+.song-info-mastery-saving {
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+
+/* Media panel selalu terbuka (tab Media) — tanpa header expand */
+.media-panel .media-panel-content {
+  display: grid;
+}
+
+/* Setlist memuat lagu: selalu terbuka di tab Info */
+.song-containing-setlists.expanded .song-containing-setlists-list {
+  display: block;
+}
+
+.song-containing-setlists-title {
+  font-weight: 700;
+  font-size: var(--font-size-base);
+}
+
+/* Analisis: section struktur & instrumen */
+.song-lyrics-analyzer-section {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px dashed var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.song-lyrics-analyzer-structure {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.song-lyrics-analyzer-structure-label {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.song-lyrics-analyzer-structure-detail {
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+.song-lyrics-analyzer-instruments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.song-lyrics-analyzer-instrument-chip {
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.9em;
+}
+
+.song-lyrics-analyzer-instrument-empty {
+  color: var(--text-muted);
+  font-style: italic;
+  border-style: dashed;
+}
+
+/* Panel lirik: chip Key & Tempo di header (tanpa judul panel) */
+.song-lyrics-main-keytempo {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.song-lyrics-key-chip,
+.song-lyrics-tempo-chip {
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-weight: 700;
+  font-size: 0.95em;
+  white-space: nowrap;
+}
+
+/* Tinggi panel lirik sesuai viewport agar lirik panjang di-scroll DI DALAM
+   panel, bukan ke bawah halaman — header & tab tetap terlihat. */
+.song-lyrics-main {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 220px);
+  overflow: hidden;
+}
+
+.song-lyrics-main .song-lyrics-display {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Genre inline setelah nama penyanyi di header */
+.song-genre-inline {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+/* Panel analisis chord inline (tab Analisis) — konten langsung di panel,
+   bukan modal, jadi tidak menutupi halaman. */
+.song-lyrics-analyzer-inline-panel {
+  padding: var(--spacing-lg);
+}
+
+.song-lyrics-analyzer-inline-panel .song-lyrics-analyzer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: var(--spacing-md);
 }
 

@@ -2,7 +2,7 @@
 import { TextEncoder } from 'util';
 global.TextEncoder = TextEncoder;
 import { describe, test, expect, vi } from 'vitest';
-import { exportToCSV, exportToPDF } from '../utils/exportUtil';
+import { exportToCSV } from '../utils/exportUtil';
 
 function createSampleRows() {
   return [

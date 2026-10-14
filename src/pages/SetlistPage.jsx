@@ -39,6 +39,7 @@ export default function SetlistPage({
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
   const [sortBy, setSortBy] = React.useState('created');
   const [sortOrder, setSortOrder] = React.useState('desc');
+  const [bandFilter, setBandFilter] = React.useState('all');
 
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -55,11 +56,27 @@ export default function SetlistPage({
   const loadBands = React.useCallback(async () => {
     try {
       const data = await fetchBands();
-      setBands(data || []);
+      setBands(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Gagal memuat daftar band:', err);
+      setBands([]);
     }
   }, []);
+
+  // Load band options saat halaman dibuka.
+  React.useEffect(() => {
+    loadBands();
+  }, [loadBands]);
+
+  // Fallback: jika API gagal, pakai band dari userBandInfo.
+  React.useEffect(() => {
+    if (bands.length === 0 && Array.isArray(userBandInfo) && userBandInfo.length > 0) {
+      setBands(userBandInfo.map(b => ({
+        id: b.bandId || b.id,
+        name: b.bandName || b.name,
+      })).filter(b => b.id && b.name));
+    }
+  }, [bands.length, userBandInfo]);
 
   const loadAutoSourceSetlists = React.useCallback(async () => {
     setAutoSourceLoading(true);
@@ -74,7 +91,7 @@ export default function SetlistPage({
     }
   }, []);
 
-  // Load band options only when create/edit modal needs them.
+  // Muat ulang band saat modal/filter butuh dan daftar masih kosong.
   React.useEffect(() => {
     if ((showCreateSetlist || editSetlist) && bands.length === 0) {
       loadBands();
@@ -108,6 +125,16 @@ export default function SetlistPage({
         setlist.name?.toLowerCase().includes(searchLower) ||
         setlist.description?.toLowerCase().includes(searchLower) ||
         setlist.bandName?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply band filter
+    if (bandFilter !== 'all') {
+      const selectedBand = bands.find(b => String(b.id || b.bandId) === bandFilter);
+      const selectedBandName = selectedBand?.name?.toLowerCase();
+      result = result.filter(setlist =>
+        String(setlist.bandId || '') === bandFilter ||
+        (selectedBandName && setlist.bandName?.toLowerCase() === selectedBandName)
       );
     }
 
@@ -146,15 +173,16 @@ export default function SetlistPage({
     });
 
     return result;
-  }, [setlists, debouncedSearch, sortBy, sortOrder]);
+  }, [setlists, debouncedSearch, sortBy, sortOrder, bandFilter, bands]);
 
   const handleClearFilters = () => {
     setSearch('');
     setSortBy('created');
     setSortOrder('desc');
+    setBandFilter('all');
   };
 
-  const hasActiveFilters = Boolean(search);
+  const hasActiveFilters = Boolean(search) || bandFilter !== 'all';
 
   if (loadingSetlists) {
     return (
@@ -184,11 +212,6 @@ export default function SetlistPage({
       <div className="page-header">
         <div>
           <h1>🎵 Setlist</h1>
-          <p>
-            {hasActiveFilters
-              ? `${filteredSetlists.length} dari ${setlists.length} setlist`
-              : `${setlists.length} setlist`}
-          </p>
         </div>
         {(Array.isArray(userBandInfo)
           ? userBandInfo.some(b => b.role && b.role !== 'guest')
@@ -214,17 +237,39 @@ export default function SetlistPage({
 
           {/* Filters Row */}
           <div className="setlist-filter-grid">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="filter-select"
-            >
-              <option value="name">Urutkan: Nama</option>
-              <option value="band">Urutkan: Band</option>
-              <option value="songs">Urutkan: Jumlah Lagu</option>
-              <option value="created">Urutkan: Tanggal Dibuat</option>
-              <option value="updated">Urutkan: Terakhir Diupdate</option>
-            </select>
+            <div className="setlist-filter-field">
+              <label className="setlist-filter-label" htmlFor="setlist-band-filter">Band</label>
+              <select
+                id="setlist-band-filter"
+                value={bandFilter}
+                onChange={(e) => setBandFilter(e.target.value)}
+                className="filter-select"
+                aria-label="Filter berdasarkan band"
+              >
+                <option value="all">Semua Band</option>
+                {bands.map(band => (
+                  <option key={band.id || band.bandId} value={String(band.id || band.bandId)}>
+                    {band.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="setlist-filter-field">
+              <label className="setlist-filter-label" htmlFor="setlist-sort-by">Urutkan</label>
+              <select
+                id="setlist-sort-by"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-select"
+              >
+                <option value="name">Nama</option>
+                <option value="band">Band</option>
+                <option value="songs">Jumlah Lagu</option>
+                <option value="created">Tanggal Dibuat</option>
+                <option value="updated">Terakhir Diupdate</option>
+              </select>
+            </div>
 
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -234,6 +279,12 @@ export default function SetlistPage({
             >
               {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
             </button>
+
+            <span className="setlist-filter-count">
+              {hasActiveFilters
+                ? `${filteredSetlists.length} / ${setlists.length}`
+                : `${setlists.length} setlist`}
+            </span>
 
             {hasActiveFilters && (
               <button
@@ -274,9 +325,13 @@ export default function SetlistPage({
                     {setlist.name}
                   </h3>
                     <div className="setlist-meta">
-                      {setlist.description && <span>{setlist.description}</span>}
-                      {setlist.bandName && <span>🎸 {setlist.bandName}</span>}
-                      <span>🎵 {(setlist.songCount ?? setlist.songs?.length) || 0} lagu</span>
+                      {setlist.bandName && (
+                        <span className="setlist-meta-badge setlist-meta-band">🎸 {setlist.bandName}</span>
+                      )}
+                      <span className="setlist-meta-badge">🎵 {(setlist.songCount ?? setlist.songs?.length) || 0} lagu</span>
+                      {setlist.description && (
+                        <span className="setlist-meta-desc">{setlist.description}</span>
+                      )}
                     </div>
                 </div>
 

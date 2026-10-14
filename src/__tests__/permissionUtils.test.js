@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   PERMISSIONS,
-  ROLE_PERMISSIONS,
   hasPermission,
   hasAllPermissions,
   hasAnyPermission,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, afterEach, vi } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import ChordDisplay from '../components/ChordDisplay.jsx';

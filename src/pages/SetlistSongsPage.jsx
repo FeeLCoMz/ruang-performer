@@ -83,6 +83,26 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // list into sections that no longer matched the running order.
   const [hidePlayedSongs, setHidePlayedSongs] = useState(false);
 
+  // Mode performance: tersimpan global (localStorage) dan dikendalikan dari
+  // app header. Halaman ini hanya mengikuti lewat event broadcast, tanpa
+  // state toggle sendiri — satu sumber kebenaran di App.
+  const [performanceMode, setPerformanceMode] = useState(() => {
+    try {
+      return localStorage.getItem('setlistSongs.performanceMode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // Ikuti perubahan dari app header / halaman lain.
+  useEffect(() => {
+    const handler = (e) => {
+      if (typeof e?.detail === 'boolean') setPerformanceMode(e.detail);
+    };
+    window.addEventListener('performance-mode-change', handler);
+    return () => window.removeEventListener('performance-mode-change', handler);
+  }, []);
+
   // State untuk modal tambah lagu (multi-select)
   const [showAddSong, setShowAddSong] = useState(false);
   const [addSongSearch, setAddSongSearch] = useState('');
@@ -1348,23 +1368,30 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   }
 
   return (
-    <div className="page-container">
+    <div className={`page-container${performanceMode ? ' setlist-performance-mode' : ''}`}>
       <div className="page-header">
         <div className="setlist-header-info">
           <h1>📋 {setlist.name}</h1>
           {setlist.bandName && (
             <div className="setlist-band-name">🎸 {setlist.bandName}</div>
           )}
-          {setlist.description && (
+          {setlist.description && !performanceMode && (
             <div className="setlist-description">{setlist.description}</div>
           )}
-          <p>{setlistSongs.length} lagu di setlist ini</p>
-          <p>✅ {completedCount} lagu sudah dibawakan</p>
-          {featuredSongIdsFromMeta.length > 0 && (
-            <div className="smart-featured-caption">
-              ✨ {featuredSongIdsFromMeta.length} lagu ditandai sebagai blok show utama Smart Assistant
-            </div>
-          )}
+          <div className="setlist-header-stats">
+            <span className="setlist-meta-badge">🎵 {setlistSongs.length} lagu</span>
+            <span className={`setlist-meta-badge${completedCount > 0 ? ' setlist-meta-band' : ''}`}>
+              ✅ {completedCount} dibawakan
+            </span>
+            {featuredSongIdsFromMeta.length > 0 && (
+              <span
+                className="setlist-meta-badge"
+                title="Ditandai sebagai blok show utama Smart Assistant"
+              >
+                ✨ {featuredSongIdsFromMeta.length} smart pick
+              </span>
+            )}
+          </div>
         </div>
         <div className="setlist-header-actions setlist-header-actions-compact">
           {/* Only the primary action sits outside. Everything else lives in the
@@ -1748,7 +1775,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                           <span className="song-action-btn-label">{isCompleted ? 'Batal' : 'Dibawakan'}</span>
                         </button>
                       )}
-                      {canEdit && (
+                      {canEdit && !performanceMode && (
                         <>
                           <button
                             onClick={() => openEditSong(song.id)}

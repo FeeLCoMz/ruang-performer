@@ -493,15 +493,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(setScrollSpeed).toHaveBeenCalledWith(121);
   });
 
-  test('Given detected instruments are present, Then a copy button is visible for registration memory', async () => {
-    const clipboard = {
-      writeText: vi.fn().mockResolvedValue(undefined),
-    };
-    Object.defineProperty(globalThis.navigator, 'clipboard', {
-      value: clipboard,
-      configurable: true,
-    });
-
+  test('Given detected instruments are present, Then they render as chips without a copy button', async () => {
     await act(async () => {
       root.render(
         <SongChordsInfo
@@ -513,14 +505,13 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
+    // Fitur copy instrumen dihapus: chip tetap tampil, tombol Copy tidak ada.
+    expect(container.textContent).toContain('Stage Piano');
+    expect(container.textContent).toContain('Gitar');
+    expect(container.textContent).toContain('Sax');
+    expect(container.textContent).toContain('Piano');
     const copyButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'Copy');
-    expect(copyButton).toBeTruthy();
-
-    await act(async () => {
-      copyButton.click();
-    });
-
-    expect(clipboard.writeText).toHaveBeenCalledWith('Keyboard Patch: Stage Piano\nInstrumen: Gitar, Sax, Piano');
+    expect(copyButton).toBeFalsy();
   });
 
   test('Given mastery info is present, Then it renders as a full-width row', async () => {
@@ -545,28 +536,29 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-info-mastery-row')).toBeTruthy();
   });
 
-  test('Given time and genre are present, Then they render as separate info items', async () => {
+  test('Given time and genre are present, Then genre sits in the header and time is integrated with tempo', async () => {
     await act(async () => {
       root.render(
         <SongChordsInfo
           title="Song A"
           artist="Artist A"
+          tempo="120"
           timeSignature="4/4"
           genre="Rock"
         />
       );
     });
 
-    const items = Array.from(container.querySelectorAll('.song-info-chip-row .song-info-item'));
-    const timeItem = items.find((item) => item.textContent.includes('Time'));
-    const genreItem = items.find((item) => item.textContent.includes('Genre'));
+    // Genre kini di header, setelah nama penyanyi.
+    const genreInline = container.querySelector('.song-genre-inline');
+    expect(genreInline).toBeTruthy();
+    expect(genreInline.textContent).toContain('Rock');
 
-    expect(timeItem).toBeTruthy();
-    expect(timeItem.textContent).toContain('4/4');
-    expect(timeItem.textContent).not.toContain('Rock');
-    expect(genreItem).toBeTruthy();
-    expect(genreItem.textContent).toContain('Rock');
-    expect(genreItem.textContent).not.toContain('4/4');
+    // Time signature kini terintegrasi dengan label Tempo di baris kontrol.
+    const tempoRow = Array.from(container.querySelectorAll('.song-info-control-row'))
+      .find((row) => row.textContent.includes('Tempo'));
+    expect(tempoRow).toBeTruthy();
+    expect(tempoRow.textContent).toContain('4/4');
     expect(container.querySelector('.song-info-split-row')).toBeFalsy();
   });
 
@@ -606,13 +598,10 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.textContent).toContain('World');
   });
 
-  test('Given the chord analyzer button, When clicked, Then the analysis modal opens and can be closed', async () => {
-    function AnalyzerHost() {
-      const [open, setOpen] = React.useState(false);
-      return (
+  test('Given the analyzer is rendered inline, Then it shows stats and chords without modal chrome', async () => {
+    await act(async () => {
+      root.render(
         <SongChordsAnalyzer
-          showChordAnalyzer={open}
-          setShowChordAnalyzer={setOpen}
           chordStats={{
             count: 4,
             chords: ['C', 'G', 'Am', 'F'],
@@ -626,40 +615,21 @@ describe('Song lyrics shared editor rendering', () => {
           }}
           transpose={0}
           songKey="C"
-          onApplyRecommendedTranspose={noop}
         />
       );
-    }
-
-    await act(async () => {
-      root.render(<AnalyzerHost />);
     });
 
-    // Closed by default: no dialog, only the trigger button.
+    // Modal dihapus: konten inline langsung dirender tanpa overlay/tombol buka.
     expect(container.querySelector('.song-lyrics-analyzer-modal')).toBeFalsy();
-    const openButton = Array.from(container.querySelectorAll('button')).find((b) => b.textContent?.includes('Analisis Chord'));
-    expect(openButton).toBeTruthy();
+    expect(container.querySelector('.modal-overlay')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-analyzer-inline-panel')).toBeTruthy();
 
-    await act(async () => {
-      openButton.click();
-    });
-
-    expect(container.querySelector('.song-lyrics-analyzer-modal')).toBeTruthy();
-    expect(container.querySelector('.modal-overlay')).toBeTruthy();
     // Statistik yang tersisa: Unique Chord & Estimasi Key.
     expect(container.textContent).toContain('Unique Chord');
     expect(container.textContent).toContain('Estimasi Key');
     // Total Chord & Modulasi sudah dihapus.
     expect(container.textContent).not.toContain('Total Chord');
     expect(container.textContent).not.toContain('Modulasi');
-
-    const closeButton = container.querySelector('.song-lyrics-analyzer-modal-close');
-    expect(closeButton).toBeTruthy();
-    await act(async () => {
-      closeButton.click();
-    });
-
-    expect(container.querySelector('.song-lyrics-analyzer-modal')).toBeFalsy();
   });
 
   test('Given chord number mode is active, Then transpose does not change displayed numbers', async () => {
@@ -722,8 +692,15 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    // Stays on the setlist route and shows the chord display, not the editor.
+    // Stays on the setlist route. Lyrics now live in their own tab: open it
+    // first, then verify the chord display (not the editor) is shown.
     expect(currentLocation.pathname).toBe('/setlists/10/songs/1');
+    const lyricsTab = Array.from(container.querySelectorAll('.song-tabs-tab'))
+      .find((tab) => tab.textContent?.includes('Lirik'));
+    expect(lyricsTab).toBeTruthy();
+    await act(async () => {
+      lyricsTab.click();
+    });
     expect(container.querySelector('.song-lyrics-display')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-textarea-editor')).toBeFalsy();
 
@@ -768,12 +745,20 @@ describe('Song lyrics shared editor rendering', () => {
       button.getAttribute('aria-label') === 'Gunakan key mudah yang disarankan'
     );
     expect(keyEasyButton).toBeTruthy();
-    expect(container.textContent).toContain('Key Mudah');
-    // Jarak transpose kini ada di tooltip tombol, bukan teks terpisah.
+    // Tombol kini menampilkan rekomendasi langsung (💡 + key), label "Key Mudah"
+    // dipindah ke tooltip. Jarak transpose ada di tooltip.
+    expect(keyEasyButton.textContent).toContain('💡');
     expect(keyEasyButton.getAttribute('title')).toContain('+5 semitone');
 
     await act(async () => {
       keyEasyButton.click();
+    });
+
+    // Lirik ada di tab Lirik — buka dulu sebelum memverifikasi chord.
+    const lyricsTab = Array.from(container.querySelectorAll('.song-tabs-tab'))
+      .find((tab) => tab.textContent?.includes('Lirik'));
+    await act(async () => {
+      lyricsTab.click();
     });
 
     expect(container.querySelector('.cd-chord')?.textContent).toBe('C G F');

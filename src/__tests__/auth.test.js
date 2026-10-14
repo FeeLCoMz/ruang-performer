@@ -8,13 +8,11 @@ import {
   removeToken,
   saveUser,
   getUser,
-  removeUser,
   isAuthenticated,
   logout,
   getAuthHeader,
 } from '../utils/auth.js';
 
-const TOKEN_KEY = 'authToken';
 const USER_KEY = 'authUser';
 
 beforeEach(() => {
