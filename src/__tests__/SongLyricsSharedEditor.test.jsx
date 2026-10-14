@@ -163,8 +163,8 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    // Read-only view: chord display is present, the inline editor is gone.
-    expect(container.querySelector('.song-lyrics-toolbar')).toBeTruthy();
+    // Read-only view: chord display is present, toolbar & inline editor are gone.
+    expect(container.querySelector('.song-lyrics-toolbar')).toBeFalsy();
     expect(container.querySelector('.song-lyrics-display')).toBeTruthy();
     expect(container.querySelector('.lyric-editor-controls')).toBeFalsy();
     expect(container.querySelector('.song-lyrics-textarea-editor')).toBeFalsy();

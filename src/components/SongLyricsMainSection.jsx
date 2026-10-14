@@ -1,5 +1,4 @@
 import React from 'react';
-import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
 
 /**
@@ -41,27 +40,9 @@ export default function SongLyricsMainSection({
 }) {
   return (
     <div className="song-panel song-lyrics-main">
-      {/* Main header dihapus: key/tempo dipindah ke kontrol toolbar */}
-      <SongChordsLyricsToolbar
-        autoScrollActive={autoScrollActive}
-        setAutoScrollActive={setAutoScrollActive}
-        scrollSpeed={scrollSpeed}
-        setScrollSpeed={setScrollSpeed}
-        tempo={tempo}
-        originalKey={originalKey}
-        targetKey={targetKey}
-        transpose={transpose}
-        setTranspose={setTranspose}
-        onTempoChange={onTempoChange}
-        showChordNumbers={showChordNumbers}
-        setShowChordNumbers={setShowChordNumbers}
-        showJazzChords={showJazzChords}
-        setShowJazzChords={setShowJazzChords}
-        showSimpleChords={showSimpleChords}
-        setShowSimpleChords={setShowSimpleChords}
-        youtubeId={youtubeId}
-        youtubeRef={youtubeRef}
-      />
+      {/* Toolbar lirik dihapus: transpose/autoscroll/chord/YouTube tersedia
+          di tab Info, panel media, dan kontrol fullscreen. Panel ini murni
+          menampilkan lirik. */}
 
         {loading ? (
             <div className="lyrics-loading-skeleton">
