@@ -2141,6 +2141,22 @@ body {
   min-width: 0;
 }
 
+/* Tombol performance mode di header mobile: selalu terlihat */
+.header-performance-btn {
+  flex: 0 0 auto;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.header-performance-btn.active {
+  background: color-mix(in srgb, var(--primary-accent) 25%, transparent);
+  border-color: var(--primary-accent);
+}
+
 .header-brand-icon {
   width: 28px;
   height: 28px;

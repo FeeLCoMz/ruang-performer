@@ -218,6 +218,18 @@ function AppContent() {
               />
               <h1 className="header-title">Ruang Performer</h1>
             </div>
+            {/* Performance mode selalu terlihat di HP — drawer sidebar
+                tersembunyi, jadi tombolnya juga di sini. */}
+            <button
+              type="button"
+              className={`btn header-performance-btn${performanceMode ? ' active' : ''}`}
+              onClick={() => setPerformanceMode((prev) => !prev)}
+              aria-pressed={performanceMode}
+              title={performanceMode ? 'Matikan performance mode' : 'Nyalakan performance mode'}
+              aria-label="Performance mode"
+            >
+              🎭
+            </button>
           </header>
         </div>
 
