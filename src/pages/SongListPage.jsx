@@ -245,19 +245,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
 
   const hiddenSongsCount = Math.max(filteredSongs.length - visibleSongs.length, 0);
 
-  const masteredStats = useMemo(() => {
-    const masteredAllCount = songs.filter((song) => Boolean(song?.isMasteredByCurrentUser)).length;
-
-    const totalSongs = songs.length;
-    const masteredPercent = totalSongs > 0 ? Math.round((masteredAllCount / totalSongs) * 100) : 0;
-
-    return {
-      masteredAllCount,
-      totalSongs,
-      masteredPercent,
-    };
-  }, [songs]);
-
   if (loading) {
     return (
       <div className="page-container">
@@ -476,9 +463,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
         <div>
           <h1>🎵 Lagu Saya</h1>
           <p>{filteredSongs.length} lagu</p>
-          <div className="song-mastery-overview" aria-live="polite">
-            <span className="song-mastery-overview-badge">✅ Dikuasai: {masteredStats.masteredAllCount}/{masteredStats.totalSongs} ({masteredStats.masteredPercent}%)</span>
-          </div>
         </div>
         <div className="page-header-actions">
           <button
