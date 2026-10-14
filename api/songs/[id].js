@@ -155,10 +155,10 @@ export default async function handler(req, res) {
 
         const userId = req.user?.userId;
         const masteredRows = await client.execute(
-          `SELECT sm.userId, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
+          `SELECT sm.userId, sm.mastered, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
            FROM song_user_mastery sm
            LEFT JOIN users u ON u.id = sm.userId
-           WHERE sm.songId = ? AND sm.mastered = 1
+           WHERE sm.songId = ?
            ORDER BY datetime(COALESCE(sm.masteredAt, sm.updatedAt, sm.createdAt)) DESC`,
           [idStr]
         );
@@ -166,10 +166,12 @@ export default async function handler(req, res) {
           userId: entry.userId,
           username: entry.username || '-',
           masteredAt: entry.masteredAt || entry.updatedAt || entry.createdAt || null,
+          status: Number(entry.mastered) === 1 ? 'mastered' : 'learning',
         }));
 
         const visibleMasteredBy = await filterMasteryForViewer(client, row.bandId || null, masteredBy, userId);
         const canMarkMastery = Boolean(userId);
+        const ownMasteryEntry = masteredBy.find((entry) => String(entry.userId) === String(userId));
 
         res.status(200).json({
           ...row,
@@ -179,7 +181,8 @@ export default async function handler(req, res) {
           sheetMusicXml: row.sheet_music_xml || '',
           masteredBy: visibleMasteredBy,
           canMarkMastery,
-          isMasteredByCurrentUser: masteredBy.some((entry) => String(entry.userId) === String(userId)),
+          isMasteredByCurrentUser: ownMasteryEntry?.status === 'mastered',
+          currentUserStatus: ownMasteryEntry?.status || 'none',
         });
         return;
       } catch (queryErr) {
@@ -290,9 +293,9 @@ export default async function handler(req, res) {
     if (req.method === 'DELETE') {
       const userId = req.user?.userId;
 
-      // Check if song exists and user is the creator
+      // Check if song exists and get ownership/band info
       const songCheck = await client.execute(
-        'SELECT userId FROM songs WHERE id = ?',
+        'SELECT userId, bandId FROM songs WHERE id = ?',
         [idStr]
       );
 
@@ -301,9 +304,28 @@ export default async function handler(req, res) {
         return;
       }
 
-      if (songCheck.rows[0].userId !== userId) {
-        res.status(403).json({ error: 'You can only delete your own songs' });
-        return;
+      const song = songCheck.rows[0];
+      const isOwner = song.userId && song.userId === userId;
+
+      if (!isOwner) {
+        // Bukan owner: hanya anggota band aktif dengan permission edit lagu
+        // yang boleh menghapus lagu milik band.
+        let canDelete = false;
+        if (song.bandId && userId) {
+          const memberCheck = await client.execute(
+            `SELECT role FROM band_members
+             WHERE bandId = ? AND userId = ?
+               AND (status IS NULL OR lower(status) IN ('active', 'accepted', 'member'))
+             LIMIT 1`,
+            [song.bandId, userId]
+          );
+          const memberRole = memberCheck.rows?.[0]?.role || req.user?.role || 'member';
+          canDelete = hasPermission(memberRole, PERMISSIONS.SONG_EDIT);
+        }
+        if (!canDelete) {
+          res.status(403).json({ error: 'Anda hanya bisa menghapus lagu milik sendiri, atau lagu band dengan izin edit' });
+          return;
+        }
       }
 
       await client.execute(`DELETE FROM songs WHERE id = ?`, [idStr]);

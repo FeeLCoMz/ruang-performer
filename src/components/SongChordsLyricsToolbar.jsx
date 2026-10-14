@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import TransposeKeyControl from './TransposeKeyControl.jsx';
 import {
   AUTO_SCROLL_MODES,
   normalizeAutoScrollMode,
@@ -21,6 +22,11 @@ export default function SongChordsLyricsToolbar({
   scrollSpeed,
   setScrollSpeed,
   tempo,
+  originalKey = '',
+  targetKey = '',
+  transpose = 0,
+  setTranspose,
+  onTempoChange,
   autoScrollMode: autoScrollModeProp,
   setAutoScrollMode,
   manualSpeedLevel: manualSpeedLevelProp,
@@ -120,6 +126,25 @@ export default function SongChordsLyricsToolbar({
 
   return (
     <div className={toolbarClassName}>
+      {/* Key (shared komponen dengan tab Info) + tempo read-only: dipindah dari
+          main header. Tempo hanya tampil sebagai info, tidak bisa diubah. */}
+      {(originalKey || targetKey) && (
+        <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-key">
+          <TransposeKeyControl
+            originalKey={originalKey}
+            targetKey={targetKey}
+            transpose={transpose}
+            onTransposeChange={setTranspose}
+            compact
+            disableAutoApply
+          />
+          {tempo && (
+            <span className="song-lyrics-tempo-chip" title={`Tempo ${tempo} BPM`}>
+              ⏱️ {tempo} BPM
+            </span>
+          )}
+        </div>
+      )}
       {youtubeId && youtubeRef && (
         <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-view">
           <button

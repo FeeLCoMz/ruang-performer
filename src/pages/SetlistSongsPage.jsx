@@ -1618,6 +1618,20 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             const isCompleted = completedSongs?.[song.id] === true;
             const isInlinePlayerSong = (activeVideoSong?.id === song.id) || (isMetronomeActive && metronomeSongId === song.id);
             const mood = inferSongMood(song);
+            // Status mastery dari data base song (masteredBy berisi entri
+            // { userId, status: 'mastered' | 'learning' }).
+            const viewerId = String(effectiveUser?.userId || effectiveUser?.id || '');
+            const ownMasteryEntry = Array.isArray(baseSong?.masteredBy)
+              ? baseSong.masteredBy.find((entry) => String(entry?.userId) === viewerId)
+              : null;
+            const masteryStatus = ownMasteryEntry?.status
+              || (baseSong?.isMasteredByCurrentUser ? 'mastered' : 'none');
+            const MASTERY_STATUS_META = {
+              mastered: { icon: '🟢', label: 'Dikuasai', title: 'Status: Dikuasai' },
+              learning: { icon: '🟡', label: 'Perlu Latihan', title: 'Status: Perlu Latihan' },
+              none: { icon: '🔴', label: 'Belum Diulik', title: 'Status: Belum diulik' },
+            };
+            const masteryMeta = MASTERY_STATUS_META[masteryStatus];
             return (
               <React.Fragment key={song.id}>
                 <SongCard
@@ -1683,9 +1697,14 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     /* Status lives on the right of the title line, where it reads
                         as the state of THIS row instead of another inline word. */
                     <div className="song-heading-status">
-                      {isSongPlaying(song.id) && (
-                        <span className="song-flag song-flag-live">▶ Live</span>
-                      )}
+                      {/* Status mastery tetap tampil di kartu setlist */}
+                      <span
+                        className={`song-mastery-chip mastery-${masteryStatus}`}
+                        title={masteryMeta.title}
+                      >
+                        <span aria-hidden="true">{masteryMeta.icon}</span>
+                        {masteryMeta.label}
+                      </span>
                       {isCompleted && (
                         <span className="song-flag song-flag-done" title="Sudah dibawakan">
                           ✓ Dibawakan
@@ -1705,6 +1724,12 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                         <span className="song-chip">
                           🎸 {song.genre}
                           {genreChanged && baseSong?.genre ? ` (${baseSong.genre})` : ''}
+                        </span>
+                      )}
+                      {/* Author (kontributor) tepat setelah genre */}
+                      {(song.contributor || song.contributorName) && (
+                        <span className="song-chip song-chip-muted" title={`Ditambahkan oleh: ${song.contributor || song.contributorName}`}>
+                          ✍️ {song.contributor || song.contributorName}
                         </span>
                       )}
                     </div>

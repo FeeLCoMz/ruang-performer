@@ -68,6 +68,17 @@
   line-height: 1;
 }
 
+/* Tombol hapus lagu (owner only) */
+.song-delete-btn:hover:not(:disabled) {
+  color: #b91c1c;
+  border-color: #ef4444;
+}
+
+.song-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .song-detail-action-btn span {
   display: inline-block;
   line-height: 1;
@@ -1809,20 +1820,22 @@ body.dark-mode .number-token {
    1. ROOT VARIABLES & THEMES
    ======================================== */
 :root {
-  /* Colors (mode gelap permanen) */
-  --primary-accent: #3b82f6;
-  --chord-bright: #e5ff00;
-  --primary-accent-dark: #1e40af;
-  --primary-bg: #0f172a;
-  --secondary-bg: #1e293b;
-  --card-bg: #1e293b;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --border-color: #334155;
-  --error: #dc2626;
-  --success: #16a34a;
-  --warning: #f59e0b;
+  /* Colors — tema "Midnight Violet" (mode gelap permanen): aksen violet
+      yang hangat dengan latar biru gelap lebih dalam, kontras lebih jelas. */
+  --primary-accent: #8b5cf6;
+  --primary-accent-hover: #7c3aed;
+  --chord-bright: #fde047;
+  --primary-accent-dark: #5b21b6;
+  --primary-bg: #0b0f1e;
+  --secondary-bg: #141a2e;
+  --card-bg: #161d33;
+  --text-primary: #f3f4f8;
+  --text-secondary: #cbd2e3;
+  --text-muted: #8b93ab;
+  --border-color: #2a3350;
+  --error: #f87171;
+  --success: #34d399;
+  --warning: #fbbf24;
 
   /* Spacing */
   --spacing-xs: 4px;
@@ -4127,6 +4140,8 @@ body.dark-mode .lyrics-editor-textarea {
   align-items: center;
   gap: var(--spacing-lg);
   transition: all var(--transition-fast);
+  /* Posisi relatif supaya author bisa ditempatkan di sudut kanan bawah */
+  position: relative;
 }
 
 .song-item:hover {
@@ -8046,6 +8061,7 @@ input[type="datetime-local"]:disabled {
   white-space: pre;
   display: inline-block;
   min-width: 100%;
+  box-sizing: border-box;
 }
 
 .cd-empty {
@@ -8075,6 +8091,74 @@ input[type="datetime-local"]:disabled {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  scroll-margin-top: 80px;
+  transition: filter 0.15s ease;
+}
+
+/* Seksi lagu sebagai chip bernomor urut, bukan blok polos */
+.cd-section-struct-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cd-section-struct-icon {
+  font-size: 1.05em;
+}
+
+.cd-section-struct-label::before {
+  content: none;
+}
+
+.cd-section-struct:hover {
+  filter: brightness(1.08);
+}
+
+/* Timestamp lirik: tampil kecil & diskrit, tetap bisa diklik untuk play */
+.cd-timestamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.cd-timestamp-label {
+  font-weight: 600;
+  font-size: 0.72em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--primary-bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  border-radius: 4px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.cd-timestamp-btn {
+  margin-left: 4px;
+  color: var(--primary-accent);
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  border-radius: 50%;
+  font-size: 0.9em;
+  width: 1.8em;
+  height: 1.8em;
+  min-width: 22px;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s ease;
+}
+
+.cd-timestamp-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary-accent) 15%, transparent);
+}
+
+.cd-timestamp-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .cd-section-repeat-badge {
@@ -9326,7 +9410,8 @@ body.dark-mode .cd-token {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  /* Padding sama dengan .song-panel supaya semua tab seragam */
+  padding: 24px 20px;
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--spacing-xl);
   width: 100%;
@@ -9955,7 +10040,16 @@ body.dark-mode .cd-token {
 .song-info-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
+}
+
+/* Semua baris kontrol & chip memakai tinggi sama supaya tab Info rapi */
+.song-info-control-row {
+  min-height: 44px;
+}
+
+.song-info-chip-row {
+  min-height: 34px;
 }
 
 /* --- Baris kontrol (Key, Tempo, Dikuasai): label kiri, kontrol kanan --- */
@@ -10443,7 +10537,9 @@ body.dark-mode .cd-token {
   }
 }@media (max-width: 768px){
   .media-panel {
-    padding: var(--spacing-lg);
+    /* Sama dengan .song-panel di lebar sempit */
+    padding: 16px 8px;
+    margin-bottom: 16px;
   }
 
   .media-panel-title {
@@ -11059,6 +11155,12 @@ body.dark-mode .cd-token {
   gap: var(--spacing-sm);
 }
 
+/* Label seksi analisis sejajar dengan konten di bawahnya */
+.song-lyrics-analyzer-chords-label {
+  display: block;
+  margin: 0;
+}
+
 .song-lyrics-analyzer-structure {
   display: flex;
   flex-direction: column;
@@ -11073,6 +11175,54 @@ body.dark-mode .cd-token {
 .song-lyrics-analyzer-structure-detail {
   font-size: 0.85em;
   color: var(--text-muted);
+}
+
+/* Urutan seksi lagu di analisis struktur */
+.song-lyrics-analyzer-section-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.song-lyrics-analyzer-section-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--primary-bg);
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.song-lyrics-analyzer-section-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary-accent);
+  color: #fff;
+  font-size: 0.72em;
+  font-weight: 700;
+}
+
+/* Sub-bagian instrumen per seksi */
+.song-lyrics-analyzer-section-name {
+  white-space: nowrap;
+}
+
+.song-lyrics-analyzer-section-instruments {
+  font-size: 0.8em;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
 }
 
 .song-lyrics-analyzer-instruments {
@@ -11112,6 +11262,31 @@ body.dark-mode .cd-token {
   font-weight: 700;
   font-size: 0.95em;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Tempo di panel lirik bisa diubah: input kecil di dalam chip,
+    state dipegang halaman supaya sinkron dengan tab Info. */
+.song-lyrics-keytempo-input {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.95em;
+  padding: 2px 4px;
+}
+
+.song-lyrics-keytempo-input {
+  width: 64px;
+  text-align: center;
+}
+
+.song-lyrics-keytempo-input:focus {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 1px;
 }
 
 /* Tinggi panel lirik sesuai viewport agar lirik panjang di-scroll DI DALAM
@@ -11119,13 +11294,13 @@ body.dark-mode .cd-token {
 .song-lyrics-main {
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 220px);
-  overflow: hidden;
+  /* Tanpa max-height/overflow di sini: satu scrollbar saja, milik
+      .song-lyrics-display di dalamnya. Dua kontainer yang sama-sama scroll
+      menghasilkan 2 scrollbar bertumpuk. */
 }
 
 .song-lyrics-main .song-lyrics-display {
   flex: 1;
-  overflow-y: auto;
   min-height: 0;
 }
 
@@ -11139,7 +11314,7 @@ body.dark-mode .cd-token {
 /* Panel analisis chord inline (tab Analisis) — konten langsung di panel,
    bukan modal, jadi tidak menutupi halaman. */
 .song-lyrics-analyzer-inline-panel {
-  padding: var(--spacing-lg);
+  padding: 24px 20px;
 }
 
 .song-lyrics-analyzer-inline-panel .song-lyrics-analyzer-grid {
@@ -11153,7 +11328,8 @@ body.dark-mode .cd-token {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  /* Padding sama dengan .song-panel supaya semua tab seragam */
+  padding: 24px 20px;
   margin-bottom: var(--spacing-xl);
   box-shadow: var(--shadow-sm);
 }
@@ -12233,7 +12409,25 @@ body.dark-mode .song-lyrics-error {
   min-height: 500px;
   max-height: calc(100vh - 260px);
   overflow-y: auto;
-  overflow-x: auto;
+  /* Lirik panjang tidak memicu horizontal scroll: konten menyusut agar muat.
+      scroll horizontal hanya muncul di fullscreen/zoom tinggi. */
+  overflow-x: hidden;
+}
+
+/* Lirik otomatis diperkecil bila lebih lebar dari kontainer: scale turun
+    mengikuti rasio lebar, jadi tidak ada scroll horizontal di panel lirik. */
+.song-lyrics-display .cd {
+  transform-origin: top left;
+}
+
+.cd {
+  white-space: pre;
+}
+
+.cd-fit-width {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Bar kontrol perform nonaktif: tray kontrol lirik tak lagi dipakai di fullscreen */
@@ -12842,7 +13036,7 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
 }
 
 .song-lyrics-analyzer-chords {
-  margin-top: var(--spacing-lg);
+  margin-top: var(--spacing-sm);
 }
 
 .song-lyrics-analyzer-chords-label {
@@ -12851,7 +13045,7 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   display: block;
 }
 
@@ -13585,16 +13779,36 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
     font-size: 6px;
   }}
 
+/* Author (kontributor) di akhir baris meta kartu lagu */
+.song-author {
+  margin: 0;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 220px;
+}
+
+.song-author .song-author-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Badge live di kartu lagu: icon play bulat kecil */
 .song-playing-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  line-height: 1;
+  padding: 0;
   color: #0c4a6e;
   background: #cffafe;
   border: 1px solid #67e8f9;
@@ -14603,6 +14817,11 @@ body.dark-mode .studio-error {
 .ed-dropdown-item-label {
   flex: 1 1 auto;
   min-width: 0;
+  /* Label panjang dibungkus, bukan terpotong */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 
 .ed-dropdown-item-hint {
@@ -14684,6 +14903,16 @@ body.dark-mode .studio-error {
   .ed-dropdown-item {
     padding: 10px;
     min-height: 44px;
+  }
+
+  /* Di HP: hint & shortcut disembunyikan supaya label utama tidak terpotong */
+  .ed-dropdown-item-hint,
+  .ed-dropdown-item-kbd {
+    display: none;
+  }
+
+  .ed-dropdown-item-label {
+    font-size: 0.85rem;
   }
 }
 
@@ -15101,4 +15330,69 @@ body.dark-mode .studio-error {
 .song-lyrics-fullscreen-perf-mode-btn.is-manual,
 .song-lyrics-fullscreen-rail-mode-btn.is-manual {
   border-color: var(--primary-accent);
+}
+
+/* ========================================
+   PERFORMANCE MODE (toggle di sidebar/app header)
+   Tampilan panggung: font lebih besar, kontrol lebih tinggi,
+   kontras dinaikkan. Aktif via body.performance-mode.
+   ======================================== */
+body.performance-mode {
+  font-size: 18px;
+  --font-size-xs: 0.85rem;
+  --font-size-sm: 0.95rem;
+  --font-size-base: 1.12rem;
+  --font-size-lg: 1.3rem;
+  --font-size-xl: 1.45rem;
+  --font-size-2xl: 1.7rem;
+  --font-size-3xl: 2.2rem;
+  /* Kontras: teks lebih terang, border lebih jelas */
+  --text-muted: #a7b0c8;
+  --text-secondary: #dde3f0;
+  --border-color: #3d4770;
+}
+
+body.performance-mode .song-item,
+body.performance-mode .song-panel,
+body.performance-mode .card {
+  font-size: 1.05em;
+}
+
+body.performance-mode .btn {
+  min-height: 44px;
+  font-size: 1em;
+}
+
+body.performance-mode .song-action-btn,
+body.performance-mode .song-add-btn {
+  min-height: 46px;
+  font-size: 1.05em;
+}
+
+body.performance-mode .song-chip,
+body.performance-mode .song-mastery-chip,
+body.performance-mode .song-mood-badge {
+  font-size: 0.9rem;
+  padding: 5px 12px;
+}
+
+body.performance-mode .sidebar-nav-item {
+  font-size: 1.1rem;
+  min-height: 52px;
+}
+
+body.performance-mode .search-input-main,
+body.performance-mode .filter-select {
+  font-size: 1.05rem;
+  min-height: 46px;
+}
+
+body.performance-mode .cd {
+  font-size: clamp(1rem, 4.5vw, 1.25rem);
+}
+
+body.performance-mode .sidebar-performance-btn.active {
+  background: color-mix(in srgb, var(--primary-accent) 25%, transparent);
+  border-color: var(--primary-accent);
+  color: var(--text-primary);
 }

@@ -52,15 +52,25 @@ describe('computeMusicalScrollSpeed', () => {
 });
 
 describe('computeManualScrollSpeed', () => {
-  test('Given level 1-10, Then V = 10 * level', () => {
-    expect(computeManualScrollSpeed({ userSpeedLevel: 1 })).toBe(10);
-    expect(computeManualScrollSpeed({ userSpeedLevel: 5 })).toBe(50);
-    expect(computeManualScrollSpeed({ userSpeedLevel: 10 })).toBe(100);
+  test('Given level 1-10, Then V scales progressively (slow at low levels)', () => {
+    // Skala progresif: level rendah sangat lambat, level tinggi tetap wajar.
+    const speedAt1 = computeManualScrollSpeed({ userSpeedLevel: 1 });
+    const speedAt5 = computeManualScrollSpeed({ userSpeedLevel: 5 });
+    const speedAt10 = computeManualScrollSpeed({ userSpeedLevel: 10 });
+
+    expect(speedAt1).toBeGreaterThan(0);
+    expect(speedAt1).toBeLessThan(speedAt5);
+    expect(speedAt5).toBeLessThan(speedAt10);
+    // Level 1 harus benar-benar lambat (jauh di bawah kecepatan level 10).
+    expect(speedAt1).toBeLessThan(speedAt10 / 10);
+    expect(speedAt10).toBeLessThanOrEqual(150);
   });
 
   test('Given out-of-range level, Then it is clamped', () => {
-    expect(computeManualScrollSpeed({ userSpeedLevel: 99 })).toBe(100);
-    expect(computeManualScrollSpeed({ userSpeedLevel: 0 })).toBe(10);
+    expect(computeManualScrollSpeed({ userSpeedLevel: 99 }))
+      .toBe(computeManualScrollSpeed({ userSpeedLevel: 10 }));
+    expect(computeManualScrollSpeed({ userSpeedLevel: 0 }))
+      .toBe(computeManualScrollSpeed({ userSpeedLevel: 1 }));
   });
 });
 

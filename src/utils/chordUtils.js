@@ -810,6 +810,75 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
 
   return detected;
 }
+
+/**
+ * Peta instrumen per seksi lagu: baris lirik dipindai dari atas, setiap kali
+ * label seksi struktur ditemui seksi baru dimulai, dan semua instrumen yang
+ * terdeteksi sampai seksi berikutnya dikaitkan dengan seksi tersebut.
+ * Return: [{ key, label, lineIndex, instruments: [...] }]
+ */
+export function extractInstrumentsBySection(lyricsText) {
+  if (typeof lyricsText !== 'string' || !lyricsText.trim()) return [];
+
+  const lines = lyricsText.split(/\r?\n/);
+  const sections = [];
+  let current = null;
+
+  const scanInstrumentsInLine = (lineText) => {
+    const parsedRow = parseLine(lineText, 0);
+    if (!parsedRow) return [];
+
+    const found = [];
+    const add = (candidate) => {
+      const normalized = normalizeDetectedInstrumentName(candidate);
+      if (normalized && !found.some((item) => item.toLowerCase() === normalized.toLowerCase())) {
+        found.push(normalized);
+      }
+    };
+
+    if (Array.isArray(parsedRow.tokens)) {
+      parsedRow.tokens.forEach((token) => {
+        if (!token || token.isInstrument !== true || typeof token.token !== 'string') return;
+        const direct = findInlineInstrumentMatch(token.token.trim());
+        if (direct) add(direct);
+      });
+    }
+    if (typeof parsedRow.label === 'string' && parsedRow.type !== 'structure') {
+      const labelMatch = findInlineInstrumentMatch(parsedRow.label);
+      if (labelMatch) add(labelMatch);
+    }
+    if (parsedRow.type === 'instrument_patch' && typeof parsedRow?.fields?.instrument === 'string') {
+      add(parsedRow.fields.instrument);
+    }
+    if (typeof lineText === 'string') {
+      const match = findInlineInstrumentMatch(lineText);
+      if (match) add(match);
+    }
+    return found;
+  };
+
+  lines.forEach((line, index) => {
+    const parsed = parseSection(line);
+    if (parsed?.type === 'structure') {
+      current = {
+        key: `${index}-${parsed.label || 'section'}`,
+        label: parsed.label || 'Section',
+        lineIndex: index,
+        instruments: [],
+      };
+      sections.push(current);
+      return;
+    }
+    if (!current) return;
+    scanInstrumentsInLine(line).forEach((instrument) => {
+      if (!current.instruments.some((item) => item.toLowerCase() === instrument.toLowerCase())) {
+        current.instruments.push(instrument);
+      }
+    });
+  });
+
+  return sections;
+}
 /**
  * Helper: parse [mm:ss] or [hh:mm:ss] timestamp to seconds
  * @param {string} token - Token timestamp (misal: [01:23] atau [1:02:03])

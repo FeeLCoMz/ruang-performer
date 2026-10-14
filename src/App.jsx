@@ -13,6 +13,7 @@ import MobileBottomNav from "./components/MobileBottomNav.jsx";
 import Toast from "./components/Toast.jsx";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import * as apiClient from "./apiClient.js";
+import { STORAGE_KEYS } from "./utils/storageKeys.js";
 
 // Lazy load non-critical pages for code splitting
 const SongListPage = lazy(() => import("./pages/SongListPage.jsx"));
@@ -27,6 +28,8 @@ const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx")
 const UserManagementPage = lazy(() => import("./pages/UserManagementPage.jsx"));
 
 // Loading fallback component
+import { SongListSkeleton } from './components/LoadingSkeleton.jsx';
+
 function PageLoader() {
   return (
     <div className="page-loader">
@@ -75,6 +78,24 @@ function AppContent() {
     }
   }, [isLoading, isAuthenticated]);
   const [toastMessage, setToastMessage] = useState("");
+  // Performance mode: tampilan besar & kontras tinggi untuk panggung.
+  // Persist di localStorage supaya pilihan tetap aktif antar sesi.
+  const [performanceMode, setPerformanceMode] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.PERFORMANCE_MODE) === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    document.body.classList.toggle('performance-mode', performanceMode);
+    try {
+      localStorage.setItem(STORAGE_KEYS.PERFORMANCE_MODE, performanceMode ? '1' : '0');
+    } catch {
+      // ignore storage errors
+    }
+  }, [performanceMode]);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -176,6 +197,8 @@ function AppContent() {
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
+          performanceMode={performanceMode}
+          onTogglePerformanceMode={() => setPerformanceMode((prev) => !prev)}
         />
         <MobileBottomNav />
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
@@ -206,7 +229,10 @@ function AppContent() {
                 path="/songs"
                 element={
                   loadingSongs ? (
-                    <div>Memuat data lagu...</div>
+                    /* Lazy load: skeleton, bukan teks polos */
+                    <div className="page-container">
+                      <SongListSkeleton count={8} />
+                    </div>
                   ) : errorSongs ? (
                     <div className="error-text">{errorSongs}</div>
                   ) : (

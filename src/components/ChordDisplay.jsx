@@ -18,9 +18,25 @@
  *   - Layout responsif dengan CSS class standar
  */
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useEffect, useRef, useState } from 'react';
 import NumberToken from './NumberToken.jsx';
 import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
+
+// Icon per seksi lagu, dicocokkan dari label seksi (mis. "[Chorus]").
+const SECTION_ICONS = [
+  { icon: '🎬', pattern: /intro|opening|\bint\b/i },
+  { icon: '🎤', pattern: /verse|bait/i },
+  { icon: '⭐', pattern: /pre[- ]?chorus/i },
+  { icon: '🔁', pattern: /chorus|reff|refrain/i },
+  { icon: '🌉', pattern: /bridge/i },
+  { icon: '🎸', pattern: /solo|instrumental|interlude|musik/i },
+  { icon: '🏁', pattern: /outro|ending|coda/i },
+];
+
+const getSectionIcon = (label = '') => {
+  const hit = SECTION_ICONS.find((entry) => entry.pattern.test(String(label)));
+  return hit ? hit.icon : '🎵';
+};
 
 const getInstrumentTokenClass = (label = '') => {
   const normalized = String(label || '').trim().toLowerCase();
@@ -86,11 +102,11 @@ const ChordDisplayBase = memo(function ChordDisplay({
     const canPlay = typeof onTimestampClick === 'function';
     const label = String(rawToken).replace(/\[|\]/g, '');
     return (
-      <span key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-        <span style={{ fontWeight: 600 }}>{rawToken}</span>
+      <span key={key} className="cd-timestamp">
+        <span className="cd-timestamp-label">{rawToken}</span>
         <button
           type="button"
-          className="btn"
+          className="btn cd-timestamp-btn"
           disabled={!canPlay}
           onClick={() => {
             if (!canPlay) return;
@@ -105,11 +121,7 @@ const ChordDisplayBase = memo(function ChordDisplay({
           }}
           style={{
             marginLeft: 4,
-            color: 'var(--primary-accent)',
-            background: 'none',
-            border: 'none',
             cursor: canPlay ? 'pointer' : 'default',
-            fontSize: '1em',
             opacity: canPlay ? 1 : 0.4,
           }}
           title={
@@ -175,7 +187,10 @@ const ChordDisplayBase = memo(function ChordDisplay({
     if (lineObj.type === 'structure') {
       renderedRows.push(
         <div key={i} className={`cd-section-struct${syncClass(lineObj)}`}>
-          <span>{lineObj.label}</span>
+          <span className="cd-section-struct-label">
+            <span className="cd-section-struct-icon" aria-hidden="true">{getSectionIcon(lineObj.label)}</span>
+            {lineObj.label}
+          </span>
           {lineObj.isRepeatedReference ? (
             <span className="cd-section-repeat-badge" title="Bagian ini diambil dari section sebelumnya">
               Repeated
@@ -267,9 +282,46 @@ const ChordDisplayBase = memo(function ChordDisplay({
     );
   });
 
+  // Auto-fit horizontal: bila konten lebih lebar dari kontainer, lirik
+  // diperkecil (scale) supaya tidak memicu horizontal scroll. Zoom manual
+  // tetap dihormati — fit hanya menambah pengecilan bila diperlukan.
+  const containerRef = useRef(null);
+  const [fitScale, setFitScale] = useState(1);
+  const fitMeasureKey = `${song?.id || ''}|${song?.lyrics?.length || 0}`;
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const content = container?.querySelector(':scope > .cd');
+    if (!container || !content) return undefined;
+
+    const measure = () => {
+      const availableWidth = container.clientWidth;
+      const contentWidth = content.scrollWidth;
+      if (!availableWidth || !contentWidth) {
+        setFitScale(1);
+        return;
+      }
+      setFitScale(contentWidth > availableWidth ? availableWidth / contentWidth : 1);
+    };
+
+    measure();
+    if (typeof ResizeObserver !== 'function') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [fitMeasureKey]);
+
+  const effectiveScale = Math.min(zoom, fitScale);
+
   return (
-    <div className="cd" style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
-      {renderedRows}
+    <div className="song-lyrics-display" ref={containerRef}>
+      <div
+        className={`cd${fitScale < 1 ? ' cd-fit-width' : ''}`}
+        style={{ transform: `scale(${effectiveScale})`, transformOrigin: 'top left' }}
+      >
+        {renderedRows}
+      </div>
     </div>
   );
 });

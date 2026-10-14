@@ -8,11 +8,13 @@ import { getAuthHeader } from '../utils/auth.js';import { useAuth } from '../con
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
 import { useSongFetch } from '../hooks/useSongFetch.js';
+import { SongDetailSkeleton } from '../components/LoadingSkeleton.jsx';
 import { handleExportText, handleExportPDF, handleShare } from '../utils/songHandlers.js';
 import useMetronome from '../hooks/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
-import { fetchSetLists, updateSongMastery } from '../apiClient.js';
+import { fetchSetLists, updateSongMastery, deleteSong } from '../apiClient.js';
 import { recommendPianoFriendlyKey, extractDetectedInstrumentsFromLyrics } from '../utils/chordUtils.js';
+import { extractSectionOverview } from '../utils/songFormUtils.js';
 
 /**
  * SongChordsPage
@@ -32,6 +34,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
   const location = useLocation();
   const { id: songId, setlistId: routeSetlistId } = useParams();
   const { user } = useAuth();
+  const currentUserId = user?.userId || user?.id;
 
   // Tutup partitur saat berpindah lagu supaya state tidak terbawa ke lagu berikutnya
   const sheetMusicSongId = songProp?.id;
@@ -84,8 +87,23 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
     }
   }
   const artist = setlistSongData.artist || song?.artist || '';
-  const key = setlistSongData.key || song?.key || '';
-  const tempo = setlistSongData.tempo || song?.tempo || '';
+  // Key & tempo lintas-tab: dipegang sebagai state di halaman supaya perubahan
+  // dari panel lirik langsung terlihat di tab Info (dan sebaliknya).
+  const baseKey = setlistSongData.key || song?.key || '';
+  const baseTempo = setlistSongData.tempo || song?.tempo || '';
+  const [editableKey, setEditableKey] = useState(baseKey);
+  const [editableTempo, setEditableTempo] = useState(baseTempo);
+  // Ikuti data lagu terbaru (mis. hasil fetch ulang) bila user belum mengubah
+  useEffect(() => {
+    setEditableKey(baseKey);
+  }, [baseKey]);
+  useEffect(() => {
+    setEditableTempo(baseTempo);
+  }, [baseTempo]);
+  const key = editableKey;
+  const tempo = editableTempo;
+  const handleSongKeyChange = (nextKey) => setEditableKey(nextKey || '');
+  const handleSongTempoChange = (nextTempo) => setEditableTempo(nextTempo || '');
   const genre = setlistSongData.genre || song?.genre || '';
   const keyboardPatch = setlistSongData.keyboardPatch || song?.keyboardPatch || song?.keyboard_patch || '';
   const timeSignature = setlistSongData.time_signature || song?.time_signature || '4/4';
@@ -132,6 +150,8 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
   // Share state
   const [shareMessage, setShareMessage] = useState('');
   const [updatingMastery, setUpdatingMastery] = useState(false);
+  // State hapus lagu (dipanggil dari tab Info) — hooks harus di atas early return
+  const [deletingSong, setDeletingSong] = useState(false);
 
 
   // Media panel collapse state (default: collapsed)
@@ -291,13 +311,19 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
     }
   };
 
-  // Show loading state
+  // Show loading state — lazy load: skeleton, bukan halaman penuh yang berkedip
   if (loading) {
     return (
       <div className="page-container">
-        <div className="not-found-container">
-          <div className="not-found-icon">⏳</div>
-          <h2 className="not-found-title">Memuat Lagu...</h2>
+        <SongDetailSkeleton />
+        <div className="song-tabs">
+          <div className="lyrics-loading-skeleton">
+            <div className="skeleton-line" style={{ width: '80%' }} />
+            <div className="skeleton-line" style={{ width: '90%' }} />
+            <div className="skeleton-line" style={{ width: '70%' }} />
+            <div className="skeleton-line" style={{ width: '60%' }} />
+            <div className="skeleton-line" style={{ width: '85%' }} />
+          </div>
         </div>
       </div>
     );
@@ -346,21 +372,49 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
     navigate(`/songs/edit/${song.id}`);
   };
 
+  // Hapus lagu: hanya owner (userId cocok) atau user dengan permission edit
+  // lagu band yang boleh. Konfirmasi dulu, lalu kembali ke daftar asal.
+  const isSongOwner = Boolean(song?.userId) && String(song.userId) === String(currentUserId);
+  const canDeleteSong = isSongOwner || can(PERMISSIONS.SONG_EDIT);
+
+  const handleDelete = async () => {
+    if (!song?.id || deletingSong) return;
+    const confirmed = window.confirm(
+      `Hapus lagu "${song.title || 'tanpa judul'}"? Tindakan ini tidak bisa dibatalkan.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeletingSong(true);
+      await deleteSong(song.id);
+      navigate(setlistId ? `/setlists/${setlistId}` : '/songs');
+    } catch (err) {
+      console.error('Gagal menghapus lagu:', err);
+      window.alert(err?.message || 'Gagal menghapus lagu');
+    } finally {
+      setDeletingSong(false);
+    }
+  };
+
   const handleToggleMastery = async (level = null) => {
     if (!song?.id || !song?.canMarkMastery || updatingMastery) return;
 
-    // Level target: 'none' | 'learning' | 'ready'. API saat ini hanya
-    // mendukung boolean mastered; 'learning' dipetakan ke belum-kuasai.
-    // Ganti ke endpoint bertahap bila backend menambah dukungan level.
-    const targetMastered = level === null ? !song.isMasteredByCurrentUser : (level === 'ready');
-    if (targetMastered === Boolean(song.isMasteredByCurrentUser)) return;
+    // Tiga status tersimpan di database: 'mastered' (Dikuasai), 'learning'
+    // (Perlu Latihan), 'none' (Belum Diulik). Klik level aktif kembali ke 'none'.
+    const currentStatus = song.currentUserStatus
+      || (song.isMasteredByCurrentUser ? 'mastered' : 'none');
+    const targetStatus = level === null
+      ? (currentStatus === 'none' ? 'mastered' : 'none')
+      : (level === currentStatus ? 'none' : level);
+    if (targetStatus === currentStatus) return;
     try {
       setUpdatingMastery(true);
-      const payload = await updateSongMastery(song.id, targetMastered);
+      const payload = await updateSongMastery(song.id, targetStatus);
       setFetchedSong((prev) => ({
         ...(prev || song),
         masteredBy: Array.isArray(payload.masteredBy) ? payload.masteredBy : [],
         isMasteredByCurrentUser: Boolean(payload.isMasteredByCurrentUser),
+        currentUserStatus: payload.currentUserStatus || 'none',
       }));
     } catch (err) {
       console.error('Gagal memperbarui status penguasaan lagu:', err);
@@ -434,12 +488,16 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
             artist={artist}
             contributor={song.contributor}
             canEdit={can(PERMISSIONS.SONG_EDIT)}
+            canDelete={canDeleteSong}
+            deleting={deletingSong}
+            onDelete={handleDelete}
             onEdit={handleEdit}
             onShare={() => handleShare(song, artist, setShareMessage)}
             shareMessage={shareMessage}
             masteredBy={song.masteredBy}
             canMarkMastery={song.canMarkMastery}
             isMasteredByCurrentUser={song.isMasteredByCurrentUser}
+            currentUserStatus={song.currentUserStatus || (song.isMasteredByCurrentUser ? 'mastered' : 'none')}
             onToggleMastery={handleToggleMastery}
             masteryUpdating={updatingMastery}
             pianoRecommendation={pianoRecommendation}
@@ -496,15 +554,18 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
               transpose={transpose}
               songKey={song?.key || key}
               song={song}
+              detectedInstruments={detectedInstruments}
+              songSections={extractSectionOverview(song?.lyrics || '')}
             />
           )}
       </div>
 
       {/* Lirik & chord — hanya di tab Lirik */}
-      {activeTab === 'lyrics' && (
+        {activeTab === 'lyrics' && (
         <SongLyricsMainSection
         lyricsDisplayRef={lyricsDisplayRef}
         tempo={tempo}
+        onTempoChange={handleSongTempoChange}
         timeSignature={timeSignature}
         autoScrollActive={autoScrollActive}
         scrollSpeed={scrollSpeed}
@@ -533,8 +594,9 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
         showSimpleChords={showSimpleChords}
         setShowSimpleChords={setShowSimpleChords}
                 keySignature={key || song?.key || ''}
-                originalKey={song?.key || key || ''}
+                originalKey={song?.key || baseKey || ''}
                 targetKey={key || song?.key || ''}
+                onKeyChange={handleSongKeyChange}
                 pianoRecommendation={pianoRecommendation}
                 onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
               />

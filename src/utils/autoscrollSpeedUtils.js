@@ -13,7 +13,7 @@ export const AUTO_SCROLL_MODES = {
   MANUAL: 'MANUAL',
 };
 
-export const MANUAL_SPEED_BASE_MULTIPLIER = 10; // piksel/detik per level
+export const MANUAL_SPEED_BASE_MULTIPLIER = 4; // piksel/detik per level (level bawah)
 export const MIN_MANUAL_SPEED_LEVEL = 1;
 export const MAX_MANUAL_SPEED_LEVEL = 10;
 export const DEFAULT_MANUAL_SPEED_LEVEL = 5;
@@ -88,9 +88,10 @@ export const computeMusicalScrollSpeed = (options = {}) => {
 };
 
 /**
- * Kecepatan gulir mode MANUAL (piksel/detik):
- * V_scroll = baseSpeedMultiplier * userSpeedLevel
- * (default: 10 px/s * level 1-10 = 10-100 px/s)
+ * Kecepatan gulir mode MANUAL (piksel/detik), skala progresif supaya level
+ * rendah benar-benar lambat:
+ *   level 1 = 1.5 px/s, level 5 = 30 px/s, level 10 = 90 px/s.
+ * Rumus: multiplier * level^1.55 (level rendah jauh lebih lambat dari linear).
  */
 export const computeManualScrollSpeed = ({
   userSpeedLevel = DEFAULT_MANUAL_SPEED_LEVEL,
@@ -98,7 +99,8 @@ export const computeManualScrollSpeed = ({
 } = {}) => {
   const level = clampManualSpeedLevel(userSpeedLevel);
   const multiplier = Math.max(1, Number(baseSpeedMultiplier) || MANUAL_SPEED_BASE_MULTIPLIER);
-  return multiplier * level;
+  const scaled = Math.pow(level, 1.55);
+  return multiplier * scaled;
 };
 
 /**

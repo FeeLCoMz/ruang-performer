@@ -9,7 +9,7 @@ import { transposeChord, getNoteIndex, getTransposeSteps } from '../utils/chordU
  * @param {function} onTransposeChange - Callback when transpose changes
  * @param {boolean} compact - Optional compact mode for smaller display
  */
-export default function TransposeKeyControl({ originalKey, targetKey, transpose, onTransposeChange, compact = false }) {
+export default function TransposeKeyControl({ originalKey, targetKey, transpose, onTransposeChange, compact = false, disableAutoApply = false }) {
   const safeOnTransposeChange = React.useCallback((nextValue) => {
     if (typeof onTransposeChange === 'function') {
       onTransposeChange(nextValue);
@@ -19,7 +19,10 @@ export default function TransposeKeyControl({ originalKey, targetKey, transpose,
 
   // Terapkan transpose otomatis hanya saat pasangan key pertama kali dipasang atau berubah.
   // Setelah pengguna mengubah transpose manual, jangan mengoverride nilai tersebut.
+  // Bisa dinonaktifkan (disableAutoApply) bila halaman sudah mengelola transpose
+  // sendiri — mis. key & tempo disinkronkan lintas tab di halaman song view.
   React.useEffect(() => {
+    if (disableAutoApply) return undefined;
     if (!originalKey || !targetKey) {
       appliedKeyPairRef.current = null;
       return;
@@ -37,7 +40,7 @@ export default function TransposeKeyControl({ originalKey, targetKey, transpose,
     } else if (steps === 0 && transpose !== 0) {
       safeOnTransposeChange(0);
     }
-  }, [originalKey, targetKey, transpose, safeOnTransposeChange]);
+  }, [disableAutoApply, originalKey, targetKey, transpose, safeOnTransposeChange]);
   // Calculate transposed key menggunakan chordUtils
   const getTransposedKey = (key, semitones) => {
     if (!key || semitones === 0) return key;

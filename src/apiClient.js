@@ -218,10 +218,11 @@ export async function updateSong(id, song) {
   return request(`/songs/${id}`, { method: 'PUT', body: song, fallbackError: 'Gagal memperbarui lagu' });
 }
 
-export async function updateSongMastery(id, mastered = true) {
+export async function updateSongMastery(id, status = 'mastered') {
+  // status: 'mastered' | 'learning' | 'none'
   return request(`/songs/${id}/mastery`, {
     method: 'PUT',
-    body: { mastered },
+    body: { status },
     fallbackError: 'Gagal memperbarui status penguasaan lagu',
   });
 }

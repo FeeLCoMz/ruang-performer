@@ -401,15 +401,14 @@ export default function YouTubeTrendingPage() {
                   </div>
                 </a>
                 <button
-                    className="youtube-trending-share-btn"
-                    type="button"
-                    onClick={(e) => handleShareClick(e, item)}
-                    title="Bagikan lagu ini"
-                    aria-label={`Bagikan lagu: ${item.title}`}
-                  >
-                    <span aria-hidden="true">📤</span>
-                  </button>
-                )}
+                  className="youtube-trending-share-btn"
+                  type="button"
+                  onClick={(e) => handleShareClick(e, item)}
+                  title="Bagikan lagu ini"
+                  aria-label={`Bagikan lagu: ${item.title}`}
+                >
+                  <span aria-hidden="true">📤</span>
+                </button>
               </div>
             ))}
           </div>

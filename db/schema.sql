@@ -117,6 +117,8 @@ CREATE TABLE IF NOT EXISTS band_song_preferences (
 
 
 -- Song mastery status per user
+-- Field `mastered` dipakai sebagai status tiga-nilai:
+--   1 = Dikuasai, 0 = Perlu Latihan; baris tidak ada = Belum Diulik.
 CREATE TABLE IF NOT EXISTS song_user_mastery (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   songId TEXT NOT NULL,

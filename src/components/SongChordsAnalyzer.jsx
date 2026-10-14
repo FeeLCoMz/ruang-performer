@@ -1,6 +1,5 @@
 import React from 'react';
-import { transposeChord, getNoteIndex } from '../utils/chordUtils.js';
-import { inferSongMood } from '../utils/songMoodUtils.js';
+import { transposeChord, getNoteIndex, extractInstrumentsBySection } from '../utils/chordUtils.js';
 
 /**
  * SongChordsAnalyzer
@@ -12,6 +11,8 @@ export default function SongChordsAnalyzer({
   transpose,
   songKey,
   song = null,
+  detectedInstruments = [],
+  songSections = [],
 }) {
   const parseModeFromKey = (keyLabel = '') => {
     const normalized = String(keyLabel).trim().toLowerCase();
@@ -99,10 +100,13 @@ export default function SongChordsAnalyzer({
       : progressionVariety >= 35 ? 'Sedang — progresi bervariasi'
         : 'Sederhana — progresi repetitif (mudah dihafal)';
 
-  // Analisis mood/energi lagu (berdasarkan tempo & genre — pola yang sama
-  // dengan badge mood di kartu lagu). Instrumen terdeteksi dari lirik sudah
-  // diproses di halaman dan dikirim lewat prop `song`.
-  const mood = song ? inferSongMood(song) : null;
+  // Daftar instrumen yang terdeteksi dari lirik (dihitung di halaman via
+  // extractDetectedInstrumentsFromLyrics). Bukan mood — mood ditampilkan
+  // terpisah di bawahnya.
+  const instrumentList = (Array.isArray(detectedInstruments) ? detectedInstruments : [])
+    .filter(Boolean);
+  // Instrumen yang terdeteksi di dalam tiap seksi lagu
+  const instrumentsBySection = song ? extractInstrumentsBySection(song?.lyrics || '') : [];
 
   const detectedKeyInfo = chordStats?.detectedKey || null;
   const detectedKeyLabel = detectedKeyInfo?.key
@@ -174,7 +178,7 @@ export default function SongChordsAnalyzer({
         </div>
       </div>
 
-      {/* Analisis struktur lagu */}
+      {/* Analisis struktur lagu: label ringkasan + urutan seksi lagu */}
       <div className="song-lyrics-analyzer-section">
         <label className="song-lyrics-analyzer-chords-label">🏗️ Struktur Lagu:</label>
         <div className="song-lyrics-analyzer-structure">
@@ -183,24 +187,42 @@ export default function SongChordsAnalyzer({
             {uniqueChordCount} chord unik dari {totalChordHits} pemakaian • variasi {progressionVariety}%
           </span>
         </div>
+        {Array.isArray(songSections) && songSections.length > 0 && (
+          <div className="song-lyrics-analyzer-section-list" aria-label="Urutan seksi lagu">
+            {songSections.map((section, i) => {
+              const sectionInstruments = (instrumentsBySection.find(
+                (entry) => entry.lineIndex === section.lineIndex
+              )?.instruments || []);
+              return (
+                <span key={`${section.key}-${section.lineNumber}`} className="song-lyrics-analyzer-section-item">
+                  <span className="song-lyrics-analyzer-section-order">{i + 1}</span>
+                  <span className="song-lyrics-analyzer-section-name">{section.label}</span>
+                  {sectionInstruments.length > 0 && (
+                    <span
+                      className="song-lyrics-analyzer-section-instruments"
+                      title={`Instrumen: ${sectionInstruments.join(', ')}`}
+                    >
+                      🎸 {sectionInstruments.join(', ')}
+                    </span>
+                  )}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Analisis instrumen & mood */}
+      {/* Analisis instrumen (dari deteksi lirik) */}
       <div className="song-lyrics-analyzer-section">
-        <label className="song-lyrics-analyzer-chords-label">🎼 Instrumen & Mood:</label>
+        <label className="song-lyrics-analyzer-chords-label">🎼 Instrumen:</label>
         <div className="song-lyrics-analyzer-instruments">
-          {Array.isArray(song?.detectedInstruments) && song.detectedInstruments.length > 0 ? (
-            song.detectedInstruments.map((instrument, i) => (
+          {instrumentList.length > 0 ? (
+            instrumentList.map((instrument, i) => (
               <span key={`${instrument}-${i}`} className="song-lyrics-analyzer-instrument-chip">{instrument}</span>
             ))
           ) : (
             <span className="song-lyrics-analyzer-instrument-chip song-lyrics-analyzer-instrument-empty">
               Tidak ada instrumen terdeteksi dari lirik
-            </span>
-          )}
-          {mood && (
-            <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
-              {mood.label}
             </span>
           )}
         </div>

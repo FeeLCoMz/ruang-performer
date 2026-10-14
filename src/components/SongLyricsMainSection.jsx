@@ -28,6 +28,7 @@ export default function SongLyricsMainSection({
   setShowSimpleChords,
   originalKey = '',
   targetKey = '',
+  onTempoChange,
   pianoRecommendation = null,
   onApplyRecommendedTranspose,
   keySignature,
@@ -40,34 +41,27 @@ export default function SongLyricsMainSection({
 }) {
   return (
     <div className="song-panel song-lyrics-main">
-      <div className="song-lyrics-main-header">
-          {/* Key & tempo aktif: identitas musik lagu, tanpa judul panel */}
-          <div className="song-lyrics-main-keytempo">
-            <span className="song-lyrics-key-chip" title={`Key ${keySignature || '-'}`}>
-              🎹 {keySignature || '-'}
-            </span>
-            {tempo && (
-              <span className="song-lyrics-tempo-chip" title={`Tempo ${tempo} BPM`}>
-                ⏱️ {tempo} BPM
-              </span>
-            )}
-          </div>
-          <SongChordsLyricsToolbar
-            autoScrollActive={autoScrollActive}
-            setAutoScrollActive={setAutoScrollActive}
-            scrollSpeed={scrollSpeed}
-            setScrollSpeed={setScrollSpeed}
-            tempo={tempo}
-            showChordNumbers={showChordNumbers}
-            setShowChordNumbers={setShowChordNumbers}
-            showJazzChords={showJazzChords}
-            setShowJazzChords={setShowJazzChords}
-            showSimpleChords={showSimpleChords}
-            setShowSimpleChords={setShowSimpleChords}
-            youtubeId={youtubeId}
-            youtubeRef={youtubeRef}
-          />
-        </div>
+      {/* Main header dihapus: key/tempo dipindah ke kontrol toolbar */}
+      <SongChordsLyricsToolbar
+        autoScrollActive={autoScrollActive}
+        setAutoScrollActive={setAutoScrollActive}
+        scrollSpeed={scrollSpeed}
+        setScrollSpeed={setScrollSpeed}
+        tempo={tempo}
+        originalKey={originalKey}
+        targetKey={targetKey}
+        transpose={transpose}
+        setTranspose={setTranspose}
+        onTempoChange={onTempoChange}
+        showChordNumbers={showChordNumbers}
+        setShowChordNumbers={setShowChordNumbers}
+        showJazzChords={showJazzChords}
+        setShowJazzChords={setShowJazzChords}
+        showSimpleChords={showSimpleChords}
+        setShowSimpleChords={setShowSimpleChords}
+        youtubeId={youtubeId}
+        youtubeRef={youtubeRef}
+      />
 
         {loading ? (
             <div className="lyrics-loading-skeleton">

@@ -30,11 +30,15 @@ export default function SongChordsInfo({
   artist,
   contributor,
   canEdit = false,
+  canDelete = false,
+  deleting = false,
+  onDelete,
   onEdit,
   onShare,
   shareMessage,
   canMarkMastery = false,
   isMasteredByCurrentUser = false,
+  currentUserStatus = 'none',
   onToggleMastery,
   masteryUpdating = false,
   pianoRecommendation = null,
@@ -53,11 +57,15 @@ export default function SongChordsInfo({
     { value: 'learning', label: 'Perlu Latihan', icon: '🟡' },
     { value: 'ready', label: 'Dikuasai', icon: '🟢' },
   ];
-  const currentMasteryLevel = isMasteredByCurrentUser ? 'ready' : 'none';
+  const currentMasteryLevel = currentUserStatus === 'mastered'
+    ? 'ready'
+    : currentUserStatus === 'learning'
+      ? 'learning'
+      : 'none';
   const handleMasteryLevelChange = (level) => {
     if (!onToggleMastery) return;
-    if (level === currentMasteryLevel) return; // klik level aktif = no-op
-    onToggleMastery(level);
+    // Klik level aktif kembali ke "Belum Diulik".
+    onToggleMastery(level === currentMasteryLevel ? 'none' : level);
   };
   const showKeyEasyRecommendation = !!pianoRecommendation?.recommendedKey;
   const metadataItems = [];
@@ -136,6 +144,18 @@ export default function SongChordsInfo({
                 aria-label="Edit lagu"
               >
                 <span aria-hidden="true">✎</span>
+              </button>
+            )}
+            {canDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                disabled={deleting}
+                className="btn btn-secondary song-detail-action-btn song-delete-btn"
+                title={deleting ? 'Menghapus…' : 'Hapus lagu'}
+                aria-label="Hapus lagu"
+              >
+                <span aria-hidden="true">🗑</span>
               </button>
             )}
             <div className="song-info-export-wrap">

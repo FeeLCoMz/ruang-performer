@@ -48,7 +48,7 @@ export default function SongCard({
         <div className="song-heading">
           <h3 className="song-title">
             {title}
-            {isPlaying && <span className="song-playing-badge">{playingBadge}</span>}
+            {isPlaying && <span className="song-playing-badge" title="Sedang berjalan">▶</span>}
           </h3>
           {headingStatus}
         </div>

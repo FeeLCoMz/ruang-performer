@@ -122,6 +122,12 @@ function tokenBefore(state, pos) {
  * the user starts a `[` tag, or a capitalised word that could begin a metadata
  * key. It never completes chord names — those are typed far too often for a
  * popup to be helpful.
+ *
+ * The `from` position ALWAYS comes from our own token scan (`token.from`),
+ * never from `context.matchBefore`: matchBefore matches an empty string at
+ * positions the token scan rejected, which made the popup's `from` jump behind
+ * the caret while typing mid-word — applying a completion then replaced from
+ * that wrong offset and yanked the cursor to the start of the line.
  */
 export function lyricsCompletionSource(context) {
   const token = tokenBefore(context.state, context.pos);
@@ -131,15 +137,9 @@ export function lyricsCompletionSource(context) {
   const isTag = token.text.startsWith('[');
   const isWordStart = /^[A-Z]/.test(token.text);
   if (!isTag && !isWordStart) return null;
-  if (typeof context.matchBefore === 'function' && !context.explicit) {
-    if (token.text.length < 1) return null;
-  }
-
-  const word = context.matchBefore(/\[?[A-Za-z0-9-]*/);
-  const from = word ? word.from : token.from;
 
   return {
-    from,
+    from: token.from,
     options,
     validFor: /^\[?[A-Za-z0-9-]*$/,
   };

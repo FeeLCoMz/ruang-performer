@@ -6,7 +6,7 @@ import { canPerformAction, PERMISSIONS } from '../utils/permissionUtils.js';
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import SongCard from '../components/SongCard.jsx';
-import YouTubeViewer from '../components/YouTubeViewer.jsx';
+import { StudioMediaColumn } from '../components/SongStudioLayout.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { fetchSetLists } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
@@ -67,6 +67,10 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   });
   const videoRef = useRef(null);
   const activeInlinePlayerRef = useRef(null);
+  // Playback state untuk komponen media shared (sama dengan song view)
+  const [inlineVideoPlaying, setInlineVideoPlaying] = useState(false);
+  const [inlineVideoTime, setInlineVideoTime] = useState(0);
+  const [inlineVideoDuration, setInlineVideoDuration] = useState(0);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -206,12 +210,25 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     return songSetlistCountMap[songId] || 0;
   }
 
-  // Helper: apakah lagu sudah dikuasai oleh user yang sedang login
-  function isMasteredByCurrentUser(song) {
-    if (song?.isMasteredByCurrentUser) return true;
-    if (!currentUserId || !Array.isArray(song?.masteredBy)) return false;
-    return song.masteredBy.includes(currentUserId);
+  // Helper: status penguasaan lagu oleh user yang sedang login.
+  // 'mastered' | 'learning' | 'none' — dipakai untuk chip kartu.
+  function getMasteryStatus(song) {
+    if (!currentUserId) return 'none';
+    // masteredBy bisa berisi entri learning milik user ini
+    const ownEntry = Array.isArray(song?.masteredBy)
+      ? song.masteredBy.find((entry) => String(entry?.userId) === String(currentUserId))
+      : null;
+    if (ownEntry?.status === 'learning') return 'learning';
+    if (song?.isMasteredByCurrentUser) return 'mastered';
+    if (ownEntry) return ownEntry.status === 'learning' ? 'learning' : 'mastered';
+    return 'none';
   }
+
+  const MASTERY_STATUS_META = {
+    mastered: { icon: '🟢', label: 'Dikuasai', title: 'Status: Dikuasai' },
+    learning: { icon: '🟡', label: 'Perlu Latihan', title: 'Status: Perlu Latihan' },
+    none: { icon: '🔴', label: 'Belum Diulik', title: 'Status: Belum diulik' },
+  };
 
   const permissionsBySongId = useMemo(() => {
     const map = {};
@@ -271,11 +288,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     return Boolean(song?.youtubeId || song?.youtube_url);
   }
 
-  function resolveTempo(song) {
-    const parsed = parseInt(song?.tempo, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 120;
-  }
-
   function handlePlayVideo(song, e) {
     e.stopPropagation();
     if (!hasYouTubeVideo(song)) return;
@@ -292,8 +304,31 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     if (videoRef.current && typeof videoRef.current.handlePause === 'function') {
       videoRef.current.handlePause();
     }
+    setInlineVideoPlaying(false);
     setActiveVideoSong(null);
   }
+
+  // Lacak posisi & status video untuk komponen media shared
+  useEffect(() => {
+    if (!activeVideoSong) {
+      setInlineVideoPlaying(false);
+      setInlineVideoTime(0);
+      setInlineVideoDuration(0);
+      return undefined;
+    }
+
+    const intervalId = setInterval(() => {
+      const player = videoRef.current;
+      if (!player) return;
+      if (typeof player.getPlayerState === 'function') {
+        setInlineVideoPlaying(player.getPlayerState() === 1);
+      }
+      if (typeof player.currentTime === 'number') setInlineVideoTime(player.currentTime);
+      if (typeof player.duration === 'number') setInlineVideoDuration(player.duration);
+    }, 500);
+
+    return () => clearInterval(intervalId);
+  }, [activeVideoSong]);
 
   useEffect(() => {
     if (!activeVideoSong) return;
@@ -352,7 +387,8 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   function renderSongItem(song, style) {
     const isInlineVideoSong = activeVideoSong?.id === song.id;
     const mood = inferSongMood(song);
-    const mastered = isMasteredByCurrentUser(song);
+    const masteryStatus = getMasteryStatus(song);
+    const masteryMeta = MASTERY_STATUS_META[masteryStatus];
 
     return (
       <React.Fragment key={song.id}>
@@ -363,11 +399,11 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           onClick={() => navigate(`/songs/view/${song.id}`)}
           headingStatus={(
             <span
-              className={`song-mastery-chip mastery-${mastered ? 'ready' : 'none'}`}
-              title={mastered ? 'Status: Dikuasai' : 'Status: Belum diulik'}
+              className={`song-mastery-chip mastery-${masteryStatus}`}
+              title={masteryMeta.title}
             >
-              <span aria-hidden="true">{mastered ? '🟢' : '🔴'}</span>
-              {mastered ? 'Dikuasai' : 'Belum Diulik'}
+              <span aria-hidden="true">{masteryMeta.icon}</span>
+              {masteryMeta.label}
             </span>
           )}
           metaPrimary={(
@@ -375,6 +411,12 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
               {song.artist && <span className="song-chip">👤 {song.artist}</span>}
               {song.bandId && <span className="song-chip">🎤 {song.bandName || '-'}</span>}
               {song.genre && <span className="song-chip">🎸 {song.genre}</span>}
+              {/* Author (kontributor) tepat setelah genre */}
+              {(song.contributor || song.contributorName) && (
+                <span className="song-chip song-chip-muted" title={`Ditambahkan oleh: ${song.contributor || song.contributorName}`}>
+                  ✍️ {song.contributor || song.contributorName}
+                </span>
+              )}
             </div>
           )}
           metaDetail={(
@@ -428,28 +470,26 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
         />
 
         {isInlineVideoSong && (
-          <div ref={activeInlinePlayerRef} className="song-inline-player card song-inline-player-inline">
-            <div className="song-inline-player-header">
-              <div>
-                <h3>Now Playing</h3>
-                <p>
-                  {song.title}
-                  {song.artist ? ` - ${song.artist}` : ''}
-                  {` | ${resolveTempo(song)} BPM`}
-                </p>
-              </div>
-              <div className="song-inline-player-actions">
-                <button className="btn btn-secondary" aria-label="Tutup video" onClick={handleCloseVideoPlayer}>
-                  ✕
-                </button>
-              </div>
-            </div>
-            <div className="song-inline-player-video">
-              <YouTubeViewer
-                ref={videoRef}
-                videoId={song.youtubeId || song.youtube_url}
-              />
-            </div>
+          <div ref={activeInlinePlayerRef} className="song-panel media-panel song-inline-player card song-inline-player-inline">
+            {/* Media & kontrol pakai komponen yang sama dengan halaman song view */}
+            <StudioMediaColumn
+              youtubeId={song.youtubeId || song.youtube_url}
+              youtubeRef={videoRef}
+              timeMarkers={[]}
+              isPlaying={inlineVideoPlaying}
+              onTogglePlay={() => {
+                if (videoRef.current && typeof videoRef.current.handleTogglePlayPause === 'function') {
+                  videoRef.current.handleTogglePlayPause();
+                }
+                setInlineVideoPlaying((prev) => !prev);
+              }}
+              onSeek={(time) => videoRef.current?.handleSeek?.(time)}
+              currentTime={inlineVideoTime}
+              duration={inlineVideoDuration}
+              getCurrentYouTubeTime={() =>
+                typeof videoRef.current?.currentTime === 'number' ? videoRef.current.currentTime : 0
+              }
+            />
           </div>
         )}
       </React.Fragment>

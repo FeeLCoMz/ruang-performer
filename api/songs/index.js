@@ -83,19 +83,26 @@ async function ensureSongMasteryTable(client) {
 }
 
 function toMasteryRows(rows) {
+  // Status dari field `mastered`: 1 = Dikuasai ('mastered'), 0 = Perlu Latihan
+  // ('learning'). 'Belum Diulik' = baris tidak ada.
   return (rows?.rows || []).map((row) => ({
     userId: row.userId,
     username: row.username || '-',
     masteredAt: row.masteredAt || row.updatedAt || row.createdAt || null,
+    status: Number(row.mastered) === 1 ? 'mastered' : 'learning',
   }));
 }
 
+/**
+ * Daftar status penguasaan untuk satu lagu. Menyertakan baris mastered=0
+ * (Perlu Latihan) — baris ini tetap disimpan di tabel.
+ */
 async function getSongMasteryList(client, songId) {
   const rows = await client.execute(
-    `SELECT sm.userId, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
+    `SELECT sm.userId, sm.mastered, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
      FROM song_user_mastery sm
      LEFT JOIN users u ON u.id = sm.userId
-     WHERE sm.songId = ? AND sm.mastered = 1
+     WHERE sm.songId = ?
      ORDER BY datetime(COALESCE(sm.masteredAt, sm.updatedAt, sm.createdAt)) DESC`,
     [songId]
   );
@@ -188,7 +195,7 @@ async function handleSongMastery(req, res, client, songId) {
   }
 
   const songResult = await client.execute(
-    `SELECT id FROM songs WHERE id = ? LIMIT 1`,
+    `SELECT id, bandId FROM songs WHERE id = ? LIMIT 1`,
     [songId]
   );
   const song = songResult.rows?.[0];
@@ -197,26 +204,58 @@ async function handleSongMastery(req, res, client, songId) {
     return;
   }
 
+  // Mastery marker harus anggota band aktif dari lagu band; untuk lagu pribadi
+  // hanya pemilik lagu yang boleh menandai.
+  if (song.bandId) {
+    const bandMembers = await getActiveBandMemberSet(client, song.bandId);
+    if (!bandMembers.has(String(userId))) {
+      res.status(403).json({ error: 'Hanya anggota band yang bisa menandai status penguasaan' });
+      return;
+    }
+  } else {
+    const ownerRow = await client.execute(
+      `SELECT userId FROM songs WHERE id = ? LIMIT 1`,
+      [songId]
+    );
+    const ownerId = ownerRow.rows?.[0]?.userId;
+    if (ownerId && String(ownerId) !== String(userId)) {
+      res.status(403).json({ error: 'Hanya pemilik lagu yang bisa menandai status penguasaan' });
+      return;
+    }
+  }
+
   if (req.method === 'GET') {
-    const masteredByAll = await getSongMasteryList(client, songId);
-    const masteredBy = await filterMasteryForViewer(client, song.bandId || null, masteredByAll, userId);
-    res.status(200).json({ songId, masteredBy, isMasteredByCurrentUser: masteredByAll.some((entry) => String(entry.userId) === String(userId)) });
+    const masteryAll = await getSongMasteryList(client, songId);
+    const masteredBy = await filterMasteryForViewer(client, song.bandId || null, masteryAll, userId);
+    const ownEntry = masteryAll.find((entry) => String(entry.userId) === String(userId));
+    res.status(200).json({
+      songId,
+      masteredBy,
+      isMasteredByCurrentUser: ownEntry?.status === 'mastered',
+      currentUserStatus: ownEntry?.status || 'none',
+    });
     return;
   }
 
   if (req.method === 'PUT' || req.method === 'PATCH') {
     const body = await readJson(req);
-    const mastered = body?.mastered !== false;
-    if (mastered) {
+    // Status penguasaan disimpan di field `mastered` (skema tabel tidak diubah):
+    //   1 = Dikuasai, 0 = Perlu Latihan, dan 'none' (Belum Diulik) = hapus baris.
+    const requestedStatus = String(body?.status || '').toLowerCase();
+    const masteredValue = requestedStatus === 'learning' ? 0 : 1;
+    const mastered = masteredValue === 1;
+
+    if (requestedStatus !== 'none') {
       const now = new Date().toISOString();
       await client.execute(
         `INSERT INTO song_user_mastery (id, songId, userId, mastered, masteredAt, createdAt, updatedAt)
-         VALUES (?, ?, ?, 1, ?, ?, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(songId, userId) DO UPDATE SET
-           mastered = 1,
+           mastered = excluded.mastered,
            masteredAt = excluded.masteredAt,
            updatedAt = excluded.updatedAt`,
-        [randomUUID(), songId, userId, now, now, now]
+        [randomUUID(), songId, userId, masteredValue,
+         requestedStatus === 'learning' ? null : now, now, now]
       );
     } else {
       await client.execute(
@@ -225,13 +264,16 @@ async function handleSongMastery(req, res, client, songId) {
       );
     }
 
-    const masteredByAll = await getSongMasteryList(client, songId);
-    const masteredBy = await filterMasteryForViewer(client, song.bandId || null, masteredByAll, userId);
+    const masteryAll = await getSongMasteryList(client, songId);
+    const masteredBy = await filterMasteryForViewer(client, song.bandId || null, masteryAll, userId);
+    const ownEntry = masteryAll.find((entry) => String(entry.userId) === String(userId));
     res.status(200).json({
       songId,
       mastered,
+      status: ownEntry?.status || 'none',
       masteredBy,
-      isMasteredByCurrentUser: masteredByAll.some((entry) => String(entry.userId) === String(userId)),
+      isMasteredByCurrentUser: ownEntry?.status === 'mastered',
+      currentUserStatus: ownEntry?.status || 'none',
     });
     return;
   }
@@ -355,10 +397,9 @@ export default async function handler(req, res) {
       const rows = await client.execute(songsQuery, songQueryParams);
 
       const masteryRows = await client.execute(
-        `SELECT sm.songId, sm.userId, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
+        `SELECT sm.songId, sm.userId, sm.mastered, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
         FROM song_user_mastery sm
-         LEFT JOIN users u ON u.id = sm.userId
-         WHERE sm.mastered = 1`
+         LEFT JOIN users u ON u.id = sm.userId`
       );
       const masteryMap = {};
       for (const row of masteryRows.rows || []) {
@@ -367,6 +408,7 @@ export default async function handler(req, res) {
           userId: row.userId,
           username: row.username || '-',
           masteredAt: row.masteredAt || row.updatedAt || row.createdAt || null,
+          status: Number(row.mastered) === 1 ? 'mastered' : 'learning',
         });
       }
 
@@ -428,7 +470,9 @@ export default async function handler(req, res) {
 
           return {
             masteredBy: visibleMasteredBy,
-            isMasteredByCurrentUser: rawMasteredBy.some((entry) => String(entry.userId) === viewerId),
+            isMasteredByCurrentUser: visibleMasteredBy.some((entry) =>
+              String(entry.userId) === viewerId && entry.status === 'mastered'),
+            currentUserStatus: visibleMasteredBy.find((entry) => String(entry.userId) === viewerId)?.status || 'none',
           };
         })(),
         ...row,

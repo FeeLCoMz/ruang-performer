@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   PRACTICE_VIDEO_DETACHED: 'ruangperformer_practice_video_detached_v1',
   LYRICS_PREVIEW_MODE: 'ruangperformer_lyrics_preview_mode',
   SONG_LIST_PAGE_STATE: 'songListPageState',
+  PERFORMANCE_MODE: 'ruangperformer_performance_mode',
 };
 
 export default STORAGE_KEYS;
