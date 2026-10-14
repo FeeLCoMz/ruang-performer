@@ -4655,25 +4655,6 @@ body.dark-mode .song-mastery-chip.mastery-ready {
   color: var(--primary-accent);
   font-weight: 600;
 }
-.song-mastery-overview {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  font-size: 0.9rem;
-  flex-wrap: wrap;
-}
-
-.song-mastery-overview-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
-  color: #166534;
-  background: #dcfce7;
-  border: 1px solid #86efac;
-  font-weight: 700;
-}
 
 .song-actions {
   display: flex;
@@ -15099,4 +15080,25 @@ body.dark-mode .studio-error {
     min-width: 44px;
     min-height: 44px;
   }
+}
+
+/* Switchable Mode autoscroll: MUSICAL / MANUAL */
+.song-lyrics-autoscroll-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+}
+
+.song-lyrics-autoscroll-mode.is-manual {
+  border-color: var(--primary-accent);
+}
+
+.song-lyrics-autoscroll-mode-label {
+  font-weight: 600;
+}
+
+.song-lyrics-fullscreen-perf-mode-btn.is-manual,
+.song-lyrics-fullscreen-rail-mode-btn.is-manual {
+  border-color: var(--primary-accent);
 }

@@ -2,6 +2,18 @@ import React, { useEffect, useRef, useState } from "react";
 import SongSheetMusic from "./SongSheetMusic.jsx";
 import ChordDisplay from "./ChordDisplay.jsx";
 import { transposeChord } from '../utils/chordUtils.js';
+import {
+  AUTO_SCROLL_MODES,
+  normalizeAutoScrollMode,
+  computeMusicalScrollSpeed,
+  computeManualScrollSpeed,
+  estimateBarCount,
+  estimateChordCount,
+  clampManualSpeedLevel,
+  MIN_MANUAL_SPEED_LEVEL,
+  MAX_MANUAL_SPEED_LEVEL,
+  DEFAULT_MANUAL_SPEED_LEVEL,
+} from '../utils/autoscrollSpeedUtils.js';
 
 const MIN_ZOOM = 0.7;
 const MAX_ZOOM = 1.5;
@@ -29,8 +41,12 @@ const parseBeatsPerBar = (timeSignature) => {
  *   - zoom
  *   - autoScrollActive
  *   - scrollSpeed
+ *   - autoScrollMode ('MUSICAL' | 'MANUAL')
+ *   - manualSpeedLevel (1-10, mode MANUAL)
  *   - setAutoScrollActive
  *   - setScrollSpeed
+ *   - setAutoScrollMode
+ *   - setManualSpeedLevel
  *   - currentBeat
  *   - setCurrentBeat
  *   - showSheetMusic
@@ -54,8 +70,12 @@ export default function SongChordsLyricsDisplay({
   keySignature,
   autoScrollActive,
   scrollSpeed,
+  autoScrollMode: autoScrollModeProp,
+  manualSpeedLevel: manualSpeedLevelProp,
   setAutoScrollActive,
   setScrollSpeed,
+  setAutoScrollMode,
+  setManualSpeedLevel,
   showSheetMusic,
   setShowSheetMusic,
   youtubeRef,
@@ -82,6 +102,14 @@ export default function SongChordsLyricsDisplay({
   // isYoutubePlaying comes from the page as a prop: it owns the polling, so the
   // timestamp buttons and the fullscreen controls share one source of truth.
   const [visualBeat, setVisualBeat] = useState(0);
+  // Mode autoscroll: 'MUSICAL' (BPM) atau 'MANUAL' (level 1-10).
+  // Fallback state lokal bila parent belum mengelola mode ini.
+  const [autoScrollModeLocal, setAutoScrollModeLocal] = useState(AUTO_SCROLL_MODES.MUSICAL);
+  const [manualSpeedLevelLocal, setManualSpeedLevelLocal] = useState(DEFAULT_MANUAL_SPEED_LEVEL);
+  const autoScrollMode = normalizeAutoScrollMode(autoScrollModeProp || autoScrollModeLocal);
+  const setAutoScrollModeSafe = setAutoScrollMode || setAutoScrollModeLocal;
+  const manualSpeedLevel = clampManualSpeedLevel(manualSpeedLevelProp || manualSpeedLevelLocal);
+  const setManualSpeedLevelSafe = setManualSpeedLevel || setManualSpeedLevelLocal;
 
   useEffect(() => {
     zoomRef.current = zoom;
@@ -269,8 +297,11 @@ export default function SongChordsLyricsDisplay({
         ? 'Simple'
         : 'Default';
 
-  // Autoscroll: menggeser konten lirik secara bertahap mengikuti tempo.
-  // Kecepatan (BPM) x ketukan per bar -> tinggi baris terukur = piksel/detik.
+  // Autoscroll: Switchable Mode.
+  // - MUSICAL: kecepatan dihitung dari parameter musik. T_baris =
+  //   barCount * (60/BPM) * timeSignatureNumerator, atau (tanpa barCount)
+  //   chordCount * (60/BPM) * beatsPerChord. V = lineHeightsPx / T_baris.
+  // - MANUAL : V = baseSpeedMultiplier * userSpeedLevel (10-100 px/s).
   useEffect(() => {
     const container = lyricsDisplayRef?.current;
     if (!autoScrollActive || !container) return undefined;
@@ -278,30 +309,69 @@ export default function SongChordsLyricsDisplay({
     let rafId = null;
     let lastTs = null;
     let accumulator = 0;
-    let lineStep = 0;
 
-    const measureLineStep = () => {
-      const lineEl = container.querySelector('.cd-chord, .cd-number, .cd-lyrics-line');
-      if (!lineEl) return 0;
-      const rect = lineEl.getBoundingClientRect();
-      const style = window.getComputedStyle(lineEl);
+    const measureLineMetrics = () => {
+      const lineEls = Array.from(container.querySelectorAll('.cd-chord, .cd-number, .cd-lyrics-line'));
+      if (!lineEls.length) {
+        return { lineStep: 24, lineHeightsPx: 24, barCount: 0, chordCount: 0, text: '' };
+      }
+      const firstEl = lineEls[0];
+      const style = window.getComputedStyle(firstEl);
       const lineHeight = parseFloat(style.lineHeight)
         || parseFloat(style.fontSize) * 1.6
-        || rect.height
+        || firstEl.getBoundingClientRect().height
         || 24;
-      return Math.max(8, Math.round(lineHeight));
+
+      // Tinggi blok baris sesungguhnya: jarak baris chord ini ke baris chord
+      // berikutnya (mencakup chord + baris liriknya). Tanpa ini, mode MUSICAL
+      // membagi durasi 1 baris ke tinggi elemen chord saja -> kecepatan nyaris 0.
+      let blockHeight = Math.max(8, Math.round(lineHeight));
+      if (lineEls.length > 1) {
+        const firstRect = firstEl.getBoundingClientRect();
+        const nextRect = lineEls[1].getBoundingClientRect();
+        const distance = Math.round(nextRect.top - firstRect.top);
+        if (Number.isFinite(distance) && distance > blockHeight) {
+          blockHeight = distance;
+        }
+      }
+
+      const text = firstEl.textContent || '';
+      return {
+        lineStep: blockHeight,
+        lineHeightsPx: blockHeight,
+        barCount: estimateBarCount(text),
+        chordCount: estimateChordCount(text),
+        text,
+      };
     };
 
-    lineStep = measureLineStep() || 24;
+    const computePixelsPerSecond = () => {
+      if (autoScrollMode === AUTO_SCROLL_MODES.MANUAL) {
+        // Mode konvensional: slider/preset level 1-10 (10-100 px/s).
+        return computeManualScrollSpeed({ userSpeedLevel: manualSpeedLevel });
+      }
+      // Mode musik: dari BPM + time signature + bar/chord per baris.
+      const metrics = measureLineMetrics();
+      const params = {
+        lineHeightsPx: metrics.lineHeightsPx,
+        barCount: metrics.barCount,
+        chordCount: metrics.chordCount,
+        bpm: normalizedBpm,
+        timeSignatureNumerator: beatsPerBar,
+        beatsPerChord: beatsPerBar,
+      };
+      return computeMusicalScrollSpeed(params);
+    };
+
+    let pixelsPerSecond = computePixelsPerSecond();
 
     const tick = (ts) => {
       if (lastTs === null) lastTs = ts;
       const deltaMs = ts - lastTs;
       lastTs = ts;
 
-      // Piksel per detik: satu baris per bar (beatsPerBar ketukan).
-      const beatsPerSecond = normalizedScrollSpeed / 60;
-      const pixelsPerSecond = (beatsPerSecond / beatsPerBar) * lineStep;
+      // Re-hitung kecepatan tiap frame agar perubahan mode/BPM/level langsung terasa.
+      pixelsPerSecond = computePixelsPerSecond();
       accumulator += (pixelsPerSecond * deltaMs) / 1000;
 
       if (accumulator >= 1) {
@@ -324,7 +394,7 @@ export default function SongChordsLyricsDisplay({
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, [autoScrollActive, normalizedScrollSpeed, beatsPerBar, lyricsDisplayRef, setAutoScrollActive, song?.id, showChords, showChordNumbers, showJazzChords, showSimpleChords, zoom]);
+  }, [autoScrollActive, autoScrollMode, manualSpeedLevel, normalizedBpm, beatsPerBar, lyricsDisplayRef, setAutoScrollActive, song?.id, showChords, showChordNumbers, showJazzChords, showSimpleChords, zoom]);
 
   // Indikator ketukan visual saat autoscroll nonaktif.
   useEffect(() => {
@@ -344,6 +414,11 @@ export default function SongChordsLyricsDisplay({
     : visualBeat;
 
   const nudgeScrollSpeed = (delta) => {
+    // Mode MANUAL: delta berlaku pada level kecepatan (1-10).
+    if (autoScrollMode === AUTO_SCROLL_MODES.MANUAL) {
+      setManualSpeedLevelSafe((prev) => clampManualSpeedLevel((Number(prev) || DEFAULT_MANUAL_SPEED_LEVEL) + delta));
+      return;
+    }
     setScrollSpeed((prev) => {
       const base = Number(prev) || normalizedBpm;
       return Math.max(40, Math.min(240, base + delta));
@@ -351,7 +426,19 @@ export default function SongChordsLyricsDisplay({
   };
 
   const resetScrollSpeed = () => {
+    if (autoScrollMode === AUTO_SCROLL_MODES.MANUAL) {
+      setManualSpeedLevelSafe(DEFAULT_MANUAL_SPEED_LEVEL);
+      return;
+    }
     setScrollSpeed(normalizedBpm);
+  };
+
+  const toggleAutoScrollMode = () => {
+    setAutoScrollModeSafe(
+      autoScrollMode === AUTO_SCROLL_MODES.MUSICAL
+        ? AUTO_SCROLL_MODES.MANUAL
+        : AUTO_SCROLL_MODES.MUSICAL
+    );
   };
 
   // Key info untuk kontrol performance di floating header fullscreen
@@ -475,6 +562,15 @@ export default function SongChordsLyricsDisplay({
               </span>
               <button
                 type="button"
+                className={`btn btn-secondary song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-perf-mode-btn${autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? ' is-manual' : ''}`}
+                onClick={toggleAutoScrollMode}
+                aria-label={`Mode autoscroll: ${autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? 'Musik (BPM)' : 'Manual (Level)'}. Klik untuk ganti.`}
+                title={`Mode autoscroll: ${autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? 'Musik (BPM)' : 'Manual (Level)'}`}
+              >
+                {autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? '♪' : '≡'}
+              </button>
+              <button
+                type="button"
                 className={`btn song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-perf-as-btn ${autoScrollActive ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setAutoScrollActive((prev) => !prev)}
                 aria-label={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
@@ -494,9 +590,9 @@ export default function SongChordsLyricsDisplay({
               <span
                 className="song-lyrics-fullscreen-perf-speed"
                 aria-live="polite"
-                title={`Kecepatan autoscroll ${normalizedScrollSpeed} BPM`}
+                title={`Kecepatan autoscroll ${autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? `Level ${manualSpeedLevel}` : `${normalizedScrollSpeed} BPM`}`}
               >
-                {normalizedScrollSpeed}
+                {autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? `Lv ${manualSpeedLevel}` : normalizedScrollSpeed}
               </span>
               <button
                 type="button"
@@ -632,13 +728,29 @@ export default function SongChordsLyricsDisplay({
             >
               -
             </button>
+            <button
+              type="button"
+              className={`btn btn-secondary song-lyrics-fullscreen-rail-btn song-lyrics-fullscreen-rail-mode-btn${autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? ' is-manual' : ''}`}
+              onClick={toggleAutoScrollMode}
+              aria-label={`Mode autoscroll: ${autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? 'Musik (BPM)' : 'Manual (Level)'}. Klik untuk ganti.`}
+              title={`Mode autoscroll: ${autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? 'Musik (BPM)' : 'Manual (Level)'}`}
+            >
+              {autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? '♪' : '≡'}
+            </button>
             <input
               type="range"
-              min={40}
-              max={240}
+              min={autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? MIN_MANUAL_SPEED_LEVEL : 40}
+              max={autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? MAX_MANUAL_SPEED_LEVEL : 240}
               step={1}
-              value={normalizedScrollSpeed}
-              onChange={(e) => setScrollSpeed(Number(e.target.value))}
+              value={autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? manualSpeedLevel : normalizedScrollSpeed}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                if (autoScrollMode === AUTO_SCROLL_MODES.MANUAL) {
+                  setManualSpeedLevelSafe(next);
+                } else {
+                  setScrollSpeed(next);
+                }
+              }}
               className="song-lyrics-fullscreen-autoscroll-slider"
               aria-label="Kecepatan autoscroll"
               title="Atur kecepatan autoscroll"
@@ -652,14 +764,15 @@ export default function SongChordsLyricsDisplay({
             >
               +
             </button>
-            <span className="song-lyrics-fullscreen-control-value song-lyrics-fullscreen-rail-value">{normalizedScrollSpeed}</span>
+            <span className="song-lyrics-fullscreen-control-value song-lyrics-fullscreen-rail-value">
+              {autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? `Lv ${manualSpeedLevel}` : normalizedScrollSpeed}
+            </span>
             <button
               type="button"
               className="btn btn-secondary song-lyrics-fullscreen-rail-btn"
               onClick={resetScrollSpeed}
-              aria-label="Reset ke tempo lagu"
-              title="Reset ke tempo lagu"
-              disabled={normalizedScrollSpeed === normalizedBpm}
+              aria-label="Reset kecepatan autoscroll"
+              title="Reset kecepatan autoscroll"
             >
               R
             </button>

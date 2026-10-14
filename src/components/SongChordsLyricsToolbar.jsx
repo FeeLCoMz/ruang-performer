@@ -1,4 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
+import {
+  AUTO_SCROLL_MODES,
+  normalizeAutoScrollMode,
+  clampManualSpeedLevel,
+  MIN_MANUAL_SPEED_LEVEL,
+  MAX_MANUAL_SPEED_LEVEL,
+  DEFAULT_MANUAL_SPEED_LEVEL,
+} from '../utils/autoscrollSpeedUtils.js';
 
 /**
  * SongChordsLyricsToolbar
@@ -13,6 +21,10 @@ export default function SongChordsLyricsToolbar({
   scrollSpeed,
   setScrollSpeed,
   tempo,
+  autoScrollMode: autoScrollModeProp,
+  setAutoScrollMode,
+  manualSpeedLevel: manualSpeedLevelProp,
+  setManualSpeedLevel,
   showChordNumbers,
   setShowChordNumbers,
   showJazzChords,
@@ -23,6 +35,14 @@ export default function SongChordsLyricsToolbar({
   youtubeRef,
 }) {
   const [showChordStyleMenu, setShowChordStyleMenu] = useState(false);
+  // Mode autoscroll & level manual (fallback lokal bila parent belum kelola).
+  const [autoScrollModeLocal, setAutoScrollModeLocal] = useState(AUTO_SCROLL_MODES.MUSICAL);
+  const [manualSpeedLevelLocal, setManualSpeedLevelLocal] = useState(DEFAULT_MANUAL_SPEED_LEVEL);
+  const autoScrollMode = normalizeAutoScrollMode(autoScrollModeProp || autoScrollModeLocal);
+  const setAutoScrollModeSafe = setAutoScrollMode || setAutoScrollModeLocal;
+  const manualSpeedLevel = clampManualSpeedLevel(manualSpeedLevelProp || manualSpeedLevelLocal);
+  const setManualSpeedLevelSafe = setManualSpeedLevel || setManualSpeedLevelLocal;
+  const isManualMode = autoScrollMode === AUTO_SCROLL_MODES.MANUAL;
   const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
   const [isYoutubeReady, setIsYoutubeReady] = useState(false);
   const chordStyleMenuRef = useRef(null);
@@ -155,49 +175,92 @@ export default function SongChordsLyricsToolbar({
         </button>
 
         <div className="song-lyrics-autoscroll-speed" role="group" aria-label="Kecepatan autoscroll">
+          {/* Switchable Mode: MUSICAL (BPM) / MANUAL (Level 1-10) */}
+          <button
+            type="button"
+            className={`btn btn-secondary song-lyrics-autoscroll-mode${isManualMode ? ' is-manual' : ''}`}
+            onClick={() => setAutoScrollModeSafe(isManualMode ? AUTO_SCROLL_MODES.MUSICAL : AUTO_SCROLL_MODES.MANUAL)}
+            aria-label={`Mode autoscroll: ${isManualMode ? 'Manual (Level)' : 'Musik (BPM)'}. Klik untuk ganti.`}
+            title={isManualMode ? 'Mode Manual: kecepatan dari slider (Level 1-10)' : 'Mode Musik: kecepatan mengikuti tempo lagu (BPM)'}
+          >
+            <span aria-hidden="true">{isManualMode ? '≡' : '♪'}</span>
+            <span className="song-lyrics-autoscroll-mode-label">{isManualMode ? 'Manual' : 'Musik'}</span>
+          </button>
           <button
             type="button"
             className="btn btn-secondary song-lyrics-autoscroll-step"
-            onClick={() => setScrollSpeedClamped(currentScrollSpeed - 1)}
-            disabled={currentScrollSpeed <= 40}
-            aria-label="Kurangi kecepatan autoscroll 1 BPM"
-            title="-1 BPM"
+            onClick={() => {
+              if (isManualMode) {
+                setManualSpeedLevelSafe(clampManualSpeedLevel(manualSpeedLevel - 1));
+                return;
+              }
+              setScrollSpeedClamped(currentScrollSpeed - 1);
+            }}
+            disabled={isManualMode ? manualSpeedLevel <= MIN_MANUAL_SPEED_LEVEL : currentScrollSpeed <= 40}
+            aria-label={isManualMode ? 'Kurangi level kecepatan autoscroll 1' : 'Kurangi kecepatan autoscroll 1 BPM'}
+            title={isManualMode ? '-1 Level' : '-1 BPM'}
           >
             −
           </button>
           <input
             type="number"
             className="song-lyrics-autoscroll-input"
-            value={currentScrollSpeed}
-            min={40}
-            max={240}
+            value={isManualMode ? manualSpeedLevel : currentScrollSpeed}
+            min={isManualMode ? MIN_MANUAL_SPEED_LEVEL : 40}
+            max={isManualMode ? MAX_MANUAL_SPEED_LEVEL : 240}
             step={1}
             inputMode="numeric"
-            onChange={(e) => setScrollSpeedClamped(e.target.value)}
-            aria-label="Kecepatan autoscroll (BPM)"
-            title="Kecepatan autoscroll dalam BPM"
+            onChange={(e) => {
+              if (isManualMode) {
+                setManualSpeedLevelSafe(clampManualSpeedLevel(e.target.value));
+                return;
+              }
+              setScrollSpeedClamped(e.target.value);
+            }}
+            aria-label={isManualMode ? 'Level kecepatan autoscroll (1-10)' : 'Kecepatan autoscroll (BPM)'}
+            title={isManualMode ? 'Level kecepatan autoscroll (1-10)' : 'Kecepatan autoscroll dalam BPM'}
           />
-          <span className="song-lyrics-autoscroll-unit" aria-hidden="true">BPM</span>
+          <span className="song-lyrics-autoscroll-unit" aria-hidden="true">{isManualMode ? 'Lv' : 'BPM'}</span>
           <button
             type="button"
             className="btn btn-secondary song-lyrics-autoscroll-step"
-            onClick={() => setScrollSpeedClamped(currentScrollSpeed + 1)}
-            disabled={currentScrollSpeed >= 240}
-            aria-label="Tambah kecepatan autoscroll 1 BPM"
-            title="+1 BPM"
+            onClick={() => {
+              if (isManualMode) {
+                setManualSpeedLevelSafe(clampManualSpeedLevel(manualSpeedLevel + 1));
+                return;
+              }
+              setScrollSpeedClamped(currentScrollSpeed + 1);
+            }}
+            disabled={isManualMode ? manualSpeedLevel >= MAX_MANUAL_SPEED_LEVEL : currentScrollSpeed >= 240}
+            aria-label={isManualMode ? 'Tambah level kecepatan autoscroll 1' : 'Tambah kecepatan autoscroll 1 BPM'}
+            title={isManualMode ? '+1 Level' : '+1 BPM'}
           >
             +
           </button>
-          {currentScrollSpeed !== baseTempo && (
-            <button
-              type="button"
-              className="btn btn-secondary song-lyrics-autoscroll-reset"
-              onClick={() => setScrollSpeedClamped(baseTempo)}
-              title={`Kembalikan ke tempo lagu (${baseTempo} BPM)`}
-              aria-label={`Reset ke tempo lagu ${baseTempo} BPM`}
-            >
-              ⟲
-            </button>
+          {isManualMode ? (
+            manualSpeedLevel !== DEFAULT_MANUAL_SPEED_LEVEL && (
+              <button
+                type="button"
+                className="btn btn-secondary song-lyrics-autoscroll-reset"
+                onClick={() => setManualSpeedLevelSafe(DEFAULT_MANUAL_SPEED_LEVEL)}
+                title={`Kembalikan ke level default (${DEFAULT_MANUAL_SPEED_LEVEL})`}
+                aria-label={`Reset ke level default ${DEFAULT_MANUAL_SPEED_LEVEL}`}
+              >
+                ⟲
+              </button>
+            )
+          ) : (
+            currentScrollSpeed !== baseTempo && (
+              <button
+                type="button"
+                className="btn btn-secondary song-lyrics-autoscroll-reset"
+                onClick={() => setScrollSpeedClamped(baseTempo)}
+                title={`Kembalikan ke tempo lagu (${baseTempo} BPM)`}
+                aria-label={`Reset ke tempo lagu ${baseTempo} BPM`}
+              >
+                ⟲
+              </button>
+            )
           )}
         </div>
       </div>

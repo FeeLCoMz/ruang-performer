@@ -146,6 +146,9 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
   // Auto Scroll state
   const [autoScrollActive, setAutoScrollActive] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(parseInt(tempo) || 120);
+  // Switchable Mode autoscroll: 'MUSICAL' (BPM) / 'MANUAL' (Level 1-10)
+  const [autoScrollMode, setAutoScrollMode] = useState('MUSICAL');
+  const [manualSpeedLevel, setManualSpeedLevel] = useState(5);
   const lyricsDisplayRef = useRef(null);
 
   // Real playback state for the timestamp play buttons. Without this the button
@@ -507,6 +510,10 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null })
         scrollSpeed={scrollSpeed}
         setAutoScrollActive={setAutoScrollActive}
         setScrollSpeed={setScrollSpeed}
+        autoScrollMode={autoScrollMode}
+        setAutoScrollMode={setAutoScrollMode}
+        manualSpeedLevel={manualSpeedLevel}
+        setManualSpeedLevel={setManualSpeedLevel}
         zoom={zoom}
         setZoom={setZoom}
         song={song}
