@@ -4,7 +4,7 @@ import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
 import { STORAGE_KEYS } from '../utils/storageKeys.js';
 
 const MIN_FONT_SCALE = 0.85;
-const MAX_FONT_SCALE = 1.6;
+const MAX_FONT_SCALE = 2.5;
 const clampFontScale = (value) => Math.min(MAX_FONT_SCALE, Math.max(MIN_FONT_SCALE, Number(value) || 1));
 
 const readStoredBool = (key, fallback = false) => {
@@ -120,6 +120,8 @@ export default function SongLyricsMainSection({
         targetKey={targetKey}
         transpose={transpose}
         setTranspose={setTranspose}
+        pianoRecommendation={pianoRecommendation}
+        onApplyRecommendedTranspose={onApplyRecommendedTranspose}
         tempo={tempo}
         autoScrollActive={autoScrollActive}
         setAutoScrollActive={setAutoScrollActive}

@@ -38,6 +38,8 @@ export default function SongChordsLyricsToolbar({
   // Grup tampilan panggung: font, mode panggung, mode fokus, lock
   fontScale = 1,
   setFontScale,
+  pianoRecommendation = null,
+  onApplyRecommendedTranspose,
   stageMode = false,
   setStageMode,
   focusMode = false,
@@ -48,7 +50,7 @@ export default function SongChordsLyricsToolbar({
   setlistNav = null,
 }) {
   const MIN_FONT_SCALE = 0.85;
-  const MAX_FONT_SCALE = 1.6;
+  const MAX_FONT_SCALE = 2.5;
   const clampFontScale = (value) => Math.min(MAX_FONT_SCALE, Math.max(MIN_FONT_SCALE, Number(value) || 1));
 
   // Autoscroll: fallback lokal bila parent belum kelola mode/level.
@@ -82,6 +84,18 @@ export default function SongChordsLyricsToolbar({
           compact
           disableAutoApply
         />
+        {pianoRecommendation && Number(pianoRecommendation.transposeFromCurrent) !== 0 && (
+          <button
+            type="button"
+            className="btn btn-secondary song-info-key-easy-btn"
+            onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
+            disabled={typeof onApplyRecommendedTranspose !== 'function'}
+            title={`Key mudah: ${pianoRecommendation.recommendedKey} (${pianoRecommendation.transposeFromCurrent > 0 ? '+' : ''}${pianoRecommendation.transposeFromCurrent} semitone)`}
+            aria-label="Gunakan key mudah yang disarankan"
+          >
+            💡 {pianoRecommendation.recommendedKey}
+          </button>
+        )}
       </div>
 
       {/* LED tempo — elemen mandiri (read-only info) */}

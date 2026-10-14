@@ -12599,9 +12599,9 @@ body.dark-mode .song-lyrics-error {
   min-height: 500px;
   max-height: calc(100vh - 260px);
   overflow-y: auto;
-  /* Lirik panjang tidak memicu horizontal scroll: konten menyusut agar muat.
-      scroll horizontal hanya muncul di fullscreen/zoom tinggi. */
-  overflow-x: hidden;
+  /* Font scale dari A-/A+ tidak lagi dikompensasi auto-fit, jadi font besar
+     boleh menimbulkan scroll horizontal — tanpa ini, konten terpotong. */
+  overflow-x: auto;
 }
 
 /* Lirik otomatis diperkecil bila lebih lebar dari kontainer: scale turun

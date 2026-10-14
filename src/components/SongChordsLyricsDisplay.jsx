@@ -912,6 +912,7 @@ export default function SongChordsLyricsDisplay({
         song={song}
         transpose={transpose}
         zoom={zoom}
+        fontScale={fontScale}
         currentBeat={activeVisualBeat}
         timeSignature={timeSignature || song?.time_signature || '4/4'}
         showChords={effectiveShowChords}

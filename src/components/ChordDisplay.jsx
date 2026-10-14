@@ -76,6 +76,8 @@ const ChordDisplayBase = memo(function ChordDisplay({
     activeLine = null,
     /** Mode fokus: kunci bagian aktif — baris di luar bagian itu diredupkan. */
     focusSectionKey = null,
+    /** Skala font dari tombol A-/A+; dipakai agar auto-fit tidak mengkompensasi font scale. */
+    fontScale = 1,
   }) {
 
   const formatInstrumentPatchText = (lineObj) => {
@@ -301,11 +303,15 @@ const ChordDisplayBase = memo(function ChordDisplay({
   });
 
   // Auto-fit horizontal: bila konten lebih lebar dari kontainer, lirik
-  // diperkecil (scale) supaya tidak memicu horizontal scroll. Zoom manual
-  // tetap dihormati — fit hanya menambah pengecilan bila diperlukan.
+  // diperkecil (scale) supaya tidak memicu horizontal scroll. Pengecilan HANYA
+  // berlaku untuk zoom manual (pinch/wheel) — tidak boleh mengkompensasi font
+  // scale dari tombol A-/A+, karena bila fit memasukkan font scale, memperbesar
+  // font langsung dibatalkan oleh fit (lirik kembali mengecil).
+  // Caranya: ukur lebar konten pada skala 1, hitung berapa lebar "berlebih"
+  // setelah dik porsi zoom, lalu fit = sisa kompensasi untuk zoom saja.
   const containerRef = useRef(null);
   const [fitScale, setFitScale] = useState(1);
-  const fitMeasureKey = `${song?.id || ''}|${song?.lyrics?.length || 0}`;
+  const fitMeasureKey = `${song?.id || ''}|${song?.lyrics?.length || 0}|${fontScale || 1}`;
 
   useEffect(() => {
     // Kontainer ukur = induk terdekat (.song-lyrics-display milik
@@ -317,12 +323,28 @@ const ChordDisplayBase = memo(function ChordDisplay({
 
     const measure = () => {
       const availableWidth = container.clientWidth;
-      const contentWidth = content.scrollWidth;
-      if (!availableWidth || !contentWidth) {
+      // scrollWidth sudah termasuk efek font-scale (CSS var di induk).
+      const scaledContentWidth = content.scrollWidth;
+      const fontScaleValue = Number(fontScale) || 1;
+      if (!availableWidth || !scaledContentWidth) {
         setFitScale(1);
         return;
       }
-      setFitScale(contentWidth > availableWidth ? availableWidth / contentWidth : 1);
+
+      // Lebar konten pada font dasar (skala 1) = lebar terukur / fontScale.
+      const baseContentWidth = scaledContentWidth / fontScaleValue;
+
+      // Bila konten dasar sudah muat, tidak ada pengecilan sama sekali —
+      // font diperbesar murni membesar (mengikuti overflow-x dari panel).
+      if (baseContentWidth <= availableWidth) {
+        setFitScale(1);
+        return;
+      }
+
+      // Konten dasar kelebihan lebar: fit boleh mengecil hingga konten DASAR
+      // muat, lalu zoom manual tetap dihormati di atasnya.
+      const fit = availableWidth / baseContentWidth;
+      setFitScale(Math.min(1, fit));
     };
 
     measure();

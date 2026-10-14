@@ -562,7 +562,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
 
   return (
     <div className="page-container">
-      {/* Tab panel: Info | Media | Lirik | Analisis */}
+      {/* Tab panel: Info | Lirik | Media | Analisis */}
       <div className="song-tabs">
         <div className="song-tabs-bar" role="tablist" aria-label="Panel lagu">
           <button
@@ -577,6 +577,15 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
           <button
             type="button"
             role="tab"
+            aria-selected={activeTab === 'lyrics'}
+            className={`song-tabs-tab${activeTab === 'lyrics' ? ' active' : ''}`}
+            onClick={() => setActiveTab('lyrics')}
+          >
+            🎤 Lirik
+          </button>
+          <button
+            type="button"
+            role="tab"
             aria-selected={activeTab === 'media'}
             className={`song-tabs-tab${activeTab === 'media' ? ' active' : ''}`}
             onClick={() => setActiveTab('media')}
@@ -584,15 +593,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
             title={youtubeId ? 'Panel media (video & time markers)' : 'Lagu ini belum punya video YouTube'}
           >
             📺 Media
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'lyrics'}
-            className={`song-tabs-tab${activeTab === 'lyrics' ? ' active' : ''}`}
-            onClick={() => setActiveTab('lyrics')}
-          >
-            🎤 Lirik
           </button>
           <button
             type="button"
