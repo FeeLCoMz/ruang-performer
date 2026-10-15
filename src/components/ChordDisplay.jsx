@@ -142,15 +142,8 @@ const ChordDisplayBase = memo(function ChordDisplay({
     );
   };
 
-  if (!song?.lyrics) {
-    return (
-      <div className="cd-empty">
-        No lyrics available
-      </div>
-    );
-  }
-
-  const lines = useMemo(() => song.lyrics.split(/\r?\n/), [song.lyrics]);
+  // --- Hooks (must all run before any early return, per the Rules of Hooks) ---
+  const lines = useMemo(() => song?.lyrics ? song.lyrics.split(/\r?\n/) : [], [song?.lyrics]);
   const effectiveTranspose = showChordNumbers ? 0 : transpose;
   // Parsing the whole lyric is the expensive part of a render, and in the
   // editor this component re-renders on every keystroke. Memoising on the
@@ -161,6 +154,67 @@ const ChordDisplayBase = memo(function ChordDisplay({
     () => parseLines(lines, effectiveTranspose),
     [lines, effectiveTranspose]
   );
+
+  // Auto-fit horizontal: bila konten lebih lebar dari kontainer, lirik
+  // diperkecil (scale) supaya tidak memicu horizontal scroll. Pengecilannya HANYA
+  // berlaku untuk zoom manual (pinch/wheel) — tidak boleh mengkompensasi font
+  // scale dari tombol A-/A+, karena bila fit memasukkan font scale, memperbesar
+  // font langsung dibatalkan oleh fit (lirik kembali mengecil).
+  // Caranya: ukur lebar konten pada skala 1, hitung berapa lebar "berlebih"
+  // setelah dikurangi porsi zoom, lalu fit = sisa kompensasi untuk zoom saja.
+  const containerRef = useRef(null);
+  const [fitScale, setFitScale] = useState(1);
+  const fitMeasureKey = `${song?.id || ''}|${song?.lyrics?.length || 0}|${fontScale || 1}`;
+
+  useEffect(() => {
+    // Kontainer ukur = induk terdekat (.song-lyrics-display milik
+    // SongChordsLyricsDisplay). Komponen ini sendiri tidak merender wrapper —
+    // panel scroll berasal dari induk.
+    const container = containerRef?.current?.closest?.('.song-lyrics-display');
+    const content = containerRef?.current;
+    if (!container || !content) return undefined;
+
+    const measure = () => {
+      const availableWidth = container.clientWidth;
+      // scrollWidth sudah termasuk efek font-scale (CSS var di induk).
+      const scaledContentWidth = content.scrollWidth;
+      const fontScaleValue = Number(fontScale) || 1;
+      if (!availableWidth || !scaledContentWidth) {
+        setFitScale(1);
+        return;
+      }
+
+      // Lebar konten pada font dasar (skala 1) = lebar terukur / fontScale.
+      const baseContentWidth = scaledContentWidth / fontScaleValue;
+
+      // Bila konten dasar sudah muat, tidak ada pengecilan sama sekali —
+      // font diperbesar murni membesar (mengikuti overflow-x dari panel).
+      if (baseContentWidth <= availableWidth) {
+        setFitScale(1);
+        return;
+      }
+
+      // Konten dasar kelebihan lebar: fit boleh mengecil hingga konten DASAR
+      // muat, lalu zoom manual tetap dihormati di atasnya.
+      const fit = availableWidth / baseContentWidth;
+      setFitScale(Math.min(1, fit));
+    };
+
+    measure();
+    if (typeof ResizeObserver !== 'function') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [fitMeasureKey]);
+
+  if (!song?.lyrics) {
+    return (
+      <div className="cd-empty">
+        No lyrics available
+      </div>
+    );
+  }
 
   /** Highlight class for a parsed row, compared by source line. */
   const syncClass = (lineObj) => {
@@ -309,52 +363,6 @@ const ChordDisplayBase = memo(function ChordDisplay({
   // font langsung dibatalkan oleh fit (lirik kembali mengecil).
   // Caranya: ukur lebar konten pada skala 1, hitung berapa lebar "berlebih"
   // setelah dik porsi zoom, lalu fit = sisa kompensasi untuk zoom saja.
-  const containerRef = useRef(null);
-  const [fitScale, setFitScale] = useState(1);
-  const fitMeasureKey = `${song?.id || ''}|${song?.lyrics?.length || 0}|${fontScale || 1}`;
-
-  useEffect(() => {
-    // Kontainer ukur = induk terdekat (.song-lyrics-display milik
-    // SongChordsLyricsDisplay). Komponen ini sendiri tidak merender wrapper —
-    // panel scroll berasal dari induk.
-    const container = containerRef?.current?.closest?.('.song-lyrics-display');
-    const content = containerRef?.current;
-    if (!container || !content) return undefined;
-
-    const measure = () => {
-      const availableWidth = container.clientWidth;
-      // scrollWidth sudah termasuk efek font-scale (CSS var di induk).
-      const scaledContentWidth = content.scrollWidth;
-      const fontScaleValue = Number(fontScale) || 1;
-      if (!availableWidth || !scaledContentWidth) {
-        setFitScale(1);
-        return;
-      }
-
-      // Lebar konten pada font dasar (skala 1) = lebar terukur / fontScale.
-      const baseContentWidth = scaledContentWidth / fontScaleValue;
-
-      // Bila konten dasar sudah muat, tidak ada pengecilan sama sekali —
-      // font diperbesar murni membesar (mengikuti overflow-x dari panel).
-      if (baseContentWidth <= availableWidth) {
-        setFitScale(1);
-        return;
-      }
-
-      // Konten dasar kelebihan lebar: fit boleh mengecil hingga konten DASAR
-      // muat, lalu zoom manual tetap dihormati di atasnya.
-      const fit = availableWidth / baseContentWidth;
-      setFitScale(Math.min(1, fit));
-    };
-
-    measure();
-    if (typeof ResizeObserver !== 'function') return undefined;
-    const observer = new ResizeObserver(measure);
-    observer.observe(container);
-    observer.observe(content);
-    return () => observer.disconnect();
-  }, [fitMeasureKey]);
-
   const effectiveScale = Math.min(zoom, fitScale);
 
   // Tanpa wrapper: induk (.song-lyrics-display di SongChordsLyricsDisplay)

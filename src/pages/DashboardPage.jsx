@@ -20,7 +20,23 @@ export default function DashboardPage() {
   const [eventsError, setEventsError] = useState('');
   const [popularSongsError, setPopularSongsError] = useState('');
 
-  const handleRetryActivities = useCallback(async () => {
+  /** Map the raw trending payload into the shape the popular-songs card needs. */
+  const mapTrendingSongs = (payload) =>
+    (Array.isArray(payload?.trending) ? payload.trending : []).map((item) => ({
+      id: item.videoId || item.id || item.youtubeId || item.title,
+      youtubeId: item.videoId || item.youtubeId || item.id || null,
+      title: item.title || item.snippet?.title || '',
+      artist: item.channelTitle || item.artist || item.snippet?.channelTitle || '',
+      thumbnail: item.thumbnailUrl || item.thumbnail || item.snippet?.thumbnails?.high?.url || null,
+      viewCount: item.viewCount || null,
+      publishedAt: item.publishedAt || null,
+    }));
+
+  /** Fetch trending songs and map them; shared by mount load and retry button. */
+  const fetchAndMapPopularSongs = async () =>
+    mapTrendingSongs(await apiClient.fetchSongs({ includeTrending: true }));
+
+  const loadActivities = useCallback(async () => {
     setStatsLoading(true);
     setBandsLoading(true);
     setActivitiesError('');
@@ -54,7 +70,9 @@ export default function DashboardPage() {
     setBandsLoading(false);
   }, []);
 
-  const handleRetryEvents = useCallback(async () => {
+  const handleRetryActivities = loadActivities;
+
+  const loadEvents = useCallback(async () => {
     setEventsLoading(true);
     setEventsError('');
 
@@ -72,22 +90,14 @@ export default function DashboardPage() {
     setEventsLoading(false);
   }, []);
 
-  const handleRetryPopularSongs = useCallback(async () => {
+  const handleRetryEvents = loadEvents;
+
+  const loadPopularSongs = useCallback(async () => {
     setPopularSongsLoading(true);
     setPopularSongsError('');
 
     try {
-      const payload = await apiClient.fetchSongs({ includeTrending: true });
-      const trendingData = Array.isArray(payload?.trending) ? payload.trending : [];
-      setPopularSongs(trendingData.map((item) => ({
-        id: item.videoId || item.id || item.youtubeId || item.title,
-        youtubeId: item.videoId || item.youtubeId || item.id || null,
-        title: item.title || item.snippet?.title || '',
-        artist: item.channelTitle || item.artist || item.snippet?.channelTitle || '',
-        thumbnail: item.thumbnailUrl || item.thumbnail || item.snippet?.thumbnails?.high?.url || null,
-        viewCount: item.viewCount || null,
-        publishedAt: item.publishedAt || null,
-      })));
+      setPopularSongs(await fetchAndMapPopularSongs());
     } catch {
       setPopularSongs([]);
       setPopularSongsError('Lagu populer YouTube gagal dimuat. Silakan coba lagi.');
@@ -96,123 +106,13 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const handleRetryPopularSongs = loadPopularSongs;
+
   useEffect(() => {
-    let isMounted = true;
-
-    const loadDashboard = async () => {
-      setStatsLoading(false);
-      setBandsLoading(false);
-      setActivitiesError('');
-      setEventsError('');
-      setPopularSongsError('');
-
-      let setlistsData = [];
-      let bandsData = [];
-      let songsData = [];
-      let gigsData = [];
-
-      const updateSummary = () => {
-        if (!isMounted) return;
-
-        setStats((prev) => ({
-          ...prev,
-          setlists: setlistsData.length || 0,
-          bands: bandsData.length || 0,
-          songs: songsData.length || 0,
-          gigs: gigsData.length || 0,
-        }));
-
-        setBands(bandsData.slice(0, 5));
-        setRecentActivity(buildRecentActivities({
-          bandsData,
-          setlistsData,
-          songsData,
-          gigsData,
-        }));
-      };
-
-      const loadSummaryData = async () => {
-        const [setlistsResult, bandsResult] = await Promise.allSettled([
-          apiClient.fetchSetLists({ summary: true }),
-          apiClient.fetchBands(),
-        ]);
-
-        if (!isMounted) return;
-
-        setlistsData = setlistsResult.status === 'fulfilled' ? (Array.isArray(setlistsResult.value) ? setlistsResult.value : []) : [];
-        bandsData = bandsResult.status === 'fulfilled' ? (Array.isArray(bandsResult.value) ? bandsResult.value : []) : [];
-
-        if (setlistsResult.status === 'rejected' || bandsResult.status === 'rejected') {
-          setActivitiesError('Sebagian data aktivitas gagal dimuat. Silakan coba lagi.');
-        }
-
-        updateSummary();
-      };
-
-      const loadDetailData = async () => {
-        const [songsResult, gigsResult] = await Promise.allSettled([
-          apiClient.fetchSongs(),
-          apiClient.fetchGigs(),
-        ]);
-
-        if (!isMounted) return;
-
-        const songsPayload = songsResult.status === 'fulfilled' ? songsResult.value : [];
-        const gigsPayload = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
-        songsData = Array.isArray(songsPayload) ? songsPayload : Array.isArray(songsPayload?.songs) ? songsPayload.songs : [];
-        gigsData = Array.isArray(gigsPayload) ? gigsPayload : [];
-
-        if (songsResult.status === 'rejected' || gigsResult.status === 'rejected') {
-          setActivitiesError('Aktivitas terbaru gagal diperbarui. Silakan coba lagi.');
-        }
-
-        if (gigsResult.status === 'rejected') {
-          setEventsError('Upcoming events gagal dimuat. Silakan coba lagi.');
-        }
-
-        setUpcomingEvents(buildUpcomingEvents({ gigsData }));
-        setEventsLoading(false);
-        updateSummary();
-      };
-
-      const loadPopularSongs = async () => {
-        try {
-          const payload = await apiClient.fetchSongs({ includeTrending: true });
-          const trendingData = Array.isArray(payload?.trending) ? payload.trending : [];
-
-          if (!isMounted) return;
-
-          setPopularSongs(trendingData.map((item) => ({
-            id: item.videoId || item.id || item.youtubeId || item.title,
-            youtubeId: item.videoId || item.youtubeId || item.id || null,
-            title: item.title || item.snippet?.title || '',
-            artist: item.channelTitle || item.artist || item.snippet?.channelTitle || '',
-            thumbnail: item.thumbnailUrl || item.thumbnail || item.snippet?.thumbnails?.high?.url || null,
-            viewCount: item.viewCount || null,
-            publishedAt: item.publishedAt || null,
-          })));
-        } catch {
-          if (!isMounted) return;
-          setPopularSongs([]);
-          setPopularSongsError('Lagu populer YouTube gagal dimuat. Silakan coba lagi.');
-        } finally {
-          if (isMounted) {
-            setPopularSongsLoading(false);
-          }
-        }
-      };
-
-      loadSummaryData();
-      loadDetailData();
-      loadPopularSongs();
-    };
-
-    loadDashboard();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    loadActivities();
+    loadEvents();
+    loadPopularSongs();
+  }, [loadActivities, loadEvents, loadPopularSongs]);
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
