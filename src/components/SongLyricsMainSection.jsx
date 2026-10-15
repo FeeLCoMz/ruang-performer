@@ -30,7 +30,7 @@ const readStoredFontScale = () => {
  * SongLyricsMainSection
  * Komponen utama untuk menampilkan lirik dan chord (read-only).
  * Memuat toolbar panel lirik: key/tempo, autoscroll, gaya chord, YouTube,
- * plus kontrol tampilan panggung (font size, mode panggung, mode fokus,
+ * plus kontrol tampilan panggung (font size, mode fokus,
  * lock layar) dan navigasi lagu setlist.
  */
 export default function SongLyricsMainSection({
@@ -71,27 +71,22 @@ export default function SongLyricsMainSection({
   youtubeId,
   isYoutubePlaying = false,
   setlistNav = null,
-  loading = false
+  loading = false,
+  // Mode overlay lirik: dikelola parent (SongChordsPage) supaya tombol di
+  // SetlistNavFooter dan layer overlay di panel ini berbagi satu state.
+  overlayMode = false,
+  onOverlayClose,
 }) {
   // Preferensi tampilan panggung, dipersist di localStorage lintas sesi.
   const [fontScale, setFontScaleState] = useState(readStoredFontScale);
-  const [stageMode, setStageModeState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_STAGE_MODE));
   const [focusMode, setFocusModeState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_FOCUS_MODE));
   const [screenLocked, setScreenLockedState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_LOCK));
-  // Mode overlay lirik: layer fullscreen di atas seluruh UI (z-index tertinggi).
-  const [overlayMode, setOverlayModeState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_OVERLAY));
 
   const setFontScale = (next) => {
     const clamped = clampFontScale(next);
     setFontScaleState(clamped);
     try {
       localStorage.setItem(STORAGE_KEYS.LYRICS_FONT_SCALE, String(clamped));
-    } catch { /* ignore */ }
-  };
-  const setStageMode = (next) => {
-    setStageModeState(Boolean(next));
-    try {
-      localStorage.setItem(STORAGE_KEYS.LYRICS_STAGE_MODE, next ? '1' : '0');
     } catch { /* ignore */ }
   };
   const setFocusMode = (next) => {
@@ -106,12 +101,6 @@ export default function SongLyricsMainSection({
       localStorage.setItem(STORAGE_KEYS.LYRICS_LOCK, next ? '1' : '0');
     } catch { /* ignore */ }
   };
-  const setOverlayMode = (next) => {
-    setOverlayModeState(Boolean(next));
-    try {
-      localStorage.setItem(STORAGE_KEYS.LYRICS_OVERLAY, next ? '1' : '0');
-    } catch { /* ignore */ }
-  };
 
   // Ref panel lirik & chord (.song-lyrics-main) — dipakai untuk efek
   // mode panggung/fokus/lock.
@@ -122,10 +111,9 @@ export default function SongLyricsMainSection({
   useEffect(() => {
     const panel = lyricsDisplayRef?.current;
     if (!panel) return;
-    panel.classList.toggle('lyrics-stage-mode', stageMode);
     panel.classList.toggle('lyrics-focus-mode', focusMode);
     panel.classList.toggle('lyrics-screen-locked', screenLocked);
-  }, [lyricsDisplayRef, stageMode, focusMode, screenLocked, loading]);
+  }, [lyricsDisplayRef, focusMode, screenLocked, loading]);
 
   return (
     <div className="song-panel song-lyrics-main" ref={lyricsPanelRef}>
@@ -152,16 +140,10 @@ export default function SongLyricsMainSection({
         setManualSpeedLevel={setManualSpeedLevel}
         fontScale={fontScale}
         setFontScale={setFontScale}
-        stageMode={stageMode}
-        setStageMode={setStageMode}
         focusMode={focusMode}
         setFocusMode={setFocusMode}
         screenLocked={screenLocked}
         setScreenLocked={setScreenLocked}
-        overlayMode={overlayMode}
-        setOverlayMode={setOverlayMode}
-        overlayMode={overlayMode}
-        setOverlayMode={setOverlayMode}
         setlistNav={setlistNav}
       />
 
@@ -203,7 +185,7 @@ export default function SongLyricsMainSection({
               screenLocked={screenLocked}
               setlistNav={setlistNav}
               overlayMode={overlayMode}
-              onOverlayClose={() => setOverlayMode(false)}
+              onOverlayClose={onOverlayClose}
             />
         )}
     </div>

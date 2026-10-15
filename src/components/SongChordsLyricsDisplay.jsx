@@ -481,8 +481,25 @@ export default function SongChordsLyricsDisplay({
                 ref={overlayRef}
               >
                 <div className="lyrics-overlay-header">
-                  <span className="lyrics-overlay-title">{song?.title || 'Lirik'}</span>
+                  <span className="lyrics-overlay-title">
+                    {song?.title || 'Lirik'}
+                    {song?.artist && <span className="lyrics-overlay-artist"> — {song.artist}</span>}
+                  </span>
                   {targetKey && <span className="lyrics-overlay-key">{targetKey}</span>}
+                  {/* LED tempo + angka BPM — setelah key, gaya pill seperti key. */}
+                  <span
+                    className="song-lyrics-tempo-led-compact lyrics-overlay-tempo-led"
+                    title={`Tempo ${normalizedBpm} BPM`}
+                  >
+                    <span
+                      className="song-info-tempo-led"
+                      style={{ animationDuration: `${Math.round(60000 / normalizedBpm)}ms` }}
+                      aria-hidden="true"
+                    />
+                    <span className="song-lyrics-tempo-led-compact-text" aria-live="polite">
+                      {normalizedBpm}
+                    </span>
+                  </span>
                   <button
                     type="button"
                     className="btn btn-secondary lyrics-overlay-close"

@@ -179,8 +179,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(buttonLabels).not.toContain('Full screen');
     expect(container.querySelector('.song-lyrics-transpose-controls')).toBeFalsy();
     expect(container.querySelector('.song-lyrics-tempo-minimal')).toBeFalsy();
-    // Kontrol tampilan panggung baru tersedia di toolbar; kontrol lama tidak.
-    expect(buttonLabels).toContain('Panggung');
+    // Kontrol tampilan tersedia di toolbar (mode panggung dihapus);
     expect(buttonLabels).toContain('Fokus');
     expect(buttonLabels).toContain('Kunci');
   });
@@ -417,8 +416,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-tempo-capsule').textContent).toContain('120');
     // Autoscroll lirik di toolbar: kapsul shared (AutoScrollControl).
     expect(container.querySelector('.song-lyrics-autoscroll-capsule')).toBeTruthy();
-    // Kontrol tampilan panggung dirender.
-    expect(labels).toContain('Panggung');
+    // Kontrol tampilan dirender (mode panggung dihapus).
     expect(labels).toContain('Fokus');
     expect(labels).toContain('Kunci');
     expect(container.querySelector('.song-lyrics-font-control')).toBeTruthy();
@@ -483,9 +481,11 @@ describe('Song lyrics shared editor rendering', () => {
     expect(footer).toBeTruthy();
     expect(footer.textContent).toContain('2/5');
     const buttons = footer.querySelectorAll('button');
-    expect(buttons.length).toBe(3);
-    expect(buttons[0].disabled).toBe(false);
-    expect(buttons[2].disabled).toBe(true);
+    // 4 tombol: prev, info posisi, next, plus tombol overlay lirik.
+    expect(buttons.length).toBe(4);
+    // Urutan tombol: overlay, prev, info posisi, next.
+    expect(buttons[1].disabled).toBe(false);
+    expect(buttons[3].disabled).toBe(true);
   });
 
   test('Given SetlistNavFooter without nav, Then nothing renders', async () => {

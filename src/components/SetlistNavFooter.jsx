@@ -12,7 +12,7 @@ import React, { useEffect, useState } from 'react';
  * Desktop (>768px): disembunyikan di luar mode penuh — navigasi antar lagu
  * tetap tersedia di toolbar panel lirik.
  */
-export default function SetlistNavFooter({ setlistNav, allSongs = [] }) {
+export default function SetlistNavFooter({ setlistNav, allSongs = [], overlayMode = false, onToggleOverlay }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [query, setQuery] = useState('');
   const searchRef = React.useRef(null);
@@ -146,6 +146,16 @@ export default function SetlistNavFooter({ setlistNav, allSongs = [] }) {
       )}
 
       <div className="setlist-nav-footer setlist-nav-fullscreen" role="navigation" aria-label="Navigasi lagu setlist">
+        <button
+          type="button"
+          className={`btn btn-secondary setlist-nav-footer-btn${overlayMode ? ' active' : ''}`}
+          onClick={onToggleOverlay}
+          aria-pressed={overlayMode}
+          aria-label="Tampilkan lirik overlay"
+          title="Overlay lirik: tampilkan lirik fullscreen di atas UI"
+        >
+          <span aria-hidden="true">🖥️</span>
+        </button>
         <button
           type="button"
           className="btn btn-secondary setlist-nav-footer-btn"

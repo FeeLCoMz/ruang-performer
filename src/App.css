@@ -12080,6 +12080,25 @@ body.dark-mode .cd-token {
   font-size: 1rem;
 }
 
+.lyrics-overlay-artist {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* LED tempo di header overlay (LED + angka BPM) — gaya pill sama seperti
+   .lyrics-overlay-key; order:0 menetralkan order:4 dari toolbar. */
+.lyrics-overlay-tempo-led {
+  flex: 0 0 auto;
+  order: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-accent) 14%, transparent);
+  color: var(--primary-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 6px;
+}
+
 .lyrics-overlay-key {
   flex: 0 0 auto;
   padding: 2px 10px;
@@ -12104,9 +12123,42 @@ body.dark-mode .cd-token {
   padding: 8px 16px calc(24px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Mode panggung diterapkan juga di overlay agar kontras tetap tinggi. */
-.lyrics-overlay.lyrics-stage-mode {
+/* Area lirik overlay mengisi penuh sisa tinggi sampai bawah layar —
+   override gaya .song-lyrics-display (min/max-height, border, radius).
+   Padding tetap inherit dari .song-lyrics-display agar konsisten. */
+.lyrics-overlay-body.song-lyrics-display {
+  flex: 1 1 auto;
+  display: block;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.lyrics-overlay-body .cd {
+  min-height: 100%;
+  /* Padding bawah supaya baris terakhir bisa di-scroll melewati lipatan layar. */
+  padding-bottom: 48px;
+}
+
+/* Overlay lirik selalu bertema gelap: latar hitam, teks lirik putih,
+   token chord kuning — kontras tinggi untuk panggung. */
+.lyrics-overlay {
   background: #000;
+}
+
+.lyrics-overlay .lyrics-overlay-body .cd {
+  color: #ffffff;
+}
+
+.lyrics-overlay .lyrics-overlay-body .cd-token {
+  color: #ffd479;
+}
+
+.lyrics-overlay .lyrics-overlay-body .cd .cd-focus-dim {
+  opacity: 0.32;
 }
 
 .song-lyrics-toolbar-group {
@@ -15631,22 +15683,7 @@ body.performance-mode .song-lyrics-display .cd {
   font-size: calc(clamp(1rem, 4.5vw, 1.25rem) * var(--lyrics-font-scale));
 }
 
-/* Mode panggung: kontras tinggi & teks lebih besar untuk panggung redup.
-   Lokal pada panel, tidak mengubah performance-mode global. */
-.song-lyrics-display.lyrics-stage-mode {
-  background: #05070d;
-  border-color: #4b5880;
-}
-
-.song-lyrics-display.lyrics-stage-mode .cd {
-  color: #ffffff;
-  text-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
-  font-weight: 600;
-}
-
-.song-lyrics-display.lyrics-stage-mode .cd-token {
-  color: #ffd479;
-}
+/* (Mode panggung panel lirik dihapus — overlay lirik kini selalu gelap.) */
 
 /* Mode fokus: baris di luar bagian aktif diredupkan; header bagian aktif
    disorot dengan aksen. Mengikuti pattern cd-sync-row (aturan kiri). */

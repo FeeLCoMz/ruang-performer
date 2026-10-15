@@ -34,15 +34,10 @@ export default function SongChordsLyricsToolbar({
   setFontScale,
   pianoRecommendation = null,
   onApplyRecommendedTranspose,
-  stageMode = false,
-  setStageMode,
   focusMode = false,
   setFocusMode,
   screenLocked = false,
   setScreenLocked,
-  // Mode overlay lirik: layer fullscreen di atas seluruh UI.
-  overlayMode = false,
-  setOverlayMode,
   // Tempo & metronome
   onTempoChange,
   isMetronomeActive = false,
@@ -112,7 +107,7 @@ export default function SongChordsLyricsToolbar({
         tempo={tempo}
       />
 
-      {/* Grup tampilan: font size, mode panggung, mode fokus, lock layar */}
+      {/* Grup tampilan: font size, mode fokus, lock layar */}
       <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-viewmode" role="group" aria-label="Tampilan lirik">
         <div className="song-lyrics-font-control" role="group" aria-label="Ukuran font lirik">
           <button
@@ -145,17 +140,6 @@ export default function SongChordsLyricsToolbar({
         </div>
         <button
           type="button"
-          className={`btn song-lyrics-toolbar-btn${stageMode ? ' btn-primary' : ' btn-secondary'}`}
-          onClick={() => setStageMode?.(!stageMode)}
-          aria-pressed={stageMode}
-          aria-label={stageMode ? 'Matikan mode panggung' : 'Nyalakan mode panggung'}
-          title={stageMode ? 'Mode panggung aktif: kontras tinggi & font besar' : 'Mode panggung: kontras tinggi untuk panggung redup'}
-        >
-          <span aria-hidden="true">🌙</span>
-          <span className="song-lyrics-toolbar-btn-label">Panggung</span>
-        </button>
-        <button
-          type="button"
           className={`btn song-lyrics-toolbar-btn${focusMode ? ' btn-primary' : ' btn-secondary'}`}
           onClick={() => setFocusMode?.(!focusMode)}
           aria-pressed={focusMode}
@@ -164,17 +148,6 @@ export default function SongChordsLyricsToolbar({
         >
           <span aria-hidden="true">🎯</span>
           <span className="song-lyrics-toolbar-btn-label">Fokus</span>
-        </button>
-        <button
-          type="button"
-          className={`btn song-lyrics-toolbar-btn${overlayMode ? ' btn-primary' : ' btn-secondary'}`}
-          onClick={() => setOverlayMode?.(!overlayMode)}
-          aria-pressed={overlayMode}
-          aria-label={overlayMode ? 'Tutup overlay lirik' : 'Tampilkan lirik overlay'}
-          title={overlayMode ? 'Overlay lirik aktif: lirik tampil fullscreen di atas UI' : 'Overlay lirik: tampilkan lirik fullscreen di atas UI'}
-        >
-          <span aria-hidden="true">🖥️</span>
-          <span className="song-lyrics-toolbar-btn-label">Overlay</span>
         </button>
         <button
           type="button"
