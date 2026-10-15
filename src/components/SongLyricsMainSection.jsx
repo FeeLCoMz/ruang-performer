@@ -133,7 +133,6 @@ export default function SongLyricsMainSection({
         setAutoScrollActive={setAutoScrollActive}
         scrollSpeed={scrollSpeed}
         setScrollSpeed={setScrollSpeed}
-        tempo={tempo}
         autoScrollMode={autoScrollMode}
         setAutoScrollMode={setAutoScrollMode}
         manualSpeedLevel={manualSpeedLevel}
