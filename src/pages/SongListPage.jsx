@@ -6,7 +6,7 @@ import { canPerformAction, PERMISSIONS } from '../utils/permissionUtils.js';
 import PlusIcon from '../components/PlusIcon.jsx';
 import EditIcon from '../components/EditIcon.jsx';
 import SongCard from '../components/SongCard.jsx';
-import { StudioMediaColumn } from '../components/SongStudioLayout.jsx';
+import SongMediaPanel from '../components/SongMediaPanel.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
@@ -463,7 +463,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
         {isInlineVideoSong && (
           <div ref={activeInlinePlayerRef} className="song-panel media-panel song-inline-player card song-inline-player-inline">
             {/* Media & kontrol pakai komponen yang sama dengan halaman song view */}
-            <StudioMediaColumn
+            <SongMediaPanel
               youtubeId={song.youtubeId || song.youtube_url}
               youtubeRef={videoRef}
               timeMarkers={[]}

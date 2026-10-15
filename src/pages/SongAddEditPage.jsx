@@ -2,12 +2,12 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 // import { usePermission } from "../hooks/usePermission.js";
 // import { PERMISSIONS } from "../utils/permissionUtils.js";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import YouTubeViewer from "../components/YouTubeViewer";
 import TapTempo from "../components/TapTempo";
 import VirtualPiano from "../components/VirtualPiano";
 import AIAutofillModal from "../components/AIAutofillModal";
 import SongLyricsEditorPanel from "../components/SongLyricsEditorPanel.jsx";
-import SongStudioTopbar, { StudioMediaColumn } from "../components/SongStudioLayout.jsx";
+import SongStudioTopbar from "../components/SongStudioTopbar.jsx";
+import SongMediaPanel from "../components/SongMediaPanel.jsx";
 import { getAuthHeader } from "../utils/auth";
 import { extractYouTubeId } from "../utils/youtubeUtils";
 import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils.js';
@@ -859,7 +859,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         </section>
 
         <div className="studio-columns">
-          <StudioMediaColumn
+          <SongMediaPanel
             youtubeId={normalizedYoutubeId}
             youtubeRef={ytRef}
             timeMarkers={timeMarkers}

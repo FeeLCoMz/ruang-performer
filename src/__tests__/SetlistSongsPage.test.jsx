@@ -32,7 +32,7 @@ vi.mock('jspdf', () => ({
   default: vi.fn().mockImplementation(() => ({})),
 }));
 
-vi.mock('../components/YouTubeViewer.jsx', () => ({
+vi.mock('../components/SongMediaPanel.jsx', () => ({
   default: () => null,
 }));
 

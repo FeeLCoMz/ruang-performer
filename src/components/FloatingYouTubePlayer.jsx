@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import YouTubeViewer from './YouTubeViewer.jsx';
-import TimeMarkers from './TimeMarkers.jsx';
+import SongMediaPanel, { TimeMarkers } from './SongMediaPanel.jsx';
 import { STORAGE_KEYS } from '../utils/storageKeys.js';
 
 const FLOATING_PLAYER_POSITION_STORAGE_KEY = STORAGE_KEYS.FLOATING_PLAYER_POSITION;
@@ -72,6 +71,28 @@ export default function FloatingYouTubePlayer({
   const [ytCurrentTime, setYtCurrentTime] = useState(0);
   const [ytDuration, setYtDuration] = useState(0);
   const [markersExpanded, setMarkersExpanded] = useState(false);
+  // Status play/pause di-poll dari player asli (bukan toggle lokal) agar ikon
+  // tombol play di panel shared selalu mencerminkan kondisi player YouTube.
+  const [isPlayingState, setIsPlayingState] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const intervalId = setInterval(() => {
+      const state = youtubeRef?.current?.getPlayerState?.();
+      if (typeof state === 'number') setIsPlayingState(state === 1);
+    }, 500);
+    return () => clearInterval(intervalId);
+  }, [isOpen, youtubeRef]);
+
+  const handleTogglePlay = () => {
+    youtubeRef?.current?.handleTogglePlayPause?.();
+  };
+
+  const handleSeekFromControls = (time) => {
+    if (typeof time === 'number') {
+      youtubeRef?.current?.handleSeek?.(time);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -245,9 +266,24 @@ export default function FloatingYouTubePlayer({
         }}
       />
       <div className="floating-youtube-player-body">
-        <YouTubeViewer
-          ref={youtubeRef}
-          videoId={videoId}
+        {/* Video + kontrol + marker via komponen shared SongMediaPanel
+            (varian floating: tanpa header internal, marker bisa dilipat).
+            Drag/resize/close milik lapisan luar komponen ini. */}
+        <SongMediaPanel
+          variant="floating"
+          youtubeId={videoId}
+          youtubeRef={youtubeRef}
+          isPlaying={isPlayingState}
+          currentTime={ytCurrentTime}
+          duration={ytDuration}
+          timeMarkers={timeMarkers}
+          readonlyMarkers={readonlyTimeMarkers}
+          onUpdateMarkers={onUpdateTimeMarkers}
+          onTogglePlay={handleTogglePlay}
+          onSeek={handleSeekFromControls}
+          getCurrentYouTubeTime={() =>
+            typeof youtubeRef?.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0
+          }
           onTimeUpdate={(time, duration) => {
             setYtCurrentTime(time || 0);
             if (typeof duration === 'number') {
@@ -257,57 +293,44 @@ export default function FloatingYouTubePlayer({
               onTimeUpdate(time, duration);
             }
           }}
+          markerExtra={
+            <button
+              type="button"
+              className="btn btn-secondary smp-markers-toggle"
+              onClick={() => setMarkersExpanded((prev) => !prev)}
+              aria-expanded={markersExpanded}
+              title={markersExpanded ? 'Sembunyikan time markers' : 'Tampilkan time markers'}
+            >
+              <span aria-hidden="true">{markersExpanded ? '▼' : '▶'}</span>
+              <span>Time Markers {hasMarkers ? `(${timeMarkers.length})` : '(0)'}</span>
+            </button>
+          }
         />
-
-        <div className="floating-youtube-player-markers">
-          <button
-            type="button"
-            className="btn btn-secondary floating-youtube-player-markers-toggle"
-            onClick={() => setMarkersExpanded((prev) => !prev)}
-            aria-expanded={markersExpanded}
-            title={markersExpanded ? 'Sembunyikan time markers' : 'Tampilkan time markers'}
-          >
-            <span aria-hidden="true">{markersExpanded ? '▼' : '▶'}</span>
-            <span>
-              Time Markers {hasMarkers ? `(${timeMarkers.length})` : '(0)'}
-            </span>
-          </button>
-
-          {markersExpanded && (
-            <div className="floating-youtube-player-markers-content">
-              <TimeMarkers
-                timeMarkers={timeMarkers}
-                readonly={readonlyTimeMarkers}
-                compactUI={true}
-                currentTime={ytCurrentTime}
-                duration={ytDuration}
-                onUpdate={onUpdateTimeMarkers}
-                onSeek={(time, opts) => {
-                  if (opts?.pause) {
-                    if (youtubeRef?.current && typeof youtubeRef.current.handlePause === 'function') {
-                      youtubeRef.current.handlePause();
-                    }
-                    return;
-                  }
-
-                  if (typeof time === 'number' && youtubeRef?.current && typeof youtubeRef.current.handleSeek === 'function') {
-                    youtubeRef.current.handleSeek(time);
-                  }
-
-                  if (youtubeRef?.current && typeof youtubeRef.current.handlePlay === 'function') {
-                    youtubeRef.current.handlePlay();
-                  }
-                }}
-                getCurrentYouTubeTime={() => {
-                  if (youtubeRef?.current && typeof youtubeRef.current.currentTime === 'number') {
-                    return youtubeRef.current.currentTime;
-                  }
-                  return 0;
-                }}
-              />
-            </div>
-          )}
-        </div>
+        {markersExpanded && (
+          <div className="floating-youtube-player-markers-content">
+            <TimeMarkers
+              timeMarkers={timeMarkers}
+              readonly={readonlyTimeMarkers}
+              compactUI={true}
+              currentTime={ytCurrentTime}
+              duration={ytDuration}
+              onUpdate={onUpdateTimeMarkers}
+              onSeek={(time, opts) => {
+                if (opts?.pause) {
+                  youtubeRef?.current?.handlePause?.();
+                  return;
+                }
+                if (typeof time === 'number') {
+                  youtubeRef?.current?.handleSeek?.(time);
+                }
+                youtubeRef?.current?.handlePlay?.();
+              }}
+              getCurrentYouTubeTime={() =>
+                typeof youtubeRef?.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0
+              }
+            />
+          </div>
+        )}
       </div>
     </div>
   );

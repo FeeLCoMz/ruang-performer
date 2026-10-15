@@ -21,8 +21,7 @@ import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
 import useMetronome from '../hooks/useMetronome.js';
 import { updateSongMastery } from '../apiClient.js';
 import MasteryChip from '../components/MasteryChip.jsx';
-import YouTubeViewer from '../components/YouTubeViewer.jsx';
-import TimeMarkers from '../components/TimeMarkers.jsx';
+import SongMediaPanel from '../components/SongMediaPanel.jsx';
 
 const SESSION_DIVIDER_META_FIELD = 'sessionDividerName';
 
@@ -1888,42 +1887,39 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                       </div>
                     </div>
                     {activeVideoSong?.id === song.id && (
-                      <div className="song-inline-player-video">
-                        <YouTubeViewer
-                          ref={videoRef}
-                          videoId={song.youtubeId || song.youtube_url}
-                          autoPlay={Boolean(activeVideoSong)}
-                          onTimeUpdate={(t, d) => {
-                            setVideoPlayback((prev) => ({
-                              time: typeof t === 'number' ? t : prev.time,
-                              duration: typeof d === 'number' ? d : prev.duration,
-                            }));
-                          }}
-                          onStateChange={(event) => handleYouTubeStateChange(event, song.id)}
-                        />
-                      </div>
-                    )}
-
-                    {/* Time markers for the song being played, so you can jump to
-                        any section without scrubbing the video. Rendered read-only:
-                        the setlist page is for performing, not editing. */}
-                    {activeVideoSong?.id === song.id && (
-                      Array.isArray(song.time_markers) && song.time_markers.length > 0 ? (
-                        <div className="song-inline-player-markers">
-                          <TimeMarkers
-                            timeMarkers={song.time_markers}
-                            readonly
-                            onSeek={(seconds) => videoRef.current?.handleSeek?.(seconds)}
-                            currentTime={videoPlayback.time}
-                            duration={videoPlayback.duration}
-                          />
-                        </div>
-                      ) : (
-                        <div className="song-inline-player-markers-empty">
-                          Lagu ini belum punya time marker. Tambahkan di halaman editor lagu
-                          agar bagian-bagiannya bisa dilompati dari sini.
-                        </div>
-                      )
+                      /* Video + kontrol + time marker via komponen shared
+                         SongMediaPanel (aturan CSS sama dengan halaman lain).
+                         Marker read-only: halaman setlist untuk performa, bukan edit. */
+                      <SongMediaPanel
+                        variant="inline"
+                        youtubeId={song.youtubeId || song.youtube_url}
+                        youtubeRef={videoRef}
+                        autoPlay={Boolean(activeVideoSong)}
+                        onStateChange={(event) => handleYouTubeStateChange(event, song.id)}
+                        timeMarkers={song.time_markers}
+                        readonlyMarkers
+                        showMarkers={true}
+                        currentTime={videoPlayback.time}
+                        duration={videoPlayback.duration}
+                        getCurrentYouTubeTime={() =>
+                          typeof videoRef.current?.currentTime === 'number' ? videoRef.current.currentTime : 0
+                        }
+                        onSeek={(seconds) => videoRef.current?.handleSeek?.(seconds)}
+                        onTimeUpdate={(t, d) => {
+                          setVideoPlayback((prev) => ({
+                            time: typeof t === 'number' ? t : prev.time,
+                            duration: typeof d === 'number' ? d : prev.duration,
+                          }));
+                        }}
+                        markerExtra={
+                          Array.isArray(song.time_markers) && song.time_markers.length === 0 ? (
+                            <div className="smp-markers-empty">
+                              Lagu ini belum punya time marker. Tambahkan di halaman editor lagu
+                              agar bagian-bagiannya bisa dilompati dari sini.
+                            </div>
+                          ) : null
+                        }
+                      />
                     )}
                   </div>
                 )}

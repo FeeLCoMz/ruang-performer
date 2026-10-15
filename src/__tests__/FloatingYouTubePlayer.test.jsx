@@ -4,7 +4,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import FloatingYouTubePlayer from '../components/FloatingYouTubePlayer.jsx';
 
-vi.mock('../components/YouTubeViewer.jsx', () => ({
+vi.mock('../components/SongMediaPanel.jsx', () => ({
   default: React.forwardRef(function MockYouTubeViewer({ videoId }) {
     return <div data-testid="youtube-viewer">{videoId}</div>;
   }),

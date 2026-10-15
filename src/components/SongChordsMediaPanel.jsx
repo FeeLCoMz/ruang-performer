@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { StudioMediaColumn, StudioMediaLayout } from './SongStudioLayout.jsx';
+import SongMediaPanel, { TimeMarkers } from './SongMediaPanel.jsx';
 import { extractSectionOverview } from '../utils/songFormUtils.js';
 
 /**
  * SongChordsMediaPanel
  *
- * Konten tab Media di halaman song view. Sengaja memakai komponen yang sama
- * dengan halaman song add/edit (StudioMediaColumn) — video dan kontrol play —
- * supaya tampilan dan perilakunya identik di kedua halaman.
- *
- * Layout layar lebar: video + kontrol di kiri, daftar time marker di kanan
- * (StudioMediaLayout). Termasuk tombol "Marker Otomatis" yang membuat satu
- * time marker per seksi lagu ([Intro], [Chorus], dst) — waktu diambil dari
- * timestamp yang sudah tertulis di baris seksi lirik bila ada.
+ * Konten tab Media di halaman song view. Video dan kontrol play memakai
+ * komponen shared SongMediaPanel — sama dengan SongListPage dan
+ * halaman add/edit — supaya tampilan dan perilakunya identik di semua halaman.
+ * Termasuk tombol "Marker Otomatis" yang membuat satu time marker per seksi
+ * lagu ([Intro], [Chorus], dst) — waktu diambil dari timestamp yang sudah
+ * tertulis di baris seksi lirik bila ada.
  */
 export default function SongChordsMediaPanel({
   youtubeId,
@@ -89,42 +87,64 @@ export default function SongChordsMediaPanel({
 
   return (
     <div className="song-panel media-panel">
-      <StudioMediaLayout
-        timeMarkers={timeMarkers}
-        onSeek={(time) => youtubeRef.current?.handleSeek?.(time)}
-        currentTime={ytCurrentTime}
-        duration={ytDuration}
-        onUpdateMarkers={canEdit ? handleTimeMarkerUpdate : undefined}
-        getCurrentYouTubeTime={() =>
-          typeof youtubeRef.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0
-        }
-        sections={sections}
-        onAddAutoMarkers={handleAddAutoMarkers}
-        autoMarkersDisabled={!canEdit || sections.length === 0}
-      >
-        <StudioMediaColumn
-          youtubeId={youtubeId}
-          youtubeRef={youtubeRef}
-          isPlaying={isPlaying}
-          onTogglePlay={() => {
-            youtubeRef.current?.handleTogglePlayPause?.();
-            // State tidak di-toggle di sini: poll interval (atas) akan menyelaraskan
-            // isPlaying dengan kondisi player asli dalam ≤500ms.
-          }}
-          onSeek={(time) => youtubeRef.current?.handleSeek?.(time)}
-          currentTime={ytCurrentTime}
-          duration={ytDuration}
-          getCurrentYouTubeTime={() =>
-            typeof youtubeRef.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0
-          }
-          onTimeUpdate={(t, d) => {
-            // Pelacak posisi pemutaran agar tombol «5s / 5s» dan label waktu
-            // menghitung dari posisi yang benar, bukan selalu dari 0.
-            if (typeof t === 'number' && Number.isFinite(t)) setYtCurrentTime(t);
-            if (typeof d === 'number' && Number.isFinite(d)) setYtDuration(d);
-          }}
-        />
-      </StudioMediaLayout>
+      {/* Layout 2 kolom (CSS studio-media-columns): video+kontrol di kiri,
+          daftar time marker di kanan; di kolom sempit keduanya bertumpuk.
+          Video & kontrol memakai komponen shared SongMediaPanel
+          (sama dengan SongListPage, add/edit, setlist & mini player). */}
+      <div className="studio-media-container">
+        <div className="studio-media-columns">
+          <div className="studio-media-main">
+            <SongMediaPanel
+              youtubeId={youtubeId}
+              youtubeRef={youtubeRef}
+              isPlaying={isPlaying}
+              onTogglePlay={() => {
+                youtubeRef.current?.handleTogglePlayPause?.();
+                // State tidak di-toggle di sini: poll interval (atas) akan menyelaraskan
+                // isPlaying dengan kondisi player asli dalam ≤500ms.
+              }}
+              onSeek={(time) => youtubeRef.current?.handleSeek?.(time)}
+              currentTime={ytCurrentTime}
+              duration={ytDuration}
+              getCurrentYouTubeTime={() =>
+                typeof youtubeRef.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0
+              }
+              onTimeUpdate={(t, d) => {
+                // Pelacak posisi pemutaran agar tombol «5s / 5s» dan label waktu
+                // menghitung dari posisi yang benar, bukan selalu dari 0.
+                if (typeof t === 'number' && Number.isFinite(t)) setYtCurrentTime(t);
+                if (typeof d === 'number' && Number.isFinite(d)) setYtDuration(d);
+              }}
+              showMarkers={false}
+            />
+          </div>
+          <div className="studio-media-side smp-markers">
+            <span className="smp-markers-subtitle">Kontrol Time Marker</span>
+            {sections.length > 0 && (
+              <button
+                type="button"
+                className="btn btn-secondary studio-auto-markers-btn"
+                onClick={handleAddAutoMarkers}
+                disabled={!canEdit || sections.length === 0}
+                title="Buat marker otomatis dari setiap seksi lagu"
+              >
+                ✨ Marker Otomatis ({sections.length} seksi)
+              </button>
+            )}
+            <TimeMarkers
+              timeMarkers={timeMarkers}
+              onSeek={(time) => youtubeRef.current?.handleSeek?.(time)}
+              currentTime={ytCurrentTime}
+              duration={ytDuration}
+              onUpdate={canEdit ? handleTimeMarkerUpdate : undefined}
+              getCurrentYouTubeTime={() =>
+                typeof youtubeRef.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0
+              }
+              compactUI
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

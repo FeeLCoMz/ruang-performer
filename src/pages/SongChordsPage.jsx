@@ -719,8 +719,12 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
           )}
       </div>
 
-      {/* Lirik & chord — hanya di tab Lirik */}
+      {/* Lirik & chord — hanya di tab Lirik. Di layar desktop, panel lirik
+          dan panel media berbagi 2 kolom berdampingan (CSS song-lyrics-media-columns);
+          di layar sempit keduanya kembali bertumpuk satu kolom. */}
         {activeTab === 'lyrics' && (
+        <div className="song-lyrics-media-columns">
+        <div className="song-lyrics-media-lyrics">
         <SongLyricsMainSection
         lyricsDisplayRef={lyricsDisplayRef}
         tempo={tempo}
@@ -764,6 +768,20 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
                 overlayMode={overlayMode}
                 onOverlayClose={() => setOverlayMode(false)}
               />
+        </div>
+        {youtubeId && (
+          <div className="song-lyrics-media-side">
+            <SongChordsMediaPanel
+              youtubeId={youtubeId}
+              youtubeRef={youtubeRef}
+              timeMarkers={timeMarkers}
+              canEdit={can(PERMISSIONS.SONG_EDIT)}
+              handleTimeMarkerUpdate={handleTimeMarkerUpdate}
+              song={song}
+            />
+          </div>
+        )}
+        </div>
       )}
 
       {/* Footer sticky: navigasi lagu setlist (di atas bottom nav, mobile) */}
