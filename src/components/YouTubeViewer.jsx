@@ -52,35 +52,39 @@ const YouTubeViewer = React.forwardRef(({
     } catch {}
   };
 
-  // Expose currentTime and handleSeek to parent via ref
+  // Expose currentTime and handleSeek to parent via ref.
+  // Semua aksi memakai playerRef (instansi player live), bukan state `player`
+  // yang bisa telat satu render — root cause tombol pause & ±5 detik tidak jalan:
+  // handle menutup state lama sehingga `player` masih null / stale.
   React.useImperativeHandle(ref, () => ({
     currentTime,
     handlePlay: () => {
-      if (player && typeof player.playVideo === 'function') {
-        try {
-          player.playVideo();
-        } catch {}
+      const p = playerRef.current;
+      if (p && typeof p.playVideo === 'function') {
+        try { p.playVideo(); } catch {}
       }
     },
     handlePause: () => {
-      if (player && typeof player.pauseVideo === 'function') {
-        player.pauseVideo();
+      const p = playerRef.current;
+      if (p && typeof p.pauseVideo === 'function') {
+        try { p.pauseVideo(); } catch {}
       }
     },
     handleTogglePlayPause: () => {
-      if (player && typeof player.getPlayerState === 'function') {
-        const state = player.getPlayerState();
-        // state: 1 = PLAYING, 2 = PAUSED
-        if (state === 1) {
-          player.pauseVideo();
-        } else if (state === 2 || state === 0 || state === 5) {
-          player.playVideo();
-        }
+      const p = playerRef.current;
+      if (p && typeof p.getPlayerState === 'function') {
+        const state = p.getPlayerState();
+        // state: 1 = PLAYING, 2 = PAUSED, 0/5 = ended/not started
+        try {
+          if (state === 1) p.pauseVideo();
+          else p.playVideo();
+        } catch {}
       }
     },
     getPlayerState: () => {
-      if (player && typeof player.getPlayerState === 'function') {
-        return player.getPlayerState();
+      const p = playerRef.current;
+      if (p && typeof p.getPlayerState === 'function') {
+        return p.getPlayerState();
       }
       return -1; // uninitialized
     },

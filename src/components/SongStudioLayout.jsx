@@ -101,6 +101,9 @@ export function StudioMediaColumn({
   duration,
   getCurrentYouTubeTime,
   onTimeUpdate,
+  /** Peta seksi lagu → detik, untuk tombol "marker otomatis". */
+  onAddAutoMarkers,
+  autoMarkersDisabled = false,
 }) {
   const format = typeof secondsToLabel === 'function' ? secondsToLabel : (v) => String(v);
 
@@ -108,11 +111,6 @@ export function StudioMediaColumn({
     <div className="studio-media">
       <div className="studio-panel-head">
         <span className="studio-panel-title">🎬 Media &amp; Kontrol</span>
-        {youtubeId && (
-          <span className={`song-practice-state${isPlaying ? ' is-playing' : ''}`}>
-            {isPlaying ? '▶ Berjalan' : '⏸ Berhenti'}
-          </span>
-        )}
       </div>
 
       {youtubeId ? (
@@ -172,7 +170,8 @@ export function StudioMediaColumn({
               {format(Math.floor(currentTime || 0))}
               {duration > 0 ? ` / ${format(Math.floor(duration))}` : ''}
             </span>
-          </div>        </>
+          </div>
+        </>
       ) : (
         <div className="studio-media-empty">
           Belum ada video referensi. Isi <b>YouTube URL atau ID</b> di bagian Informasi
@@ -182,6 +181,58 @@ export function StudioMediaColumn({
 
       <div className="studio-markers">
         <span className="studio-panel-subtitle">Kontrol Time Marker</span>
+        {!youtubeId && (
+          <TimeMarkers
+            timeMarkers={timeMarkers}
+            onSeek={onSeek}
+            currentTime={currentTime}
+            duration={duration}
+            onUpdate={onUpdateMarkers}
+            getCurrentYouTubeTime={getCurrentYouTubeTime}
+            compactUI
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * StudioMediaLayout
+ *
+ * Layout tab Media untuk layar lebar: video + kontrol playback di kiri,
+ * daftar time marker di kanan (dua kolom sejajar); di layar sempit keduanya
+ * kembali bertumpuk satu kolom. Marker otomatis dari seksi lagu ada di panel
+ * marker, karena hasilnya juga tampil di daftar itu.
+ */
+export function StudioMediaLayout({
+  children,
+  timeMarkers,
+  onSeek,
+  currentTime,
+  duration,
+  onUpdateMarkers,
+  getCurrentYouTubeTime,
+  sections = [],
+  onAddAutoMarkers,
+  autoMarkersDisabled = false,
+}) {
+  return (
+    <div className="studio-media-columns">
+      <div className="studio-media-main">{children}</div>
+      <div className="studio-media-side">
+        <span className="studio-panel-subtitle">Kontrol Time Marker</span>
+        {sections.length > 0 && (
+          <button
+            type="button"
+            className="btn btn-secondary studio-auto-markers-btn"
+            onClick={onAddAutoMarkers}
+            disabled={autoMarkersDisabled}
+            title="Buat marker otomatis dari setiap seksi lagu"
+          >
+            ✨ Marker Otomatis ({sections.length} seksi)
+          </button>
+        )}
         <TimeMarkers
           timeMarkers={timeMarkers}
           onSeek={onSeek}

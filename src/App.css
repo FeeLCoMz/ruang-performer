@@ -10184,6 +10184,19 @@ body.dark-mode .cd-token {
   gap: var(--spacing-sm);
 }
 
+/* Layar lebar: Key & Tempo berdampingan dalam satu baris */
+@media (min-width: 901px) {
+  .song-info-control-rows {
+    flex-direction: row;
+    gap: var(--spacing-sm);
+  }
+
+  .song-info-control-rows .song-info-control-row {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
 .song-info-control-row {
   display: flex;
   align-items: center;
@@ -11505,6 +11518,17 @@ body.dark-mode .cd-token {
 .song-lyrics-main {
   display: flex;
   flex-direction: column;
+  /* Layar lebar: panel pas dengan sisa tinggi viewport — lirik panjang
+     di-scroll DI DALAM panel, bukan memicu vertical scroll di halaman.
+     Di layar sempit tetap mengalir alami (tanpa height terkunci). */
+}
+
+@media (min-width: 901px) {
+  .song-lyrics-main {
+    height: calc(100vh - 230px);
+    min-height: 480px;
+  }
+}
   /* Tanpa max-height/overflow di sini: satu scrollbar saja, milik
       .song-lyrics-display di dalamnya. Dua kontainer yang sama-sama scroll
       menghasilkan 2 scrollbar bertumpuk. */
@@ -14942,6 +14966,44 @@ body.dark-mode .studio-error {
   margin-top: var(--spacing-md);
   padding-top: var(--spacing-md);
   border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+/* ---- Tab Media layar lebar: video+kontrol kiri, time marker kanan ----
+   Di layar sempit (<= 900px) kembali satu kolom bertumpuk. */
+.studio-media-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+@media (min-width: 901px) {
+  .studio-media-columns {
+    grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr);
+  }
+
+  /* Video column tidak melar; marker column punya scroll sendiri bila panjang */
+  .studio-media-side {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  }
+
+  .studio-media-main .studio-markers {
+    display: none;
+  }
+}
+
+.studio-auto-markers-btn {
+  width: 100%;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.studio-auto-markers-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* ---- Live preview canvas ---- */

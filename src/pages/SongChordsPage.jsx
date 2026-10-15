@@ -705,6 +705,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
               timeMarkers={timeMarkers}
               canEdit={can(PERMISSIONS.SONG_EDIT)}
               handleTimeMarkerUpdate={handleTimeMarkerUpdate}
+              song={song}
             />
           )}
 
@@ -712,9 +713,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
             <SongChordsAnalyzer
               chordStats={chordStats}
               transpose={transpose}
-              songKey={song?.key || key}
               song={song}
-              detectedInstruments={detectedInstruments}
               songSections={extractSectionOverview(song?.lyrics || '')}
             />
           )}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { transposeChord, getNoteIndex, extractInstrumentsBySection } from '../utils/chordUtils.js';
+import { transposeChord, getNoteIndex } from '../utils/chordUtils.js';
 
 /**
  * SongChordsAnalyzer
@@ -9,9 +9,7 @@ import { transposeChord, getNoteIndex, extractInstrumentsBySection } from '../ut
 export default function SongChordsAnalyzer({
   chordStats,
   transpose,
-  songKey,
   song = null,
-  detectedInstruments = [],
   songSections = [],
 }) {
   const parseModeFromKey = (keyLabel = '') => {
@@ -100,14 +98,6 @@ export default function SongChordsAnalyzer({
       : progressionVariety >= 35 ? 'Sedang — progresi bervariasi'
         : 'Sederhana — progresi repetitif (mudah dihafal)';
 
-  // Daftar instrumen yang terdeteksi dari lirik (dihitung di halaman via
-  // extractDetectedInstrumentsFromLyrics). Bukan mood — mood ditampilkan
-  // terpisah di bawahnya.
-  const instrumentList = (Array.isArray(detectedInstruments) ? detectedInstruments : [])
-    .filter(Boolean);
-  // Instrumen yang terdeteksi di dalam tiap seksi lagu
-  const instrumentsBySection = song ? extractInstrumentsBySection(song?.lyrics || '') : [];
-
   const detectedKeyInfo = chordStats?.detectedKey || null;
   const detectedKeyLabel = detectedKeyInfo?.key
     ? (transpose !== 0 ? transposeChord(detectedKeyInfo.key, transpose) : detectedKeyInfo.key)
@@ -189,50 +179,15 @@ export default function SongChordsAnalyzer({
         </div>
         {Array.isArray(songSections) && songSections.length > 0 && (
           <div className="song-lyrics-analyzer-section-list" aria-label="Urutan seksi lagu">
-            {songSections.map((section, i) => {
-              const sectionInstruments = (instrumentsBySection.find(
-                (entry) => entry.lineIndex === section.lineIndex
-              )?.instruments || []);
-              return (
-                <span key={`${section.key}-${section.lineNumber}`} className="song-lyrics-analyzer-section-item">
-                  <span className="song-lyrics-analyzer-section-order">{i + 1}</span>
-                  <span className="song-lyrics-analyzer-section-name">{section.label}</span>
-                  {sectionInstruments.length > 0 && (
-                    <span
-                      className="song-lyrics-analyzer-section-instruments"
-                      title={`Instrumen: ${sectionInstruments.join(', ')}`}
-                    >
-                      🎸 {sectionInstruments.join(', ')}
-                    </span>
-                  )}
-                </span>
-              );
-            })}
+            {songSections.map((section, i) => (
+              <span key={`${section.key}-${section.lineNumber}`} className="song-lyrics-analyzer-section-item">
+                <span className="song-lyrics-analyzer-section-order">{i + 1}</span>
+                <span className="song-lyrics-analyzer-section-name">{section.label}</span>
+              </span>
+            ))}
           </div>
         )}
       </div>
-
-      {/* Analisis instrumen (dari deteksi lirik) */}
-      <div className="song-lyrics-analyzer-section">
-        <label className="song-lyrics-analyzer-chords-label">🎼 Instrumen:</label>
-        <div className="song-lyrics-analyzer-instruments">
-          {instrumentList.length > 0 ? (
-            instrumentList.map((instrument, i) => (
-              <span key={`${instrument}-${i}`} className="song-lyrics-analyzer-instrument-chip">{instrument}</span>
-            ))
-          ) : (
-            <span className="song-lyrics-analyzer-instrument-chip song-lyrics-analyzer-instrument-empty">
-              Tidak ada instrumen terdeteksi dari lirik
-            </span>
-          )}
-        </div>
-      </div>
-
-      {songKey && (
-        <div className="song-lyrics-analyzer-hint">
-          Key lagu: {songKey}. Gunakan kontrol Key di tab Info untuk transpose.
-        </div>
-      )}
     </div>
   );
 }
