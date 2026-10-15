@@ -21,7 +21,7 @@ vi.mock('../components/SetlistSongNavigator.jsx', () => ({
   ),
 }));
 
-vi.mock('../components/SongChordsMediaPanel.jsx', () => ({
+vi.mock('../components/SongMediaPanel.jsx', () => ({
   default: () => <div data-testid="song-chords-media-panel" />,
 }));
 

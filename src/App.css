@@ -11498,53 +11498,6 @@ body.dark-mode .cd-token {
   outline-offset: 1px;
 }
 
-/* ---- Desktop: panel lirik + panel media berbagi 2 kolom berdampingan ----
-   Lirik dominan (flex 1.8), media di kanan (lebar pas player 16:9).
-   Di layar <= 900px keduanya bertumpuk satu kolom seperti sebelumnya. */
-.song-lyrics-media-columns {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-  min-width: 0;
-}
-
-@media (min-width: 901px) {
-  .song-lyrics-media-columns {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-
-  .song-lyrics-media-lyrics {
-    flex: 1 1 60%;
-    min-width: 0;
-  }
-
-  .song-lyrics-media-side {
-    flex: 0 1 clamp(300px, 32%, 460px);
-    min-width: 0;
-    position: sticky;
-    top: 96px; /* tetap terlihat di bawah topbar saat lirik panjang */
-    align-self: flex-start;
-  }
-
-  /* Video YouTube embed di kolom media: rasio 16:9, tidak meluap */
-  .song-lyrics-media-side .studio-video {
-    aspect-ratio: 16 / 9;
-  }
-
-  .song-lyrics-media-side .studio-video iframe,
-  .song-lyrics-media-side .studio-video > div {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-@media (max-width: 900px) {
-  .song-lyrics-media-side {
-    order: 2; /* di layar sempit media muncul setelah lirik */
-  }
-}
-
 /* Tinggi panel lirik sesuai viewport agar lirik panjang di-scroll DI DALAM
    panel, bukan ke bawah halaman � header & tab tetap terlihat. */
 .song-lyrics-main {
@@ -15002,43 +14955,48 @@ body.dark-mode .studio-error {
 
 /* (Kontrol playback & marker kini via SongMediaPanel / smp-*.) */
 
-/* ---- Tab Media: responsif terhadap LEBAR KOMPONEN (container query), bukan layar ----
-   Container lebar >= 768px (ukuran tablet): video+kontrol kiri (60%), time marker kanan (40%).
-   Container lebih sempit: player di atas, time marker di bawah (satu kolom). */
-.studio-media-container {
+/* ---- SongMediaPanel: responsif terhadap LEBAR KOMPONEN (container query),
+   bukan lebar layar. Semua pemakaian panel (tanpa prop apa pun) otomatis:
+   - kontainer < 768px (di bawah tablet) : satu kolom — video di atas, Time Marker di bawah
+   - kontainer >= 768px (minimal tablet) : 2 kolom — video 60% kiri, marker 40% kanan
+
+   Catatan: @container tidak bisa menanyakan kontainernya sendiri, jadi
+   .smp-layout-wrap (container) dan .smp-layout (grid yang di-query) harus
+   elemen terpisah. */
+.smp-layout-wrap {
   container-type: inline-size;
 }
 
-.studio-media-columns {
+.smp-layout {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--spacing-md);
   align-items: start;
+  min-width: 0;
 }
 
-/* Duplikasi marker: di layout 2 kolom SongChordsMediaPanel, daftar marker
-   sudah dirender di kolom kanan (.studio-media-side). Komponen shared
-   SongMediaPanel punya seksi marker internal sendiri (dipakai saat
-   mandiri di SongListPage & add/edit), jadi di dalam layout kolom itu
-   disembunyikan — terlepas dari lebar, karena di kolom sempit pun tetap
-   ganda. */
-.studio-media-columns .studio-media-main .studio-markers {
-  display: none;
+/* Kartu panel pas dengan kolomnya (min-width mencegah overflow di grid) */
+.smp {
+  min-width: 0;
 }
 
 @container (min-width: 768px) {
-  .studio-media-columns {
+  .smp-layout {
     grid-template-columns: minmax(0, 60%) minmax(0, 40%);
   }
 
-  /* Marker column punya scroll sendiri bila daftarnya panjang */
-  .studio-media-container .studio-media-side {
+  .smp-layout > .smp-side {
     max-height: 70vh;
     overflow-y: auto;
-    padding-top: var(--spacing-sm);
-    border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+    /* Margin-top .smp-markers (sisa layout satu kolom) di-nolkan: jarak
+       antar kolom sudah ditangani gap grid — tanpa ini kartu marker
+       turun lebih rendah dari panel video. */
+    margin-top: 0;
   }
 }
+
+/* Duplikasi marker tidak ada: marker hanya dirender di .smp-side;
+   .smp-markers di dalam .smp tidak dirender lagi di markup panel. */
 
 .studio-auto-markers-btn {
   width: 100%;
@@ -15162,15 +15120,17 @@ body.dark-mode .studio-error {
   white-space: nowrap;
 }
 
-/* Seksi time marker */
+/* Seksi time marker: kartu berlatar card-bg, konsisten dengan panel video */
 .smp-markers {
   margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  padding: var(--spacing-md);
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
 }
 
 .smp--inline .smp-markers {
-  padding: var(--spacing-md) 14px 0;
+  padding: var(--spacing-md) 14px;
 }
 
 .smp-markers-subtitle {
@@ -15215,22 +15175,6 @@ body.dark-mode .studio-error {
   justify-content: flex-start;
   gap: 6px;
   font-size: var(--font-size-sm);
-}
-
-/* Kolom marker punya scroll sendiri bila daftarnya panjang */
-.studio-media-columns .studio-media-side .smp-markers {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-/* Duplikasi marker: di layout 2 kolom SongChordsMediaPanel, daftar marker
-   sudah dirender di kolom kanan (.studio-media-side). Komponen shared
-   SongMediaPanel punya seksi marker internal sendiri (dipakai saat
-   mandiri di SongListPage & add/edit), jadi di dalam layout kolom itu
-   disembunyikan — terlepas dari lebar, karena di kolom sempit pun tetap
-   ganda. */
-.studio-media-columns .studio-media-main .smp-markers {
-  display: none;
 }
 
 /* ---- Live preview canvas ---- */

@@ -365,49 +365,58 @@ export default function SongMediaPanel({
   ];
 
   return (
-    <div className={`smp smp--${variant}`}>
-      {showHeader && (
-        <div className="smp-header">
-          <span className="smp-title">{title}</span>
-          {extraControls && <div className="smp-extra-controls">{extraControls}</div>}
+    // Layout container-query: CSS memutuskan 1 kolom (kontainer sempit) atau
+    // 2 kolom — video+kontrol kiri, Time Marker kanan (kontainer >= 768px).
+    // .smp-layout-wrap adalah CONTAINER (container-type); @container di CSS
+    // menanyakan elemen ini. .smp-layout (grid) di dalamnya yang di-query —
+    // container query tidak bisa menanyakan kontainernya sendiri, makanya
+    // keduanya harus elemen terpisah.
+    <div className="smp-layout-wrap">
+      <div className="smp-layout">
+        <div className={`smp smp--${variant}`}>
+          {showHeader && (
+            <div className="smp-header">
+              <span className="smp-title">{title}</span>
+              {extraControls && <div className="smp-extra-controls">{extraControls}</div>}
+            </div>
+          )}
+
+          {youtubeId ? (
+            <>
+              <div className="smp-video" style={aspectRatio === '9/16' ? { aspectRatio: '9 / 16', maxWidth: '100%', margin: '0 auto' } : undefined}>
+                <YouTubeViewer
+                  videoId={youtubeId}
+                  ref={youtubeRef}
+                  onTimeUpdate={onTimeUpdate}
+                  onStateChange={onStateChange}
+                  autoPlay={autoPlay}
+                />
+              </div>
+
+              <div className="smp-controls" role="group" aria-label="Kontrol playback video">
+                {controls.map(({ key, icon, label, onClick }) => (
+                  <button key={key} type="button" className="btn btn-secondary smp-btn" onClick={onClick} title={label} aria-label={label}>
+                    {icon}
+                  </button>
+                ))}
+                <span className="smp-time" title="Posisi video saat ini">
+                  {format(Math.floor(currentTime || 0))}
+                  {duration > 0 ? ` / ${format(Math.floor(duration))}` : ''}
+                </span>
+              </div>
+            </>
+          ) : (
+            !hideEmptyState && (
+              <div className="smp-empty">
+                Belum ada video referensi. Isi <b>YouTube URL atau ID</b> di bagian Informasi untuk
+                memuat player dan penanda waktu di sini.
+              </div>
+            )
+          )}
         </div>
-      )}
-
-      {youtubeId ? (
-        <>
-          <div className="smp-video" style={aspectRatio === '9/16' ? { aspectRatio: '9 / 16', maxWidth: '100%', margin: '0 auto' } : undefined}>
-            <YouTubeViewer
-              videoId={youtubeId}
-              ref={youtubeRef}
-              onTimeUpdate={onTimeUpdate}
-              onStateChange={onStateChange}
-              autoPlay={autoPlay}
-            />
-          </div>
-
-          <div className="smp-controls" role="group" aria-label="Kontrol playback video">
-            {controls.map(({ key, icon, label, onClick }) => (
-              <button key={key} type="button" className="btn btn-secondary smp-btn" onClick={onClick} title={label} aria-label={label}>
-                {icon}
-              </button>
-            ))}
-            <span className="smp-time" title="Posisi video saat ini">
-              {format(Math.floor(currentTime || 0))}
-              {duration > 0 ? ` / ${format(Math.floor(duration))}` : ''}
-            </span>
-          </div>
-        </>
-      ) : (
-        !hideEmptyState && (
-          <div className="smp-empty">
-            Belum ada video referensi. Isi <b>YouTube URL atau ID</b> di bagian Informasi untuk
-            memuat player dan penanda waktu di sini.
-          </div>
-        )
-      )}
 
       {showMarkerSection && (
-        <div className="smp-markers">
+        <div className="smp-side smp-markers">
           <span className="smp-markers-subtitle">Time Marker</span>
           {markerExtra}
           <TimeMarkers
@@ -422,6 +431,7 @@ export default function SongMediaPanel({
           />
         </div>
       )}
+      </div>
     </div>
   );
 }

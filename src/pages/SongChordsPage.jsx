@@ -3,7 +3,7 @@ import SongChordsAnalyzer from '../components/SongChordsAnalyzer.jsx';
 import SongLyricsMainSection from '../components/SongLyricsMainSection.jsx';
 import SetlistNavFooter from '../components/SetlistNavFooter.jsx';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import SongChordsMediaPanel from '../components/SongChordsMediaPanel.jsx';
+import SongMediaPanel from '../components/SongMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import { getAuthHeader } from '../utils/auth.js';import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
@@ -250,6 +250,9 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
   // could only ever seek: ChordDisplay used to guess locally, and once that was
   // removed it received no state at all, so it never showed "pause".
   const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
+  // Posisi & durasi video untuk panel media (label waktu & time marker).
+  const [ytCurrentTime, setYtCurrentTime] = useState(0);
+  const [ytDuration, setYtDuration] = useState(0);
 
   useEffect(() => {
     if (!youtubeId) {
@@ -355,6 +358,25 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
   }, [isSetlistRoute, routeSetlistId, navSetlist]);
 
   // Handler export & share di utils/songHandlers.js
+
+  // Marker otomatis: satu time marker per seksi lagu ([Intro], [Chorus], dst)
+  // — waktu diambil dari timestamp [mm:ss] yang menempel di baris seksi lirik.
+  const sections = useMemo(() => extractSectionOverview(song?.lyrics || ''), [song?.lyrics]);
+  const handleAddAutoMarkers = () => {
+    if (!can(PERMISSIONS.SONG_EDIT)) return;
+    const lyricLines = String(song?.lyrics || '').split(/\r?\n/);
+    const nextMarkers = [...timeMarkers];
+    sections.forEach((section, index) => {
+      const tsMatch = (lyricLines[section.lineIndex] || '').match(/\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]/);
+      if (!tsMatch) return;
+      const time = tsMatch[3]
+        ? Number(tsMatch[1]) * 3600 + Number(tsMatch[2]) * 60 + Number(tsMatch[3])
+        : Number(tsMatch[1]) * 60 + Number(tsMatch[2]);
+      if (nextMarkers.some((m) => Number(m.time) === time)) return;
+      nextMarkers.push({ time, label: section.label || `Section ${index + 1}` });
+    });
+    handleTimeMarkerUpdate(nextMarkers.sort((a, b) => a.time - b.time));
+  };
 
   // Handle time marker updates
   const handleTimeMarkerUpdate = async (updatedMarkers) => {
@@ -583,6 +605,44 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
     }
   };
 
+  // Panel media: konfigurasi SongMediaPanel untuk tab Media. Layout 2 kolom
+  // murni CSS container query (.smp-layout); state playback & marker tetap
+  // satu sumber di halaman ini.
+  const canEditSong = can(PERMISSIONS.SONG_EDIT);
+  const mediaPanelProps = {
+    variant: 'card',
+    youtubeId,
+    youtubeRef,
+    timeMarkers,
+    isPlaying: isYoutubePlaying,
+    onTogglePlay: () => {
+      youtubeRef.current?.handleTogglePlayPause?.();
+      // State diselaraskan oleh poll interval di atas dalam ≤500ms.
+    },
+    onSeek: (time) => youtubeRef.current?.handleSeek?.(time),
+    onUpdateMarkers: canEditSong ? handleTimeMarkerUpdate : undefined,
+    currentTime: ytCurrentTime,
+    duration: ytDuration,
+    getCurrentYouTubeTime: () =>
+      typeof youtubeRef.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0,
+    onTimeUpdate: (t, d) => {
+      if (typeof t === 'number' && Number.isFinite(t)) setYtCurrentTime(t);
+      if (typeof d === 'number' && Number.isFinite(d)) setYtDuration(d);
+    },
+    markerExtra:
+      sections.length > 0 && (
+        <button
+          type="button"
+          className="btn btn-secondary studio-auto-markers-btn"
+          onClick={handleAddAutoMarkers}
+          disabled={!canEditSong || sections.length === 0}
+          title="Buat marker otomatis dari setiap seksi lagu"
+        >
+          ✨ Marker Otomatis ({sections.length} seksi)
+        </button>
+      ),
+  };
+
   return (
     <div className="page-container">
       {/* Tab panel: Info | Lirik | Media | Analisis */}
@@ -699,14 +759,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
           })()}
 
           {activeTab === 'media' && youtubeId && (
-            <SongChordsMediaPanel
-              youtubeId={youtubeId}
-              youtubeRef={youtubeRef}
-              timeMarkers={timeMarkers}
-              canEdit={can(PERMISSIONS.SONG_EDIT)}
-              handleTimeMarkerUpdate={handleTimeMarkerUpdate}
-              song={song}
-            />
+            <SongMediaPanel {...mediaPanelProps} />
           )}
 
           {activeTab === 'analyzer' && (
@@ -719,69 +772,51 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
           )}
       </div>
 
-      {/* Lirik & chord — hanya di tab Lirik. Di layar desktop, panel lirik
-          dan panel media berbagi 2 kolom berdampingan (CSS song-lyrics-media-columns);
-          di layar sempit keduanya kembali bertumpuk satu kolom. */}
+      {/* Lirik & chord — hanya di tab Lirik, satu kolom penuh. */}
         {activeTab === 'lyrics' && (
-        <div className="song-lyrics-media-columns">
-        <div className="song-lyrics-media-lyrics">
         <SongLyricsMainSection
-        lyricsDisplayRef={lyricsDisplayRef}
-        tempo={tempo}
-        onTempoChange={handleSongTempoChange}
-        isMetronomeActive={isMetronomeActive}
-        setIsMetronomeActive={setIsMetronomeActive}
-        timeSignature={timeSignature}
-        autoScrollActive={autoScrollActive}
-        scrollSpeed={scrollSpeed}
-        setAutoScrollActive={setAutoScrollActive}
-        setScrollSpeed={setScrollSpeed}
-        autoScrollMode={autoScrollMode}
-        setAutoScrollMode={setAutoScrollMode}
-        manualSpeedLevel={manualSpeedLevel}
-        setManualSpeedLevel={setManualSpeedLevel}
-        zoom={zoom}
-        setZoom={setZoom}
-        song={song}
-        transpose={transpose}
-        setTranspose={setTranspose}
-        showChords={showChords}
-        showSheetMusic={showSheetMusic}
-        setShowSheetMusic={setShowSheetMusic}
-        youtubeRef={youtubeRef}
-        youtubeId={youtubeId}
-        isYoutubePlaying={isYoutubePlaying}
-        loading={loading}
-        showChordNumbers={showChordNumbers}
-        setShowChordNumbers={setShowChordNumbers}
-        showJazzChords={showJazzChords}
-        setShowJazzChords={setShowJazzChords}
-        showSimpleChords={showSimpleChords}
-        setShowSimpleChords={setShowSimpleChords}
-                keySignature={key || song?.key || ''}
-                originalKey={song?.key || baseKey || ''}
-                targetKey={key || song?.key || ''}
-                onKeyChange={handleSongKeyChange}
-                pianoRecommendation={pianoRecommendation}
-                onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-                setlistNav={setlistNav}
-                overlayMode={overlayMode}
-                onOverlayClose={() => setOverlayMode(false)}
-              />
-        </div>
-        {youtubeId && (
-          <div className="song-lyrics-media-side">
-            <SongChordsMediaPanel
-              youtubeId={youtubeId}
-              youtubeRef={youtubeRef}
-              timeMarkers={timeMarkers}
-              canEdit={can(PERMISSIONS.SONG_EDIT)}
-              handleTimeMarkerUpdate={handleTimeMarkerUpdate}
-              song={song}
-            />
-          </div>
-        )}
-        </div>
+          lyricsDisplayRef={lyricsDisplayRef}
+          tempo={tempo}
+          onTempoChange={handleSongTempoChange}
+          isMetronomeActive={isMetronomeActive}
+          setIsMetronomeActive={setIsMetronomeActive}
+          timeSignature={timeSignature}
+          autoScrollActive={autoScrollActive}
+          scrollSpeed={scrollSpeed}
+          setAutoScrollActive={setAutoScrollActive}
+          setScrollSpeed={setScrollSpeed}
+          autoScrollMode={autoScrollMode}
+          setAutoScrollMode={setAutoScrollMode}
+          manualSpeedLevel={manualSpeedLevel}
+          setManualSpeedLevel={setManualSpeedLevel}
+          zoom={zoom}
+          setZoom={setZoom}
+          song={song}
+          transpose={transpose}
+          setTranspose={setTranspose}
+          showChords={showChords}
+          showSheetMusic={showSheetMusic}
+          setShowSheetMusic={setShowSheetMusic}
+          youtubeRef={youtubeRef}
+          youtubeId={youtubeId}
+          isYoutubePlaying={isYoutubePlaying}
+          loading={loading}
+          showChordNumbers={showChordNumbers}
+          setShowChordNumbers={setShowChordNumbers}
+          showJazzChords={showJazzChords}
+          setShowJazzChords={setShowJazzChords}
+          showSimpleChords={showSimpleChords}
+          setShowSimpleChords={setShowSimpleChords}
+          keySignature={key || song?.key || ''}
+          originalKey={song?.key || baseKey || ''}
+          targetKey={key || song?.key || ''}
+          onKeyChange={handleSongKeyChange}
+          pianoRecommendation={pianoRecommendation}
+          onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+          setlistNav={setlistNav}
+          overlayMode={overlayMode}
+          onOverlayClose={() => setOverlayMode(false)}
+        />
       )}
 
       {/* Footer sticky: navigasi lagu setlist (di atas bottom nav, mobile) */}
