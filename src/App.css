@@ -10345,6 +10345,21 @@ body.dark-mode .cd-token {
   border-radius: var(--radius-md);
 }
 
+/* Tombol key mudah (💡): bagian dari kontrol transpose, ukuran mengikuti
+   tombol lain — lebar konten (label key), tinggi sama dengan âˆ’/+. */
+.transpose-key-control-compact .transpose-key-easy-btn {
+  width: auto;
+  min-width: 34px;
+  padding: 0 8px;
+  gap: 4px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.transpose-key-control-compact .transpose-key-easy-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .transpose-key-control-compact .song-info-key-display {
   flex: 0 0 auto;
   min-width: 84px;
@@ -12621,348 +12636,10 @@ body.dark-mode .song-lyrics-error {
 }
 
 /* Bar kontrol perform nonaktif: tray kontrol lirik tak lagi dipakai di fullscreen */
-.song-lyrics-fullscreen-quick-controls {
-  display: none;
-}
+/* (Fitur fullscreen lirik dihapus; semua class song-lyrics-fullscreen-*
+   dibuang dari markup & CSS.) */
 
-.song-lyrics-fullscreen-controls-toggle {
-  display: none !important;
-}
-
-.song-lyrics-fullscreen-control-row {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.song-lyrics-fullscreen-autoscroll {
-  min-width: 320px;
-}
-
-.song-lyrics-fullscreen-autoscroll-slider {
-  width: 160px;
-  accent-color: var(--primary-accent);
-  cursor: pointer;
-}
-
-.song-lyrics-fullscreen-control-label {
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-
-/* Fullscreen kini memakai bar kontrol perform di semua mode (normal & performance). */
-.song-lyrics-fullscreen-performance-bar {
-  position: sticky;
-  top: 0;
-  z-index: 12;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin: 0 0 10px;
-  padding: 6px 8px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--card-bg) 90%, transparent);
-  border: 1px solid var(--border-color);
-  backdrop-filter: blur(8px);
-  box-shadow: var(--shadow-sm);
-}
-.song-lyrics-fullscreen-perf-cluster {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.song-lyrics-fullscreen-perf-cluster-right {
-  justify-content: flex-end;
-  margin-left: auto;
-}
-
-.song-lyrics-fullscreen-performance-bar::-webkit-scrollbar {
-  display: none;
-}
-.song-lyrics-fullscreen-perf-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
-  white-space: nowrap;
-}
-
-.song-lyrics-fullscreen-perf-chip-icon {
-  font-size: 0.9rem;
-  line-height: 1;
-}
-
-.song-lyrics-fullscreen-perf-chip-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-}
-
-.song-lyrics-fullscreen-perf-chip-value {
-  font-size: 0.92rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-.song-lyrics-fullscreen-perf-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
-}
-
-.song-lyrics-fullscreen-perf-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-width: 34px;
-  min-height: 34px;
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 0.88rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.song-lyrics-fullscreen-perf-step-btn {
-  min-width: 30px;
-  padding: 0 7px;
-}
-
-.song-lyrics-fullscreen-perf-as-btn {
-  letter-spacing: 0.04em;
-}
-
-.song-lyrics-fullscreen-perf-transpose {
-  padding: 3px 5px;
-  gap: 3px;
-}
-
-.song-lyrics-fullscreen-perf-key {
-  min-width: 48px;
-  text-align: center;
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-.song-lyrics-fullscreen-perf-offset {
-  min-width: 26px;
-  text-align: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-
-.song-lyrics-fullscreen-perf-speed {
-  min-width: 32px;
-  text-align: center;
-  font-size: 0.92rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-.song-lyrics-fullscreen-perf-easy-label {
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-}
-
-.song-lyrics-fullscreen-perf-easy-value {
-  font-size: 0.94rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-.song-lyrics-fullscreen-perf-tempo .song-info-tempo-led {
-  width: 10px;
-  height: 10px;
-  flex: 0 0 auto;
-}
-
-.song-lyrics-fullscreen-perf-value {
-  min-width: 30px;
-  text-align: center;
-  font-size: 0.86rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-/* Rail autoscroll vertikal di sisi kanan */
-.song-lyrics-fullscreen-autoscroll-rail {
-  display: none;
-}
-
-.song-lyrics-fullscreen-rail-btn {
-  min-width: 32px;
-  min-height: 32px;
-  height: 32px;
-  border-radius: 10px;
-}
-
-.song-lyrics-fullscreen-rail-value {
-  writing-mode: vertical-rl;
-  min-width: 0;
-  min-height: 42px;
-  font-size: 0.82rem;
-}
-
-.song-lyrics-display:fullscreen .song-lyrics-fullscreen-autoscroll-rail,
-.song-lyrics-display:-webkit-full-screen .song-lyrics-fullscreen-autoscroll-rail {
-  position: fixed;
-  top: 50%;
-  right: 14px;
-  transform: translateY(-50%);
-  z-index: 11;
-  display: inline-flex;
-  padding: 8px 6px;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card-bg) 76%, transparent);
-  backdrop-filter: blur(6px);
-  box-shadow: var(--shadow-md);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 180ms ease;
-}
-
-.song-lyrics-display:fullscreen .song-lyrics-fullscreen-autoscroll-rail.is-visible,
-.song-lyrics-display:-webkit-full-screen .song-lyrics-fullscreen-autoscroll-rail.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.song-lyrics-display:fullscreen .song-lyrics-fullscreen-autoscroll-rail-performance,
-.song-lyrics-display:-webkit-full-screen .song-lyrics-fullscreen-autoscroll-rail-performance {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.song-lyrics-fullscreen-autoscroll-rail .song-lyrics-fullscreen-autoscroll {
-  flex-direction: column;
-  align-items: center;
-  min-width: 0;
-  gap: 6px;
-}
-
-.song-lyrics-fullscreen-autoscroll-rail .song-lyrics-fullscreen-autoscroll-slider {
-  width: 120px;
-  transform: rotate(-90deg);
-  transform-origin: center;
-  margin: 60px -60px;
-}
-
-.song-lyrics-display:fullscreen .song-lyrics-fullscreen-quick-controls-performance,
-.song-lyrics-display:-webkit-full-screen .song-lyrics-fullscreen-quick-controls-performance {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.song-lyrics-fullscreen-control-value {
-  min-width: 34px;
-  text-align: center;
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.song-lyrics-fullscreen-tempo-led-inline {
-  display: none;
-}
-
-.song-lyrics-fullscreen-tempo-led-inline-text {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  min-width: 26px;
-  text-align: center;
-}
-
-.song-lyrics-fullscreen-style-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 8px;
-  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--secondary-bg) 70%, transparent);
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.song-lyrics-fullscreen-style-badge.mode-default {
-  border-color: color-mix(in srgb, var(--border-color) 70%, transparent);
-  background: color-mix(in srgb, var(--secondary-bg) 70%, transparent);
-}
-
-.song-lyrics-fullscreen-style-badge.mode-jazz {
-  border-color: rgba(59, 130, 246, 0.55);
-  background: rgba(59, 130, 246, 0.16);
-  color: #2563eb;
-}
-
-.song-lyrics-fullscreen-style-badge.mode-simple {
-  border-color: rgba(16, 185, 129, 0.55);
-  background: rgba(16, 185, 129, 0.16);
-  color: #059669;
-}
-
-.song-lyrics-fullscreen-style-badge.mode-number {
-  border-color: rgba(245, 158, 11, 0.58);
-  background: rgba(245, 158, 11, 0.18);
-  color: #b45309;
-}
-
-body.dark-mode .song-lyrics-fullscreen-style-badge {
-  border-color: rgba(148, 163, 184, 0.5);
-  background: rgba(15, 23, 42, 0.72);
-  color: #e2e8f0;
-}
-
-body.dark-mode .song-lyrics-fullscreen-style-badge.mode-default {
-  border-color: rgba(148, 163, 184, 0.6);
-  background: rgba(30, 41, 59, 0.78);
-  color: #e2e8f0;
-}
-
-body.dark-mode .song-lyrics-fullscreen-style-badge.mode-jazz {
-  border-color: rgba(96, 165, 250, 0.86);
-  background: rgba(30, 64, 175, 0.4);
-  color: #bfdbfe;
-}
-
-body.dark-mode .song-lyrics-fullscreen-style-badge.mode-simple {
-  border-color: rgba(52, 211, 153, 0.86);
-  background: rgba(4, 120, 87, 0.4);
-  color: #a7f3d0;
-}
-
-body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
-  border-color: rgba(251, 191, 36, 0.86);
-  background: rgba(180, 83, 9, 0.38);
-  color: #fde68a;
-}
+/* (Bar kontrol perform fullscreen sudah dihapus dari markup; style-nya dibuang.) */
 
 .song-lyrics-zoom-hud {
   position: sticky;
@@ -12982,40 +12659,7 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   pointer-events: none;
 }
 
-.song-lyrics-display:fullscreen,
-.song-lyrics-display:-webkit-full-screen {
-  background: var(--primary-bg);
-  padding: var(--spacing-xl);
-}
-
-/* Performance mode: sisakan ruang untuk bar kontrol atas agar tidak menutupi lirik */
-.song-lyrics-display:fullscreen:has(.song-lyrics-fullscreen-performance-bar),
-.song-lyrics-display:-webkit-full-screen:has(.song-lyrics-fullscreen-performance-bar) {
-  padding-top: var(--spacing-xl);
-}
-
-.song-lyrics-display:fullscreen .song-lyrics-fullscreen-quick-controls,
-.song-lyrics-display:-webkit-full-screen .song-lyrics-fullscreen-quick-controls {
-  display: none;
-}
-
-.song-lyrics-display:fullscreen .song-lyrics-fullscreen-tempo-led-inline,
-.song-lyrics-display:-webkit-full-screen .song-lyrics-fullscreen-tempo-led-inline {
-  display: none;
-}
-
-/* Baris kontrol perform sticky di atas dan tetap tampil di semua mode */
-.song-lyrics-display:fullscreen .song-lyrics-fullscreen-performance-bar,
-.song-lyrics-display:-webkit-full-screen .song-lyrics-fullscreen-performance-bar {
-  position: sticky;
-  top: 0;
-}
-
-.song-lyrics-display:fullscreen .song-lyrics-zoom-hud,
-.song-lyrics-display:-webkit-full-screen .song-lyrics-zoom-hud {
-  top: 8px;
-  backdrop-filter: blur(2px);
-}
+/* (Semua style fullscreen lirik dihapus bersama fiturnya.) */
 
 /* Chord Analyzer Panel */
 .song-lyrics-analyzer {
@@ -13479,6 +13123,32 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   transition: all var(--transition-fast);
   font-size: var(--font-size-sm);
   white-space: nowrap;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+/* Dropdown export: kartu menu yang muncul di bawah tombol export */
+.song-lyrics-export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  min-width: 190px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.35));
+  padding: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Wrapper tombol export: anchor posisi dropdown */
+.song-info-export-wrap {
+  position: relative;
+  display: inline-flex;
 }
 
 .song-lyrics-export-item:hover {
@@ -15484,13 +15154,6 @@ body.dark-mode .studio-error {
   }
 }
 
-/* (Mode autoscroll MUSICAL/MANUAL tetap hidup di kontrol fullscreen perf,
-   style-nya di .song-lyrics-fullscreen-perf-mode-btn / rail-mode-btn.) */
-
-.song-lyrics-fullscreen-perf-mode-btn.is-manual,
-.song-lyrics-fullscreen-rail-mode-btn.is-manual {
-  border-color: var(--primary-accent);
-}
 
 /* ========================================
    PERFORMANCE MODE (toggle di sidebar/app header)

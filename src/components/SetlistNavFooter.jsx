@@ -6,8 +6,12 @@ import React, { useEffect, useState } from 'react';
  * tombol prev/next lagu + posisi lagu dalam setlist. Muncul di semua tab,
  * jadi pemain bisa pindah lagu tanpa kembali ke daftar setlist.
  *
- * Desktop (>768px): disembunyikan — navigasi antar lagu tetap tersedia
- * di toolbar panel lirik.
+ * Dipakai juga sebagai footer sticky di fullscreen lirik
+ * (SongChordsLyricsDisplay) — class .setlist-nav-fullscreen mengoverride
+ * media query desktop agar footer tetap tampil di layar penuh.
+ *
+ * Desktop (>768px): disembunyikan di luar fullscreen — navigasi antar lagu
+ * tetap tersedia di toolbar panel lirik.
  */
 export default function SetlistNavFooter({ setlistNav }) {
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -81,39 +85,39 @@ export default function SetlistNavFooter({ setlistNav }) {
         </div>
       )}
 
-      <div className="setlist-nav-footer" role="navigation" aria-label="Navigasi lagu setlist">
-      <button
-        type="button"
-        className="btn btn-secondary setlist-nav-footer-btn"
-        onClick={setlistNav.onPrev}
-        disabled={!setlistNav.hasPrev}
-        aria-label="Lagu sebelumnya"
-        title={setlistNav.prevTitle || 'Lagu sebelumnya'}
-      >
-        <span aria-hidden="true">←</span>
-      </button>
-      <button
-        type="button"
-        className="setlist-nav-footer-info setlist-nav-footer-info-btn"
-        onClick={() => setSheetOpen((v) => !v)}
-        aria-expanded={sheetOpen}
-        aria-label={`Lagu ${setlistNav.songNumber} dari ${setlistNav.totalSongs}. Buka daftar lagu.`}
-        title="Lihat daftar lagu"
-      >
-        Lagu {setlistNav.songNumber}/{setlistNav.totalSongs}
-        <span className="setlist-nav-footer-info-icon" aria-hidden="true">☰</span>
-      </button>
-      <button
-        type="button"
-        className="btn btn-secondary setlist-nav-footer-btn"
-        onClick={setlistNav.onNext}
-        disabled={!setlistNav.hasNext}
-        aria-label="Lagu berikutnya"
-        title={setlistNav.nextTitle || 'Lagu berikutnya'}
-      >
-        <span aria-hidden="true">→</span>
-      </button>
-    </div>
+      <div className="setlist-nav-footer setlist-nav-fullscreen" role="navigation" aria-label="Navigasi lagu setlist">
+        <button
+          type="button"
+          className="btn btn-secondary setlist-nav-footer-btn"
+          onClick={setlistNav.onPrev}
+          disabled={!setlistNav.hasPrev}
+          aria-label="Lagu sebelumnya"
+          title={setlistNav.prevTitle || 'Lagu sebelumnya'}
+        >
+          <span aria-hidden="true">←</span>
+        </button>
+        <button
+          type="button"
+          className="setlist-nav-footer-info setlist-nav-footer-info-btn"
+          onClick={() => setSheetOpen((v) => !v)}
+          aria-expanded={sheetOpen}
+          aria-label={`Lagu ${setlistNav.songNumber} dari ${setlistNav.totalSongs}. Buka daftar lagu.`}
+          title="Lihat daftar lagu"
+        >
+          Lagu {setlistNav.songNumber}/{setlistNav.totalSongs}
+          <span className="setlist-nav-footer-info-icon" aria-hidden="true">☰</span>
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary setlist-nav-footer-btn"
+          onClick={setlistNav.onNext}
+          disabled={!setlistNav.hasNext}
+          aria-label="Lagu berikutnya"
+          title={setlistNav.nextTitle || 'Lagu berikutnya'}
+        >
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
     </>
   );
 }

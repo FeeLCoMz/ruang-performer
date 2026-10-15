@@ -103,6 +103,10 @@ export default function SongLyricsMainSection({
     } catch { /* ignore */ }
   };
 
+  // Ref panel lirik & chord (.song-lyrics-main) — masih dipakai untuk efek
+  // mode panggung/fokus/lock. (Fitur fullscreen sudah dihapus.)
+  const lyricsPanelRef = React.useRef(null);
+
   // Mode tampilan diterapkan pada elemen panel lirik (bukan body) supaya
   // tidak mengganggu performance-mode global dari app header.
   useEffect(() => {
@@ -114,7 +118,7 @@ export default function SongLyricsMainSection({
   }, [lyricsDisplayRef, stageMode, focusMode, screenLocked, loading]);
 
   return (
-    <div className="song-panel song-lyrics-main">
+    <div className="song-panel song-lyrics-main" ref={lyricsPanelRef}>
       <SongChordsLyricsToolbar
         originalKey={originalKey}
         targetKey={targetKey}
@@ -176,11 +180,10 @@ export default function SongLyricsMainSection({
               timeSignature={timeSignature}
               originalKey={originalKey}
               targetKey={targetKey}
-              pianoRecommendation={pianoRecommendation}
-              onApplyRecommendedTranspose={onApplyRecommendedTranspose}
               fontScale={fontScale}
               focusMode={focusMode}
               screenLocked={screenLocked}
+              setlistNav={setlistNav}
             />
         )}
     </div>

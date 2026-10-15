@@ -23,7 +23,7 @@ describe('scheduleShareUtils', () => {
 
   test('createGigScheduleText returns formatted text with totals and URL', () => {
     const text = createGigScheduleText('Band A', gigs, 'https://example.com');
-    expect(text).toMatch(/Jadwal Konser: Band A/);
+    expect(text).toMatch(/Jadwal Gigs: Band A/);
     expect(text).toMatch(/Jumlah pertunjukan: 2/);
     expect(text).toContain('Lihat detail jadwal: https://example.com');
     expect(text).toContain('Band A');
@@ -32,7 +32,7 @@ describe('scheduleShareUtils', () => {
 
   test('createGigScheduleText handles empty gigs list', () => {
     const text = createGigScheduleText('Band A', [], 'https://example.com');
-    expect(text).toContain('Tidak ada jadwal konser saat ini.');
+    expect(text).toContain('Tidak ada jadwal gigs saat ini.');
   });
 
   test('createGigCalendar returns valid ICS format', () => {

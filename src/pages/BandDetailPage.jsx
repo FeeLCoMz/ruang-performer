@@ -130,12 +130,12 @@ export default function BandDetailPage() {
   };
 
   const handleDownloadScheduleText = () => {
-    downloadTextFile(`${band?.name || 'jadwal-konser'}.txt`, scheduleText);
+    downloadTextFile(`${band?.name || 'jadwal-gigs'}.txt`, scheduleText);
   };
 
   const handleDownloadScheduleCalendar = () => {
-    const calendarContent = createGigCalendar(band?.name || 'Jadwal Konser', gigs);
-    downloadCalendarFile(`${band?.name || 'jadwal-konser'}.ics`, calendarContent);
+    const calendarContent = createGigCalendar(band?.name || 'Jadwal Gigs', gigs);
+    downloadCalendarFile(`${band?.name || 'jadwal-gigs'}.ics`, calendarContent);
   };
 
   const allMembers = band?.members || [];
@@ -344,9 +344,9 @@ export default function BandDetailPage() {
       </div>
 
       <div className="dashboard-card band-section-card band-reveal band-reveal-4">
-        <h2 className="card-title">🎤 Jadwal Konser ({gigs.length})</h2>
+        <h2 className="card-title">🎤 Jadwal Gigs ({gigs.length})</h2>
         {gigs.length === 0 ? (
-          <div className="empty-state">Belum ada jadwal konser</div>
+          <div className="empty-state">Belum ada jadwal gigs</div>
         ) : (
           <div className="grid-gap">
             {visibleGigs.map((gig, index) => (
@@ -379,7 +379,7 @@ export default function BandDetailPage() {
                 className="btn btn-secondary"
                 onClick={() => toggleSection(showAllGigs, setShowAllGigs, setIsCollapsingGigs)}
               >
-                {showAllGigs ? 'Ringkas Jadwal' : 'Lihat Semua Jadwal Konser'}
+                {showAllGigs ? 'Ringkas Jadwal' : 'Lihat Semua Jadwal Gigs'}
               </button>
             )}
           </div>
@@ -536,7 +536,7 @@ export default function BandDetailPage() {
       {showShareModal && (
         <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Bagikan Jadwal Konser</h2>
+            <h2>Bagikan Jadwal Gigs</h2>
             <p className="band-share-caption">
               Salin teks jadwal atau unduh file kalender untuk dibagikan ke anggota band dan penggemar.
             </p>

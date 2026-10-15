@@ -65,7 +65,7 @@ export default function GigPage() {
   };
 
   const selectedBand = bands.find(band => band.id === selectedBandId);
-  const scheduleBandName = selectedBand?.name || 'Jadwal Konser';
+  const scheduleBandName = selectedBand?.name || 'Jadwal Gigs';
   const monthName = (shareMonth === '' || shareMonth === null || Number.isNaN(shareMonth))
     ? `Semua bulan ${shareYear}`
     : new Date(shareYear, shareMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
@@ -95,12 +95,12 @@ export default function GigPage() {
   };
 
   const handleDownloadScheduleText = () => {
-    downloadTextFile(`${scheduleTitle || 'jadwal-konser'}.txt`, scheduleText);
+    downloadTextFile(`${scheduleTitle || 'jadwal-gigs'}.txt`, scheduleText);
   };
 
   const handleDownloadScheduleCalendar = () => {
     const calendarContent = createGigCalendar(scheduleTitle, filteredGigs);
-    downloadCalendarFile(`${scheduleTitle || 'jadwal-konser'}.ics`, calendarContent);
+    downloadCalendarFile(`${scheduleTitle || 'jadwal-gigs'}.ics`, calendarContent);
   };
 
   const handleDownloadPoster = async () => {
@@ -108,7 +108,7 @@ export default function GigPage() {
     setIsGeneratingPoster(true);
     setPosterError('');
     try {
-      const safeName = (scheduleTitle || 'jadwal-konser').replace(/[\\/:*?"<>|]+/g, '').trim();
+      const safeName = (scheduleTitle || 'jadwal-gigs').replace(/[\\/:*?"<>|]+/g, '').trim();
       await downloadCalendarAsJPG(posterRef.current, `${safeName}-poster.jpg`);
     } catch (err) {
       console.error('Gagal membuat poster:', err);
@@ -123,8 +123,8 @@ export default function GigPage() {
     setIsGeneratingPoster(true);
     setPosterError('');
     try {
-      const safeName = (scheduleTitle || 'jadwal-konser').replace(/[\\/:*?"<>|]+/g, '').trim();
-      await downloadCalendarAsPDF(posterRef.current, `Jadwal Konser - ${safeName}`);
+      const safeName = (scheduleTitle || 'jadwal-gigs').replace(/[\\/:*?"<>|]+/g, '').trim();
+      await downloadCalendarAsPDF(posterRef.current, `Jadwal Gigs - ${safeName}`);
     } catch (err) {
       console.error('Gagal membuat poster PDF:', err);
       setPosterError('Gagal membuat PDF. Coba lagi.');
@@ -177,7 +177,7 @@ export default function GigPage() {
         const data = await fetchGigs(selectedBandId || null);
         setGigs(Array.isArray(data) ? data : []);
       } catch (err) {
-        setError(err.message || 'Gagal memuat daftar konser');
+        setError(err.message || 'Gagal memuat daftar gigs');
       } finally {
         setLoading(false);
       }
@@ -267,7 +267,7 @@ export default function GigPage() {
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1>🎤 Jadwal Konser</h1>
+          <h1>🎤 Jadwal Gigs</h1>
           <p>Kelola pertunjukan band mu</p>
         </div>
         {/* Permission: Only show if user can create gig for selected band */}
@@ -294,7 +294,7 @@ export default function GigPage() {
           return (
             <div className="page-header-actions">
               <button className="btn" onClick={handleCreateGig}>
-                <PlusIcon size={18} /> Buat Konser
+                <PlusIcon size={18} /> Buat Gigs
               </button>
               {gigs.length > 0 && (
                 <button className="btn btn-secondary gig-share-trigger-btn" onClick={() => setShowShareModal(true)}>
@@ -310,7 +310,7 @@ export default function GigPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => { setShowForm(false); setEditGig(null); }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>{editGig ? 'Edit Jadwal Konser' : 'Buat Jadwal Konser Baru'}</h2>
+            <h2>{editGig ? 'Edit Jadwal Gigs' : 'Buat Jadwal Gigs Baru'}</h2>
             <form onSubmit={handleSubmit} className="form-section">
               <div>
                 <label className="form-label">Band (opsional)</label>
@@ -405,7 +405,7 @@ export default function GigPage() {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className="modal-input"
                   rows="3"
-                  placeholder="Contoh: Konser di festival musik, performa bagus..."
+                  placeholder="Contoh: Gigs di festival musik, performa bagus..."
                 />
               </div>
 
@@ -435,9 +435,9 @@ export default function GigPage() {
       {deleteConfirm && (
         <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 className="gig-delete-title">Hapus Jadwal Konser?</h2>
+            <h2 className="gig-delete-title">Hapus Jadwal Gigs?</h2>
             <p className="gig-delete-message">
-              Yakin ingin menghapus konser di <b>{deleteConfirm.venue || deleteConfirm.city || 'lokasi ini'}</b> tanggal <b>{new Date(deleteConfirm.date).toLocaleDateString('id-ID')}</b>?
+              Yakin ingin menghapus gigs di <b>{deleteConfirm.venue || deleteConfirm.city || 'lokasi ini'}</b> tanggal <b>{new Date(deleteConfirm.date).toLocaleDateString('id-ID')}</b>?
             </p>
             <div className="gig-delete-actions">
               <button className="btn" onClick={() => setDeleteConfirm(null)}>Batal</button>
@@ -455,12 +455,12 @@ export default function GigPage() {
       {showShareModal && (
         <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
           <div className="modal add-song-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-title">Bagikan Jadwal Konser</div>
+            <div className="modal-title">Bagikan Jadwal Gigs</div>
             <p className="gig-share-note">
               Gunakan bulan dan tahun yang dipilih untuk daftar dan kalender.
             </p>
             <p className="gig-share-month-summary">
-              📅 <strong>{monthName}</strong> - {filteredGigs.length} konser
+              📅 <strong>{monthName}</strong> - {filteredGigs.length} gigs
             </p>
 
             {/* Poster preview for sharing */}
@@ -468,7 +468,7 @@ export default function GigPage() {
               <div className="calendar-export-card schedule-poster-card gig-share-poster-card" ref={posterRef}>
                 <div className="schedule-poster-header">
                   <div>
-                    <div className="schedule-poster-kicker">Jadwal Konser</div>
+                    <div className="schedule-poster-kicker">Jadwal Gigs</div>
                     <div className="schedule-poster-title">{scheduleBandName}</div>
                     <div className="schedule-poster-subtitle">{monthName}</div>
                   </div>
@@ -500,7 +500,7 @@ export default function GigPage() {
                     ))
                   ) : (
                     <div className="schedule-poster-item gig-poster-empty-item">
-                      Tidak ada konser di bulan ini
+                      Tidak ada gigs di bulan ini
                     </div>
                   )}
                 </div>
@@ -610,10 +610,10 @@ export default function GigPage() {
       {/* Content */}
       {loading && <ListSkeleton count={5} />}
       {error && <div className="error-text">{error}</div>}
-      
+
       {!loading && sortedGigs.length === 0 ? (
         <div className="gig-empty-state">
-          Belum ada jadwal konser untuk {monthName}
+          Belum ada jadwal gigs untuk {monthName}
         </div>
       ) : !loading && viewMode === 'calendar' ? (
         <CalendarView gigs={sortedGigs} selectedMonth={calendarSelectedMonth} selectedYear={shareYear} onGigSelect={handleEdit} />

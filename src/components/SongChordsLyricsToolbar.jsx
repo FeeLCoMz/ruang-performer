@@ -83,19 +83,9 @@ export default function SongChordsLyricsToolbar({
           onTransposeChange={(next) => setTranspose?.(Number(next) || 0)}
           compact
           disableAutoApply
+          pianoRecommendation={pianoRecommendation}
+          onApplyRecommendedTranspose={onApplyRecommendedTranspose}
         />
-        {pianoRecommendation && Number(pianoRecommendation.transposeFromCurrent) !== 0 && (
-          <button
-            type="button"
-            className="btn btn-secondary song-info-key-easy-btn"
-            onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
-            disabled={typeof onApplyRecommendedTranspose !== 'function'}
-            title={`Key mudah: ${pianoRecommendation.recommendedKey} (${pianoRecommendation.transposeFromCurrent > 0 ? '+' : ''}${pianoRecommendation.transposeFromCurrent} semitone)`}
-            aria-label="Gunakan key mudah yang disarankan"
-          >
-            💡 {pianoRecommendation.recommendedKey}
-          </button>
-        )}
       </div>
 
       {/* LED tempo — elemen mandiri (read-only info) */}

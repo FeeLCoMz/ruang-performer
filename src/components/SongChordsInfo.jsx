@@ -72,9 +72,6 @@ export default function SongChordsInfo({
   const detectedInstrumentList = Array.isArray(detectedInstruments) ? detectedInstruments.filter(Boolean) : [];
 
   const recommendedTranspose = Number(pianoRecommendation?.transposeFromCurrent || 0);
-  const recommendedTransposeText = recommendedTranspose > 0
-    ? `+${recommendedTranspose}`
-    : `${recommendedTranspose}`;
   const baseDisplayKey = targetKey || originalKey || '';
   const transposedDisplayKey = (() => {
     if (!baseDisplayKey || !transpose) return baseDisplayKey;
@@ -205,21 +202,9 @@ export default function SongChordsInfo({
                     transpose={transpose}
                     onTransposeChange={setTranspose}
                     compact
+                    pianoRecommendation={showKeyEasyRecommendation ? pianoRecommendation : null}
+                    onApplyRecommendedTranspose={onApplyRecommendedTranspose}
                   />
-                  {showKeyEasyRecommendation && (
-                    <button
-                      type="button"
-                      className={`btn ${pianoRecommendation.transposeFromCurrent === 0 ? 'btn-secondary' : ''} song-info-key-easy-btn`}
-                      onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
-                      disabled={typeof onApplyRecommendedTranspose !== 'function' || pianoRecommendation.transposeFromCurrent === 0}
-                      title={pianoRecommendation.transposeFromCurrent === 0
-                        ? 'Key dasar sudah cocok'
-                        : `Key mudah: ${pianoRecommendation.recommendedKey} (${recommendedTransposeText} semitone)`}
-                      aria-label="Gunakan key mudah yang disarankan"
-                    >
-                      💡 {pianoRecommendation.recommendedKey}
-                    </button>
-                  )}
                 </div>
               </div>
             )}

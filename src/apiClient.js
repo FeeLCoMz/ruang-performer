@@ -359,21 +359,21 @@ export async function fetchGigs(bandId = null) {
   const path = bandId
     ? `/events/gig?bandId=${encodeURIComponent(bandId)}`
     : '/events/gig';
-  return request(path, { fallbackError: 'Gagal mengambil daftar konser' });
+  return request(path, { fallbackError: 'Gagal mengambil daftar gigs' });
 }
 
 export async function createGig(gig) {
-  return request('/events/gig', { method: 'POST', body: gig, fallbackError: 'Gagal membuat konser' });
+  return request('/events/gig', { method: 'POST', body: gig, fallbackError: 'Gagal membuat gigs' });
 }
 
 export async function updateGig(id, gig) {
-  return request(`/events/gig/${id}`, { method: 'PUT', body: gig, fallbackError: 'Gagal memperbarui konser' });
+  return request(`/events/gig/${id}`, { method: 'PUT', body: gig, fallbackError: 'Gagal memperbarui gigs' });
 }
 
 export async function deleteGig(id) {
   const data = await request(`/events/gig/${id}`, {
     method: 'DELETE',
-    fallbackError: 'Gagal menghapus konser',
+    fallbackError: 'Gagal menghapus gigs',
   });
   // 204 No Content has no body
   return data ?? { success: true };

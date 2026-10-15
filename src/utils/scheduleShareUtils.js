@@ -43,10 +43,10 @@ function formatGigTextEntry(gig) {
 
 export function createGigScheduleText(title, gigs, shareUrl = '') {
   if (!Array.isArray(gigs) || gigs.length === 0) {
-    return `${title}\n\nTidak ada jadwal konser saat ini.`;
+    return `${title}\n\nTidak ada jadwal gigs saat ini.`;
   }
 
-  const header = [`Jadwal Konser: ${title}`, `Jumlah pertunjukan: ${gigs.length}`];
+  const header = [`Jadwal Gigs: ${title}`, `Jumlah pertunjukan: ${gigs.length}`];
   const entries = gigs.map(formatGigTextEntry);
   const footer = shareUrl ? [`\nLihat detail jadwal: ${shareUrl}`] : [];
 

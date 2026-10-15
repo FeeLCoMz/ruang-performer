@@ -74,7 +74,7 @@ export default function CalendarView({ gigs = [], selectedMonth, selectedYear, o
       <div className="calendar-export-card schedule-poster-card" ref={exportRef} style={{ width: '100%', maxWidth: 1040 }}>
         <div className="schedule-poster-header">
           <div>
-            <div className="schedule-poster-kicker">Jadwal Konser</div>
+            <div className="schedule-poster-kicker">Jadwal Gigs</div>
             <div className="schedule-poster-title">{monthName}</div>
           </div>
           <div className="share-badge">#RuangPerformer</div>

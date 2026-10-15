@@ -14,7 +14,7 @@ export const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: '🏠', bottomNav: true },
   { path: '/songs', label: 'Lagu', icon: '🎵', bottomNav: true },
   { path: '/setlists', label: 'Setlist', icon: '📋', bottomNav: true },
-  { path: '/gigs', label: 'Konser', icon: '🎤', bottomNav: true },
+  { path: '/gigs', label: 'Gigs', icon: '🎤', bottomNav: true },
   { path: '/bands/manage', label: 'Band', icon: '🎸' },
   { path: '/youtube-trending', label: 'Trending', icon: '📺' },
 ];

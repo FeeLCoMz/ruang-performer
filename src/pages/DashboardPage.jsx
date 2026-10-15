@@ -235,7 +235,7 @@ export default function DashboardPage() {
       <div className="dashboard-welcome">
         <div>
           <h1>👋 Selamat datang, {user?.username || 'Musician'}!</h1>
-            <p>Kelola lagu, setlist, dan konser dalam satu platform</p>
+            <p>Kelola lagu, setlist, dan gigs dalam satu platform</p>
         </div>
         <div>
           <button className="btn" onClick={() => navigate('/songs/add')}>
@@ -245,7 +245,7 @@ export default function DashboardPage() {
             📋 Buat Setlist
           </button>
           <button className="btn" onClick={() => navigate('/gigs')}>
-            🎤 Jadwal Konser
+            🎤 Jadwal Gigs
           </button>
         </div>
       </div>
@@ -268,9 +268,9 @@ export default function DashboardPage() {
           <p>Band aktif</p>
         </div>
         <div className="stat-card" onClick={() => navigate('/gigs')}>
-          <h3>🎤 Konser</h3>
+          <h3>🎤 Gigs</h3>
           <div className="stat-value">{statsLoading ? <span className="loading-skeleton loading-skeleton-stat" /> : stats.gigs}</div>
-          <p>Jadwal konser</p>
+          <p>Jadwal gigs</p>
         </div>
       </div>
 

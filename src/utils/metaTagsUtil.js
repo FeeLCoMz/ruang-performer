@@ -5,14 +5,14 @@
 
 export function updatePageMeta({
   title = 'Ruang Performer',
-  description = 'Ruang Performer - Manajemen band, setlist, dan konser dalam satu platform.',
+  description = 'Ruang Performer - Manajemen band, setlist, dan gigs dalam satu platform.',
   image = '/favicon.svg',
   url = window.location.href,
   type = 'website'
 }) {
   // Update title
   document.title = `${title} | Ruang Performer`;
-  
+
   // Update or create meta tags
   updateMetaTag('description', description);
   updateMetaTag('og:title', title, 'property');
@@ -27,13 +27,13 @@ export function updatePageMeta({
 
 function updateMetaTag(name, content, type = 'name') {
   let tag = document.querySelector(`meta[${type}="${name}"]`);
-  
+
   if (!tag) {
     tag = document.createElement('meta');
     tag.setAttribute(type, name);
     document.head.appendChild(tag);
   }
-  
+
   tag.setAttribute('content', content);
 }
 
@@ -41,7 +41,7 @@ function updateMetaTag(name, content, type = 'name') {
 export const pageMetadata = {
   home: {
     title: 'Beranda',
-    description: 'Dashboard utama Ruang Performer - Kelola band, setlist, dan konser Anda'
+    description: 'Dashboard utama Ruang Performer - Kelola band, setlist, dan gigs Anda'
   },
   songs: {
     title: 'Lagu Saya',
@@ -56,7 +56,7 @@ export const pageMetadata = {
     description: 'Kelola band, anggota, dan informasi band Anda'
   },
   gigs: {
-    title: 'Konser',
-    description: 'Kelola jadwal konser dan pertunjukan band Anda'
+    title: 'Gigs',
+    description: 'Kelola jadwal gigs dan pertunjukan band Anda'
   }
 };

@@ -9,7 +9,7 @@ import { transposeChord, getNoteIndex, getTransposeSteps } from '../utils/chordU
  * @param {function} onTransposeChange - Callback when transpose changes
  * @param {boolean} compact - Optional compact mode for smaller display
  */
-export default function TransposeKeyControl({ originalKey, targetKey, transpose, onTransposeChange, compact = false, disableAutoApply = false }) {
+export default function TransposeKeyControl({ originalKey, targetKey, transpose, onTransposeChange, compact = false, disableAutoApply = false, pianoRecommendation = null, onApplyRecommendedTranspose = null }) {
   const safeOnTransposeChange = React.useCallback((nextValue) => {
     if (typeof onTransposeChange === 'function') {
       onTransposeChange(nextValue);
@@ -63,6 +63,19 @@ export default function TransposeKeyControl({ originalKey, targetKey, transpose,
     }
   };
 
+  // Tombol "key mudah": bagian dari kontrol transpose agar ukuran/posisinya
+  // seragam di semua tempat yang memakai komponen ini (tab Info, toolbar lirik).
+  const recommendedSteps = Number(pianoRecommendation?.transposeFromCurrent) || 0;
+  const showEasyKey = Boolean(
+    pianoRecommendation && pianoRecommendation.recommendedKey
+    && typeof onApplyRecommendedTranspose === 'function'
+  );
+  const handleApplyEasyKey = () => {
+    if (recommendedSteps !== 0) {
+      onApplyRecommendedTranspose?.(recommendedSteps);
+    }
+  };
+
   if (!originalKey) return null;
 
   if (compact) {
@@ -97,6 +110,20 @@ export default function TransposeKeyControl({ originalKey, targetKey, transpose,
         >
           +
         </button>
+        {showEasyKey && (
+          <button
+            type="button"
+            onClick={handleApplyEasyKey}
+            className="btn btn-secondary transpose-key-easy-btn"
+            disabled={recommendedSteps === 0}
+            title={recommendedSteps === 0
+              ? 'Key dasar sudah cocok'
+              : `Key mudah: ${pianoRecommendation.recommendedKey} (${recommendedSteps > 0 ? '+' : ''}${recommendedSteps} semitone)`}
+            aria-label="Gunakan key mudah yang disarankan"
+          >
+            💡 {pianoRecommendation.recommendedKey}
+          </button>
+        )}
         {transpose !== 0 && (
           <button
             type="button"
@@ -144,6 +171,20 @@ export default function TransposeKeyControl({ originalKey, targetKey, transpose,
         >
           +
         </button>
+        {showEasyKey && (
+          <button
+            type="button"
+            onClick={handleApplyEasyKey}
+            className="btn btn-secondary transpose-key-easy-btn"
+            disabled={recommendedSteps === 0}
+            title={recommendedSteps === 0
+              ? 'Key dasar sudah cocok'
+              : `Key mudah: ${pianoRecommendation.recommendedKey} (${recommendedSteps > 0 ? '+' : ''}${recommendedSteps} semitone)`}
+            aria-label="Gunakan key mudah yang disarankan"
+          >
+            💡 {pianoRecommendation.recommendedKey}
+          </button>
+        )}
         {transpose !== 0 && (
           <button
             type="button"

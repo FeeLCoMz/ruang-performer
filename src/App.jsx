@@ -153,7 +153,7 @@ function AppContent() {
   }, [location.pathname, isLoading, isAuthenticated]);
 
   // Keluar dari mode setlist: saat menu berpindah ke halaman di luar setlist
-  // (mis. halaman Lagu, Konser, dsb.), setlist aktif direset agar Info lagu
+  // (mis. halaman Lagu, Gigs, dsb.), setlist aktif direset agar Info lagu
   // kembali membaca data lagu master, bukan setlistSongMeta setlist sebelumnya.
   const activeSetlistRef = useRef(null);
   activeSetlistRef.current = activeSetlist;

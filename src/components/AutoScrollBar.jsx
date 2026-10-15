@@ -78,7 +78,6 @@ const scrollContainerTo = (container, top, behavior = 'auto') => {
 };
 
 const STICKY_OVERLAY_SELECTORS = [
-  '.song-lyrics-fullscreen-performance-bar',
   '.song-lyrics-fullscreen-tempo-led-row',
 ];
 

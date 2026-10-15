@@ -86,23 +86,17 @@ export default function SongChordsLyricsDisplay({
   timeSignature = '4/4',
   originalKey = '',
   targetKey = '',
-  performanceKeyOverride = '',
-  pianoRecommendation = null,
-  onApplyRecommendedTranspose,
   // Tampilan panggung dari toolbar: skala font, mode fokus, lock layar.
   fontScale = 1,
   focusMode = false,
   screenLocked = false,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
-  const handleExitFullscreenRef = useRef(null);
   const zoomRef = useRef(zoom);
   const zoomHudTimerRef = useRef(null);
   const controlsHideTimerRef = useRef(null);
   const [zoomHudVisible, setZoomHudVisible] = useState(false);
   const [zoomHudText, setZoomHudText] = useState(`${Math.round((zoom || 1) * 100)}%`);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [controlsVisible, setControlsVisible] = useState(false);
   // isYoutubePlaying comes from the page as a prop: it owns the polling, so the
   // timestamp buttons and the fullscreen controls share one source of truth.
   const [visualBeat, setVisualBeat] = useState(0);
@@ -182,84 +176,12 @@ export default function SongChordsLyricsDisplay({
     };
   }, []);
 
-  useEffect(() => {
-    const el = lyricsDisplayRef?.current;
-    if (!el) return;
-
-    const checkFullscreen = () => {
-      const active = document.fullscreenElement === el
-        || document.webkitFullscreenElement === el
-        || document.msFullscreenElement === el;
-      setIsFullscreen(active);
-      if (active) {
-        setControlsVisible(false);
-      }
-    };
-
-    checkFullscreen();
-
-    document.addEventListener('fullscreenchange', checkFullscreen);
-    document.addEventListener('webkitfullscreenchange', checkFullscreen);
-    document.addEventListener('MSFullscreenChange', checkFullscreen);
-
-    return () => {
-      document.removeEventListener('fullscreenchange', checkFullscreen);
-      document.removeEventListener('webkitfullscreenchange', checkFullscreen);
-      document.removeEventListener('MSFullscreenChange', checkFullscreen);
-    };
-  }, [lyricsDisplayRef]);
-
-  useEffect(() => {
-    if (!isFullscreen) return undefined;
-
-    const isEditableTarget = (target) => {
-      const tag = target?.tagName?.toLowerCase?.();
-      return tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable;
-    };
-
-    const handleKeyDown = (event) => {
-      if (isEditableTarget(event.target)) return;
-      const key = String(event.key || '').toLowerCase();
-
-      if (key === 'escape') {
-        handleExitFullscreenRef.current?.();
-        return;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    isFullscreen,
-  ]);
-
-  useEffect(() => {
-    if (!isFullscreen) {
-      setControlsVisible(false);
-      if (controlsHideTimerRef.current) {
-        clearTimeout(controlsHideTimerRef.current);
-      }
-      return;
-    }
-
-    // Kontrol perform di fullscreen tetap tampil permanen di semua mode.
-    setControlsVisible(true);
-    if (controlsHideTimerRef.current) {
-      clearTimeout(controlsHideTimerRef.current);
-      controlsHideTimerRef.current = null;
-    }
-    return;
-  }, [isFullscreen, controlsVisible, transpose, autoScrollActive, scrollSpeed]);
+  // (Fitur fullscreen lirik dihapus: state isFullscreen, efek fullscreenchange,
+  //  tombol Esc, dan kontrol fullscreen. Zoom pinch/wheel tetap aktif.)
 
   useEffect(() => {
     const el = lyricsDisplayRef?.current;
     if (!el || typeof setZoom !== 'function') return;
-
-    const isFullscreenActive = () => {
-      return document.fullscreenElement === el
-        || document.webkitFullscreenElement === el
-        || document.msFullscreenElement === el;
-    };
 
     const getDistance = (touches) => {
       const dx = touches[0].clientX - touches[1].clientX;
@@ -268,7 +190,7 @@ export default function SongChordsLyricsDisplay({
     };
 
     const handleWheel = (e) => {
-      if (!isFullscreenActive() || !e.ctrlKey) return;
+      if (!e.ctrlKey) return;
       e.preventDefault();
       const delta = e.deltaY < 0 ? 0.05 : -0.05;
       setZoom((prev) => {
@@ -282,7 +204,7 @@ export default function SongChordsLyricsDisplay({
     };
 
     const handleTouchStart = (e) => {
-      if (!isFullscreenActive() || e.touches.length !== 2) return;
+      if (e.touches.length !== 2) return;
       pinchStateRef.current = {
         active: true,
         startDistance: getDistance(e.touches),
@@ -291,7 +213,6 @@ export default function SongChordsLyricsDisplay({
     };
 
     const handleTouchMove = (e) => {
-      if (!isFullscreenActive()) return;
       const state = pinchStateRef.current;
       if (!state.active || e.touches.length !== 2) return;
 
@@ -333,24 +254,6 @@ export default function SongChordsLyricsDisplay({
   const normalizedScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedBpm));
   const beatsPerBar = parseBeatsPerBar(timeSignature || song?.time_signature || '4/4');
   const effectiveShowChords = showChords;
-  const currentChordModeKey = !effectiveShowChords
-    ? 'hidden'
-    : showChordNumbers
-    ? 'number'
-    : showJazzChords
-      ? 'jazz'
-      : showSimpleChords
-        ? 'simple'
-        : 'default';
-  const currentChordModeLabel = !effectiveShowChords
-    ? 'Off'
-    : showChordNumbers
-    ? 'Angka'
-    : showJazzChords
-      ? 'Jazz'
-      : showSimpleChords
-        ? 'Simple'
-        : 'Default';
 
   // Autoscroll: Switchable Mode.
   // - MUSICAL: kecepatan dihitung dari parameter musik. T_baris =
@@ -496,406 +399,17 @@ export default function SongChordsLyricsDisplay({
     );
   };
 
-  // Key info untuk kontrol performance di floating header fullscreen
-  const performanceBaseKey = performanceKeyOverride || targetKey || originalKey || song?.key || '';
-  const recommendedPianoKey = pianoRecommendation?.recommendedKey || '';
-  const recommendedTransposeSteps = Number(pianoRecommendation?.transposeFromCurrent) || 0;
-  const compactRecommendedTransposeText = recommendedTransposeSteps === 0
-    ? 'sama dengan key sekarang'
-    : `${recommendedTransposeSteps > 0 ? '+' : ''}${recommendedTransposeSteps}`;
-  const canApplyRecommendedKey = typeof onApplyRecommendedTranspose === 'function'
-    && recommendedPianoKey !== ''
-    && recommendedTransposeSteps !== 0;
-  // Key hasil transpose, supaya user langsung melihat efek tombol transpose
-  const transposedPerformanceKey = (() => {
-    if (!performanceBaseKey) return '';
-    if (!transpose) return performanceBaseKey;
-    return transposeChord(performanceBaseKey, transpose) || performanceBaseKey;
-  })();
+  // (Key info untuk performance bar dihapus — bar kontrol itu sudah tidak ada.)
 
-  const handleExitFullscreen = () => {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-      return;
-    }
-    if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-      return;
-    }
-    if (document.msExitFullscreen) {
-      document.msExitFullscreen();
-    }
-  };
-
-  handleExitFullscreenRef.current = handleExitFullscreen;
+  // (Fitur fullscreen lirik dihapus: handler exit fullscreen juga tidak dipakai.)
 
   return (
     <div className="song-lyrics-display" ref={lyricsDisplayRef}>
-      {isFullscreen && (
-        <>
-          <div className="song-lyrics-fullscreen-tempo-led-inline" title={`Tempo ${normalizedBpm} BPM`}>
-            <span
-              className="song-info-tempo-led"
-              style={{ animationDuration: `${Math.round(60000 / normalizedBpm)}ms` }}
-              aria-hidden="true"
-            />
-            <span className="song-lyrics-fullscreen-tempo-led-inline-text">{normalizedBpm}</span>
-          </div>
-        </>
-      )}
-      {isFullscreen && (
-        <div className="song-lyrics-fullscreen-performance-bar" role="group" aria-label="Kontrol performance">
-          <div className="song-lyrics-fullscreen-perf-cluster">
-            <div className="song-lyrics-fullscreen-perf-group song-lyrics-fullscreen-perf-transpose" role="group" aria-label="Transpose key">
-              <span className="song-lyrics-fullscreen-perf-chip-icon" aria-hidden="true">🎹</span>
-              <button
-                type="button"
-                className="btn btn-secondary song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-perf-step-btn"
-                onClick={() => setTranspose((prev) => (prev || 0) - 1)}
-                aria-label="Turunkan key 1 semitone"
-                title="Turunkan key 1 semitone"
-              >
-                −
-              </button>
-              <span
-                className="song-lyrics-fullscreen-perf-key"
-                aria-live="polite"
-                title={`Key aktif: ${transposedPerformanceKey || '-'}${transpose ? ` (${transpose > 0 ? '+' : ''}${transpose} dari ${performanceBaseKey})` : ''}`}
-              >
-                {transposedPerformanceKey || '-'}
-              </span>
-              <button
-                type="button"
-                className="btn btn-secondary song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-perf-step-btn"
-                onClick={() => setTranspose((prev) => (prev || 0) + 1)}
-                aria-label="Naikkan key 1 semitone"
-                title="Naikkan key 1 semitone"
-              >
-                +
-              </button>
-              <span className="song-lyrics-fullscreen-perf-offset" aria-live="polite">
-                {transpose > 0 ? `+${transpose}` : transpose}
-              </span>
-              <button
-                type="button"
-                className="btn btn-secondary song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-perf-step-btn"
-                onClick={() => setTranspose(0)}
-                aria-label="Reset transpose ke key asli"
-                title={`Reset transpose${performanceBaseKey ? ` ke ${performanceBaseKey}` : ''}`}
-                disabled={(transpose || 0) === 0}
-              >
-                ⟲
-              </button>
-            </div>
-            <button
-              type="button"
-              className="btn btn-secondary song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-easy-key-btn"
-              onClick={() => onApplyRecommendedTranspose?.(recommendedTransposeSteps)}
-              disabled={!canApplyRecommendedKey}
-              title={recommendedPianoKey
-                ? `Terapkan key mudah ${recommendedPianoKey} (${compactRecommendedTransposeText})`
-                : 'Tidak ada rekomendasi key mudah'}
-              aria-label="Gunakan key mudah yang disarankan"
-            >
-              <span className="song-lyrics-fullscreen-perf-chip-icon" aria-hidden="true">✨</span>
-              <span className="song-lyrics-fullscreen-perf-easy-label">Mudah</span>
-              <span className="song-lyrics-fullscreen-perf-easy-value">
-                {recommendedPianoKey || '-'}
-              </span>
-            </button>
-          </div>
-
-          <div className="song-lyrics-fullscreen-perf-cluster song-lyrics-fullscreen-perf-cluster-right">
-            <div className="song-lyrics-fullscreen-perf-group" role="group" aria-label="Tempo dan autoscroll">
-              <span className="song-lyrics-fullscreen-perf-chip song-lyrics-fullscreen-perf-tempo" title={`Tempo lagu ${normalizedBpm} BPM`}>
-                <span
-                  className="song-info-tempo-led"
-                  style={{ animationDuration: `${Math.round(60000 / normalizedBpm)}ms` }}
-                  aria-hidden="true"
-                />
-                <span className="song-lyrics-fullscreen-perf-chip-value">{normalizedBpm}</span>
-              </span>
-              <button
-                type="button"
-                className={`btn btn-secondary song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-perf-mode-btn${autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? ' is-manual' : ''}`}
-                onClick={toggleAutoScrollMode}
-                aria-label={`Mode autoscroll: ${autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? 'Musik (BPM)' : 'Manual (Level)'}. Klik untuk ganti.`}
-                title={`Mode autoscroll: ${autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? 'Musik (BPM)' : 'Manual (Level)'}`}
-              >
-                {autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? '♪' : '≡'}
-              </button>
-              <button
-                type="button"
-                className={`btn song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-perf-as-btn ${autoScrollActive ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setAutoScrollActive((prev) => !prev)}
-                aria-label={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
-                title={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
-              >
-                AS
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-perf-step-btn"
-                onClick={() => nudgeScrollSpeed(-2)}
-                aria-label="Kurangi kecepatan autoscroll"
-                title="Kurangi kecepatan autoscroll"
-              >
-                −
-              </button>
-              <span
-                className="song-lyrics-fullscreen-perf-speed"
-                aria-live="polite"
-                title={`Kecepatan autoscroll ${autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? `Level ${manualSpeedLevel}` : `${normalizedScrollSpeed} BPM`}`}
-              >
-                {autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? `Lv ${manualSpeedLevel}` : normalizedScrollSpeed}
-              </span>
-              <button
-                type="button"
-                className="btn btn-secondary song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-perf-step-btn"
-                onClick={() => nudgeScrollSpeed(2)}
-                aria-label="Tambah kecepatan autoscroll"
-                title="Tambah kecepatan autoscroll"
-              >
-                +
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary song-lyrics-fullscreen-perf-btn song-lyrics-fullscreen-perf-step-btn"
-                onClick={resetScrollSpeed}
-                aria-label="Reset ke tempo lagu"
-                title="Reset ke tempo lagu"
-                disabled={normalizedScrollSpeed === normalizedBpm}
-              >
-                ⟲
-              </button>
-            </div>
-            {youtubeId && youtubeRef && (
-              <div className="song-lyrics-fullscreen-perf-group" role="group" aria-label="YouTube">
-                <button
-                  type="button"
-                  className="btn btn-secondary song-lyrics-fullscreen-perf-btn"
-                  onClick={() => {
-                    if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
-                      youtubeRef.current.handleTogglePlayPause();
-                      setTimeout(() => {
-                        const state = youtubeRef.current?.getPlayerState?.();
-                        onYoutubePlayingChange?.(state === 1);
-                      }, 50);
-                    }
-                  }}
-                  aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-                  title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-                >
-                  {isYoutubePlaying ? '⏸' : '▶'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary song-lyrics-fullscreen-perf-btn"
-                  onClick={() => {
-                    if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
-                      youtubeRef.current.handleSeek(0);
-                      setTimeout(() => {
-                        const state = youtubeRef.current?.getPlayerState?.();
-                        onYoutubePlayingChange?.(state === 1);
-                      }, 50);
-                    }
-                  }}
-                  aria-label="Putar dari awal"
-                  title="Putar dari awal"
-                >
-                  ⏮
-                </button>
-              </div>
-            )}
-            <button
-              type="button"
-              className="btn btn-secondary song-lyrics-fullscreen-perf-btn"
-              onClick={handleExitFullscreen}
-              aria-label="Keluar fullscreen"
-              title="Keluar fullscreen"
-            >
-              ⤫
-            </button>
-          </div>
-        </div>
-      )}
-      {isFullscreen && (
-      <div
-        className={`song-lyrics-fullscreen-quick-controls${controlsVisible ? ' is-visible' : ''}`}
-        role="group"
-        aria-label="Kontrol fullscreen lirik"
-      >
-        <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Transpose">
-            <span className="song-lyrics-fullscreen-control-label">Tr</span>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setTranspose((prev) => prev - 1)}
-              aria-label="Transpose turun"
-              title="Transpose turun"
-            >
-              -
-            </button>
-            <span className="song-lyrics-fullscreen-control-value" aria-live="polite">
-              {transpose > 0 ? `+${transpose}` : transpose}
-            </span>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setTranspose((prev) => prev + 1)}
-              aria-label="Transpose naik"
-              title="Transpose naik"
-            >
-              +
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setTranspose(0)}
-              aria-label="Reset transpose"
-              title="Reset transpose"
-              disabled={transpose === 0}
-            >
-              0
-            </button>
-          </div>
-        <div
-          className={`song-lyrics-fullscreen-autoscroll-rail${controlsVisible ? ' is-visible' : ''}`}
-          role="group"
-          aria-label="Kontrol autoscroll"
-        >
-          <div className="song-lyrics-fullscreen-autoscroll" role="group" aria-label="Autoscroll">
-            <button
-              type="button"
-              className={`btn song-lyrics-fullscreen-rail-btn ${autoScrollActive ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setAutoScrollActive((prev) => !prev)}
-              aria-label={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
-              title={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
-            >
-              AS
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary song-lyrics-fullscreen-rail-btn"
-              onClick={() => nudgeScrollSpeed(-2)}
-              aria-label="Kurangi kecepatan autoscroll"
-              title="Kurangi kecepatan autoscroll"
-            >
-              -
-            </button>
-            <button
-              type="button"
-              className={`btn btn-secondary song-lyrics-fullscreen-rail-btn song-lyrics-fullscreen-rail-mode-btn${autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? ' is-manual' : ''}`}
-              onClick={toggleAutoScrollMode}
-              aria-label={`Mode autoscroll: ${autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? 'Musik (BPM)' : 'Manual (Level)'}. Klik untuk ganti.`}
-              title={`Mode autoscroll: ${autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? 'Musik (BPM)' : 'Manual (Level)'}`}
-            >
-              {autoScrollMode === AUTO_SCROLL_MODES.MUSICAL ? '♪' : '≡'}
-            </button>
-            <input
-              type="range"
-              min={autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? MIN_MANUAL_SPEED_LEVEL : 40}
-              max={autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? MAX_MANUAL_SPEED_LEVEL : 240}
-              step={1}
-              value={autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? manualSpeedLevel : normalizedScrollSpeed}
-              onChange={(e) => {
-                const next = Number(e.target.value);
-                if (autoScrollMode === AUTO_SCROLL_MODES.MANUAL) {
-                  setManualSpeedLevelSafe(next);
-                } else {
-                  setScrollSpeed(next);
-                }
-              }}
-              className="song-lyrics-fullscreen-autoscroll-slider"
-              aria-label="Kecepatan autoscroll"
-              title="Atur kecepatan autoscroll"
-            />
-            <button
-              type="button"
-              className="btn btn-secondary song-lyrics-fullscreen-rail-btn"
-              onClick={() => nudgeScrollSpeed(2)}
-              aria-label="Tambah kecepatan autoscroll"
-              title="Tambah kecepatan autoscroll"
-            >
-              +
-            </button>
-            <span className="song-lyrics-fullscreen-control-value song-lyrics-fullscreen-rail-value">
-              {autoScrollMode === AUTO_SCROLL_MODES.MANUAL ? `Lv ${manualSpeedLevel}` : normalizedScrollSpeed}
-            </span>
-            <button
-              type="button"
-              className="btn btn-secondary song-lyrics-fullscreen-rail-btn"
-              onClick={resetScrollSpeed}
-              aria-label="Reset kecepatan autoscroll"
-              title="Reset kecepatan autoscroll"
-            >
-              R
-            </button>
-          </div>
-        </div>
-        {youtubeId && youtubeRef && (
-          <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="YouTube">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => {
-                if (youtubeRef.current && typeof youtubeRef.current.handleTogglePlayPause === 'function') {
-                  youtubeRef.current.handleTogglePlayPause();
-                  // Update state setelah toggle
-                  setTimeout(() => {
-                    const state = youtubeRef.current?.getPlayerState?.();
-                    onYoutubePlayingChange?.(state === 1);
-                  }, 50);
-                }
-              }}
-              aria-label={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-              title={isYoutubePlaying ? 'Pause YouTube' : 'Play YouTube'}
-            >
-              {isYoutubePlaying ? '⏸️ Pause' : '▶️ Play'}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => {
-                if (youtubeRef.current && typeof youtubeRef.current.handleSeek === 'function') {
-                  youtubeRef.current.handleSeek(0);
-                  setTimeout(() => {
-                    const state = youtubeRef.current?.getPlayerState?.();
-                    onYoutubePlayingChange?.(state === 1);
-                  }, 50);
-                }
-              }}
-              aria-label="Putar dari awal"
-              title="Putar dari awal"
-            >
-              ⏮️ Restart
-            </button>
-          </div>
-        )}
-        <div className="song-lyrics-fullscreen-control-row" role="group" aria-label="Fullscreen">
-          <span
-            className={`song-lyrics-fullscreen-style-badge mode-${currentChordModeKey}`}
-            title={`Mode chord aktif: ${currentChordModeLabel}`}
-          >
-            Chord: {currentChordModeLabel}
-          </span>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setControlsVisible(false)}
-            aria-label="Sembunyikan kontrol"
-            title="Sembunyikan kontrol"
-          >
-            ─
-          </button>
-        </div>
-      </div>
-      )}
       {zoomHudVisible && (
         <div className="song-lyrics-zoom-hud" aria-live="polite">Zoom {zoomHudText}</div>
       )}
       {/* Tombol Lihat Partitur (selalu tampil jika ada MusicXML) */}
-      {!isFullscreen && song?.sheetMusicXml && (
+      {song?.sheetMusicXml && (
         <button
           className="btn btn-secondary btn-margin-bottom"
           onClick={() => setShowSheetMusic((v) => !v)}

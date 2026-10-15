@@ -1,7 +1,7 @@
 // Library berat (html-to-image, html2canvas, jspdf) di-load secara dinamis
 // hanya saat fitur ekspor dipakai, agar bundle awal tetap ringan di mobile.
 
-export async function downloadCalendarAsJPG(elementRef, filename = 'jadwal-konser.jpg') {
+export async function downloadCalendarAsJPG(elementRef, filename = 'jadwal-gigs.jpg') {
   if (!elementRef) return;
   try {
     const { toJpeg } = await import('html-to-image');
@@ -21,7 +21,7 @@ export async function downloadCalendarAsJPG(elementRef, filename = 'jadwal-konse
   }
 }
 
-export async function downloadCalendarAsPDF(elementRef, title = 'Jadwal Konser') {
+export async function downloadCalendarAsPDF(elementRef, title = 'Jadwal Gigs') {
   if (!elementRef) return;
   try {
     const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
@@ -73,7 +73,7 @@ export async function downloadCalendarAsPDF(elementRef, title = 'Jadwal Konser')
   }
 }
 
-export async function downloadScheduleAsPDF(scheduleText, title = 'Jadwal Konser') {
+export async function downloadScheduleAsPDF(scheduleText, title = 'Jadwal Gigs') {
   try {
     const { default: jsPDF } = await import('jspdf');
     const pdf = new jsPDF({
