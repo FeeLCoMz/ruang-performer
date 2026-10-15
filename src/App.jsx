@@ -78,24 +78,6 @@ function AppContent() {
     }
   }, [isLoading, isAuthenticated]);
   const [toastMessage, setToastMessage] = useState("");
-  // Performance mode: tampilan besar & kontras tinggi untuk panggung.
-  // Persist di localStorage supaya pilihan tetap aktif antar sesi.
-  const [performanceMode, setPerformanceMode] = useState(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEYS.PERFORMANCE_MODE) === '1';
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    document.body.classList.toggle('performance-mode', performanceMode);
-    try {
-      localStorage.setItem(STORAGE_KEYS.PERFORMANCE_MODE, performanceMode ? '1' : '0');
-    } catch {
-      // ignore storage errors
-    }
-  }, [performanceMode]);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -208,8 +190,6 @@ function AppContent() {
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          performanceMode={performanceMode}
-          onTogglePerformanceMode={() => setPerformanceMode((prev) => !prev)}
         />
         <MobileBottomNav />
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />
@@ -229,18 +209,6 @@ function AppContent() {
               />
               <h1 className="header-title">Ruang Performer</h1>
             </div>
-            {/* Performance mode selalu terlihat di HP — drawer sidebar
-                tersembunyi, jadi tombolnya juga di sini. */}
-            <button
-              type="button"
-              className={`btn header-performance-btn${performanceMode ? ' active' : ''}`}
-              onClick={() => setPerformanceMode((prev) => !prev)}
-              aria-pressed={performanceMode}
-              title={performanceMode ? 'Matikan performance mode' : 'Nyalakan performance mode'}
-              aria-label="Performance mode"
-            >
-              🎭
-            </button>
           </header>
         </div>
 

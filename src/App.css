@@ -1990,26 +1990,6 @@ body {
   color: var(--primary-accent);
 }
 
-.sidebar-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-bottom: 1px solid var(--border-color);
-  flex-wrap: wrap;
-}
-
-.sidebar-control-btn {
-  min-height: 34px;
-  font-size: var(--font-size-xs);
-}
-
-.sidebar-performance-btn {
-  flex: 1;
-  justify-content: center;
-  white-space: nowrap;
-}
-
 /* Sidebar Navigation */
 .sidebar-nav {
   flex: 1;
@@ -2144,22 +2124,6 @@ body {
   align-items: center;
   gap: var(--spacing-sm);
   min-width: 0;
-}
-
-/* Tombol performance mode di header mobile: selalu terlihat */
-.header-performance-btn {
-  flex: 0 0 auto;
-  min-width: 42px;
-  min-height: 42px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 1.1rem;
-  line-height: 1;
-}
-
-.header-performance-btn.active {
-  background: color-mix(in srgb, var(--primary-accent) 25%, transparent);
-  border-color: var(--primary-accent);
 }
 
 .header-brand-icon {
@@ -15781,71 +15745,6 @@ body.dark-mode .studio-error {
 
 
 /* ========================================
-   PERFORMANCE MODE (toggle di sidebar/app header)
-   Tampilan panggung: font lebih besar, kontrol lebih tinggi,
-   kontras dinaikkan. Aktif via body.performance-mode.
-   ======================================== */
-body.performance-mode {
-  font-size: 18px;
-  --font-size-xs: 0.85rem;
-  --font-size-sm: 0.95rem;
-  --font-size-base: 1.12rem;
-  --font-size-lg: 1.3rem;
-  --font-size-xl: 1.45rem;
-  --font-size-2xl: 1.7rem;
-  --font-size-3xl: 2.2rem;
-  /* Kontras: teks lebih terang, border lebih jelas */
-  --text-muted: #a7b0c8;
-  --text-secondary: #dde3f0;
-  --border-color: #3d4770;
-}
-
-body.performance-mode .song-item,
-body.performance-mode .song-panel,
-body.performance-mode .card {
-  font-size: 1.05em;
-}
-
-body.performance-mode .btn {
-  min-height: 44px;
-  font-size: 1em;
-}
-
-body.performance-mode .song-action-btn,
-body.performance-mode .song-add-btn {
-  min-height: 46px;
-  font-size: 1.05em;
-}
-
-body.performance-mode .song-chip,
-body.performance-mode .song-mastery-chip,
-body.performance-mode .song-mood-badge {
-  font-size: 0.9rem;
-  padding: 5px 12px;
-}
-
-body.performance-mode .sidebar-nav-item {
-  font-size: 1.1rem;
-  min-height: 52px;
-}
-
-body.performance-mode .search-input-main,
-body.performance-mode .filter-select {
-  font-size: 1.05rem;
-  min-height: 46px;
-}
-
-body.performance-mode .cd {
-  font-size: clamp(1rem, 4.5vw, 1.25rem);
-}
-
-body.performance-mode .sidebar-performance-btn.active {
-  background: color-mix(in srgb, var(--primary-accent) 25%, transparent);
-  border-color: var(--primary-accent);
-  color: var(--text-primary);
-}
-
-/* ========================================
    LYRICS PANEL VIEW MODES (toolbar panel lirik)
    Font scale, mode panggung, mode fokus, lock layar.
    Diterapkan pada .song-lyrics-display via class toggle.
@@ -15857,10 +15756,6 @@ body.performance-mode .sidebar-performance-btn.active {
 
 .song-lyrics-display .cd {
   font-size: calc(clamp(0.75rem, 4vw, 1rem) * var(--lyrics-font-scale));
-}
-
-body.performance-mode .song-lyrics-display .cd {
-  font-size: calc(clamp(1rem, 4.5vw, 1.25rem) * var(--lyrics-font-scale));
 }
 
 /* (Mode panggung panel lirik dihapus — overlay lirik kini selalu gelap.) */

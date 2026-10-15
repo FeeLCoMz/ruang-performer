@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNavItems } from '../hooks/useNavItems.js';
 
-export default function Sidebar({ isOpen, onClose, performanceMode = false, onTogglePerformanceMode }) {
+export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { items: navItems, isActive } = useNavItems();
@@ -51,20 +51,6 @@ export default function Sidebar({ isOpen, onClose, performanceMode = false, onTo
 
         {/* Navigation */}
         <nav className="sidebar-nav" aria-label="Navigasi utama sidebar">
-          <div className="sidebar-controls">
-            {/* Performance mode: tampilan besar & kontras untuk panggung.
-                CSS-nya dikelola di body.performance-mode (lihat App.jsx). */}
-            <button
-              type="button"
-              className={`btn btn-secondary sidebar-control-btn sidebar-performance-btn${performanceMode ? ' active' : ''}`}
-              onClick={onTogglePerformanceMode}
-              aria-pressed={performanceMode}
-              title={performanceMode ? 'Matikan performance mode' : 'Nyalakan performance mode (tampilan besar untuk panggung)'}
-            >
-              <span aria-hidden="true">🎭</span>
-              {performanceMode ? 'Performance: ON' : 'Performance Mode'}
-            </button>
-          </div>
           <div className="sidebar-nav-section">
             <h3 className="sidebar-nav-title">Menu Utama</h3>
             {visibleNavItems.map(item => (

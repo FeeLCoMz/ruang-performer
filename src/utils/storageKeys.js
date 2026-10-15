@@ -10,7 +10,6 @@ export const STORAGE_KEYS = {
   PRACTICE_VIDEO_DETACHED: 'ruangperformer_practice_video_detached_v1',
   LYRICS_PREVIEW_MODE: 'ruangperformer_lyrics_preview_mode',
   SONG_LIST_PAGE_STATE: 'songListPageState',
-  PERFORMANCE_MODE: 'ruangperformer_performance_mode',
   // Preferensi panel lirik (dipakai lintas sesi): ukuran font lirik,
   // mode panggung (kontras tinggi), mode fokus, dan lock layar.
   LYRICS_FONT_SCALE: 'ruangperformer_lyrics_font_scale_v1',

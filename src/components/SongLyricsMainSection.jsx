@@ -107,7 +107,7 @@ export default function SongLyricsMainSection({
   const lyricsPanelRef = React.useRef(null);
 
   // Mode tampilan diterapkan pada elemen panel lirik (bukan body) supaya
-  // tidak mengganggu performance-mode global dari app header.
+  // tidak menimpa tema global aplikasi.
   useEffect(() => {
     const panel = lyricsDisplayRef?.current;
     if (!panel) return;
