@@ -15,25 +15,6 @@ import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
 import { STORAGE_KEYS } from '../utils/storageKeys.js';
-import { List as VirtualList } from 'react-window';
-
-function VirtualSongRow({ index, style, ariaAttributes, songs, renderSongItem }) {
-  const song = songs[index];
-  if (!song) return null;
-
-  return (
-    <div
-      style={style}
-      className="song-virtual-row"
-      {...ariaAttributes}
-    >
-      {renderSongItem(song, {
-        height: '100%',
-        margin: 0,
-      })}
-    </div>
-  );
-}
 
 export default function SongListPage({ songs, loading, error, onSongClick }) {
   const navigate = useNavigate();
@@ -66,27 +47,12 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
   const [activeVideoSong, setActiveVideoSong] = useState(null);
   const [visibleCount, setVisibleCount] = useState(pageSize);
-  const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth < 768;
-  });
   const videoRef = useRef(null);
   const activeInlinePlayerRef = useRef(null);
   // Playback state untuk komponen media shared (sama dengan song view)
   const [inlineVideoPlaying, setInlineVideoPlaying] = useState(false);
   const [inlineVideoTime, setInlineVideoTime] = useState(0);
   const [inlineVideoDuration, setInlineVideoDuration] = useState(0);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const onResize = () => {
-      setIsNarrowViewport(window.innerWidth < 768);
-    };
-
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -412,10 +378,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     return songs.find((song) => song.id === metronomeSongId) || null;
   }, [metronomeSongId, songs]);
 
-  const shouldVirtualize = !activeVideoSong && !isNarrowViewport && filteredSongs.length >= 180;
-  const virtualRowHeight = isNarrowViewport ? 230 : 156;
-
-  function renderSongItem(song, style) {
+  function renderSongItem(song) {
     const isInlineVideoSong = activeVideoSong?.id === song.id;
     const mood = inferSongMood(song);
     const masteryStatus = getMasteryStatus(song);
@@ -423,7 +386,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     return (
       <React.Fragment key={song.id}>
         <SongCard
-          style={style}
           title={song.title}
           isPlaying={isSongPlaying(song.id)}
           onClick={() => navigate(`/songs/view/${song.id}`)}
@@ -683,24 +645,10 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
         </div>
       ) : (
         <>
-          {shouldVirtualize ? (
-            <div className="song-list-virtual-shell">
-              <VirtualList
-                className="song-list-container song-list-virtualized"
-                rowComponent={VirtualSongRow}
-                rowCount={filteredSongs.length}
-                rowHeight={virtualRowHeight}
-                rowProps={{ songs: filteredSongs, renderSongItem }}
-                overscanCount={6}
-                style={{ height: 'min(68vh, 760px)' }}
-              />
-            </div>
-          ) : (
-            <div className="song-list-container">
-              {displayedSongRows.map((row) => renderSongItem(row.song))}
-            </div>
-          )}
-          {!shouldVirtualize && hiddenSongsCount > 0 && (
+          <div className="song-list-container">
+            {displayedSongRows.map((row) => renderSongItem(row.song))}
+          </div>
+          {hiddenSongsCount > 0 && (
             <div className="song-list-load-more">
               <button
                 className="btn btn-secondary"

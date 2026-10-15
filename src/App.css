@@ -3922,11 +3922,6 @@ body.dark-mode .lyrics-editor-textarea {
   gap: var(--spacing-sm);
 }
 
-.song-virtual-row {
-  box-sizing: border-box;
-  padding-bottom: 8px;
-}
-
 .song-setlist-count-meta {
   color: var(--primary-accent);
   margin-left: 8px;
@@ -4111,18 +4106,6 @@ body.dark-mode .lyrics-editor-textarea {
   margin-top: var(--spacing-md);
   display: flex;
   justify-content: center;
-}
-
-.song-list-virtual-shell {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--primary-bg);
-  padding: var(--spacing-sm);
-}
-
-.song-list-virtualized {
-  width: 100%;
-  scrollbar-gutter: stable;
 }
 
 .setlist-session-divider {
@@ -4625,6 +4608,19 @@ body.dark-mode .lyrics-editor-textarea {
   white-space: nowrap;
 }
 
+/* Layar lebar: jarak judul ke metadata lebih rapat, kartu terasa satu blok */
+@media (min-width: 901px) {
+  .song-item .song-title {
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .song-item .song-heading {
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+}
+
 .song-meta {
   display: flex;
   flex-direction: column;
@@ -4632,6 +4628,46 @@ body.dark-mode .lyrics-editor-textarea {
   font-size: 0.85em;
   color: var(--text-muted);
   flex-wrap: wrap;
+}
+
+/* ---- Song card di layar lebar: layout rapikan ----
+   - Kedua baris metadata mengalir jadi SATU baris chip (wrap bila panjang).
+   - Konten info dibatasi lebarnya agar tidak menciptakan ruang kosong besar
+     di tengah kartu; kolom kanan (status + aksi) tetap rapat ke kanan.
+   - Tinggi kartu lebih ringkas. */
+@media (min-width: 901px) {
+  .song-item {
+    padding: var(--spacing-md) var(--spacing-lg);
+    gap: var(--spacing-md);
+  }
+
+  .song-item .song-meta {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  /* Baris detail setelah baris primary: pemisah tipis agar tetap terbaca
+     sebagai kelompok berbeda meski satu baris. */
+  .song-item .song-meta-line-detail::before {
+    content: '';
+    align-self: stretch;
+    width: 1px;
+    background: color-mix(in srgb, var(--border-color) 60%, transparent);
+    margin: 2px 4px;
+  }
+
+  .song-item .song-info {
+    flex: 1 1 auto;
+    max-width: calc(100% - 260px);
+  }
+
+  .song-item .song-actions {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+  }
 }
 
 /* Dua baris metadata: baris 1 (artis + status), baris 2 (key, BPM, mood, genre) */
