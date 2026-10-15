@@ -14953,8 +14953,13 @@ body.dark-mode .studio-error {
   border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
 }
 
-/* ---- Tab Media layar lebar: video+kontrol kiri, time marker kanan ----
-   Di layar sempit (<= 900px) kembali satu kolom bertumpuk. */
+/* ---- Tab Media: responsif terhadap LEBAR KOMPONEN (container query), bukan layar ----
+   Container lebar >= 768px (ukuran tablet): video+kontrol kiri (60%), time marker kanan (40%).
+   Container lebih sempit: player di atas, time marker di bawah (satu kolom). */
+.studio-media-container {
+  container-type: inline-size;
+}
+
 .studio-media-columns {
   display: grid;
   grid-template-columns: 1fr;
@@ -14962,13 +14967,13 @@ body.dark-mode .studio-error {
   align-items: start;
 }
 
-@media (min-width: 901px) {
+@container (min-width: 768px) {
   .studio-media-columns {
-    grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr);
+    grid-template-columns: minmax(0, 60%) minmax(0, 40%);
   }
 
-  /* Video column tidak melar; marker column punya scroll sendiri bila panjang */
-  .studio-media-side {
+  /* Marker column punya scroll sendiri bila daftarnya panjang */
+  .studio-media-container .studio-media-side {
     max-height: 70vh;
     overflow-y: auto;
     padding-top: var(--spacing-sm);

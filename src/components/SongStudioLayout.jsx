@@ -181,8 +181,7 @@ export function StudioMediaColumn({
 
       <div className="studio-markers">
         <span className="studio-panel-subtitle">Kontrol Time Marker</span>
-        {!youtubeId && (
-          <TimeMarkers
+        <TimeMarkers
             timeMarkers={timeMarkers}
             onSeek={onSeek}
             currentTime={currentTime}
@@ -191,7 +190,6 @@ export function StudioMediaColumn({
             getCurrentYouTubeTime={getCurrentYouTubeTime}
             compactUI
           />
-        )}
       </div>
     </div>
   );
@@ -218,9 +216,10 @@ export function StudioMediaLayout({
   autoMarkersDisabled = false,
 }) {
   return (
-    <div className="studio-media-columns">
-      <div className="studio-media-main">{children}</div>
-      <div className="studio-media-side">
+    <div className="studio-media-container">
+      <div className="studio-media-columns">
+        <div className="studio-media-main">{children}</div>
+        <div className="studio-media-side">
         <span className="studio-panel-subtitle">Kontrol Time Marker</span>
         {sections.length > 0 && (
           <button
@@ -242,6 +241,7 @@ export function StudioMediaLayout({
           getCurrentYouTubeTime={getCurrentYouTubeTime}
           compactUI
         />
+        </div>
       </div>
     </div>
   );
