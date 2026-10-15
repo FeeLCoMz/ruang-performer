@@ -37,6 +37,8 @@ export default function SongLyricsMainSection({
   lyricsDisplayRef,
   tempo,
   timeSignature,
+  isMetronomeActive = false,
+  setIsMetronomeActive,
   autoScrollActive,
   scrollSpeed,
   setAutoScrollActive,
@@ -103,8 +105,8 @@ export default function SongLyricsMainSection({
     } catch { /* ignore */ }
   };
 
-  // Ref panel lirik & chord (.song-lyrics-main) — masih dipakai untuk efek
-  // mode panggung/fokus/lock. (Fitur fullscreen sudah dihapus.)
+  // Ref panel lirik & chord (.song-lyrics-main) — dipakai untuk efek
+  // mode panggung/fokus/lock.
   const lyricsPanelRef = React.useRef(null);
 
   // Mode tampilan diterapkan pada elemen panel lirik (bukan body) supaya
@@ -127,6 +129,10 @@ export default function SongLyricsMainSection({
         pianoRecommendation={pianoRecommendation}
         onApplyRecommendedTranspose={onApplyRecommendedTranspose}
         tempo={tempo}
+        onTempoChange={onTempoChange}
+        isMetronomeActive={isMetronomeActive}
+        setIsMetronomeActive={setIsMetronomeActive}
+        timeSignature={timeSignature}
         autoScrollActive={autoScrollActive}
         setAutoScrollActive={setAutoScrollActive}
         scrollSpeed={scrollSpeed}

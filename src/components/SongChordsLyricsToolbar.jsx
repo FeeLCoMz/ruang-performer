@@ -1,13 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import TransposeKeyControl from './TransposeKeyControl.jsx';
-import {
-  AUTO_SCROLL_MODES,
-  normalizeAutoScrollMode,
-  clampManualSpeedLevel,
-  MIN_MANUAL_SPEED_LEVEL,
-  MAX_MANUAL_SPEED_LEVEL,
-  DEFAULT_MANUAL_SPEED_LEVEL,
-} from '../utils/autoscrollSpeedUtils.js';
+import AutoScrollControl from './AutoScrollControl.jsx';
+import TempoControl from './TempoControl.jsx';
+import { AUTO_SCROLL_MODES, normalizeAutoScrollMode } from '../utils/autoscrollSpeedUtils.js';
 
 /**
  * SongChordsLyricsToolbar
@@ -34,8 +29,7 @@ export default function SongChordsLyricsToolbar({
   autoScrollMode: autoScrollModeProp,
   setAutoScrollMode,
   manualSpeedLevel: manualSpeedLevelProp,
-  setManualSpeedLevel,
-  // Grup tampilan panggung: font, mode panggung, mode fokus, lock
+  setManualSpeedLevel,  // Grup tampilan panggung: font, mode panggung, mode fokus, lock
   fontScale = 1,
   setFontScale,
   pianoRecommendation = null,
@@ -46,6 +40,11 @@ export default function SongChordsLyricsToolbar({
   setFocusMode,
   screenLocked = false,
   setScreenLocked,
+  // Tempo & metronome
+  onTempoChange,
+  isMetronomeActive = false,
+  setIsMetronomeActive,
+  timeSignature = '4/4',
   // Navigasi setlist (opsional — hanya di konteks setlist)
   setlistNav = null,
 }) {
@@ -53,159 +52,62 @@ export default function SongChordsLyricsToolbar({
   const MAX_FONT_SCALE = 2.5;
   const clampFontScale = (value) => Math.min(MAX_FONT_SCALE, Math.max(MIN_FONT_SCALE, Number(value) || 1));
 
-  // Autoscroll: fallback lokal bila parent belum kelola mode/level.
-  const [autoScrollModeLocal, setAutoScrollModeLocal] = useState(AUTO_SCROLL_MODES.MUSICAL);
-  const [manualSpeedLevelLocal, setManualSpeedLevelLocal] = useState(DEFAULT_MANUAL_SPEED_LEVEL);
-  const autoScrollMode = normalizeAutoScrollMode(autoScrollModeProp || autoScrollModeLocal);
-  const setAutoScrollModeSafe = setAutoScrollMode || setAutoScrollModeLocal;
-  const manualSpeedLevel = clampManualSpeedLevel(manualSpeedLevelProp || manualSpeedLevelLocal);
-  const setManualSpeedLevelSafe = setManualSpeedLevel || setManualSpeedLevelLocal;
-  const isManualMode = autoScrollMode === AUTO_SCROLL_MODES.MANUAL;
-
   const baseTempo = Math.max(40, Math.min(240, Number(tempo) || 120));
-  const currentScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || baseTempo));
-
-  const setScrollSpeedClamped = (next) => {
-    if (typeof setScrollSpeed !== 'function') return;
-    const numeric = Number(next);
-    if (!Number.isFinite(numeric)) return;
-    setScrollSpeed(Math.max(40, Math.min(240, Math.round(numeric))));
-  };
+  const autoScrollMode = normalizeAutoScrollMode(autoScrollModeProp || AUTO_SCROLL_MODES.MUSICAL);
 
   return (
     <div className="song-lyrics-toolbar song-lyrics-toolbar--normal">
-      {/* Key/Transpose — grup mandiri, langsung di baris utama (akses cepat) */}
-      <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-key" role="group" aria-label="Transpose key">
-        <TransposeKeyControl
-          originalKey={originalKey}
-          targetKey={targetKey}
-          transpose={transpose}
-          onTransposeChange={(next) => setTranspose?.(Number(next) || 0)}
-          compact
-          disableAutoApply
-          pianoRecommendation={pianoRecommendation}
-          onApplyRecommendedTranspose={onApplyRecommendedTranspose}
-        />
-      </div>
+      {/* Transpose key — kapsul compact */}
+      <TransposeKeyControl
+        originalKey={originalKey}
+        targetKey={targetKey}
+        transpose={transpose}
+        onTransposeChange={(next) => setTranspose?.(Number(next) || 0)}
+        variant="compact"
+        disableAutoApply
+        pianoRecommendation={pianoRecommendation}
+        onApplyRecommendedTranspose={onApplyRecommendedTranspose}
+      />
 
-      {/* LED tempo — elemen mandiri (read-only info) */}
-      <div
-        className="song-lyrics-tempo-led-compact"
-        title={`Tempo ${baseTempo} BPM`}
-      >
-        <span
-          className="song-info-tempo-led"
-          style={{ animationDuration: `${Math.round(60000 / baseTempo)}ms` }}
-          aria-hidden="true"
+      {/* Tempo & metronome — shared TempoControl compact */}
+      {onTempoChange ? (
+        <TempoControl
+          tempo={tempo}
+          scrollSpeed={scrollSpeed}
+          setScrollSpeed={setScrollSpeed}
+          isMetronomeActive={isMetronomeActive}
+          setIsMetronomeActive={setIsMetronomeActive}
+          timeSignature={timeSignature}
+          variant="compact"
         />
-        <span className="song-lyrics-tempo-led-compact-text" aria-live="polite">
-          {baseTempo}
-        </span>
-      </div>
-
-      {/* Autoscroll lirik: on/off + mode Musik (BPM) / Manual (Level 1-10) */}
-      <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-autoscroll" role="group" aria-label="Autoscroll lirik">
-        <button
-          type="button"
-          className={`btn song-lyrics-toolbar-btn ${autoScrollActive ? 'btn-primary' : 'btn-secondary'}`}
-          onClick={() => setAutoScrollActive?.(!autoScrollActive)}
-          title={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
-          aria-label={autoScrollActive ? 'Matikan autoscroll' : 'Nyalakan autoscroll'}
-          aria-pressed={autoScrollActive}
+      ) : (
+        <div
+          className="song-lyrics-tempo-led-compact"
+          title={`Tempo ${baseTempo} BPM`}
         >
-          <span aria-hidden="true">↕</span>
-          <span className="song-lyrics-toolbar-btn-label">Autoscroll</span>
-        </button>
-
-        <div className="song-lyrics-autoscroll-speed" role="group" aria-label="Kecepatan autoscroll">
-          <button
-            type="button"
-            className={`btn btn-secondary song-lyrics-autoscroll-mode${isManualMode ? ' is-manual' : ''}`}
-            onClick={() => setAutoScrollModeSafe(isManualMode ? AUTO_SCROLL_MODES.MUSICAL : AUTO_SCROLL_MODES.MANUAL)}
-            aria-label={`Mode autoscroll: ${isManualMode ? 'Manual (Level)' : 'Musik (BPM)'}. Klik untuk ganti.`}
-            title={isManualMode ? 'Mode Manual: kecepatan dari level (1-10)' : 'Mode Musik: kecepatan mengikuti tempo lagu (BPM)'}
-          >
-            <span aria-hidden="true">{isManualMode ? '≡' : '♪'}</span>
-            <span className="song-lyrics-autoscroll-mode-label">{isManualMode ? 'Manual' : 'Musik'}</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary song-lyrics-autoscroll-step"
-            onClick={() => {
-              if (isManualMode) {
-                setManualSpeedLevelSafe(clampManualSpeedLevel(manualSpeedLevel - 1));
-                return;
-              }
-              setScrollSpeedClamped(currentScrollSpeed - 1);
-            }}
-            disabled={isManualMode ? manualSpeedLevel <= MIN_MANUAL_SPEED_LEVEL : currentScrollSpeed <= 40}
-            aria-label={isManualMode ? 'Kurangi level kecepatan autoscroll 1' : 'Kurangi kecepatan autoscroll 1 BPM'}
-            title={isManualMode ? '-1 Level' : '-1 BPM'}
-          >
-            −
-          </button>
-          <input
-            type="number"
-            className="song-lyrics-autoscroll-input"
-            value={isManualMode ? manualSpeedLevel : currentScrollSpeed}
-            min={isManualMode ? MIN_MANUAL_SPEED_LEVEL : 40}
-            max={isManualMode ? MAX_MANUAL_SPEED_LEVEL : 240}
-            step={1}
-            inputMode="numeric"
-            onChange={(e) => {
-              if (isManualMode) {
-                setManualSpeedLevelSafe(clampManualSpeedLevel(e.target.value));
-                return;
-              }
-              setScrollSpeedClamped(e.target.value);
-            }}
-            aria-label={isManualMode ? 'Level kecepatan autoscroll (1-10)' : 'Kecepatan autoscroll (BPM)'}
-            title={isManualMode ? 'Level kecepatan autoscroll (1-10)' : 'Kecepatan autoscroll dalam BPM'}
+          <span
+            className="song-info-tempo-led"
+            style={{ animationDuration: `${Math.round(60000 / baseTempo)}ms` }}
+            aria-hidden="true"
           />
-          <span className="song-lyrics-autoscroll-unit" aria-hidden="true">{isManualMode ? 'Lv' : 'BPM'}</span>
-          <button
-            type="button"
-            className="btn btn-secondary song-lyrics-autoscroll-step"
-            onClick={() => {
-              if (isManualMode) {
-                setManualSpeedLevelSafe(clampManualSpeedLevel(manualSpeedLevel + 1));
-                return;
-              }
-              setScrollSpeedClamped(currentScrollSpeed + 1);
-            }}
-            disabled={isManualMode ? manualSpeedLevel >= MAX_MANUAL_SPEED_LEVEL : currentScrollSpeed >= 240}
-            aria-label={isManualMode ? 'Tambah level kecepatan autoscroll 1' : 'Tambah kecepatan autoscroll 1 BPM'}
-            title={isManualMode ? '+1 Level' : '+1 BPM'}
-          >
-            +
-          </button>
-          {isManualMode ? (
-            manualSpeedLevel !== DEFAULT_MANUAL_SPEED_LEVEL && (
-              <button
-                type="button"
-                className="btn btn-secondary song-lyrics-autoscroll-reset"
-                onClick={() => setManualSpeedLevelSafe(DEFAULT_MANUAL_SPEED_LEVEL)}
-                title={`Kembalikan ke level default (${DEFAULT_MANUAL_SPEED_LEVEL})`}
-                aria-label={`Reset ke level default ${DEFAULT_MANUAL_SPEED_LEVEL}`}
-              >
-                ⟲
-              </button>
-            )
-          ) : (
-            currentScrollSpeed !== baseTempo && (
-              <button
-                type="button"
-                className="btn btn-secondary song-lyrics-autoscroll-reset"
-                onClick={() => setScrollSpeedClamped(baseTempo)}
-                title={`Kembalikan ke tempo lagu (${baseTempo} BPM)`}
-                aria-label={`Reset ke tempo lagu ${baseTempo} BPM`}
-              >
-                ⟲
-              </button>
-            )
-          )}
+          <span className="song-lyrics-tempo-led-compact-text" aria-live="polite">
+            {baseTempo}
+          </span>
         </div>
-      </div>
+      )}
+
+      {/* Autoscroll lirik — shared AutoScrollControl */}
+      <AutoScrollControl
+        autoScrollActive={autoScrollActive}
+        setAutoScrollActive={setAutoScrollActive}
+        scrollSpeed={scrollSpeed}
+        setScrollSpeed={setScrollSpeed}
+        autoScrollMode={autoScrollMode}
+        setAutoScrollMode={setAutoScrollMode}
+        manualSpeedLevel={manualSpeedLevelProp}
+        setManualSpeedLevel={setManualSpeedLevel}
+        tempo={tempo}
+      />
 
       {/* Grup tampilan: font size, mode panggung, mode fokus, lock layar */}
       <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-viewmode" role="group" aria-label="Tampilan lirik">

@@ -208,11 +208,11 @@ export default function SongChordsInfo({
                 </div>
               </div>
             )}
-        {/* Tempo + time signature terintegrasi: label menampilkan keduanya */}
+        {/* Tempo — time signature terintegrasi di dalam TempoControl */}
             {tempo && (
               <div className="song-info-control-row">
                 <span className="song-info-row-label">
-                  ⏱️ Tempo{timeSignature ? ` • ${timeSignature}` : ''}
+                  ⏱️ Tempo
                 </span>
                 <div className="song-info-row-control">
                   <TempoControl
@@ -221,6 +221,7 @@ export default function SongChordsInfo({
                     setScrollSpeed={setScrollSpeed}
                     isMetronomeActive={isMetronomeActive}
                     setIsMetronomeActive={setIsMetronomeActive}
+                    timeSignature={timeSignature}
                   />
                 </div>
               </div>

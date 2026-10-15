@@ -49,6 +49,7 @@ vi.mock('../hooks/usePermission.js', () => ({
 vi.mock('../apiClient.js', () => ({
   fetchSetLists: vi.fn().mockResolvedValue([]),
   fetchSetListById: vi.fn().mockResolvedValue(null),
+  fetchSongs: vi.fn().mockResolvedValue([]),
   updateSongMastery: vi.fn(),
 }));
 
@@ -136,7 +137,8 @@ describe('Song lyrics shared editor rendering', () => {
   test('Given SongLyricsMainSection, Then the lyrics toolbars and display are rendered without the editor', async () => {
     await act(async () => {
       root.render(
-        <SongLyricsMainSection
+        <MemoryRouter>
+          <SongLyricsMainSection
           lyricsDisplayRef={{ current: null }}
           tempo={120}
           timeSignature={'4/4'}
@@ -161,6 +163,7 @@ describe('Song lyrics shared editor rendering', () => {
           youtubeRef={{ current: null }}
           loading={false}
         />
+        </MemoryRouter>
       );
     });
 
@@ -342,7 +345,8 @@ describe('Song lyrics shared editor rendering', () => {
   test('Given recognized section labels, Then no detected-section badges are rendered', async () => {
     await act(async () => {
       root.render(
-        <SongLyricsMainSection
+        <MemoryRouter>
+          <SongLyricsMainSection
           lyricsDisplayRef={{ current: null }}
           tempo={120}
           timeSignature={'4/4'}
@@ -367,6 +371,7 @@ describe('Song lyrics shared editor rendering', () => {
           youtubeRef={{ current: null }}
           loading={false}
         />
+        </MemoryRouter>
       );
     });
 
@@ -385,6 +390,10 @@ describe('Song lyrics shared editor rendering', () => {
           transpose={2}
           setTranspose={noop}
           tempo={120}
+          onTempoChange={noop}
+          isMetronomeActive={false}
+          setIsMetronomeActive={noop}
+          timeSignature="4/4"
           autoScrollActive={false}
           setAutoScrollActive={noop}
           scrollSpeed={120}
@@ -402,13 +411,12 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     const labels = Array.from(container.querySelectorAll('button')).map((b) => (b.textContent || '').trim()).join(' ');
-    // Key/transpose: key asli → target + LED tempo mengikuti BPM.
-    expect(container.querySelector('.transpose-key-control')).toBeTruthy();
-    expect(container.querySelector('.song-info-key-display').textContent).toContain('D');
-    expect(container.querySelector('.song-lyrics-tempo-led-compact').textContent).toContain('120');
-    // Autoscroll lirik di toolbar.
-    expect(labels).toContain('Autoscroll');
-    expect(container.querySelector('.song-lyrics-autoscroll-speed')).toBeTruthy();
+    // Key/transpose: kapsul compact (TransposeKeyControl variant="compact") + tempo kapsul.
+    expect(container.querySelector('.transpose-key-capsule')).toBeTruthy();
+    expect(container.querySelector('.transpose-key-value').textContent).toContain('D');
+    expect(container.querySelector('.song-lyrics-tempo-capsule').textContent).toContain('120');
+    // Autoscroll lirik di toolbar: kapsul shared (AutoScrollControl).
+    expect(container.querySelector('.song-lyrics-autoscroll-capsule')).toBeTruthy();
     // Kontrol tampilan panggung dirender.
     expect(labels).toContain('Panggung');
     expect(labels).toContain('Fokus');
@@ -473,7 +481,7 @@ describe('Song lyrics shared editor rendering', () => {
 
     const footer = container.querySelector('.setlist-nav-footer');
     expect(footer).toBeTruthy();
-    expect(footer.textContent).toContain('Lagu 2/5');
+    expect(footer.textContent).toContain('2/5');
     const buttons = footer.querySelectorAll('button');
     expect(buttons.length).toBe(3);
     expect(buttons[0].disabled).toBe(false);
@@ -521,12 +529,12 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const group = container.querySelector('.song-lyrics-toolbar-group-autoscroll');
+    const group = container.querySelector('.song-lyrics-autoscroll-capsule');
     expect(group).toBeTruthy();
 
     // Toggle on/off.
-    const toggle = group.querySelector('.song-lyrics-toolbar-btn');
-    expect(toggle.textContent).toContain('Autoscroll');
+    const toggle = group.querySelector('.song-lyrics-autoscroll-toggle');
+    expect(toggle).toBeTruthy();
     await act(async () => { toggle.click(); });
     expect(setAutoScrollActive).toHaveBeenCalledWith(true);
 

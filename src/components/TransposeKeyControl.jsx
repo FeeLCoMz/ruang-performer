@@ -1,5 +1,5 @@
 import React from 'react';
-import { transposeChord, getNoteIndex, getTransposeSteps } from '../utils/chordUtils.js';
+import { transposeChord, getTransposeSteps } from '../utils/chordUtils.js';
 
 /**
  * TransposeKeyControl - Component for displaying and transposing musical keys
@@ -9,7 +9,17 @@ import { transposeChord, getNoteIndex, getTransposeSteps } from '../utils/chordU
  * @param {function} onTransposeChange - Callback when transpose changes
  * @param {boolean} compact - Optional compact mode for smaller display
  */
-export default function TransposeKeyControl({ originalKey, targetKey, transpose, onTransposeChange, compact = false, disableAutoApply = false, pianoRecommendation = null, onApplyRecommendedTranspose = null }) {
+export default function TransposeKeyControl({
+  originalKey,
+  targetKey,
+  transpose,
+  onTransposeChange,
+  compact = false,
+  disableAutoApply = false,
+  pianoRecommendation = null,
+  onApplyRecommendedTranspose = null,
+  variant,
+}) {
   const safeOnTransposeChange = React.useCallback((nextValue) => {
     if (typeof onTransposeChange === 'function') {
       onTransposeChange(nextValue);
@@ -78,33 +88,47 @@ export default function TransposeKeyControl({ originalKey, targetKey, transpose,
 
   if (!originalKey) return null;
 
-  if (compact) {
+  const isCompact = variant === 'compact' || (variant == null && compact);
+  // mini: versi paling ringkas — untuk bar terpadu mode penuh (layar sempit)
+  const isMini = variant === 'mini';
+  const sizeClass = isMini ? ' transpose-key-capsule-mini' : '';
+
+  if (isCompact || isMini) {
     return (
-      <div className="transpose-key-control transpose-key-control-compact">
+      /* Kapsul pill gaya TempoControl/AutoScrollControl compact */
+      <div className={`transpose-key-capsule${sizeClass}`} role="group" aria-label="Transpose key">
         <button
           type="button"
           onClick={handleTransposeDown}
-          className="btn btn-secondary"
+          className="transpose-key-step"
           title="Transpose down"
           aria-label="Transpose down"
         >
           −
         </button>
-        <div className="song-info-key-display">
+        <div
+          className="transpose-key-value"
+          aria-live="polite"
+          title={transpose !== 0 ? `${originalKey} → ${transposedKey}` : `Key aktif: ${originalKey}`}
+        >
           {transpose !== 0 ? (
             <>
-              <span className="song-info-key-original">{originalKey}</span>
-              <span className="song-info-key-arrow">→</span>
-              <span className="song-info-value">{transposedKey}</span>
+              {originalKey && (
+                <>
+                  <span className="transpose-key-original">{originalKey}</span>
+                  <span className="transpose-key-arrow" aria-hidden="true">→</span>
+                </>
+              )}
+              <span className="transpose-key-current">{transposedKey}</span>
             </>
           ) : (
-            <span className="song-info-value">{originalKey}</span>
+            <span className="transpose-key-current">{originalKey}</span>
           )}
         </div>
         <button
           type="button"
           onClick={handleTransposeUp}
-          className="btn btn-secondary"
+          className="transpose-key-step"
           title="Transpose up"
           aria-label="Transpose up"
         >
@@ -114,7 +138,7 @@ export default function TransposeKeyControl({ originalKey, targetKey, transpose,
           <button
             type="button"
             onClick={handleApplyEasyKey}
-            className="btn btn-secondary transpose-key-easy-btn"
+            className="transpose-key-easy-btn"
             disabled={recommendedSteps === 0}
             title={recommendedSteps === 0
               ? 'Key dasar sudah cocok'
@@ -128,7 +152,7 @@ export default function TransposeKeyControl({ originalKey, targetKey, transpose,
           <button
             type="button"
             onClick={handleReset}
-            className="key-transpose-reset"
+            className="transpose-key-reset"
             title="Reset transpose"
             aria-label="Reset transpose"
           >

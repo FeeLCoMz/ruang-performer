@@ -6,11 +6,10 @@ import React, { useEffect, useState } from 'react';
  * tombol prev/next lagu + posisi lagu dalam setlist. Muncul di semua tab,
  * jadi pemain bisa pindah lagu tanpa kembali ke daftar setlist.
  *
- * Dipakai juga sebagai footer sticky di fullscreen lirik
- * (SongChordsLyricsDisplay) — class .setlist-nav-fullscreen mengoverride
- * media query desktop agar footer tetap tampil di layar penuh.
+ * Dipakai juga sebagai bar bawah saat MODE PENUH panel lirik (dari
+ * SongLyricsMainSection) — footer mobile disembunyikan di lebar besar.
  *
- * Desktop (>768px): disembunyikan di luar fullscreen — navigasi antar lagu
+ * Desktop (>768px): disembunyikan di luar mode penuh — navigasi antar lagu
  * tetap tersedia di toolbar panel lirik.
  */
 export default function SetlistNavFooter({ setlistNav }) {
@@ -102,10 +101,10 @@ export default function SetlistNavFooter({ setlistNav }) {
           onClick={() => setSheetOpen((v) => !v)}
           aria-expanded={sheetOpen}
           aria-label={`Lagu ${setlistNav.songNumber} dari ${setlistNav.totalSongs}. Buka daftar lagu.`}
-          title="Lihat daftar lagu"
+          title={`Lagu ${setlistNav.songNumber}/${setlistNav.totalSongs} — lihat daftar lagu`}
         >
-          Lagu {setlistNav.songNumber}/{setlistNav.totalSongs}
           <span className="setlist-nav-footer-info-icon" aria-hidden="true">☰</span>
+          <span className="setlist-nav-footer-info-number">{setlistNav.songNumber}/{setlistNav.totalSongs}</span>
         </button>
         <button
           type="button"

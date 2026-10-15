@@ -1,4 +1,4 @@
-ï»¿/* ===== Song Contributor Modern ===== */
+/* ===== Song Contributor Modern ===== */
 .song-contributor-main {
   font-size: 0.9em;
   color: var(--text-secondary);
@@ -731,15 +731,20 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   margin-bottom: 24px;
-  padding: 24px 20px;
+  /* Padding seragam untuk semua tab panel lagu (Info, Lirik, Media, Analisis):
+     mengikuti token spacing — sama dengan panel lirik yang diperkecil. */
+  padding: var(--spacing-sm) var(--spacing-sm);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}@media (max-width: 768px){
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 768px){
   .song-panel {
-    padding: 16px 8px;
-    margin-bottom: 16px;
-  }}
+    padding: var(--spacing-sm) 6px;
+    margin-bottom: var(--spacing-lg);
+  }
+}
 /* ========================================
    SETLIST SONG NAVIGATOR COMPONENT
    ======================================== */
@@ -1820,7 +1825,7 @@ body.dark-mode .number-token {
    1. ROOT VARIABLES & THEMES
    ======================================== */
 :root {
-  /* Colors â€” tema "Midnight Violet" (mode gelap permanen): aksen violet
+  /* Colors — tema "Midnight Violet" (mode gelap permanen): aksen violet
       yang hangat dengan latar biru gelap lebih dalam, kontras lebih jelas. */
   --primary-accent: #8b5cf6;
   --primary-accent-hover: #7c3aed;
@@ -9433,8 +9438,8 @@ body.dark-mode .cd-token {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  /* Padding sama dengan .song-panel supaya semua tab seragam */
-  padding: 24px 20px;
+  /* Padding sama dengan .song-panel (token spacing) supaya semua tab seragam */
+  padding: var(--spacing-sm);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--spacing-xl);
   width: 100%;
@@ -10331,43 +10336,100 @@ body.dark-mode .cd-token {
   gap: 0.35rem;
 }
 
-/* Tombol Ã¢Ë†â€™/+ dalam baris kontrol disamakan tingginya */
-.transpose-key-control-compact .btn {
-  width: 34px;
-  height: 32px;
-  min-width: 34px;
-  min-height: 32px;
-  padding: 0;
+/* ========================================
+   TRANSPOSE KEY CAPSULE (TransposeKeyControl variant="compact")
+   Kapsul pill di toolbar lirik, gaya selaras TempoControl/AutoScrollControl:
+   ( -  G?D  +  ??C  ? )
+   ======================================== */
+.transpose-key-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
+  border: 1px solid var(--border-color);
+}
+
+.transpose-key-step {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
-  border-radius: var(--radius-md);
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
 }
 
-/* Tombol key mudah (ðŸ’¡): bagian dari kontrol transpose, ukuran mengikuti
-   tombol lain â€” lebar konten (label key), tinggi sama dengan Ã¢Ë†â€™/+. */
-.transpose-key-control-compact .transpose-key-easy-btn {
-  width: auto;
-  min-width: 34px;
-  padding: 0 8px;
-  gap: 4px;
-  font-size: 0.85rem;
-  white-space: nowrap;
+.transpose-key-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 52px;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
 }
-.transpose-key-control-compact .transpose-key-easy-btn:disabled {
-  opacity: 0.55;
+
+.transpose-key-value .transpose-key-original {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.transpose-key-value .transpose-key-arrow {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.transpose-key-value .transpose-key-current {
+  color: var(--text-primary);
+}
+
+.transpose-key-capsule .transpose-key-easy-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  min-width: 30px;
+  padding: 0 7px;
+  gap: 3px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary-accent);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.transpose-key-capsule .transpose-key-easy-btn:disabled {
+  opacity: 0.45;
   cursor: default;
 }
 
-.transpose-key-control-compact .song-info-key-display {
-  flex: 0 0 auto;
-  min-width: 84px;
-  height: 32px;
-  min-height: 32px;
-  padding: 0 var(--spacing-sm);
-  border-radius: var(--radius-md);
+.transpose-key-capsule .transpose-key-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary-accent);
+  font-size: 0.95rem;
+  cursor: pointer;
 }
+
+/* (Style compact lama transpose-key-control-compact dibuang — diganti kapsul di atas.) */
 
 .key-transpose-reset {
   width: 32px;
@@ -10395,16 +10457,17 @@ body.dark-mode .cd-token {
   transform: scale(0.95);
 }
 
-/* Tempo Metronome Controls */
+/* Tempo Metronome Controls (variant full, tab Info)
+   Rapi: tombol bulat pill mengikuti bahasa visual kapsul di toolbar lirik,
+   display BPM menyatu, term tempo rata kanan. */
 .song-info-tempo-controls {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0;
+  gap: 6px;
 }
 
-/* Tombol tempo disamakan tingginya dengan kontrol key */
+/* Tombol tempo: pill bulat transparan, tinggi sama dengan kontrol key */
 .song-info-tempo-controls .btn {
   width: 34px;
   height: 32px;
@@ -10415,7 +10478,14 @@ body.dark-mode .cd-token {
   align-items: center;
   justify-content: center;
   line-height: 1;
-  border-radius: var(--radius-md);
+  border-radius: 999px;
+}
+
+/* Tombol metronome aktif: menyala accent (gaya kapsul compact) */
+.song-info-tempo-controls .btn.active {
+  background: var(--primary-accent);
+  border-color: var(--primary-accent);
+  color: var(--primary-bg);
 }
 
 .song-info-tempo-header-row {
@@ -10457,14 +10527,20 @@ body.dark-mode .cd-token {
   flex: 0 1 auto;
   min-width: 0;
   height: 32px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0 var(--spacing-md);
-  background: var(--primary-bg);
-  border-radius: var(--radius-md);
+  gap: 6px;
+  padding: 0 12px;
+  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
+  border-radius: 999px;
   border: 1px solid var(--border-color);
+}
+
+/* Angka BPM tegas: lebih besar dari unit & time signature */
+.song-info-tempo-display .song-info-value {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
 }
 
 .song-info-tempo-term {
@@ -10473,7 +10549,7 @@ body.dark-mode .cd-token {
   font-weight: 700;
   letter-spacing: 0.3px;
   text-transform: uppercase;
-  margin-left: auto;
+  margin-left: 4px;
   white-space: nowrap;
 }
 
@@ -10574,11 +10650,11 @@ body.dark-mode .cd-token {
     grid-column: 1;
   }
 }@media (max-width: 768px){
-  .media-panel {
-    /* Sama dengan .song-panel di lebar sempit */
-    padding: 16px 8px;
-    margin-bottom: 16px;
-  }
+.media-panel {
+  /* Sama dengan .song-panel di lebar sempit (token spacing) */
+  padding: var(--spacing-sm) 6px;
+  margin-bottom: var(--spacing-lg);
+}
 
   .media-panel-title {
     font-size: var(--font-size-lg);
@@ -11080,7 +11156,7 @@ body.dark-mode .cd-token {
   gap: var(--spacing-md);
 }
 
-/* Baris aksi media & analisis chord â€” satu baris di bawah song info */
+/* Baris aksi media & analisis chord — satu baris di bawah song info */
 .song-actions-row {
   display: flex;
   gap: var(--spacing-sm);
@@ -11093,7 +11169,7 @@ body.dark-mode .cd-token {
   min-height: 40px;
 }
 
-/* Tab panel Info | Media | Lirik â€” mode normal */
+/* Tab panel Info | Media | Lirik — mode normal */
 .song-tabs {
   margin-bottom: var(--spacing-lg);
 }
@@ -11168,7 +11244,7 @@ body.dark-mode .cd-token {
   color: var(--text-muted);
 }
 
-/* Media panel selalu terbuka (tab Media) â€” tanpa header expand */
+/* Media panel selalu terbuka (tab Media) — tanpa header expand */
 .media-panel .media-panel-content {
   display: grid;
 }
@@ -11328,7 +11404,7 @@ body.dark-mode .cd-token {
 }
 
 /* Tinggi panel lirik sesuai viewport agar lirik panjang di-scroll DI DALAM
-   panel, bukan ke bawah halaman â€” header & tab tetap terlihat. */
+   panel, bukan ke bawah halaman — header & tab tetap terlihat. */
 .song-lyrics-main {
   display: flex;
   flex-direction: column;
@@ -11349,7 +11425,7 @@ body.dark-mode .cd-token {
   white-space: nowrap;
 }
 
-/* Panel analisis chord inline (tab Analisis) â€” konten langsung di panel,
+/* Panel analisis chord inline (tab Analisis) — konten langsung di panel,
    bukan modal, jadi tidak menutupi halaman. */
 .song-lyrics-analyzer-inline-panel {
   padding: 24px 20px;
@@ -11366,8 +11442,6 @@ body.dark-mode .cd-token {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  /* Padding sama dengan .song-panel supaya semua tab seragam */
-  padding: 24px 20px;
   margin-bottom: var(--spacing-xl);
   box-shadow: var(--shadow-sm);
 }
@@ -11397,14 +11471,14 @@ body.dark-mode .cd-token {
   flex-wrap: wrap;
 }
 
-/* Urutan visual grup toolbar (prioritas perform): Key â†’ Tempo LED â†’
-   Autoscroll â†’ Viewmode. Key & tempo grup terpisah; semua di baris utama. */
+/* Urutan visual grup toolbar (prioritas perform): Key ? Tempo LED ?
+   Autoscroll ? Viewmode. Key & tempo grup terpisah; semua di baris utama. */
 .song-lyrics-toolbar-group-key { order: 1; }
 .song-lyrics-toolbar-group-autoscroll { order: 2; }
 .song-lyrics-toolbar-group-viewmode { order: 3; }
 .song-lyrics-tempo-led-compact { order: 4; }
 
-/* Grup key tidak meregang â€” cukup selebar isinya */
+/* Grup key tidak meregang — cukup selebar isinya */
 .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-key {
   flex: 0 0 auto;
   flex-wrap: nowrap;
@@ -11531,23 +11605,231 @@ body.dark-mode .cd-token {
   font-weight: 600;
 }
 
+/* ========================================
+   AUTOSCROLL CAPSULE (shared AutoScrollControl)
+   Satu kapsul menyatu: [?] [?/=] [-] 72 BPM [+] [?] — menggantikan grup
+   toolbar terpisah (tombol Autoscroll + sub-group kecepatan).
+   ======================================== */
+.song-lyrics-autoscroll-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
+  border: 1px solid var(--border-color);
+}
+
+/* Saat autoscroll aktif: aksen di border kapsul + tombol ? menyala */
+.song-lyrics-autoscroll-capsule.is-active {
+  border-color: var(--primary-accent);
+  background: color-mix(in srgb, var(--primary-accent) 10%, var(--secondary-bg) 85%, transparent);
+}
+
+.song-lyrics-autoscroll-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.song-lyrics-autoscroll-toggle.is-active {
+  background: var(--primary-accent);
+  color: var(--primary-bg);
+}
+
+.song-lyrics-autoscroll-capsule .song-lyrics-autoscroll-mode {
+  min-width: 30px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.song-lyrics-autoscroll-capsule .song-lyrics-autoscroll-mode.is-manual {
+  background: color-mix(in srgb, var(--primary-accent) 18%, transparent);
+  color: var(--primary-accent);
+}
+
+.song-lyrics-autoscroll-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.song-lyrics-autoscroll-step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.song-lyrics-autoscroll-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 64px;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.song-lyrics-autoscroll-capsule .song-lyrics-autoscroll-unit {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.song-lyrics-autoscroll-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary-accent);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* ========================================
+   TEMPO CAPSULE (TempoControl variant="compact")
+   Kapsul pill di toolbar lirik, gaya selaras AutoScrollControl:
+   [-] ? 120 BPM 4/4 [+] [?]
+   Time signature terintegrasi sebagai chip kecil di samping BPM.
+   ======================================== */
+.song-lyrics-tempo-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
+  border: 1px solid var(--border-color);
+}
+
+.song-lyrics-tempo-capsule.is-playing {
+  border-color: var(--primary-accent);
+}
+
+.song-lyrics-tempo-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.song-lyrics-tempo-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.song-lyrics-tempo-bpm {
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.song-lyrics-tempo-unit {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* Chip time signature (dipakai variant compact; full variant juga render) */
+.song-info-time-signature {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+  background: color-mix(in srgb, var(--secondary-bg) 70%, transparent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Full variant (tab Info): chip sedikit diberi jarak dari unit BPM */
+.song-info-tempo-display .song-info-time-signature {
+  margin-left: 6px;
+}
+
+.song-lyrics-tempo-metronome {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.song-lyrics-tempo-metronome.is-active {
+  background: var(--primary-accent);
+  color: var(--primary-bg);
+}
+
 /* Di HP, label teks tombol autoscroll ("Autoscroll") dan mode
-   ("Musik"/"Manual") disembunyikan â€” ikon saja, seperti tombol lainnya.
-   Menu overflow (â‹®): grup jarang-dipakai disembunyikan sampai tombol â‹®
-   ditekan. Tombol â‹® sendiri hanya ada di mobile (desktop: tampil normal). */
+   ("Musik"/"Manual") disembunyikan — ikon saja, seperti tombol lainnya.
+   Menu overflow (?): grup jarang-dipakai disembunyikan sampai tombol ?
+   ditekan. Tombol ? sendiri hanya ada di mobile (desktop: tampil normal). */
 @media (max-width: 768px) {
   .song-lyrics-toolbar-group-autoscroll .song-lyrics-toolbar-btn-label,
   .song-lyrics-autoscroll-mode-label {
     display: none;
   }
 
-  /* (Menu overflow â‹® dihapus: key/tempo kini selalu tampil di baris utama
+  /* (Menu overflow ? dihapus: key/tempo kini selalu tampil di baris utama
      karena transpose & autoscroll harus bisa diakses cepat saat perform.) */
 }
 
 /* ========================================
    SETLIST NAV FOOTER (mobile)
-   Footer sticky navigasi lagu setlist â€” duduk tepat di atas bottom nav.
+   Footer sticky navigasi lagu setlist — duduk tepat di atas bottom nav.
    Muncul di semua tab halaman lagu saat lagu dibuka dari setlist.
    ======================================== */
 .setlist-nav-footer {
@@ -11607,7 +11889,7 @@ body.dark-mode .cd-token {
   }
 }
 
-/* Sheet daftar lagu setlist (dibuka dari footer â˜°) */
+/* Sheet daftar lagu setlist (dibuka dari footer ?) */
 .setlist-nav-sheet-overlay {
   position: fixed;
   inset: 0;
@@ -11721,7 +12003,7 @@ body.dark-mode .cd-token {
   align-items: center;
   gap: var(--spacing-xs);
   /* Grup utuh: kontrol serumpun tidak pernah pecah baris. Hanya grup
-     (blok) yang pindah baris di toolbar â€” bukan tombol individual. */
+     (blok) yang pindah baris di toolbar — bukan tombol individual. */
   flex-wrap: nowrap;
   white-space: nowrap;
 }
@@ -11740,7 +12022,7 @@ body.dark-mode .cd-token {
   background: transparent;
 }
 
-/* Area sentuh aman untuk live: tombol â‰¥ 38px, gap antar tombol â‰¥ 6px
+/* Area sentuh aman untuk live: tombol = 38px, gap antar tombol = 6px
    supaya tangan gemetar/keringat tidak salah tekan. */
 .song-lyrics-toolbar--normal .btn {
   min-height: 38px;
@@ -12615,7 +12897,7 @@ body.dark-mode .song-lyrics-error {
   max-height: calc(100vh - 260px);
   overflow-y: auto;
   /* Font scale dari A-/A+ tidak lagi dikompensasi auto-fit, jadi font besar
-     boleh menimbulkan scroll horizontal â€” tanpa ini, konten terpotong. */
+     boleh menimbulkan scroll horizontal — tanpa ini, konten terpotong. */
   overflow-x: auto;
 }
 
@@ -12661,13 +12943,13 @@ body.dark-mode .song-lyrics-error {
 
 /* (Semua style fullscreen lirik dihapus bersama fiturnya.) */
 
-/* Chord Analyzer Panel */
+/* Chord Analyzer Panel — padding sama dengan .song-panel (token spacing) */
 .song-lyrics-analyzer {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
-  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
   box-shadow: var(--shadow-sm);
 }
 
@@ -14143,11 +14425,11 @@ input[type="submit"],
 }
 
 /* ========================================
-   SONG ADD/EDIT â€” STUDIO LAYOUT (additive)
+   SONG ADD/EDIT — STUDIO LAYOUT (additive)
    ========================================
    A second arrangement of the same form: sticky command bar, one dense
    INFORMASI UTAMA grid, media beside the lyrics editor, live preview below.
-   The stepped layout and all of its styles above are untouched â€” this block
+   The stepped layout and all of its styles above are untouched — this block
    only adds the new surface.
    ======================================== */
 
@@ -14760,7 +15042,7 @@ body.dark-mode .studio-error {
 }
 
 /* ========================================
-   SETLIST SONGS PAGE â€” MOBILE
+   SETLIST SONGS PAGE — MOBILE
    ========================================
    Measured problems at 390px before this block:
      - the filter row was a fixed 2-column grid, so "Kelompokkan: Tidak" was
@@ -14807,7 +15089,7 @@ body.dark-mode .studio-error {
 
   /* Keep the gear glyph visible while hiding the words. */
   .setlist-header-more > summary::before {
-    content: 'âš™';
+    content: '?';
     font-size: 1.15rem;
     line-height: 1;
   }
@@ -15014,7 +15296,7 @@ body.dark-mode .studio-error {
 }
 
 /* ========================================
-   SETLIST SONGS â€” VISIBILITY SWITCH + VIDEO MARKERS
+   SETLIST SONGS — VISIBILITY SWITCH + VIDEO MARKERS
    ======================================== */
 
 /* The "show / hide played songs" switch that replaced the Kelompokkan dropdown.
@@ -15321,10 +15603,10 @@ body.performance-mode .song-lyrics-display .cd {
   text-align: center;
 }
 
-/* (setlistnav di toolbar sudah dipindah ke SetlistNavFooter â€” sticky footer
+/* (setlistnav di toolbar sudah dipindah ke SetlistNavFooter — sticky footer
    di atas bottom nav. Style grup ini hanya sisa desktop; tak lagi dipakai.) */
 
-/* Urutan visual grup toolbar: viewmode â†’ setlist nav (didefinisikan di atas,
+/* Urutan visual grup toolbar: viewmode ? setlist nav (didefinisikan di atas,
    dekat .song-lyrics-toolbar). */
 
 @media (max-width: 768px) {
