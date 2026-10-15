@@ -4647,39 +4647,136 @@ body.dark-mode .lyrics-editor-textarea {
   color: var(--text-secondary);
 }
 
-/* Indikator status penguasaan: merah = belum, hijau = dikuasai */
+/* Indikator status penguasaan: merah = belum, kuning = latihan, hijau = dikuasai.
+   Gaya low-key: tanpa latar — hanya ikon + teks berwarna. Warna status lewat
+   variabel --mastery-color yang berlaku untuk chip dan item menu dropdown.
+   mastery-ready dipertahankan sebagai alias lama dari mastery-mastered. */
+.song-mastery-chip,
+.mastery-chip-item {
+  --mastery-color: var(--text-primary);
+  color: var(--mastery-color);
+}
+
+[class*='mastery-none'] {
+  --mastery-color: #b91c1c;
+}
+
+[class*='mastery-learning'] {
+  --mastery-color: #92400e;
+}
+
+[class*='mastery-mastered'],
+[class*='mastery-ready'] {
+  --mastery-color: #166534;
+}
+
+body.dark-mode [class*='mastery-none'] {
+  --mastery-color: #fca5a5;
+}
+
+body.dark-mode [class*='mastery-learning'] {
+  --mastery-color: #fcd34d;
+}
+
+body.dark-mode [class*='mastery-mastered'],
+body.dark-mode [class*='mastery-ready'] {
+  --mastery-color: #86efac;
+}
+
 .song-mastery-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 10px;
+  padding: 2px 4px;
   border-radius: 999px;
-  border: 1px solid transparent;
+  border: none;
+  background: transparent;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
   flex: 0 0 auto;
 }
 
-.song-mastery-chip.mastery-none {
-  color: #b91c1c;
-  background: color-mix(in srgb, #dc2626 14%, transparent);
-  border-color: color-mix(in srgb, #dc2626 34%, transparent);
+/* MasteryChip interaktif: chip = tombol dropdown pilihan status.
+   Hover/open hanya mengubah brightness. */
+.song-mastery-chip.mastery-learning {
+  color: #92400e;
 }
 
-.song-mastery-chip.mastery-ready {
-  color: #166534;
-  background: color-mix(in srgb, #16a34a 14%, transparent);
-  border-color: color-mix(in srgb, #16a34a 34%, transparent);
+body.dark-mode .song-mastery-chip.mastery-learning {
+  color: #fcd34d;
 }
 
-body.dark-mode .song-mastery-chip.mastery-none {
-  color: #fca5a5;
+.mastery-chip-root {
+  position: relative;
+  display: inline-flex;
 }
 
-body.dark-mode .song-mastery-chip.mastery-ready {
-  color: #86efac;
+button.song-mastery-chip {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button.song-mastery-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+button.song-mastery-chip.open,
+button.song-mastery-chip:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+
+.mastery-chip-caret {
+  font-size: 0.65em;
+  opacity: 0.7;
+}
+
+.mastery-chip-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.mastery-chip-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mastery-chip-item:hover {
+  background: color-mix(in srgb, var(--primary-accent) 10%, transparent);
+}
+
+.mastery-chip-item.selected {
+  font-weight: 700;
+  background: color-mix(in srgb, var(--primary-accent) 14%, transparent);
+}
+
+.mastery-chip-check {
+  margin-left: auto;
+  color: var(--mastery-color, var(--primary-accent));
 }
 
 .sr-only {

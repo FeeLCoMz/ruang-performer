@@ -19,6 +19,8 @@ import { buildSmartSetlistPlan } from '../utils/setlistSmartAssistant.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
 import useMetronome from '../hooks/useMetronome.js';
+import { updateSongMastery } from '../apiClient.js';
+import MasteryChip from '../components/MasteryChip.jsx';
 import YouTubeViewer from '../components/YouTubeViewer.jsx';
 import TimeMarkers from '../components/TimeMarkers.jsx';
 
@@ -153,6 +155,31 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [videoPlayback, setVideoPlayback] = useState({ time: 0, duration: 0 });
   const videoRef = useRef(null);
   const activeInlinePlayerRef = useRef(null);
+
+  // Override mastery lokal per lagu (chip di kartu setlist) + id yang sedang
+  // disimpan, agar tidak perlu refetch seluruh lagu setelah ubah status.
+  const [masteryOverrides, setMasteryOverrides] = useState({});
+  const [masteryUpdatingId, setMasteryUpdatingId] = useState(null);
+  const [masteryError, setMasteryError] = useState('');
+  const handleMasteryChange = async (song, nextStatus) => {
+    if (!viewerId) {
+      setMasteryError('Masuk untuk menandai status penguasaan lagu.');
+      return;
+    }
+    setMasteryUpdatingId(song.id);
+    setMasteryError('');
+    try {
+      await updateSongMastery(song.id, nextStatus);
+      setMasteryOverrides((prev) => ({
+        ...prev,
+        [String(song.id)]: { status: nextStatus },
+      }));
+    } catch (err) {
+      setMasteryError(err?.message || 'Gagal memperbarui status penguasaan lagu');
+    } finally {
+      setMasteryUpdatingId(null);
+    }
+  };
 
   const baseSongMap = useMemo(() => {
     const map = new Map();
@@ -1640,14 +1667,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             const ownMasteryEntry = Array.isArray(baseSong?.masteredBy)
               ? baseSong.masteredBy.find((entry) => String(entry?.userId) === viewerId)
               : null;
-            const masteryStatus = ownMasteryEntry?.status
+            // Override lokal (chip diubah) diprioritaskan di atas data base song.
+            const masteryStatus = masteryOverrides[String(song.id)]?.status
+              || ownMasteryEntry?.status
               || (baseSong?.isMasteredByCurrentUser ? 'mastered' : 'none');
-            const MASTERY_STATUS_META = {
-              mastered: { icon: '🟢', label: 'Dikuasai', title: 'Status: Dikuasai' },
-              learning: { icon: '🟡', label: 'Perlu Latihan', title: 'Status: Perlu Latihan' },
-              none: { icon: '🔴', label: 'Belum Diulik', title: 'Status: Belum diulik' },
-            };
-            const masteryMeta = MASTERY_STATUS_META[masteryStatus];
             return (
               <React.Fragment key={song.id}>
                 <SongCard
@@ -1713,14 +1736,13 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     /* Status lives on the right of the title line, where it reads
                         as the state of THIS row instead of another inline word. */
                     <div className="song-heading-status">
-                      {/* Status mastery tetap tampil di kartu setlist */}
-                      <span
-                        className={`song-mastery-chip mastery-${masteryStatus}`}
-                        title={masteryMeta.title}
-                      >
-                        <span aria-hidden="true">{masteryMeta.icon}</span>
-                        {masteryMeta.label}
-                      </span>
+                      {/* Status mastery: chip interaktif — klik untuk ubah status */}
+                      <MasteryChip
+                        status={masteryStatus}
+                        onStatusChange={(next) => handleMasteryChange(song, next)}
+                        updating={masteryUpdatingId === song.id}
+                        disabled={!viewerId}
+                      />
                       {isCompleted && (
                         <span className="song-flag song-flag-done" title="Sudah dibawakan">
                           ✓ Dibawakan

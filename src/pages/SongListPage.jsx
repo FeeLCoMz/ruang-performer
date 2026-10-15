@@ -8,8 +8,9 @@ import EditIcon from '../components/EditIcon.jsx';
 import SongCard from '../components/SongCard.jsx';
 import { StudioMediaColumn } from '../components/SongStudioLayout.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
-import { fetchSetLists } from '../apiClient.js';
+import { fetchSetLists, updateSongMastery } from '../apiClient.js';
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx';
+import MasteryChip from '../components/MasteryChip.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
@@ -38,6 +39,10 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [masteryError, setMasteryError] = useState(null);
+  const [masteryUpdatingId, setMasteryUpdatingId] = useState(null);
+  // Override mastery lokal per lagu setelah chip diubah (prop songs bersifat
+  // read-only dari parent). Menyimpan { songId: { status, masteredBy } }.
+  const [masteryOverrides, setMasteryOverrides] = useState({});
   const currentUserId = user?.userId || user?.id;
   const pageSize = 60;
   // Restore state from localStorage
@@ -213,6 +218,9 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   // Helper: status penguasaan lagu oleh user yang sedang login.
   // 'mastered' | 'learning' | 'none' — dipakai untuk chip kartu.
   function getMasteryStatus(song) {
+    // Override lokal (chip baru diubah) diprioritaskan.
+    const override = masteryOverrides[String(song?.id)];
+    if (override?.status) return override.status;
     if (!currentUserId) return 'none';
     // masteredBy bisa berisi entri learning milik user ini
     const ownEntry = Array.isArray(song?.masteredBy)
@@ -228,6 +236,29 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     mastered: { icon: '🟢', label: 'Dikuasai', title: 'Status: Dikuasai' },
     learning: { icon: '🟡', label: 'Perlu Latihan', title: 'Status: Perlu Latihan' },
     none: { icon: '🔴', label: 'Belum Diulik', title: 'Status: Belum diulik' },
+  };
+
+  // Ubah status mastery dari chip dropdown di kartu: panggil API lalu
+  // perbarui entri masteredBy lagu tersebut secara lokal.
+  const handleMasteryChange = async (song, nextStatus) => {
+    if (!currentUserId) {
+      setMasteryError('Masuk untuk menandai status penguasaan lagu.');
+      return;
+    }
+    setMasteryUpdatingId(song.id);
+    setMasteryError(null);
+    try {
+      await updateSongMastery(song.id, nextStatus);
+      // Simpan override lokal + perbarui entri masteredBy lagu tersebut.
+      setMasteryOverrides((prev) => ({
+        ...prev,
+        [String(song.id)]: { status: nextStatus },
+      }));
+    } catch (err) {
+      setMasteryError(err?.message || 'Gagal memperbarui status penguasaan lagu');
+    } finally {
+      setMasteryUpdatingId(null);
+    }
   };
 
   const permissionsBySongId = useMemo(() => {
@@ -388,7 +419,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     const isInlineVideoSong = activeVideoSong?.id === song.id;
     const mood = inferSongMood(song);
     const masteryStatus = getMasteryStatus(song);
-    const masteryMeta = MASTERY_STATUS_META[masteryStatus];
 
     return (
       <React.Fragment key={song.id}>
@@ -398,13 +428,12 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           isPlaying={isSongPlaying(song.id)}
           onClick={() => navigate(`/songs/view/${song.id}`)}
           headingStatus={(
-            <span
-              className={`song-mastery-chip mastery-${masteryStatus}`}
-              title={masteryMeta.title}
-            >
-              <span aria-hidden="true">{masteryMeta.icon}</span>
-              {masteryMeta.label}
-            </span>
+            <MasteryChip
+              status={masteryStatus}
+              onStatusChange={(next) => handleMasteryChange(song, next)}
+              updating={masteryUpdatingId === song.id}
+              disabled={!currentUserId}
+            />
           )}
           metaPrimary={(
             <div className="song-meta-line song-meta-line-primary">

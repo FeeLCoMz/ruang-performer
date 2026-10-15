@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import TransposeKeyControl from './TransposeKeyControl.jsx';
 import TempoControl from './TempoControl.jsx';
 import SongChordsExportMenu from './SongChordsExportMenu.jsx';
+import MasteryChip from './MasteryChip.jsx';
 import { transposeChord } from '../utils/chordUtils.js';
 
 /**
@@ -51,21 +52,15 @@ export default function SongChordsInfo({
   const showActions = true;
   const [activeTab] = useState('info');
 
-  // Level penguasaan lagu: Belum Diulik / Perlu Latihan / Dikuasai.
-  const MASTERY_LEVELS = [
-    { value: 'none', label: 'Belum Diulik', icon: '🔴' },
-    { value: 'learning', label: 'Perlu Latihan', icon: '🟡' },
-    { value: 'ready', label: 'Dikuasai', icon: '🟢' },
-  ];
+  // Level penguasaan lagu: 'none' | 'learning' | 'mastered' — chip dropdown.
   const currentMasteryLevel = currentUserStatus === 'mastered'
-    ? 'ready'
+    ? 'mastered'
     : currentUserStatus === 'learning'
       ? 'learning'
       : 'none';
   const handleMasteryLevelChange = (level) => {
     if (!onToggleMastery) return;
-    // Klik level aktif kembali ke "Belum Diulik".
-    onToggleMastery(level === currentMasteryLevel ? 'none' : level);
+    onToggleMastery(level);
   };
   const showKeyEasyRecommendation = !!pianoRecommendation?.recommendedKey;
   const metadataItems = [];
@@ -261,23 +256,15 @@ export default function SongChordsInfo({
         )}
 
         {/* Baris mastery — 3 level: Belum Diulik / Perlu Latihan / Dikuasai.
-            Chip status = dropdown pilihan; klik membuka pilihan level. */}
+            Chip status = dropdown; klik membuka pilihan level. */}
         <div className="song-info-control-row song-info-mastery-row">
           <div className="song-info-mastery-picker" title="Pilih status penguasaan lagu">
-            {MASTERY_LEVELS.map((level) => (
-              <button
-                key={level.value}
-                type="button"
-                className={`song-mastery-chip mastery-${level.value}${currentMasteryLevel === level.value ? ' selected' : ''}`}
-                onClick={() => handleMasteryLevelChange(level.value)}
-                disabled={!canMarkMastery || masteryUpdating}
-                aria-pressed={currentMasteryLevel === level.value}
-                title={canMarkMastery ? `Set status: ${level.label}` : 'Anda belum bisa menandai lagu ini'}
-              >
-                <span aria-hidden="true">{level.icon}</span>
-                {level.label}
-              </button>
-            ))}
+            <MasteryChip
+              status={currentMasteryLevel}
+              onStatusChange={handleMasteryLevelChange}
+              updating={masteryUpdating}
+              disabled={!canMarkMastery}
+            />
           </div>
           <div className="song-info-row-control">
             {masteryUpdating && <span className="song-info-mastery-saving">Menyimpan…</span>}
