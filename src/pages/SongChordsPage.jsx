@@ -437,6 +437,12 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
         const nextIndex = orderedSongs.findIndex((s) => String(s?.id) === String(songId));
         if (nextIndex !== -1) go(nextIndex);
       },
+      // Buka lagu di luar setlist (dari pencarian cepat di footer).
+      // Navigasi keluar konteks setlist — footer nav akan hilang otomatis.
+      openSongOutside: (songId) => {
+        if (!songId) return;
+        navigate(`/songs/view/${songId}`);
+      },
       // Daftar lagu untuk sheet pilih-lagu (footer): nomor, judul, key, aktif
       songs: orderedSongs.map((s, i) => ({
         id: String(s?.id),
@@ -743,7 +749,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
       )}
 
       {/* Footer sticky: navigasi lagu setlist (di atas bottom nav, mobile) */}
-      <SetlistNavFooter setlistNav={setlistNav} />
+      <SetlistNavFooter setlistNav={setlistNav} allSongs={Array.isArray(songsProp) ? songsProp : []} />
     </div>
   );
 }

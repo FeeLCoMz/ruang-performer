@@ -17,6 +17,8 @@ export const STORAGE_KEYS = {
   LYRICS_STAGE_MODE: 'ruangperformer_lyrics_stage_mode_v1',
   LYRICS_FOCUS_MODE: 'ruangperformer_lyrics_focus_mode_v1',
   LYRICS_LOCK: 'ruangperformer_lyrics_lock_v1',
+  // Mode overlay lirik: layer fullscreen di atas seluruh UI.
+  LYRICS_OVERLAY: 'ruangperformer_lyrics_overlay_v1',
 };
 
 export default STORAGE_KEYS;

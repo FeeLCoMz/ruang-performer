@@ -40,6 +40,9 @@ export default function SongChordsLyricsToolbar({
   setFocusMode,
   screenLocked = false,
   setScreenLocked,
+  // Mode overlay lirik: layer fullscreen di atas seluruh UI.
+  overlayMode = false,
+  setOverlayMode,
   // Tempo & metronome
   onTempoChange,
   isMetronomeActive = false,
@@ -161,6 +164,17 @@ export default function SongChordsLyricsToolbar({
         >
           <span aria-hidden="true">🎯</span>
           <span className="song-lyrics-toolbar-btn-label">Fokus</span>
+        </button>
+        <button
+          type="button"
+          className={`btn song-lyrics-toolbar-btn${overlayMode ? ' btn-primary' : ' btn-secondary'}`}
+          onClick={() => setOverlayMode?.(!overlayMode)}
+          aria-pressed={overlayMode}
+          aria-label={overlayMode ? 'Tutup overlay lirik' : 'Tampilkan lirik overlay'}
+          title={overlayMode ? 'Overlay lirik aktif: lirik tampil fullscreen di atas UI' : 'Overlay lirik: tampilkan lirik fullscreen di atas UI'}
+        >
+          <span aria-hidden="true">🖥️</span>
+          <span className="song-lyrics-toolbar-btn-label">Overlay</span>
         </button>
         <button
           type="button"

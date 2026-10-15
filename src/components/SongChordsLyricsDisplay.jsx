@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 import SongSheetMusic from "./SongSheetMusic.jsx";
 import ChordDisplay from "./ChordDisplay.jsx";
 import { transposeChord } from '../utils/chordUtils.js';
@@ -90,6 +91,9 @@ export default function SongChordsLyricsDisplay({
   fontScale = 1,
   focusMode = false,
   screenLocked = false,
+  // Mode overlay lirik: layer fullscreen di atas seluruh UI.
+  overlayMode = false,
+  onOverlayClose,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
   const zoomRef = useRef(zoom);
@@ -100,6 +104,24 @@ export default function SongChordsLyricsDisplay({
   // isYoutubePlaying comes from the page as a prop: it owns the polling, so the
   // timestamp buttons and the fullscreen controls share one source of truth.
   const [visualBeat, setVisualBeat] = useState(0);
+
+  // Overlay lirik: ref panel overlay + tutup via Esc. Port lirik memakai
+  // portal ke body agar benar-benar di atas semua UI (sidebar, bottom nav).
+  const overlayRef = useRef(null);
+  useEffect(() => {
+    if (!overlayMode) return undefined;
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onOverlayClose?.();
+    };
+    window.addEventListener('keydown', handleKey);
+    // Kunci scroll body agar latar belakang tidak ikut scroll.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [overlayMode, onOverlayClose]);
   // Mode autoscroll: 'MUSICAL' (BPM) atau 'MANUAL' (level 1-10).
   // Fallback state lokal bila parent belum mengelola mode ini.
   const [autoScrollModeLocal, setAutoScrollModeLocal] = useState(AUTO_SCROLL_MODES.MUSICAL);
@@ -404,6 +426,7 @@ export default function SongChordsLyricsDisplay({
   // (Fitur fullscreen lirik dihapus: handler exit fullscreen juga tidak dipakai.)
 
   return (
+    <>
     <div className="song-lyrics-display" ref={lyricsDisplayRef}>
       {zoomHudVisible && (
         <div className="song-lyrics-zoom-hud" aria-live="polite">Zoom {zoomHudText}</div>
@@ -446,7 +469,50 @@ export default function SongChordsLyricsDisplay({
             youtubeRef.current.handlePause();
           }
         }}
-      />
-    </div>
-  );
-}
+              />
+            </div>
+
+            {overlayMode && ReactDOM.createPortal(
+              <div
+                className="lyrics-overlay"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Lirik overlay"
+                ref={overlayRef}
+              >
+                <div className="lyrics-overlay-header">
+                  <span className="lyrics-overlay-title">{song?.title || 'Lirik'}</span>
+                  {targetKey && <span className="lyrics-overlay-key">{targetKey}</span>}
+                  <button
+                    type="button"
+                    className="btn btn-secondary lyrics-overlay-close"
+                    onClick={() => onOverlayClose?.()}
+                    aria-label="Tutup overlay lirik"
+                    title="Tutup overlay (Esc)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="lyrics-overlay-body song-lyrics-display">
+                  <ChordDisplay
+                    song={song}
+                    transpose={transpose}
+                    zoom={zoom}
+                    fontScale={fontScale}
+                    currentBeat={activeVisualBeat}
+                    timeSignature={timeSignature || song?.time_signature || '4/4'}
+                    showChords={effectiveShowChords}
+                    showChordNumbers={showChordNumbers}
+                    showJazzChords={showJazzChords}
+                    showSimpleChords={showSimpleChords}
+                    keySignature={keySignature || song?.key || 'C'}
+                    isPlaying={isYoutubePlaying}
+                    focusSectionKey={focusMode ? activeFocusSection : null}
+                  />
+                </div>
+              </div>,
+              document.body,
+            )}
+          </>
+        );
+      }

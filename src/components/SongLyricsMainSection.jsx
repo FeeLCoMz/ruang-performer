@@ -78,6 +78,8 @@ export default function SongLyricsMainSection({
   const [stageMode, setStageModeState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_STAGE_MODE));
   const [focusMode, setFocusModeState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_FOCUS_MODE));
   const [screenLocked, setScreenLockedState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_LOCK));
+  // Mode overlay lirik: layer fullscreen di atas seluruh UI (z-index tertinggi).
+  const [overlayMode, setOverlayModeState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_OVERLAY));
 
   const setFontScale = (next) => {
     const clamped = clampFontScale(next);
@@ -102,6 +104,12 @@ export default function SongLyricsMainSection({
     setScreenLockedState(Boolean(next));
     try {
       localStorage.setItem(STORAGE_KEYS.LYRICS_LOCK, next ? '1' : '0');
+    } catch { /* ignore */ }
+  };
+  const setOverlayMode = (next) => {
+    setOverlayModeState(Boolean(next));
+    try {
+      localStorage.setItem(STORAGE_KEYS.LYRICS_OVERLAY, next ? '1' : '0');
     } catch { /* ignore */ }
   };
 
@@ -150,6 +158,10 @@ export default function SongLyricsMainSection({
         setFocusMode={setFocusMode}
         screenLocked={screenLocked}
         setScreenLocked={setScreenLocked}
+        overlayMode={overlayMode}
+        setOverlayMode={setOverlayMode}
+        overlayMode={overlayMode}
+        setOverlayMode={setOverlayMode}
         setlistNav={setlistNav}
       />
 
@@ -190,6 +202,8 @@ export default function SongLyricsMainSection({
               focusMode={focusMode}
               screenLocked={screenLocked}
               setlistNav={setlistNav}
+              overlayMode={overlayMode}
+              onOverlayClose={() => setOverlayMode(false)}
             />
         )}
     </div>
