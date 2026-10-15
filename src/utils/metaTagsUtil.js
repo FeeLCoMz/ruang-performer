@@ -44,7 +44,7 @@ export const pageMetadata = {
     description: 'Dashboard utama Ruang Performer - Kelola band, setlist, dan gigs Anda'
   },
   songs: {
-    title: 'Lagu Saya',
+    title: 'Lagu',
     description: 'Kelola koleksi lagu Anda dengan chord, lirik, dan informasi lengkap'
   },
   setlists: {

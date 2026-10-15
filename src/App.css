@@ -7799,21 +7799,6 @@ body.dark-mode .song-editor-status-blocker {
   color: #198754;
 }
 
-.tools-models-wrap {
-  margin-top: 12px;
-  max-height: 200px;
-  overflow: auto;
-  font-size: 13px;
-}
-
-.tools-models-list {
-  padding-left: 18px;
-}
-
-.tools-model-name {
-  color: #888;
-}
-
 .token-input {
   width: 100%;
   text-align: center;

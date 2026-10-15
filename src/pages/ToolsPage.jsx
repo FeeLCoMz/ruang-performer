@@ -5,9 +5,11 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { getToken, getAuthHeader } from '../utils/auth.js';
 // No permission check needed, just check user.role === 'owner'
 
-export default function ToolsPage() {
-  const navigate = useNavigate();
+// --- Hooks dipisah dari komponen supaya urutan hook selalu konsisten ---
+// (rules of hooks: tidak boleh ada hook setelah early return owner guard).
+function useOwnerAuth() {
   const { user, login } = useAuth();
+  const navigate = useNavigate();
   React.useEffect(() => {
     async function syncUser() {
       if (!user || user.role !== 'owner') {
@@ -16,36 +18,21 @@ export default function ToolsPage() {
           if (res && res.user && res.user.role === 'owner') {
             login(getToken(), res.user);
           }
-        } catch {}
+        } catch { /* ignore */ }
       }
     }
     syncUser();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return { user, navigate };
+}
 
-  if (!user || user.role !== 'owner') {
-    return (
-      <div className="page-container">
-        <div className="page-header"><h1>Tools</h1></div>
-        <div className="card">Hanya Owner aplikasi yang dapat mengakses halaman ini.</div>
-      </div>
-    );
-  }
-
-  // State for import/export/backup
-  const [exporting, setExporting] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState(null);
-  const [importSuccess, setImportSuccess] = useState(null);
-  const [backingUp, setBackingUp] = useState(false);
-  const [backupError, setBackupError] = useState(null);
-  const [backupSuccess, setBackupSuccess] = useState(null);
-  const [exportError, setExportError] = useState(null);
-  const fileInputRef = useRef();
-  const sqlInputRef = useRef();
+// State + handler restore SQL (dipisah agar hook tidak berada setelah early return).
+function useSqlRestore() {
   const [restoring, setRestoring] = useState(false);
   const [restoreError, setRestoreError] = useState(null);
   const [restoreSuccess, setRestoreSuccess] = useState(null);
-  // Restore SQL handler
+  const sqlInputRef = useRef();
+
   const handleRestore = async (e) => {
     setRestoreError(null);
     setRestoreSuccess(null);
@@ -59,10 +46,6 @@ export default function ToolsPage() {
         setRestoring(false);
         sqlInputRef.current.value = '';
         return;
-      }
-      // Debug: tampilkan preview isi file SQL jika error
-      if (sql.length < 1000) {
-        setRestoreSuccess('Preview file SQL:\n' + sql.slice(0, 500));
       }
       const res = await fetch('/api/tools/restore', {
         method: 'POST',
@@ -82,32 +65,15 @@ export default function ToolsPage() {
     sqlInputRef.current.value = '';
   };
 
-  // State for Gemini models
-  const [models, setModels] = useState(null);
-  const [modelsError, setModelsError] = useState(null);
-  const [loadingModels, setLoadingModels] = useState(false);
+  return { restoring, restoreError, restoreSuccess, sqlInputRef, handleRestore };
+}
 
-  // Export handler
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      const data = await apiClient.exportAllData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ruang-performer-backup-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      setExportError('Export gagal: ' + (e.message || e));
-    }
-    setExporting(false);
-  };
+// State + handler backup SQL.
+function useSqlBackup() {
+  const [backingUp, setBackingUp] = useState(false);
+  const [backupError, setBackupError] = useState(null);
+  const [backupSuccess, setBackupSuccess] = useState(null);
 
-  // Backup handler
   const handleBackup = async () => {
     setBackingUp(true);
     setBackupError(null);
@@ -131,37 +97,24 @@ export default function ToolsPage() {
     setBackingUp(false);
   };
 
-  // Import handler
-  const handleImport = async (e) => {
-    setImportError(null);
-    setImportSuccess(null);
-    setImporting(true);
-    const file = e.target.files[0];
-    if (!file) { setImporting(false); return; }
-    try {
-      const text = await file.text();
-      const json = JSON.parse(text);
-      await apiClient.importAllData(json);
-      setImportSuccess('Import berhasil!');
-    } catch (err) {
-      setImportError('Import gagal: ' + (err.message || err));
-    }
-    setImporting(false);
-    fileInputRef.current.value = '';
-  };
+  return { backingUp, backupError, backupSuccess, handleBackup };
+}
 
-  // Handler to fetch Gemini models
-  const handleFetchModels = async () => {
-    setLoadingModels(true);
-    setModelsError(null);
-    try {
-      const data = await apiClient.listGeminiModels();
-      setModels(data.models || []);
-    } catch (err) {
-      setModelsError(err.message || 'Gagal mengambil daftar model');
-    }
-    setLoadingModels(false);
-  };
+export default function ToolsPage() {
+  const { user, navigate } = useOwnerAuth();
+  const { restoring, restoreError, restoreSuccess, sqlInputRef, handleRestore } = useSqlRestore();
+  const { backingUp, backupError, backupSuccess, handleBackup } = useSqlBackup();
+
+  if (!user || user.role !== 'owner') {
+    return (
+      <div className="page-container">
+        <div className="page-header"><h1>Tools</h1></div>
+        <div className="card">Hanya Owner aplikasi yang dapat mengakses halaman ini.</div>
+      </div>
+    );
+  }
+
+  // --- Backup & restore handler sekarang di custom hooks di atas file ---
 
   return (
     <div className="page-container">
@@ -182,22 +135,6 @@ export default function ToolsPage() {
         </div>
 
         <div className="tool-card">
-          <h2>📤 Export Data</h2>
-          <p>Ekspor seluruh data aplikasi ke file JSON untuk backup atau migrasi.</p>
-          <button className="btn btn-secondary" onClick={handleExport} disabled={exporting}>{exporting ? 'Exporting...' : 'Export JSON'}</button>
-          {exportError && <div className="tools-feedback tools-feedback-error">{exportError}</div>}
-        </div>
-
-        <div className="tool-card">
-          <h2>📥 Import Data</h2>
-          <p>Impor data dari file JSON untuk restore atau migrasi data.<br/><b>Seluruh data lama akan dihapus!</b></p>
-          <input type="file" accept="application/json" className="tools-hidden-input" ref={fileInputRef} onChange={handleImport} disabled={importing} />
-          <button className="btn btn-secondary" onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={importing}>{importing ? 'Importing...' : 'Import JSON'}</button>
-          {importError && <div className="tools-feedback tools-feedback-error">{importError}</div>}
-          {importSuccess && <div className="tools-feedback tools-feedback-success">{importSuccess}</div>}
-        </div>
-
-        <div className="tool-card">
           <h2>♻️ Restore Database SQL</h2>
           <p>Restore database dari file SQL backup. <b>Seluruh data lama akan dihapus!</b></p>
           <input type="file" accept=".sql,text/sql" className="tools-hidden-input" ref={sqlInputRef} onChange={handleRestore} disabled={restoring} />
@@ -210,31 +147,6 @@ export default function ToolsPage() {
           <h2>👥 User Management</h2>
           <p>Kelola user: reset password, nonaktifkan user, atau ubah role user secara manual.</p>
           <button className="btn btn-secondary" onClick={() => navigate('/user-management')}>Kelola User</button>
-        </div>
-
-        <div className="tool-card">
-          <h2>📝 Audit Log Viewer</h2>
-          <p>Lihat log aktivitas penting aplikasi.</p>
-          <button className="btn btn-secondary" onClick={() => navigate('/audit-logs')}>Lihat Audit Log</button>
-        </div>
-
-        <div className="tool-card">
-          <h2>🤖 List Gemini Models</h2>
-          <p>Lihat daftar model Gemini yang tersedia dari Google Generative AI API.</p>
-          <button className="btn btn-secondary" onClick={handleFetchModels} disabled={loadingModels}>
-            {loadingModels ? 'Loading...' : 'List Models'}
-          </button>
-          {modelsError && <div className="tools-feedback tools-feedback-error">{modelsError}</div>}
-          {models && (
-            <div className="tools-models-wrap">
-              <b>Models:</b>
-              <ul className="tools-models-list">
-                {models.map((m) => (
-                  <li key={m.name}><b>{m.displayName || m.name}</b> <span className="tools-model-name">({m.name})</span></li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
     </div>

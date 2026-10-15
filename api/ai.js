@@ -72,32 +72,6 @@ async function readJson(req) {
   });
 }
 
-// --- List Models handler ---
-async function handleListModels(req, res) {
-  try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: 'GEMINI_API_KEY tidak diset' });
-    }
-    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-    const resp = await fetch(url, { method: 'GET' });
-    const data = await resp.json();
-    if (!resp.ok) {
-      console.error('Gemini ListModels API error:', data);
-      return res.status(resp.status).json({ error: data.error?.message || 'Gemini ListModels API gagal' });
-    }
-    const models = (data.models || []).filter(model => {
-      const modelName = model?.name?.split('/').pop();
-      const supportedMethods = Array.isArray(model?.supportedGenerationMethods) ? model.supportedGenerationMethods : [];
-      return supportedMethods.includes('generateContent') || GEMINI_TEXT_MODELS_SUPPORTED.includes(modelName);
-    });
-    res.status(200).json({ models });
-  } catch (err) {
-    console.error('ListModels error:', err);
-    res.status(500).json({ error: 'Failed to list models', message: err.message });
-  }
-}
-
 // --- AI Setlist Recommendation Handler ---
 async function handleRecommendSetlist(req, res) {
   if (req.method !== 'POST') {
@@ -161,7 +135,6 @@ export default async function handler(req, res) {
   }
   if (url.startsWith('/transcribe')) return await handleTranscribe(req, res);
   if (url.startsWith('/recommend-setlist')) return await handleRecommendSetlist(req, res);
-  if (url.startsWith('/list-models')) return await handleListModels(req, res);
   return await handleChat(req, res);
 }
 

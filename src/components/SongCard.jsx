@@ -3,7 +3,7 @@ import React from 'react';
 /**
  * SongCard
  *
- * Satu sumber tampilan kartu lagu, dipakai halaman "Lagu Saya" dan halaman
+ * Satu sumber tampilan kartu lagu, dipakai halaman "Lagu" dan halaman
  * lagu di dalam setlist. Strukturnya sengaja dibuat sama (judul + status di
  * sudut kanan atas, metadata dua baris, baris aksi berlabel) supaya kedua
  * halaman terasa seperti satu aplikasi.

@@ -38,17 +38,6 @@ export async function changePassword(oldPassword, newPassword) {
 export async function backupDatabase() {
   return request('/tools/backup', { expect: 'text', fallbackError: 'Gagal membackup database' });
 }
-export async function exportAllData() {
-  return request('/tools', { fallbackError: 'Gagal mengekspor data' });
-}
-
-export async function importAllData({ songs, setlists, bands, users }) {
-  return request('/tools', {
-    method: 'POST',
-    body: { songs, setlists, bands, users },
-    fallbackError: 'Gagal mengimpor data',
-  });
-}
 const API_BASE = '/api';
 
 function resolveUrl(path) {
@@ -377,11 +366,6 @@ export async function deleteGig(id) {
   });
   // 204 No Content has no body
   return data ?? { success: true };
-}
-
-// List Gemini Models
-export async function listGeminiModels() {
-  return request('/ai/list-models', { fallbackError: 'Gagal mengambil daftar model Gemini' });
 }
 
 // Band Members endpoints

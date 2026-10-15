@@ -263,7 +263,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     return (
       <div className="page-container">
         <div className="page-header">
-          <h1>🎵 Lagu Saya</h1>
+          <h1>🎵 Lagu</h1>
         </div>
         <SongListSkeleton count={8} />
       </div>
@@ -274,7 +274,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     return (
       <div className="page-container">
         <div className="page-header">
-          <h1>🎵 Lagu Saya</h1>
+          <h1>🎵 Lagu</h1>
         </div>
         <div className="error-text">{error}</div>
       </div>
@@ -492,7 +492,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1>🎵 Lagu Saya</h1>
+          <h1>🎵 Lagu</h1>
           <p>{filteredSongs.length} lagu</p>
         </div>
         <div className="page-header-actions">
