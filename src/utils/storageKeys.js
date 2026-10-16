@@ -25,6 +25,9 @@ export const STORAGE_KEYS = {
   STAGE_BAND: 'ruangperformer_stage_band_v1',
   STAGE_SETLIST: 'ruangperformer_stage_setlist_v1',
   STAGE_SONG: 'ruangperformer_stage_song_v1',
+  // Stage Mode: preferensi lirik (font zoom & mode autoscroll).
+  STAGE_FONT_SCALE: 'ruangperformer_stage_font_scale_v1',
+  STAGE_AUTOSCROLL_MODE: 'ruangperformer_stage_autoscroll_mode_v1',
 };
 
 export default STORAGE_KEYS;

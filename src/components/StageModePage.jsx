@@ -247,11 +247,12 @@ export default function StageModePage({
       .filter(Boolean);
   }, [activeSetlist, allSongs, setlistSongMeta]);
 
+  const effectiveSongId = selectedSongId || setlistSongs[0]?.id || null;
+
   // Index lagu aktif dihitung dari effectiveSongId (bukan selectedSongId)
   // agar footer ✓ posisi & tombol ← / → akurat juga saat lagu pertama
   // dipilih otomatis (selectedSongId masih kosong).
   const currentIndex = setlistSongs.findIndex((s) => String(s.id) === String(effectiveSongId));
-  const effectiveSongId = selectedSongId || setlistSongs[0]?.id || null;
 
   // Detail lagu: dari repertoire di memori, atau fetch via hook (cache offline
   // + auth header) bila belum ada.
@@ -289,10 +290,28 @@ export default function StageModePage({
   // Bila user sudah mengubah transpose manual untuk lagu ini, auto-apply
   // transpose dari setlist tidak boleh menimpanya. Flag direset saat pindah lagu.
   const userAdjustedTransposeRef = useRef(false);
-  const [fontScale, setFontScale] = useState(1.4);
+  const [fontScale, setFontScale] = useState(() => {
+    const stored = Number(readStored(STORAGE_KEYS.STAGE_FONT_SCALE));
+    return Number.isFinite(stored) && stored >= 0.85 && stored <= 3 ? stored : 1.4;
+  });
+  const [autoScrollMode, setAutoScrollMode] = useState(() => {
+    const stored = readStored(STORAGE_KEYS.STAGE_AUTOSCROLL_MODE);
+    return stored === AUTO_SCROLL_MODES.MANUAL || stored === AUTO_SCROLL_MODES.MUSICAL
+      ? stored
+      : AUTO_SCROLL_MODES.MUSICAL;
+  });
+  // Persist preferensi lirik lintas sesi (font zoom & mode autoscroll).
+  useEffect(() => {
+    writeStored(STORAGE_KEYS.STAGE_FONT_SCALE, String(fontScale));
+  }, [fontScale]);
+  useEffect(() => {
+    writeStored(STORAGE_KEYS.STAGE_AUTOSCROLL_MODE, autoScrollMode);
+  }, [autoScrollMode]);
   const [autoScrollActive, setAutoScrollActive] = useState(false);
+  // scrollSpeed HANYA untuk display metronome/tempo di AutoScrollControl —
+  // kecepatan scroll aktual dihitung dari mode: MANUAL pakai manualSpeedLevel,
+  // MUSICAL pakai BPM × time signature (lihat effect autoscroll di bawah).
   const [scrollSpeed, setScrollSpeed] = useState(120);
-  const [autoScrollMode, setAutoScrollMode] = useState(AUTO_SCROLL_MODES.MUSICAL);
   const [manualSpeedLevel, setManualSpeedLevel] = useState(5);
   const [sheetOpen, setSheetOpen] = useState(null); // null | 'song' | 'setlist' | 'search'
   // Wizard setup berurutan saat Stage Mode pertama aktif: 'band' → 'setlist' →
@@ -348,8 +367,12 @@ export default function StageModePage({
     let lastTs = null;
     let accumulator = 0;
 
-    // Ukur sekali per frame; nilai bergantung zoom/font bisa berubah.
-    const speedPxPerSecond = () => {
+    // Kecepatan di-cache dan hanya diukur ulang tiap ~500ms (atau bila zoom/
+    // font berubah otomatis saat lirik berubah ukuran). Sebelumnya diukur
+    // per frame — querySelectorAll + getBoundingClientRect × 60/s.
+    let cachedSpeed = 24;
+    let lastMeasure = 0;
+    const measureSpeed = () => {
       const lineEls = Array.from(container.querySelectorAll('.cd-chord, .cd-number, .cd-lyrics-line'));
       if (lineEls.length === 0) return 24; // fallback aman
 
@@ -379,11 +402,19 @@ export default function StageModePage({
       return Math.max(2, totalHeight / Math.max(1, totalDuration));
     };
 
+    const speedPxPerSecond = (ts) => {
+      if (ts - lastMeasure >= 500) {
+        lastMeasure = ts;
+        cachedSpeed = measureSpeed();
+      }
+      return cachedSpeed;
+    };
+
     const step = (ts) => {
       if (lastTs === null) lastTs = ts;
       const dt = Math.min(100, ts - lastTs);
       lastTs = ts;
-      accumulator += (speedPxPerSecond() * dt) / 1000;
+      accumulator += (speedPxPerSecond(ts) * dt) / 1000;
       if (accumulator >= 1) {
         const px = Math.floor(accumulator);
         accumulator -= px;
