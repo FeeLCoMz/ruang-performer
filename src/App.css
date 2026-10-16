@@ -2640,6 +2640,73 @@ body.stage-mode .btn-secondary {
   color: #9aa3bd;
 }
 
+/* Daftar hasil pencarian: dua baris per item (judul di atas, artis di bawah). */
+.stage-mode-sheet-list--search {
+  max-height: 55vh;
+}
+
+.stage-mode-sheet-item .stage-mode-sheet-name {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.stage-mode-sheet-item-title {
+  font-weight: 600;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-mode-sheet-item-artist {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: #9aa3bd;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-mode-sheet-item.active .stage-mode-sheet-item-artist {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Pintasan pencarian eksternal (Google/YouTube): tombol berdampingan. */
+.stage-mode-sheet-external {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px 4px;
+}
+
+.stage-mode-sheet-ext-btn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 14px;
+  background: #10101c;
+  border: 1px solid #4a4a6a;
+  border-radius: var(--radius-md, 10px);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+.stage-mode-sheet-ext-btn:hover,
+.stage-mode-sheet-ext-btn:focus-visible {
+  border-color: var(--primary-accent);
+  color: var(--primary-accent);
+}
+
+.stage-mode-sheet-hint {
+  margin: 6px 16px 10px;
+  font-size: 0.75rem;
+  color: #9aa3bd;
+}
+
 /* Wizard setup berurutan (band → setlist) saat pertama kali Stage Mode aktif. */
 .stage-mode-wizard-overlay {
   z-index: 4200;
