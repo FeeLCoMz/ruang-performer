@@ -270,6 +270,8 @@ export default function StageModePage({
     };
   }, [songFromList, fetchedSong, setlistSongMeta]);
 
+  const hasSong = Boolean(song);
+
   const goToSong = (id) => {
     const next = String(id);
     setSelectedSongId(next);
@@ -281,6 +283,9 @@ export default function StageModePage({
   // Performance state
   // =========================
   const [transpose, setTranspose] = useState(0);
+  // Bila user sudah mengubah transpose manual untuk lagu ini, auto-apply
+  // transpose dari setlist tidak boleh menimpanya. Flag direset saat pindah lagu.
+  const userAdjustedTransposeRef = useRef(false);
   const [fontScale, setFontScale] = useState(1.4);
   const [autoScrollActive, setAutoScrollActive] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(120);
@@ -298,6 +303,7 @@ export default function StageModePage({
   // Reset kontrol performance saat pindah lagu.
   useEffect(() => {
     setTranspose(0);
+    userAdjustedTransposeRef.current = false;
     setAutoScrollActive(false);
     setScrollSpeed(Number(song?.tempo) || 120);
     setPlayerVisible(false);
@@ -326,9 +332,11 @@ export default function StageModePage({
   // - MUSICAL: V = tinggi baris / durasi musik baris (barCount dari jumlah
   //   chord-line × (60/BPM) × pembilang time signature).
   // - MANUAL : multiplier × level^1.55 (level 1 = sangat lambat).
+  // hasSong di dep: container body baru ada setelah lagu termuat — jangan
+  // pasang loop autoscroll pada elemen empty-state.
   useEffect(() => {
     const container = stageBodyRef.current;
-    if (!stageMode || !autoScrollActive || !container) return undefined;
+    if (!stageMode || !autoScrollActive || !hasSong || !container) return undefined;
 
     let rafId = null;
     let lastTs = null;
@@ -387,16 +395,26 @@ export default function StageModePage({
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [stageMode, autoScrollActive, normalizedAutoScrollMode, manualSpeedLevel, bpm, song?.id, song?.time_signature]);
+  }, [stageMode, autoScrollActive, hasSong, normalizedAutoScrollMode, manualSpeedLevel, bpm, song?.id, song?.time_signature]);
+
+  // Key master lagu (tanpa override setlist) — pembanding untuk auto-apply
+  // transpose. song.key sudah berisi override setlist, jadi bukan pembanding
+  // yang benar.
+  const masterKey = useMemo(() => {
+    if (!song?.id) return '';
+    const base = allSongs.find((s) => String(s.id) === String(song.id));
+    return base?.key || song.key || '';
+  }, [song?.id, song?.key, allSongs]);
 
   // Auto-apply transpose bila key setlist berbeda dari key lagu master.
+  // Dilewati bila user sudah mengubah transpose manual untuk lagu ini.
   useEffect(() => {
-    const originalKey = song?.key || '';
     const setlistKey = setlistSongMeta[String(song?.id)]?.key || '';
-    if (!originalKey || !setlistKey || originalKey === setlistKey) return;
-    const steps = getTransposeSteps(originalKey, setlistKey);
+    if (userAdjustedTransposeRef.current) return;
+    if (!masterKey || !setlistKey || masterKey === setlistKey) return;
+    const steps = getTransposeSteps(masterKey, setlistKey);
     if (steps !== null) setTranspose(steps);
-  }, [song?.id, song?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [song?.id, masterKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const youtubeRef = useRef(null);
   const stageBodyRef = useRef(null);
@@ -405,8 +423,23 @@ export default function StageModePage({
   const [ytDuration, setYtDuration] = useState(0);
   const timeMarkers = Array.isArray(song?.time_markers) ? song.time_markers : [];
 
-  // Poll status playback video (sejajar SongChordsPage).
+  // Poll status playback video (sejajar SongChordsPage) + update langsung
+  // dari event player (onStateChange) agar responsif — polling tetap sebagai
+  // fallback, dan durasi diisi dari event getDuration.
   const youtubeId = extractYouTubeId(song?.youtubeId || song?.youtube_url || '');
+  const handleYouTubeStateChange = (event) => {
+    const state = event?.data;
+    if (state === 1) {
+      setIsYoutubePlaying(true);
+    } else if (state === 0 || state === 2) {
+      setIsYoutubePlaying(false);
+      if (state === 0) setYtCurrentTime(0);
+    }
+    try {
+      const d = Number(event?.target?.getDuration?.());
+      if (Number.isFinite(d) && d > 0) setYtDuration(d);
+    } catch { /* ignore */ }
+  };
   useEffect(() => {
     if (!youtubeId || !playerVisible) {
       setIsYoutubePlaying(false);
@@ -444,7 +477,8 @@ export default function StageModePage({
 
   useEffect(() => {
     const el = stageBodyRef.current;
-    if (!stageMode || !el) return undefined;
+    // Hanya pasang pada container lirik yang sudah termuat (bukan empty-state).
+    if (!stageMode || !hasSong || !el) return undefined;
     const g = gestureRef.current;
 
     const getDistance = (touches) => Math.hypot(
@@ -490,7 +524,7 @@ export default function StageModePage({
       el.removeEventListener('touchend', handleTouchEnd);
       el.removeEventListener('wheel', handleWheel);
     };
-  }, [stageMode, fontScale]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stageMode, hasSong, fontScale]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // =========================
   // Derived info
@@ -642,6 +676,7 @@ export default function StageModePage({
               timeMarkers={timeMarkers}
               secondsToLabel={formatDuration}
               isPlaying={isYoutubePlaying}
+              onStateChange={handleYouTubeStateChange}
               onTogglePlay={() => youtubeRef.current?.handleTogglePlayPause?.()}
               onSeek={(time) => youtubeRef.current?.handleSeek?.(time)}
               onUpdateMarkers={undefined}
@@ -679,7 +714,12 @@ export default function StageModePage({
             originalKey={song?.key || ''}
             targetKey={song?.key || ''}
             transpose={transpose}
-            onTransposeChange={(next) => setTranspose(Number(next) || 0)}
+            onTransposeChange={(next) => {
+              // User mengubah manual — hentikan auto-apply dari setlist
+              // untuk lagu ini sampai pindah lagu berikutnya.
+              userAdjustedTransposeRef.current = true;
+              setTranspose(Number(next) || 0);
+            }}
             variant="mini"
             disableAutoApply
           />
