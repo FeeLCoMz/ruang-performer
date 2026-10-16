@@ -15,6 +15,7 @@ import Toast from "./components/Toast.jsx";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import * as apiClient from "./apiClient.js";
 import { STORAGE_KEYS } from "./utils/storageKeys.js";
+import StageModeButton from "./components/StageModeButton.jsx";
 
 // Lazy load non-critical pages for code splitting
 const SongListPage = lazy(() => import("./pages/SongListPage.jsx"));
@@ -51,6 +52,8 @@ function App() {
 }
 
 function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
   // State for userBandInfo (array of user's bands with role)
   const [userBandInfo, setUserBandInfo] = useState([]);
   const [addSongSearch, setAddSongSearch] = useState("");
@@ -80,10 +83,27 @@ function AppContent() {
   }, [isLoading, isAuthenticated]);
   const [toastMessage, setToastMessage] = useState("");
 
-  const navigate = useNavigate();
-  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCreateSetlist, setShowCreateSetlist] = useState(false);
+  // Stage Mode: tema kontras tinggi untuk layar saat tampil di panggung.
+  // Preferensi dipersist di localStorage lintas sesi.
+  const [stageMode, setStageModeState] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.STAGE_MODE) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const setStageMode = (next) => {
+    setStageModeState(Boolean(next));
+    try {
+      localStorage.setItem(STORAGE_KEYS.STAGE_MODE, next ? '1' : '0');
+    } catch { /* ignore */ }
+  };
+  useEffect(() => {
+    document.body.classList.toggle('stage-mode', stageMode);
+    return () => document.body.classList.remove('stage-mode');
+  }, [stageMode]);
   const [createSetlistName, setCreateSetlistName] = useState("");
   const [createSetlistError, setCreateSetlistError] = useState("");
   const [songs, setSongs] = useState([]);
@@ -222,6 +242,7 @@ function AppContent() {
               />
               <h1 className="header-title">Ruang Performer</h1>
             </div>
+            <StageModeButton stageMode={stageMode} onToggle={() => setStageMode(!stageMode)} />
           </header>
         </div>
 

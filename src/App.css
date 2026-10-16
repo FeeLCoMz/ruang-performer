@@ -2242,6 +2242,40 @@ body {
   text-overflow: ellipsis;
 }
 
+/* Tombol Stage Mode di app header: toggle tema kontras tinggi untuk panggung. */
+.stage-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.stage-mode-btn-icon {
+  font-size: var(--font-size-base);
+  line-height: 1;
+}
+
+/* Stage Mode: tema kontras tinggi untuk pencahayaan panggung yang redup. */
+body.stage-mode {
+  --primary-bg: #000000;
+  --secondary-bg: #0a0a12;
+  --card-bg: #10101c;
+  --text-primary: #ffffff;
+  --text-secondary: #e5e9f5;
+  --border-color: #3a3a5a;
+  --primary-accent: #a78bfa;
+  --chord-bright: #ffe14d;
+}
+
+body.stage-mode .btn-secondary {
+  background: #10101c;
+  color: #ffffff;
+  border-color: #4a4a6a;
+}
+
 .main-content {
   flex: 1;
   padding: var(--spacing-md);

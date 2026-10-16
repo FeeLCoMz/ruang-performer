@@ -19,6 +19,8 @@ export const STORAGE_KEYS = {
   LYRICS_LOCK: 'ruangperformer_lyrics_lock_v1',
   // Mode overlay lirik: layer fullscreen di atas seluruh UI.
   LYRICS_OVERLAY: 'ruangperformer_lyrics_overlay_v1',
+  // Stage Mode: tema kontras tinggi untuk panggung (toggle di app header).
+  STAGE_MODE: 'ruangperformer_stage_mode_v1',
 };
 
 export default STORAGE_KEYS;
