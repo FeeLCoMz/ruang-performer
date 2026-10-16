@@ -5,6 +5,8 @@
  * UI tetap terbaca di pencahayaan panggung yang redup. Preferensi dikelola di
  * AppContent dan dipersist di localStorage (STORAGE_KEYS.STAGE_MODE).
  */
+import React from 'react';
+
 export default function StageModeButton({ stageMode = false, onToggle }) {
   return (
     <button
