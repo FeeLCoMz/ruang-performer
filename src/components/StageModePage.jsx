@@ -247,7 +247,10 @@ export default function StageModePage({
       .filter(Boolean);
   }, [activeSetlist, allSongs, setlistSongMeta]);
 
-  const currentIndex = setlistSongs.findIndex((s) => String(s.id) === String(selectedSongId));
+  // Index lagu aktif dihitung dari effectiveSongId (bukan selectedSongId)
+  // agar footer ✓ posisi & tombol ← / → akurat juga saat lagu pertama
+  // dipilih otomatis (selectedSongId masih kosong).
+  const currentIndex = setlistSongs.findIndex((s) => String(s.id) === String(effectiveSongId));
   const effectiveSongId = selectedSongId || setlistSongs[0]?.id || null;
 
   // Detail lagu: dari repertoire di memori, atau fetch via hook (cache offline
@@ -295,6 +298,9 @@ export default function StageModePage({
   // Wizard setup berurutan saat Stage Mode pertama aktif: 'band' → 'setlist' →
   // null. Null = setup selesai / dilewati karena sudah ada setlist aktif.
   const [setupStep, setSetupStep] = useState(null);
+  // Bila user melewat wizard dengan sadar, jangan munculkan lagi otomatis
+  // selama sesi Stage Mode ini.
+  const wizardSkippedRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [setlistSearchQuery, setSetlistSearchQuery] = useState('');
   const [infoOpen, setInfoOpen] = useState(false);
@@ -313,7 +319,7 @@ export default function StageModePage({
   // setlist aktif, mulai dari memilih BAND lalu SETLIST. Jika sudah ada
   // setlist aktif (dari halaman setlist atau preferensi), wizard dilewati.
   useEffect(() => {
-    if (!stageMode || dataLoading) return;
+    if (!stageMode || dataLoading || wizardSkippedRef.current) return;
     const hasActive = Boolean(activeSetlist || setlistId);
     if (!hasActive && setupStep === null) {
       setSetupStep('band');
@@ -449,15 +455,35 @@ export default function StageModePage({
       const player = youtubeRef.current;
       if (!player || typeof player.getPlayerState !== 'function') return;
       setIsYoutubePlaying(player.getPlayerState() === 1);
+      // Fallback durasi: isi bila event onStateChange belum mengirimkannya
+      // (panel belum memutar video). Pertahankan nilai yang sudah ada.
+      setYtDuration((prev) => {
+        if (prev) return prev;
+        try {
+          const d = Number(player.getDuration?.());
+          return Number.isFinite(d) && d > 0 ? d : prev;
+        } catch { return prev; }
+      });
     }, 500);
     return () => clearInterval(intervalId);
   }, [youtubeId, playerVisible]);
 
-  // Esc keluar Stage Mode; kunci scroll body saat aktif.
+  // Esc: tutup sheet/wizard dulu (jika terbuka), baru keluar Stage Mode.
   useEffect(() => {
     if (!stageMode) return undefined;
     const handleKey = (e) => {
-      if (e.key === 'Escape') onExit?.();
+      if (e.key !== 'Escape') return;
+      if (sheetOpen) {
+        e.preventDefault();
+        setSheetOpen(null);
+        return;
+      }
+      if (setupStep) {
+        e.preventDefault();
+        setSetupStep(null);
+        return;
+      }
+      onExit?.();
     };
     window.addEventListener('keydown', handleKey);
     const prevOverflow = document.body.style.overflow;
@@ -466,7 +492,7 @@ export default function StageModePage({
       window.removeEventListener('keydown', handleKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [stageMode, onExit]);
+  }, [stageMode, sheetOpen, setupStep, onExit]);
 
   // ======== Gestur panggung ========
   // - Pinch (2 jari): perbesar/perkecil font lirik (fontScale).
@@ -824,6 +850,18 @@ export default function StageModePage({
                     ? `Setlist: ${activeSetlist.name}`
                     : 'Urutan lagu di setlist dipakai sebagai urutan panggung.'}
               </p>
+              <button
+                type="button"
+                className="btn btn-secondary stage-mode-wizard-skip"
+                onClick={() => {
+                  wizardSkippedRef.current = true;
+                  setSetupStep(null);
+                }}
+                aria-label="Lewati setup"
+                title="Lewati setup — atur nanti lewat tombol 📋 di footer"
+              >
+                Lewati →
+              </button>
             </div>
 
             {setupStep === 'band' && (
