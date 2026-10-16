@@ -68,7 +68,14 @@ const extractYouTubeId = (input) => {
  *
  * Esc / tombol ✕ menonaktifkan Stage Mode (onExit).
  */
-export default function StageModePage({ stageMode, onExit, songs: songsProp = [], activeSetlist: initialSetlist = null }) {
+export default function StageModePage({
+  stageMode,
+  onExit,
+  songs: songsProp = [],
+  bands: bandsProp = [],
+  setlists: setlistsProp = [],
+  activeSetlist: initialSetlist = null,
+}) {
   // =========================
   // Data band & setlist
   // =========================
@@ -80,22 +87,51 @@ export default function StageModePage({ stageMode, onExit, songs: songsProp = []
   const [dataLoading, setDataLoading] = useState(true);
   const [allSongs, setAllSongs] = useState(Array.isArray(songsProp) ? songsProp : []);
 
-  // Ambil band, setlist, dan repertoire saat Stage Mode menyala.
+  // Sinkronkan data yang sudah di-fetch aplikasi mode normal (props dari App):
+  // songs, bands, dan setlists dipakai apa adanya bila tersedia, sehingga
+  // Stage Mode tidak perlu fetch ulang.
+  useEffect(() => {
+    if (Array.isArray(bandsProp) && bandsProp.length > 0) setBands(bandsProp);
+  }, [bandsProp]);
+  useEffect(() => {
+    if (Array.isArray(setlistsProp) && setlistsProp.length > 0) setSetlists(setlistsProp);
+  }, [setlistsProp]);
+
+  // Hanya fetch data yang BELUM di-fetch oleh aplikasi (props kosong).
   useEffect(() => {
     if (!stageMode) return undefined;
+    const needsSongs = !Array.isArray(songsProp) || songsProp.length === 0;
+    const needsBands = !Array.isArray(bandsProp) || bandsProp.length === 0;
+    const needsSetlists = !Array.isArray(setlistsProp) || setlistsProp.length === 0;
+    if (!needsSongs && !needsBands && !needsSetlists) {
+      setDataLoading(false);
+      return undefined;
+    }
     let cancelled = false;
     setDataLoading(true);
-    Promise.allSettled([apiClient.fetchBands(), apiClient.fetchSetLists(), apiClient.fetchSongs()])
+    // Fetch selektif: hanya request yang benar-benar dibutuhkan.
+    Promise.allSettled([
+      needsBands ? apiClient.fetchBands() : Promise.resolve(undefined),
+      needsSetlists ? apiClient.fetchSetLists() : Promise.resolve(undefined),
+      needsSongs ? apiClient.fetchSongs() : Promise.resolve(undefined),
+    ])
       .then(([bandsRes, setlistsRes, songsRes]) => {
         if (cancelled) return;
-        setBands(Array.isArray(bandsRes.value) ? bandsRes.value : []);
-        setSetlists(Array.isArray(setlistsRes.value) ? setlistsRes.value : []);
+        if (Array.isArray(bandsRes.value) && bandsRes.value.length > 0) {
+          setBands(bandsRes.value);
+        }
+        if (Array.isArray(setlistsRes.value) && setlistsRes.value.length > 0) {
+          setSetlists(setlistsRes.value);
+        }
         if (Array.isArray(songsRes.value) && songsRes.value.length > 0) {
           setAllSongs(songsRes.value);
         }
         setDataLoading(false);
       });
     return () => { cancelled = true; };
+    // songsProp/bandsProp/setlistsProp sengaja tidak di dep — penilaian
+    // "data tersedia" cukup dilakukan saat Stage Mode dinyalakan.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stageMode]);
 
   // =========================
@@ -112,10 +148,37 @@ export default function StageModePage({ stageMode, onExit, songs: songsProp = []
     }
   }, [stageMode, initialSetlist?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const activeSetlist = useMemo(
+  // Setlist aktif: prioritas dari halaman setlist (initialSetlist), lalu
+  // dari daftar setlists. Bila hanya punya ID (dari preferensi tersimpan
+  // atau ringkasan tanpa daftar lagu), fetch detailnya via fetchSetListById
+  // (cache offline + auth header) supaya urutan lagu tersedia.
+  const [resolvedSetlist, setResolvedSetlist] = useState(null);
+  const activeSetlistCandidate = useMemo(
     () => (initialSetlist?.id ? initialSetlist : setlists.find((sl) => String(sl.id) === String(setlistId)) || null),
     [initialSetlist, setlists, setlistId],
   );
+  const activeSetlistNeedsDetail = useMemo(() => {
+    if (!activeSetlistCandidate) return false;
+    // Sudah cukup bila daftar lagunya tersedia.
+    return !Array.isArray(activeSetlistCandidate.songs);
+  }, [activeSetlistCandidate]);
+  useEffect(() => {
+    setResolvedSetlist(null);
+  }, [activeSetlistCandidate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!stageMode || !activeSetlistNeedsDetail || !activeSetlistCandidate?.id) return undefined;
+    let cancelled = false;
+    apiClient.fetchSetListById(activeSetlistCandidate.id)
+      .then((detail) => { if (!cancelled && detail) setResolvedSetlist(detail); })
+      .catch(() => { /* biarkan UI menampilkan pesan kosong */ });
+    return () => { cancelled = true; };
+  }, [stageMode, activeSetlistNeedsDetail, activeSetlistCandidate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const activeSetlist = useMemo(() => {
+    if (activeSetlistCandidate && (!activeSetlistNeedsDetail || Array.isArray(activeSetlistCandidate.songs))) {
+      return activeSetlistCandidate;
+    }
+    return resolvedSetlist || null;
+  }, [activeSetlistCandidate, activeSetlistNeedsDetail, resolvedSetlist]);
 
   // Daftar setlist untuk sheet pemilih, terfilter per band.
   const filteredSetlists = useMemo(() => {
@@ -369,8 +432,9 @@ export default function StageModePage({ stageMode, onExit, songs: songsProp = []
   // ======== Gestur panggung ========
   // - Pinch (2 jari): perbesar/perkecil font lirik (fontScale).
   // - Wheel + Ctrl : perbesar/perkecil font lirik (desktop).
-  // - Swipe horizontal: pindah lagu sebelumnya/berikutnya.
-  const gestureRef = useRef({ pinchActive: false, startDistance: 0, startFontScale: 1.4, touchStartX: 0, touchStartY: 0, swiped: false });
+  // (Swipe antar lagu dihapus — sering terpicu tidak sengaja. Pindah lagu
+  // tetap lewat tombol footer ← / →.)
+  const gestureRef = useRef({ pinchActive: false, startDistance: 0, startFontScale: 1.4 });
 
   useEffect(() => {
     const el = stageBodyRef.current;
@@ -387,10 +451,6 @@ export default function StageModePage({ stageMode, onExit, songs: songsProp = []
         g.pinchActive = true;
         g.startDistance = getDistance(e.touches);
         g.startFontScale = Number(fontScale) || 1.4;
-      } else if (e.touches.length === 1) {
-        g.touchStartX = e.touches[0].clientX;
-        g.touchStartY = e.touches[0].clientY;
-        g.swiped = false;
       }
     };
 
@@ -403,24 +463,8 @@ export default function StageModePage({ stageMode, onExit, songs: songsProp = []
       }
     };
 
-    const handleTouchEnd = (e) => {
-      if (g.pinchActive) {
-        g.pinchActive = false;
-        return;
-      }
-      if (g.swiped || e.changedTouches.length === 0) return;
-      const t = e.changedTouches[0];
-      const dx = t.clientX - g.touchStartX;
-      const dy = t.clientY - g.touchStartY;
-      // Swipe horizontal ≥ 80px dan lebih dominan daripada vertikal.
-      if (Math.abs(dx) >= 80 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        g.swiped = true;
-        if (dx < 0 && currentIndex < setlistSongs.length - 1) {
-          goToSong(setlistSongs[currentIndex + 1].id); // swipe kiri → next
-        } else if (dx > 0 && currentIndex > 0) {
-          goToSong(setlistSongs[currentIndex - 1].id); // swipe kanan → prev
-        }
-      }
+    const handleTouchEnd = () => {
+      if (g.pinchActive) g.pinchActive = false;
     };
 
     const handleWheel = (e) => {
@@ -440,7 +484,7 @@ export default function StageModePage({ stageMode, onExit, songs: songsProp = []
       el.removeEventListener('touchend', handleTouchEnd);
       el.removeEventListener('wheel', handleWheel);
     };
-  }, [stageMode, fontScale, currentIndex, setlistSongs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stageMode, fontScale]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // =========================
   // Derived info

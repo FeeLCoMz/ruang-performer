@@ -252,6 +252,8 @@ function AppContent() {
           stageMode={stageMode}
           onExit={() => setStageMode(false)}
           songs={songs}
+          bands={userBandInfo}
+          setlists={setlists}
           activeSetlist={activeSetlist}
         />
 
