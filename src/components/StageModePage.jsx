@@ -220,8 +220,14 @@ export default function StageModePage({
   // Lagu aktif
   // =========================
   // Lagu dari setlist (urutan panggung) dengan meta key/tempo override.
-  const setlistSongMeta = typeof activeSetlist?.setlistSongMeta === 'object' && activeSetlist?.setlistSongMeta !== null
+  // Field meta bisa bernama setlistSongMeta (daftar) atau songKeys (detail
+  // endpoint /:id) — baca keduanya agar override key selalu terkirim ke
+  // Stage Mode, sama seperti SongChordsPage.
+  const setlistSongMetaRaw = activeSetlist?.setlistSongMeta && typeof activeSetlist.setlistSongMeta === 'object'
     ? activeSetlist.setlistSongMeta
+    : (activeSetlist?.songKeys && typeof activeSetlist.songKeys === 'object' ? activeSetlist.songKeys : {});
+  const setlistSongMeta = typeof setlistSongMetaRaw === 'object' && !Array.isArray(setlistSongMetaRaw)
+    ? setlistSongMetaRaw
     : {};
   const setlistSongs = useMemo(() => {
     const order = Array.isArray(activeSetlist?.songs) ? activeSetlist.songs : [];
@@ -857,6 +863,36 @@ export default function StageModePage({
                     onChange={(e) => setSetlistSearchQuery(e.target.value)}
                     aria-label="Cari setlist"
                   />
+                </div>
+                {/* Filter band: chip pemilih band (termasuk "Semua band"). */}
+                <div
+                  className="stage-mode-sheet-list stage-mode-sheet-filter"
+                  role="group"
+                  aria-label="Filter band"
+                >
+                  <button
+                    type="button"
+                    className={`stage-mode-sheet-item stage-mode-filter-chip${!bandId ? ' active' : ''}`}
+                    onClick={() => setBandId('')}
+                    aria-pressed={!bandId}
+                  >
+                    <span className="stage-mode-sheet-name">Semua band</span>
+                  </button>
+                  {bands.map((b) => {
+                    const id = String(b.bandId || b.id);
+                    const selected = id === String(bandId);
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`stage-mode-sheet-item stage-mode-filter-chip${selected ? ' active' : ''}`}
+                        onClick={() => setBandId(id)}
+                        aria-pressed={selected}
+                      >
+                        <span className="stage-mode-sheet-name">{b.name || b.bandName || 'Band'}</span>
+                      </button>
+                    );
+                  })}
                 </div>
                 <div className="stage-mode-sheet-list" role="menu">
                   {filteredSetlists

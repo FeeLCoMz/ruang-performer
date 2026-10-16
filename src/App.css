@@ -2645,6 +2645,24 @@ body.stage-mode .btn-secondary {
   max-height: 55vh;
 }
 
+/* Baris chip filter band di sheet pemilih setlist. */
+.stage-mode-sheet-filter {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: none;
+  overflow-x: auto;
+  padding: 4px 12px;
+}
+
+.stage-mode-filter-chip {
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .stage-mode-sheet-item .stage-mode-sheet-name {
   display: flex;
   flex-direction: column;
