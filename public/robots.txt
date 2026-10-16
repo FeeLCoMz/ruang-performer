@@ -1,0 +1,13 @@
+# robots.txt for Ruang Performer
+# https://ruangperformer.app
+
+User-agent: *
+Allow: /
+Allow: /login
+
+# Blokir crawling endpoint backend dan halaman kredensial privat
+Disallow: /api/
+Disallow: /reset-password
+
+# Sitemap
+Sitemap: https://ruangperformer.app/sitemap.xml

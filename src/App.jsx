@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from "react-router-dom";
 
 // Eager load critical pages
+import LandingPage from "./pages/LandingPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
@@ -153,11 +154,22 @@ function AppContent() {
   }
 
   // Allow public pages even without auth
-  const publicPages = ["/login", "/reset-password"];
+  const publicPages = ["/landing", "/login", "/reset-password"];
   const isPublicPage = publicPages.some((page) => location.pathname.startsWith(page));
 
+  // Jika belum login dan mengakses root "/", tampilkan Landing Page publik untuk pengunjung & Googlebot
+  if (!isAuthenticated && location.pathname === "/") {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <LandingPage />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
   if (!isAuthenticated && !isPublicPage) {
-    return <LoginPage />;
+    return <Navigate to="/login" replace />;
   }
 
   // Show public pages without sidebar/header
@@ -166,6 +178,7 @@ function AppContent() {
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
+            <Route path="/landing" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="*" element={<Navigate to="/login" />} />

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as apiClient from '../apiClient.js';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, setError, error } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(searchParams.get('mode') !== 'register');
   const [formData, setFormData] = useState({ email: '', username: '', password: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,7 +40,7 @@ export default function LoginPage() {
       <div className="login-card">
         <h1 className="login-title">🎸 Ruang Performer</h1>
         <p className="login-subtitle">Band Management & Setlist Organizer</p>
-        
+
         <form onSubmit={handleSubmit} className="login-form">
           <div className="login-tabs">
             <button
@@ -100,6 +101,23 @@ export default function LoginPage() {
             {isSubmitting ? 'Loading...' : isLogin ? 'Login' : 'Register'}
           </button>
         </form>
+
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-secondary, #cbd2e3)',
+              cursor: 'pointer',
+              fontSize: '0.9em',
+              textDecoration: 'underline'
+            }}
+          >
+            ← Kembali ke Halaman Utama
+          </button>
+        </div>
       </div>
     </div>
   );
