@@ -28,6 +28,7 @@ export default function SongCard({
   style,
   onClick,
   dragProps = null,
+  rowRef = null,
 }) {
   const cardClassName = [
     'song-item',
@@ -37,6 +38,7 @@ export default function SongCard({
 
   return (
     <div
+      ref={rowRef}
       className={cardClassName}
       onClick={onClick}
       style={style}

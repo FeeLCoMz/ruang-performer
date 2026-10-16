@@ -144,8 +144,12 @@ describe('SetlistSongsPage', () => {
       await flushPromises();
     });
 
-    expect(findElementByText(container, 'Lagu Sudah')).toBeTruthy();
-    expect(findElementByText(container, 'Lagu Belum')).toBeFalsy();
+    // The quick-access dropdowns list every song on purpose, so scope the
+    // search assertions to the song list itself.
+    const songList = container.querySelector('.song-list-container');
+    expect(songList).toBeTruthy();
+    expect(findElementByText(songList, 'Lagu Sudah')).toBeTruthy();
+    expect(findElementByText(songList, 'Lagu Belum')).toBeFalsy();
   });
 
   test('shows sequential autoplay control for setlist videos and starts the first song', async () => {
@@ -173,7 +177,7 @@ describe('SetlistSongsPage', () => {
     expect(findElementByText(container, 'Lagu Sudah')).toBeTruthy();
   });
 
-  test('shows next/previous and loop controls while a setlist video is active', async () => {
+  test('shows next/previous controls while a setlist video is active and no loop control', async () => {
     const props = buildProps({
       songs: [
         { id: 'song-1', title: 'Lagu Sudah', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop', youtubeId: 'abc123def45' },
@@ -194,7 +198,8 @@ describe('SetlistSongsPage', () => {
 
     expect(container.querySelector('button[aria-label="Video sebelumnya"]')).toBeTruthy();
     expect(container.querySelector('button[aria-label="Video berikutnya"]')).toBeTruthy();
-    expect(container.querySelector('button[aria-label="Aktifkan loop playlist video"]')).toBeTruthy();
+    // The loop control was removed: video playback always stops at the end.
+    expect(container.querySelector('button[aria-label="Aktifkan loop playlist video"]')).toBeFalsy();
   });
 
   test('shows song key, tempo, and setlist usage metadata', async () => {

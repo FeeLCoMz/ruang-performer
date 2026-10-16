@@ -1497,6 +1497,102 @@ body.dark-mode .song-mood-badge.mood-peak {
   outline-offset: 2px;
 }
 
+/* ---- Quick "mark as played" control in the row rail ----
+   A big, always-visible target so the performer can tick songs off without
+   hunting for a small button in the actions column. */
+.song-played-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+  background: color-mix(in srgb, var(--secondary-bg) 60%, transparent);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.song-played-toggle:hover {
+  border-color: #16a34a;
+  color: #16a34a;
+  background: color-mix(in srgb, #16a34a 16%, transparent);
+}
+
+.song-played-toggle:focus-visible {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
+.song-played-toggle.is-completed {
+  border-color: color-mix(in srgb, #16a34a 55%, transparent);
+  background: color-mix(in srgb, #16a34a 22%, transparent);
+  color: #4ade80;
+}
+
+.song-played-toggle.is-completed:hover {
+  border-color: #22c55e;
+  background: color-mix(in srgb, #16a34a 32%, transparent);
+}
+
+/* Row highlight flashed by the quick "jump to song" control. */
+.song-item-highlighted {
+  animation: song-item-highlight-pulse 2s ease-out;
+  border-color: var(--primary-accent) !important;
+}
+
+@keyframes song-item-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-accent) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-accent) 25%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* ---- Quick access selects (jump to / open a song) ---- */
+.song-quick-access {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.song-jump-select,
+.song-open-select {
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--primary-bg);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.song-jump-select:hover,
+.song-open-select:hover {
+  border-color: color-mix(in srgb, var(--primary-accent) 45%, var(--border-color));
+}
+
+.song-jump-select:focus-visible,
+.song-open-select:focus-visible {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
 .song-heading {
   display: flex;
   align-items: baseline;
@@ -15672,6 +15768,14 @@ body.dark-mode .studio-error {
     border-radius: var(--radius-md);
   }
 
+  /* The played toggle is the primary tap target in the rail, so it meets the
+     44px touch minimum on mobile too. */
+  .song-item .song-rail .song-played-toggle {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+  }
+
   .song-item .song-info {
     width: 100%;
   }
@@ -15810,6 +15914,21 @@ body.dark-mode .studio-error {
 
 .song-visibility-toggle:hover {
   border-color: color-mix(in srgb, var(--primary-accent) 45%, var(--border-color));
+}
+
+/* Nonaktif saat tidak ada lagu yang ditandai sudah dibawakan: switch-nya tidak
+   punya apa pun untuk disembunyikan, jadi jangan tawarkan aksi kosong. */
+.song-visibility-toggle.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.song-visibility-toggle.is-disabled:hover {
+  border-color: var(--border-color);
+}
+
+.song-visibility-toggle.is-disabled .song-visibility-track {
+  background: color-mix(in srgb, var(--border-color) 60%, transparent);
 }
 
 .song-visibility-checkbox {
