@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import * as apiClient from "./apiClient.js";
 import { STORAGE_KEYS } from "./utils/storageKeys.js";
 import StageModeButton from "./components/StageModeButton.jsx";
+import StageModePage from "./components/StageModePage.jsx";
 
 // Lazy load non-critical pages for code splitting
 const SongListPage = lazy(() => import("./pages/SongListPage.jsx"));
@@ -245,6 +246,14 @@ function AppContent() {
             <StageModeButton stageMode={stageMode} onToggle={() => setStageMode(!stageMode)} />
           </header>
         </div>
+
+        {/* Halaman khusus Stage Mode: fullscreen di atas seluruh UI saat aktif. */}
+        <StageModePage
+          stageMode={stageMode}
+          onExit={() => setStageMode(false)}
+          songs={songs}
+          activeSetlist={activeSetlist}
+        />
 
         <main className="main-content">
           <Suspense fallback={<PageLoader />}>

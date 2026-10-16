@@ -21,6 +21,10 @@ export const STORAGE_KEYS = {
   LYRICS_OVERLAY: 'ruangperformer_lyrics_overlay_v1',
   // Stage Mode: tema kontras tinggi untuk panggung (toggle di app header).
   STAGE_MODE: 'ruangperformer_stage_mode_v1',
+  // Stage Mode: pilihan band, setlist, dan lagu aktif (persist lintas sesi).
+  STAGE_BAND: 'ruangperformer_stage_band_v1',
+  STAGE_SETLIST: 'ruangperformer_stage_setlist_v1',
+  STAGE_SONG: 'ruangperformer_stage_song_v1',
 };
 
 export default STORAGE_KEYS;

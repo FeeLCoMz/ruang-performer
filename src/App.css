@@ -2276,6 +2276,432 @@ body.stage-mode .btn-secondary {
   border-color: #4a4a6a;
 }
 
+/* ========== HALAMAN STAGE MODE (fullscreen di atas seluruh UI) ========== */
+.stage-mode-page {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: flex;
+  flex-direction: column;
+  background: #000000;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.stage-mode-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: 8px 12px;
+  border-bottom: 1px solid #2a2a40;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.stage-mode-exit {
+  flex: 0 0 auto;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.stage-mode-header-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.stage-mode-artist {
+  color: #9aa3bd;
+  font-weight: 500;
+}
+
+.stage-mode-pill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-accent) 16%, transparent);
+  color: var(--primary-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.stage-mode-instruments {
+  color: #cbd2e3;
+  background: rgba(255, 255, 255, 0.06);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage-mode-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: block;
+  padding: 12px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.stage-mode-body.song-lyrics-display {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+}
+
+.stage-mode-body .cd {
+  min-height: 100%;
+  padding-bottom: 48px;
+  color: #ffffff;
+  font-size: 1.25rem;
+}
+
+.stage-mode-body .cd-token {
+  color: #ffd479;
+}
+
+.stage-mode-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md, 16px);
+}
+
+.stage-mode-empty-text {
+  color: #9aa3bd;
+  font-size: 1rem;
+}
+
+.stage-mode-pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 4px);
+  width: min(480px, 100%);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.stage-mode-pick-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: 10px 12px;
+  background: #10101c;
+  border: 1px solid #3a3a5a;
+  border-radius: var(--radius-md, 10px);
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.stage-mode-pick-item:hover {
+  border-color: var(--primary-accent);
+}
+
+.stage-mode-pick-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-mode-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid #2a2a40;
+  flex: 0 0 auto;
+  background: rgba(10, 10, 18, 0.92);
+}
+
+.stage-mode-footer .btn-secondary,
+.stage-mode-footer-btn {
+  background: #10101c;
+  color: #ffffff;
+  border-color: #4a4a6a;
+}
+
+.stage-mode-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4100;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.stage-mode-sheet {
+  width: min(560px, 100%);
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #0a0a12;
+  border: 1px solid #3a3a5a;
+  border-radius: 16px 16px 0 0;
+  padding: 12px 0 calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.stage-mode-sheet-title {
+  padding: 8px 16px 12px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.stage-mode-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.stage-mode-sheet-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stage-mode-sheet-item.active {
+  background: color-mix(in srgb, var(--primary-accent) 18%, transparent);
+}
+
+.stage-mode-sheet-number {
+  flex: 0 0 auto;
+  width: 28px;
+  color: #9aa3bd;
+  font-weight: 700;
+}
+
+.stage-mode-sheet-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Konteks band/setlist di header — tombol dua baris yang bisa diklik. */
+.stage-mode-context {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid #2a2a40;
+  border-radius: var(--radius-md, 10px);
+  color: #ffffff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.stage-mode-context:hover {
+  border-color: var(--primary-accent);
+}
+
+.stage-mode-context-band {
+  font-size: 0.72rem;
+  color: #9aa3bd;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-mode-context-setlist {
+  font-size: 0.85rem;
+  font-weight: 700;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Panel info lagu (toggle dari tombol ℹ️) */
+.stage-mode-info {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  border-bottom: 1px solid #2a2a40;
+  background: #0a0a12;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
+.stage-mode-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 16px;
+}
+
+.stage-mode-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stage-mode-info-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9aa3bd;
+}
+
+.stage-mode-info-item > span:last-child {
+  font-size: 0.92rem;
+  color: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+/* Player referensi: overlay melayang di atas body lirik */
+.stage-mode-player {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 64px;
+  z-index: 4050;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 10px;
+  background: #0a0a12;
+  border: 1px solid #3a3a5a;
+  border-radius: var(--radius-md, 10px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+
+.stage-mode-player-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+}
+
+/* Tombol next ditonjolkan: pindah lagu adalah aksi paling sering. */
+.stage-mode-next {
+  min-width: 44px;
+  min-height: 40px;
+  font-weight: 700;
+}
+
+.stage-mode-sheet--tall {
+  max-height: 80vh;
+}
+
+.stage-mode-sheet-artist {
+  color: #9aa3bd;
+  font-weight: 500;
+}
+
+.stage-mode-sheet-link {
+  display: flex;
+  text-decoration: none;
+}
+
+.stage-mode-sheet-link:hover .stage-mode-sheet-name {
+  color: var(--primary-accent);
+}
+
+.stage-mode-sheet-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.stage-mode-sheet-group-label {
+  padding: 10px 16px 4px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9aa3bd;
+}
+
+/* Wizard setup berurutan (band → setlist) saat pertama kali Stage Mode aktif. */
+.stage-mode-wizard-overlay {
+  z-index: 4200;
+  align-items: center;
+  /* Wajib: menutup overlay tidak menutup wizard. */
+  pointer-events: auto;
+}
+
+.stage-mode-wizard-overlay .stage-mode-sheet {
+  width: min(480px, 100%);
+  border-radius: 16px;
+  margin: 16px;
+}
+
+.stage-mode-wizard-header {
+  padding: 16px 16px 8px;
+}
+
+.stage-mode-wizard-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.stage-mode-wizard-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #9aa3bd;
+  background: #10101c;
+  border: 1px solid #3a3a5a;
+}
+
+.stage-mode-wizard-dot.active {
+  color: #000000;
+  background: var(--primary-accent);
+  border-color: var(--primary-accent);
+}
+
+.stage-mode-wizard-dot.done {
+  color: #4ade80;
+  border-color: #4ade80;
+}
+
+.stage-mode-wizard-bar {
+  flex: 1 1 auto;
+  height: 2px;
+  background: #3a3a5a;
+}
+
+.stage-mode-wizard-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: #9aa3bd;
+}
+
 .main-content {
   flex: 1;
   padding: var(--spacing-md);
