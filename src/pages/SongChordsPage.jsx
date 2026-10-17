@@ -180,7 +180,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
   }, [song?.id, song?.key, setlistSongData.key]);
 
   const [zoom, setZoom] = useState(1);
-  const [showChords] = useState(true);
   const [showChordNumbers, setShowChordNumbers] = useState(false);
   const [showJazzChords, setShowJazzChords] = useState(false);
   const [showSimpleChords, setShowSimpleChords] = useState(false);
@@ -694,7 +693,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
           song={song}
           transpose={transpose}
           setTranspose={setTranspose}
-          showChords={showChords}
           showSheetMusic={showSheetMusic}
           setShowSheetMusic={setShowSheetMusic}
           youtubeRef={youtubeRef}

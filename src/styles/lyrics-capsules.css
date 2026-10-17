@@ -254,7 +254,7 @@
 }
 
 @media (min-width: 901px) and (max-width: 1080px) {
-  .song-lyrics-chord-text,
+  .song-lyrics-display-switcher,
   .song-lyrics-toolbar-divider {
     display: none;
   }

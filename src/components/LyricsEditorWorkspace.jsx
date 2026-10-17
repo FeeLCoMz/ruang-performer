@@ -10,6 +10,13 @@ export const PREVIEW_MODES = {
   PREVIEW: "preview",
 };
 
+/** Label singkat untuk switcher tampilan yang selalu terlihat. */
+const MODE_LABELS = {
+  [PREVIEW_MODES.OFF]: { icon: "✍️", label: "Editor", title: "Editor saja" },
+  [PREVIEW_MODES.SPLIT]: { icon: "🔀", label: "Duo", title: "Editor + Preview berdampingan" },
+  [PREVIEW_MODES.PREVIEW]: { icon: "👁", label: "Preview", title: "Preview saja" },
+};
+
 function readStoredMode() {
   if (typeof window === "undefined") return PREVIEW_MODES.SPLIT;
   const stored = window.localStorage.getItem(PREVIEW_MODE_STORAGE_KEY);
@@ -131,6 +138,27 @@ export default function LyricsEditorWorkspace({
     >
       <div className="lyrics-editor-workspace-bar">
         <span className="lyrics-editor-workspace-title">✍️ Editor</span>
+        {/* Switcher tampilan yang selalu terlihat: satu tap untuk pindah
+            Editor / Editor+Preview / Preview, tanpa harus buka menu Tampilan. */}
+        <div
+          className="lyrics-editor-mode-switcher"
+          role="group"
+          aria-label="Tampilan editor"
+        >
+          {[PREVIEW_MODES.OFF, PREVIEW_MODES.SPLIT, PREVIEW_MODES.PREVIEW].map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`lyrics-editor-mode-btn${previewMode === mode ? " is-active" : ""}`}
+              onClick={() => setPreviewMode(mode)}
+              aria-pressed={previewMode === mode}
+              title={MODE_LABELS[mode].title}
+            >
+              <span aria-hidden="true">{MODE_LABELS[mode].icon}</span>
+              {MODE_LABELS[mode].label}
+            </button>
+          ))}
+        </div>
         {typeof baselineLyrics === "string" && (
           <span
             className={`lyrics-editor-dirty-badge${isDirty ? " is-dirty" : ""}`}

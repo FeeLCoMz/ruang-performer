@@ -63,6 +63,7 @@ export default function SongChordsLyricsDisplay({
   transpose,
   setTranspose,
   showChords,
+  showLyrics = true,
   zoom,
   setZoom,
   showChordNumbers,
@@ -259,7 +260,7 @@ export default function SongChordsLyricsDisplay({
   const normalizedScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedBpm));
   const beatsPerBar = parseBeatsPerBar(timeSignature || song?.time_signature || '4/4');
   const effectiveShowChords = showChords;
-  const effectiveShowLyrics = true;
+  const effectiveShowLyrics = showLyrics;
 
   // Autoscroll: Switchable Mode.
   // - MUSICAL: kecepatan dihitung dari parameter musik. T_baris =

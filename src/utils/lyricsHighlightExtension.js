@@ -225,7 +225,6 @@ export const lyricsEditorTheme = EditorView.theme({
     padding: '12px 0',
     caretColor: 'var(--primary-accent)',
   },
-  '.cm-scroller': { fontFamily: 'inherit', overflow: 'auto' },
   '.cm-gutters': {
     backgroundColor: 'transparent',
     border: 'none',

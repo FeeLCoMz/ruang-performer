@@ -65,72 +65,52 @@
   background: color-mix(in srgb, var(--border-color) 85%, transparent);
 }
 
-/* Switch "Tampilkan Chord" di toolbar panel lirik.
-   Checkbox asli tetap di DOM untuk keyboard & screen reader; track & knob
-   digambar dari state checkbox-nya (pattern sama dengan song-visibility-toggle). */
-.song-lyrics-chord-switch {
+/* Switcher mode tampilan panel lirik: Lirik & Chord / Lirik / Chord.
+   Satu kapsul pill menyatu, gaya selaras grup tampilan lain. */
+.song-lyrics-display-switcher {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  user-select: none;
-}
-
-.song-lyrics-chord-checkbox {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.song-lyrics-chord-track {
-  position: relative;
-  flex: 0 0 auto;
-  width: 32px;
-  height: 18px;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 78%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--border-color) 85%, transparent);
-  transition: background var(--transition-fast);
+  background: color-mix(in srgb, var(--primary-bg) 70%, transparent);
 }
 
-.song-lyrics-chord-knob {
-  position: absolute;
-  top: 2.5px;
-  left: 2.5px;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: var(--card-bg);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.35);
-  transition: transform var(--transition-fast);
-}
-
-.song-lyrics-chord-checkbox:checked + .song-lyrics-chord-track {
-  background: var(--primary-accent);
-}
-
-.song-lyrics-chord-checkbox:checked + .song-lyrics-chord-track .song-lyrics-chord-knob {
-  transform: translateX(14px);
-}
-
-.song-lyrics-chord-checkbox:focus-visible + .song-lyrics-chord-track {
-  outline: 2px solid var(--primary-accent);
-  outline-offset: 2px;
-}
-
-.song-lyrics-chord-text {
-  font-size: 0.78rem;
+.song-lyrics-display-switcher-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
   font-weight: 600;
-  color: var(--text-primary);
+  cursor: pointer;
   white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.song-lyrics-display-switcher-btn:hover {
+  color: var(--text-primary);
+}
+
+.song-lyrics-display-switcher-btn.is-active {
+  background: var(--primary-accent);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .song-lyrics-display-switcher-btn {
+    padding: 3px 6px;
+  }
+
+  .song-lyrics-display-switcher {
+    padding: 2px 3px;
+  }
 }
 
 /* Tombol .btn di dalam grup tampilan (Fokus, Kunci) diseragamkan dengan
@@ -243,13 +223,10 @@
     display: none;
   }
 
-  .song-lyrics-chord-text {
-    display: none;
-  }
-
-  .song-lyrics-chord-switch {
+  .song-lyrics-display-switcher-btn {
     min-height: 38px;
-    padding: 0 4px;
+    padding: 0 8px;
+    font-size: 0.8rem;
   }
 
   /* Angka persentase font cukup sebagai nilai kecil, tanpa tanda % agar hemat */

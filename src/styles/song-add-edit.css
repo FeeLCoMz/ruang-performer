@@ -269,10 +269,16 @@
     font-size: var(--font-size-sm);
   }
 
-  /* Lyrics editor: shorter editor panes so the preview stays in reach. */
+  /* Lyrics editor: shorter editor panes so the preview stays in reach.
+     Setel tinggi di .cm-scroller saja — wrapper .cm-editor memakai height:auto
+     supaya tidak ada dua scrollbar (wrapper + scroller) di layar HP. */
   .song-lyrics-textarea,
   .song-lyrics-textarea.cm-editor,
   .song-lyrics-textarea-editor .cm-editor {
+    height: auto;
+  }
+
+  .song-lyrics-textarea.cm-editor .cm-scroller {
     height: 340px;
   }
 

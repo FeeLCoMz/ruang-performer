@@ -410,8 +410,9 @@ describe('Song lyrics shared editor rendering', () => {
     expect(labels).toContain('Fokus');
     expect(labels).toContain('Kunci');
     expect(container.querySelector('.song-lyrics-font-control')).toBeTruthy();
+    // Switcher mode tampilan: Lirik & Chord / Lirik / Chord.
+    expect(container.querySelector('.song-lyrics-display-switcher')).toBeTruthy();
     // Kontrol lama (non-autoscroll) dihapus dari toolbar dan tidak kembali.
-    expect(labels).not.toContain('Chord');
     expect(labels).not.toContain('Play');
     expect(labels).not.toContain('Edit Lirik');
     expect(labels).not.toContain('Full screen');

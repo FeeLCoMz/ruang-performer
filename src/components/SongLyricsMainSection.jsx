@@ -77,13 +77,17 @@ export default function SongLyricsMainSection({
   const [fontScale, setFontScaleState] = useState(readStoredFontScale);
   const [focusMode, setFocusModeState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_FOCUS_MODE));
   const [screenLocked, setScreenLockedState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_LOCK));
-  // Switch tampilan chord: on = lirik + chord, off = lirik saja (persist).
-  const [showChordsLocal, setShowChordsLocal] = useState(() => {
+  // Mode tampilan panel lirik: 'BOTH' (lirik+chord) | 'LYRICS' | 'CHORDS'
+  // (persist lintas sesi; migrasi dari key switch chord lama bila ada).
+  const [displayMode, setDisplayModeState] = useState(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.LYRICS_SHOW_CHORDS);
-      return raw === null ? true : raw === '1';
+      const raw = localStorage.getItem(STORAGE_KEYS.LYRICS_DISPLAY_MODE);
+      if (raw === 'LYRICS' || raw === 'CHORDS' || raw === 'BOTH') return raw;
+      // Migrasi: switch chord lama off -> lirik saja.
+      const legacy = localStorage.getItem(STORAGE_KEYS.LYRICS_SHOW_CHORDS);
+      return legacy === '0' ? 'LYRICS' : 'BOTH';
     } catch {
-      return true;
+      return 'BOTH';
     }
   });
 
@@ -106,11 +110,11 @@ export default function SongLyricsMainSection({
       localStorage.setItem(STORAGE_KEYS.LYRICS_LOCK, next ? '1' : '0');
     } catch { /* ignore */ }
   };
-  const setShowChordsPersisted = (next) => {
-    const value = Boolean(next);
-    setShowChordsLocal(value);
+  const setDisplayMode = (next) => {
+    const value = next === 'LYRICS' || next === 'CHORDS' ? next : 'BOTH';
+    setDisplayModeState(value);
     try {
-      localStorage.setItem(STORAGE_KEYS.LYRICS_SHOW_CHORDS, value ? '1' : '0');
+      localStorage.setItem(STORAGE_KEYS.LYRICS_DISPLAY_MODE, value);
     } catch { /* ignore */ }
   };
 
@@ -145,8 +149,8 @@ export default function SongLyricsMainSection({
         setFocusMode={setFocusMode}
         screenLocked={screenLocked}
         setScreenLocked={setScreenLocked}
-        showChords={showChordsLocal}
-        setShowChords={setShowChordsPersisted}
+        displayMode={displayMode}
+        setDisplayMode={setDisplayMode}
         tempo={tempo}
       />
 
@@ -186,7 +190,8 @@ export default function SongLyricsMainSection({
               fontScale={fontScale}
               focusMode={focusMode}
               screenLocked={screenLocked}
-              showChords={showChordsLocal}
+              showChords={displayMode !== 'LYRICS'}
+              showLyrics={displayMode !== 'CHORDS'}
               setlistNav={setlistNav}
             />
         )}
