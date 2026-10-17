@@ -1521,6 +1521,20 @@ body.dark-mode .song-mood-badge.mood-peak {
   color: var(--text-muted);
 }
 
+/* Teks polos untuk meta yang naratif (artis, band, kontributor, counter) —
+   tanpa latar/border chip supaya baris meta tidak penuh kotak. */
+.song-meta-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.song-meta-text-muted {
+  color: var(--text-muted);
+}
+
 .song-info {
   flex: 1;
   min-width: 0;

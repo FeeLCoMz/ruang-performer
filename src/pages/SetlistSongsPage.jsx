@@ -1831,7 +1831,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   )}
                   metaPrimary={(
                     <div className="song-meta-line song-meta-line-primary">
-                      {song.artist && <span className="song-chip">👤 {song.artist}</span>}
+                      {song.artist && <span className="song-meta-text">👤 {song.artist}</span>}
                       {song.genre && (
                         <span className="song-chip">
                           🎸 {song.genre}
@@ -1840,7 +1840,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                       )}
                       {/* Author (kontributor) tepat setelah genre */}
                       {(song.contributor || song.contributorName) && (
-                        <span className="song-chip song-chip-muted" title={`Ditambahkan oleh: ${song.contributor || song.contributorName}`}>
+                        <span className="song-meta-text song-meta-text-muted" title={`Ditambahkan oleh: ${song.contributor || song.contributorName}`}>
                           ✍️ {song.contributor || song.contributorName}
                         </span>
                       )}
@@ -1863,7 +1863,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                       <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood: ${mood.label} (${mood.sourceHint})`}>
                         {mood.label}
                       </span>
-                      <span className="song-chip song-chip-muted">
+                      <span className="song-meta-text song-meta-text-muted">
                         📋 {songUsageCountMap.get(song.id) || 0} setlist
                       </span>
                     </div>

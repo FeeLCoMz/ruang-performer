@@ -397,12 +397,12 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           )}
           metaPrimary={(
             <div className="song-meta-line song-meta-line-primary">
-              {song.artist && <span className="song-chip">👤 {song.artist}</span>}
-              {song.bandId && <span className="song-chip">🎤 {song.bandName || '-'}</span>}
+              {song.artist && <span className="song-meta-text">👤 {song.artist}</span>}
+              {song.bandId && <span className="song-meta-text">🎤 {song.bandName || '-'}</span>}
               {song.genre && <span className="song-chip">🎸 {song.genre}</span>}
               {/* Author (kontributor) tepat setelah genre */}
               {(song.contributor || song.contributorName) && (
-                <span className="song-chip song-chip-muted" title={`Ditambahkan oleh: ${song.contributor || song.contributorName}`}>
+                <span className="song-meta-text song-meta-text-muted" title={`Ditambahkan oleh: ${song.contributor || song.contributorName}`}>
                   ✍️ {song.contributor || song.contributorName}
                 </span>
               )}
@@ -415,11 +415,11 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
               <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
                 {mood.label}
               </span>
-              <span className="song-chip song-chip-muted song-setlist-count-meta">
+              <span className="song-meta-text song-meta-text-muted song-setlist-count-meta">
                 {setlistsLoading ? '...' : `📋 ${getSetlistCount(song.id)} setlist`}
               </span>
               {Array.isArray(song.masteredBy) && song.masteredBy.length > 0 && (
-                <span className="song-chip song-mastery-summary">
+                <span className="song-meta-text song-mastery-summary">
                   ✅ {song.masteredBy.length} kuasai
                 </span>
               )}
