@@ -719,9 +719,9 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
               className={`song-tabs-tab${activeTab === 'media' ? ' active' : ''}`}
               onClick={() => setActiveTab('media')}
               disabled={!youtubeId}
-              title={youtubeId ? 'Panel media (video & time markers)' : 'Lagu ini belum punya video YouTube'}
+              title={youtubeId ? 'Video referensi & time marker' : 'Lagu ini belum punya video YouTube'}
             >
-              📺 Media
+              ▶️ Video
             </button>
             <button
               type="button"
@@ -730,7 +730,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
               className={`song-tabs-tab${activeTab === 'analyzer' ? ' active' : ''}`}
               onClick={() => setActiveTab('analyzer')}
             >
-              🎵 Analisis
+              🔎 Chord
             </button>
             <button
               type="button"
@@ -739,11 +739,11 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
               className={`song-tabs-tab${activeTab === 'setlists' ? ' active' : ''}`}
               onClick={() => setActiveTab('setlists')}
             >
-              📋 Setlist
+              📋 Dalam Setlist
             </button>
           </div>
 
-          {/* Tab media: panel video + time marker, berbagi kolom dengan panel lirik. */}
+          {/* Tab video: panel video + time marker, berbagi kolom dengan panel lirik. */}
           {activeTab === 'media' && youtubeId && (
             <SongMediaPanel {...mediaPanelProps} />
           )}
