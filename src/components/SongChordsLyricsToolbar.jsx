@@ -10,7 +10,7 @@ import { AUTO_SCROLL_MODES, normalizeAutoScrollMode } from '../utils/autoscrollS
  * Kontrol transpose key & tempo dihapus dari toolbar: tersedia di header lagu
  * dan panel media. Kontrol lama lain (gaya chord, YouTube) juga sudah dihapus.
  *
- * Tampilan chord: switcher mode — Lirik & Chord / Lirik saja / Chord saja.
+ * Mode lirik: satu tombol toggle — aktif = hanya lirik (chord disembunyikan).
  */
 export default function SongChordsLyricsToolbar({
   // Autoscroll lirik
@@ -57,25 +57,17 @@ export default function SongChordsLyricsToolbar({
 
       {/* Grup tampilan: switcher mode, font size, mode fokus, lock layar */}
       <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-viewmode" role="group" aria-label="Tampilan lirik">
-        {/* Switcher mode tampilan: Lirik & Chord / Lirik / Chord */}
-        <div className="song-lyrics-display-switcher" role="group" aria-label="Mode tampilan lirik dan chord">
-          {[
-            { value: 'BOTH', label: 'Lirik & Chord' },
-            { value: 'LYRICS', label: 'Lirik' },
-            { value: 'CHORDS', label: 'Chord' },
-          ].map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={`song-lyrics-display-switcher-btn${displayMode === option.value ? ' is-active' : ''}`}
-              onClick={() => setDisplayMode?.(option.value)}
-              aria-pressed={displayMode === option.value}
-              title={`Tampilkan ${option.label.toLowerCase()}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        {/* Toggle lirik: aktif = hanya lirik (chord disembunyikan) */}
+        <button
+          type="button"
+          className={`song-lyrics-display-switcher-btn${displayMode === 'LYRICS' ? ' is-active' : ''}`}
+          onClick={() => setDisplayMode?.(displayMode === 'LYRICS' ? 'BOTH' : 'LYRICS')}
+          aria-pressed={displayMode === 'LYRICS'}
+          title="Tampilkan lirik saja"
+        >
+          Lirik
+        </button>
+
 
         <span className="song-lyrics-toolbar-divider" aria-hidden="true" />
 
