@@ -744,15 +744,9 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    // Stays on the setlist route. Lyrics now live in their own tab: open it
-    // first, then verify the chord display (not the editor) is shown.
+    // Stays on the setlist route. Lyrics tab sudah dihapus: panel lirik selalu
+    // tampil tanpa perlu klik tab.
     expect(currentLocation.pathname).toBe('/setlists/10/songs/1');
-    const lyricsTab = Array.from(container.querySelectorAll('.song-tabs-tab'))
-      .find((tab) => tab.textContent?.includes('Lirik'));
-    expect(lyricsTab).toBeTruthy();
-    await act(async () => {
-      lyricsTab.click();
-    });
     expect(container.querySelector('.song-lyrics-display')).toBeTruthy();
     expect(container.querySelector('.song-lyrics-textarea-editor')).toBeFalsy();
 
@@ -809,13 +803,7 @@ describe('Song lyrics shared editor rendering', () => {
       keyEasyButton.click();
     });
 
-    // Lirik ada di tab Lirik — buka dulu sebelum memverifikasi chord.
-    const lyricsTab = Array.from(container.querySelectorAll('.song-tabs-tab'))
-      .find((tab) => tab.textContent?.includes('Lirik'));
-    await act(async () => {
-      lyricsTab.click();
-    });
-
+    // Tab Lirik sudah dihapus — panel lirik selalu tampil, langsung verifikasi chord.
     expect(container.querySelector('.cd-chord')?.textContent).toBe('C G F');
   });
 });
