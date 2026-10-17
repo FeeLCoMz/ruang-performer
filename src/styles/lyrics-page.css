@@ -1161,7 +1161,8 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  /* Padding sama dengan .song-panel — satu token untuk semua panel lagu. */
+  padding: var(--spacing-lg);
   margin-bottom: 0;
   display: flex;
   flex-direction: column;
