@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import * as apiClient from '../apiClient.js';
-import EditIcon from '../components/EditIcon.jsx';
-import DeleteIcon from '../components/DeleteIcon.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
 import {
@@ -193,7 +191,7 @@ export default function BandDetailPage() {
           <div className="band-actions">
             {can(PERMISSIONS.BAND_EDIT) && (
               <button className="btn btn-primary" onClick={() => setShowEditModal(true)} title="Edit Band">
-                <EditIcon size={18} /> Edit Band
+                <span aria-hidden="true">✎</span> Edit Band
               </button>
             )}
             {gigs.length > 0 && (
@@ -203,7 +201,7 @@ export default function BandDetailPage() {
             )}
             {can(PERMISSIONS.BAND_DELETE) && (
               <button className="btn btn-red" onClick={handleDelete} title="Hapus Band">
-                <DeleteIcon size={18} /> Hapus
+                <span aria-hidden="true">🗑</span> Hapus
               </button>
             )}
           </div>
@@ -272,7 +270,7 @@ export default function BandDetailPage() {
                         setEditError(null);
                       }}
                     >
-                      <EditIcon size={16} />
+                      <span aria-hidden="true">✎</span>
                     </button>
                     <button
                       className="btn btn-red"
@@ -289,7 +287,7 @@ export default function BandDetailPage() {
                         }
                       }}
                     >
-                      <DeleteIcon size={16} />
+                      <span aria-hidden="true">🗑</span>
                     </button>
                   </div>
                 )}

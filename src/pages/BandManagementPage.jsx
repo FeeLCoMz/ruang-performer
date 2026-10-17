@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import * as apiClient from '../apiClient.js';
 import { updatePageMeta } from '../utils/metaTagsUtil.js';
-import PlusIcon from '../components/PlusIcon.jsx';
 import BandListItem from '../components/BandListItem.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 
@@ -32,7 +31,7 @@ export default function BandManagementPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '', genre: '' });
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Filter & Sort States
   const [search, setSearch] = useState('');
   const [filterGenre, setFilterGenre] = useState('all');
@@ -96,7 +95,7 @@ export default function BandManagementPage() {
     // Apply sorting
     result.sort((a, b) => {
       let aVal, bVal;
-      
+
       switch (sortBy) {
         case 'name':
           aVal = a.name?.toLowerCase() || '';
@@ -169,7 +168,7 @@ export default function BandManagementPage() {
         {/* Permission: Only show if user can create a band */}
         {user && (
           <button className="btn" onClick={() => setShowCreateForm(true)}>
-            <PlusIcon size={18} /> Buat Band
+            <span aria-hidden="true">＋</span> Buat Band
           </button>
         )}
       </div>
@@ -255,7 +254,7 @@ export default function BandManagementPage() {
           </p>
           {!hasActiveFilters && (
             <button className="btn band-empty-cta" onClick={() => setShowCreateForm(true)}>
-              <PlusIcon size={18} /> Buat Band Pertama
+              <span aria-hidden="true">＋</span> Buat Band Pertama
             </button>
           )}
         </div>

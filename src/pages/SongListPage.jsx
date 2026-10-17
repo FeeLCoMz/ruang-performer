@@ -3,8 +3,6 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { canPerformAction, PERMISSIONS } from '../utils/permissionUtils.js';
-import PlusIcon from '../components/PlusIcon.jsx';
-import EditIcon from '../components/EditIcon.jsx';
 import SongCard from '../components/SongCard.jsx';
 import SongMediaPanel from '../components/SongMediaPanel.jsx';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
@@ -451,7 +449,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                     title="Edit lirik & chord"
                     aria-label="Edit lirik dan chord"
                   >
-                    <EditIcon size={16} />
+                    <span aria-hidden="true">✎</span>
                     <span className="song-action-btn-label">Edit</span>
                   </button>
                 );
@@ -502,7 +500,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
             title="Tambah lagu baru"
             aria-label="Tambah lagu baru"
           >
-            <PlusIcon size={18} />
+            <span aria-hidden="true">＋</span>
             <span className="song-add-btn-label">Tambah</span>
           </button>
         </div>
@@ -639,7 +637,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           )}
           {!hasActiveFilters && (
             <button className="btn" onClick={() => onSongClick('add')}>
-              <PlusIcon size={18} /> Tambah Lagu Pertama
+              <span aria-hidden="true">＋</span> Tambah Lagu Pertama
             </button>
           )}
         </div>

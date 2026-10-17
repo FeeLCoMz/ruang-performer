@@ -10,9 +10,6 @@ import {
 } from '../utils/scheduleShareUtils.js';
 import '../styles/setlist-poster.css';
 import { downloadCalendarAsJPG, downloadCalendarAsPDF } from '../utils/calendarDownloadUtil.js';
-import PlusIcon from '../components/PlusIcon.jsx';
-import EditIcon from '../components/EditIcon.jsx';
-import DeleteIcon from '../components/DeleteIcon.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 import CalendarView from '../components/CalendarView.jsx';
 
@@ -294,7 +291,7 @@ export default function GigPage() {
           return (
             <div className="page-header-actions">
               <button className="btn" onClick={handleCreateGig}>
-                <PlusIcon size={18} /> Buat Gigs
+                <span aria-hidden="true">＋</span> Buat Gigs
               </button>
               {gigs.length > 0 && (
                 <button className="btn btn-secondary gig-share-trigger-btn" onClick={() => setShowShareModal(true)}>
@@ -662,7 +659,7 @@ export default function GigPage() {
                               className="btn"
                               title="Edit"
                             >
-                              <EditIcon size={16} />
+                              <span aria-hidden="true">✎</span>
                             </button>
                           </>
                         )}
@@ -672,7 +669,7 @@ export default function GigPage() {
                             className="btn btn-red"
                             title="Hapus"
                           >
-                            <DeleteIcon size={16} />
+                            <span aria-hidden="true">🗑</span>
                           </button>
                         )}
                       </>

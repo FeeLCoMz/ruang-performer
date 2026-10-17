@@ -121,8 +121,8 @@ describe('SetlistSongsPage', () => {
       (btn) => btn.textContent.trim(),
     );
     // Setelah tombol mode performance dihapus dari header setlist, hanya
-    // "Tambah Lagu" yang tersisa di luar menu aksi.
-    expect(directButtons).toEqual(['Tambah Lagu']);
+    // "Tambah Lagu" yang tersisa di luar menu aksi (ikon ＋ tak dihitung karena aria-hidden).
+    expect(directButtons.map((t) => t.replace('＋', ''))).toEqual(['Tambah Lagu']);
 
     const moreMenu = header.querySelector('details.setlist-header-more');
     expect(moreMenu).toBeTruthy();

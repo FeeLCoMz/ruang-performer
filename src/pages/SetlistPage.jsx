@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PlusIcon from '../components/PlusIcon.jsx';
 import SetlistForm from '../components/SetlistForm.jsx';
-import EditIcon from '../components/EditIcon.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { fetchBands, addSetList, updateSetList, fetchSetLists } from '../apiClient.js';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
@@ -219,7 +217,7 @@ export default function SetlistPage({
         ) && (
           <div className="page-header-actions">
             <button className="btn" onClick={() => setShowCreateSetlist(true)}>
-              <PlusIcon size={18} /> Buat Setlist
+              <span aria-hidden="true">＋</span> Buat Setlist
             </button>
           </div>
         )}
@@ -305,7 +303,7 @@ export default function SetlistPage({
           </p>
           {!hasActiveFilters && (
             <button className="btn setlist-empty-add-btn" onClick={() => setShowCreateSetlist(true)}>
-              <PlusIcon size={18} /> Buat Setlist Pertama
+              <span aria-hidden="true">＋</span> Buat Setlist Pertama
             </button>
           )}
         </div>
@@ -347,7 +345,7 @@ export default function SetlistPage({
                       title="Edit setlist"
                       aria-label={`Edit setlist ${setlist.name}`}
                     >
-                      <EditIcon size={16} />
+                      <span aria-hidden="true">✎</span>
                     </button>
                   )}
                 </div>

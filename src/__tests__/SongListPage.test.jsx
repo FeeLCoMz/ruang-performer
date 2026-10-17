@@ -25,9 +25,6 @@ vi.mock('../utils/permissionUtils.js', () => ({
   },
 }));
 
-vi.mock('../components/PlusIcon.jsx', () => ({ default: () => <span /> }));
-vi.mock('../components/EditIcon.jsx', () => ({ default: () => <span /> }));
-vi.mock('../components/DeleteIcon.jsx', () => ({ default: () => <span /> }));
 vi.mock('../components/SongMediaPanel.jsx', () => ({ default: () => null }));
 vi.mock('../components/VoiceSearchButton.jsx', () => ({ default: () => null }));
 vi.mock('../components/LoadingSkeleton.jsx', () => ({ SongListSkeleton: () => <div /> }));

@@ -1,7 +1,4 @@
 import React from 'react';
-import PlusIcon from '../components/PlusIcon.jsx';
-import EditIcon from '../components/EditIcon.jsx';
-import DeleteIcon from '../components/DeleteIcon.jsx';
 import SetlistPoster from '../components/SetlistPoster.jsx';
 import SongCard from '../components/SongCard.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -1473,7 +1470,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               equally-weighted buttons. */}
           {canEdit && (
             <button className="btn setlist-btn-primary" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
-              <span className="setlist-btn-icon" aria-hidden="true"><PlusIcon size={22} /></span>
+              <span className="setlist-btn-icon" aria-hidden="true">＋</span>
               <span className="setlist-btn-label">Tambah Lagu</span>
             </button>
           )}
@@ -1694,15 +1691,15 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                         className="btn btn-secondary"
                         title="Edit divider sesi"
                       >
-                        <EditIcon size={14} />
-                      </button>
+                          <span aria-hidden="true">✎</span>
+                        </button>
                       <button
                         onClick={() => handleDeleteSessionDivider(row.songId)}
                         className="btn btn-red"
                         title="Hapus divider sesi"
                       >
-                        <DeleteIcon size={14} />
-                      </button>
+                          <span aria-hidden="true">🗑</span>
+                        </button>
                     </div>
                   )}
                 </div>
@@ -1892,7 +1889,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                             title="Edit detail lagu di setlist"
                             aria-label="Edit detail lagu di setlist"
                           >
-                            <EditIcon size={16} />
+                            <span aria-hidden="true">✎</span>
                             <span className="song-action-btn-label">Edit</span>
                           </button>
                           <button
@@ -1901,7 +1898,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                             title="Hapus dari setlist"
                             aria-label="Hapus dari setlist"
                           >
-                            <DeleteIcon size={16} />
+                            <span aria-hidden="true">🗑</span>
                             <span className="song-action-btn-label">Hapus</span>
                           </button>
                         </>
