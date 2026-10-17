@@ -1421,6 +1421,14 @@
   white-space: nowrap;
 }
 
+/* Original Key inline di baris artis (setelah nama penyanyi) */
+.song-original-key-inline {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Panel analisis chord inline (tab Analisis) — konten langsung di panel,
    bukan modal, jadi tidak menutupi halaman. Padding & radius mengikuti token
    panel lagu (.song-panel sudah memberi radius-lg & padding seragam). */

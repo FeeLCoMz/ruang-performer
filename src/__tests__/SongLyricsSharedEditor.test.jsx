@@ -556,7 +556,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(copyButton).toBeFalsy();
   });
 
-  test('Given mastery info is present, Then it renders as a full-width row', async () => {
+  test('Given mastery info is present, Then the mastery chip sits inline on the Key row', async () => {
     await act(async () => {
       root.render(
         <SongChordsInfo
@@ -575,7 +575,11 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.querySelector('.song-info-mastery-row')).toBeTruthy();
+    // Mastery chip kini inline di baris Key (tanpa baris terpisah) — panel padat.
+    const keyRow = container.querySelector('.song-info-control-row');
+    expect(keyRow).toBeTruthy();
+    expect(keyRow.querySelector('.song-mastery-chip')).toBeTruthy();
+    expect(container.querySelector('.song-info-mastery-row')).toBeFalsy();
   });
 
   test('Given time and genre are present, Then genre sits in the header and time is integrated with tempo', async () => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import TransposeKeyControl from './TransposeKeyControl.jsx';
 import TempoControl from './TempoControl.jsx';
 import SongChordsExportMenu from './SongChordsExportMenu.jsx';
@@ -50,7 +50,6 @@ export default function SongChordsInfo({
   handleExportPDF,
 }) {
   const showActions = true;
-  const [activeTab] = useState('info');
 
   // Level penguasaan lagu: 'none' | 'learning' | 'mastered' — chip dropdown.
   const currentMasteryLevel = currentUserStatus === 'mastered'
@@ -105,13 +104,19 @@ export default function SongChordsInfo({
           {(artist || contributor || genre) && (
             <p className="song-artist-main">
               {artist && <span className="song-artist-name">{artist}</span>}
-              {artist && genre && <span className="song-meta-sep" aria-hidden="true">·</span>}
+              {artist && lyricsOriginalKey && <span className="song-meta-sep" aria-hidden="true">·</span>}
+              {lyricsOriginalKey && (
+                <span className="song-original-key-inline" title="Original Key (dari metadata lirik)">
+                  <span aria-hidden="true">🎵</span> {lyricsOriginalKey}
+                </span>
+              )}
+              {(artist || lyricsOriginalKey) && genre && <span className="song-meta-sep" aria-hidden="true">·</span>}
               {genre && (
                 <span className="song-genre-inline" title={`Genre: ${genre}`}>
                   <span aria-hidden="true">🎸</span> {genre}
                 </span>
               )}
-              {artist && contributor && <span className="song-meta-sep" aria-hidden="true">·</span>}
+              {(artist || lyricsOriginalKey || genre) && contributor && <span className="song-meta-sep" aria-hidden="true">·</span>}
               {contributor && showActions && (
                 <span className="song-contributor-main" title={`Kontributor: ${contributor}`}>
                   <span aria-hidden="true">👤</span>
@@ -200,6 +205,14 @@ export default function SongChordsInfo({
                     pianoRecommendation={showKeyEasyRecommendation ? pianoRecommendation : null}
                     onApplyRecommendedTranspose={onApplyRecommendedTranspose}
                   />
+                  {/* Mastery chip menempel di baris Key — panel lebih padat,
+                      tak ada baris sendiri yang boros ruang. */}
+                  <MasteryChip
+                    status={currentMasteryLevel}
+                    onStatusChange={handleMasteryLevelChange}
+                    updating={masteryUpdating}
+                    disabled={!canMarkMastery}
+                  />
                 </div>
               </div>
             )}
@@ -218,21 +231,24 @@ export default function SongChordsInfo({
                     setIsMetronomeActive={setIsMetronomeActive}
                     timeSignature={timeSignature}
                   />
+                  {/* Bila lagu tidak punya key (baris Key tak tampil), mastery
+                      chip pindah ke baris Tempo agar tetap selalu ada. */}
+                  {!(originalKey || targetKey) && (
+                    <MasteryChip
+                      status={currentMasteryLevel}
+                      onStatusChange={handleMasteryLevelChange}
+                      updating={masteryUpdating}
+                      disabled={!canMarkMastery}
+                    />
+                  )}
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Asli key — time signature terintegrasi dengan Tempo */}
-        {lyricsOriginalKey && (
-          <div className="song-info-chip-row">
-            <span className="song-info-item song-info-item-plain">🎵 Asli: {lyricsOriginalKey}</span>
-          </div>
-        )}
-
-        {/* Detail tambahan (patch keyboard, instrumen) — hanya di tab Info */}
-        {activeTab === 'info' && (keyboardPatch || detectedInstrumentList.length > 0) && (
+        {/* Detail tambahan (patch keyboard, instrumen) */}
+        {(keyboardPatch || detectedInstrumentList.length > 0) && (
           <div className="song-info-chip-row">
             {keyboardPatch && (
               <span className="song-info-item song-info-item-wide">
@@ -255,20 +271,20 @@ export default function SongChordsInfo({
           </div>
         )}
 
-        {/* Baris mastery — 3 level: Belum Diulik / Perlu Latihan / Dikuasai.
-            Chip status = dropdown; class sama dengan chip di kartu lagu
-            (song-mastery-chip dari setlist-songs.css), tanpa wrapper khusus. */}
-        <div className="song-info-control-row song-info-mastery-row">
-          <div className="song-info-row-control">
-            <MasteryChip
-              status={currentMasteryLevel}
-              onStatusChange={handleMasteryLevelChange}
-              updating={masteryUpdating}
-              disabled={!canMarkMastery}
-            />
-            {masteryUpdating && <span className="song-info-mastery-saving">Menyimpan…</span>}
+        {/* Mastery chip berdiri sendiri hanya bila lagu tak punya key & tempo. */}
+        {!(originalKey || targetKey || tempo) && (
+          <div className="song-info-control-row song-info-mastery-row">
+            <div className="song-info-row-control">
+              <MasteryChip
+                status={currentMasteryLevel}
+                onStatusChange={handleMasteryLevelChange}
+                updating={masteryUpdating}
+                disabled={!canMarkMastery}
+              />
+              {masteryUpdating && <span className="song-info-mastery-saving">Menyimpan…</span>}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
