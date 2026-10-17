@@ -94,6 +94,22 @@
   display: none;
 }
 
+/* Dropdown mastery chip terpotong oleh overflow-x:auto di row ini —
+   saat row berisi chip, biarkan overflow visible supaya menu tampil penuh. */
+.song-info-row-control:has(.mastery-chip-root) {
+  overflow-x: visible;
+  overflow-y: visible;
+}
+
+/* Dropdown mastery chip di dalam row kontrol: overflow-x:auto di row
+   memotong menu (position:absolute) yang menjorok keluar. Tanpa overflow
+   menu tampil penuh — kontrol lain di row tetap diratakan, scrollbar
+   tetap disembunyikan. */
+.song-info-row-control:has(.mastery-chip-root) {
+  overflow-x: visible;
+  overflow-y: visible;
+}
+
 /* Teks polos di dalam row-control (mis. daftar instrumen) */
 .song-info-row-text {
   font-size: var(--font-size-sm);
