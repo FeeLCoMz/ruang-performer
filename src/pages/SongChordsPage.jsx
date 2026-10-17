@@ -346,25 +346,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
 
   // Handler export & share di utils/songHandlers.js
 
-  // Marker otomatis: satu time marker per seksi lagu ([Intro], [Chorus], dst)
-  // — waktu diambil dari timestamp [mm:ss] yang menempel di baris seksi lirik.
-  const sections = useMemo(() => extractSectionOverview(song?.lyrics || ''), [song?.lyrics]);
-  const handleAddAutoMarkers = () => {
-    if (!can(PERMISSIONS.SONG_EDIT)) return;
-    const lyricLines = String(song?.lyrics || '').split(/\r?\n/);
-    const nextMarkers = [...timeMarkers];
-    sections.forEach((section, index) => {
-      const tsMatch = (lyricLines[section.lineIndex] || '').match(/\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]/);
-      if (!tsMatch) return;
-      const time = tsMatch[3]
-        ? Number(tsMatch[1]) * 3600 + Number(tsMatch[2]) * 60 + Number(tsMatch[3])
-        : Number(tsMatch[1]) * 60 + Number(tsMatch[2]);
-      if (nextMarkers.some((m) => Number(m.time) === time)) return;
-      nextMarkers.push({ time, label: section.label || `Section ${index + 1}` });
-    });
-    handleTimeMarkerUpdate(nextMarkers.sort((a, b) => a.time - b.time));
-  };
-
   // Handle time marker updates
   const handleTimeMarkerUpdate = async (updatedMarkers) => {
     if (!song.id || !can(PERMISSIONS.SONG_EDIT)) return;
@@ -618,18 +599,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
       if (typeof t === 'number' && Number.isFinite(t)) setYtCurrentTime(t);
       if (typeof d === 'number' && Number.isFinite(d)) setYtDuration(d);
     },
-    markerExtra:
-      sections.length > 0 && (
-        <button
-          type="button"
-          className="btn btn-secondary studio-auto-markers-btn"
-          onClick={handleAddAutoMarkers}
-          disabled={!canEditSong || sections.length === 0}
-          title="Buat marker otomatis dari setiap seksi lagu"
-        >
-          ✨ Marker Otomatis ({sections.length} seksi)
-        </button>
-      ),
   };
 
   return (
