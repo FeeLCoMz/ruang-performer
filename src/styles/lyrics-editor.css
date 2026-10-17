@@ -737,14 +737,56 @@ body.dark-mode .lyrics-editor-dirty-badge.is-dirty {
   height: 500px;
   overflow: auto;
   padding: var(--spacing-lg);
-}@media (max-width: 1024px){
+}@media (max-width: 1024px) {
   .lyrics-editor-workspace.has-preview .lyrics-editor-workspace-body {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .lyrics-editor-preview-scroll {
     height: 320px;
-  }}@media (max-width: 768px){
+  }
+}
+
+@media (max-width: 768px) {
+  /* (Dipindah dari song-add-edit.css supaya aturan editor lirik semua ada di
+     satu file. Nilai tidak berubah.) */
+
+  /* Lyrics editor: shorter editor panes so the preview stays in reach.
+     Setel tinggi di .cm-scroller saja — wrapper .cm-editor memakai height:auto
+     supaya tidak ada dua scrollbar (wrapper + scroller) di layar HP. */
+  .song-lyrics-textarea,
+  .song-lyrics-textarea.cm-editor,
+  .song-lyrics-textarea-editor .cm-editor {
+    height: auto;
+  }
+
+  .song-lyrics-textarea.cm-editor .cm-scroller {
+    height: 340px;
+  }
+
+  .lyrics-editor-preview-scroll {
+    height: 280px;
+    padding: var(--spacing-md);
+  }
+
+  .lyric-format,
+  .lyric-tools {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .lyric-format-group {
+    padding: 6px 8px;
+  }
+
+  .lyric-format-preview-compare {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lyric-format-preview-text {
+    max-height: 200px;
+  }
+
   .lyrics-editor-preview-toggle {
     width: 100%;
     margin-left: 0;
@@ -1436,6 +1478,15 @@ body.dark-mode .song-lyrics-error {
   .song-lyrics-textarea {
     min-height: 300px;
     font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    /* Shorter editor so the sticky action bar and the keyboard both fit. */
+    .song-lyrics-textarea,
+    .song-lyrics-textarea.cm-editor,
+    .song-lyrics-textarea.cm-editor .cm-scroller {
+      height: 300px;
+    }     
   }
 
 

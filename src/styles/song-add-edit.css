@@ -1,4 +1,4 @@
-﻿/* ========================================
+﻿﻿/* ========================================
    SONG ADD/EDIT - EDITOR HERO + STEP NAV
    ======================================== */
 .song-editor-hero {
@@ -269,41 +269,8 @@
     font-size: var(--font-size-sm);
   }
 
-  /* Lyrics editor: shorter editor panes so the preview stays in reach.
-     Setel tinggi di .cm-scroller saja — wrapper .cm-editor memakai height:auto
-     supaya tidak ada dua scrollbar (wrapper + scroller) di layar HP. */
-  .song-lyrics-textarea,
-  .song-lyrics-textarea.cm-editor,
-  .song-lyrics-textarea-editor .cm-editor {
-    height: auto;
-  }
-
-  .song-lyrics-textarea.cm-editor .cm-scroller {
-    height: 340px;
-  }
-
-  .lyrics-editor-preview-scroll {
-    height: 280px;
-    padding: var(--spacing-md);
-  }
-
-  .lyric-format,
-  .lyric-tools {
-    padding: 8px;
-    gap: 8px;
-  }
-
-  .lyric-format-group {
-    padding: 6px 8px;
-  }
-
-  .lyric-format-preview-compare {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .lyric-format-preview-text {
-    max-height: 200px;
-  }
+  /* (Tinggi editor lirik, preview, dan toolbar lyric-format/tools kini milik
+     lyrics-editor.css — lihat blok responsifnya di sana.) */
 
   /* Modals: keep the virtual piano and AI autofill inside the viewport. */
   .song-lyrics-format-preview-modal .modal,
@@ -355,12 +322,7 @@
     width: 100%;
   }
 
-  /* Shorter editor so the sticky action bar and the keyboard both fit. */
-  .song-lyrics-textarea,
-  .song-lyrics-textarea.cm-editor,
-  .song-lyrics-textarea-editor .cm-editor {
-    height: 300px;
-  }
+  /* (Tinggi editor lirik layar sangat kecil kini di lyrics-editor.css.) */
 
   /* Piano popup: docked to the bottom of the phone screen so it can never be
      dragged off-viewport, and scrollable if the keys overflow the width. */
