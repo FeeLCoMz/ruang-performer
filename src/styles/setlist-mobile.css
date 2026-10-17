@@ -284,7 +284,7 @@
   border-color: color-mix(in srgb, var(--primary-accent) 45%, var(--border-color));
 }
 
-/* Nonaktif saat tidak ada lagu yang ditandai sudah dibawakan: switch-nya tidak
+/* Nonaktif saat tidak ada lagu yang ditandai selesai: switch-nya tidak
    punya apa pun untuk disembunyikan, jadi jangan tawarkan aksi kosong. */
 .song-visibility-toggle.is-disabled {
   cursor: not-allowed;

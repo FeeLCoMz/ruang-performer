@@ -10,7 +10,7 @@ import React from 'react';
  *
  * Perbedaan antar-halaman dikirim lewat props, bukan lewat duplikasi markup:
  *  - `leadingSlot`   : kolom kiri opsional (mis. nomor urut di setlist).
- *  - `headingStatus` : flag status di baris judul (mis. Live/Dibawakan).
+ *  - `headingStatus` : flag status di baris judul (mis. Live/Selesai).
  *  - `metaPrimary`   : baris 1 metadata (artis/band/genre).
  *  - `metaDetail`    : baris 2 metadata (key/tempo/mood/setlist).
  *  - `actions`       : tombol aksi halaman tersebut.

@@ -48,7 +48,7 @@ export default function SetlistPoster({ setlist, setlistSongs, setlistRows, post
           <div className="setlist-poster-song">
             {song.title}
             {isCompleted && (
-              <span className="setlist-poster-completed-badge" title="Sudah dibawakan" aria-label="Sudah dibawakan">
+              <span className="setlist-poster-completed-badge" title="Selesai" aria-label="Selesai">
                 ✓
               </span>
             )}

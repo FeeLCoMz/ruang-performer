@@ -108,12 +108,12 @@ describe('SetlistSongsPage', () => {
     // The artist / genre / completed dropdowns were removed on purpose: the
     // header now offers a single action plus a menu, and the text search is the
     // only filter left in the toolbar.
-    expect(container.querySelector('select[aria-label="Filter status dibawakan"]')).toBeFalsy();
+    expect(container.querySelector('select[aria-label="Filter status selesai"]')).toBeFalsy();
     const filterSelects = container.querySelectorAll('.filter-row select');
     const selectLabels = Array.from(filterSelects).map((el) => el.textContent || '');
     expect(selectLabels.some((text) => text.includes('Artis:'))).toBe(false);
     expect(selectLabels.some((text) => text.includes('Genre:'))).toBe(false);
-    expect(selectLabels.some((text) => text.includes('Dibawakan:'))).toBe(false);
+    expect(selectLabels.some((text) => text.includes('Selesai:'))).toBe(false);
 
     // Only "Tambah Lagu" sits outside the menu, plus the performance toggle.
     const header = container.querySelector('.setlist-header-actions');
@@ -448,7 +448,7 @@ describe('SetlistSongsPage', () => {
     expect(shareTextarea.value).toContain('Lihat detail & chord:');
   });
 
-  test('replaces the grouping dropdown with a hide-played-songs switch', async () => {
+  test('replaces the grouping dropdown with a hide-completed-songs switch', async () => {
     const props = buildProps({
       setlists: [
         {
@@ -477,7 +477,7 @@ describe('SetlistSongsPage', () => {
     expect(selects.some((t) => t.includes('Urutkan:'))).toBe(false);
     expect(selects.some((t) => t.includes('Kelompokkan:'))).toBe(false);
 
-    const toggle = container.querySelector('#hide-played-songs');
+    const toggle = container.querySelector('#hide-completed-songs');
     expect(toggle).toBeTruthy();
     expect(toggle.checked).toBe(false);
 
@@ -493,7 +493,7 @@ describe('SetlistSongsPage', () => {
       await flushPromises();
     });
 
-    // Switching it on filters OUT the song already performed.
+    // Switching it on filters OUT the completed song.
     const visible = titles();
     expect(visible.length).toBe(2);
     expect(visible.some((t) => t.startsWith('Beta'))).toBe(false);

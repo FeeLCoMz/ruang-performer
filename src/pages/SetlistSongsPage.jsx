@@ -85,18 +85,18 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // The old "Kelompokkan" dropdown became this single switch. Grouping split the
   // list into sections that no longer matched the running order. Preferensinya
   // dipersist di localStorage supaya pilihan tidak hilang saat halaman dibuka ulang.
-  const [hidePlayedSongs, setHidePlayedSongsState] = useState(() => {
+  const [hideCompletedSongs, setHideCompletedSongsState] = useState(() => {
     try {
-      return localStorage.getItem(STORAGE_KEYS.SETLIST_HIDE_PLAYED_SONGS) === '1';
+      return localStorage.getItem(STORAGE_KEYS.SETLIST_HIDE_COMPLETED_SONGS) === '1';
     } catch {
       return false;
     }
   });
-  const setHidePlayedSongs = (next) => {
+  const setHideCompletedSongs = (next) => {
     const value = Boolean(next);
-    setHidePlayedSongsState(value);
+    setHideCompletedSongsState(value);
     try {
-      localStorage.setItem(STORAGE_KEYS.SETLIST_HIDE_PLAYED_SONGS, value ? '1' : '0');
+      localStorage.setItem(STORAGE_KEYS.SETLIST_HIDE_COMPLETED_SONGS, value ? '1' : '0');
     } catch { /* ignore */ }
   };
 
@@ -308,13 +308,13 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         (song.title || '').toLowerCase().includes(searchText.toLowerCase()) ||
         (song.artist || '').toLowerCase().includes(searchText.toLowerCase());
       const matchSmart = !filterSmartOnly || setlistSongMeta?.[song.id]?.smartFeatured === true;
-      // The "hide played songs" switch: when ON it filters OUT what is done.
-      const matchHidePlayed = !hidePlayedSongs || completedSongs?.[song.id] !== true;
-      return matchSearch && matchSmart && matchHidePlayed;
+      // The "hide completed songs" switch: when ON it filters OUT what is done.
+      const matchHideCompleted = !hideCompletedSongs || completedSongs?.[song.id] !== true;
+      return matchSearch && matchSmart && matchHideCompleted;
     });
-  }, [setlistSongs, searchText, filterSmartOnly, hidePlayedSongs, completedSongs, setlistSongMeta]);
+  }, [setlistSongs, searchText, filterSmartOnly, hideCompletedSongs, completedSongs, setlistSongMeta]);
 
-  const hasActiveFilters = Boolean(searchText || filterSmartOnly || hidePlayedSongs);
+  const hasActiveFilters = Boolean(searchText || filterSmartOnly || hideCompletedSongs);
 
   const smartPlan = useMemo(() => {
     if (!Array.isArray(setlistSongs) || setlistSongs.length === 0) return null;
@@ -575,7 +575,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   function handleClearFilters() {
     setSearchText('');
     setFilterSmartOnly(false);
-    setHidePlayedSongs(false);
+    setHideCompletedSongs(false);
   }
 
   // Generate share text
@@ -600,7 +600,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
 
         const song = row.song;
         songNumber += 1;
-        const completedPrefix = completedSongs?.[song.id] === true ? '✅ ' : '';
+        const completedPrefix = completedSongs?.[song.id] === true ? '✅ (selesai) ' : '';
         if (!includeSongDetails) {
           return `${songNumber}. ${completedPrefix}${song.title}${song.artist ? ` - ${song.artist}` : ''}`;
         }
@@ -1209,7 +1209,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         }),
       });
     } catch (e) {
-      console.error('Gagal update status lagu dibawakan', e);
+      console.error('Gagal update status lagu selesai', e);
     }
   }
 
@@ -1232,11 +1232,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         }),
       });
     } catch (e) {
-      console.error('Gagal mereset status lagu dibawakan', e);
+      console.error('Gagal mereset status lagu selesai', e);
     }
   }
 
-  // Tandai SEMUA lagu di setlist sebagai sudah dibawakan sekaligus.
+  // Tandai SEMUA lagu di setlist sebagai selesai sekaligus.
   async function handleMarkAllSongsCompleted() {
     if (!canEdit || setlistSongs.length === 0) return;
 
@@ -1261,7 +1261,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         }),
       });
     } catch (e) {
-      console.error('Gagal menandai semua lagu dibawakan', e);
+      console.error('Gagal menandai semua lagu selesai', e);
     }
   }
 
@@ -1455,7 +1455,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           <div className="setlist-header-stats">
             <span className="setlist-meta-badge">🎵 {setlistSongs.length} lagu</span>
             <span className={`setlist-meta-badge${completedCount > 0 ? ' setlist-meta-band' : ''}`}>
-              ✅ {completedCount} dibawakan
+              ✅ {completedCount} selesai
             </span>
             {featuredSongIdsFromMeta.length > 0 && (
               <span
@@ -1536,18 +1536,18 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                 <button
                   className="btn btn-secondary setlist-btn-ghost"
                   onClick={handleResetCompletedSongs}
-                  title="Reset semua status lagu dibawakan"
+                  title="Reset semua status lagu selesai"
                 >
-                  ↺ Reset Dibawakan
+                  ↺ Reset Selesai
                 </button>
               )}
               {canEdit && uncompletedCount > 0 && (
                 <button
                   className="btn btn-secondary setlist-btn-ghost"
                   onClick={handleMarkAllSongsCompleted}
-                  title="Tandai semua lagu sudah dibawakan"
+                  title="Tandai semua lagu selesai"
                 >
-                  ✅ Tandai Semua Dibawakan
+                  ✅ Tandai Semua Selesai
                 </button>
               )}
               <button className="btn setlist-btn-ghost" onClick={() => setShowCopyModal(true)} title="Copy Setlist">
@@ -1571,34 +1571,34 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           <div className="filter-row">
             {/* Songs always follow the user's own order, so there is no sort
                 control. The only list control left is this switch. */}
-            {/* Switch ini hanya berguna bila ada lagu yang sudah dibawakan. */}
+            {/* Switch ini hanya berguna bila ada lagu yang selesai. */}
             <label
               className={`song-visibility-toggle${completedCount === 0 ? ' is-disabled' : ''}`}
-              htmlFor="hide-played-songs"
+              htmlFor="hide-completed-songs"
               title={
                 completedCount === 0
-                  ? 'Belum ada lagu yang ditandai sudah dibawakan'
-                  : 'Sembunyikan atau tampilkan lagu yang sudah dibawakan'
+                  ? 'Belum ada lagu yang ditandai selesai'
+                  : 'Sembunyikan atau tampilkan lagu yang selesai'
               }
             >
               <input
-                id="hide-played-songs"
+                id="hide-completed-songs"
                 type="checkbox"
                 className="song-visibility-checkbox"
-                checked={hidePlayedSongs}
+                checked={hideCompletedSongs}
                 disabled={completedCount === 0}
-                onChange={(e) => setHidePlayedSongs(e.target.checked)}
+                onChange={(e) => setHideCompletedSongs(e.target.checked)}
               />
               <span className="song-visibility-track" aria-hidden="true">
                 <span className="song-visibility-knob" />
               </span>
               <span className="song-visibility-text">
                 <span className="song-visibility-label">
-                  Sembunyikan lagu yang sudah dibawakan
+                  Sembunyikan lagu yang selesai
                 </span>
                 {completedCount > 0 && (
                   <span className="song-visibility-count">
-                    {completedCount} dari {setlistSongs.length} sudah dibawakan
+                    {completedCount} dari {setlistSongs.length} selesai
                   </span>
                 )}
               </span>
@@ -1787,14 +1787,14 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                       ) : (
                         <span className="song-number">{displayOrderNumber}</span>
                       )}
-                      {/* Kontrol utama menandai lagu dibawakan: satu tap besar di rail,
+                      {/* Kontrol utama menandai lagu selesai: satu tap besar di rail,
                           selalu terlihat dan tidak perlu mencari tombol kecil. */}
                       {canEdit && (
                         <button
                           type="button"
                           className={`song-played-toggle${isCompleted ? ' is-completed' : ''}`}
-                          title={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
-                          aria-label={isCompleted ? `Tandai ${song.title} belum dibawakan` : `Tandai ${song.title} sudah dibawakan`}
+                          title={isCompleted ? 'Tandai belum selesai' : 'Tandai selesai'}
+                          aria-label={isCompleted ? `Tandai ${song.title} belum selesai` : `Tandai ${song.title} selesai`}
                           aria-pressed={isCompleted}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1818,8 +1818,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                         disabled={!viewerId}
                       />
                       {isCompleted && (
-                        <span className="song-flag song-flag-done" title="Sudah dibawakan">
-                          ✓ Dibawakan
+                        <span className="song-flag song-flag-done" title="Selesai">
+                          ✓ Selesai
                         </span>
                       )}
                       {isSmartFeatured && (
