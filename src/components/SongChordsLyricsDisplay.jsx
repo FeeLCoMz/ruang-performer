@@ -460,40 +460,6 @@ export default function SongChordsLyricsDisplay({
         }}
               />
       </div>
-
-      {/* Info lagu berikutnya (Up Next) — tampil bila ada lagu setelah ini
-          dalam setlist aktif. Setelah lagu terakhir, tampil tombol kembali
-          ke daftar setlist. */}
-      {setlistNav && (setlistNav.hasNext || typeof setlistNav.onOpenSetlist === 'function') && (
-        <div className="setlist-up-next" role="complementary" aria-label="Lagu berikutnya">
-          {setlistNav.hasNext ? (
-            <>
-              <span className="setlist-up-next-label">Up Next</span>
-              <button
-                type="button"
-                className="setlist-up-next-song"
-                onClick={setlistNav.onNext}
-                title={`Buka: ${setlistNav.nextTitle}`}
-              >
-                <span className="setlist-up-next-number" aria-hidden="true">
-                  {setlistNav.songNumber + 1}
-                </span>
-                <span className="setlist-up-next-title">{setlistNav.nextTitle || 'Lagu berikutnya'}</span>
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="setlist-up-next-song"
-              onClick={setlistNav.onOpenSetlist}
-              title="Kembali ke daftar setlist"
-            >
-              <span className="setlist-up-next-number" aria-hidden="true">🏁</span>
-              <span className="setlist-up-next-title">Lagu terakhir — kembali ke setlist</span>
-            </button>
-          )}
-        </div>
-      )}
     </>
   );
 }
