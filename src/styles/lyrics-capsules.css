@@ -331,10 +331,21 @@
     gap: 10px;
   }
 
-  .setlist-nav-footer-btn {
-    min-height: 36px;
-    padding: 0 14px;
+  /* Seragamkan semua tombol footer di desktop: kapsul pill setinggi 38px —
+     info posisi, prev/next, dan tombol setlist memakai ukuran/gaya sama. */
+  .setlist-nav-footer-btn,
+  .setlist-nav-footer-info-btn {
+    min-height: 38px;
+    height: 38px;
+    padding: 0 16px;
     font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--secondary-bg);
   }
 
   .setlist-nav-footer-btn-label {
