@@ -23,7 +23,7 @@ import { alignSelectedBarlines, wrapBarsPerLine } from "../utils/chordUtils.js";
  *   Format   - actions on the highlighted selection
  *   Dokumen  - actions on the whole lyric
  *   Sisip    - insertion aids (piano, notes)
- *   Tampilan - editor / split / preview mode
+ *   (menu Tampilan dihapus; pindah mode lewat switcher di workspace)
  *
  * Every group renders through the same EditorMenuBar item shape, so the menus,
  * items, separators and shortcut hints are visually identical throughout.
@@ -244,38 +244,6 @@ export default function LyricsFormatToolbar({
     },
   ];
 
-  const viewMenuItems = previewModes
-    ? [
-        {
-          key: 'editor',
-          icon: 'E',
-          label: 'Editor saja',
-          title: 'Sembunyikan preview, editor pakai lebar penuh',
-          active: previewMode === previewModes.OFF,
-          disabled,
-          onSelect: () => onPreviewModeChange?.(previewModes.OFF),
-        },
-        {
-          key: 'split',
-          icon: 'S',
-          label: 'Editor + Preview',
-          title: 'Tampilkan editor dan preview berdampingan',
-          active: previewMode === previewModes.SPLIT,
-          disabled,
-          onSelect: () => onPreviewModeChange?.(previewModes.SPLIT),
-        },
-        {
-          key: 'preview',
-          icon: 'V',
-          label: 'Preview saja',
-          title: 'Tampilkan preview saja (lebih lebar)',
-          active: previewMode === previewModes.PREVIEW,
-          disabled,
-          onSelect: () => onPreviewModeChange?.(previewModes.PREVIEW),
-        },
-      ]
-    : [];
-
   const menus = [
     { key: 'riwayat', label: 'Riwayat', items: historyMenuItems },
     { key: 'format', label: 'Format', items: selectionMenuItems },
@@ -307,10 +275,6 @@ export default function LyricsFormatToolbar({
           ]
         : insertMenuItems,
     });
-  }
-
-  if (viewMenuItems.length > 0) {
-    menus.push({ key: 'tampilan', label: 'Tampilan', items: viewMenuItems });
   }
 
   return (
