@@ -76,7 +76,10 @@ const ChordDisplayBase = memo(function ChordDisplay({
     activeLine = null,
     /** Mode fokus: kunci bagian aktif — baris di luar bagian itu diredupkan. */
     focusSectionKey = null,
-    /** Skala font dari tombol A-/A+; dipakai agar auto-fit tidak mengkompensasi font scale. */
+  /**
+   * Skala font dari tombol A-/A+; diterapkan sebagai CSS var di induk
+   * (SongChordsLyricsDisplay), tidak mengubah ukuran font di sini.
+   */
     fontScale = 1,
   }) {
 
@@ -107,7 +110,7 @@ const ChordDisplayBase = memo(function ChordDisplay({
     const label = String(rawToken).replace(/\[|\]/g, '');
     return (
       <span key={key} className="cd-timestamp">
-        <span className="cd-timestamp-label">{rawToken}</span>
+        <span className="cd-timestamp-label">{label}</span>
         <button
           type="button"
           className="btn cd-timestamp-btn"
@@ -155,58 +158,8 @@ const ChordDisplayBase = memo(function ChordDisplay({
     [lines, effectiveTranspose]
   );
 
-  // Auto-fit horizontal: bila konten lebih lebar dari kontainer, lirik
-  // diperkecil (scale) supaya tidak memicu horizontal scroll. Pengecilannya HANYA
-  // berlaku untuk zoom manual (pinch/wheel) — tidak boleh mengkompensasi font
-  // scale dari tombol A-/A+, karena bila fit memasukkan font scale, memperbesar
-  // font langsung dibatalkan oleh fit (lirik kembali mengecil).
-  // Caranya: ukur lebar konten pada skala 1, hitung berapa lebar "berlebih"
-  // setelah dikurangi porsi zoom, lalu fit = sisa kompensasi untuk zoom saja.
-  const containerRef = useRef(null);
-  const [fitScale, setFitScale] = useState(1);
-  const fitMeasureKey = `${song?.id || ''}|${song?.lyrics?.length || 0}|${fontScale || 1}`;
-
-  useEffect(() => {
-    // Kontainer ukur = induk terdekat (.song-lyrics-display milik
-    // SongChordsLyricsDisplay). Komponen ini sendiri tidak merender wrapper —
-    // panel scroll berasal dari induk.
-    const container = containerRef?.current?.closest?.('.song-lyrics-display');
-    const content = containerRef?.current;
-    if (!container || !content) return undefined;
-
-    const measure = () => {
-      const availableWidth = container.clientWidth;
-      // scrollWidth sudah termasuk efek font-scale (CSS var di induk).
-      const scaledContentWidth = content.scrollWidth;
-      const fontScaleValue = Number(fontScale) || 1;
-      if (!availableWidth || !scaledContentWidth) {
-        setFitScale(1);
-        return;
-      }
-
-      // Lebar konten pada font dasar (skala 1) = lebar terukur / fontScale.
-      const baseContentWidth = scaledContentWidth / fontScaleValue;
-
-      // Bila konten dasar sudah muat, tidak ada pengecilan sama sekali —
-      // font diperbesar murni membesar (mengikuti overflow-x dari panel).
-      if (baseContentWidth <= availableWidth) {
-        setFitScale(1);
-        return;
-      }
-
-      // Konten dasar kelebihan lebar: fit boleh mengecil hingga konten DASAR
-      // muat, lalu zoom manual tetap dihormati di atasnya.
-      const fit = availableWidth / baseContentWidth;
-      setFitScale(Math.min(1, fit));
-    };
-
-    measure();
-    if (typeof ResizeObserver !== 'function') return undefined;
-    const observer = new ResizeObserver(measure);
-    observer.observe(container);
-    observer.observe(content);
-    return () => observer.disconnect();
-  }, [fitMeasureKey]);
+  // Auto-fit horizontal dihapus: lirik tidak lagi otomatis diubah ukurannya —
+  // lebar konten yang melebihi panel bisa digulir (overflow-x) oleh user.
 
   if (!song?.lyrics) {
     return (
@@ -356,23 +309,13 @@ const ChordDisplayBase = memo(function ChordDisplay({
     );
   });
 
-  // Auto-fit horizontal: bila konten lebih lebar dari kontainer, lirik
-  // diperkecil (scale) supaya tidak memicu horizontal scroll. Pengecilan HANYA
-  // berlaku untuk zoom manual (pinch/wheel) — tidak boleh mengkompensasi font
-  // scale dari tombol A-/A+, karena bila fit memasukkan font scale, memperbesar
-  // font langsung dibatalkan oleh fit (lirik kembali mengecil).
-  // Caranya: ukur lebar konten pada skala 1, hitung berapa lebar "berlebih"
-  // setelah dik porsi zoom, lalu fit = sisa kompensasi untuk zoom saja.
-  const effectiveScale = Math.min(zoom, fitScale);
-
   // Tanpa wrapper: induk (.song-lyrics-display di SongChordsLyricsDisplay)
   // sudah jadi panel scroll. Dua elemen ber-class sama bertumpuk menciptakan
   // pembungkus duplikat (padding/scroll ganda).
   return (
     <div
-      ref={containerRef}
-      className={`cd${fitScale < 1 ? ' cd-fit-width' : ''}`}
-      style={{ transform: `scale(${effectiveScale})`, transformOrigin: 'top left' }}
+      className="cd"
+      style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}
     >
       {renderedRows}
     </div>

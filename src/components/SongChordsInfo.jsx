@@ -256,17 +256,16 @@ export default function SongChordsInfo({
         )}
 
         {/* Baris mastery — 3 level: Belum Diulik / Perlu Latihan / Dikuasai.
-            Chip status = dropdown; klik membuka pilihan level. */}
+            Chip status = dropdown; class sama dengan chip di kartu lagu
+            (song-mastery-chip dari setlist-songs.css), tanpa wrapper khusus. */}
         <div className="song-info-control-row song-info-mastery-row">
-          <div className="song-info-mastery-picker" title="Pilih status penguasaan lagu">
+          <div className="song-info-row-control">
             <MasteryChip
               status={currentMasteryLevel}
               onStatusChange={handleMasteryLevelChange}
               updating={masteryUpdating}
               disabled={!canMarkMastery}
             />
-          </div>
-          <div className="song-info-row-control">
             {masteryUpdating && <span className="song-info-mastery-saving">Menyimpan…</span>}
           </div>
         </div>

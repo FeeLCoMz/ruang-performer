@@ -75,8 +75,9 @@ export default function TempoControl({
       >
         {isMetronomeActive ? "⏹" : "▶"}
       </button>
+      {/* Istilah tempo disembunyikan di layar sempit — hemat ruang baris kontrol. */}
       {!isCompact && !isMini && tempoTerm && (
-        <span className="song-info-tempo-term" title={`Istilah tempo: ${tempoTerm}`}>
+        <span className="song-info-tempo-term hide-on-narrow" title={`Istilah tempo: ${tempoTerm}`}>
           {tempoTerm}
         </span>
       )}

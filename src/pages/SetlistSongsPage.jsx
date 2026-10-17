@@ -163,10 +163,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
   const [activeVideoSong, setActiveVideoSong] = useState(null);
   const [isSequentialVideoMode, setIsSequentialVideoMode] = useState(false);
-  // "Lompat ke lagu": elemen baris lagu didaftarkan di sini agar bisa
-  // di-scroll & disorot langsung dari header, tanpa menggulir manual.
-  const songRowRefs = useRef(new Map());
-  const [highlightedSongId, setHighlightedSongId] = useState(null);
   // Playback position of the inline player, so the song's time markers can show
   // where you are and offer a jump to each section.
   const [videoPlayback, setVideoPlayback] = useState({ time: 0, duration: 0 });
@@ -1269,27 +1265,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
   }
 
-  // Buka lagu dengan cepat: scroll ke barisnya dan sorot sebentar.
-  function jumpToSong(songId) {
-    if (!songId) return;
-    // Pastikan lagu tidak tersembunyi oleh filter sebelum dicari.
-    if (hidePlayedSongs && completedSongs?.[songId] === true) {
-      setHidePlayedSongs(false);
-    }
-    if (filterSmartOnly && setlistSongMeta?.[songId]?.smartFeatured !== true) {
-      setFilterSmartOnly(false);
-    }
-    const rowEl = songRowRefs.current.get(String(songId));
-    if (rowEl) {
-      rowEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    setHighlightedSongId(songId);
-    window.setTimeout(() => {
-      setHighlightedSongId((current) => (current === songId ? null : current));
-    }, 2000);
-  }
-
-  // Buka detail lagu (halaman chord/player) — dipakai oleh kontrol cepat.
+  // Buka detail lagu (halaman chord/player).
   function openSongDetail(song) {
     if (!song) return;
     navigate(`/setlists/${setlist.id}/songs/${song.id}`, {
@@ -1592,53 +1568,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             onChange={(e) => setSearchText(e.target.value)}
             className="search-input-main"
           />
-          {/* Kontrol cepat: buka lagu mana pun tanpa menggulir daftar panjang.
-              Dua aksi: lompat ke baris (scroll) atau langsung buka detail lagu. */}
-          {setlistSongs.length > 0 && (
-            <div className="song-quick-access">
-              <select
-                className="song-jump-select"
-                value=""
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (!value) return;
-                  jumpToSong(value);
-                  e.target.value = '';
-                }}
-                aria-label="Lompat ke lagu dalam setlist"
-                title="Lompat ke lagu dalam setlist"
-              >
-                <option value="">🎯 Lompat ke lagu…</option>
-                {setlistSongs.map((song, index) => (
-                  <option key={song.id} value={song.id}>
-                    {index + 1}. {song.title}
-                    {completedSongs?.[song.id] === true ? ' ✓' : ''}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="song-open-select"
-                value=""
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (!value) return;
-                  const target = setlistSongs.find((song) => String(song.id) === String(value));
-                  openSongDetail(target);
-                  e.target.value = '';
-                }}
-                aria-label="Buka lagu dalam setlist"
-                title="Buka detail lagu"
-              >
-                <option value="">📖 Buka lagu…</option>
-                {setlistSongs.map((song, index) => (
-                  <option key={song.id} value={song.id}>
-                    {index + 1}. {song.title}
-                    {completedSongs?.[song.id] === true ? ' ✓' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
           <div className="filter-row">
             {/* Songs always follow the user's own order, so there is no sort
                 control. The only list control left is this switch. */}
@@ -1803,12 +1732,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
               <React.Fragment key={song.id}>
                 <SongCard
                   title={song.title}
-                  className={`${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}${highlightedSongId === song.id ? ' song-item-highlighted' : ''}`}
+                  className={`${isSmartFeatured ? ' song-item-smart-featured' : ''}${isCompleted ? ' song-item-completed' : ''}`}
                   isPlaying={isSongPlaying(song.id)}
-                  rowRef={(el) => {
-                    if (el) songRowRefs.current.set(String(song.id), el);
-                    else songRowRefs.current.delete(String(song.id));
-                  }}
                   /* Song-to-song reordering is done with the ⇅ button in the rail:
                      HTML5 drag-and-drop does not fire on touch devices, so the
                      old handle was a control that did nothing on a phone.
@@ -1954,17 +1879,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                         >
                           <span aria-hidden="true">🎬</span>
                           <span className="song-action-btn-label">Video</span>
-                        </button>
-                      )}
-                      {canEdit && (
-                        <button
-                          onClick={() => handleToggleSongCompleted(song.id)}
-                          className={`btn song-action-btn ${isCompleted ? '' : 'btn-secondary'}`}
-                          title={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
-                          aria-label={isCompleted ? 'Tandai belum dibawakan' : 'Tandai sudah dibawakan'}
-                        >
-                          <span aria-hidden="true">{isCompleted ? '✅' : '☑'}</span>
-                          <span className="song-action-btn-label">{isCompleted ? 'Batal' : 'Dibawakan'}</span>
                         </button>
                       )}
                       {canEdit && (

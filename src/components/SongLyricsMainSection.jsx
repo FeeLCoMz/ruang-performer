@@ -72,10 +72,6 @@ export default function SongLyricsMainSection({
   isYoutubePlaying = false,
   setlistNav = null,
   loading = false,
-  // Mode overlay lirik: dikelola parent (SongChordsPage) supaya tombol di
-  // SetlistNavFooter dan layer overlay di panel ini berbagi satu state.
-  overlayMode = false,
-  onOverlayClose,
 }) {
   // Preferensi tampilan panggung, dipersist di localStorage lintas sesi.
   const [fontScale, setFontScaleState] = useState(readStoredFontScale);
@@ -183,8 +179,6 @@ export default function SongLyricsMainSection({
               focusMode={focusMode}
               screenLocked={screenLocked}
               setlistNav={setlistNav}
-              overlayMode={overlayMode}
-              onOverlayClose={onOverlayClose}
             />
         )}
     </div>

@@ -222,11 +222,24 @@
 
 /* ========================================
    SETLIST NAV FOOTER (mobile)
-   Footer sticky navigasi lagu setlist ï¿½ duduk tepat di atas bottom nav.
+   Footer sticky navigasi lagu setlist — duduk tepat di atas bottom nav.
    Muncul di semua tab halaman lagu saat lagu dibuka dari setlist.
+   Desktop: tampil sebagai bar inline biasa saat berada dalam konteks
+   setlist (variant="inline" — dipakai SongChordsPage).
    ======================================== */
 .setlist-nav-footer {
   display: none;
+}
+
+/* Desktop: bar inline di bawah panel lagu saat dalam konteks setlist. */
+.setlist-nav-footer.setlist-nav-footer--inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border-color);
 }
 
 @media (max-width: 768px) {
@@ -282,7 +295,7 @@
   }
 }
 
-/* Sheet daftar lagu setlist (dibuka dari footer ?) */
+/* Sheet daftar lagu setlist (dibuka dari footer 📋/☰) */
 .setlist-nav-sheet-overlay {
   position: fixed;
   inset: 0;
@@ -442,3 +455,64 @@
   }
 }
 
+
+/* ========================================
+   UP NEXT — info lagu berikutnya di halaman lagu dalam setlist
+   Tampil setelah panel lirik: kartu kecil berisi lagu berikutnya
+   (klik untuk buka), atau tombol kembali ke setlist setelah lagu terakhir.
+   ======================================== */
+.setlist-up-next {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+
+.setlist-up-next-label {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.setlist-up-next-song {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary-accent) 8%, transparent);
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.setlist-up-next-song:hover {
+  background: color-mix(in srgb, var(--primary-accent) 16%, transparent);
+}
+
+.setlist-up-next-number {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--primary-accent);
+}
+
+.setlist-up-next-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}

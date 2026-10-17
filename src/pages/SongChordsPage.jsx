@@ -7,7 +7,6 @@ import SongMediaPanel from '../components/SongMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import { getAuthHeader } from '../utils/auth.js';import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
-import { STORAGE_KEYS } from '../utils/storageKeys.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
 import { useSongFetch } from '../hooks/useSongFetch.js';
 import { SongDetailSkeleton } from '../components/LoadingSkeleton.jsx';
@@ -228,22 +227,6 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
   // Switchable Mode autoscroll: 'MUSICAL' (BPM) / 'MANUAL' (Level 1-10)
   const [autoScrollMode, setAutoScrollMode] = useState('MUSICAL');
   const [manualSpeedLevel, setManualSpeedLevel] = useState(5);
-  // Mode overlay lirik: layer fullscreen di atas seluruh UI. State di halaman
-  // agar tombol di SetlistNavFooter dan layer overlay di panel lirik berbagi
-  // satu sumber kebenaran. Preferensi dipersist di localStorage.
-  const [overlayMode, setOverlayModeState] = useState(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEYS.LYRICS_OVERLAY) === '1';
-    } catch {
-      return false;
-    }
-  });
-  const setOverlayMode = (next) => {
-    setOverlayModeState(Boolean(next));
-    try {
-      localStorage.setItem(STORAGE_KEYS.LYRICS_OVERLAY, next ? '1' : '0');
-    } catch { /* ignore */ }
-  };
   const lyricsDisplayRef = useRef(null);
 
   // Real playback state for the timestamp play buttons. Without this the button
@@ -482,6 +465,8 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
         if (!songId) return;
         navigate(`/songs/view/${songId}`);
       },
+      // Kembali ke daftar lagu setlist aktif (tombol 📋 di footer + Up Next).
+      onOpenSetlist: () => navigate(`/setlists/${navSetlist.id}`),
       // Daftar lagu untuk sheet pilih-lagu (footer): nomor, judul, key, aktif
       songs: orderedSongs.map((s, i) => ({
         id: String(s?.id),
@@ -814,17 +799,17 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
           pianoRecommendation={pianoRecommendation}
           onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
           setlistNav={setlistNav}
-          overlayMode={overlayMode}
-          onOverlayClose={() => setOverlayMode(false)}
         />
       )}
 
-      {/* Footer sticky: navigasi lagu setlist (di atas bottom nav, mobile) */}
+      {/* Footer navigasi lagu setlist: sticky di mobile; di desktop tampil
+          sebagai bar inline saat dalam konteks setlist. Tombol 📋 membuka
+          setlist aktif dengan cepat dari lagu mana pun. */}
       <SetlistNavFooter
         setlistNav={setlistNav}
         allSongs={Array.isArray(songsProp) ? songsProp : []}
-        overlayMode={overlayMode}
-        onToggleOverlay={() => setOverlayMode(!overlayMode)}
+        variant="inline"
+        onOpenSetlist={setlistNav && setlistId ? () => navigate(`/setlists/${setlistId}`) : undefined}
       />
     </div>
   );

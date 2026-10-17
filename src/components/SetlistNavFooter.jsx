@@ -3,8 +3,9 @@ import React, { useEffect, useState } from 'react';
 /**
  * SetlistNavFooter
  * Footer sticky di atas bottom nav (mobile) saat lagu dibuka dari setlist:
- * tombol prev/next lagu + posisi lagu dalam setlist. Muncul di semua tab,
- * jadi pemain bisa pindah lagu tanpa kembali ke daftar setlist.
+ * tombol buka setlist aktif + prev/next lagu + posisi lagu dalam setlist.
+ * Muncul di semua tab, jadi pemain bisa pindah lagu tanpa kembali ke daftar
+ * setlist.
  *
  * Dipakai juga sebagai bar bawah saat MODE PENUH panel lirik (dari
  * SongLyricsMainSection) — footer mobile disembunyikan di lebar besar.
@@ -12,7 +13,7 @@ import React, { useEffect, useState } from 'react';
  * Desktop (>768px): disembunyikan di luar mode penuh — navigasi antar lagu
  * tetap tersedia di toolbar panel lirik.
  */
-export default function SetlistNavFooter({ setlistNav, allSongs = [], overlayMode = false, onToggleOverlay }) {
+export default function SetlistNavFooter({ setlistNav, allSongs = [], onOpenSetlist, variant = 'sticky' }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [query, setQuery] = useState('');
   const searchRef = React.useRef(null);
@@ -145,17 +146,22 @@ export default function SetlistNavFooter({ setlistNav, allSongs = [], overlayMod
         </div>
       )}
 
-      <div className="setlist-nav-footer setlist-nav-fullscreen" role="navigation" aria-label="Navigasi lagu setlist">
-        <button
-          type="button"
-          className={`btn btn-secondary setlist-nav-footer-btn${overlayMode ? ' active' : ''}`}
-          onClick={onToggleOverlay}
-          aria-pressed={overlayMode}
-          aria-label="Tampilkan lirik overlay"
-          title="Overlay lirik: tampilkan lirik fullscreen di atas UI"
-        >
-          <span aria-hidden="true">🖥️</span>
-        </button>
+      <div
+        className={`setlist-nav-footer setlist-nav-fullscreen${variant === 'inline' ? ' setlist-nav-footer--inline' : ''}`}
+        role="navigation"
+        aria-label="Navigasi lagu setlist"
+      >
+        {typeof onOpenSetlist === 'function' && (
+          <button
+            type="button"
+            className="btn btn-secondary setlist-nav-footer-btn"
+            onClick={onOpenSetlist}
+            aria-label="Buka setlist aktif"
+            title="Kembali ke daftar lagu setlist aktif"
+          >
+            <span aria-hidden="true">📋</span>
+          </button>
+        )}
         <button
           type="button"
           className="btn btn-secondary setlist-nav-footer-btn"

@@ -481,11 +481,11 @@ describe('Song lyrics shared editor rendering', () => {
     expect(footer).toBeTruthy();
     expect(footer.textContent).toContain('2/5');
     const buttons = footer.querySelectorAll('button');
-    // 4 tombol: prev, info posisi, next, plus tombol overlay lirik.
-    expect(buttons.length).toBe(4);
-    // Urutan tombol: overlay, prev, info posisi, next.
-    expect(buttons[1].disabled).toBe(false);
-    expect(buttons[3].disabled).toBe(true);
+    // 3 tombol: prev, info posisi, next. Tombol overlay lirik sudah dihapus.
+    expect(buttons.length).toBe(3);
+    // Urutan tombol: prev, info posisi, next.
+    expect(buttons[0].disabled).toBe(false);
+    expect(buttons[2].disabled).toBe(true);
   });
 
   test('Given SetlistNavFooter without nav, Then nothing renders', async () => {

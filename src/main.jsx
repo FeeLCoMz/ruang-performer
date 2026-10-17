@@ -15,7 +15,6 @@ import './styles/playback.css';
 import './styles/media-panel.css';
 import './styles/lyrics-page.css';
 import './styles/lyrics-capsules.css';
-import './styles/lyrics-overlay.css';
 import './styles/lyrics-editor.css';
 import './styles/virtual-piano.css';
 import './styles/mobile-polish.css';

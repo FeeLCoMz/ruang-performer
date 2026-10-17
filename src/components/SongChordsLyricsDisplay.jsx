@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import ReactDOM from "react-dom";
 import SongSheetMusic from "./SongSheetMusic.jsx";
 import ChordDisplay from "./ChordDisplay.jsx";
 import { transposeChord } from '../utils/chordUtils.js';
@@ -91,9 +90,8 @@ export default function SongChordsLyricsDisplay({
   fontScale = 1,
   focusMode = false,
   screenLocked = false,
-  // Mode overlay lirik: layer fullscreen di atas seluruh UI.
-  overlayMode = false,
-  onOverlayClose,
+  // Konteks setlist: untuk info lagu berikutnya (Up Next).
+  setlistNav = null,
 }) {
   const pinchStateRef = useRef({ active: false, startDistance: 0, startZoom: 1 });
   const zoomRef = useRef(zoom);
@@ -105,23 +103,7 @@ export default function SongChordsLyricsDisplay({
   // timestamp buttons and the fullscreen controls share one source of truth.
   const [visualBeat, setVisualBeat] = useState(0);
 
-  // Overlay lirik: ref panel overlay + tutup via Esc. Port lirik memakai
-  // portal ke body agar benar-benar di atas semua UI (sidebar, bottom nav).
-  const overlayRef = useRef(null);
-  useEffect(() => {
-    if (!overlayMode) return undefined;
-    const handleKey = (e) => {
-      if (e.key === 'Escape') onOverlayClose?.();
-    };
-    window.addEventListener('keydown', handleKey);
-    // Kunci scroll body agar latar belakang tidak ikut scroll.
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', handleKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [overlayMode, onOverlayClose]);
+  // Overlay lirik dihapus — fungsi fullscreen tampil kini ada di Stage Mode.
   // Mode autoscroll: 'MUSICAL' (BPM) atau 'MANUAL' (level 1-10).
   // Fallback state lokal bila parent belum mengelola mode ini.
   const [autoScrollModeLocal, setAutoScrollModeLocal] = useState(AUTO_SCROLL_MODES.MUSICAL);
@@ -470,66 +452,41 @@ export default function SongChordsLyricsDisplay({
           }
         }}
               />
-            </div>
+      </div>
 
-            {overlayMode && ReactDOM.createPortal(
-              <div
-                className="lyrics-overlay"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Lirik overlay"
-                ref={overlayRef}
+      {/* Info lagu berikutnya (Up Next) — tampil bila ada lagu setelah ini
+          dalam setlist aktif. Setelah lagu terakhir, tampil tombol kembali
+          ke daftar setlist. */}
+      {setlistNav && (setlistNav.hasNext || typeof setlistNav.onOpenSetlist === 'function') && (
+        <div className="setlist-up-next" role="complementary" aria-label="Lagu berikutnya">
+          {setlistNav.hasNext ? (
+            <>
+              <span className="setlist-up-next-label">Up Next</span>
+              <button
+                type="button"
+                className="setlist-up-next-song"
+                onClick={setlistNav.onNext}
+                title={`Buka: ${setlistNav.nextTitle}`}
               >
-                <div className="lyrics-overlay-header">
-                  <span className="lyrics-overlay-title">
-                    {song?.title || 'Lirik'}
-                    {song?.artist && <span className="lyrics-overlay-artist"> — {song.artist}</span>}
-                  </span>
-                  {targetKey && <span className="lyrics-overlay-key">{targetKey}</span>}
-                  {/* LED tempo + angka BPM — setelah key, gaya pill seperti key. */}
-                  <span
-                    className="song-lyrics-tempo-led-compact lyrics-overlay-tempo-led"
-                    title={`Tempo ${normalizedBpm} BPM`}
-                  >
-                    <span
-                      className="song-info-tempo-led"
-                      style={{ animationDuration: `${Math.round(60000 / normalizedBpm)}ms` }}
-                      aria-hidden="true"
-                    />
-                    <span className="song-lyrics-tempo-led-compact-text" aria-live="polite">
-                      {normalizedBpm}
-                    </span>
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-secondary lyrics-overlay-close"
-                    onClick={() => onOverlayClose?.()}
-                    aria-label="Tutup overlay lirik"
-                    title="Tutup overlay (Esc)"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="lyrics-overlay-body song-lyrics-display">
-                  <ChordDisplay
-                    song={song}
-                    transpose={transpose}
-                    zoom={zoom}
-                    fontScale={fontScale}
-                    currentBeat={activeVisualBeat}
-                    timeSignature={timeSignature || song?.time_signature || '4/4'}
-                    showChords={effectiveShowChords}
-                    showChordNumbers={showChordNumbers}
-                    showJazzChords={showJazzChords}
-                    showSimpleChords={showSimpleChords}
-                    keySignature={keySignature || song?.key || 'C'}
-                    isPlaying={isYoutubePlaying}
-                    focusSectionKey={focusMode ? activeFocusSection : null}
-                  />
-                </div>
-              </div>,
-              document.body,
-            )}
-          </>
-        );
-      }
+                <span className="setlist-up-next-number" aria-hidden="true">
+                  {setlistNav.songNumber + 1}
+                </span>
+                <span className="setlist-up-next-title">{setlistNav.nextTitle || 'Lagu berikutnya'}</span>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="setlist-up-next-song"
+              onClick={setlistNav.onOpenSetlist}
+              title="Kembali ke daftar setlist"
+            >
+              <span className="setlist-up-next-number" aria-hidden="true">🏁</span>
+              <span className="setlist-up-next-title">Lagu terakhir — kembali ke setlist</span>
+            </button>
+          )}
+        </div>
+      )}
+    </>
+  );
+}

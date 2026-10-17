@@ -524,6 +524,13 @@
   white-space: nowrap;
 }
 
+/* Istilah tempo tak perlu di layar sempit — baris kontrol Tempo sudah padat. */
+@media (max-width: 640px) {
+  .song-info-tempo-term.hide-on-narrow {
+    display: none;
+  }
+}
+
 .song-info-tempo-unit {
   font-size: var(--font-size-xs);
   color: var(--text-muted);
@@ -1181,34 +1188,8 @@
   font-weight: 600;
 }
 
-/* Mastery 3-level picker: chip pilihan (Belum Diulik / Perlu Latihan / Dikuasai) */
-.song-info-mastery-picker {
-  display: flex;
-  gap: var(--spacing-xs);
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.song-info-mastery-picker .song-mastery-chip {
-  cursor: pointer;
-  opacity: 0.55;
-  transition: opacity var(--transition-fast), border-color var(--transition-fast);
-}
-
-.song-info-mastery-picker .song-mastery-chip:hover:not(:disabled) {
-  opacity: 0.85;
-}
-
-.song-info-mastery-picker .song-mastery-chip.selected {
-  opacity: 1;
-  border-width: 2px;
-  font-weight: 700;
-}
-
-.song-info-mastery-picker .song-mastery-chip:disabled {
-  cursor: not-allowed;
-  opacity: 0.3;
-}
+/* Mastery 3-level: chip memakai class sama dengan chip kartu lagu
+   (.song-mastery-chip di setlist-songs.css) — tanpa class picker tambahan. */
 
 .song-info-mastery-saving {
   font-size: 0.8em;
