@@ -27,6 +27,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-color);
 }
 
 /* Semua baris kontrol & chip memakai tinggi sama supaya tab Info rapi */
@@ -1152,6 +1154,25 @@
   margin-bottom: var(--spacing-lg);
 }
 
+/* Tab panel side (Video | Chord | Dalam Setlist): kartu konten sejajar
+   dengan panel lirik — satu bahasa visual. */
+.song-tabs.song-tabs-side {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Item setlist dalam kartu setlist di kolom kanan — padat & bisa diklik */
+.song-containing-setlist-item {
+  min-height: 44px;
+}
+
 .song-tabs-bar {
   display: flex;
   gap: var(--spacing-xs);
@@ -1169,6 +1190,7 @@
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
+  white-space: nowrap;
   transition: color var(--transition-fast), border-color var(--transition-fast);
 }
 
@@ -1196,9 +1218,19 @@
   color: var(--text-muted);
 }
 
-/* Media panel selalu terbuka (tab Media) ï¿½ tanpa header expand */
+/* Media panel selalu terbuka (tab Video) — tanpa header expand */
 .media-panel .media-panel-content {
   display: grid;
+}
+
+/* Panel lirik & tab panel sama tinggi di desktop: kolom kanan tidak
+   menyisakan ruang kosong saat lirik panjang. */
+@media (min-width: 901px) {
+  .song-lyrics-tabs-grid > .song-tabs-side {
+    max-height: 100%;
+    position: sticky;
+    top: 16px;
+  }
 }
 
 /* Setlist memuat lagu: selalu terbuka di tab Info */
