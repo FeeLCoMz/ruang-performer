@@ -12,15 +12,6 @@ import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
 import TransposeKeyControl from '../components/TransposeKeyControl.jsx';
 import SongChordsPage from '../pages/SongChordsPage.jsx';
 
-vi.mock('../components/SetlistSongNavigator.jsx', () => ({
-  default: ({ compact, onOpenSetlist }) => (
-    <div data-testid="setlist-navigator">
-      {compact ? 'compact' : 'full'}
-      {typeof onOpenSetlist === 'function' ? '|has-open-setlist' : ''}
-    </div>
-  ),
-}));
-
 vi.mock('../components/SongMediaPanel.jsx', () => ({
   default: () => <div data-testid="song-chords-media-panel" />,
 }));
@@ -765,7 +756,8 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    expect(container.querySelector('[data-testid="setlist-navigator"]')).toBeNull();
+    // Navigator setlist sudah tidak ada lagi di aplikasi.
+    expect(container.querySelector('.setlist-song-navigator')).toBeNull();
   });
 
   test('Given a song is opened from a setlist, Then keyboard key recommendation uses the original song key', async () => {

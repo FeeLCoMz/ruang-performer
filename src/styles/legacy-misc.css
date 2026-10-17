@@ -1,4 +1,4 @@
-﻿/* ===== Song Contributor Modern ===== */
+/* ===== Song Contributor Modern ===== */
 .song-contributor-main {
   font-size: 0.9em;
   color: var(--text-secondary);
@@ -733,7 +733,7 @@
   box-shadow: var(--shadow-sm);
   margin-bottom: 24px;
   /* Padding seragam untuk semua tab panel lagu (Header, Lirik, tab samping):
-     lebih lega (xl) di semua sisi — desktop maupun mobile sama. */
+     lebih lega (xl) di semua sisi � desktop maupun mobile sama. */
   padding: var(--spacing-xl);
   display: flex;
   flex-direction: column;
@@ -746,172 +746,6 @@
     margin-bottom: var(--spacing-lg);
   }
 }
-/* ========================================
-   SETLIST SONG NAVIGATOR COMPONENT
-   ======================================== */
-.setlist-song-navigator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  width: 100%;
-  padding: 16px 20px;
-  margin-bottom: 24px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.setlist-song-navigator-compact {
-  gap: 8px;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-  border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(15, 23, 42, 0.04));
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-}
-
-.setlist-song-navigator-compact .setlist-nav-btn {
-  padding: 8px 12px;
-  min-width: 44px;
-  justify-content: center;
-  border-radius: var(--radius-md);
-}
-
-.setlist-song-navigator-compact .setlist-song-info {
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 10px;
-  min-height: 40px;
-}
-.setlist-nav-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  min-height: 42px;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--primary-bg);
-  color: var(--text-primary);
-  transition:
-    opacity var(--transition-fast),
-    cursor var(--transition-fast);
-}
-.setlist-nav-open-list-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  margin-left: auto;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--primary-bg);
-  color: var(--text-primary);
-}
-
-.setlist-nav-open-list-btn-compact {
-  min-height: 36px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  font-size: 0.86rem;
-}
-
-.setlist-song-navigator-compact .setlist-nav-open-list-btn {
-  order: 4;
-  margin-left: auto;
-}
-.setlist-nav-btn.disabled,
-.setlist-nav-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.setlist-song-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 20px;
-  background: var(--primary-bg);
-  border-radius: 18px;
-  border: 1px solid var(--border-color);
-  font-weight: 600;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
-}
-.setlist-song-info-label {
-  font-size: 0.85em;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-.setlist-song-info-number {
-  font-size: 1.1em;
-  font-weight: 700;
-  color: var(--primary-accent);
-}
-.setlist-song-info-total {
-  font-size: 1em;
-  font-weight: 600;
-  color: var(--text-primary);
-}@media (max-width: 600px){
-  .setlist-song-navigator-compact {
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    width: 100%;
-    padding: 8px 10px;
-    gap: 6px;
-    border-radius: 18px;
-  }
-
-  .setlist-song-navigator-compact .setlist-nav-btn,
-  .setlist-song-navigator-compact .setlist-nav-open-list-btn {
-    flex: 0 0 auto;
-    min-width: 38px;
-    min-height: 36px;
-    padding: 6px 8px;
-  }
-
-  .setlist-song-navigator-compact .setlist-nav-open-list-btn {
-    order: 0;
-    margin-left: 0;
-  }
-
-  .setlist-song-navigator-compact .setlist-song-info {
-    flex: 1 1 auto;
-    min-width: 0;
-    width: auto;
-    justify-content: center;
-    padding: 6px 8px;
-    min-height: 34px;
-    gap: 4px;
-    font-size: 0.88rem;
-  }
-
-  .setlist-song-navigator-compact .setlist-song-info-label {
-    font-size: 0.68rem;
-  }
-
-  .setlist-song-navigator-compact .setlist-song-info-number,
-  .setlist-song-navigator-compact .setlist-song-info-total {
-    font-size: 0.96rem;
-  }}@media (max-width: 420px){
-  .setlist-song-navigator-compact {
-    gap: 5px;
-    padding-inline: 8px;
-  }
-
-  .setlist-song-navigator-compact .setlist-nav-btn,
-  .setlist-song-navigator-compact .setlist-nav-open-list-btn {
-    min-width: 34px;
-    min-height: 32px;
-    padding: 5px 7px;
-  }
-
-  .setlist-song-navigator-compact .setlist-song-info {
-    gap: 3px;
-    padding: 5px 6px;
-    letter-spacing: 0.01em;
-  }}
 /* ========== CUSTOM UTILITY FOR SONGCHORDSPAGE ========== */
 .info-text-margin {
   margin-bottom: 16px;
@@ -1602,7 +1436,7 @@ body.dark-mode .song-mood-badge.mood-peak {
   flex-wrap: wrap;
 }
 
-/* Dropdown menu mastery chip tampil keluar dari batas kartu — kartu jangan
+/* Dropdown menu mastery chip tampil keluar dari batas kartu � kartu jangan
    memotongnya (clip) supaya pilihan status tetap bisa diklik. */
 .song-heading-status {
   position: relative;

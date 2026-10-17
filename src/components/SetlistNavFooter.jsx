@@ -2,16 +2,13 @@ import React, { useEffect, useState } from 'react';
 
 /**
  * SetlistNavFooter
- * Footer sticky di atas bottom nav (mobile) saat lagu dibuka dari setlist:
- * tombol buka setlist aktif + prev/next lagu + posisi lagu dalam setlist.
- * Muncul di semua tab, jadi pemain bisa pindah lagu tanpa kembali ke daftar
- * setlist.
+ * Navigasi lagu setlist yang responsif di semua lebar layar:
+ * - Mobile (≤768px): footer sticky di atas bottom nav.
+ * - Desktop (>768px): bar inline di bawah panel lagu.
  *
- * Dipakai juga sebagai bar bawah saat MODE PENUH panel lirik (dari
- * SongLyricsMainSection) — footer mobile disembunyikan di lebar besar.
- *
- * Desktop (>768px): disembunyikan di luar mode penuh — navigasi antar lagu
- * tetap tersedia di toolbar panel lirik.
+ * Isi: info posisi lagu (klik = sheet daftar lagu + pencarian),
+ * prev/next dengan judul lagu (label disembunyikan otomatis di layar sempit),
+ * dan tombol buka setlist aktif.
  */
 export default function SetlistNavFooter({ setlistNav, allSongs = [], onOpenSetlist, variant = 'sticky' }) {
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -151,27 +148,9 @@ export default function SetlistNavFooter({ setlistNav, allSongs = [], onOpenSetl
         role="navigation"
         aria-label="Navigasi lagu setlist"
       >
-        {typeof onOpenSetlist === 'function' && (
-          <button
-            type="button"
-            className="btn btn-secondary setlist-nav-footer-btn"
-            onClick={onOpenSetlist}
-            aria-label="Buka setlist aktif"
-            title="Kembali ke daftar lagu setlist aktif"
-          >
-            <span aria-hidden="true">📋</span>
-          </button>
-        )}
-        <button
-          type="button"
-          className="btn btn-secondary setlist-nav-footer-btn"
-          onClick={setlistNav.onPrev}
-          disabled={!setlistNav.hasPrev}
-          aria-label="Lagu sebelumnya"
-          title={setlistNav.prevTitle || 'Lagu sebelumnya'}
-        >
-          <span aria-hidden="true">←</span>
-        </button>
+        {/* Tengah: info posisi lagu — klik untuk buka sheet daftar lagu.
+            Flex: 1 1 auto supaya tiga zona (setlist, prev/next, info) berbagi
+            lebar secara merata di lebar layar apa pun. */}
         <button
           type="button"
           className="setlist-nav-footer-info setlist-nav-footer-info-btn"
@@ -185,14 +164,41 @@ export default function SetlistNavFooter({ setlistNav, allSongs = [], onOpenSetl
         </button>
         <button
           type="button"
-          className="btn btn-secondary setlist-nav-footer-btn"
+          className="btn btn-secondary setlist-nav-footer-btn setlist-nav-footer-btn--prev"
+          onClick={setlistNav.onPrev}
+          disabled={!setlistNav.hasPrev}
+          aria-label="Lagu sebelumnya"
+          title={setlistNav.prevTitle ? `Sebelumnya: ${setlistNav.prevTitle}` : 'Lagu sebelumnya'}
+        >
+          <span aria-hidden="true">←</span>
+          {setlistNav.prevTitle && (
+            <span className="setlist-nav-footer-btn-label">{setlistNav.prevTitle}</span>
+          )}
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary setlist-nav-footer-btn setlist-nav-footer-btn--next"
           onClick={setlistNav.onNext}
           disabled={!setlistNav.hasNext}
           aria-label="Lagu berikutnya"
-          title={setlistNav.nextTitle || 'Lagu berikutnya'}
+          title={setlistNav.nextTitle ? `Berikutnya: ${setlistNav.nextTitle}` : 'Lagu berikutnya'}
         >
           <span aria-hidden="true">→</span>
+          {setlistNav.nextTitle && (
+            <span className="setlist-nav-footer-btn-label">{setlistNav.nextTitle}</span>
+          )}
         </button>
+        {typeof onOpenSetlist === 'function' && (
+          <button
+            type="button"
+            className="btn btn-secondary setlist-nav-footer-btn setlist-nav-footer-btn--setlist"
+            onClick={onOpenSetlist}
+            aria-label="Buka setlist aktif"
+            title="Kembali ke daftar lagu setlist aktif"
+          >
+            <span aria-hidden="true">📋</span>
+          </button>
+        )}
       </div>
     </>
   );

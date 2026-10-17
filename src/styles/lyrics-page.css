@@ -130,7 +130,6 @@
 .song-info-item .song-info-value {
   flex: 1 1 auto;
   min-width: 0;
-  text-align: right;
   white-space: normal;
   word-break: break-word;
 }
@@ -257,7 +256,7 @@
   font-weight: 600;
   color: var(--text-muted);
   text-decoration: line-through;
-  font-family: "Courier New", monospace;
+  font-family: inherit;
 }
 
 .song-info-key-arrow {
@@ -274,7 +273,7 @@
   padding: var(--spacing-xs);
   background: var(--secondary-bg);
   border-radius: var(--radius-sm);
-  font-family: "Courier New", monospace;
+  font-family: inherit;
 }
 
 /* Transpose Key Control Component */
@@ -548,7 +547,7 @@
   font-size: var(--font-size-base);
   font-weight: 700;
   color: var(--text-primary);
-  font-family: "Courier New", monospace;
+  font-family: inherit;
 }
 
 .song-info-mastery-count {

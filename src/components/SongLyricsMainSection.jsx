@@ -151,7 +151,6 @@ export default function SongLyricsMainSection({
         setScreenLocked={setScreenLocked}
         displayMode={displayMode}
         setDisplayMode={setDisplayMode}
-        tempo={tempo}
       />
 
         {loading ? (
