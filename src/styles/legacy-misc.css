@@ -1601,7 +1601,11 @@ body.dark-mode .song-mood-badge.mood-peak {
   flex-wrap: wrap;
 }
 
+/* Dropdown menu mastery chip tampil keluar dari batas kartu — kartu jangan
+   memotongnya (clip) supaya pilihan status tetap bisa diklik. */
 .song-heading-status {
+  position: relative;
+  z-index: 5;
   display: inline-flex;
   align-items: center;
   gap: 6px;

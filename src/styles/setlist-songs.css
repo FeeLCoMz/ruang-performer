@@ -1098,18 +1098,40 @@ button.song-mastery-chip:not(:disabled):hover {
   justify-content: center;
 }
 
-/* Tombol aksi dengan label teks: ikon + label, target tetap mudah ditekan */
+/* Tombol aksi dengan label teks: ikon + label, target tetap mudah ditekan.
+   Gaya sama di desktop dan mobile — satu bahasa visual untuk semua lebar layar. */
 .song-action-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 34px;
+  min-height: 44px;
+  height: 44px;
   padding: 0 12px;
-  border-radius: 999px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
+}
+
+/* Warna tombol aksi: biru = aksi utama, merah = danger — latar tipis dan warna
+   di ikon/border, bukan blok penuh, agar baris tombol tidak terasa ramai. */
+.song-action-btn:not(.btn-red):not(.btn-secondary) {
+  background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--primary-accent) 32%, transparent);
+  color: var(--primary-accent);
+}
+
+.song-action-btn.btn-secondary {
+  background: color-mix(in srgb, var(--secondary-bg) 70%, transparent);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.song-action-btn.btn-red {
+  background: color-mix(in srgb, #dc2626 12%, transparent);
+  border-color: color-mix(in srgb, #dc2626 34%, transparent);
+  color: #f87171;
 }
 
 .song-action-btn-label {

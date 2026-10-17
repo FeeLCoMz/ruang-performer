@@ -180,43 +180,20 @@
 
   .song-item .song-actions {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: flex-end;
     gap: 8px;
     padding-top: 10px;
     border-top: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent);
   }
 
-  /* Target sentuh besar: label tetap terbaca pada layar sempit. */
-  .song-item .song-actions .btn,
-  .song-item .song-action-btn,
-  .song-list-container .song-actions .btn {
-    height: 44px;
-    min-height: 44px;
-    border-radius: var(--radius-md);
-    font-size: 0.82rem;
+  /* Target sentuh besar: tinggi tombol sama dengan desktop (sudah di style umum).
+     Label teks disembunyikan di layar sempit — cukup ikon, tooltip tetap ada. */
+  .song-item .song-actions .btn .song-action-btn-label {
+    display: none;
+  }
+
+  .song-item .song-actions .btn {
     padding: 0 12px;
-  }
-
-  /* The row of actions keeps its semantics (blue = primary, red = danger) but
-     drops the filled backgrounds, so five saturated buttons stop reading as a
-     row of candy. Colour moves to the icon and border instead. */
-  .song-item .song-actions .btn:not(.btn-red),
-  .song-item .song-action-btn {
-    background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
-    border-color: color-mix(in srgb, var(--primary-accent) 32%, transparent);
-    color: var(--primary-accent);
-  }
-
-  .song-item .song-actions .btn-secondary.song-action-btn {
-    background: color-mix(in srgb, var(--secondary-bg) 70%, transparent);
-    border-color: var(--border-color);
-    color: var(--text-secondary);
-  }
-
-  .song-item .song-actions .btn-red {
-    background: color-mix(in srgb, #dc2626 12%, transparent);
-    border-color: color-mix(in srgb, #dc2626 34%, transparent);
-    color: #f87171;
   }
 
   /* ---- Inline player ---- */

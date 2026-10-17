@@ -172,7 +172,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   const [masteryUpdatingId, setMasteryUpdatingId] = useState(null);
   const [masteryError, setMasteryError] = useState('');
   const handleMasteryChange = async (song, nextStatus) => {
-    if (!viewerId) {
+    const currentUserId = String(effectiveUser?.userId || effectiveUser?.id || '');
+    if (!currentUserId) {
       setMasteryError('Masuk untuk menandai status penguasaan lagu.');
       return;
     }
@@ -1720,8 +1721,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             const mood = inferSongMood(song);
             // Status mastery dari data base song (masteredBy berisi entri
             // { userId, status: 'mastered' | 'learning' }).
-            const viewerId = String(effectiveUser?.userId || effectiveUser?.id || '');
-            const ownMasteryEntry = Array.isArray(baseSong?.masteredBy)
+            const viewerId = String(effectiveUser?.userId || effectiveUser?.id || '');            const ownMasteryEntry = Array.isArray(baseSong?.masteredBy)
               ? baseSong.masteredBy.find((entry) => String(entry?.userId) === viewerId)
               : null;
             // Override lokal (chip diubah) diprioritaskan di atas data base song.
