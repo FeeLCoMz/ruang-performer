@@ -51,6 +51,7 @@ const parseBeatsPerBar = (timeSignature) => {
  *   - setCurrentBeat
  *   - showSheetMusic
  *   - setShowSheetMusic
+ *   - showChords — switch tampilan chord (false = lirik saja)
  */
 export default function SongChordsLyricsDisplay({
   isEditingLyrics,
@@ -258,6 +259,7 @@ export default function SongChordsLyricsDisplay({
   const normalizedScrollSpeed = Math.max(40, Math.min(240, Number(scrollSpeed) || normalizedBpm));
   const beatsPerBar = parseBeatsPerBar(timeSignature || song?.time_signature || '4/4');
   const effectiveShowChords = showChords;
+  const effectiveShowLyrics = true;
 
   // Autoscroll: Switchable Mode.
   // - MUSICAL: kecepatan dihitung dari parameter musik. T_baris =
@@ -313,12 +315,15 @@ export default function SongChordsLyricsDisplay({
         return computeManualScrollSpeed({ userSpeedLevel: manualSpeedLevel });
       }
       // Mode musik: dari BPM + time signature + bar/chord per baris.
+      // BPM yang dipakai adalah scrollSpeed (BPM efektif) — tombol −/+ di
+      // toolbar mengubah nilai ini; default-nya tempo lagu. Tanpa ini,
+      // perubahan tombol −/+ tidak memengaruhi kecepatan scroll nyata.
       const metrics = measureLineMetrics();
       const params = {
         lineHeightsPx: metrics.lineHeightsPx,
         barCount: metrics.barCount,
         chordCount: metrics.chordCount,
-        bpm: normalizedBpm,
+        bpm: normalizedScrollSpeed,
         timeSignatureNumerator: beatsPerBar,
         beatsPerChord: beatsPerBar,
       };
@@ -356,7 +361,7 @@ export default function SongChordsLyricsDisplay({
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, [autoScrollActive, autoScrollMode, manualSpeedLevel, normalizedBpm, beatsPerBar, lyricsDisplayRef, setAutoScrollActive, song?.id, showChords, showChordNumbers, showJazzChords, showSimpleChords, zoom]);
+  }, [autoScrollActive, autoScrollMode, manualSpeedLevel, normalizedBpm, normalizedScrollSpeed, beatsPerBar, lyricsDisplayRef, setAutoScrollActive, song?.id, showChords, showChordNumbers, showJazzChords, showSimpleChords, zoom]);
 
   // Indikator ketukan visual saat autoscroll nonaktif.
   useEffect(() => {
@@ -435,6 +440,7 @@ export default function SongChordsLyricsDisplay({
         currentBeat={activeVisualBeat}
         timeSignature={timeSignature || song?.time_signature || '4/4'}
         showChords={effectiveShowChords}
+        showLyrics={effectiveShowLyrics}
         showChordNumbers={showChordNumbers}
         showJazzChords={showJazzChords}
         showSimpleChords={showSimpleChords}

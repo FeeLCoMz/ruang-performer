@@ -683,6 +683,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
           tempo={tempo}
           autoScrollActive={autoScrollActive}
           setAutoScrollActive={setAutoScrollActive}
+          scrollSpeed={scrollSpeed}
           setScrollSpeed={setScrollSpeed}
           autoScrollMode={autoScrollMode}
           setAutoScrollMode={setAutoScrollMode}

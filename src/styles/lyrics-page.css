@@ -1390,10 +1390,10 @@
     min-height: 480px;
   }
 }
-  /* Tanpa max-height/overflow di sini: satu scrollbar saja, milik
-      .song-lyrics-display di dalamnya. Dua kontainer yang sama-sama scroll
-      menghasilkan 2 scrollbar bertumpuk. */
-}
+
+/* Tanpa max-height/overflow di sini: satu scrollbar saja, milik
+   .song-lyrics-display di dalamnya. Dua kontainer yang sama-sama scroll
+   menghasilkan 2 scrollbar bertumpuk. */
 
 .song-lyrics-main .song-lyrics-display {
   flex: 1;
@@ -1618,4 +1618,19 @@
 /* Song header di atas tab: jarak antar-seksi halaman lagu. */
 .page-container > .song-panel:first-child {
   margin-bottom: 12px;
+}
+
+/* Di layar sempit panel lirik & tab tidak boleh memicu scroll horizontal
+   halaman: .cd ber-white-space:pre mendorong lebar panel, jadi kedua kolom
+   dikunci ke lebar kontainer. */
+@media (max-width: 900px) {
+  .song-lyrics-main,
+  .song-tabs.song-tabs-side {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .song-lyrics-main .song-lyrics-display {
+    max-width: 100%;
+  }
 }

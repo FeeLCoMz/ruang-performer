@@ -56,6 +56,7 @@ const ChordDisplayBase = memo(function ChordDisplay({
     transpose = 0,
     zoom = 1,
     showChords = true,
+    showLyrics = true,
     showChordNumbers = false,
     showJazzChords = false,
     showSimpleChords = false,
@@ -286,6 +287,9 @@ const ChordDisplayBase = memo(function ChordDisplay({
       return;
     }
 
+    if (!showLyrics) {
+      return;
+    }
     renderedRows.push(
       <div key={i} className={`cd-lyrics${syncClass(lineObj)}${focusRowClass()}`}>
         {lineObj.tokens.map((t, j) => {

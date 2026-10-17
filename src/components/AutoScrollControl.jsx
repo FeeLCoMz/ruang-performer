@@ -68,6 +68,7 @@ export default function AutoScrollControl({
         aria-pressed={autoScrollActive}
       >
         <span aria-hidden="true">↕</span>
+        <span className="song-lyrics-autoscroll-btn-label">Scroll</span>
       </button>
 
       <button
@@ -78,6 +79,7 @@ export default function AutoScrollControl({
         title={isManualMode ? 'Mode Manual: kecepatan dari level (1-10)' : 'Mode Musik: kecepatan mengikuti tempo lagu (BPM)'}
       >
         <span aria-hidden="true">{isManualMode ? '≡' : '♪'}</span>
+        <span className="song-lyrics-autoscroll-btn-label">{isManualMode ? 'Manual' : 'Musik'}</span>
       </button>
 
       <button
@@ -100,7 +102,7 @@ export default function AutoScrollControl({
       <span className="song-lyrics-autoscroll-value" aria-live="polite">
         {isManualMode ? manualSpeedLevel : currentScrollSpeed}
         {size !== 'mini' && (
-          <span className="song-lyrics-autoscroll-unit" aria-hidden="true">{isManualMode ? 'Lv' : 'BPM'}</span>
+          <span className="song-lyrics-autoscroll-unit" aria-hidden="true">{isManualMode ? 'Level' : 'BPM'}</span>
         )}
       </span>
 

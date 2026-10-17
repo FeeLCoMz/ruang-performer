@@ -17,6 +17,8 @@ export const STORAGE_KEYS = {
   LYRICS_FONT_SCALE: 'ruangperformer_lyrics_font_scale_v1',
   LYRICS_FOCUS_MODE: 'ruangperformer_lyrics_focus_mode_v1',
   LYRICS_LOCK: 'ruangperformer_lyrics_lock_v1',
+  // Switch tampilan chord di panel lirik ('1' = tampil, '0' = sembunyikan).
+  LYRICS_SHOW_CHORDS: 'ruangperformer_lyrics_show_chords_v1',
   // Stage Mode: tema kontras tinggi untuk panggung (toggle di app header).
   STAGE_MODE: 'ruangperformer_stage_mode_v1',
   // Stage Mode: pilihan band, setlist, dan lagu aktif (persist lintas sesi).

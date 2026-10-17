@@ -19,18 +19,20 @@
   background: color-mix(in srgb, var(--primary-accent) 10%, var(--secondary-bg) 85%, transparent);
 }
 
+/* Tombol autoscroll: ikon + label (label hanya di desktop, lihat media query) */
 .song-lyrics-autoscroll-toggle {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 34px;
-  height: 32px;
-  padding: 0;
+  gap: 3px;
+  min-width: 28px;
+  height: 26px;
+  padding: 0 6px;
   border: none;
   border-radius: 999px;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
   cursor: pointer;
   transition: color var(--transition-fast), background var(--transition-fast);
 }
@@ -41,15 +43,19 @@
 }
 
 .song-lyrics-autoscroll-capsule .song-lyrics-autoscroll-mode {
-  min-width: 30px;
-  height: 32px;
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
   justify-content: center;
   border: none;
   border-radius: 999px;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.72rem;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -62,14 +68,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  height: 30px;
+  min-width: 24px;
+  height: 26px;
   padding: 0;
   border: none;
   border-radius: 999px;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
 }
 
@@ -82,9 +88,9 @@
   display: inline-flex;
   align-items: baseline;
   gap: 3px;
-  min-width: 64px;
+  min-width: 56px;
   justify-content: center;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
@@ -100,14 +106,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  height: 30px;
+  min-width: 24px;
+  height: 26px;
   padding: 0;
   border: none;
   border-radius: 999px;
   background: transparent;
   color: var(--primary-accent);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   cursor: pointer;
 }
 
@@ -211,6 +217,11 @@
    Menu overflow (?): grup jarang-dipakai disembunyikan sampai tombol ?
    ditekan. Tombol ? sendiri hanya ada di mobile (desktop: tampil normal). */
 @media (max-width: 768px) {
+  /* Label tombol autoscroll disembunyikan di HP — ikon saja */
+  .song-lyrics-autoscroll-btn-label {
+    display: none;
+  }
+
   .song-lyrics-toolbar-group-autoscroll .song-lyrics-toolbar-btn-label,
   .song-lyrics-autoscroll-mode-label {
     display: none;

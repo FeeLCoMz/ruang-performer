@@ -9,6 +9,9 @@ import { AUTO_SCROLL_MODES, normalizeAutoScrollMode } from '../utils/autoscrollS
  *
  * Kontrol transpose key & tempo dihapus dari toolbar: tersedia di header lagu
  * dan panel media. Kontrol lama lain (gaya chord, YouTube) juga sudah dihapus.
+ *
+ * Tampilan chord: switch "Tampilkan Chord" — saat off, panel hanya menampilkan
+ * lirik (chord disembunyikan).
  */
 export default function SongChordsLyricsToolbar({
   // Autoscroll lirik
@@ -26,6 +29,9 @@ export default function SongChordsLyricsToolbar({
   setFocusMode,
   screenLocked = false,
   setScreenLocked,
+  // Switch tampilan chord: on = lirik + chord, off = lirik saja.
+  showChords = true,
+  setShowChords,
   // Tempo (dipakai indikator autoscroll musik saja)
   tempo,
 }) {
@@ -50,8 +56,30 @@ export default function SongChordsLyricsToolbar({
         tempo={tempo}
       />
 
-      {/* Grup tampilan: font size, mode fokus, lock layar */}
+      {/* Grup tampilan: switch chord, font size, mode fokus, lock layar */}
       <div className="song-lyrics-toolbar-group song-lyrics-toolbar-group-viewmode" role="group" aria-label="Tampilan lirik">
+        {/* Switch tampilkan chord: on = lirik + chord, off = lirik saja */}
+        <label
+          className="song-lyrics-chord-switch"
+          htmlFor="song-lyrics-show-chords"
+          title={showChords ? 'Sembunyikan chord (lirik saja)' : 'Tampilkan chord di atas lirik'}
+        >
+          <input
+            id="song-lyrics-show-chords"
+            type="checkbox"
+            className="song-lyrics-chord-checkbox"
+            checked={Boolean(showChords)}
+            disabled={typeof setShowChords !== 'function'}
+            onChange={(e) => setShowChords?.(e.target.checked)}
+          />
+          <span className="song-lyrics-chord-track" aria-hidden="true">
+            <span className="song-lyrics-chord-knob" />
+          </span>
+          <span className="song-lyrics-chord-text">Chord</span>
+        </label>
+
+        <span className="song-lyrics-toolbar-divider" aria-hidden="true" />
+
         <div className="song-lyrics-font-control" role="group" aria-label="Ukuran font lirik">
           <button
             type="button"

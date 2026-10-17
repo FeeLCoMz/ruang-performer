@@ -1393,5 +1393,18 @@ body.dark-mode .song-lyrics-error {
 
   .song-lyrics-analyzer-grid {
     grid-template-columns: 1fr;
-  }}
+  }
+
+  /* Layar sangat sempit: padding panel dikurangi agar konten tidak mepet
+     melebihi lebar layar HP. */
+  .song-lyrics-main,
+  .song-tabs.song-tabs-side {
+    padding: var(--spacing-md);
+  }
+
+  .song-lyrics-display {
+    padding: var(--spacing-md);
+    min-height: 320px;
+  }
+}
 

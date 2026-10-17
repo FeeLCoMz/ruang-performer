@@ -77,6 +77,15 @@ export default function SongLyricsMainSection({
   const [fontScale, setFontScaleState] = useState(readStoredFontScale);
   const [focusMode, setFocusModeState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_FOCUS_MODE));
   const [screenLocked, setScreenLockedState] = useState(() => readStoredBool(STORAGE_KEYS.LYRICS_LOCK));
+  // Switch tampilan chord: on = lirik + chord, off = lirik saja (persist).
+  const [showChordsLocal, setShowChordsLocal] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.LYRICS_SHOW_CHORDS);
+      return raw === null ? true : raw === '1';
+    } catch {
+      return true;
+    }
+  });
 
   const setFontScale = (next) => {
     const clamped = clampFontScale(next);
@@ -95,6 +104,13 @@ export default function SongLyricsMainSection({
     setScreenLockedState(Boolean(next));
     try {
       localStorage.setItem(STORAGE_KEYS.LYRICS_LOCK, next ? '1' : '0');
+    } catch { /* ignore */ }
+  };
+  const setShowChordsPersisted = (next) => {
+    const value = Boolean(next);
+    setShowChordsLocal(value);
+    try {
+      localStorage.setItem(STORAGE_KEYS.LYRICS_SHOW_CHORDS, value ? '1' : '0');
     } catch { /* ignore */ }
   };
 
@@ -129,6 +145,8 @@ export default function SongLyricsMainSection({
         setFocusMode={setFocusMode}
         screenLocked={screenLocked}
         setScreenLocked={setScreenLocked}
+        showChords={showChordsLocal}
+        setShowChords={setShowChordsPersisted}
         tempo={tempo}
       />
 
@@ -147,16 +165,16 @@ export default function SongLyricsMainSection({
               tempo={tempo}
               transpose={transpose}
               setTranspose={setTranspose}
-              showChords={showChords}
-              zoom={zoom}
-              setZoom={setZoom}
               showChordNumbers={showChordNumbers}
               showJazzChords={showJazzChords}
               showSimpleChords={showSimpleChords}
               keySignature={keySignature}
+              zoom={zoom}
+              setZoom={setZoom}
               autoScrollActive={autoScrollActive}
               scrollSpeed={scrollSpeed}
               setAutoScrollActive={setAutoScrollActive}
+              setScrollSpeed={setScrollSpeed}
               showSheetMusic={showSheetMusic}
               setShowSheetMusic={setShowSheetMusic}
               youtubeRef={youtubeRef}
@@ -168,6 +186,7 @@ export default function SongLyricsMainSection({
               fontScale={fontScale}
               focusMode={focusMode}
               screenLocked={screenLocked}
+              showChords={showChordsLocal}
               setlistNav={setlistNav}
             />
         )}

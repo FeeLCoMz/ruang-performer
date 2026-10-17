@@ -41,7 +41,115 @@
   opacity: 0.6;
 }
 
-/* Toolbar panel lirik: grup tampilan & navigasi setlist */
+/* Toolbar panel lirik: grup tampilan */
+
+/* Kapsul grup tampilan — satu pill menyatu, selaras dengan kapsul autoscroll.
+   Isi: switch Chord | divider | font A−/%/A+ | Fokus | Kunci. */
+.song-lyrics-toolbar-group-viewmode {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
+  flex-wrap: nowrap;
+}
+
+/* Divider tipis antara switch chord dan kontrol font */
+.song-lyrics-toolbar-divider {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 1px;
+  margin: 2px 0;
+  background: color-mix(in srgb, var(--border-color) 85%, transparent);
+}
+
+/* Switch "Tampilkan Chord" di toolbar panel lirik.
+   Checkbox asli tetap di DOM untuk keyboard & screen reader; track & knob
+   digambar dari state checkbox-nya (pattern sama dengan song-visibility-toggle). */
+.song-lyrics-chord-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  user-select: none;
+}
+
+.song-lyrics-chord-checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.song-lyrics-chord-track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 18px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-color) 85%, transparent);
+  transition: background var(--transition-fast);
+}
+
+.song-lyrics-chord-knob {
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.35);
+  transition: transform var(--transition-fast);
+}
+
+.song-lyrics-chord-checkbox:checked + .song-lyrics-chord-track {
+  background: var(--primary-accent);
+}
+
+.song-lyrics-chord-checkbox:checked + .song-lyrics-chord-track .song-lyrics-chord-knob {
+  transform: translateX(14px);
+}
+
+.song-lyrics-chord-checkbox:focus-visible + .song-lyrics-chord-track {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
+.song-lyrics-chord-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* Tombol .btn di dalam grup tampilan (Fokus, Kunci) dipadatkan — padding
+   .btn global terlalu besar untuk toolbar lirik. Tinggi selaras kapsul (30px). */
+.song-lyrics-toolbar-group-viewmode .btn {
+  min-height: 26px;
+  height: 26px;
+  padding: 0 0.6rem;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  border-radius: 999px;
+}
+
+/* Matikan efek lift global .btn agar toolbar tetap datar/stabil */
+.song-lyrics-toolbar-group-viewmode .btn:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
 .song-lyrics-toolbar-group-viewmode {
   display: inline-flex;
   align-items: center;
@@ -52,21 +160,38 @@
 .song-lyrics-font-control {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .song-lyrics-font-btn {
-  min-height: 36px;
-  padding: 0 0.6rem;
+  min-height: 26px;
+  height: 26px;
+  padding: 0 0.5rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
   font-weight: 700;
-  font-size: var(--font-size-sm);
+  font-size: 0.78rem;
   line-height: 1;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.song-lyrics-font-btn:hover:not(:disabled) {
+  background: rgba(127, 127, 127, 0.15);
+  color: var(--text-primary);
+}
+
+.song-lyrics-font-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .song-lyrics-font-value {
-  min-width: 3.2em;
+  min-width: 3em;
   text-align: center;
-  font-size: var(--font-size-xs);
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
@@ -80,16 +205,32 @@
   text-align: center;
 }
 
-/* (setlistnav di toolbar sudah dipindah ke SetlistNavFooter ï¿½ sticky footer
+/* (setlistnav di toolbar sudah dipindah ke SetlistNavFooter — sticky footer
    di atas bottom nav. Style grup ini hanya sisa desktop; tak lagi dipakai.) */
 
-/* Urutan visual grup toolbar: viewmode ? setlist nav (didefinisikan di atas,
-   dekat .song-lyrics-toolbar). */
-
+/* Di layar sempit: label teks tombol disembunyikan (ikon saja) dan kapsul
+   tampilan diperkecil agar toolbar tetap muat satu-dua baris. */
 @media (max-width: 768px) {
-  .song-lyrics-toolbar-group-viewmode .song-lyrics-toolbar-btn-label,
-  .song-lyrics-toolbar-group-setlistnav .song-lyrics-toolbar-btn-label {
+  .song-lyrics-toolbar-group-viewmode {
+    padding: 3px 5px;
+    gap: 4px;
+  }
+
+  .song-lyrics-toolbar-group-viewmode .song-lyrics-toolbar-btn-label {
     display: none;
+  }
+
+  .song-lyrics-toolbar-divider {
+    display: none;
+  }
+
+  .song-lyrics-chord-text {
+    display: none;
+  }
+
+  .song-lyrics-chord-switch {
+    min-height: 38px;
+    padding: 0 4px;
   }
 
   /* Angka persentase font cukup sebagai nilai kecil, tanpa tanda % agar hemat */
@@ -99,6 +240,7 @@
   }
 
   .song-lyrics-font-btn {
+    min-height: 38px;
     padding: 0 0.45rem;
   }
 }
