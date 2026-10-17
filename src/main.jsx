@@ -1,5 +1,30 @@
 import React from 'react';
-import './App.css';
+// Gaya di-split per domain — urutan import harus dipertahankan agar spesifisitas
+// CSS sama seperti saat masih satu file App.css.
+import './styles/theme.css';
+import './styles/layout.css';
+import './styles/components.css';
+import './styles/legacy-misc.css';
+import './styles/responsive-anim.css';
+import './styles/setlist-songs.css';
+import './styles/song-editor.css';
+import './styles/tools.css';
+import './styles/chord-display.css';
+import './styles/zoom-skeleton.css';
+import './styles/playback.css';
+import './styles/media-panel.css';
+import './styles/lyrics-page.css';
+import './styles/lyrics-capsules.css';
+import './styles/lyrics-overlay.css';
+import './styles/lyrics-editor.css';
+import './styles/virtual-piano.css';
+import './styles/mobile-polish.css';
+import './styles/song-add-edit.css';
+import './styles/media-panel-smp.css';
+import './styles/editor-menu.css';
+import './styles/setlist-mobile.css';
+import './styles/lyrics-view-modes.css';
+import './styles/landing.css';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { BrowserRouter } from 'react-router-dom';

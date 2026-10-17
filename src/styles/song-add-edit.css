@@ -1,0 +1,704 @@
+﻿/* ========================================
+   SONG ADD/EDIT - EDITOR HERO + STEP NAV
+   ======================================== */
+.song-editor-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary-accent);
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-accent) 10%, var(--card-bg)),
+    var(--card-bg)
+  );
+}
+
+.song-editor-hero[data-mode="version"] {
+  border-left-color: #a855f7;
+}
+
+.song-editor-hero-main {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.song-editor-hero-eyebrow {
+  display: inline-block;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary-accent);
+}
+
+.song-editor-hero-title {
+  margin: 4px 0 6px;
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.song-editor-hero-subtitle {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+
+.song-editor-hero-progress {
+  flex: 0 1 240px;
+  min-width: 200px;
+}
+
+.song-editor-hero-progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.song-editor-hero-progress-head strong {
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+}
+
+.song-editor-hero-progress-track {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--border-color) 60%, transparent);
+}
+
+.song-editor-hero-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width var(--transition-base);
+}
+
+.song-editor-hero-progress-fill.level-high {
+  background: #16a34a;
+}
+
+.song-editor-hero-progress-fill.level-medium {
+  background: #f59e0b;
+}
+
+.song-editor-hero-progress-fill.level-low {
+  background: #dc2626;
+}
+
+.song-editor-hero-progress-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   SONG ADD/EDIT - MOBILE (<= 768px)
+   Editor is a long form: on a phone the goal is a single readable
+   column, reachable controls and no double sticky bars.
+   ======================================== */
+@media (max-width: 768px) {
+  /* Header & step map: full width, tighter type, steps scroll horizontally
+     instead of wrapping into a tall block that pushes the form off-screen. */
+  .song-editor-hero {
+    padding: var(--spacing-lg);
+    gap: var(--spacing-md);
+  }
+
+  .song-editor-hero-title {
+    font-size: 1.25rem;
+  }
+
+  .song-editor-hero-subtitle {
+    font-size: var(--font-size-xs);
+  }
+
+  .song-editor-hero-progress {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  /* Section header: give the title room, drop the secondary subtitle line
+     that was squeezing the badge, and let the header wrap cleanly. */
+  .song-form-section-header {
+    flex-wrap: wrap;
+    padding: 4px 8px 4px 4px;
+  }
+
+  .song-form-section-toggle {
+    padding: 10px 6px;
+    gap: 8px;
+  }
+
+  .song-form-section-step {
+    width: 22px;
+    height: 22px;
+    font-size: 0.72rem;
+  }
+
+  .song-form-section-title {
+    font-size: 0.95rem;
+  }
+
+  .song-form-section-subtitle {
+    display: none;
+  }
+
+  .song-form-section-badge {
+    order: 3;
+    margin-left: 0;
+  }
+
+  .song-form-section-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 4px 8px;
+  }
+
+  .song-form-section-actions .btn {
+    flex: 1 1 auto;
+    min-height: 40px;
+  }
+
+  .song-form-section-body {
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+  }
+
+  /* Field grids collapse to one column with comfortable touch spacing. */
+  .form-grid-2col,
+  .form-grid-3col {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  .song-field-inline {
+    gap: var(--spacing-sm);
+  }
+
+  /* Lyrics section quick actions (transpose / copy) sit below the header. */
+  .song-lyrics-quick-transpose {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .song-lyrics-quick-transpose .btn {
+    flex: 1 1 auto;
+    min-height: 36px;
+  }
+
+  /* Sidebar: practice panel still comes first so the reference video is at the
+     top, but nothing sticks - see the note on `.song-practice-panel`. */
+  .song-editor-sidebar {
+    height: auto;
+    align-self: start;
+  }
+
+  .song-editor-sidebar-card {
+    padding: var(--spacing-md);
+  }
+
+  .song-practice-controls {
+    flex-wrap: wrap;
+  }
+
+  .song-practice-controls .btn {
+    min-height: 38px;
+    min-width: 38px;
+  }
+
+  .song-practice-marker-list,
+  .song-section-nav-list {
+    max-height: 260px;
+  }
+
+  /* Action bar: stack status above buttons, clear the bottom nav, and stretch
+     both buttons to full-width targets instead of editing-side by side. */
+  .song-editor-form {
+    padding-bottom: 24px;
+  }
+
+  .song-editor-actionbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+    padding: 10px var(--spacing-md)
+      calc(10px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    margin-top: var(--spacing-md);
+  }
+
+  .song-editor-actionbar-status {
+    gap: var(--spacing-sm);
+  }
+
+  .song-editor-status-hint {
+    display: none;
+  }
+
+  .song-editor-status-blocker {
+    width: 100%;
+    justify-content: center;
+    min-height: 36px;
+  }
+
+  .song-editor-actionbar-buttons {
+    gap: var(--spacing-sm);
+  }
+
+  .song-editor-actionbar-buttons .btn {
+    flex: 1 1 0;
+    min-height: 46px;
+    padding: 10px 12px;
+    font-size: var(--font-size-sm);
+  }
+
+  /* Lyrics editor: shorter editor panes so the preview stays in reach. */
+  .song-lyrics-textarea,
+  .song-lyrics-textarea.cm-editor,
+  .song-lyrics-textarea-editor .cm-editor {
+    height: 340px;
+  }
+
+  .lyrics-editor-preview-scroll {
+    height: 280px;
+    padding: var(--spacing-md);
+  }
+
+  .lyric-format,
+  .lyric-tools {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .lyric-format-group {
+    padding: 6px 8px;
+  }
+
+  .lyric-format-preview-compare {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lyric-format-preview-text {
+    max-height: 200px;
+  }
+
+  /* Modals: keep the virtual piano and AI autofill inside the viewport. */
+  .song-lyrics-format-preview-modal .modal,
+  .modal.song-lyrics-format-preview-modal {
+    max-height: 85vh;
+    max-height: 85dvh;
+    overflow-y: auto;
+  }
+
+  .ai-autofill-modal {
+    width: 100%;
+    max-height: 85vh;
+    max-height: 85dvh;
+    overflow-y: auto;
+  }
+
+  .ai-autofill-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ========================================
+   SONG ADD/EDIT - SMALL MOBILE (<= 480px)
+   ======================================== */
+@media (max-width: 480px) {
+  .song-editor-hero {
+    padding: var(--spacing-md);
+  }
+
+  .song-editor-hero-title {
+    font-size: 1.1rem;
+  }
+
+  /* Full-bleed video: on a narrow phone a 300px-tall sidebar video wastes the
+     whole first screen, so the practice panel reaches edge to edge instead. */
+  .song-editor-sidebar-card.song-practice-panel {
+    margin-left: calc(var(--spacing-md) * -1);
+    margin-right: calc(var(--spacing-md) * -1);
+    border-radius: 0;
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+
+  .song-editor-actionbar-buttons {
+    flex-direction: column;
+  }
+
+  .song-editor-actionbar-buttons .btn {
+    width: 100%;
+  }
+
+  /* Shorter editor so the sticky action bar and the keyboard both fit. */
+  .song-lyrics-textarea,
+  .song-lyrics-textarea.cm-editor,
+  .song-lyrics-textarea-editor .cm-editor {
+    height: 300px;
+  }
+
+  /* Piano popup: docked to the bottom of the phone screen so it can never be
+     dragged off-viewport, and scrollable if the keys overflow the width. */
+  .piano-popup {
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: 0 !important;
+    width: 100%;
+    max-width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 78vh;
+    max-height: 78dvh;
+    overflow-y: auto;
+  }
+
+  .piano-popup-header {
+    cursor: default;
+  }
+
+  .piano-popup-insert-controls .btn,
+  .piano-popup-insert-controls select {
+    flex: 1 1 auto;
+    min-height: 38px;
+  }
+
+  .piano-popup-body .virtual-piano {
+    padding: var(--spacing-sm);
+  }
+}
+
+/* ========================================
+   SONG ADD/EDIT ï¿½ STUDIO LAYOUT (additive)
+   ========================================
+   A second arrangement of the same form: sticky command bar, one dense
+   INFORMASI UTAMA grid, media beside the lyrics editor, live preview below.
+   The stepped layout and all of its styles above are untouched ï¿½ this block
+   only adds the new surface.
+   ======================================== */
+
+.studio-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.studio-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* ---- Sticky command bar ---- */
+.studio-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 10px var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--card-bg) 94%, white);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.07);
+  backdrop-filter: blur(8px);
+}
+
+body.dark-mode .studio-topbar {
+  background: color-mix(in srgb, var(--card-bg) 94%, black);
+}
+
+.studio-topbar-back {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.studio-topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.studio-topbar-icon {
+  font-size: 1.15rem;
+  flex: 0 0 auto;
+}
+
+.studio-topbar-title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.studio-topbar-heading {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary-accent);
+  white-space: nowrap;
+}
+
+.studio-topbar-subject {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.studio-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 0 0 auto;
+}
+
+.studio-topbar-save {
+  white-space: nowrap;
+}
+
+.studio-topbar-layout {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* ---- Notice / error rows ---- */
+.studio-note,
+.studio-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.studio-note {
+  border: 1px solid color-mix(in srgb, #a855f7 30%, var(--border-color));
+  background: color-mix(in srgb, #a855f7 8%, var(--card-bg));
+  color: var(--text-secondary);
+}
+
+.studio-error {
+  border: 1px solid color-mix(in srgb, #dc2626 35%, var(--border-color));
+  border-left: 3px solid #dc2626;
+  background: color-mix(in srgb, #dc2626 10%, var(--card-bg));
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+body.dark-mode .studio-error {
+  color: #fca5a5;
+}
+
+/* ---- Body: cards stacked in one column ---- */
+.studio-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.studio-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  padding: var(--spacing-lg);
+}
+
+.studio-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+.studio-card-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ---- INFORMASI UTAMA: deliberate two-column grid ---- */
+.studio-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-md) var(--spacing-lg);
+}
+
+.studio-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Full-row field (e.g. the YouTube URL, which needs the whole width). */
+.studio-field-span {
+  grid-column: 1 / -1;
+}
+
+.studio-field-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ---- Two columns: media (left) | editor (right) ---- */
+.studio-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.studio-media,
+.studio-editor {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  padding: var(--spacing-lg);
+  min-width: 0;
+}
+
+.studio-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+.studio-panel-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.studio-panel-subtitle {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.studio-video {
+  margin-bottom: var(--spacing-sm);
+}
+
+.studio-media-empty {
+  padding: var(--spacing-md);
+  border: 1px dashed color-mix(in srgb, var(--border-color) 80%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+
+.studio-markers {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+/* (Kontrol playback & marker kini via SongMediaPanel / smp-*.) */
+
+/* ---- SongMediaPanel: responsif terhadap LEBAR KOMPONEN (container query),
+   bukan lebar layar. Semua pemakaian panel (tanpa prop apa pun) otomatis:
+   - kontainer < 768px (di bawah tablet) : satu kolom â€” video di atas, Time Marker di bawah
+   - kontainer >= 768px (minimal tablet) : 2 kolom â€” video 60% kiri, marker 40% kanan
+
+   Catatan: @container tidak bisa menanyakan kontainernya sendiri, jadi
+   .smp-layout-wrap (container) dan .smp-layout (grid yang di-query) harus
+   elemen terpisah. */
+.smp-layout-wrap {
+  container-type: inline-size;
+}
+
+.smp-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+  align-items: start;
+  min-width: 0;
+}
+
+/* Kartu panel pas dengan kolomnya (min-width mencegah overflow di grid) */
+.smp {
+  min-width: 0;
+}
+
+@container (min-width: 768px) {
+  .smp-layout {
+    grid-template-columns: minmax(0, 60%) minmax(0, 40%);
+  }
+
+  .smp-layout > .smp-side {
+    max-height: 70vh;
+    overflow-y: auto;
+    /* Margin-top .smp-markers (sisa layout satu kolom) di-nolkan: jarak
+       antar kolom sudah ditangani gap grid â€” tanpa ini kartu marker
+       turun lebih rendah dari panel video. */
+    margin-top: 0;
+  }
+}
+
+/* Duplikasi marker tidak ada: marker hanya dirender di .smp-side;
+   .smp-markers di dalam .smp tidak dirender lagi di markup panel. */
+
+.studio-auto-markers-btn {
+  width: 100%;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.studio-auto-markers-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+

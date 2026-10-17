@@ -67,7 +67,19 @@ npm run lint      # ESLint pada src/
 
 ### CSS
 
-`src/App.css` adalah **satu-satunya sumber kebenaran** styling.
+Styling dibagi per domain di `src/styles/` — **satu file CSS per fitur/kelompok komponen**. Semua file diimpor berurutan di `src/main.jsx`, dan **urutan import harus dipertahankan** agar spesifisitas/override CSS tidak berubah.
+
+File utama:
+
+| File | Isi |
+| --- | --- |
+| `theme.css` | CSS variables, tema, global styles |
+| `layout.css` | Sidebar, app container & header |
+| `components.css` | Page layout, buttons, cards, modals, forms, utility |
+| `stage-mode.css` | Stage Mode (tema kontras tinggi + halaman fullscreen) |
+| `setlist-songs.css`, `song-editor.css`, `lyrics-*.css`, `playback.css`, dst. | CSS per fitur/halaman |
+
+Fitur baru: buat file sendiri di `src/styles/<fitur>.css`, lalu impor di `main.jsx` (atau di komponen pemakainya, seperti yang dilakukan `StageModePage.jsx`).
 
 ```jsx
 // ✅ Benar

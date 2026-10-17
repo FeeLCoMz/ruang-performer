@@ -1,0 +1,444 @@
+﻿/* ========================================
+   AUTOSCROLL CAPSULE (shared AutoScrollControl)
+   Satu kapsul menyatu: [?] [?/=] [-] 72 BPM [+] [?] ï¿½ menggantikan grup
+   toolbar terpisah (tombol Autoscroll + sub-group kecepatan).
+   ======================================== */
+.song-lyrics-autoscroll-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
+  border: 1px solid var(--border-color);
+}
+
+/* Saat autoscroll aktif: aksen di border kapsul + tombol ? menyala */
+.song-lyrics-autoscroll-capsule.is-active {
+  border-color: var(--primary-accent);
+  background: color-mix(in srgb, var(--primary-accent) 10%, var(--secondary-bg) 85%, transparent);
+}
+
+.song-lyrics-autoscroll-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.song-lyrics-autoscroll-toggle.is-active {
+  background: var(--primary-accent);
+  color: var(--primary-bg);
+}
+
+.song-lyrics-autoscroll-capsule .song-lyrics-autoscroll-mode {
+  min-width: 30px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.song-lyrics-autoscroll-capsule .song-lyrics-autoscroll-mode.is-manual {
+  background: color-mix(in srgb, var(--primary-accent) 18%, transparent);
+  color: var(--primary-accent);
+}
+
+.song-lyrics-autoscroll-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.song-lyrics-autoscroll-step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.song-lyrics-autoscroll-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 64px;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.song-lyrics-autoscroll-capsule .song-lyrics-autoscroll-unit {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.song-lyrics-autoscroll-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary-accent);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* ========================================
+   TEMPO CAPSULE (TempoControl variant="compact")
+   Kapsul pill di toolbar lirik, gaya selaras AutoScrollControl:
+   [-] ? 120 BPM 4/4 [+] [?]
+   Time signature terintegrasi sebagai chip kecil di samping BPM.
+   ======================================== */
+.song-lyrics-tempo-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
+  border: 1px solid var(--border-color);
+}
+
+.song-lyrics-tempo-capsule.is-playing {
+  border-color: var(--primary-accent);
+}
+
+.song-lyrics-tempo-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.song-lyrics-tempo-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.song-lyrics-tempo-bpm {
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.song-lyrics-tempo-unit {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* Chip time signature (dipakai variant compact; full variant juga render) */
+.song-info-time-signature {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+  background: color-mix(in srgb, var(--secondary-bg) 70%, transparent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Full variant (tab Info): chip sedikit diberi jarak dari unit BPM */
+.song-info-tempo-display .song-info-time-signature {
+  margin-left: 6px;
+}
+
+.song-lyrics-tempo-metronome {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.song-lyrics-tempo-metronome.is-active {
+  background: var(--primary-accent);
+  color: var(--primary-bg);
+}
+
+/* Di HP, label teks tombol autoscroll ("Autoscroll") dan mode
+   ("Musik"/"Manual") disembunyikan ï¿½ ikon saja, seperti tombol lainnya.
+   Menu overflow (?): grup jarang-dipakai disembunyikan sampai tombol ?
+   ditekan. Tombol ? sendiri hanya ada di mobile (desktop: tampil normal). */
+@media (max-width: 768px) {
+  .song-lyrics-toolbar-group-autoscroll .song-lyrics-toolbar-btn-label,
+  .song-lyrics-autoscroll-mode-label {
+    display: none;
+  }
+
+  /* (Menu overflow ? dihapus: key/tempo kini selalu tampil di baris utama
+     karena transpose & autoscroll harus bisa diakses cepat saat perform.) */
+}
+
+/* ========================================
+   SETLIST NAV FOOTER (mobile)
+   Footer sticky navigasi lagu setlist ï¿½ duduk tepat di atas bottom nav.
+   Muncul di semua tab halaman lagu saat lagu dibuka dari setlist.
+   ======================================== */
+.setlist-nav-footer {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .setlist-nav-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    /* Tinggi bottom nav: padding 6px + item 48px + safe area */
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px) * 0);
+    background: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.18);
+  }
+
+  .setlist-nav-footer-btn {
+    min-width: 44px;
+    min-height: 44px;
+    height: 44px;
+    padding: 0 0.9rem;
+    font-size: 1.05rem;
+    border-radius: 999px;
+  }
+
+  .setlist-nav-footer-info {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  /* Tombol info (posisi lagu) bisa diklik: buka sheet daftar lagu */
+  .setlist-nav-footer-info-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--secondary-bg);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .setlist-nav-footer-info-icon {
+    font-size: 1rem;
+    color: var(--primary-accent);
+  }
+}
+
+/* Sheet daftar lagu setlist (dibuka dari footer ?) */
+.setlist-nav-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+}
+
+.setlist-nav-sheet {
+  width: 100%;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.35);
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
+
+.setlist-nav-sheet-handle {
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-color);
+  margin: 10px auto 6px;
+  flex: 0 0 auto;
+}
+
+.setlist-nav-sheet-title {
+  padding: 4px 16px 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  flex: 0 0 auto;
+}
+
+.setlist-nav-sheet-search {
+  padding: 10px 16px 6px;
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.setlist-nav-sheet-search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color, rgba(127, 127, 127, 0.08));
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.setlist-nav-sheet-search-input:focus {
+  border-color: var(--primary-accent);
+}
+
+.setlist-nav-sheet-group-label {
+  padding: 8px 16px 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  position: sticky;
+  top: 0;
+  background: var(--card-bg);
+  z-index: 1;
+}
+
+.setlist-nav-sheet-item.outside .setlist-nav-sheet-item-number {
+  color: var(--primary-accent);
+  font-weight: 700;
+}
+
+.setlist-nav-sheet-item-artist {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.setlist-nav-sheet-empty {
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.setlist-nav-sheet-list {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.setlist-nav-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.setlist-nav-sheet-item:active {
+  background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
+}
+
+.setlist-nav-sheet-item.active {
+  background: color-mix(in srgb, var(--primary-accent) 14%, transparent);
+  font-weight: 700;
+}
+
+.setlist-nav-sheet-item-number {
+  flex: 0 0 1.8em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.setlist-nav-sheet-item-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setlist-nav-sheet-item-key {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-accent) 14%, transparent);
+  color: var(--primary-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.setlist-nav-sheet-item-playing {
+  flex: 0 0 auto;
+  color: var(--primary-accent);
+  font-size: 0.8rem;
+}
+
+@media (min-width: 769px) {
+  .setlist-nav-sheet-overlay {
+    display: none;
+  }
+}
+

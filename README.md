@@ -1,8 +1,8 @@
-# Ruang Performer
+﻿# Ruang Performer
 
 Aplikasi manajemen band: repertoire lagu (lirik + kord), setlist, latihan, gigs/pertunjukan, dan kerja kolaboratif multi-anggota dengan kontrol akses berbasis peran.
 
-**Versi:** 2.0.10 · **Lisensi:** MIT · **Target deploy:** Vercel (serverless functions) + Turso/libSQL
+**Versi:** 2.0.10 Â· **Lisensi:** MIT Â· **Target deploy:** Vercel (serverless functions) + Turso/libSQL
 
 ---
 
@@ -27,7 +27,7 @@ Aplikasi manajemen band: repertoire lagu (lirik + kord), setlist, latihan, gigs/
 
 Ruang Performer adalah aplikasi web untuk mengelola seluruh Lifecycle sebuah band: dari menyimpan repertoire lagu lengkap dengan lirik berkord, menyusun setlist untuk gigs, mencatat sesi latihan, hingga menjadwalkan pertunjukan.
 
-Dirancang untuk usage nyata di panggung — ada **Performance Mode** yang menyederhanakan UI, **Lyrics Mode** untuk vokalis, dan dukungan **offline** sehingga setlist tetap bisa dibuka tanpa koneksi.
+Dirancang untuk usage nyata di panggung â€” ada **Performance Mode** yang menyederhanakan UI, **Lyrics Mode** untuk vokalis, dan dukungan **offline** sehingga setlist tetap bisa dibuka tanpa koneksi.
 
 ## Fitur Utama
 
@@ -51,18 +51,18 @@ Dirancang untuk usage nyata di panggung — ada **Performance Mode** yang menyed
 **Frontend**
 - React 18 + React Router 7 (SPA, client-side routing)
 - Vite 5 (build, dev server, code splitting via `React.lazy` + `manualChunks`)
-- Slate / Slate React — editor lirik rich-text
-- @dnd-kit & @hello-pangea/dnd — drag & drop
-- OpenSheetMusicDisplay — render sheet music MusicXML
-- jsPDF, html2canvas, html-to-image — export poster/PDF
-- qrcode.react — QR code pada poster
-- fabric — kanvas editing
+- Slate / Slate React â€” editor lirik rich-text
+- @dnd-kit & @hello-pangea/dnd â€” drag & drop
+- OpenSheetMusicDisplay â€” render sheet music MusicXML
+- jsPDF, html2canvas, html-to-image â€” export poster/PDF
+- qrcode.react â€” QR code pada poster
+- fabric â€” kanvas editing
 
 **Backend**
 - Express 4 (server lokal) + format handler Vercel Serverless Functions
-- JWT (jsonwebtoken) + bcryptjs — autentikasi
-- @libsql/client — Turso (libSQL, SQLite remote)
-- nodemailer — email reset sandi
+- JWT (jsonwebtoken) + bcryptjs â€” autentikasi
+- @libsql/client â€” Turso (libSQL, SQLite remote)
+- nodemailer â€” email reset sandi
 - Rate limiter token-bucket (`api/middleware/rateLimiter.js`)
 - Google Generative AI (@google/generative-ai)
 
@@ -75,15 +75,15 @@ Dirancang untuk usage nyata di panggung — ada **Performance Mode** yang menyed
 Ruang Performer memakai arsitektur **monorepo ringan** dengan dua bagian yang deploy terpisah secara logis:
 
 ```
-┌─────────────────────────┐        ┌──────────────────────────────┐
-│  Frontend (Vite/React)  │  HTTPS │  Backend (Express/Vercel Fn) │
-│  src/                   │ ─────► │  api/                        │
-│  → /api/* (proxy dev)   │  JWT   │  → Turso (libSQL)            │
-└─────────────────────────┘        └──────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Frontend (Vite/React)  â”‚  HTTPS â”‚  Backend (Express/Vercel Fn) â”‚
+â”‚  src/                   â”‚ â”€â”€â”€â”€â”€â–º â”‚  api/                        â”‚
+â”‚  â†’ /api/* (proxy dev)   â”‚  JWT   â”‚  â†’ Turso (libSQL)            â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜        â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 **Routing**
-- **Produksi (Vercel):** route didefinisikan lewat regex rewrite di `vercel.json` → tiap file handler (`api/**/*.js`) menjadi serverless function.
+- **Produksi (Vercel):** route didefinisikan lewat regex rewrite di `vercel.json` â†’ tiap file handler (`api/**/*.js`) menjadi serverless function.
 - **Lokal:** `api/index.js` dijalankan sebagai Express app (port 3000); `vite.config.js` me-proxy `/api` ke `127.0.0.1:3000`.
 
 **Alur data frontend**
@@ -115,8 +115,8 @@ npm run dev:full
 Alternatif jalankan terpisah di dua terminal:
 
 ```bash
-npm run dev:api   # API  → http://localhost:3000
-npm run dev       # Web  → http://localhost:5173
+npm run dev:api   # API  â†’ http://localhost:3000
+npm run dev       # Web  â†’ http://localhost:5173
 ```
 
 > **Penting:** setiap kali Anda mengubah file di dalam `api/`, restart `npm run dev:api` agar handler terbaru terbaca. Dan pastikan setiap handler baru terdaftar di `api/index.js`.
@@ -137,7 +137,7 @@ npm run dev       # Web  → http://localhost:5173
 
 Template: `.env.example`. Untuk lingkungan lokal, `api/index.js` memuat `.env.local` lalu `.env`.
 
-> Jangan pernah commit `.env.local` — sudah masuk `.gitignore`.
+> Jangan pernah commit `.env.local` â€” sudah masuk `.gitignore`.
 
 ## Setup Database
 
@@ -149,7 +149,7 @@ node runMigration.js schema.sql
 
 `runMigration.js` memecah file SQL per `;`, membuang komentar `--`, mengeksekusi statement secara berurutan, mengabaikan error nonfatal (`already exists`, `no such column`), lalu menampilkan struktur seluruh tabel. Karena semua statement memakai `IF NOT EXISTS`, perintah di atas aman dijalankan berulang.
 
-> **Upgrade DB produksi yang sudah berjalan:** `schema.sql` hanya untuk database baru — karena `CREATE TABLE IF NOT EXISTS`, menjalankannya pada DB yang sudah ada tidak mengubah tabel lama. Perubahan schema ke depan: tambahkan statement ke `db/schema.sql` lalu jalankan file itu ke produksi (perubahan aditif aman di-skip otomatis); untuk perubahan destruktif buat file migrasi terpisah + backup dulu. Prosedur lengkap: [`docs/DATABASE.md`](docs/DATABASE.md).
+> **Upgrade DB produksi yang sudah berjalan:** `schema.sql` hanya untuk database baru â€” karena `CREATE TABLE IF NOT EXISTS`, menjalankannya pada DB yang sudah ada tidak mengubah tabel lama. Perubahan schema ke depan: tambahkan statement ke `db/schema.sql` lalu jalankan file itu ke produksi (perubahan aditif aman di-skip otomatis); untuk perubahan destruktif buat file migrasi terpisah + backup dulu. Prosedur lengkap: [`docs/DATABASE.md`](docs/DATABASE.md).
 
 > **Peringatan:** sebelum menjalankan skrip yang dapat menghapus kolom/tabel/data, selalu minta konfirmasi eksplisit pengguna terlebih dahulu.
 
@@ -173,35 +173,35 @@ node runMigration.js schema.sql
 
 ```
 .
-├── api/                  # Backend (Express + handler serverless)
-│   ├── index.js          # Express app + registrasi route lokal
-│   ├── _auth.js          # verifyToken (JWT)
-│   ├── _turso.js         # Klien Turso (env-aware)
-│   ├── middleware/       # rateLimiter
-│   ├── auth/             # register, login, me, change-password, forgot/reset
-│   ├── songs/            # index.js, [id].js
-│   ├── setlists/         # index.js
-│   ├── bands/            # index.js, [id].js, members.js
-│   ├── events/           # gigs & sesi latihan
-│   ├── users/            # user management (owner)
-│   ├── tools/            # export/import, backup, restore
-│   ├── ai.js             # Integrasi Gemini
-│   └── __tests__/        # Jest + supertest
-├── db/                   # schema.sql (skema tunggal & lengkap)
-├── src/
-│   ├── main.jsx          # Entry React
-│   ├── App.jsx           # Router + state global
-│   ├── apiClient.js      # Wrapper fetch terpusat
-│   ├── contexts/         # AuthContext
-│   ├── hooks/            # usePermission, useMetronome, useChordStats, ...
-│   ├── components/       # UI reusable
-│   ├── pages/            # <Feature>Page.jsx
-│   ├── utils/            # chordUtils, permissionUtils, exportUtil, ...
-│   ├── styles/           # AuditLog.css, setlist-poster.css
-│   └── __tests__/        # Vitest
-├── public/               # aset statis
-├── vercel.json           # Routing serverless
-└── vite.config.js        # Dev server + proxy + manualChunks
+â”œâ”€â”€ api/                  # Backend (Express + handler serverless)
+â”‚   â”œâ”€â”€ index.js          # Express app + registrasi route lokal
+â”‚   â”œâ”€â”€ _auth.js          # verifyToken (JWT)
+â”‚   â”œâ”€â”€ _turso.js         # Klien Turso (env-aware)
+â”‚   â”œâ”€â”€ middleware/       # rateLimiter
+â”‚   â”œâ”€â”€ auth/             # register, login, me, change-password, forgot/reset
+â”‚   â”œâ”€â”€ songs/            # index.js, [id].js
+â”‚   â”œâ”€â”€ setlists/         # index.js
+â”‚   â”œâ”€â”€ bands/            # index.js, [id].js, members.js
+â”‚   â”œâ”€â”€ events/           # gigs & sesi latihan
+â”‚   â”œâ”€â”€ users/            # user management (owner)
+â”‚   â”œâ”€â”€ tools/            # export/import, backup, restore
+â”‚   â”œâ”€â”€ ai.js             # Integrasi Gemini
+â”‚   â””â”€â”€ __tests__/        # Jest + supertest
+â”œâ”€â”€ db/                   # schema.sql (skema tunggal & lengkap)
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ main.jsx          # Entry React
+â”‚   â”œâ”€â”€ App.jsx           # Router + state global
+â”‚   â”œâ”€â”€ apiClient.js      # Wrapper fetch terpusat
+â”‚   â”œâ”€â”€ contexts/         # AuthContext
+â”‚   â”œâ”€â”€ hooks/            # usePermission, useMetronome, useChordStats, ...
+â”‚   â”œâ”€â”€ components/       # UI reusable
+â”‚   â”œâ”€â”€ pages/            # <Feature>Page.jsx
+â”‚   â”œâ”€â”€ utils/            # chordUtils, permissionUtils, exportUtil, ...
+â”‚   â”œâ”€â”€ styles/           # CSS per domain/fitur (theme, layout, stage-mode, ...)
+â”‚   â””â”€â”€ __tests__/        # Vitest
+â”œâ”€â”€ public/               # aset statis
+â”œâ”€â”€ vercel.json           # Routing serverless
+â””â”€â”€ vite.config.js        # Dev server + proxy + manualChunks
 ```
 
 ## Dokumentasi Lainnya

@@ -116,7 +116,7 @@ Migrations split by `;`, skip `--` comments, run sequentially.
 
 ### CSS Architecture (CRITICAL)
 
-**Single source of truth:** `src/App.css` — NEVER use inline styles, CSS-in-JS, or CSS modules.
+**Split by domain in `src/styles/`** (theme.css, layout.css, components.css, one file per feature e.g. stage-mode.css) — NEVER use inline styles, CSS-in-JS, or CSS modules. Import order in `src/main.jsx` must be preserved to keep CSS specificity/overrides unchanged. For a new feature, create `src/styles/<feature>.css` and import it in the consuming component.
 
 **Pattern:**
 

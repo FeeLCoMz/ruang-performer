@@ -1,0 +1,286 @@
+﻿/* ========================================================================
+   SongMediaPanel (smp) â€” komponen shared video + kontrol playback
+   + time marker. Satu aturan CSS yang sama untuk semua halaman yang
+   menampilkan video: song view, add/edit studio, daftar lagu, setlist,
+   dan mini player mengambang.
+
+   Varian:
+   - smp--card     : panel berdiri sendiri (song view, add/edit)
+   - smp--inline   : di dalam kartu lain (inline player daftar lagu/setlist)
+   - smp--floating : mini player mengambang (tanpa header internal)
+   ======================================================================== */
+.smp {
+  min-width: 0;
+}
+
+.smp--card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  padding: var(--spacing-lg);
+}
+
+.smp--inline {
+  padding: 0;
+}
+
+.smp--floating {
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header panel */
+.smp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+.smp--inline .smp-header {
+  padding: 10px 14px 8px;
+  margin-bottom: 0;
+}
+
+.smp-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.smp-extra-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Video embed: rasio 16:9, tidak meluap â€” aturan yang sama di semua halaman */
+.smp-video {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-sm, 6px);
+  background: #000;
+}
+
+.smp-video iframe,
+.smp-video > div {
+  width: 100%;
+  height: 100%;
+}
+
+/* Kontrol playback: tombol seragam + label posisi di kanan */
+.smp-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: var(--spacing-sm);
+}
+
+.smp--inline .smp-controls {
+  padding: 0 14px;
+}
+
+.smp--floating .smp-controls {
+  margin-top: 6px;
+}
+
+.smp-btn {
+  min-width: 40px;
+  padding: 6px 10px;
+  font-size: var(--font-size-sm);
+  line-height: 1.2;
+}
+
+.smp-time {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Seksi time marker: kartu berlatar card-bg, konsisten dengan panel video */
+.smp-markers {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+.smp--inline .smp-markers {
+  padding: var(--spacing-md) 14px;
+}
+
+.smp-markers-subtitle {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.smp--floating .smp-markers {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Empty state */
+.smp-empty {
+  padding: var(--spacing-md);
+  border: 1px dashed color-mix(in srgb, var(--border-color) 80%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+
+/* Pesan kosong di seksi marker (mis. setlist: lagu belum punya marker) */
+.smp-markers-empty {
+  padding: var(--spacing-sm) 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+/* Toggle lipat marker di mini player mengambang */
+.smp-markers-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  font-size: var(--font-size-sm);
+}
+
+/* ---- Live preview canvas ---- */
+.studio-preview {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  overflow: hidden;
+}
+
+.studio-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: 10px var(--spacing-lg);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  background: color-mix(in srgb, var(--secondary-bg) 70%, var(--card-bg));
+}
+
+.studio-preview-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.studio-preview-body {
+  padding: var(--spacing-lg);
+  max-height: 60vh;
+  overflow: auto;
+  background: var(--primary-bg);
+}
+
+.studio-preview-empty {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* ---- Studio: tablet ---- */
+@media (max-width: 1100px) {
+  .studio-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Studio: mobile ---- */
+@media (max-width: 768px) {
+  .studio-topbar {
+    flex-wrap: wrap;
+    padding: 10px var(--spacing-md);
+    gap: var(--spacing-sm);
+  }
+
+  .studio-topbar-title {
+    order: -1;
+    flex: 1 1 100%;
+  }
+
+  .studio-topbar-heading {
+    white-space: normal;
+  }
+
+  .studio-topbar-back,
+  .studio-topbar-actions {
+    flex: 1 1 auto;
+  }
+
+  .studio-topbar-actions .btn {
+    flex: 1 1 auto;
+    min-height: 42px;
+  }
+
+  .studio-topbar-status {
+    flex: 1 1 100%;
+    order: 3;
+  }
+
+  .studio-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .studio-card,
+  .studio-media,
+  .studio-editor {
+    padding: var(--spacing-md);
+  }
+
+  .studio-preview-body {
+    padding: var(--spacing-md);
+    max-height: 50vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .studio-topbar-layout {
+    display: none;
+  }
+}
+
+/* Switch back to the studio arrangement, shown in the stepped layout's header.
+   The studio top bar holds the only other toggle, so this is the return path. */
+.song-editor-layout-switch {
+  align-self: flex-start;
+  margin-top: var(--spacing-md);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .song-editor-layout-switch {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+  }
+}
+

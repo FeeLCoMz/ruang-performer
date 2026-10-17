@@ -1,0 +1,610 @@
+﻿/* ========================================
+   MEDIA PANEL (YouTube + Time Markers)
+   ======================================== */
+
+.media-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  /* Padding sama dengan .song-panel (token spacing) supaya semua tab seragam */
+  padding: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-xl);
+  width: 100%;
+}
+
+.media-panel-header {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.media-panel-header-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.media-panel-toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 1;
+}
+
+.media-panel-toggle:hover {
+  background: var(--primary-accent);
+  border-color: var(--primary-accent);
+  color: white;
+  transform: scale(1.05);
+}
+
+.media-panel-toggle:active {
+  transform: scale(0.95);
+}
+
+.media-panel-title {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.media-panel-icon {
+  font-size: var(--font-size-2xl);
+  display: inline-block;
+}
+
+.media-panel-subtitle {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.media-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* Grid Layout for Video + Time Markers */
+.media-panel-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+.media-panel-grid-single {
+  grid-template-columns: 1fr;
+}
+
+.media-video-section {
+  grid-column: 1;
+}
+
+.media-markers-section {
+  grid-column: 2;
+}
+
+/* Media Sections */
+.media-section {
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all var(--transition-fast);
+}
+
+.media-section:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--primary-accent);
+}
+
+.media-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--primary-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.media-section-icon {
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.media-section-label {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex: 1;
+}
+
+.media-section-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 var(--spacing-sm);
+  background: var(--primary-accent);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.media-section-body {
+  padding: var(--spacing-lg);
+}
+
+/* Empty State */
+.media-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  text-align: center;
+  opacity: 0.7;
+}
+
+.media-empty-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.5;
+}
+
+.media-empty-text {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.media-empty-hint {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Floating mini player for performance mode */
+.floating-youtube-player {
+  position: fixed;
+  z-index: 1200;
+  left: 0;
+  top: 0;
+  min-width: 260px;
+  max-width: calc(100vw - 16px);
+  width: 360px;
+  max-height: min(72vh, 520px);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 16px;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.28);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  user-select: none;
+  touch-action: none;
+  will-change: left, top, width;
+}
+
+.floating-youtube-player-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transition: background 0.2s ease;
+}
+
+.floating-youtube-player-header:active {
+  cursor: grabbing;
+}
+
+.floating-youtube-player-title {
+  flex: 1;
+  min-width: 0;
+  color: #f8fafc;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.floating-youtube-player-close {
+  flex-shrink: 0;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.floating-youtube-player-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  border-top-left-radius: 8px;
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.05));
+  border-left: 1px solid rgba(148, 163, 184, 0.2);
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  cursor: nwse-resize;
+  z-index: 1;
+}
+
+.floating-youtube-player-body {
+  background: rgba(15, 23, 42, 0.94);
+  border-radius: 0 0 16px 16px;
+  overflow: hidden;
+}
+
+.floating-youtube-player-markers {
+  padding: 10px 12px 12px;
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.floating-youtube-player-markers-toggle {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.floating-youtube-player-markers-content {
+  margin-top: 10px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+/* Override YouTube Viewer and Time Markers styles */
+.media-panel .youtube-viewer,
+.media-section-body .youtube-viewer,
+.media-panel .time-markers,
+.media-section-body > div[style*="background"] {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* YouTube Viewer Component */
+.youtube-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.youtube-viewer-empty {
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.youtube-viewer-hidden {
+  height: 0;
+  overflow: hidden;
+}
+
+.youtube-viewer-container {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  margin-bottom: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: #000;
+}
+
+.youtube-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.youtube-scrubber-section {
+  margin-bottom: var(--spacing-md);
+}
+
+.scrubber-input {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--secondary-bg);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: none;
+  padding: 0;
+}
+
+/* Webkit (Chrome, Safari) */
+.scrubber-input::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: var(--secondary-bg);
+  border-radius: 3px;
+  border: none;
+}
+
+.scrubber-input::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary-accent);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  margin-top: -5px;
+}
+
+/* Firefox */
+.scrubber-input::-moz-range-track {
+  background: var(--secondary-bg);
+  border-radius: 3px;
+  border: none;
+  height: 6px;
+}
+
+.scrubber-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary-accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.scrubber-time-display {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.youtube-controls {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+}
+
+/* Time Markers Component */
+.time-markers {
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+}
+
+.time-markers-time {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.time-markers-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.time-markers-progress {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.time-markers-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.time-markers-hint-mobile {
+  display: none;
+}
+
+.time-markers-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.time-markers-list-compact {
+  gap: var(--spacing-xs);
+}
+
+.time-marker-item {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--secondary-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.time-marker-item-readonly {
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.time-marker-item-editing {
+  border: 2px solid var(--primary-accent);
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--spacing-sm);
+}
+
+.time-marker-input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+.time-marker-time {
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+}
+
+.time-marker-play-btn {
+  min-width: 40px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.time-marker-edit-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.time-marker-label {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time-marker-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.time-marker-empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}
+
+.time-marker-add {
+  padding: var(--spacing-md);
+  background: var(--secondary-bg);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.time-marker-add-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.time-marker-add-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.time-markers-compact-ui {
+  padding: var(--spacing-sm);
+  border-style: dashed;
+}
+
+.time-markers-compact-ui .time-markers-content {
+  gap: var(--spacing-sm);
+}
+
+.time-markers-compact-ui .time-markers-progress {
+  text-align: left;
+  font-size: 0.72rem;
+}
+
+.time-markers-compact-ui .time-marker-item {
+  padding: var(--spacing-sm);
+  gap: var(--spacing-sm);
+}
+
+.time-markers-compact-ui .time-marker-time {
+  min-width: 42px;
+  font-size: 0.82rem;
+}
+
+.time-markers-compact-ui .time-marker-label {
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.time-markers-compact-ui .time-marker-play-btn {
+  min-width: 34px;
+  width: 34px;
+  height: 30px;
+  padding: 0;
+}
+
+.time-markers-compact-ui .time-marker-actions .btn,
+.time-markers-compact-ui .time-marker-edit-actions .btn,
+.time-markers-compact-ui .time-marker-add .btn {
+  min-height: 30px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+}
+
+.time-markers-compact-ui .time-marker-input {
+  padding: 6px 8px;
+  font-size: 0.8rem;
+}
+
+.time-markers-compact-ui .time-marker-empty {
+  padding: var(--spacing-sm);
+  font-size: 0.8rem;
+}@media (max-width: 768px){
+  .time-markers-hint-desktop {
+    display: none;
+  }
+
+  .time-markers-hint-mobile {
+    display: inline;
+  }}
+

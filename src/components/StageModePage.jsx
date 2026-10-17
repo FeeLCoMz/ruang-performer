@@ -8,6 +8,7 @@ import { useSongFetch } from '../hooks/useSongFetch.js';
 import * as apiClient from '../apiClient.js';
 import { STORAGE_KEYS } from '../utils/storageKeys.js';
 import { getTransposeSteps, extractDetectedInstrumentsFromLyrics } from '../utils/chordUtils.js';
+import '../styles/stage-mode.css';
 import {
   AUTO_SCROLL_MODES,
   computeManualScrollSpeed,

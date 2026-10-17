@@ -1,0 +1,335 @@
+﻿/* =============================================
+   Virtual Piano Component
+   ============================================= */
+/* Piano Popup Window */
+.piano-popup {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  max-width: 450px;
+  width: 90%;
+  border: 2px solid var(--border-color);
+}
+
+.piano-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+.piano-popup-title {
+  margin: 0;
+  color: white;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+}
+
+.piano-popup-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all var(--transition-fast);
+}
+
+.piano-popup-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.piano-popup-body {
+  padding: var(--spacing-md);
+  background: var(--card-bg);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.piano-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.piano-modal .modal-body {
+  overflow-x: auto;
+  padding: var(--spacing-xl);
+}
+
+.virtual-piano {
+  margin-top: 0;
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.piano-keys {
+  display: flex;
+  position: relative;
+  height: 180px;
+  width: 357px; /* 7 white keys x 51px (50px + 1px gap) */
+  margin: 0 auto;
+}
+
+.piano-key {
+  border: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.piano-key:active,
+.piano-key.active {
+  transform: translateY(3px);
+}
+
+/* White Keys */
+.white-key {
+  width: 50px;
+  height: 180px;
+  background: linear-gradient(to bottom, #ffffff 0%, #f8f8f8 100%);
+  border: 2px solid #333;
+  border-radius: 0 0 5px 5px;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.05);
+  z-index: 1;
+  position: relative;
+  margin-right: 1px;
+}
+
+.white-key:last-of-type {
+  margin-right: 0;
+}
+
+.white-key:hover {
+  background: linear-gradient(to bottom, #f5f5f5 0%, #efefef 100%);
+}
+
+.white-key:active,
+.white-key.active {
+  background: linear-gradient(to bottom, #e8e8e8 0%, #ddd 100%);
+  box-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.2),
+    inset 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.white-key .piano-key-label {
+  color: #333;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+/* Black Keys */
+.black-key {
+  width: 32px;
+  height: 110px;
+  background: linear-gradient(to bottom, #333 0%, #000 100%);
+  border: 1px solid #000;
+  border-radius: 0 0 3px 3px;
+  box-shadow:
+    0 5px 8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: absolute;
+  z-index: 2;
+  top: 0;
+}
+
+.black-key:hover {
+  background: linear-gradient(to bottom, #444 0%, #111 100%);
+}
+
+.black-key:active,
+.black-key.active {
+  background: linear-gradient(to bottom, #222 0%, #000 100%);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.6),
+    inset 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.black-key .piano-key-label {
+  color: #fff;
+  font-size: 9px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Specific black key positions (centered between white keys) */
+.piano-keys > button:nth-child(2) {
+  left: 35px;
+} /* C# between C and D */
+.piano-keys > button:nth-child(4) {
+  left: 86px;
+} /* D# between D and E */
+.piano-keys > button:nth-child(7) {
+  left: 188px;
+} /* F# between F and G */
+.piano-keys > button:nth-child(9) {
+  left: 239px;
+} /* G# between G and A */
+.piano-keys > button:nth-child(11) {
+  left: 290px;
+} /* A# between A and B */
+
+/* Responsive Piano */
+@media (max-width: 768px) {
+  .virtual-piano {
+    padding: var(--spacing-md);
+  }
+
+  .piano-keys {
+    height: 140px;
+    width: 287px; /* 7 x 41px */
+  }
+
+  .white-key {
+    width: 40px;
+    height: 140px;
+  }
+
+  .black-key {
+    width: 26px;
+    height: 85px;
+  }
+
+  .piano-keys > button:nth-child(2) {
+    left: 28px;
+  }
+  .piano-keys > button:nth-child(4) {
+    left: 69px;
+  }
+  .piano-keys > button:nth-child(7) {
+    left: 151px;
+  }
+  .piano-keys > button:nth-child(9) {
+    left: 192px;
+  }
+  .piano-keys > button:nth-child(11) {
+    left: 233px;
+  }
+
+  .piano-key-label {
+    font-size: 9px;
+  }
+
+  .black-key .piano-key-label {
+    font-size: 7px;
+  }
+}@media (max-width: 480px){
+  .piano-popup {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+    width: auto;
+  }
+
+  .piano-popup-header {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .piano-popup-title {
+    font-size: var(--font-size-sm);
+  }
+
+  .piano-popup-body {
+    padding: var(--spacing-sm);
+  }
+
+  .piano-keys {
+    height: 110px;
+    width: 217px; /* 7 x 31px */
+  }
+
+  .white-key {
+    width: 30px;
+    height: 110px;
+  }
+
+  .black-key {
+    width: 20px;
+    height: 65px;
+  }
+
+  .piano-keys > button:nth-child(2) {
+    left: 21px;
+  }
+  .piano-keys > button:nth-child(4) {
+    left: 52px;
+  }
+  .piano-keys > button:nth-child(7) {
+    left: 114px;
+  }
+  .piano-keys > button:nth-child(9) {
+    left: 145px;
+  }
+  .piano-keys > button:nth-child(11) {
+    left: 176px;
+  }
+
+  .piano-key-label {
+    font-size: 7px;
+  }
+
+  .black-key .piano-key-label {
+    font-size: 6px;
+  }}
+
+/* Author (kontributor) di akhir baris meta kartu lagu */
+.song-author {
+  margin: 0;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 220px;
+}
+
+.song-author .song-author-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Badge live di kartu lagu: icon play bulat kecil */
+.song-playing-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  line-height: 1;
+  padding: 0;
+  color: #0c4a6e;
+  background: #cffafe;
+  border: 1px solid #67e8f9;
+  vertical-align: middle;
+}
+

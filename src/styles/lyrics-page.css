@@ -1,0 +1,1589 @@
+﻿/* ========================================
+   SONG INFO COMPACT (Horizontal Layout)
+   ======================================== */
+
+.song-info-compact {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.song-info-compact-title {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Panel info lagu: baris kontrol + baris chip status */
+.song-info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* Semua baris kontrol & chip memakai tinggi sama supaya tab Info rapi */
+.song-info-control-row {
+  min-height: 44px;
+}
+
+.song-info-chip-row {
+  min-height: 34px;
+}
+
+/* --- Baris kontrol (Key, Tempo, Dikuasai): label kiri, kontrol kanan --- */
+.song-info-control-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Layar lebar: Key & Tempo berdampingan dalam satu baris */
+@media (min-width: 901px) {
+  .song-info-control-rows {
+    flex-direction: row;
+    gap: var(--spacing-sm);
+  }
+
+  .song-info-control-rows .song-info-control-row {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.song-info-control-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-lg);
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+}
+
+.song-info-row-label {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.song-info-row-control {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.song-info-row-control::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- Baris chip status: nilai teks ringkas --- */
+.song-info-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+}
+
+.song-info-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.24rem 0.7rem;
+  min-height: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  max-width: 100%;
+}
+
+.song-info-item .song-info-chip-list {
+  gap: 0.3rem;
+}
+
+.song-info-item .song-info-chip {
+  padding: 0.15rem 0.45rem;
+  font-size: 0.68rem;
+}
+
+.song-info-item .song-info-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.song-info-item .song-info-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.song-info-item-wide {
+  flex-wrap: wrap;
+  border-radius: var(--radius-lg);
+  height: auto;
+}
+
+/* Chip Instrumen punya chip bersarang + tombol: jangan paksa satu baris */
+.song-info-item:has(.song-info-chip-list) {
+  height: auto;
+  min-height: 30px;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.song-info-item-wide .song-info-value {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.song-info-mastery-row .song-info-mastery-count {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.song-info-mastery-members {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+/* Chip rekomendasi key mudah (tombol ber-chip) */
+.song-info-piano-reco-btn {
+  cursor: pointer;
+  border-color: rgba(59, 130, 246, 0.35);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(59, 130, 246, 0.05));
+}
+
+.song-info-piano-reco-btn:not(:disabled):hover {
+  border-color: var(--primary-accent);
+}
+
+.song-info-piano-reco-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.song-info-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.song-info-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+  align-items: center;
+}
+
+.song-info-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.28rem 0.56rem;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Baris mastery: samakan tinggi dengan baris kontrol lain */
+.song-info-mastery-row .song-info-row-control {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+.song-info-mastery-btn {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.song-info-copy-btn {
+  min-height: 26px;
+  height: 26px;
+  padding: 0 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Key Transpose Controls */
+.song-info-key-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.song-info-key-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--primary-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  min-height: 40px;
+}
+
+.song-info-key-original {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  font-family: "Courier New", monospace;
+}
+
+.song-info-key-arrow {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.song-info-key-status {
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--primary-accent);
+  font-weight: 700;
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-xs);
+  background: var(--secondary-bg);
+  border-radius: var(--radius-sm);
+  font-family: "Courier New", monospace;
+}
+
+/* Transpose Key Control Component */
+.transpose-key-control {
+  width: 100%;
+}
+
+.transpose-key-control-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.transpose-key-control-compact .song-info-key-controls {
+  margin-top: 0;
+  gap: 0.35rem;
+}
+
+/* ========================================
+   TRANSPOSE KEY CAPSULE (TransposeKeyControl variant="compact")
+   Kapsul pill di toolbar lirik, gaya selaras TempoControl/AutoScrollControl:
+   ( -  G?D  +  ??C  ? )
+   ======================================== */
+.transpose-key-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
+  border: 1px solid var(--border-color);
+}
+
+.transpose-key-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.transpose-key-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 52px;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.transpose-key-value .transpose-key-original {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.transpose-key-value .transpose-key-arrow {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.transpose-key-value .transpose-key-current {
+  color: var(--text-primary);
+}
+
+.transpose-key-capsule .transpose-key-easy-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  min-width: 30px;
+  padding: 0 7px;
+  gap: 3px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary-accent);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.transpose-key-capsule .transpose-key-easy-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.transpose-key-capsule .transpose-key-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary-accent);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* (Style compact lama transpose-key-control-compact dibuang ï¿½ diganti kapsul di atas.) */
+
+.key-transpose-reset {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--secondary-bg);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.key-transpose-reset:hover {
+  background: var(--text-muted);
+  border-color: var(--text-muted);
+  color: white;
+  transform: scale(1.1);
+}
+
+.key-transpose-reset:active {
+  transform: scale(0.95);
+}
+
+/* Tempo Metronome Controls (variant full, tab Info)
+   Rapi: tombol bulat pill mengikuti bahasa visual kapsul di toolbar lirik,
+   display BPM menyatu, term tempo rata kanan. */
+.song-info-tempo-controls {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Tombol tempo: pill bulat transparan, tinggi sama dengan kontrol key */
+.song-info-tempo-controls .btn {
+  width: 34px;
+  height: 32px;
+  min-width: 34px;
+  min-height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border-radius: 999px;
+}
+
+/* Tombol metronome aktif: menyala accent (gaya kapsul compact) */
+.song-info-tempo-controls .btn.active {
+  background: var(--primary-accent);
+  border-color: var(--primary-accent);
+  color: var(--primary-bg);
+}
+
+.song-info-tempo-header-row {
+  display: none;
+}
+
+.song-info-tempo-led-row {
+  display: none;
+}
+
+.song-info-tempo-led {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+  animation-name: tempo-led-pulse;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+.song-info-tempo-led-text {
+  display: none;
+}@keyframes tempo-led-pulse{
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.15);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }}
+
+.song-info-tempo-display {
+  flex: 0 1 auto;
+  min-width: 0;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+}
+
+/* Angka BPM tegas: lebih besar dari unit & time signature */
+.song-info-tempo-display .song-info-value {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.song-info-tempo-term {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.song-info-tempo-unit {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}@keyframes metronome-pulse{
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }}
+
+.song-info-tempo-status {
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--success);
+  font-weight: 600;
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-xs);
+  background: var(--secondary-bg);
+  border-radius: var(--radius-sm);
+  animation: pulse 1s infinite;
+}
+
+.song-info-value {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: "Courier New", monospace;
+}
+
+.song-info-mastery-count {
+  color: var(--primary-accent);
+}
+
+.song-info-mastery-members {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.song-info-mastery-btn {
+  margin-top: var(--spacing-xs);
+  width: fit-content;
+}
+
+.song-info-mastery-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* Responsive - Song Info chips */
+@media (max-width: 768px) {
+  .song-info-compact {
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  .song-info-chip-row {
+    gap: 0.4rem 0.55rem;
+  }
+
+  .song-info-item {
+    padding: 0.24rem 0.55rem;
+  }
+
+  .song-info-label {
+    font-size: 0.68rem;
+  }
+
+  .song-info-value {
+    font-size: var(--font-size-sm);
+  }
+}@media (max-width: 480px){
+  .song-info-item-wide {
+    flex-basis: 100%;
+  }}
+
+/* Responsive - Media Panel */
+@media (max-width: 1200px) {
+  .media-panel {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .media-panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .media-video-section,
+  .media-markers-section {
+    grid-column: 1;
+  }
+}@media (max-width: 768px){
+.media-panel {
+  /* Sama dengan .song-panel di lebar sempit (token spacing) */
+  padding: var(--spacing-sm) 6px;
+  margin-bottom: var(--spacing-lg);
+}
+
+  .media-panel-title {
+    font-size: var(--font-size-lg);
+  }
+
+  .media-panel-subtitle {
+    font-size: var(--font-size-xs);
+  }
+
+  .media-panel-toggle {
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-base);
+  }
+
+  .media-section-header {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .media-section-body {
+    padding: var(--spacing-md);
+  }
+
+  .media-empty-icon {
+    font-size: 36px;
+  }}@media (max-width: 480px){
+  .media-panel-content {
+    gap: var(--spacing-md);
+  }
+
+  .media-panel-title {
+    font-size: var(--font-size-base);
+  }
+
+  .media-panel-icon {
+    font-size: var(--font-size-xl);
+  }
+
+  .media-section-label {
+    font-size: 11px;
+  }
+
+  .media-empty-state {
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
+
+  .media-empty-text {
+    font-size: var(--font-size-sm);
+  }
+
+  .media-empty-hint {
+    font-size: var(--font-size-xs);
+  }}
+
+/* ========================================
+   SONG LYRICS PAGE - ENHANCED STYLES
+   ======================================== */
+
+/* Header Section */
+.song-lyrics-header {
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--secondary-bg) 100%);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.song-lyrics-header:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.song-lyrics-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-lyrics-title {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-word;
+  letter-spacing: -0.5px;
+}
+
+.song-lyrics-artist {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.song-lyrics-header-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Info & Controls Grid */
+.song-lyrics-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+/* Details Card */
+.song-lyrics-details-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.song-lyrics-details-title {
+  margin: 0 0 var(--spacing-lg) 0;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border-color);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.song-lyrics-detail-row {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--border-color);
+  gap: var(--spacing-md);
+}
+
+/* ===== CALENDAR VIEW ===== */
+.calendar-container {
+  width: 100%;
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 20px;
+  border: 1.5px solid var(--border-color);
+}
+
+.schedule-poster-card {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto 24px;
+  padding: 28px;
+  border-radius: 26px;
+  background: radial-gradient(circle at top, rgba(59, 130, 246, 0.24), rgba(15, 23, 42, 0.98) 50%);
+  color: #e2e8f0;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.22);
+}
+
+.schedule-poster-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.schedule-poster-kicker {
+  font-size: 0.85rem;
+  letter-spacing: 4px;
+  color: #93c5fd;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.schedule-poster-title {
+  font-size: clamp(2rem, 3.5vw, 3.25rem);
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #f8fafc;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+
+.schedule-poster-subtitle {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.schedule-poster-list {
+  display: grid;
+  gap: 18px;
+}
+
+.schedule-poster-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  background: rgba(15, 23, 42, 0.86);
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 20px;
+  padding: 22px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.schedule-poster-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.22);
+}
+
+.schedule-poster-item-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.schedule-poster-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+.schedule-poster-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #cbd5e1;
+  font-size: 0.96rem;
+}
+
+.schedule-poster-notes {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.schedule-poster-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+  min-width: 86px;
+}
+
+.schedule-poster-item button.btn {
+  min-width: 44px;
+  padding: 10px 12px;
+}
+
+.calendar-export-card {
+  width: min(1040px, 100%);
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(7, 11, 27, 0.85);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  overflow: hidden;
+}
+
+.calendar-share-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0 8px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  margin-bottom: 16px;
+}
+
+.share-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.share-subtitle {
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.share-badge {
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.calendar-header h2 {
+  margin: 0;
+  font-size: 1.25em;
+  color: var(--text-primary);
+  min-width: 180px;
+  text-align: center;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+  min-width: 100%;
+}
+
+.calendar-day-header {
+  min-width: 0;
+  padding: 10px;
+  text-align: center;
+  font-weight: 700;
+  color: #cbd5e1;
+  font-size: 0.85em;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.calendar-day {
+  min-width: 0;
+  min-height: 120px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+
+.calendar-day:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.calendar-day-empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+.calendar-day-today {
+  border-color: #60a5fa;
+  background: rgba(59, 130, 246, 0.16);
+}
+
+.calendar-day-number {
+  font-weight: 800;
+  font-size: 1.05em;
+  color: #f8fafc;
+  margin-bottom: 6px;
+}
+
+.calendar-day-gigs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 80px;
+}
+
+.calendar-gig-item {
+  background: rgba(59, 130, 246, 0.22);
+  color: #eef2ff;
+  padding: 6px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-gig-item:hover {
+  background: #3d6fcc;
+  transform: scale(1.02);
+}
+
+.calendar-gig-more {
+  font-size: 0.7em;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 2px 4px;
+}@media (max-width: 1024px){
+  .calendar-day {
+    min-height: 100px;
+    font-size: 0.95em;
+  }
+
+  .calendar-gig-item {
+    font-size: 0.7em;
+  }}@media (max-width: 768px){
+  .calendar-container {
+    padding: 12px;
+  }
+
+  .calendar-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .calendar-header h2 {
+    min-width: 100%;
+    font-size: 1.1em;
+  }
+
+  .calendar-day {
+    min-height: 90px;
+    padding: 6px;
+  }
+
+  .calendar-day-number {
+    font-size: 0.9em;
+  }
+
+  .calendar-day-gigs {
+    max-height: 60px;
+  }
+
+  .calendar-gig-item {
+    font-size: 0.65em;
+  }}@media (max-width: 600px){
+  .calendar-day {
+    min-height: 80px;
+  }
+
+  .calendar-day-header {
+    font-size: 0.75em;
+    padding: 6px 2px;
+  }}
+
+.song-lyrics-detail-row:last-child {
+  border-bottom: none;
+}
+
+.song-lyrics-detail-label {
+  min-width: 100px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.song-lyrics-detail-value {
+  flex: 1;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: var(--font-size-base);
+}
+
+.song-lyrics-detail-empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Controls Section */
+.song-lyrics-controls-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.song-lyrics-controls-title {
+  margin: 0 0 var(--spacing-lg) 0;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border-color);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.song-lyrics-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* Baris aksi media & analisis chord ï¿½ satu baris di bawah song info */
+.song-actions-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.song-actions-row-btn {
+  flex: 0 1 auto;
+  min-height: 40px;
+}
+
+/* Tab panel Info | Media | Lirik ï¿½ mode normal */
+.song-tabs {
+  margin-bottom: var(--spacing-lg);
+}
+
+.song-tabs-bar {
+  display: flex;
+  gap: var(--spacing-xs);
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.song-tabs-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 10px var(--spacing-md);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.song-tabs-tab.active {
+  color: var(--primary-accent);
+  border-bottom-color: var(--primary-accent);
+}
+
+.song-tabs-tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Key Mudah terintegrasi dengan kontrol Key */
+.song-info-key-easy-btn {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* Mastery 3-level picker: chip pilihan (Belum Diulik / Perlu Latihan / Dikuasai) */
+.song-info-mastery-picker {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.song-info-mastery-picker .song-mastery-chip {
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity var(--transition-fast), border-color var(--transition-fast);
+}
+
+.song-info-mastery-picker .song-mastery-chip:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.song-info-mastery-picker .song-mastery-chip.selected {
+  opacity: 1;
+  border-width: 2px;
+  font-weight: 700;
+}
+
+.song-info-mastery-picker .song-mastery-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+.song-info-mastery-saving {
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+
+/* Media panel selalu terbuka (tab Media) ï¿½ tanpa header expand */
+.media-panel .media-panel-content {
+  display: grid;
+}
+
+/* Setlist memuat lagu: selalu terbuka di tab Info */
+.song-containing-setlists.expanded .song-containing-setlists-list {
+  display: block;
+}
+
+.song-containing-setlists-title {
+  font-weight: 700;
+  font-size: var(--font-size-base);
+}
+
+/* Analisis: section struktur & instrumen */
+.song-lyrics-analyzer-section {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px dashed var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Label seksi analisis sejajar dengan konten di bawahnya */
+.song-lyrics-analyzer-chords-label {
+  display: block;
+  margin: 0;
+}
+
+.song-lyrics-analyzer-structure {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.song-lyrics-analyzer-structure-label {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.song-lyrics-analyzer-structure-detail {
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+/* Urutan seksi lagu di analisis struktur */
+.song-lyrics-analyzer-section-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.song-lyrics-analyzer-section-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--primary-bg);
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.song-lyrics-analyzer-section-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary-accent);
+  color: #fff;
+  font-size: 0.72em;
+  font-weight: 700;
+}
+
+/* Sub-bagian instrumen per seksi */
+.song-lyrics-analyzer-section-name {
+  white-space: nowrap;
+}
+
+.song-lyrics-analyzer-section-instruments {
+  font-size: 0.8em;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.song-lyrics-analyzer-instruments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.song-lyrics-analyzer-instrument-chip {
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.9em;
+}
+
+.song-lyrics-analyzer-instrument-empty {
+  color: var(--text-muted);
+  font-style: italic;
+  border-style: dashed;
+}
+
+/* Panel lirik: chip Key & Tempo di header (tanpa judul panel) */
+.song-lyrics-main-keytempo {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.song-lyrics-key-chip,
+.song-lyrics-tempo-chip {
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-weight: 700;
+  font-size: 0.95em;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Tempo di panel lirik bisa diubah: input kecil di dalam chip,
+    state dipegang halaman supaya sinkron dengan tab Info. */
+.song-lyrics-keytempo-input {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.95em;
+  padding: 2px 4px;
+}
+
+.song-lyrics-keytempo-input {
+  width: 64px;
+  text-align: center;
+}
+
+.song-lyrics-keytempo-input:focus {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 1px;
+}
+
+/* Tinggi panel lirik sesuai viewport agar lirik panjang di-scroll DI DALAM
+   panel, bukan ke bawah halaman ï¿½ header & tab tetap terlihat. */
+.song-lyrics-main {
+  display: flex;
+  flex-direction: column;
+  /* Layar lebar: panel pas dengan sisa tinggi viewport â€” lirik panjang
+     di-scroll DI DALAM panel, bukan memicu vertical scroll di halaman.
+     Di layar sempit tetap mengalir alami (tanpa height terkunci). */
+}
+
+@media (min-width: 901px) {
+  .song-lyrics-main {
+    height: calc(100vh - 230px);
+    min-height: 480px;
+  }
+}
+  /* Tanpa max-height/overflow di sini: satu scrollbar saja, milik
+      .song-lyrics-display di dalamnya. Dua kontainer yang sama-sama scroll
+      menghasilkan 2 scrollbar bertumpuk. */
+}
+
+.song-lyrics-main .song-lyrics-display {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Genre inline setelah nama penyanyi di header */
+.song-genre-inline {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+/* Panel analisis chord inline (tab Analisis) ï¿½ konten langsung di panel,
+   bukan modal, jadi tidak menutupi halaman. */
+.song-lyrics-analyzer-inline-panel {
+  padding: 24px 20px;
+}
+
+.song-lyrics-analyzer-inline-panel .song-lyrics-analyzer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* Lyrics Main Section */
+.song-lyrics-main {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.song-lyrics-main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.song-lyrics-main-title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.song-lyrics-toolbar {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Urutan visual grup toolbar (prioritas perform): Key ? Tempo LED ?
+   Autoscroll ? Viewmode. Key & tempo grup terpisah; semua di baris utama. */
+.song-lyrics-toolbar-group-key { order: 1; }
+.song-lyrics-toolbar-group-autoscroll { order: 2; }
+.song-lyrics-toolbar-group-viewmode { order: 3; }
+.song-lyrics-tempo-led-compact { order: 4; }
+
+/* Grup key tidak meregang ï¿½ cukup selebar isinya */
+.song-lyrics-toolbar--normal .song-lyrics-toolbar-group-key {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.song-lyrics-toolbar--normal .transpose-key-control-compact {
+  flex: 0 0 auto;
+}
+
+.song-lyrics-toolbar--normal .transpose-key-control-compact .song-info-key-display {
+  white-space: nowrap;
+}
+
+/* Di layar sempit, LED tempo menyusut duluan (angka B PM bisa dipendekkan)
+   tapi tetap di baris yang sama dengan key. */
+@media (max-width: 480px) {
+  .song-lyrics-toolbar--normal .song-lyrics-tempo-led-compact {
+    padding: 0 5px;
+    gap: 4px;
+  }
+
+  .song-lyrics-toolbar--normal .song-lyrics-tempo-led-compact-text {
+    font-size: 0.72rem;
+  }
+
+  .song-lyrics-toolbar--normal .transpose-key-control-compact .song-info-key-display {
+    font-size: 0.78rem;
+  }
+}
+
+/* LED tempo compact di toolbar (pulse mengikuti BPM lagu) */
+.song-lyrics-tempo-led-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  height: 34px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--secondary-bg);
+}
+
+.song-lyrics-tempo-led-compact-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 24px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kontrol kecepatan autoscroll presisi */
+.song-lyrics-autoscroll-speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--secondary-bg);
+}
+
+.song-lyrics-autoscroll-step,
+.song-lyrics-autoscroll-reset {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+}
+
+.song-lyrics-autoscroll-input {
+  width: 52px;
+  height: 34px;
+  padding: 0 4px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+/* Sembunyikan spinner input number agar rapi */
+.song-lyrics-autoscroll-input::-webkit-outer-spin-button,
+.song-lyrics-autoscroll-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.song-lyrics-autoscroll-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.song-lyrics-autoscroll-unit {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* Switchable Mode autoscroll: MUSICAL / MANUAL (toolbar & fullscreen) */
+.song-lyrics-autoscroll-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+}
+
+.song-lyrics-autoscroll-mode.is-manual {
+  border-color: var(--primary-accent);
+}
+
+.song-lyrics-autoscroll-mode-label {
+  font-weight: 600;
+}
+

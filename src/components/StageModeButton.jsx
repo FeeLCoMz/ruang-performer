@@ -6,6 +6,7 @@
  * AppContent dan dipersist di localStorage (STORAGE_KEYS.STAGE_MODE).
  */
 import React from 'react';
+import '../styles/stage-mode.css';
 
 export default function StageModeButton({ stageMode = false, onToggle }) {
   return (

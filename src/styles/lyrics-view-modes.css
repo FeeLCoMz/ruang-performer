@@ -1,0 +1,105 @@
+﻿/* ========================================
+   LYRICS PANEL VIEW MODES (toolbar panel lirik)
+   Font scale, mode panggung, mode fokus, lock layar.
+   Diterapkan pada .song-lyrics-display via class toggle.
+   ======================================== */
+/* Font scale dari tombol A- / A+ (default 1) */
+.song-lyrics-display {
+  --lyrics-font-scale: 1;
+}
+
+.song-lyrics-display .cd {
+  font-size: calc(clamp(0.75rem, 4vw, 1rem) * var(--lyrics-font-scale));
+}
+
+/* (Mode panggung panel lirik dihapus â€” overlay lirik kini selalu gelap.) */
+
+/* Mode fokus: baris di luar bagian aktif diredupkan; header bagian aktif
+   disorot dengan aksen. Mengikuti pattern cd-sync-row (aturan kiri). */
+.song-lyrics-display .cd .cd-focus-dim {
+  opacity: 0.32;
+  transition: opacity 0.2s ease;
+}
+
+.song-lyrics-display .cd .cd-focus-active {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Lock layar: sentuhan tak sengaja tidak mengubah tampilan.
+   Wheel diblok di JS; klik/pointer-select dimatikan di sini. */
+.song-lyrics-display.lyrics-screen-locked {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  cursor: default;
+}
+
+.song-lyrics-display.lyrics-screen-locked .cd-timestamp-btn {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Toolbar panel lirik: grup tampilan & navigasi setlist */
+.song-lyrics-toolbar-group-viewmode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.song-lyrics-font-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.song-lyrics-font-btn {
+  min-height: 36px;
+  padding: 0 0.6rem;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.song-lyrics-font-value {
+  min-width: 3.2em;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.song-lyrics-setlistnav-info {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 3.4em;
+  text-align: center;
+}
+
+/* (setlistnav di toolbar sudah dipindah ke SetlistNavFooter ï¿½ sticky footer
+   di atas bottom nav. Style grup ini hanya sisa desktop; tak lagi dipakai.) */
+
+/* Urutan visual grup toolbar: viewmode ? setlist nav (didefinisikan di atas,
+   dekat .song-lyrics-toolbar). */
+
+@media (max-width: 768px) {
+  .song-lyrics-toolbar-group-viewmode .song-lyrics-toolbar-btn-label,
+  .song-lyrics-toolbar-group-setlistnav .song-lyrics-toolbar-btn-label {
+    display: none;
+  }
+
+  /* Angka persentase font cukup sebagai nilai kecil, tanpa tanda % agar hemat */
+  .song-lyrics-font-value {
+    min-width: 2.6em;
+    font-size: 0.68rem;
+  }
+
+  .song-lyrics-font-btn {
+    padding: 0 0.45rem;
+  }
+}
+

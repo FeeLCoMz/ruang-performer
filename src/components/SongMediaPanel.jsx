@@ -12,7 +12,7 @@ import React, { useState, useEffect, useRef } from 'react';
  *    video + kontrol playback + kontrol time marker.
  *
  * Dipakai di semua halaman yang menampilkan video + time marker, dengan satu
- * aturan CSS yang sama (kelas `smp-*` di App.css).
+ * aturan CSS yang sama (kelas `smp-*` di src/styles/media-panel-smp.css).
  *
  * `onUpdateMarkers` tidak diberikan → seksi marker disembunyikan, kecuali
  * dipaksa via `showMarkers`.

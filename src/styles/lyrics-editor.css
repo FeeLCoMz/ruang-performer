@@ -1,0 +1,1397 @@
+﻿/* ========================================
+   LYRICS EDITOR CONTROLS
+   A single row above the editor: the tools drawer (history / search / cue /
+   piano) plus the formatting actions for both scopes.
+   ======================================== */
+.lyric-editor-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: var(--spacing-md);
+}
+
+.lyric-editor-tools-panel {
+  animation: slideDown 0.15s ease-out;
+}
+
+/* ---- Tools bar ---- */
+.lyric-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--secondary-bg) 70%, var(--card-bg));
+}
+
+.lyric-tools-history {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lyric-tools-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  padding: 5px 10px;
+  min-height: 30px;
+  white-space: nowrap;
+}
+
+.lyric-tools-insert-flag {
+  padding: 0 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--border-color) 60%, transparent);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.lyric-tools-insert-flag.is-on {
+  background: color-mix(in srgb, var(--primary-accent) 25%, transparent);
+  color: var(--primary-accent);
+}
+
+.lyric-tools-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* ---- Format bar: one flat row (tools toggle | selection | document) ---- */
+.lyric-format {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card-bg) 88%, white),
+    color-mix(in srgb, var(--secondary-bg) 90%, transparent)
+  );
+}
+
+body.dark-mode .lyric-format {
+  background: color-mix(in srgb, var(--secondary-bg) 70%, var(--card-bg));
+}
+
+/* Tools drawer toggle: lives in the same row instead of its own header line. */
+.lyric-format-tools-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  padding: 5px 10px;
+  min-height: 30px;
+  white-space: nowrap;
+}
+
+.lyric-format-tools-toggle.is-open {
+  border-color: color-mix(in srgb, var(--primary-accent) 45%, var(--border-color));
+  background: color-mix(in srgb, var(--primary-accent) 10%, transparent);
+}
+
+.lyric-format-caret {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+/* Thin rule separating the three scopes, replacing the old nested boxes. */
+.lyric-format-divider {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 1px;
+  min-height: 24px;
+  background: color-mix(in srgb, var(--border-color) 85%, transparent);
+}
+
+.lyric-format-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lyric-format-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.lyric-format-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  padding: 5px 10px;
+  min-height: 30px;
+  white-space: nowrap;
+}
+
+.lyric-format-btn:disabled {
+  opacity: 0.45;
+}
+
+.lyric-format-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lyric-format-bars-label {
+  /* The control alone is ambiguous; keep this visible but quiet. */
+  opacity: 0.85;
+}
+
+.lyric-format-select {
+  font-size: 0.78rem;
+  padding: 4px 6px;
+  min-height: 30px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--primary-bg);
+  color: var(--text-primary);
+}
+
+/* ---- Editor/preview line sync ---- */
+/* Rows parsed from the line the caret is on. A left rule reads as "you are
+   here" without recolouring the lyrics themselves. */
+.cd-sync-row {
+  position: relative;
+  background: color-mix(in srgb, var(--primary-accent) 9%, transparent);
+  box-shadow: inset 3px 0 0 var(--primary-accent);
+  border-radius: 2px;
+}
+
+/* Rows expanded from a repeated section reference are a looser match: the caret
+   is on the reference, not on the copied body. Quieter so the distinction reads. */
+.cd-sync-row.is-expanded {
+  background: color-mix(in srgb, var(--primary-accent) 4%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--primary-accent) 40%, transparent);
+}
+
+body.dark-mode .cd-sync-row {
+  background: color-mix(in srgb, var(--primary-accent) 16%, transparent);
+}
+
+body.dark-mode .cd-sync-row.is-expanded {
+  background: color-mix(in srgb, var(--primary-accent) 8%, transparent);
+}
+
+.lyrics-editor-preview-follow {
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--primary-accent) 40%, var(--border-color));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
+  color: var(--primary-accent);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lyrics-editor-preview-follow:hover {
+  background: color-mix(in srgb, var(--primary-accent) 22%, transparent);
+}
+
+/* ---- Preview modal for "Rapikan Semua" ---- */
+.lyric-format-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.lyric-format-preview-head h3 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.lyric-format-preview-desc {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-secondary);
+}
+
+.lyric-format-preview-unchanged {
+  margin: 0;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: #dcfce7;
+  color: #166534;
+  font-weight: 600;
+}
+
+body.dark-mode .lyric-format-preview-unchanged {
+  background: rgba(22, 101, 52, 0.25);
+  color: #86efac;
+}
+
+.lyric-format-preview-summary {
+  margin: 0 0 var(--spacing-md);
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.lyric-format-preview-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.lyric-format-preview-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lyric-format-preview-label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.lyric-format-preview-text {
+  margin: 0;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--primary-bg);
+  font-family: "Courier New", "JetBrains Mono", Courier, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.lyric-format-preview-text.is-after {
+  border-color: color-mix(in srgb, var(--primary-accent) 45%, var(--border-color));
+  background: color-mix(in srgb, var(--primary-accent) 6%, var(--primary-bg));
+}
+
+.lyric-format-preview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+}@media (max-width: 768px){
+  /* On a phone the single format row can't hold three scopes side by side, so
+     it wraps into labelled rows instead of collapsing into an unreadable
+     stack of full-width buttons. The dividers become horizontal rules. */
+  .lyric-format {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .lyric-format-tools-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lyric-format-divider {
+    width: auto;
+    min-height: 1px;
+    height: 1px;
+    align-self: auto;
+  }
+
+  .lyric-format-group {
+    width: 100%;
+  }
+
+  .lyric-format-actions {
+    width: 100%;
+  }
+
+  .lyric-tools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lyric-tools-right {
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+
+  .lyric-tools-select,
+  .lyric-tools-select-patch {
+    max-width: none;
+    flex: 1 1 auto;
+  }
+
+  .lyric-format-btn,
+  .lyric-tools-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }}
+
+.piano-popup-insert-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border: 1px solid color-mix(in srgb, var(--border-color) 75%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--secondary-bg) 65%, var(--card-bg));
+}
+
+.song-lyrics-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--secondary-bg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+}
+
+.song-lyrics-zoom-display {
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.song-lyrics-textarea {
+  width: 100%;
+  height: 500px;
+  padding: var(--spacing-lg);
+  background: var(--primary-bg);
+  color: var(--text-primary);
+  border: 2px solid var(--primary-accent);
+  border-radius: var(--radius-md);
+  font-family: "Courier New", "JetBrains Mono", Courier, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+  transition: all var(--transition-fast);
+  overflow-y: auto;
+  white-space: pre;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.song-lyrics-textarea:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* CodeMirror wrapper: reuses the .song-lyrics-textarea frame for the editor surface */
+.song-lyrics-textarea-editor {
+  border: 2px solid var(--primary-accent);
+  border-radius: var(--radius-md);
+  background: var(--primary-bg);
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition: all var(--transition-fast);
+}
+
+.song-lyrics-textarea-editor:focus-within {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.song-lyrics-textarea-editor .song-lyrics-textarea.cm-editor,
+.song-lyrics-textarea.cm-editor {
+  width: 100%;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  font-size: 14px;
+  resize: none;
+}
+
+.song-lyrics-textarea.cm-editor.cm-focused {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Syntax highlighting tokens - same colour language as ChordDisplay */
+.cm-lyr-chord {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.cm-lyr-section {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.cm-lyr-section-intro {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.cm-lyr-section-verse {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.cm-lyr-section-chorus {
+  color: #b45309;
+  font-weight: 700;
+}
+
+.cm-lyr-cue {
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+.cm-lyr-metadata {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.cm-lyr-barline {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.cm-lyr-instrument {
+  color: #c2410c;
+  font-weight: 600;
+}
+
+.cm-lyr-timestamp {
+  color: #0369a1;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+body.dark-mode .cm-lyr-chord {
+  color: #93c5fd;
+}
+
+body.dark-mode .cm-lyr-section-intro {
+  color: #93c5fd;
+}
+
+body.dark-mode .cm-lyr-section-verse {
+  color: #86efac;
+}
+
+body.dark-mode .cm-lyr-section-chorus {
+  color: #fcd34d;
+}
+
+body.dark-mode .cm-lyr-section {
+  color: #5eead4;
+}
+
+body.dark-mode .cm-lyr-cue {
+  color: #c4b5fd;
+}
+
+body.dark-mode .cm-lyr-instrument {
+  color: #fdba74;
+}
+
+body.dark-mode .cm-lyr-barline {
+  color: #64748b;
+}
+
+body.dark-mode .cm-lyr-timestamp {
+  color: #7dd3fc;
+}
+
+.song-lyrics-textarea-editor .cm-placeholder {
+  color: var(--text-secondary);
+  opacity: 0.65;
+}
+
+/* Lyrics editor workspace: editor + live preview side by side */
+.lyrics-editor-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.lyrics-editor-workspace-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 78%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--secondary-bg) 88%, var(--card-bg));
+}
+
+.lyrics-editor-workspace-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.lyrics-editor-dirty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #86efac;
+  background: #dcfce7;
+  color: #166534;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lyrics-editor-dirty-badge.is-dirty {
+  border-color: #fcd34d;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+body.dark-mode .lyrics-editor-dirty-badge {
+  border-color: rgba(134, 239, 172, 0.4);
+  background: rgba(22, 101, 52, 0.25);
+  color: #86efac;
+}
+
+body.dark-mode .lyrics-editor-dirty-badge.is-dirty {
+  border-color: rgba(252, 211, 77, 0.4);
+  background: rgba(146, 64, 14, 0.25);
+  color: #fcd34d;
+}
+
+.lyrics-editor-preview-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.lyrics-editor-workspace-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+.lyrics-editor-workspace.has-preview .lyrics-editor-workspace-body {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.lyrics-editor-workspace.is-preview-only .lyrics-editor-workspace-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.lyrics-editor-pane {
+  min-width: 0;
+}
+
+.lyrics-editor-preview {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--secondary-bg) 92%, var(--card-bg));
+  overflow: hidden;
+}
+
+.lyrics-editor-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 78%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 92%, white);
+}
+
+.lyrics-editor-preview-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.lyrics-editor-preview-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.lyrics-editor-preview-scroll {
+  height: 500px;
+  overflow: auto;
+  padding: var(--spacing-lg);
+}@media (max-width: 1024px){
+  .lyrics-editor-workspace.has-preview .lyrics-editor-workspace-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lyrics-editor-preview-scroll {
+    height: 320px;
+  }}@media (max-width: 768px){
+  .lyrics-editor-preview-toggle {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .lyrics-editor-preview-toggle .btn {
+    flex: 1 1 auto;
+  }}
+
+.song-lyrics-error {
+  padding: var(--spacing-lg);
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  animation: fadeIn 0.2s ease;
+}
+
+body.dark-mode .song-lyrics-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Chord Display Container */
+.song-lyrics-display {
+  position: relative;
+  background: var(--primary-bg);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  min-height: 500px;
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+  /* Font scale dari A-/A+ tidak lagi dikompensasi auto-fit, jadi font besar
+     boleh menimbulkan scroll horizontal ï¿½ tanpa ini, konten terpotong. */
+  overflow-x: auto;
+}
+
+/* Lirik otomatis diperkecil bila lebih lebar dari kontainer: scale turun
+    mengikuti rasio lebar, jadi tidak ada scroll horizontal di panel lirik. */
+.song-lyrics-display .cd {
+  transform-origin: top left;
+}
+
+.cd {
+  white-space: pre;
+}
+
+.cd-fit-width {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Bar kontrol perform nonaktif: tray kontrol lirik tak lagi dipakai di fullscreen */
+/* (Fitur fullscreen lirik dihapus; semua class song-lyrics-fullscreen-*
+   dibuang dari markup & CSS.) */
+
+/* (Bar kontrol perform fullscreen sudah dihapus dari markup; style-nya dibuang.) */
+
+.song-lyrics-zoom-hud {
+  position: sticky;
+  top: 0;
+  margin-left: auto;
+  width: fit-content;
+  z-index: 8;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+}
+
+/* (Semua style fullscreen lirik dihapus bersama fiturnya.) */
+
+/* Chord Analyzer Panel ï¿½ padding sama dengan .song-panel (token spacing) */
+.song-lyrics-analyzer {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.song-lyrics-analyzer-title {
+  margin: 0 0 var(--spacing-lg) 0;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border-color);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.song-lyrics-analyzer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Mobile: modal analisis chord dibuat satu kolom agar mudah dibaca */
+@media (max-width: 600px) {
+  .song-lyrics-analyzer-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .song-lyrics-analyzer-stat {
+    padding: 10px 12px;
+    text-align: left;
+  }
+
+  .song-lyrics-analyzer-stat-label {
+    font-size: 0.72rem;
+    margin-bottom: 4px;
+  }
+
+  .song-lyrics-analyzer-stat-value {
+    font-size: var(--font-size-lg);
+  }
+
+  /* Alternatif key tetap tampil; hanya penjelasan panjang yang dibatasi */
+  .song-lyrics-analyzer-key-alt-list {
+    justify-content: flex-start;
+  }
+
+  .song-lyrics-analyzer-key-alt-badge {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+  }
+
+  .song-lyrics-analyzer-chords {
+    margin-top: var(--spacing-sm);
+  }
+
+  .song-lyrics-analyzer-chords-label {
+    margin-bottom: 8px;
+    font-size: 0.72rem;
+  }
+
+  .song-lyrics-analyzer-chords-list {
+    gap: 8px;
+  }
+
+  .song-lyrics-analyzer-chord-tag {
+    padding: 6px 8px 6px 10px;
+    font-size: var(--font-size-sm);
+    gap: 8px;
+  }
+}
+
+/* Layar sangat kecil: modal memakai hampir seluruh lebar */
+@media (max-width: 480px) {
+  .song-lyrics-analyzer-modal-overlay {
+    padding: 8px;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .song-lyrics-analyzer-modal {
+    max-height: 90vh;
+    max-height: 90dvh;
+    padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .song-lyrics-analyzer-modal-header {
+    top: -16px;
+  }
+
+  .song-lyrics-analyzer-modal-title {
+    font-size: var(--font-size-lg);
+  }
+}
+
+.song-lyrics-analyzer-stat {
+  background: var(--secondary-bg);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--primary-accent);
+  text-align: center;
+}
+
+.song-lyrics-analyzer-stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.song-lyrics-analyzer-stat-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--primary-accent);
+}
+
+.song-lyrics-analyzer-key-value {
+  font-family: "Courier New", monospace;
+}
+
+.song-lyrics-analyzer-stat-subvalue {
+  margin-top: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.song-lyrics-analyzer-key-alt-list {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.song-lyrics-analyzer-key-alt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.song-lyrics-analyzer-key-alt-relation {
+  font-weight: 600;
+  opacity: 0.9;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.song-lyrics-analyzer-key-alt-badge-relative {
+  background: #e6f8ec;
+  color: #1f7a43;
+  border-color: #aadfbc;
+}
+
+.song-lyrics-analyzer-key-alt-badge-parallel {
+  background: #e9f4ff;
+  color: #1c5b99;
+  border-color: #aecdff;
+}
+
+.song-lyrics-analyzer-key-alt-badge-other {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
+.song-lyrics-analyzer-modulation-yes {
+  color: #1f7a43;
+}
+
+.song-lyrics-analyzer-modulation-no {
+  color: #6b7280;
+}
+
+.song-lyrics-analyzer-modulation-list {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.song-lyrics-analyzer-modulation-item {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  background: #fff7e6;
+  color: #9a6700;
+  border: 1px solid #f2c77f;
+}
+
+.song-lyrics-analyzer-chords {
+  margin-top: var(--spacing-sm);
+}
+
+.song-lyrics-analyzer-chords-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-sm);
+  display: block;
+}
+
+.song-lyrics-analyzer-chords-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.song-lyrics-analyzer-chord-tag {
+  background: var(--primary-accent);
+  color: white;
+  padding: 6px 8px 6px 10px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  font-family: "Courier New", monospace;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.song-lyrics-analyzer-chord-name {
+  line-height: 1;
+}
+
+.song-lyrics-analyzer-chord-count {
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.song-lyrics-analyzer-piano-reco {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--secondary-bg);
+}
+
+.song-lyrics-analyzer-piano-reco-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.song-lyrics-analyzer-piano-reco-difficulty {
+  margin-top: var(--spacing-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.song-lyrics-analyzer-piano-reco-help {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: help;
+}
+
+.song-lyrics-analyzer-piano-reco-help:focus-visible {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
+.song-lyrics-analyzer-piano-reco-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: min(240px, 72vw);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  padding: 8px 10px;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease;
+  z-index: 3;
+}
+
+.song-lyrics-analyzer-piano-reco-help:hover .song-lyrics-analyzer-piano-reco-tooltip,
+.song-lyrics-analyzer-piano-reco-help:focus .song-lyrics-analyzer-piano-reco-tooltip,
+.song-lyrics-analyzer-piano-reco-help:focus-visible .song-lyrics-analyzer-piano-reco-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.song-lyrics-analyzer-piano-reco-difficulty-very-easy {
+  background: #e8f7ed;
+  color: #1b7a3f;
+  border-color: #9fdfb7;
+}
+
+.song-lyrics-analyzer-piano-reco-difficulty-easy {
+  background: #ecf8ff;
+  color: #00668f;
+  border-color: #a8daf0;
+}
+
+.song-lyrics-analyzer-piano-reco-difficulty-medium {
+  background: #fff8e6;
+  color: #8a5a00;
+  border-color: #f0d08a;
+}
+
+.song-lyrics-analyzer-piano-reco-difficulty-hard {
+  background: #ffecec;
+  color: #9f1b1b;
+  border-color: #f1b3b3;
+}
+
+.song-lyrics-analyzer-piano-reco-key {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--primary-accent);
+  font-family: "Courier New", monospace;
+}
+
+.song-lyrics-analyzer-piano-reco-note {
+  margin-top: var(--spacing-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.song-lyrics-analyzer-piano-reco-actions {
+  margin-top: var(--spacing-sm);
+}
+
+.song-lyrics-analyzer-piano-reco-notice {
+  margin-top: var(--spacing-xs);
+  display: inline-block;
+  color: #1b7a3f;
+  background: #e8f7ed;
+  border: 1px solid #9fdfb7;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.song-lyrics-analyzer-piano-reco-compare {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.song-lyrics-analyzer-piano-reco-compare-improved {
+  color: #1b7a3f;
+  background: #e8f7ed;
+  border-color: #9fdfb7;
+}
+
+.song-lyrics-analyzer-piano-reco-compare-same {
+  color: #5d6772;
+  background: #f1f4f8;
+  border-color: #d6dde6;
+}
+
+.song-lyrics-analyzer-piano-reco-compare-harder {
+  color: #9f1b1b;
+  background: #ffecec;
+  border-color: #f1b3b3;
+}
+
+/* Metronome Component */
+.song-lyrics-metronome {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.song-lyrics-metronome-title {
+  margin: 0 0 var(--spacing-lg) 0;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border-color);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.song-lyrics-metronome-display {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--primary-accent);
+  margin: var(--spacing-lg) 0;
+  font-family: "Courier New", monospace;
+}
+
+.song-lyrics-metronome-controls {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  margin: var(--spacing-lg) 0;
+  flex-wrap: wrap;
+}
+
+.song-lyrics-export-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+/* Dropdown export: kartu menu yang muncul di bawah tombol export */
+.song-lyrics-export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  min-width: 190px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.35));
+  padding: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Wrapper tombol export: anchor posisi dropdown */
+.song-info-export-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.song-lyrics-export-item:hover {
+  background: var(--secondary-bg);
+  color: var(--primary-accent);
+}
+
+/* Navigation Footer */
+.song-lyrics-navigator {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.song-lyrics-navigator-info {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* ========================================
+   RESPONSIVE - Song Lyrics Page
+   ======================================== */
+
+@media (max-width: 1200px) {
+  .song-lyrics-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .song-lyrics-header {
+    flex-wrap: wrap;
+  }
+
+  .song-lyrics-info {
+    flex: 1;
+    min-width: 100%;
+  }
+
+  .song-lyrics-header-actions {
+    min-width: 100%;
+  }
+}@media (max-width: 768px){
+  .song-lyrics-header {
+    padding: var(--spacing-lg) var(--spacing-lg);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .song-lyrics-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .song-lyrics-header-actions {
+    width: 100%;
+    gap: var(--spacing-sm);
+  }
+
+  .song-lyrics-info-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .song-lyrics-main-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .song-lyrics-toolbar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
+  }
+
+  /* Di HP toolbar tampil rapat: grup mengalir wrap satu baris, bukan kolom */
+  .song-lyrics-toolbar--normal {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .song-lyrics-toolbar--normal .song-lyrics-toolbar-group {
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    justify-content: flex-start;
+  }
+
+  /* Mobile: tombol lirik dipadatkan tapi tetap >= 38px (area sentuh aman) */
+  .song-lyrics-toolbar--normal .song-lyrics-toolbar-btn {
+    padding: 0 0.6rem;
+    gap: 4px;
+    min-width: 0;
+    min-height: 38px;
+    height: 38px;
+    font-size: 0.76rem;
+  }
+
+  .song-lyrics-toolbar--normal .song-lyrics-toolbar-btn-label {
+    font-size: 0.72rem;
+  }
+
+  .song-lyrics-zoom-controls {
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .song-lyrics-textarea {
+    min-height: 300px;
+    font-size: 13px;
+  }
+
+
+  .song-lyrics-details-card {
+    padding: var(--spacing-lg);
+  }
+
+  .song-lyrics-detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .song-lyrics-detail-label {
+    min-width: auto;
+  }
+
+  .song-lyrics-analyzer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .song-lyrics-navigator {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }}@media (max-width: 480px){
+  .song-lyrics-header {
+    padding: var(--spacing-md) var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .song-lyrics-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .song-lyrics-artist {
+    font-size: var(--font-size-sm);
+  }
+
+  .song-lyrics-details-card,
+  .song-lyrics-controls-section,
+  .song-lyrics-main {
+    padding: var(--spacing-lg);
+  }
+
+
+  .song-lyrics-details-title,
+  .song-lyrics-controls-title,
+  .song-lyrics-main-title {
+    font-size: var(--font-size-base);
+  }
+
+  .song-lyrics-analyzer-grid {
+    grid-template-columns: 1fr;
+  }}
+

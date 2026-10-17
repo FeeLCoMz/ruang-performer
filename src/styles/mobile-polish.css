@@ -1,0 +1,96 @@
+﻿/* ========================================
+   MOBILE-FIRST POLISH
+   ======================================== */
+
+/* Guard against accidental horizontal scroll on small screens.
+   Containers that intentionally scroll horizontally re-enable it locally. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Error state for lazily-loaded sheet music (OSMD) */
+.sheet-music-error {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  text-align: center;
+  padding: 12px;
+}
+
+/* On touch devices there is no hover state: gate hover-only effects so they
+   never "stick" after a tap. :active and :focus-visible remain for feedback. */
+@media (hover: none) {
+  .card:hover,
+  .stat-card:hover,
+  .song-item:hover,
+  .setlist-item:hover,
+  .list-item:hover,
+  .event-item:hover,
+  .dashboard-band-card:hover,
+  .band-item:hover,
+  .band-linked-item:hover,
+  .tool-card:hover,
+  .youtube-trending-card:hover {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .btn:hover:not(:disabled),
+  .btn-primary:hover:not(:disabled),
+  .btn-secondary:hover:not(:disabled),
+  .btn-red:hover:not(:disabled),
+  .login-submit-btn:hover:not(:disabled),
+  .expand-button:hover:not(:disabled) {
+    filter: none;
+  }
+}
+
+/* ===== Partitur (OSMD) di layar kecil =====
+   OSMD merender partitur sebagai <svg> dengan lebar tetap. Pada layar sempit
+   ini bisa melebar keluar viewport dan memicu scroll horizontal. Batasi
+   container dan biarkan SVG menyesuaikan, dengan scroll horizontal lokal
+   jika masih lebih lebar (mis. partitur banyak birama). */
+.sheet-music-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheet-music-container svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}@media (max-width: 768px){
+  .sheet-music-container {
+    padding: var(--spacing-sm);
+  }
+
+  .sheet-music-container svg {
+    width: 100%;
+  }}
+
+/* ========================================
+   16. MOBILE ACCESSIBILITY & PERFORMANCE
+   ======================================== */
+/* Kurangi animasi/transisi bagi pengguna yang memintanya (mobile low-end & aksesibilitas) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Hilangkan delay tap 300ms pada elemen interaktif di perangkat sentuh */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+[role="button"] {
+  touch-action: manipulation;
+}
