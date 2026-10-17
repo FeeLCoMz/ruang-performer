@@ -4,7 +4,7 @@
 .cd {
   font-family: "JetBrains Mono", "Fira Code", "Source Code Pro", "Courier New", monospace;
   font-size: clamp(0.75rem, 4vw, 1rem);
-  line-height: 1.8;
+  line-height: 1.55;
   letter-spacing: 0.3px;
   color: var(--text-primary);
   white-space: pre;
@@ -278,8 +278,8 @@
 
 .cd-chord {
   white-space: pre;
-  margin-bottom: 4px;
-  min-height: 1.5em;
+  margin-bottom: 0;
+  min-height: 1.3em;
   cursor: pointer;
 }
 
