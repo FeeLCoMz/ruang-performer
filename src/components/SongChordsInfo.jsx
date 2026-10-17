@@ -259,12 +259,9 @@ export default function SongChordsInfo({
             {detectedInstrumentList.length > 0 && (
               <span className="song-info-item">
                 <span className="song-info-label">🎼 Instrumen</span>
-                <span className="song-info-chip-list" aria-label="Daftar instrumen terdeteksi">
-                  {detectedInstrumentList.map((instrument, i) => (
-                    <span key={`${instrument}-${i}`} className="song-info-chip">
-                      {instrument}
-                    </span>
-                  ))}
+                {/* Teks polos dipisah koma — bukan chip, lebih tenang. */}
+                <span className="song-info-value" aria-label="Daftar instrumen terdeteksi">
+                  {detectedInstrumentList.join(', ')}
                 </span>
               </span>
             )}

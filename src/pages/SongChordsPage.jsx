@@ -212,8 +212,13 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
   const [deletingSong, setDeletingSong] = useState(false);
 
 
-  // Media panel collapse state (default: collapsed)
-  const [activeTab, setActiveTab] = useState('info');
+  // Tab samping aktif — mengikuti lagu saat berpindah lagu: default Video.
+  const [activeTab, setActiveTab] = useState('media');
+
+  // Reset tab ke Video saat pindah lagu (lagu baru mungkin punya/tak punya video).
+  useEffect(() => {
+    setActiveTab('media');
+  }, [songId]);
 
   const youtubeRef = useRef(null);
   const autoMetronomeStartedRef = useRef(false);

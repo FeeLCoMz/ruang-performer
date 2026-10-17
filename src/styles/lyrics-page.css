@@ -119,13 +119,12 @@
   max-width: 100%;
 }
 
-.song-info-item .song-info-chip-list {
-  gap: 0.3rem;
-}
-
-.song-info-item .song-info-chip {
-  padding: 0.15rem 0.45rem;
-  font-size: 0.68rem;
+.song-info-item .song-info-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .song-info-item .song-info-label {
@@ -149,12 +148,10 @@
   height: auto;
 }
 
-/* Chip Instrumen punya chip bersarang + tombol: jangan paksa satu baris */
-.song-info-item:has(.song-info-chip-list) {
-  height: auto;
-  min-height: 30px;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+/* Baris instrumen kini teks polos (bukan chip) — boleh wrap seperti patch */
+.song-info-item .song-info-value {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .song-info-item-wide .song-info-value {
@@ -198,27 +195,6 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.song-info-chip-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.38rem;
-  align-items: center;
-}
-
-.song-info-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.28rem 0.56rem;
-  border-radius: 999px;
-  background: rgba(59, 130, 246, 0.08);
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  color: var(--text-primary);
-  font-size: 0.72rem;
-  font-weight: 700;
-  line-height: 1.2;
 }
 
 /* Baris mastery: samakan tinggi dengan baris kontrol lain */
