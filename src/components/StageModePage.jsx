@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
+import { createPortal } from 'react-dom';
 import ChordDisplay from './ChordDisplay.jsx';
 import AutoScrollControl from './AutoScrollControl.jsx';
 import TransposeKeyControl from './TransposeKeyControl.jsx';
@@ -223,12 +223,12 @@ export default function StageModePage({
   // Field meta bisa bernama setlistSongMeta (daftar) atau songKeys (detail
   // endpoint /:id) — baca keduanya agar override key selalu terkirim ke
   // Stage Mode, sama seperti SongChordsPage.
-  const setlistSongMetaRaw = activeSetlist?.setlistSongMeta && typeof activeSetlist.setlistSongMeta === 'object'
-    ? activeSetlist.setlistSongMeta
-    : (activeSetlist?.songKeys && typeof activeSetlist.songKeys === 'object' ? activeSetlist.songKeys : {});
-  const setlistSongMeta = typeof setlistSongMetaRaw === 'object' && !Array.isArray(setlistSongMetaRaw)
-    ? setlistSongMetaRaw
-    : {};
+  const setlistSongMeta = useMemo(() => {
+    const raw = activeSetlist?.setlistSongMeta && typeof activeSetlist.setlistSongMeta === 'object'
+      ? activeSetlist.setlistSongMeta
+      : (activeSetlist?.songKeys && typeof activeSetlist.songKeys === 'object' ? activeSetlist.songKeys : null);
+    return (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+  }, [activeSetlist?.setlistSongMeta, activeSetlist?.songKeys]);
   const setlistSongs = useMemo(() => {
     const order = Array.isArray(activeSetlist?.songs) ? activeSetlist.songs : [];
     return order
@@ -314,6 +314,14 @@ export default function StageModePage({
   const [scrollSpeed, setScrollSpeed] = useState(120);
   const [manualSpeedLevel, setManualSpeedLevel] = useState(5);
   const [sheetOpen, setSheetOpen] = useState(null); // null | 'song' | 'setlist' | 'search'
+  // Query pencarian direset saat sheet ditutup agar sheet berikutnya tidak
+  // menyimpan filter lama yang tersembunyi dari pandangan user.
+  useEffect(() => {
+    if (sheetOpen === null) {
+      setSearchQuery('');
+      setSetlistSearchQuery('');
+    }
+  }, [sheetOpen]);
   // Wizard setup berurutan saat Stage Mode pertama aktif: 'band' → 'setlist' →
   // null. Null = setup selesai / dilewati karena sudah ada setlist aktif.
   const [setupStep, setSetupStep] = useState(null);
@@ -333,6 +341,24 @@ export default function StageModePage({
     setScrollSpeed(Number(song?.tempo) || 120);
     setPlayerVisible(false);
   }, [effectiveSongId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset state player YouTube saat pindah lagu — progress/durasi/status
+  // play jangan membawa data lagu sebelumnya sampai event baru masuk.
+  useEffect(() => {
+    setYtCurrentTime(0);
+    setYtDuration(0);
+    setIsYoutubePlaying(false);
+  }, [effectiveSongId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sinkronkan dataLoading bila props dari App baru tersedia setelah fetch
+  // lokal dimulai — jangan biarkan loading menggantung dan fetch ulang data
+  // yang sebenarnya sudah ada dari mode normal.
+  useEffect(() => {
+    const allFromProps = Array.isArray(songsProp) && songsProp.length > 0
+      && Array.isArray(bandsProp) && bandsProp.length > 0
+      && Array.isArray(setlistsProp) && setlistsProp.length > 0;
+    if (allFromProps && dataLoading) setDataLoading(false);
+  }, [songsProp, bandsProp, setlistsProp, dataLoading]);
 
   // Wizard setup berurutan: saat data setlist selesai dimuat dan belum ada
   // setlist aktif, mulai dari memilih BAND lalu SETLIST. Jika sudah ada
@@ -389,9 +415,12 @@ export default function StageModePage({
       }
 
       // MUSICAL: total durasi lagu = barCount × (60/BPM) × pembilang; barCount
-      // = jumlah baris chord. Total tinggi = blockHeight × jumlah baris.
+      // = jumlah baris chord. Total tinggi = jarak scroll aktual (scrollHeight
+      // − clientHeight), bukan blockHeight × jumlah baris — lirik lanjutan
+      // (tanpa chord) menempel di blok yang sama sehingga estimasi lama
+      // melebih-lebihkan tinggi dan kecepatan meleset.
       const barCount = Math.max(1, container.querySelectorAll('.cd-chord, .cd-number').length || 1);
-      const totalHeight = blockHeight * lineEls.length;
+      const totalHeight = Math.max(blockHeight, container.scrollHeight - container.clientHeight);
       const totalDuration = computeMusicalLineDuration({
         barCount,
         chordCount: 0,
@@ -411,6 +440,13 @@ export default function StageModePage({
     };
 
     const step = (ts) => {
+      // Berhenti otomatis di akhir lirik — cek juga sebelum menambah
+      // accumulator, agar loop tidak berjalan tanpa hasil bila posisi
+      // scroll sudah ada di bawah saat autoscroll dinyalakan.
+      if (container.scrollTop + container.clientHeight >= container.scrollHeight - 2) {
+        setAutoScrollActive(false);
+        return;
+      }
       if (lastTs === null) lastTs = ts;
       const dt = Math.min(100, ts - lastTs);
       lastTs = ts;
@@ -419,11 +455,6 @@ export default function StageModePage({
         const px = Math.floor(accumulator);
         accumulator -= px;
         container.scrollTop += px;
-        // Berhenti otomatis di akhir lirik.
-        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 2) {
-          setAutoScrollActive(false);
-          return;
-        }
       }
       rafId = requestAnimationFrame(step);
     };
@@ -514,6 +545,16 @@ export default function StageModePage({
         setSetupStep(null);
         return;
       }
+      if (infoOpen) {
+        e.preventDefault();
+        setInfoOpen(false);
+        return;
+      }
+      if (playerVisible) {
+        e.preventDefault();
+        setPlayerVisible(false);
+        return;
+      }
       onExit?.();
     };
     window.addEventListener('keydown', handleKey);
@@ -523,7 +564,7 @@ export default function StageModePage({
       window.removeEventListener('keydown', handleKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [stageMode, sheetOpen, setupStep, onExit]);
+  }, [stageMode, sheetOpen, setupStep, infoOpen, playerVisible, onExit]);
 
   // ======== Gestur panggung ========
   // - Pinch (2 jari): perbesar/perkecil font lirik (fontScale).
@@ -531,6 +572,10 @@ export default function StageModePage({
   // (Swipe antar lagu dihapus — sering terpicu tidak sengaja. Pindah lagu
   // tetap lewat tombol footer ← / →.)
   const gestureRef = useRef({ pinchActive: false, startDistance: 0, startFontScale: 1.4 });
+  // Ref ke fontScale terbaru — effect gesture tidak perlu re-subscribe listener
+  // setiap kali fontScale berubah (setiap tick pinch).
+  const fontScaleRef = useRef(fontScale);
+  useEffect(() => { fontScaleRef.current = fontScale; }, [fontScale]);
 
   useEffect(() => {
     const el = stageBodyRef.current;
@@ -547,7 +592,7 @@ export default function StageModePage({
       if (e.touches.length === 2) {
         g.pinchActive = true;
         g.startDistance = getDistance(e.touches);
-        g.startFontScale = Number(fontScale) || 1.4;
+        g.startFontScale = Number(fontScaleRef.current) || 1.4;
       }
     };
 
@@ -581,7 +626,56 @@ export default function StageModePage({
       el.removeEventListener('touchend', handleTouchEnd);
       el.removeEventListener('wheel', handleWheel);
     };
-  }, [stageMode, hasSong, fontScale]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stageMode, hasSong]);
+
+  // ======== Sheet: focus trap + navigasi keyboard ========
+  // Fokus dipindah ke elemen pertama sheet saat dibuka, Tab dikunci dalam
+  // sheet, Arrow ↑/↓ berpindah antar item daftar, dan fokus dikembalikan ke
+  // elemen pemicu saat sheet ditutup.
+  const sheetRef = useRef(null);
+  const lastFocusedRef = useRef(null);
+  useEffect(() => {
+    if (!sheetOpen) return undefined;
+    lastFocusedRef.current = document.activeElement;
+    const getFocusables = () => Array.from(
+      sheetRef.current?.querySelectorAll('button, input, a[href]') || [],
+    ).filter((el) => !el.disabled && el.offsetParent !== null);
+    const focusTimer = setTimeout(() => getFocusables()[0]?.focus(), 0);
+    const handleKey = (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const items = Array.from(
+          sheetRef.current?.querySelectorAll('.stage-mode-sheet-item') || [],
+        ).filter((el) => !el.disabled);
+        if (items.length === 0) return;
+        e.preventDefault();
+        const idx = items.indexOf(document.activeElement);
+        const next = e.key === 'ArrowDown'
+          ? (idx + 1) % items.length
+          : (idx - 1 + items.length) % items.length;
+        items[next]?.focus();
+      } else if (e.key === 'Tab') {
+        const els = getFocusables();
+        if (els.length === 0) return;
+        const first = els[0];
+        const last = els[els.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      clearTimeout(focusTimer);
+      document.removeEventListener('keydown', handleKey);
+      // Kembalikan fokus ke pemicu (tombol footer) agar operasi keyboard
+      // berlanjut mulus setelah sheet ditutup.
+      lastFocusedRef.current?.focus?.();
+    };
+  }, [sheetOpen]);
 
   // =========================
   // Derived info
@@ -827,27 +921,27 @@ export default function StageModePage({
           className="btn btn-secondary stage-mode-footer-btn"
           onClick={() => setSheetOpen('song')}
           aria-label="Daftar lagu setlist"
-          title={activeSetlist ? `${activeSetlist.name} — ${currentIndex + 1}/${setlistSongs.length}` : 'Daftar lagu'}
+          title={activeSetlist ? `${activeSetlist.name} — ${currentIndex >= 0 ? currentIndex + 1 : 'luar setlist'}/${setlistSongs.length}` : 'Daftar lagu'}
         >
-          ☰ {setlistSongs.length > 0 ? `${currentIndex + 1}/${setlistSongs.length}` : '—'}
+          ☰ {setlistSongs.length > 0 ? `${currentIndex >= 0 ? currentIndex + 1 : '—'}/${setlistSongs.length}` : '—'}
         </button>
         <button
           type="button"
           className="btn btn-secondary stage-mode-footer-btn"
-          onClick={() => currentIndex > 0 && goToSong(setlistSongs[currentIndex - 1].id)}
+          onClick={() => currentIndex >= 0 && goToSong(setlistSongs[currentIndex - 1].id)}
           disabled={currentIndex <= 0}
           aria-label="Lagu sebelumnya"
-          title={currentIndex > 0 ? (setlistSongs[currentIndex - 1].title || 'Lagu sebelumnya') : 'Tidak ada lagu sebelumnya'}
+          title={currentIndex > 0 ? (setlistSongs[currentIndex - 1].title || 'Lagu sebelumnya') : (currentIndex < 0 ? 'Lagu di luar setlist — navigasi tidak tersedia' : 'Tidak ada lagu sebelumnya')}
         >
           ←
         </button>
         <button
           type="button"
           className="btn btn-primary stage-mode-next"
-          onClick={() => currentIndex < setlistSongs.length - 1 && goToSong(setlistSongs[currentIndex + 1].id)}
+          onClick={() => currentIndex >= 0 && currentIndex < setlistSongs.length - 1 && goToSong(setlistSongs[currentIndex + 1].id)}
           disabled={currentIndex < 0 || currentIndex >= setlistSongs.length - 1}
           aria-label="Lagu berikutnya"
-          title={currentIndex < setlistSongs.length - 1 ? (setlistSongs[currentIndex + 1].title || 'Lagu berikutnya') : 'Lagu terakhir'}
+          title={currentIndex < 0 ? 'Lagu di luar setlist — pilih lagu dari setlist untuk navigasi' : (currentIndex < setlistSongs.length - 1 ? (setlistSongs[currentIndex + 1].title || 'Lagu berikutnya') : 'Lagu terakhir')}
         >
           →
         </button>
@@ -897,8 +991,17 @@ export default function StageModePage({
 
             {setupStep === 'band' && (
               <div className="stage-mode-sheet-list" role="menu">
-                {bands.length === 0 && !dataLoading && (
-                  <div className="stage-mode-sheet-empty">Tidak ada band. Lewati ke pemilihan setlist.</div>
+                  {bands.length === 0 && !dataLoading && (
+                  <>
+                    <div className="stage-mode-sheet-empty">Tidak ada band. Lanjut ke pemilihan setlist.</div>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => setSetupStep('setlist')}
+                    >
+                      Lanjut ke pemilihan setlist →
+                    </button>
+                  </>
                 )}
                 {bands.map((b) => {
                   const id = String(b.bandId || b.id);
@@ -954,6 +1057,7 @@ export default function StageModePage({
           role="presentation"
         >
           <div
+            ref={sheetRef}
             className="stage-mode-sheet"
             role="menu"
             aria-label="Pilih"
@@ -982,7 +1086,10 @@ export default function StageModePage({
                   <button
                     type="button"
                     className={`stage-mode-sheet-item stage-mode-filter-chip${!bandId ? ' active' : ''}`}
-                    onClick={() => setBandId('')}
+                    onClick={() => {
+                      setBandId('');
+                      writeStored(STORAGE_KEYS.STAGE_BAND, '');
+                    }}
                     aria-pressed={!bandId}
                   >
                     <span className="stage-mode-sheet-name">Semua band</span>
@@ -995,7 +1102,11 @@ export default function StageModePage({
                         key={id}
                         type="button"
                         className={`stage-mode-sheet-item stage-mode-filter-chip${selected ? ' active' : ''}`}
-                        onClick={() => setBandId(id)}
+                        onClick={() => {
+                          // Konsisten dengan wizard: pilih band, persist, dan
+                          // arahkan ke setlist pertama milik band tersebut.
+                          handleSelectBand(id);
+                        }}
                         aria-pressed={selected}
                       >
                         <span className="stage-mode-sheet-name">{b.name || b.bandName || 'Band'}</span>
@@ -1105,8 +1216,9 @@ export default function StageModePage({
                       key={s.id}
                       type="button"
                       role="menuitemradio"
+                      aria-checked={String(s.id) === String(effectiveSongId)}
                       onClick={() => goToSong(s.id)}
-                      className="stage-mode-sheet-item"
+                      className={`stage-mode-sheet-item${String(s.id) === String(effectiveSongId) ? ' active' : ''}`}
                     >
                       <span className="stage-mode-sheet-name">
                         <span className="stage-mode-sheet-item-title">{s.title || 'Tanpa judul'}</span>
@@ -1158,5 +1270,5 @@ export default function StageModePage({
     </div>
   );
 
-  return ReactDOM.createPortal(content, document.body);
+  return createPortal(content, document.body);
 }
