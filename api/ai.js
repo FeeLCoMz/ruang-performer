@@ -3,26 +3,17 @@
 // NOTE: Gemma 3n variants are not consistently available in the v1beta generateContent API
 // for all projects, so we intentionally exclude them to prevent 404s on production traffic.
 export const GEMINI_TEXT_MODELS_SUPPORTED = [
-  'gemini-2.5-flash',
-  'gemini-2.5-pro',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-001',
-  'gemini-2.0-flash-lite-001',
-  'gemini-2.0-flash-lite',
-  'gemini-exp-1206',
-  'gemma-3-1b-it',
-  'gemma-3-4b-it',
-  'gemma-3-12b-it',
-  'gemma-3-27b-it',
+  // Verified via ModelService.ListModels (v1beta) — gemini-2.0-* and gemma-3-*
+  // are no longer served for standard API keys and only produce 404s.
   'gemini-flash-latest',
+  'gemini-2.5-flash',
   'gemini-flash-lite-latest',
-  'gemini-pro-latest',
   'gemini-2.5-flash-lite',
-  'gemini-2.5-flash-preview-09-2025',
-  'gemini-2.5-flash-lite-preview-09-2025',
-  'gemini-3-pro-preview',
+  'gemini-pro-latest',
+  'gemini-2.5-pro',
   'gemini-3-flash-preview',
-  'deep-research-pro-preview-12-2025',
+  'gemini-3.1-pro-preview',
+  'gemini-3.1-flash-lite',
 ];
 
 const UNSUPPORTED_GEMINI_MODELS = new Set([
@@ -31,10 +22,9 @@ const UNSUPPORTED_GEMINI_MODELS = new Set([
 ]);
 
 const GEMINI_FALLBACK_MODELS = [
+  'gemini-flash-latest',
   'gemini-2.5-flash',
   'gemini-2.5-pro',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
 ];
 
 function isGeminiProjectDeniedAccess(status, message) {

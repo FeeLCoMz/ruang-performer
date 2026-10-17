@@ -90,15 +90,15 @@ describe('buildGeminiModelCandidates', () => {
   test('falls back to known-good models after the requested one', () => {
     const candidates = buildGeminiModelCandidates('gemini-2.5-flash');
     expect(candidates).toContain('gemini-2.5-pro');
-    expect(candidates).toContain('gemini-2.0-flash');
+    expect(candidates).toContain('gemini-flash-latest');
+    expect(candidates).not.toContain('gemini-2.0-flash');
   });
 
   test('skips a falsy model but still returns the fallback list', () => {
-    const fallbackOnly = buildGeminiModelCandidates('gemini-2.5-flash');
-    expect(buildGeminiModelCandidates('')).toEqual(fallbackOnly);
+    const fallbackOnly = buildGeminiModelCandidates('');
     expect(buildGeminiModelCandidates(null)).toEqual(fallbackOnly);
     expect(buildGeminiModelCandidates(undefined)).toEqual(fallbackOnly);
-    expect(fallbackOnly[0]).toBe('gemini-2.5-flash');
+    expect(fallbackOnly[0]).toBe('gemini-flash-latest');
   });
 
   test('never repeats a model', () => {
@@ -196,8 +196,8 @@ describe('handleChat model fallback', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.text).toBe('second try works');
-    // First candidate denied, second candidate (gemini-2.5-flash) succeeded.
-    expect(res.body.modelUsed).toBe('gemini-2.5-flash');
+    // First candidate denied, second candidate (fallback list head) succeeded.
+    expect(res.body.modelUsed).toBe('gemini-flash-latest');
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
