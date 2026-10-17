@@ -670,130 +670,13 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
         handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
       />
 
-      {/* Tab panel: Analisis | Setlist — lirik & media selalu tampil di bawah. */}
-      <div className="song-tabs">
-        <div className="song-tabs-bar" role="tablist" aria-label="Panel lagu">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'analyzer'}
-            className={`song-tabs-tab${activeTab === 'analyzer' ? ' active' : ''}`}
-            onClick={() => setActiveTab('analyzer')}
-          >
-            🎵 Analisis
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'setlists'}
-            className={`song-tabs-tab${activeTab === 'setlists' ? ' active' : ''}`}
-            onClick={() => setActiveTab('setlists')}
-          >
-            📋 Setlist
-          </button>
-        </div>
-
-        {/* Tab Info dihapus: panel lirik sudah memuat kontrol transpose & tempo
-            di toolbar-nya, jadi tidak ada panel info detail lagi. */}
-
-        {activeTab === 'analyzer' && (
-          <SongChordsAnalyzer
-            chordStats={chordStats}
-            transpose={transpose}
-            song={song}
-            songSections={extractSectionOverview(song?.lyrics || '')}
-          />
-        )}
-
-        {/* Setlist yang memuat lagu ini — tab Setlist. */}
-        {activeTab === 'setlists' && song.id && !loadingSetlists && (() => {
-          const containingSetlists = setlists.filter((sl) =>
-            Array.isArray(sl.songs) && sl.songs.includes(song.id)
-          );
-          if (containingSetlists.length === 0) {
-            return <div className="empty-state">Lagu ini belum ada di setlist mana pun</div>;
-          }
-          return (
-            <div className="song-panel song-containing-setlists expanded">
-              <div className="song-containing-setlists-header">
-                <span className="song-containing-setlists-title">📋 Setlist yang Memuat Lagu Ini ({containingSetlists.length})</span>
-              </div>
-              <div className="song-containing-setlists-list">
-                {containingSetlists.map((sl) => (
-                  <button
-                    key={sl.id}
-                    type="button"
-                    className="song-containing-setlist-item"
-                    onClick={() => navigate(`/setlists/${sl.id}`)}
-                    title={sl.name}
-                  >
-                    <span className="song-containing-setlist-name">{sl.name}</span>
-                    <span className="song-containing-setlist-count">{sl.songs?.length || 0} lagu</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-      </div>
-
-      {/* Lirik + media: selalu tampil, berbagi kolom di desktop (grid 2 kolom),
-          bertumpuk di mobile. Lirik di kiri, media di kanan. */}
-      {youtubeId ? (
-        <div className="song-lyrics-media-grid">
-          <SongLyricsMainSection
-            lyricsDisplayRef={lyricsDisplayRef}
-            tempo={tempo}
-            onTempoChange={handleSongTempoChange}
-            isMetronomeActive={isMetronomeActive}
-            setIsMetronomeActive={setIsMetronomeActive}
-            timeSignature={timeSignature}
-            autoScrollActive={autoScrollActive}
-            scrollSpeed={scrollSpeed}
-            setAutoScrollActive={setAutoScrollActive}
-            setScrollSpeed={setScrollSpeed}
-            autoScrollMode={autoScrollMode}
-            setAutoScrollMode={setAutoScrollMode}
-            manualSpeedLevel={manualSpeedLevel}
-            setManualSpeedLevel={setManualSpeedLevel}
-            zoom={zoom}
-            setZoom={setZoom}
-            song={song}
-            transpose={transpose}
-            setTranspose={setTranspose}
-            showChords={showChords}
-            showSheetMusic={showSheetMusic}
-            setShowSheetMusic={setShowSheetMusic}
-            youtubeRef={youtubeRef}
-            youtubeId={youtubeId}
-            isYoutubePlaying={isYoutubePlaying}
-            loading={loading}
-            showChordNumbers={showChordNumbers}
-            setShowChordNumbers={setShowChordNumbers}
-            showJazzChords={showJazzChords}
-            setShowJazzChords={setShowJazzChords}
-            showSimpleChords={showSimpleChords}
-            setShowSimpleChords={setShowSimpleChords}
-            keySignature={key || song?.key || ''}
-            originalKey={song?.key || baseKey || ''}
-            targetKey={key || song?.key || ''}
-            onKeyChange={handleSongKeyChange}
-            pianoRecommendation={pianoRecommendation}
-            onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-            setlistNav={setlistNav}
-          />
-          <SongMediaPanel {...mediaPanelProps} />
-        </div>
-      ) : (
+      {/* Lirik (kiri) berbagi kolom dengan tab panel (kanan) di desktop:
+          Media | Analisis | Setlist. Mobile: bertumpuk. */}
+      <div className="song-lyrics-tabs-grid">
         <SongLyricsMainSection
           lyricsDisplayRef={lyricsDisplayRef}
           tempo={tempo}
-          onTempoChange={handleSongTempoChange}
-          isMetronomeActive={isMetronomeActive}
-          setIsMetronomeActive={setIsMetronomeActive}
-          timeSignature={timeSignature}
           autoScrollActive={autoScrollActive}
-          scrollSpeed={scrollSpeed}
           setAutoScrollActive={setAutoScrollActive}
           setScrollSpeed={setScrollSpeed}
           autoScrollMode={autoScrollMode}
@@ -826,7 +709,86 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
           onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
           setlistNav={setlistNav}
         />
-      )}
+
+        <div className="song-tabs song-tabs-side">
+          <div className="song-tabs-bar" role="tablist" aria-label="Panel lagu">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'media'}
+              className={`song-tabs-tab${activeTab === 'media' ? ' active' : ''}`}
+              onClick={() => setActiveTab('media')}
+              disabled={!youtubeId}
+              title={youtubeId ? 'Panel media (video & time markers)' : 'Lagu ini belum punya video YouTube'}
+            >
+              📺 Media
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'analyzer'}
+              className={`song-tabs-tab${activeTab === 'analyzer' ? ' active' : ''}`}
+              onClick={() => setActiveTab('analyzer')}
+            >
+              🎵 Analisis
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'setlists'}
+              className={`song-tabs-tab${activeTab === 'setlists' ? ' active' : ''}`}
+              onClick={() => setActiveTab('setlists')}
+            >
+              📋 Setlist
+            </button>
+          </div>
+
+          {/* Tab media: panel video + time marker, berbagi kolom dengan panel lirik. */}
+          {activeTab === 'media' && youtubeId && (
+            <SongMediaPanel {...mediaPanelProps} />
+          )}
+
+          {activeTab === 'analyzer' && (
+            <SongChordsAnalyzer
+              chordStats={chordStats}
+              transpose={transpose}
+              song={song}
+              songSections={extractSectionOverview(song?.lyrics || '')}
+            />
+          )}
+
+          {/* Setlist yang memuat lagu ini — tab Setlist. */}
+          {activeTab === 'setlists' && song.id && !loadingSetlists && (() => {
+            const containingSetlists = setlists.filter((sl) =>
+              Array.isArray(sl.songs) && sl.songs.includes(song.id)
+            );
+            if (containingSetlists.length === 0) {
+              return <div className="empty-state">Lagu ini belum ada di setlist mana pun</div>;
+            }
+            return (
+              <div className="song-panel song-containing-setlists expanded">
+                <div className="song-containing-setlists-header">
+                  <span className="song-containing-setlists-title">📋 Setlist yang Memuat Lagu Ini ({containingSetlists.length})</span>
+                </div>
+                <div className="song-containing-setlists-list">
+                  {containingSetlists.map((sl) => (
+                    <button
+                      key={sl.id}
+                      type="button"
+                      className="song-containing-setlist-item"
+                      onClick={() => navigate(`/setlists/${sl.id}`)}
+                      title={sl.name}
+                    >
+                      <span className="song-containing-setlist-name">{sl.name}</span>
+                      <span className="song-containing-setlist-count">{sl.songs?.length || 0} lagu</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </div>
 
       {/* Footer navigasi lagu setlist: sticky di mobile; di desktop tampil
           sebagai bar inline saat dalam konteks setlist. Tombol 📋 membuka

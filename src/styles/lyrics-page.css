@@ -1570,11 +1570,11 @@
 
 
 /* ========================================
-   SONG LYRICS + MEDIA GRID (desktop)
-   Panel lirik dan panel media berbagi kolom: lirik di kiri (kolom lebih
-   lebar), media (video + time marker) di kanan. Mobile: bertumpuk.
+   SONG LYRICS + TABS GRID (desktop)
+   Panel lirik di kiri (kolom lebih lebar), tab panel (Media | Analisis |
+   Setlist) di kanan. Mobile: bertumpuk.
    ======================================== */
-.song-lyrics-media-grid {
+.song-lyrics-tabs-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
@@ -1582,7 +1582,7 @@
 }
 
 @media (min-width: 901px) {
-  .song-lyrics-media-grid {
+  .song-lyrics-tabs-grid {
     grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
   }
 }

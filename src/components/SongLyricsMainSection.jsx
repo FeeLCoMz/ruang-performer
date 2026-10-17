@@ -114,17 +114,7 @@ export default function SongLyricsMainSection({
   return (
     <div className="song-panel song-lyrics-main" ref={lyricsPanelRef}>
       <SongChordsLyricsToolbar
-        originalKey={originalKey}
-        targetKey={targetKey}
-        transpose={transpose}
-        setTranspose={setTranspose}
-        pianoRecommendation={pianoRecommendation}
-        onApplyRecommendedTranspose={onApplyRecommendedTranspose}
         tempo={tempo}
-        onTempoChange={onTempoChange}
-        isMetronomeActive={isMetronomeActive}
-        setIsMetronomeActive={setIsMetronomeActive}
-        timeSignature={timeSignature}
         autoScrollActive={autoScrollActive}
         setAutoScrollActive={setAutoScrollActive}
         scrollSpeed={scrollSpeed}
@@ -139,7 +129,7 @@ export default function SongLyricsMainSection({
         setFocusMode={setFocusMode}
         screenLocked={screenLocked}
         setScreenLocked={setScreenLocked}
-        setlistNav={setlistNav}
+        tempo={tempo}
       />
 
         {loading ? (

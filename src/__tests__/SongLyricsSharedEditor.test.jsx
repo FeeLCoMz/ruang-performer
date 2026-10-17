@@ -380,27 +380,17 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-lyrics-section-detected-badge')).toBeFalsy();
   });
 
-  test('Given SongChordsLyricsToolbar, Then key/transpose, autoscroll and view-mode controls are rendered', async () => {
+  test('Given SongChordsLyricsToolbar, Then autoscroll and view-mode controls are rendered (transpose/tempo dihapus)', async () => {
     await act(async () => {
       root.render(
         <SongChordsLyricsToolbar
-          originalKey="C"
-          targetKey="D"
-          transpose={2}
-          setTranspose={noop}
           tempo={120}
-          onTempoChange={noop}
-          isMetronomeActive={false}
-          setIsMetronomeActive={noop}
-          timeSignature="4/4"
           autoScrollActive={false}
           setAutoScrollActive={noop}
           scrollSpeed={120}
           setScrollSpeed={noop}
           fontScale={1}
           setFontScale={noop}
-          stageMode={false}
-          setStageMode={noop}
           focusMode={false}
           setFocusMode={noop}
           screenLocked={false}
@@ -410,10 +400,10 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     const labels = Array.from(container.querySelectorAll('button')).map((b) => (b.textContent || '').trim()).join(' ');
-    // Key/transpose: kapsul compact (TransposeKeyControl variant="compact") + tempo kapsul.
-    expect(container.querySelector('.transpose-key-capsule')).toBeTruthy();
-    expect(container.querySelector('.transpose-key-value').textContent).toContain('D');
-    expect(container.querySelector('.song-lyrics-tempo-capsule').textContent).toContain('120');
+    // Transpose key & tempo kapsul dihapus dari toolbar (tersedia di header lagu
+    // dan panel media).
+    expect(container.querySelector('.transpose-key-capsule')).toBeFalsy();
+    expect(container.querySelector('.song-lyrics-tempo-capsule')).toBeFalsy();
     // Autoscroll lirik di toolbar: kapsul shared (AutoScrollControl).
     expect(container.querySelector('.song-lyrics-autoscroll-capsule')).toBeTruthy();
     // Kontrol tampilan dirender (mode panggung dihapus).
