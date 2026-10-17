@@ -40,15 +40,12 @@
     min-height: 46px;
     padding: 0;
     justify-content: center;
-    font-size: 0;
     gap: 0;
   }
 
-  /* Keep the gear glyph visible while hiding the words. */
-  .setlist-header-more > summary::before {
-    content: '?';
-    font-size: 1.15rem;
-    line-height: 1;
+  /* Sembunyikan label teks di layar sempit — hanya ikon ⚙ yang tampil. */
+  .setlist-header-more > summary .setlist-header-more-label {
+    display: none;
   }
 
   .setlist-header-more-menu {

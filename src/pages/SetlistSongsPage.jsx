@@ -1479,7 +1479,10 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           )}
 
           <details className="setlist-header-more" aria-label="Aksi tambahan setlist">
-            <summary className="btn btn-secondary">⚙ Aksi Lainnya</summary>
+            <summary className="btn btn-secondary">
+              <span className="setlist-header-more-icon" aria-hidden="true">⚙</span>
+              <span className="setlist-header-more-label">Aksi Lainnya</span>
+            </summary>
             <div className="setlist-header-more-menu">
               <button
                 className="btn btn-secondary setlist-btn-ghost"
