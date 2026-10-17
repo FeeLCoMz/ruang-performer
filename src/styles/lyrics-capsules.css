@@ -7,7 +7,7 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  padding: 3px;
+  padding: 3px 6px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
   border: 1px solid var(--border-color);
@@ -231,6 +231,34 @@
      karena transpose & autoscroll harus bisa diakses cepat saat perform.) */
 }
 
+/* Desktop sempit (901-1300px): toolbar wajib satu baris — label tombol yang
+   tidak penting disembunyikan bertahap. Prioritas: label tombol grup tampilan
+   (Fokus/Kunci — ikonnya sudah jelas) hilang dulu, lalu label autoscroll
+   (ikon ↕/♪/≡ masih bisa dibaca), lalu teks switch Chord & divider.
+   Yang TIDAK disembunyikan: angka BPM/Level, %, ikon — itu nilai fungsional. */
+@media (min-width: 901px) and (max-width: 1440px) {
+  .song-lyrics-toolbar-group-viewmode .song-lyrics-toolbar-btn-label {
+    display: none;
+  }
+
+  .song-lyrics-toolbar-group-viewmode .btn {
+    padding: 0 0.45rem;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .song-lyrics-autoscroll-btn-label,
+  .song-lyrics-autoscroll-mode-label {
+    display: none;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1080px) {
+  .song-lyrics-chord-text,
+  .song-lyrics-toolbar-divider {
+    display: none;
+  }
+}
 /* ========================================
    SETLIST NAV FOOTER (mobile)
    Footer sticky navigasi lagu setlist — duduk tepat di atas bottom nav.

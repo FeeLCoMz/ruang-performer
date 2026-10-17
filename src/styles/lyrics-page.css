@@ -1462,6 +1462,14 @@
   flex-wrap: wrap;
 }
 
+/* Desktop: toolbar wajib satu baris — label tombol yang tidak penting
+   disembunyikan bertahap di breakpoint bawah (lihat media query lain). */
+@media (min-width: 901px) {
+  .song-lyrics-toolbar--normal {
+    flex-wrap: nowrap;
+  }
+}
+
 /* Urutan visual grup toolbar (prioritas perform): Key ? Tempo LED ?
    Autoscroll ? Viewmode. Key & tempo grup terpisah; semua di baris utama. */
 .song-lyrics-toolbar-group-key { order: 1; }
@@ -1522,59 +1530,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Kontrol kecepatan autoscroll presisi */
-.song-lyrics-autoscroll-speed {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--secondary-bg);
-}
-
-.song-lyrics-autoscroll-step,
-.song-lyrics-autoscroll-reset {
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
-  min-height: 34px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  font-weight: 700;
-  border-radius: var(--radius-sm);
-}
-
-.song-lyrics-autoscroll-input {
-  width: 52px;
-  height: 34px;
-  padding: 0 4px;
-  text-align: center;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-  background: var(--primary-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-}
-
-/* Sembunyikan spinner input number agar rapi */
-.song-lyrics-autoscroll-input::-webkit-outer-spin-button,
-.song-lyrics-autoscroll-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.song-lyrics-autoscroll-input {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
+/* Kontrol kecepatan autoscroll presisi — style legacy; kini kapsul digambar
+   di lyrics-capsules.css (26px). Blok ini sudah tidak dipakai markup kapsul
+   (input numerik dihapus dari AutoScrollControl), sisanya dibuang. */
 
 .song-lyrics-autoscroll-unit {
-  font-size: var(--font-size-xs);
+  font-size: 0.62rem;
   font-weight: 700;
   color: var(--text-muted);
   letter-spacing: 0.04em;

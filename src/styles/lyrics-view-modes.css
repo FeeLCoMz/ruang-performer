@@ -133,15 +133,37 @@
   white-space: nowrap;
 }
 
-/* Tombol .btn di dalam grup tampilan (Fokus, Kunci) dipadatkan — padding
-   .btn global terlalu besar untuk toolbar lirik. Tinggi selaras kapsul (30px). */
+/* Tombol .btn di dalam grup tampilan (Fokus, Kunci) diseragamkan dengan
+   gaya tombol kapsul autoscroll: ghost pill transparan, tinggi 26px.
+   btn-secondary/btn-primary dari class global dibuang di sini. */
 .song-lyrics-toolbar-group-viewmode .btn {
   min-height: 26px;
   height: 26px;
   padding: 0 0.6rem;
   gap: 4px;
-  font-size: var(--font-size-xs);
+  border: none;
   border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Aktif (btn-primary): aksen, gaya sama dengan tombol Scroll autoscroll */
+.song-lyrics-toolbar-group-viewmode .btn.btn-primary:not(:disabled),
+.song-lyrics-toolbar-group-viewmode .btn.btn-primary:not(:disabled):hover {
+  background: var(--primary-accent);
+  border-color: var(--primary-accent);
+  color: var(--primary-bg);
+}
+
+/* Ghost hover: pill abu, sama dengan tombol autoscroll & font (TIDAK
+   mengangkat/ber-shadow seperti .btn global) */
+.song-lyrics-toolbar-group-viewmode .btn:hover:not(:disabled):not(.btn-primary) {
+  background: rgba(127, 127, 127, 0.15);
+  border-color: transparent;
+  color: var(--text-primary);
 }
 
 /* Matikan efek lift global .btn agar toolbar tetap datar/stabil */
@@ -150,11 +172,8 @@
   box-shadow: none;
 }
 
-.song-lyrics-toolbar-group-viewmode {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+.song-lyrics-toolbar-group-viewmode .btn:disabled {
+  opacity: 0.4;
 }
 
 .song-lyrics-font-control {
