@@ -5,8 +5,6 @@ import SetlistNavFooter from '../components/SetlistNavFooter.jsx';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import SongMediaPanel from '../components/SongMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
-import TransposeKeyControl from '../components/TransposeKeyControl.jsx';
-import TempoControl from '../components/TempoControl.jsx';
 import { getAuthHeader } from '../utils/auth.js';import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
@@ -672,18 +670,9 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
         handleExportPDF={() => handleExportPDF(song, artist, key, lyricsMetaKey, tempo, lyricsForExport, transpose, setShowExportMenu)}
       />
 
-      {/* Tab panel: Info | Analisis | Setlist — lirik & media selalu tampil di bawah. */}
+      {/* Tab panel: Analisis | Setlist — lirik & media selalu tampil di bawah. */}
       <div className="song-tabs">
         <div className="song-tabs-bar" role="tablist" aria-label="Panel lagu">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'info'}
-            className={`song-tabs-tab${activeTab === 'info' ? ' active' : ''}`}
-            onClick={() => setActiveTab('info')}
-          >
-            ℹ️ Info
-          </button>
           <button
             type="button"
             role="tab"
@@ -704,38 +693,8 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
           </button>
         </div>
 
-        {activeTab === 'info' && (
-          <div className="song-panel song-detail-info-panel">
-            <div className="song-detail-info-keyrow">
-              <span className="song-info-row-label">🎹 Key</span>
-              <div className="song-info-row-control">
-                <TransposeKeyControl
-                  originalKey={song?.key || key || ''}
-                  targetKey={key || song?.key || ''}
-                  transpose={transpose}
-                  onTransposeChange={setTranspose}
-                  pianoRecommendation={pianoRecommendation?.recommendedKey ? pianoRecommendation : null}
-                  onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-                />
-              </div>
-            </div>
-            {tempo && (
-              <div className="song-detail-info-keyrow">
-                <span className="song-info-row-label">⏱️ Tempo</span>
-                <div className="song-info-row-control">
-                  <TempoControl
-                    tempo={tempo}
-                    scrollSpeed={scrollSpeed}
-                    setScrollSpeed={setScrollSpeed}
-                    isMetronomeActive={isMetronomeActive}
-                    setIsMetronomeActive={setIsMetronomeActive}
-                    timeSignature={timeSignature}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Tab Info dihapus: panel lirik sudah memuat kontrol transpose & tempo
+            di toolbar-nya, jadi tidak ada panel info detail lagi. */}
 
         {activeTab === 'analyzer' && (
           <SongChordsAnalyzer

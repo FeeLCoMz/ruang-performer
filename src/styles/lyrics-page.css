@@ -1591,18 +1591,3 @@
 .page-container > .song-panel:first-child {
   margin-bottom: 12px;
 }
-
-/* Tab Info: baris Key & Tempo ringkas di bawah tab. */
-.song-detail-info-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.song-detail-info-keyrow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
