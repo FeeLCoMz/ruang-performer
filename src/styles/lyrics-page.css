@@ -96,6 +96,16 @@
   display: none;
 }
 
+/* Teks polos di dalam row-control (mis. daftar instrumen) */
+.song-info-row-text {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+  word-break: break-word;
+  white-space: normal;
+}
+
 /* --- Baris chip status: nilai teks ringkas --- */
 .song-info-chip-row {
   display: flex;

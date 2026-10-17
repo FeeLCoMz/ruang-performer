@@ -73,6 +73,12 @@ export default function SongChordsInfo({
     return shifted || baseDisplayKey;
   })();
 
+  // Baris artis: tampilkan key (prioritas: metadata lirik > key DB > key
+  // setlist) dan tempo agar info inti lagu terlihat di header.
+  const headerDisplayKey = lyricsOriginalKey || originalKey || targetKey || '';
+  if (headerDisplayKey) {
+    metadataItems.push(`Key: ${headerDisplayKey}`);
+  }
   if (baseDisplayKey) {
     metadataItems.push(`Key: ${transposedDisplayKey}`);
   }
@@ -85,7 +91,8 @@ export default function SongChordsInfo({
   if (genre) {
     metadataItems.push(`Genre: ${genre}`);
   }
-  if (lyricsOriginalKey) {
+  if (lyricsOriginalKey && lyricsOriginalKey !== headerDisplayKey) {
+    // Metadata lirik berbeda dari key utama — tampilkan sebagai informasi.
     metadataItems.push(`Original: ${lyricsOriginalKey}`);
   }
   if (detectedInstrumentList.length) {
@@ -104,19 +111,25 @@ export default function SongChordsInfo({
           {(artist || contributor || genre) && (
             <p className="song-artist-main">
               {artist && <span className="song-artist-name">{artist}</span>}
-              {artist && lyricsOriginalKey && <span className="song-meta-sep" aria-hidden="true">·</span>}
-              {lyricsOriginalKey && (
-                <span className="song-original-key-inline" title="Original Key (dari metadata lirik)">
-                  <span aria-hidden="true">🎵</span> {lyricsOriginalKey}
+              {artist && headerDisplayKey && <span className="song-meta-sep" aria-hidden="true">·</span>}
+              {headerDisplayKey && (
+                <span className="song-original-key-inline" title="Key (dari metadata lirik)">
+                  <span aria-hidden="true">🎵</span> {headerDisplayKey}
                 </span>
               )}
-              {(artist || lyricsOriginalKey) && genre && <span className="song-meta-sep" aria-hidden="true">·</span>}
+              {(artist || headerDisplayKey) && tempo && <span className="song-meta-sep" aria-hidden="true">·</span>}
+              {tempo && (
+                <span className="song-tempo-inline" title={`Tempo: ${tempo} BPM`}>
+                  <span aria-hidden="true">⏱️</span> {tempo}
+                </span>
+              )}
+              {(artist || headerDisplayKey || tempo) && genre && <span className="song-meta-sep" aria-hidden="true">·</span>}
               {genre && (
                 <span className="song-genre-inline" title={`Genre: ${genre}`}>
                   <span aria-hidden="true">🎸</span> {genre}
                 </span>
               )}
-              {(artist || lyricsOriginalKey || genre) && contributor && <span className="song-meta-sep" aria-hidden="true">·</span>}
+              {(artist || headerDisplayKey || tempo || genre) && contributor && <span className="song-meta-sep" aria-hidden="true">·</span>}
               {contributor && showActions && (
                 <span className="song-contributor-main" title={`Kontributor: ${contributor}`}>
                   <span aria-hidden="true">👤</span>
@@ -257,13 +270,14 @@ export default function SongChordsInfo({
               </span>
             )}
             {detectedInstrumentList.length > 0 && (
-              <span className="song-info-item">
-                <span className="song-info-label">🎼 Instrumen</span>
-                {/* Teks polos dipisah koma — bukan chip, lebih tenang. */}
-                <span className="song-info-value" aria-label="Daftar instrumen terdeteksi">
-                  {detectedInstrumentList.join(', ')}
-                </span>
-              </span>
+              // Satu gaya dengan baris kontrol: radius/background seragam.
+              <div className="song-info-control-row">
+                <span className="song-info-row-label">🎼 Instrumen</span>
+                <div className="song-info-row-control" aria-label="Daftar instrumen terdeteksi">
+                  {/* Teks polos dipisah koma — bukan chip. */}
+                  <span className="song-info-row-text">{detectedInstrumentList.join(', ')}</span>
+                </div>
+              </div>
             )}
           </div>
         )}

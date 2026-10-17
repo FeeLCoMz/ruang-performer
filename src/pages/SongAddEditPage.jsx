@@ -985,7 +985,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             </h1>
           </div>
         </div>
-        <div className="card">Memuat data lagu...</div>
       </div>
     );
   }
