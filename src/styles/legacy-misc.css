@@ -769,7 +769,7 @@
   padding: 10px 12px;
   margin-bottom: 12px;
   border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(15, 23, 42, 0.04));
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
@@ -778,7 +778,7 @@
   padding: 8px 12px;
   min-width: 44px;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .setlist-song-navigator-compact .setlist-song-info {

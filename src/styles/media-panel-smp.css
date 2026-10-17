@@ -15,7 +15,8 @@
 
 .smp--card {
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  /* Radius seragam kartu panel lagu (--radius-lg = 12px) */
+  border-radius: var(--radius-lg);
   background: var(--card-bg);
   padding: var(--spacing-lg);
 }

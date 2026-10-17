@@ -1370,7 +1370,7 @@
     state dipegang halaman supaya sinkron dengan tab Info. */
 .song-lyrics-keytempo-input {
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--card-bg);
   color: var(--text-primary);
   font-weight: 700;
@@ -1421,10 +1421,11 @@
   white-space: nowrap;
 }
 
-/* Panel analisis chord inline (tab Analisis) ï¿½ konten langsung di panel,
-   bukan modal, jadi tidak menutupi halaman. */
+/* Panel analisis chord inline (tab Analisis) — konten langsung di panel,
+   bukan modal, jadi tidak menutupi halaman. Padding & radius mengikuti token
+   panel lagu (.song-panel sudah memberi radius-lg & padding seragam). */
 .song-lyrics-analyzer-inline-panel {
-  padding: 24px 20px;
+  padding: var(--spacing-lg);
 }
 
 .song-lyrics-analyzer-inline-panel .song-lyrics-analyzer-grid {

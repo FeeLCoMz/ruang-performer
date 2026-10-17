@@ -77,7 +77,7 @@
   color: var(--text-muted);
   background: color-mix(in srgb, var(--primary-bg) 70%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 0 4px;
   white-space: nowrap;
 }
