@@ -119,7 +119,8 @@ body.stage-mode .btn-secondary {
   min-height: 100%;
   padding-bottom: 48px;
   color: #ffffff;
-  font-size: 1.25rem;
+  /* Ikuti --lyrics-font-scale (pinch/wheel) dengan basis lebih kecil dari 1.25rem. */
+  font-size: calc(clamp(0.8rem, 2.6vw, 1rem) * var(--lyrics-font-scale, 1));
 }
 
 .stage-mode-body .cd-token {
@@ -478,67 +479,5 @@ body.stage-mode .btn-secondary {
 .stage-mode-sheet-hint {
   margin: 6px 16px 10px;
   font-size: 0.75rem;
-  color: #9aa3bd;
-}
-
-/* Wizard setup berurutan (band â†’ setlist) saat pertama kali Stage Mode aktif. */
-.stage-mode-wizard-overlay {
-  z-index: 4200;
-  align-items: center;
-  /* Wajib: menutup overlay tidak menutup wizard. */
-  pointer-events: auto;
-}
-
-.stage-mode-wizard-overlay .stage-mode-sheet {
-  width: min(480px, 100%);
-  border-radius: 16px;
-  margin: 16px;
-}
-
-.stage-mode-wizard-header {
-  padding: 16px 16px 8px;
-}
-
-.stage-mode-wizard-progress {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.stage-mode-wizard-dot {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #9aa3bd;
-  background: #10101c;
-  border: 1px solid #3a3a5a;
-}
-
-.stage-mode-wizard-dot.active {
-  color: #000000;
-  background: var(--primary-accent);
-  border-color: var(--primary-accent);
-}
-
-.stage-mode-wizard-dot.done {
-  color: #4ade80;
-  border-color: #4ade80;
-}
-
-.stage-mode-wizard-bar {
-  flex: 1 1 auto;
-  height: 2px;
-  background: #3a3a5a;
-}
-
-.stage-mode-wizard-subtitle {
-  margin: 4px 0 0;
-  font-size: 0.82rem;
   color: #9aa3bd;
 }

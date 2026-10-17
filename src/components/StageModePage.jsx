@@ -154,6 +154,11 @@ export default function StageModePage({
   // atau ringkasan tanpa daftar lagu), fetch detailnya via fetchSetListById
   // (cache offline + auth header) supaya urutan lagu tersedia.
   const [resolvedSetlist, setResolvedSetlist] = useState(null);
+  // Menandai setlist detail sedang dimuat (fetchSetListById berjalan).
+  const [setlistDetailLoading, setSetlistDetailLoading] = useState(false);
+  // Menunda pembukaan sheet daftar lagu sampai detail setlist (urutan lagu)
+  // tersedia — dipicu oleh handleSelectSetlist.
+  const pendingSongSheetRef = useRef(false);
   const activeSetlistCandidate = useMemo(
     () => (initialSetlist?.id ? initialSetlist : setlists.find((sl) => String(sl.id) === String(setlistId)) || null),
     [initialSetlist, setlists, setlistId],
@@ -169,9 +174,25 @@ export default function StageModePage({
   useEffect(() => {
     if (!stageMode || !activeSetlistNeedsDetail || !activeSetlistCandidate?.id) return undefined;
     let cancelled = false;
+    setSetlistDetailLoading(true);
     apiClient.fetchSetListById(activeSetlistCandidate.id)
-      .then((detail) => { if (!cancelled && detail) setResolvedSetlist(detail); })
-      .catch(() => { /* biarkan UI menampilkan pesan kosong */ });
+      .then((detail) => {
+        if (cancelled) return;
+        if (detail) setResolvedSetlist(detail);
+        setSetlistDetailLoading(false);
+        // Saat pemilihan setlist menunggu detail, buka sheet lagu hanya
+        // setelah data lagu setlist benar-benar tersedia.
+        if (pendingSongSheetRef.current) {
+          pendingSongSheetRef.current = false;
+          setSheetOpen('song');
+        }
+      })
+      .catch(() => {
+        // Gagal memuat: tutup loading & jangan buka sheet lagu otomatis,
+        // biarkan UI menampilkan pesan kosong (user bisa coba lagi).
+        pendingSongSheetRef.current = false;
+        setSetlistDetailLoading(false);
+      });
     return () => { cancelled = true; };
   }, [stageMode, activeSetlistNeedsDetail, activeSetlistCandidate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const activeSetlist = useMemo(() => {
@@ -199,8 +220,6 @@ export default function StageModePage({
     writeStored(STORAGE_KEYS.STAGE_SETLIST, nextSetlistId);
     setSelectedSongId('');
     writeStored(STORAGE_KEYS.STAGE_SONG, '');
-    // Wizard berurutan: setelah band, lanjut ke pemilihan setlist.
-    if (setupStep === 'band') setSetupStep('setlist');
   };
 
   const handleSelectSetlist = (nextSetlistId) => {
@@ -208,13 +227,16 @@ export default function StageModePage({
     writeStored(STORAGE_KEYS.STAGE_SETLIST, nextSetlistId);
     setSelectedSongId('');
     writeStored(STORAGE_KEYS.STAGE_SONG, '');
-    if (setupStep) {
-      // Setup selesai — lanjut ke daftar lagu setlist yang baru dipilih.
-      setSetupStep(null);
-      setSheetOpen('song');
-    } else {
-      setSheetOpen('song');
+    // Detail lagu setlist (urutan + data lagu) harus tersedia dulu. Bila
+    // detailnya belum ada, tunda pembukaan sheet lagu sampai fetch selesai
+    // dan tampilkan indikator loading.
+    const candidate = setlists.find((sl) => String(sl.id) === String(nextSetlistId)) || null;
+    if (candidate && !Array.isArray(candidate.songs)) {
+      pendingSongSheetRef.current = true;
+      setSetlistDetailLoading(true);
+      return;
     }
+    setSheetOpen('song');
   };
 
   // =========================
@@ -293,7 +315,7 @@ export default function StageModePage({
   const userAdjustedTransposeRef = useRef(false);
   const [fontScale, setFontScale] = useState(() => {
     const stored = Number(readStored(STORAGE_KEYS.STAGE_FONT_SCALE));
-    return Number.isFinite(stored) && stored >= 0.85 && stored <= 3 ? stored : 1.4;
+    return Number.isFinite(stored) && stored >= 0.85 && stored <= 3 ? stored : 1.2;
   });
   const [autoScrollMode, setAutoScrollMode] = useState(() => {
     const stored = readStored(STORAGE_KEYS.STAGE_AUTOSCROLL_MODE);
@@ -305,6 +327,13 @@ export default function StageModePage({
   useEffect(() => {
     writeStored(STORAGE_KEYS.STAGE_FONT_SCALE, String(fontScale));
   }, [fontScale]);
+  // fontScale diterapkan sebagai CSS var pada container lirik — .cd memakai
+  // font-size skala ini (pola sama dengan SongChordsLyricsDisplay).
+  useEffect(() => {
+    const el = stageBodyRef.current;
+    if (!el) return;
+    el.style.setProperty('--lyrics-font-scale', String(Number(fontScale) || 1));
+  }, [fontScale, hasSong]);
   useEffect(() => {
     writeStored(STORAGE_KEYS.STAGE_AUTOSCROLL_MODE, autoScrollMode);
   }, [autoScrollMode]);
@@ -323,12 +352,6 @@ export default function StageModePage({
       setSetlistSearchQuery('');
     }
   }, [sheetOpen]);
-  // Wizard setup berurutan saat Stage Mode pertama aktif: 'band' → 'setlist' →
-  // null. Null = setup selesai / dilewati karena sudah ada setlist aktif.
-  const [setupStep, setSetupStep] = useState(null);
-  // Bila user melewat wizard dengan sadar, jangan munculkan lagi otomatis
-  // selama sesi Stage Mode ini.
-  const wizardSkippedRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [setlistSearchQuery, setSetlistSearchQuery] = useState('');
   const [infoOpen, setInfoOpen] = useState(false);
@@ -361,17 +384,8 @@ export default function StageModePage({
     if (allFromProps && dataLoading) setDataLoading(false);
   }, [songsProp, bandsProp, setlistsProp, dataLoading]);
 
-  // Wizard setup berurutan: saat data setlist selesai dimuat dan belum ada
-  // setlist aktif, mulai dari memilih BAND lalu SETLIST. Jika sudah ada
-  // setlist aktif (dari halaman setlist atau preferensi), wizard dilewati.
-  useEffect(() => {
-    if (!stageMode || dataLoading || wizardSkippedRef.current) return;
-    const hasActive = Boolean(activeSetlist || setlistId);
-    if (!hasActive && setupStep === null) {
-      setSetupStep('band');
-    }
-  }, [stageMode, dataLoading, activeSetlist, setlistId, setupStep]); // eslint-disable-line react-hooks/exhaustive-deps
-
+  // (Wizard setup dihapus — pemilihan band & setlist dilakukan lewat sheet
+  //  dropdown di footer/sheet pemilih setlist.)
   // BPM lagu aktif — dipakai autoscroll (MUSICAL), LED header, dan kontrol.
   const bpm = Math.max(40, Math.min(240, Number(song?.tempo) || 120));
 
@@ -531,7 +545,7 @@ export default function StageModePage({
     return () => clearInterval(intervalId);
   }, [youtubeId, playerVisible]);
 
-  // Esc: tutup sheet/wizard dulu (jika terbuka), baru keluar Stage Mode.
+  // Esc: tutup sheet dulu (jika terbuka), baru keluar Stage Mode.
   useEffect(() => {
     if (!stageMode) return undefined;
     const handleKey = (e) => {
@@ -539,11 +553,6 @@ export default function StageModePage({
       if (sheetOpen) {
         e.preventDefault();
         setSheetOpen(null);
-        return;
-      }
-      if (setupStep) {
-        e.preventDefault();
-        setSetupStep(null);
         return;
       }
       if (infoOpen) {
@@ -565,14 +574,14 @@ export default function StageModePage({
       window.removeEventListener('keydown', handleKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [stageMode, sheetOpen, setupStep, infoOpen, playerVisible, onExit]);
+  }, [stageMode, sheetOpen, infoOpen, playerVisible, onExit]);
 
   // ======== Gestur panggung ========
   // - Pinch (2 jari): perbesar/perkecil font lirik (fontScale).
   // - Wheel + Ctrl : perbesar/perkecil font lirik (desktop).
   // (Swipe antar lagu dihapus — sering terpicu tidak sengaja. Pindah lagu
   // tetap lewat tombol footer ← / →.)
-  const gestureRef = useRef({ pinchActive: false, startDistance: 0, startFontScale: 1.4 });
+  const gestureRef = useRef({ pinchActive: false, startDistance: 0, startFontScale: 1.2 });
   // Ref ke fontScale terbaru — effect gesture tidak perlu re-subscribe listener
   // setiap kali fontScale berubah (setiap tick pinch).
   const fontScaleRef = useRef(fontScale);
@@ -593,7 +602,7 @@ export default function StageModePage({
       if (e.touches.length === 2) {
         g.pinchActive = true;
         g.startDistance = getDistance(e.touches);
-        g.startFontScale = Number(fontScaleRef.current) || 1.4;
+        g.startFontScale = Number(fontScaleRef.current) || 1.2;
       }
     };
 
@@ -863,7 +872,11 @@ export default function StageModePage({
       <footer className="stage-mode-footer">
         {song && (
           <TransposeKeyControl
-            originalKey={song?.key || ''}
+            // originalKey harus key MASTER lagu (tanpa override setlist).
+            // song.key sudah berisi override key setlist, sehingga kalau dipakai
+            // sebagai acuan, tombol ± menampilkan "D → D" (override dianggap
+            // key asli) dan reset mengembalikan ke key setlist, bukan key master.
+            originalKey={masterKey || song?.key || ''}
             targetKey={song?.key || ''}
             transpose={transpose}
             onTransposeChange={(next) => {
@@ -911,15 +924,6 @@ export default function StageModePage({
         <button
           type="button"
           className="btn btn-secondary stage-mode-footer-btn"
-          onClick={() => setSheetOpen('setlist')}
-          aria-label="Ganti setlist"
-          title={activeSetlist ? `Setlist aktif: ${activeSetlist.name}` : 'Ganti setlist'}
-        >
-          📋
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary stage-mode-footer-btn"
           onClick={() => setSheetOpen('song')}
           aria-label="Daftar lagu setlist"
           title={activeSetlist ? `${activeSetlist.name} — ${currentIndex >= 0 ? currentIndex + 1 : 'luar setlist'}/${setlistSongs.length}` : 'Daftar lagu'}
@@ -928,7 +932,7 @@ export default function StageModePage({
         </button>
         <button
           type="button"
-          className="btn btn-secondary stage-mode-footer-btn"
+          className="btn btn-secondary stage-mode-footer-btn stage-mode-nav-btn"
           onClick={() => currentIndex >= 0 && goToSong(setlistSongs[currentIndex - 1].id)}
           disabled={currentIndex <= 0}
           aria-label="Lagu sebelumnya"
@@ -938,7 +942,7 @@ export default function StageModePage({
         </button>
         <button
           type="button"
-          className="btn btn-primary stage-mode-next"
+          className="btn btn-primary stage-mode-footer-btn stage-mode-nav-btn stage-mode-next"
           onClick={() => currentIndex >= 0 && currentIndex < setlistSongs.length - 1 && goToSong(setlistSongs[currentIndex + 1].id)}
           disabled={currentIndex < 0 || currentIndex >= setlistSongs.length - 1}
           aria-label="Lagu berikutnya"
@@ -947,108 +951,6 @@ export default function StageModePage({
           →
         </button>
       </footer>
-
-      {/* ======== Wizard setup berurutan (pertama kali saja) ======== */}
-      {setupStep && (
-        <div
-          className="stage-mode-sheet-overlay stage-mode-wizard-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Pilih band dan setlist untuk panggung"
-        >
-          <div
-            className="stage-mode-sheet stage-mode-sheet--tall"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="stage-mode-wizard-header">
-              <div className="stage-mode-wizard-progress" aria-label="Langkah setup">
-                <span className={`stage-mode-wizard-dot${setupStep === 'band' ? ' active' : ' done'}`} aria-hidden="true">{setupStep === 'band' ? '1' : '✓'}</span>
-                <span className="stage-mode-wizard-bar" aria-hidden="true" />
-                <span className={`stage-mode-wizard-dot${setupStep === 'setlist' ? ' active' : ''}`} aria-hidden="true">2</span>
-              </div>
-              <div className="stage-mode-sheet-title">
-                {setupStep === 'band' ? 'Pilih band yang manggung' : 'Pilih setlist untuk panggung'}
-              </div>
-              <p className="stage-mode-wizard-subtitle">
-                {setupStep === 'band'
-                  ? 'Setlist akan difilter sesuai band yang dipilih.'
-                  : activeSetlist
-                    ? `Setlist: ${activeSetlist.name}`
-                    : 'Urutan lagu di setlist dipakai sebagai urutan panggung.'}
-              </p>
-              <button
-                type="button"
-                className="btn btn-secondary stage-mode-wizard-skip"
-                onClick={() => {
-                  wizardSkippedRef.current = true;
-                  setSetupStep(null);
-                }}
-                aria-label="Lewati setup"
-                title="Lewati setup — atur nanti lewat tombol 📋 di footer"
-              >
-                Lewati →
-              </button>
-            </div>
-
-            {setupStep === 'band' && (
-              <div className="stage-mode-sheet-list" role="menu">
-                  {bands.length === 0 && !dataLoading && (
-                  <>
-                    <div className="stage-mode-sheet-empty">Tidak ada band. Lanjut ke pemilihan setlist.</div>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={() => setSetupStep('setlist')}
-                    >
-                      Lanjut ke pemilihan setlist →
-                    </button>
-                  </>
-                )}
-                {bands.map((b) => {
-                  const id = String(b.bandId || b.id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      role="menuitemradio"
-                      aria-checked={id === String(bandId)}
-                      className={`stage-mode-sheet-item${id === String(bandId) ? ' active' : ''}`}
-                      onClick={() => handleSelectBand(id)}
-                    >
-                      <span className="stage-mode-sheet-name">{b.name || b.bandName || 'Band'}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {setupStep === 'setlist' && (
-              <div className="stage-mode-sheet-list" role="menu">
-                {filteredSetlists.map((sl) => (
-                  <button
-                    key={sl.id}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={String(sl.id) === String(setlistId)}
-                    className={`stage-mode-sheet-item${String(sl.id) === String(setlistId) ? ' active' : ''}`}
-                    onClick={() => handleSelectSetlist(String(sl.id))}
-                  >
-                    <span className="stage-mode-sheet-name">{sl.name || 'Tanpa nama'}</span>
-                    {Array.isArray(sl.songs) && sl.songs.length > 0 && (
-                      <span className="stage-mode-pill">{sl.songs.length} lagu</span>
-                    )}
-                  </button>
-                ))}
-                {filteredSetlists.length === 0 && (
-                  <div className="stage-mode-sheet-empty">
-                    Tidak ada setlist untuk band ini.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* ======== Sheets ======== */}
       {sheetOpen && (
@@ -1078,42 +980,33 @@ export default function StageModePage({
                     aria-label="Cari setlist"
                   />
                 </div>
-                {/* Filter band: chip pemilih band (termasuk "Semua band"). */}
+                {/* Filter band: dropdown pemilih band (termasuk "Semua band"). */}
                 <div
-                  className="stage-mode-sheet-list stage-mode-sheet-filter"
+                  className="stage-mode-sheet-filter"
                   role="group"
                   aria-label="Filter band"
                 >
-                  <button
-                    type="button"
-                    className={`stage-mode-sheet-item stage-mode-filter-chip${!bandId ? ' active' : ''}`}
-                    onClick={() => {
-                      setBandId('');
-                      writeStored(STORAGE_KEYS.STAGE_BAND, '');
+                  <select
+                    className="stage-mode-sheet-select"
+                    value={String(bandId || '')}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      // Pilih band, persist, dan arahkan ke setlist pertama
+                      // milik band tersebut.
+                      handleSelectBand(next);
                     }}
-                    aria-pressed={!bandId}
+                    aria-label="Filter band"
                   >
-                    <span className="stage-mode-sheet-name">Semua band</span>
-                  </button>
-                  {bands.map((b) => {
-                    const id = String(b.bandId || b.id);
-                    const selected = id === String(bandId);
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        className={`stage-mode-sheet-item stage-mode-filter-chip${selected ? ' active' : ''}`}
-                        onClick={() => {
-                          // Konsisten dengan wizard: pilih band, persist, dan
-                          // arahkan ke setlist pertama milik band tersebut.
-                          handleSelectBand(id);
-                        }}
-                        aria-pressed={selected}
-                      >
-                        <span className="stage-mode-sheet-name">{b.name || b.bandName || 'Band'}</span>
-                      </button>
-                    );
-                  })}
+                    <option value="">Semua band</option>
+                    {bands.map((b) => {
+                      const id = String(b.bandId || b.id);
+                      return (
+                        <option key={id} value={id}>
+                          {b.name || b.bandName || 'Band'}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
                 <div className="stage-mode-sheet-list" role="menu">
                   {filteredSetlists
@@ -1147,10 +1040,75 @@ export default function StageModePage({
             {sheetOpen === 'song' && (
               <>
                 <div className="stage-mode-sheet-title">
-                  {activeSetlist?.name || 'Daftar lagu'} — {setlistSongs.length} lagu
+                  Daftar lagu — {setlistSongs.length} lagu
+                </div>
+                {/* Dropdown setlist: ganti setlist langsung dari daftar lagu,
+                    difilter sesuai band yang aktif. */}
+                <div className="stage-mode-sheet-toolbar">
+                  <div className="stage-mode-sheet-field">
+                    <label
+                      className="stage-mode-sheet-field-label"
+                      htmlFor="stage-song-sheet-band"
+                    >
+                      Band
+                    </label>
+                    <select
+                      id="stage-song-sheet-band"
+                      className="stage-mode-sheet-select"
+                      value={String(bandId || '')}
+                      onChange={(e) => {
+                        const nextBandId = e.target.value;
+                        setBandId(nextBandId);
+                        writeStored(STORAGE_KEYS.STAGE_BAND, nextBandId);
+                        // Pindah ke setlist pertama milik band ini, sama seperti
+                        // alur pemilih band di sheet setlist. Dihitung langsung
+                        // dari setlists karena filteredSetlists masih memakai
+                        // bandId lama pada render ini.
+                        const firstSetlist = setlists.find(
+                          (sl) => !nextBandId || String(sl.bandId || '') === String(nextBandId) || !sl.bandId,
+                        );
+                        if (firstSetlist) handleSelectSetlist(String(firstSetlist.id));
+                      }}
+                    >
+                      <option value="">Semua band</option>
+                      {bands.map((b) => (
+                        <option key={String(b.bandId || b.id)} value={String(b.bandId || b.id)}>
+                          {b.name || b.bandName || 'Band'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="stage-mode-sheet-field">
+                    <label
+                      className="stage-mode-sheet-field-label"
+                      htmlFor="stage-song-sheet-setlist"
+                    >
+                      Setlist
+                    </label>
+                    <select
+                      id="stage-song-sheet-setlist"
+                      className="stage-mode-sheet-select"
+                      value={String(activeSetlist?.id || setlistId || '')}
+                      onChange={(e) => handleSelectSetlist(e.target.value)}
+                    >
+                      {(setlistId || activeSetlist?.id) && !setlists.some((sl) => String(sl.id) === String(activeSetlist?.id || setlistId)) && (
+                        <option value={String(activeSetlist?.id || setlistId)}>
+                          {activeSetlist?.name || 'Setlist aktif'}
+                        </option>
+                      )}
+                      {filteredSetlists.map((sl) => (
+                        <option key={sl.id} value={String(sl.id)}>
+                          {sl.name || 'Tanpa nama'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="stage-mode-sheet-list" role="menu">
-                  {setlistSongs.map((s, i) => (
+                  {setlistDetailLoading && (
+                    <div className="stage-mode-sheet-empty">Memuat lagu setlist…</div>
+                  )}
+                  {!setlistDetailLoading && setlistSongs.map((s, i) => (
                     <button
                       key={s.id}
                       type="button"
@@ -1167,7 +1125,7 @@ export default function StageModePage({
                       {s.key && <span className="stage-mode-pill">{s.key}</span>}
                     </button>
                   ))}
-                  {setlistSongs.length === 0 && (
+                  {!setlistDetailLoading && setlistSongs.length === 0 && (
                     <div className="stage-mode-sheet-empty">Setlist ini masih kosong.</div>
                   )}
                 </div>
