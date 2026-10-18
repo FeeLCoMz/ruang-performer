@@ -865,7 +865,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               </label>
 
               <label className="studio-field studio-field-genre">
-                <span className="studio-field-label">Genre / Mood</span>
+                <span className="studio-field-label">Genre</span>
                 <input
                   id="song-genre"
                   name="genre"
@@ -884,7 +884,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               </label>
 
               <label className="studio-field studio-field-key">
-                <span className="studio-field-label">Nada Dasar (Key)</span>
+                <span className="studio-field-label">Nada Dasar/Key</span>
                 <select
                   id="song-key"
                   name="key"
@@ -908,7 +908,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               </label>
 
               <label className="studio-field studio-field-tempo">
-                <span className="studio-field-label">BPM / Tempo</span>
+                <span className="studio-field-label">Tempo (BPM)</span>
                 <div className="song-field-inline">
                   <input
                     id="song-tempo"
