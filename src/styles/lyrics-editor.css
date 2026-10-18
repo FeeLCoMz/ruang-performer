@@ -379,7 +379,7 @@ body.dark-mode .lyric-format-preview-unchanged {
 
 .song-lyrics-textarea {
   width: 100%;
-  height: 500px;
+  height: 560px;
   padding: var(--spacing-lg);
   background: var(--primary-bg);
   color: var(--text-primary);
@@ -407,7 +407,7 @@ body.dark-mode .lyric-format-preview-unchanged {
 }
 
 .song-lyrics-textarea.cm-editor .cm-scroller {
-  height: 500px;
+  height: 560px;
   overflow-y: auto;
   padding: var(--spacing-lg);
   font-family: "Courier New", "JetBrains Mono", Courier, monospace;

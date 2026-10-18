@@ -262,6 +262,13 @@
   text-transform: none;
 }
 
+/* Transpose sits in the quick row just before Piano: same button language,
+   but the accidental glyph carries the meaning, so the label stays tiny. */
+.lyric-quick-transpose .lyric-quick-label {
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 768px) {
   .lyric-format-row {
     gap: 6px;

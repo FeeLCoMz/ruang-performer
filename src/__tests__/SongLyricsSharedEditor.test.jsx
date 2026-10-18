@@ -231,9 +231,11 @@ describe('Song lyrics shared editor rendering', () => {
     await openMenuAsync('Format');
     const selectionItems = [...container.querySelectorAll('.ed-dropdown-item')];
     expect(selectionItems.length).toBeGreaterThan(0);
+    // Transpose acts on the whole document, so it stays enabled without a selection.
+    const documentScopedInFormat = ['Transpose −1', 'Transpose +1'];
     for (const item of selectionItems) {
-      // Every item in Format acts on a selection, so all are disabled without one.
-      expect(item.disabled, `${item.textContent} should be disabled`).toBe(true);
+      const shouldDisable = !documentScopedInFormat.some((label) => item.textContent.includes(label));
+      expect(item.disabled, `${item.textContent} should be disabled`).toBe(shouldDisable);
     }
 
     // The document menu stays usable without a selection.

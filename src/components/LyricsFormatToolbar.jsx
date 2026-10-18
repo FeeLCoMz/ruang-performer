@@ -38,6 +38,10 @@ export default function LyricsFormatToolbar({
   showPianoControls = false,
   onOpenPiano,
   insertNotesEnabled = false,
+  /** Quick transpose + copy, owned by the page. */
+  onTranspose,
+  onCopyLyrics,
+  copyFeedback = '',
   /** When provided, the toolbar renders its own Insert ON/OFF switch. */
   onToggleInsertNotes,
   pianoOpen = false,
@@ -156,6 +160,23 @@ export default function LyricsFormatToolbar({
       },
       { type: 'separator' },
       {
+        key: 'transpose-down',
+        icon: '♭',
+        label: 'Transpose −1',
+        title: 'Turunkan semua chord 1 semitone',
+        disabled,
+        onSelect: () => onTranspose?.(-1),
+      },
+      {
+        key: 'transpose-up',
+        icon: '♯',
+        label: 'Transpose +1',
+        title: 'Naikkan semua chord 1 semitone',
+        disabled,
+        onSelect: () => onTranspose?.(1),
+      },
+      { type: 'separator' },
+      {
         key: 'wrap-bars',
         icon: 'W',
         label: 'Pecah Bar',
@@ -249,6 +270,15 @@ export default function LyricsFormatToolbar({
       disabled,
       onSelect: openFormatPreview,
     },
+    {
+      key: 'copy',
+      icon: 'C',
+      label: 'Salin Lirik',
+      title: 'Salin seluruh lirik ke papan klip',
+      hint: copyFeedback || undefined,
+      disabled,
+      onSelect: () => onCopyLyrics?.(),
+    },
   ];
 
   const insertMenuItems = [
@@ -302,34 +332,63 @@ export default function LyricsFormatToolbar({
       <div className="lyric-format-row">
         <EditorMenuBar menus={menus} ariaLabel="Menu editor lirik" />
 
-        {showPianoControls && (
+        {(showPianoControls || typeof onTranspose === 'function') && (
           <div className="lyric-format-quick">
-            <button
-              type="button"
-              className={`lyric-quick-btn lyric-quick-piano${pianoOpen ? ' is-active' : ''}`}
-              onClick={() => onOpenPiano?.()}
-              disabled={disabled}
-              aria-pressed={pianoOpen}
-              title="Virtual Piano (Alt+P)"
-            >
-              <span aria-hidden="true">🎹</span>
-              <span className="lyric-quick-label">Piano</span>
-            </button>
+            {typeof onTranspose === 'function' && (
+              <>
+                <button
+                  type="button"
+                  className="lyric-quick-btn lyric-quick-transpose"
+                  onClick={() => onTranspose(-1)}
+                  disabled={disabled}
+                  title="Turunkan semua chord 1 semitone"
+                >
+                  <span aria-hidden="true">♭</span>
+                  <span className="lyric-quick-label">−1</span>
+                </button>
+                <button
+                  type="button"
+                  className="lyric-quick-btn lyric-quick-transpose"
+                  onClick={() => onTranspose(1)}
+                  disabled={disabled}
+                  title="Naikkan semua chord 1 semitone"
+                >
+                  <span aria-hidden="true">♯</span>
+                  <span className="lyric-quick-label">+1</span>
+                </button>
+              </>
+            )}
 
-            {typeof onToggleInsertNotes === 'function' && (
-              <button
-                type="button"
-                className={`lyric-quick-btn lyric-quick-insert${insertNotesEnabled ? ' is-active' : ''}`}
-                onClick={() => onToggleInsertNotes()}
-                disabled={disabled}
-                aria-pressed={insertNotesEnabled}
-                title="Sisipkan not yang diklik ke lirik (bukan hanya dibunyikan)"
-              >
-                <span aria-hidden="true">✍</span>
-                <span className="lyric-quick-label">
-                  Insert {insertNotesEnabled ? 'ON' : 'OFF'}
-                </span>
-              </button>
+            {showPianoControls && (
+              <>
+                <button
+                  type="button"
+                  className={`lyric-quick-btn lyric-quick-piano${pianoOpen ? ' is-active' : ''}`}
+                  onClick={() => onOpenPiano?.()}
+                  disabled={disabled}
+                  aria-pressed={pianoOpen}
+                  title="Virtual Piano (Alt+P)"
+                >
+                  <span aria-hidden="true">🎹</span>
+                  <span className="lyric-quick-label">Piano</span>
+                </button>
+
+                {typeof onToggleInsertNotes === 'function' && (
+                  <button
+                    type="button"
+                    className={`lyric-quick-btn lyric-quick-insert${insertNotesEnabled ? ' is-active' : ''}`}
+                    onClick={() => onToggleInsertNotes()}
+                    disabled={disabled}
+                    aria-pressed={insertNotesEnabled}
+                    title="Sisipkan not yang diklik ke lirik (bukan hanya dibunyikan)"
+                  >
+                    <span aria-hidden="true">✍</span>
+                    <span className="lyric-quick-label">
+                      Insert {insertNotesEnabled ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+                )}
+              </>
             )}
           </div>
         )}

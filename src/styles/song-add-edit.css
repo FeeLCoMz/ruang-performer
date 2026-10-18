@@ -1,4 +1,4 @@
-﻿﻿/* ========================================
+﻿/* ========================================
    SONG ADD/EDIT - EDITOR HERO + STEP NAV
    ======================================== */
 .song-editor-hero {
@@ -19,7 +19,7 @@
   );
 }
 
-.song-editor-hero[data-mode="version"] {
+.song-editor-hero[data-mode='version'] {
   border-left-color: #a855f7;
 }
 
@@ -238,8 +238,7 @@
     flex-direction: column;
     align-items: stretch;
     gap: var(--spacing-sm);
-    padding: 10px var(--spacing-md)
-      calc(10px + env(safe-area-inset-bottom, 0px));
+    padding: 10px var(--spacing-md) calc(10px + env(safe-area-inset-bottom, 0px));
     bottom: calc(64px + env(safe-area-inset-bottom, 0px));
     margin-top: var(--spacing-md);
   }
@@ -524,18 +523,30 @@ body.dark-mode .studio-error {
   color: var(--text-secondary);
 }
 
-/* ---- INFORMASI UTAMA: deliberate two-column grid ---- */
+/* ---- INFORMASI UTAMA: deliberate three-column grid on wide screens ----
+   Dense by design: the metadata is context for the lyrics, not the main event,
+   so fields stay short and the editor below keeps the vertical space.
+   Wide screens read as: Judul | Artis | Genre, then Nada Dasar | Tempo | Time
+   Signature; the long fields (YouTube, patch, score) span the full row. */
 .studio-fields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--spacing-md) var(--spacing-lg);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-sm) var(--spacing-md);
 }
 
 .studio-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
+}
+
+/* Compact variant: shorter controls for the secondary fields (patch, score). */
+.studio-field-compact {
+  min-height: 0;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-size: var(--font-size-sm);
 }
 
 /* Full-row field (e.g. the YouTube URL, which needs the whole width). */
@@ -544,19 +555,43 @@ body.dark-mode .studio-error {
 }
 
 .studio-field-label {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
-/* ---- Two columns: media (left) | editor (right) ---- */
+/* ---- Layout: full-width info row above a two-column split ---------------
+   The song's identity (INFORMASI UTAMA) reads as its own band across the top;
+   below it the workspace splits into the lyrics editor (left, wider) and the
+   media player (right). The lyrics editor is the reason the page exists, so it
+   takes the wide column on the left. */
 .studio-columns {
   display: grid;
-  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
-  gap: var(--spacing-lg);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+  grid-template-areas:
+    "info  info"
+    "editor media";
+  gap: var(--spacing-md);
   align-items: start;
 }
 
+.studio-editor-info.studio-info-full {
+  grid-area: info;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.studio-editor {
+  grid-area: editor;
+}
+
+.studio-media {
+  grid-area: media;
+}
+
+/* Editor and media panels are cards in their own right; the info band above
+   is styled to match so the three read as one column stack. */
 .studio-media,
 .studio-editor {
   border: 1px solid var(--border-color);
@@ -564,6 +599,75 @@ body.dark-mode .studio-error {
   background: var(--card-bg);
   padding: var(--spacing-lg);
   min-width: 0;
+}
+
+/* The info band reads as a card in its own right, so it lines up with the
+   editor and media panels below it instead of looking like a bare strip. */
+.studio-editor-section.studio-editor-info.studio-info-full {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  padding: var(--spacing-lg);
+}
+
+/* ---- Quick actions in the editor header (transpose, copy) ---------------- */
+.song-lyrics-quick-transpose {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.song-lyrics-quick-transpose-label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-right: 2px;
+}
+
+.song-lyrics-quick-transpose .btn {
+  padding: 4px 10px;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+/* Narrow screens stack back to a single column: info, then editor, then media. */
+@media (max-width: 900px) {
+  .studio-columns {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "info"
+      "editor"
+      "media";
+  }
+}
+
+/* The editor column is the reason the page exists: it gets the room. */
+.studio-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* ---- Sections inside the editor panel --------------------------------------
+   Metadata sits above the lyrics as a dense header block, so one workspace
+   covers every editable fact without three stacked cards fighting for space. */
+.studio-editor-section {
+  padding-top: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+.studio-editor-section .studio-card-head {
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: 4px;
+}
+
+/* The metadata block reads as a header strip, not a card of its own. */
+.studio-editor-info .studio-card-head {
+  border-bottom: none;
 }
 
 .studio-panel-head {
@@ -669,4 +773,3 @@ body.dark-mode .studio-error {
   opacity: 0.55;
   cursor: not-allowed;
 }
-

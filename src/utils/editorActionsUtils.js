@@ -14,6 +14,9 @@ function buildEditorActions({
   insertNotesToLyrics,
   onToggleInsertNotes,
   pianoOpen,
+  onTranspose,
+  onCopyLyrics,
+  copyFeedback,
 }) {
   return {
     showSaveCancelButtons,
@@ -25,6 +28,9 @@ function buildEditorActions({
     insertNotesEnabled: insertNotesToLyrics,
     onToggleInsertNotes,
     pianoOpen,
+    onTranspose,
+    onCopyLyrics,
+    copyFeedback,
   };
 }
 

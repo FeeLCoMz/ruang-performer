@@ -209,8 +209,20 @@
 
 /* ---- Studio: tablet ---- */
 @media (max-width: 1100px) {
+  /* One column: the info band, then the editor, then the media player.
+     The areas are reset too, otherwise the two-column areas from the base
+     rule would still claim an "info info" row. */
   .studio-columns {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "info"
+      "editor"
+      "media";
+  }
+
+  /* Three columns get cramped below this width; drop the metadata to two. */
+  .studio-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

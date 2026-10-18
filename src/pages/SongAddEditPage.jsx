@@ -1,21 +1,40 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 // import { usePermission } from "../hooks/usePermission.js";
 // import { PERMISSIONS } from "../utils/permissionUtils.js";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import TapTempo from "../components/TapTempo";
-import VirtualPiano from "../components/VirtualPiano";
-import AIAutofillModal from "../components/AIAutofillModal";
-import SongLyricsEditorPanel from "../components/SongLyricsEditorPanel.jsx";
-import SongStudioTopbar from "../components/SongStudioTopbar.jsx";
-import SongMediaPanel from "../components/SongMediaPanel.jsx";
-import { getAuthHeader } from "../utils/auth";
-import { extractYouTubeId } from "../utils/youtubeUtils";
-import { alignSelectedBarlines, wrapBarsPerLine, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils.js';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import TapTempo from '../components/TapTempo';
+import VirtualPiano from '../components/VirtualPiano';
+import AIAutofillModal from '../components/AIAutofillModal';
+import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
+import SongStudioTopbar from '../components/SongStudioTopbar.jsx';
+import SongMediaPanel from '../components/SongMediaPanel.jsx';
+import { getAuthHeader } from '../utils/auth';
+import { extractYouTubeId } from '../utils/youtubeUtils';
+import {
+  alignSelectedBarlines,
+  wrapBarsPerLine,
+  mergeDetectedTimestampsIntoMarkers,
+} from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
-import { buildInsertNoteToken, formatWholeLyricsDocument, replaceSelectionWithToken, transposeLyricsText } from '../utils/lyricsEditorUtils.js';
+import {
+  buildInsertNoteToken,
+  formatWholeLyricsDocument,
+  replaceSelectionWithToken,
+  transposeLyricsText,
+} from '../utils/lyricsEditorUtils.js';
 import { buildAddEditEditorActions } from '../utils/editorActionsUtils.js';
-import { analyseLyrics, computeSongCompleteness, extractSectionOverview, validateMusicalFields } from '../utils/songFormUtils.js';
-import { GENRE_OPTIONS, NUMBER_NOTATION_KEY_OPTIONS, SONG_KEY_OPTIONS, TIME_SIGNATURE_OPTIONS } from '../utils/songOptions.js';
+import {
+  analyseLyrics,
+  computeSongCompleteness,
+  extractSectionOverview,
+  validateMusicalFields,
+} from '../utils/songFormUtils.js';
+import {
+  GENRE_OPTIONS,
+  NUMBER_NOTATION_KEY_OPTIONS,
+  SONG_KEY_OPTIONS,
+  TIME_SIGNATURE_OPTIONS,
+} from '../utils/songOptions.js';
 
 const formatDuration = (seconds) => {
   const safe = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -32,7 +51,8 @@ const completenessScoreLevel = (score) => {
   return 'low';
 };
 
-function buildNewVersionTitle(sourceTitle) {  const baseTitle = (sourceTitle || "").trim() || "Tanpa Judul";
+function buildNewVersionTitle(sourceTitle) {
+  const baseTitle = (sourceTitle || '').trim() || 'Tanpa Judul';
   const versionMatch = baseTitle.match(/^(.*)\s+\(Versi\s+(\d+)\)$/i);
   if (versionMatch) {
     const versionNumber = parseInt(versionMatch[2], 10);
@@ -50,22 +70,22 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const isEditMode = !!id && !newVersionMode;
 
   // Form states
-  const [sheetMusicXml, setSheetMusicXml] = useState("");
-  const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
-  const [songKey, setSongKey] = useState("C");
-  const [tempo, setTempo] = useState("");
-  const [timeSignature, setTimeSignature] = useState("4/4");
-  const [genre, setGenre] = useState("");
-  const [lyrics, setLyrics] = useState("");
-  const [youtubeId, setYoutubeId] = useState("");
-  const [keyboardPatch, setKeyboardPatch] = useState("");
+  const [sheetMusicXml, setSheetMusicXml] = useState('');
+  const [title, setTitle] = useState('');
+  const [artist, setArtist] = useState('');
+  const [songKey, setSongKey] = useState('C');
+  const [tempo, setTempo] = useState('');
+  const [timeSignature, setTimeSignature] = useState('4/4');
+  const [genre, setGenre] = useState('');
+  const [lyrics, setLyrics] = useState('');
+  const [youtubeId, setYoutubeId] = useState('');
+  const [keyboardPatch, setKeyboardPatch] = useState('');
   const [timeMarkers, setTimeMarkers] = useState([]);
 
   // UI states
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(!!id);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiResult, setAiResult] = useState(null);
@@ -73,10 +93,12 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [showLyricsPiano, setShowLyricsPiano] = useState(false);
   const [insertNotesToLyrics, setInsertNotesToLyrics] = useState(false);
   const [insertNoteFormat, setInsertNoteFormat] = useState('number');
-  const [insertNumberKeySignature, setInsertNumberKeySignature] = useState(() => getNumericNotationKey('C'));
+  const [insertNumberKeySignature, setInsertNumberKeySignature] = useState(() =>
+    getNumericNotationKey('C'),
+  );
   const [insertTrailingSpace, setInsertTrailingSpace] = useState(true);
   const [barsPerLine, setBarsPerLine] = useState(4);
-  const [lyricsEditError, setLyricsEditError] = useState("");
+  const [lyricsEditError, setLyricsEditError] = useState('');
 
   // Single source of truth for video playback, shared by the practice panel and
   // the timestamp buttons inside the lyrics preview.
@@ -92,7 +114,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     derived: false,
   });
   const [savedBaseline, setSavedBaseline] = useState(null);
-  const [copyFeedback, setCopyFeedback] = useState("");
+  const [copyFeedback, setCopyFeedback] = useState('');
 
   // YouTube ref
   const ytRef = useRef(null);
@@ -121,33 +143,34 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     return () => clearInterval(interval);
   }, [normalizedYoutubeId]);
 
-  const areMarkersEqual = (first = [], second = []) => JSON.stringify(first) === JSON.stringify(second);
+  const areMarkersEqual = (first = [], second = []) =>
+    JSON.stringify(first) === JSON.stringify(second);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       const textarea = lyricsTextareaRef.current;
       if (!textarea || document.activeElement !== textarea) return;
 
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         formRef.current?.requestSubmit();
         return;
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "b") {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         handleAlignSelectedBarlines();
         return;
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "4") {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '4') {
         e.preventDefault();
         handleWrap4BarsPerLine();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lyrics, barsPerLine]);
 
@@ -155,53 +178,52 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   useEffect(() => {
     if (id) {
       setLoadingData(true);
-      setError("");
+      setError('');
       fetch(`/api/songs/${id}`, {
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...getAuthHeader(),
         },
       })
         .then((res) => {
-          if (!res.ok) throw new Error("Gagal memuat data lagu");
+          if (!res.ok) throw new Error('Gagal memuat data lagu');
           return res.json();
         })
         .then((data) => {
-          setTitle(newVersionMode ? buildNewVersionTitle(data.title) : (data.title || ""));
-          setArtist(data.artist || "");
-          setSongKey(data.key || "");
+          setTitle(newVersionMode ? buildNewVersionTitle(data.title) : data.title || '');
+          setArtist(data.artist || '');
+          setSongKey(data.key || '');
           setInsertNumberKeySignature(getNumericNotationKey(data.key || 'C'));
-          setTempo(data.tempo || "");
-          setTimeSignature(data.time_signature || "4/4");
-          setGenre(data.genre || "");
-          setLyrics(data.lyrics || "");
-          setYoutubeId(extractYouTubeId(data.youtubeId || data.youtube_url || ""));
+          setTempo(data.tempo || '');
+          setTimeSignature(data.time_signature || '4/4');
+          setGenre(data.genre || '');
+          setLyrics(data.lyrics || '');
+          setYoutubeId(extractYouTubeId(data.youtubeId || data.youtube_url || ''));
           setKeyboardPatch(
             Array.isArray(data.keyboardPatch)
-              ? data.keyboardPatch.join(", ")
-              : data.keyboardPatch || "",
+              ? data.keyboardPatch.join(', ')
+              : data.keyboardPatch || '',
           );
           setTimeMarkers(data.time_markers || []);
-          setSheetMusicXml(data.sheetMusicXml || "");
+          setSheetMusicXml(data.sheetMusicXml || '');
           setLoadingData(false);
 
           // Establish the dirty-tracking baseline from the freshly loaded server data.
           setSavedBaseline(
             JSON.stringify({
-              title: (data.title || "").trim(),
-              artist: (data.artist || "").trim(),
-              key: data.key || "",
-              tempo: data.tempo || "",
-              timeSignature: data.time_signature || "4/4",
-              genre: (data.genre || "").trim(),
-              lyrics: (data.lyrics || "").trim(),
-              youtubeId: extractYouTubeId(data.youtubeId || data.youtube_url || ""),
-              keyboardPatch: (
-                Array.isArray(data.keyboardPatch)
-                  ? data.keyboardPatch.join(", ")
-                  : data.keyboardPatch || ""
+              title: (data.title || '').trim(),
+              artist: (data.artist || '').trim(),
+              key: data.key || '',
+              tempo: data.tempo || '',
+              timeSignature: data.time_signature || '4/4',
+              genre: (data.genre || '').trim(),
+              lyrics: (data.lyrics || '').trim(),
+              youtubeId: extractYouTubeId(data.youtubeId || data.youtube_url || ''),
+              keyboardPatch: (Array.isArray(data.keyboardPatch)
+                ? data.keyboardPatch.join(', ')
+                : data.keyboardPatch || ''
               ).trim(),
-              sheetMusicXml: data.sheetMusicXml || "",
+              sheetMusicXml: data.sheetMusicXml || '',
             }),
           );
         })
@@ -223,18 +245,18 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
   const handleAIAutofill = async () => {
     if (!title.trim()) {
-      setError("Isi judul lagu terlebih dahulu untuk AI autofill");
+      setError('Isi judul lagu terlebih dahulu untuk AI autofill');
       return;
     }
 
     setAiLoading(true);
-    setError("");
+    setError('');
 
     try {
-      const res = await fetch("/api/ai/song-search", {
-        method: "POST",
+      const res = await fetch('/api/ai/song-search', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...getAuthHeader(),
         },
         body: JSON.stringify({
@@ -243,7 +265,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         }),
       });
 
-      if (!res.ok) throw new Error("Gagal mendapatkan data AI");
+      if (!res.ok) throw new Error('Gagal mendapatkan data AI');
 
       const data = await res.json();
       setAiResult(data);
@@ -257,7 +279,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       });
       setShowAiModal(true);
     } catch (err) {
-      setError(err.message || "Gagal autofill AI");
+      setError(err.message || 'Gagal autofill AI');
     } finally {
       setAiLoading(false);
     }
@@ -276,7 +298,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     if (aiConfirmFields.keyboardPatch && aiResult.keyboardPatch)
       setKeyboardPatch(
         Array.isArray(aiResult.keyboardPatch)
-          ? aiResult.keyboardPatch.join(", ")
+          ? aiResult.keyboardPatch.join(', ')
           : aiResult.keyboardPatch,
       );
     setShowAiModal(false);
@@ -287,19 +309,19 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     e.preventDefault();
 
     if (!title.trim()) {
-      setError("Judul lagu wajib diisi");
+      setError('Judul lagu wajib diisi');
       return;
     }
 
     // Block submit on invalid musical fields rather than storing bad data.
     if (hasFieldErrors) {
-      setError("Periksa kembali Key, Tempo, dan Time Signature.");
+      setError('Periksa kembali Key, Tempo, dan Time Signature.');
       setOpenSections((prev) => ({ ...prev, musical: true }));
       return;
     }
 
     setLoading(true);
-    setError("");
+    setError('');
 
     const mergedMarkers = mergeDetectedTimestampsIntoMarkers(lyrics.trim(), timeMarkers);
 
@@ -308,7 +330,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       artist: artist.trim(),
       key: songKey,
       tempo: tempo ? parseInt(tempo) : null,
-      time_signature: timeSignature || "4/4",
+      time_signature: timeSignature || '4/4',
       genre: genre.trim(),
       lyrics: lyrics.trim(),
       youtubeId: extractYouTubeId(youtubeId),
@@ -318,13 +340,13 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     };
 
     try {
-      const url = isEditMode ? `/api/songs/${id}` : "/api/songs";
-      const method = isEditMode ? "PUT" : "POST";
+      const url = isEditMode ? `/api/songs/${id}` : '/api/songs';
+      const method = isEditMode ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
         method,
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...getAuthHeader(),
         },
         body: JSON.stringify(payload),
@@ -332,7 +354,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || "Gagal menyimpan lagu");
+        throw new Error(errorData.error || 'Gagal menyimpan lagu');
       }
 
       const savedSong = await res.json();
@@ -353,7 +375,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
           state: { fromEdit: true },
         });
       } else {
-        navigate(location.state?.from || "/songs");
+        navigate(location.state?.from || '/songs');
       }
     } catch (err) {
       setError(err.message);
@@ -368,33 +390,37 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     if (isEditMode) {
       navigate(`/songs/view/${id}`);
     } else {
-      navigate(location.state?.from || "/songs");
+      navigate(location.state?.from || '/songs');
     }
   };
 
   const handleAlignSelectedBarlines = () => {
     const textarea = lyricsTextareaRef.current;
-    if (!textarea || typeof textarea.selectionStart !== "number" || typeof textarea.selectionEnd !== "number") {
+    if (
+      !textarea ||
+      typeof textarea.selectionStart !== 'number' ||
+      typeof textarea.selectionEnd !== 'number'
+    ) {
       return;
     }
 
     const selectionStart = textarea.selectionStart;
     const selectionEnd = textarea.selectionEnd;
     if (selectionStart === selectionEnd) {
-      setLyricsEditError("Blok teks lirik terlebih dahulu.");
+      setLyricsEditError('Blok teks lirik terlebih dahulu.');
       return;
     }
 
     const selectedText = lyrics.slice(selectionStart, selectionEnd);
     const alignedText = alignSelectedBarlines(selectedText);
     if (alignedText === selectedText) {
-      setLyricsEditError("");
+      setLyricsEditError('');
       return;
     }
 
     const nextLyrics = `${lyrics.slice(0, selectionStart)}${alignedText}${lyrics.slice(selectionEnd)}`;
     setLyrics(nextLyrics);
-    setLyricsEditError("");
+    setLyricsEditError('');
 
     requestAnimationFrame(() => {
       textarea.focus();
@@ -406,12 +432,13 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     const textarea = lyricsTextareaRef.current;
     if (!textarea) return;
 
-    const hasSelection = typeof textarea.selectionStart === "number"
-      && typeof textarea.selectionEnd === "number"
-      && textarea.selectionStart !== textarea.selectionEnd;
+    const hasSelection =
+      typeof textarea.selectionStart === 'number' &&
+      typeof textarea.selectionEnd === 'number' &&
+      textarea.selectionStart !== textarea.selectionEnd;
 
     if (!hasSelection) {
-      setLyricsEditError("Blok teks lirik terlebih dahulu.");
+      setLyricsEditError('Blok teks lirik terlebih dahulu.');
       return;
     }
 
@@ -423,13 +450,13 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     const wrappedText = wrapBarsPerLine(selectedText, targetBarsPerLine);
     const alignedText = alignSelectedBarlines(wrappedText);
     if (alignedText === selectedText) {
-      setLyricsEditError("");
+      setLyricsEditError('');
       return;
     }
 
     const nextLyrics = `${lyrics.slice(0, selectionStart)}${alignedText}${lyrics.slice(selectionEnd)}`;
     setLyrics(nextLyrics);
-    setLyricsEditError("");
+    setLyricsEditError('');
 
     requestAnimationFrame(() => {
       textarea.focus();
@@ -457,15 +484,22 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     const selectionStart = textarea?.selectionStart;
     const selectionEnd = textarea?.selectionEnd;
 
-    setLyrics((prev) => replaceSelectionWithToken({
-      text: prev,
-      selectionStart,
-      selectionEnd,
-      token,
-    }).nextText);
+    setLyrics(
+      (prev) =>
+        replaceSelectionWithToken({
+          text: prev,
+          selectionStart,
+          selectionEnd,
+          token,
+        }).nextText,
+    );
 
     requestAnimationFrame(() => {
-      if (!textarea || typeof textarea.selectionStart !== 'number' || typeof textarea.selectionEnd !== 'number') {
+      if (
+        !textarea ||
+        typeof textarea.selectionStart !== 'number' ||
+        typeof textarea.selectionEnd !== 'number'
+      ) {
         return;
       }
       textarea.focus();
@@ -492,12 +526,23 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       keyboardPatch: keyboardPatch.trim(),
       sheetMusicXml,
     }),
-    [title, artist, songKey, tempo, timeSignature, genre, lyrics, youtubeId, keyboardPatch, sheetMusicXml]
+    [
+      title,
+      artist,
+      songKey,
+      tempo,
+      timeSignature,
+      genre,
+      lyrics,
+      youtubeId,
+      keyboardPatch,
+      sheetMusicXml,
+    ],
   );
 
   const completeness = useMemo(
     () => computeSongCompleteness({ ...formSnapshot, lyrics }, lyricsAnalysis),
-    [formSnapshot, lyrics, lyricsAnalysis]
+    [formSnapshot, lyrics, lyricsAnalysis],
   );
 
   const serializedForm = useMemo(() => JSON.stringify(formSnapshot), [formSnapshot]);
@@ -507,7 +552,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   // only on submit (the previous behaviour accepted e.g. key "H" silently).
   const fieldErrors = useMemo(
     () => validateMusicalFields({ key: songKey, timeSignature, tempo }),
-    [songKey, timeSignature, tempo]
+    [songKey, timeSignature, tempo],
   );
   const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
 
@@ -564,17 +609,17 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
   const handleCopyLyrics = async () => {
     if (!lyrics.trim()) {
-      setCopyFeedback("Lirik masih kosong");
-      setTimeout(() => setCopyFeedback(""), 2000);
+      setCopyFeedback('Lirik masih kosong');
+      setTimeout(() => setCopyFeedback(''), 2000);
       return;
     }
     try {
       await navigator.clipboard.writeText(lyrics);
-      setCopyFeedback("Lirik disalin");
+      setCopyFeedback('Lirik disalin');
     } catch {
-      setCopyFeedback("Gagal menyalin");
+      setCopyFeedback('Gagal menyalin');
     }
-    setTimeout(() => setCopyFeedback(""), 2000);
+    setTimeout(() => setCopyFeedback(''), 2000);
   };
 
   /** Play/pause from the lyrics preview, targeting the single player. */
@@ -653,7 +698,9 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 aria-label="Pilih key untuk angka chord"
               >
                 {NUMBER_NOTATION_KEY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>{option}</option>
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
               </select>
             </label>
@@ -674,10 +721,11 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   );
 
   /**
-   * The studio arrangement: a sticky command bar, all the song's facts in one
-   * dense grid, the media column beside the lyrics editor, and the rendered
-   * song underneath. Every control here is the same one the stepped layout uses
-   * — this only places them where they are needed while building a song.
+   * The studio arrangement: a sticky command bar, then two columns — the media
+   * player on the left, and ONE editor workspace on the right that carries every
+   * editable fact: song metadata, the lyrics/chord editor, and the extra info.
+   * Keeping them in a single panel means the user never leaves the editor to
+   * change a field that belongs to the same song.
    */
   const statusText = loading
     ? 'Menyimpan…'
@@ -688,9 +736,14 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const studioLayout = (
     <div className="studio-shell">
       <SongStudioTopbar
-        modeLabel={isEditMode ? 'EDITOR LIRIK & CHORD' : newVersionMode ? 'VERSI BARU' : 'LAGU BARU'}
+        modeLabel={
+          isEditMode ? 'EDITOR LIRIK & CHORD' : newVersionMode ? 'VERSI BARU' : 'LAGU BARU'
+        }
         eyebrowIcon={isEditMode ? '📝' : newVersionMode ? '🧬' : '➕'}
-        title={title.trim() || (isEditMode ? 'Edit Lagu' : newVersionMode ? 'Buat Versi Baru' : 'Tambah Lagu Baru')}
+        title={
+          title.trim() ||
+          (isEditMode ? 'Edit Lagu' : newVersionMode ? 'Buat Versi Baru' : 'Tambah Lagu Baru')
+        }
         isEditMode={isEditMode}
         newVersionMode={newVersionMode}
         loading={loading}
@@ -704,19 +757,23 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       {newVersionMode && (
         <div className="studio-note">
           <span aria-hidden="true">🧬</span>
-          Form ini membuat versi baru dari lagu yang sudah ada. Ubah judul, aransemen,
-          atau detail lain seperlunya sebelum menyimpan.
+          Form ini membuat versi baru dari lagu yang sudah ada. Ubah judul, aransemen, atau detail
+          lain seperlunya sebelum menyimpan.
         </div>
       )}
 
-      {error && <div className="error-message studio-error" role="alert">{error}</div>}
+      {error && (
+        <div className="error-message studio-error" role="alert">
+          {error}
+        </div>
+      )}
 
-      <div className="studio-body">
-        {/* INFORMASI UTAMA — every fact that identifies the song, in one grid.
-            Columns are explicit rather than auto-fit so the rows line up (Judul
-            next to Artis, BPM next to Time Signature, Nada Dasar next to Genre),
-            instead of reflowing into an uneven arrangement at each width. */}
-        <section className="studio-card studio-info">
+      <div className="studio-columns">
+        {/* INFORMASI UTAMA — the song's identity, full width above the split.
+              Wide screens read as three columns: Judul | Artis | Genre, then
+              Nada Dasar | Tempo | Time Signature. The long fields (YouTube,
+              patch, score) span the full row so they never squeeze the grid. */}
+        <div className="studio-editor-section studio-editor-info studio-info-full">
           <div className="studio-card-head">
             <span className="studio-card-title">INFORMASI UTAMA</span>
             <button
@@ -731,245 +788,218 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
           </div>
 
           <div className="studio-fields">
-            <label className="studio-field">
-              <span className="studio-field-label">
-                Judul Lagu <span className="required-asterisk">*</span>
-              </span>
-              <input
-                id="song-title"
-                name="title"
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                placeholder="Masukkan judul lagu"
-                className="form-input-field"
-              />
-            </label>
-
-            <label className="studio-field">
-              <span className="studio-field-label">Artis / Band</span>
-              <input
-                id="song-artist"
-                name="artist"
-                type="text"
-                value={artist}
-                onChange={(e) => setArtist(e.target.value)}
-                placeholder="Nama artist atau band"
-                className="form-input-field"
-              />
-            </label>
-
-            <label className="studio-field">
-              <span className="studio-field-label">BPM / Tempo</span>
-              <div className="song-field-inline">
+              <label className="studio-field">
+                <span className="studio-field-label">
+                  Judul Lagu <span className="required-asterisk">*</span>
+                </span>
                 <input
-                  id="song-tempo"
-                  name="tempo"
-                  type="number"
-                  value={tempo}
-                  onChange={(e) => setTempo(e.target.value)}
-                  placeholder="120"
-                  min="40"
-                  max="240"
-                  className={`form-input-field${fieldErrors.tempo ? ' field-has-error' : ''}`}
-                  aria-invalid={Boolean(fieldErrors.tempo)}
+                  id="song-title"
+                  name="title"
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  placeholder="Masukkan judul lagu"
+                  className="form-input-field"
                 />
-                <TapTempo onTempo={setTempo} initialTempo={tempo} label="Tap" />
-              </div>
-              {fieldErrors.tempo && <span className="song-field-error">{fieldErrors.tempo}</span>}
-            </label>
+              </label>
 
-            <label className="studio-field">
-              <span className="studio-field-label">Time Signature</span>
-              <select
-                id="song-time-signature"
-                name="time_signature"
-                className={`form-input-field${fieldErrors.timeSignature ? ' field-has-error' : ''}`}
-                value={timeSignature}
-                onChange={(e) => setTimeSignature(e.target.value)}
-                aria-invalid={Boolean(fieldErrors.timeSignature)}
-              >
-                {TIME_SIGNATURE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-              {fieldErrors.timeSignature && (
-                <span className="song-field-error">{fieldErrors.timeSignature}</span>
-              )}
-            </label>
+              <label className="studio-field">
+                <span className="studio-field-label">Artis / Band</span>
+                <input
+                  id="song-artist"
+                  name="artist"
+                  type="text"
+                  value={artist}
+                  onChange={(e) => setArtist(e.target.value)}
+                  placeholder="Nama artist atau band"
+                  className="form-input-field"
+                />
+              </label>
 
-            <label className="studio-field">
-              <span className="studio-field-label">Nada Dasar (Key)</span>
-              <select
-                id="song-key"
-                name="key"
-                className={`form-input-field${fieldErrors.key ? ' field-has-error' : ''}`}
-                value={songKey}
-                onChange={(e) => {
-                  const nextKey = e.target.value;
-                  setSongKey(nextKey);
-                  setInsertNumberKeySignature(getNumericNotationKey(nextKey || 'C'));
-                }}
-                aria-invalid={Boolean(fieldErrors.key)}
-              >
-                <option value="">— pilih key —</option>
-                {SONG_KEY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-              {fieldErrors.key && <span className="song-field-error">{fieldErrors.key}</span>}
-            </label>
+              <label className="studio-field">
+                <span className="studio-field-label">Genre / Mood</span>
+                <input
+                  id="song-genre"
+                  name="genre"
+                  type="text"
+                  value={genre}
+                  onChange={(e) => setGenre(e.target.value)}
+                  placeholder="Pop, Rock, Jazz, dll"
+                  className="form-input-field"
+                  list="song-genre-options"
+                />
+                <datalist id="song-genre-options">
+                  {GENRE_OPTIONS.map((option) => (
+                    <option key={option} value={option} />
+                  ))}
+                </datalist>
+              </label>
 
-            <label className="studio-field">
-              <span className="studio-field-label">Genre / Mood</span>
-              <input
-                id="song-genre"
-                name="genre"
-                type="text"
-                value={genre}
-                onChange={(e) => setGenre(e.target.value)}
-                placeholder="Pop, Rock, Jazz, dll"
-                className="form-input-field"
-                list="song-genre-options"
-              />
-              <datalist id="song-genre-options">
-                {GENRE_OPTIONS.map((option) => (
-                  <option key={option} value={option} />
-                ))}
-              </datalist>
-            </label>
-
-            <label className="studio-field studio-field-span">
-              <span className="studio-field-label">YouTube URL atau ID</span>
-              <input
-                id="song-youtube"
-                name="youtubeId"
-                type="text"
-                value={youtubeId}
-                onChange={(e) => setYoutubeId(e.target.value)}
-                placeholder="https://youtube.com/watch?v=... atau dQw4w9WgXcQ"
-                className="form-input-field"
-              />
-              {normalizedYoutubeId && (
-                <span className="form-hint">Video terdeteksi: <code>{normalizedYoutubeId}</code></span>
-              )}
-            </label>
-          </div>
-        </section>
-
-        <div className="studio-columns">
-          <SongMediaPanel
-            youtubeId={normalizedYoutubeId}
-            youtubeRef={ytRef}
-            timeMarkers={timeMarkers}
-            secondsToLabel={formatDuration}
-            isPlaying={isYoutubePlaying}
-            onTogglePlay={handleToggleYoutubePlay}
-            onSeek={handlePreviewSeek}
-            onUpdateMarkers={setTimeMarkers}
-            currentTime={ytCurrentTime}
-            duration={ytDuration}
-            getCurrentYouTubeTime={() =>
-              typeof ytRef.current?.currentTime === 'number' ? ytRef.current.currentTime : 0
-            }
-            onTimeUpdate={(t, d) => {
-              // Simpan posisi pemutaran agar tombol «5s / 5s» dan label waktu
-              // menghitung dari posisi yang benar, bukan selalu dari 0.
-              if (typeof t === 'number' && Number.isFinite(t)) setYtCurrentTime(t);
-              if (typeof d === 'number' && Number.isFinite(d)) setYtDuration(d);
-            }}
-          />
-
-          <div className="studio-editor">
-            <div className="studio-panel-head">
-              <span className="studio-panel-title">🎤 Editor Lirik &amp; Chord</span>
-              <div className="song-lyrics-quick-transpose" role="group" aria-label="Transpose cepat">
-                <span className="song-lyrics-quick-transpose-label">Transpose</span>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => handleQuickTranspose(-1)}
-                  title="Turunkan semua chord 1 semitone"
+              <label className="studio-field">
+                <span className="studio-field-label">Nada Dasar (Key)</span>
+                <select
+                  id="song-key"
+                  name="key"
+                  className={`form-input-field${fieldErrors.key ? ' field-has-error' : ''}`}
+                  value={songKey}
+                  onChange={(e) => {
+                    const nextKey = e.target.value;
+                    setSongKey(nextKey);
+                    setInsertNumberKeySignature(getNumericNotationKey(nextKey || 'C'));
+                  }}
+                  aria-invalid={Boolean(fieldErrors.key)}
                 >
-                  −1
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => handleQuickTranspose(1)}
-                  title="Naikkan semua chord 1 semitone"
+                  <option value="">— pilih key —</option>
+                  {SONG_KEY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.key && <span className="song-field-error">{fieldErrors.key}</span>}
+              </label>
+
+              <label className="studio-field">
+                <span className="studio-field-label">BPM / Tempo</span>
+                <div className="song-field-inline">
+                  <input
+                    id="song-tempo"
+                    name="tempo"
+                    type="number"
+                    value={tempo}
+                    onChange={(e) => setTempo(e.target.value)}
+                    placeholder="120"
+                    min="40"
+                    max="240"
+                    className={`form-input-field${fieldErrors.tempo ? ' field-has-error' : ''}`}
+                    aria-invalid={Boolean(fieldErrors.tempo)}
+                  />
+                  <TapTempo onTempo={setTempo} initialTempo={tempo} label="Tap" />
+                </div>
+                {fieldErrors.tempo && <span className="song-field-error">{fieldErrors.tempo}</span>}
+              </label>
+
+              <label className="studio-field">
+                <span className="studio-field-label">Time Signature</span>
+                <select
+                  id="song-time-signature"
+                  name="time_signature"
+                  className={`form-input-field${fieldErrors.timeSignature ? ' field-has-error' : ''}`}
+                  value={timeSignature}
+                  onChange={(e) => setTimeSignature(e.target.value)}
+                  aria-invalid={Boolean(fieldErrors.timeSignature)}
                 >
-                  +1
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleCopyLyrics}
-                  title="Salin seluruh lirik ke clipboard"
-                >
-                  {copyFeedback || '⧉ Salin'}
-                </button>
-              </div>
+                  {TIME_SIGNATURE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.timeSignature && (
+                  <span className="song-field-error">{fieldErrors.timeSignature}</span>
+                )}
+              </label>
+
+              <label className="studio-field studio-field-span">
+                <span className="studio-field-label">YouTube URL atau ID</span>
+                <input
+                  id="song-youtube"
+                  name="youtubeId"
+                  type="text"
+                  value={youtubeId}
+                  onChange={(e) => setYoutubeId(e.target.value)}
+                  placeholder="https://youtube.com/watch?v=... atau dQw4w9WgXcQ"
+                  className="form-input-field"
+                />
+                {normalizedYoutubeId && (
+                  <span className="form-hint">
+                    Video terdeteksi: <code>{normalizedYoutubeId}</code>
+                  </span>
+                )}
+              </label>
+
+              <label className="studio-field studio-field-span">
+                <span className="studio-field-label">🎹 Keyboard Patch</span>
+                <textarea
+                  id="song-keyboard-patch"
+                  name="keyboardPatch"
+                  value={keyboardPatch}
+                  onChange={(e) => setKeyboardPatch(e.target.value)}
+                  placeholder="Contoh: EP Mark I untuk verse, Pad + Strings untuk chorus"
+                  rows={2}
+                  className="form-input-field studio-field-compact"
+                />
+              </label>
+
+              <label className="studio-field studio-field-span">
+                <span className="studio-field-label">Partitur (MusicXML)</span>
+                <textarea
+                  id="song-sheet-music"
+                  name="sheetMusicXml"
+                  value={sheetMusicXml}
+                  onChange={(e) => setSheetMusicXml(e.target.value)}
+                  placeholder="Paste MusicXML di sini..."
+                  rows={3}
+                  className="form-input-field song-sheetmusic-textarea studio-field-compact"
+                />
+              </label>
             </div>
-
-            <SongLyricsEditorPanel
-              lyricsRef={lyricsTextareaRef}
-              lyricsValue={lyrics}
-              setLyricsValue={setLyrics}
-              error={lyricsEditError}
-              disabled={loading}
-              editorActions={buildAddEditEditorActions({
-                onOpenPiano: () => setShowLyricsPiano(true),
-                insertNotesToLyrics,
-                onToggleInsertNotes: () => setInsertNotesToLyrics((prev) => !prev),
-                pianoOpen: showLyricsPiano,
-              })}
-              autoFocus={false}
-              previewSong={{ key: songKey, tempo, lyrics }}
-              previewProps={{
-                showChords: true,
-                keySignature: songKey || 'C',
-                isPlaying: isYoutubePlaying,
-                onTimestampClick: handlePreviewSeek,
-                onTimestampPause: handlePreviewPause,
-              }}
-            />
-          </div>
         </div>
 
-        <section className="studio-card studio-extras">
-          <div className="studio-card-head">
-            <span className="studio-card-title">INFORMASI TAMBAHAN</span>
+        <div className="studio-editor">
+          <div className="studio-panel-head">
+            <span className="studio-panel-title">🎤 Editor Lirik &amp; Chord</span>
           </div>
-          <div className="studio-fields">
-            <label className="studio-field studio-field-span">
-              <span className="studio-field-label">🎹 Keyboard Patch</span>
-              <textarea
-                id="song-keyboard-patch"
-                name="keyboardPatch"
-                value={keyboardPatch}
-                onChange={(e) => setKeyboardPatch(e.target.value)}
-                placeholder="Contoh: EP Mark I untuk verse, Pad + Strings untuk chorus"
-                rows={2}
-                className="form-input-field"
-              />
-            </label>
 
-            <label className="studio-field studio-field-span">
-              <span className="studio-field-label">Partitur (MusicXML)</span>
-              <textarea
-                id="song-sheet-music"
-                name="sheetMusicXml"
-                value={sheetMusicXml}
-                onChange={(e) => setSheetMusicXml(e.target.value)}
-                placeholder="Paste MusicXML di sini..."
-                rows={5}
-                className="form-input-field song-sheetmusic-textarea"
-              />
-            </label>
-          </div>
-        </section>
+          <SongLyricsEditorPanel
+            lyricsRef={lyricsTextareaRef}
+            lyricsValue={lyrics}
+            setLyricsValue={setLyrics}
+            error={lyricsEditError}
+            disabled={loading}
+            editorActions={buildAddEditEditorActions({
+              onOpenPiano: () => setShowLyricsPiano(true),
+              insertNotesToLyrics,
+              onToggleInsertNotes: () => setInsertNotesToLyrics((prev) => !prev),
+              pianoOpen: showLyricsPiano,
+              onTranspose: handleQuickTranspose,
+              onCopyLyrics: handleCopyLyrics,
+              copyFeedback,
+            })}
+            autoFocus={false}
+            previewSong={{ key: songKey, tempo, lyrics }}
+            previewProps={{
+              showChords: true,
+              keySignature: songKey || 'C',
+              isPlaying: isYoutubePlaying,
+              onTimestampClick: handlePreviewSeek,
+              onTimestampPause: handlePreviewPause,
+            }}
+          />
+        </div>
+
+        <SongMediaPanel
+          youtubeId={normalizedYoutubeId}
+          youtubeRef={ytRef}
+          timeMarkers={timeMarkers}
+          secondsToLabel={formatDuration}
+          isPlaying={isYoutubePlaying}
+          onTogglePlay={handleToggleYoutubePlay}
+          onSeek={handlePreviewSeek}
+          onUpdateMarkers={setTimeMarkers}
+          currentTime={ytCurrentTime}
+          duration={ytDuration}
+          getCurrentYouTubeTime={() =>
+            typeof ytRef.current?.currentTime === 'number' ? ytRef.current.currentTime : 0
+          }
+          onTimeUpdate={(t, d) => {
+            // Simpan posisi pemutaran agar tombol «5s / 5s» dan label waktu
+            // menghitung dari posisi yang benar, bukan selalu dari 0.
+            if (typeof t === 'number' && Number.isFinite(t)) setYtCurrentTime(t);
+            if (typeof d === 'number' && Number.isFinite(d)) setYtDuration(d);
+          }}
+        />
       </div>
     </div>
   );
@@ -1007,7 +1037,11 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         isOpen={showLyricsPiano}
         onClose={() => setShowLyricsPiano(false)}
         onKeySelect={handleLyricsPianoKeySelect}
-        helperText={insertNotesToLyrics ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${insertNumberKeySignature || getNumericNotationKey(songKey || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}` : 'Klik not untuk mendengar nada tanpa insert ke lirik'}
+        helperText={
+          insertNotesToLyrics
+            ? `Klik not untuk menyisipkan ${insertNoteFormat === 'plain' ? 'not' : insertNoteFormat === 'number' ? `angka (key ${insertNumberKeySignature || getNumericNotationKey(songKey || 'C')})` : 'chord'} ke lirik${insertTrailingSpace ? ' + spasi' : ''}`
+            : 'Klik not untuk mendengar nada tanpa insert ke lirik'
+        }
         insertControls={pianoInsertControls}
       />
 
