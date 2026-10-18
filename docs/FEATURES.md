@@ -45,19 +45,29 @@ Lirik disimpan sebagai teks dengan notasi kord dalam kurung siku:
 `src/utils/chordUtils.js` menyediakan:
 - `transposeChord(chord, semitones)` — transposisi kord
 - `parseChordLine(line)` — mengurai baris lirik berkord
+- deteksi section pada format `[Intro] A# F A#-C Dm` (label bracket + kord tanpa colon)
 - `ChordDisplay.jsx` merender token kord sebagai elemen interaktif
+
+Di editor lirik (`SongLyricsEditorPanel.jsx` + `LyricsFormatToolbar.jsx`), fitur **Tag Bagian** dengan `[ ]` juga berlaku pada baris instrumen, cue, dan metadata.
 
 ### Time Marker
 Ditulis di dalam lirik, misalnya `[00:32]`. Dipakai untuk **sinkronisasi video YouTube** — klik marker akan seek player ke waktu tersebut.
 
 ### Sheet Music
-Kolom `sheet_music_xml` (MusicXML) dirender oleh **OpenSheetMusicDisplay** melalui `SongSheetMusic.jsx`.
+Kolom `sheet_music_xml` (MusicXML) dirender oleh **OpenSheetMusicDisplay** melalui `SongSheetMusic.jsx`. Di halaman tambah/edit lagu, partitur diakses lewat tombol **Partitur** yang membuka `SheetMusicModal.jsx` — modal muat/ekspor MusicXML tanpa meninggalkan form lagu.
 
 ### Analisis Kord
 `SongChordsAnalyzer.jsx` + `useChordStats.js` menampilkan statistik pemakaian kord (kord yang paling sering muncul, tingkat kesulitan, progresi umum) dalam **modal** yang dibuka lewat tombol "Analisis Chord".
 
+### Editor Lagu (Song Add/Edit)
+Halaman `SongAddEditPage.jsx` menyatukan panel info & editor lirik dalam satu workspace:
+- **Info grid 4 kolom** (Genre, Nada Dasar/Key, Tempo (BPM), dll.) dengan tombol **Partitur** sejajar rata atas di barisnya
+- **Divider geser** untuk mengatur rasio editor lirik vs panel media (drag divider juga membesarkan kolom media); custom split tetap aktif
+- Transpose cepat (quick transpose) dipindah ke toolbar editor
+- **Virtual Piano** mudah diakses langsung dari editor lirik; menu piano tidak lagi memuat toggle Insert
+
 ### Panel Lirik & Chord (Song View)
-Panel lirik/chord di halaman song view bersifat **read-only**. Kontrol edit lirik dan fullscreen tidak tersedia di sini; penyuntingan dilakukan lewat halaman tambah/edit lagu. Toolbar panel memuat **key/transpose + LED tempo**, **autoscroll lirik** (on/off + mode Musik/Manual + kecepatan), dan kontrol tampilan panggung (di bawah); pemutaran YouTube di panel media & kontrol fullscreen perf. Tombol **Export** berada di header info lagu (sebaris dengan Edit & Bagikan).
+Panel lirik/chord di halaman song view bersifat **read-only**. Kontrol edit lirik dan fullscreen tidak tersedia di sini; penyuntingan dilakukan lewat halaman tambah/edit lagu. Toolbar panel memuat **key/transpose + LED tempo**, **autoscroll lirik** (on/off + mode Musik/Manual + kecepatan), dan kontrol tampilan panggung (di bawah); pemutaran YouTube di panel media & kontrol fullscreen perf. Tombol **Export** berada di header info lagu (sebaris dengan Edit & Bagikan). Kapsul autoscroll dan baris Patch di panel info memakai gaya yang konsisten dengan kontrol lain.
 
 **Autoscroll lirik** di toolbar panel: gerak halus via requestAnimationFrame. Dua mode kecepatan — *Musik* (BPM mengikuti tempo lagu, dihitung dari tinggi baris + jumlah bar/chord per baris) dan *Manual* (level 1–10, 10–100 px/s). Reset kembali ke tempo lagu / level default.
 

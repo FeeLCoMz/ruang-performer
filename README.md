@@ -214,6 +214,8 @@ node runMigration.js schema.sql
 | [`docs/FEATURES.md`](docs/FEATURES.md) | Panduan fitur per halaman |
 | [`docs/PERMISSIONS.md`](docs/PERMISSIONS.md) | Sistem peran & otorisasi |
 | [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Standar kode, styling, testing, deployment |
+| [`docs/PLAYSTORE.md`](docs/PLAYSTORE.md) | Panduan publikasi ke Google Play Store (TWA) |
+| [`SECURITY.md`](SECURITY.md) | Kebijakan keamanan & cara melaporkan kerentanan |
 
 ## Deploy
 
