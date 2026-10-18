@@ -720,6 +720,13 @@ body.dark-mode .studio-error {
   align-items: stretch;
 }
 
+/* With a custom split (dragged at least once) the media column takes the
+   remaining space, so it can grow past its 340px default too — not just the
+   editor column. */
+.studio-columns.has-custom-split {
+  grid-template-columns: var(--studio-editor-col, minmax(0, 1fr)) auto minmax(0, 1fr);
+}
+
 .studio-editor-info.studio-info-full {
   grid-area: info;
   margin-top: 0;
@@ -770,6 +777,11 @@ body.dark-mode .studio-error {
   grid-template-columns: var(--studio-editor-col, minmax(0, 1fr)) auto minmax(0, 1fr);
   cursor: col-resize;
   user-select: none;
+}
+
+/* Drag hint: hide the grip pulse on the media card edge while resizing. */
+.studio-columns.is-resizing .studio-columns-divider {
+  background: color-mix(in srgb, var(--primary-accent) 18%, transparent);
 }
 
 @media (max-width: 900px) {

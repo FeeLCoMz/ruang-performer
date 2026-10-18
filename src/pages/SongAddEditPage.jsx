@@ -105,6 +105,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   // Rasio kolom editor/media, dikendalikan divider geser. String kosong =
   // pakai lebar default dari CSS (tanpa inline var).
   const [splitRatio, setSplitRatio] = useState('');
+  const hasCustomSplit = splitRatio !== '';
   const [isResizingColumns, setIsResizingColumns] = useState(false);
   const columnsRef = useRef(null);
 
@@ -811,7 +812,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
       <div
         ref={columnsRef}
-        className={`studio-columns${isResizingColumns ? ' is-resizing' : ''}`}
+        className={`studio-columns${isResizingColumns ? ' is-resizing' : ''}${hasCustomSplit ? ' has-custom-split' : ''}`}
         style={{ '--studio-editor-col': splitRatio }}
       >
         {/* INFORMASI UTAMA — the song's identity, full width above the split.
