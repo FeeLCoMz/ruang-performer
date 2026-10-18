@@ -362,6 +362,55 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Download / Google Play Section */}
+      <section id="unduh" className="landing-section landing-download">
+        <div className="landing-download-inner">
+          <div className="landing-download-text">
+            <span className="landing-section-tag">Unduh Aplikasi</span>
+            <h2 className="landing-section-title">
+              Instal Ruang Performer di Perangkat Anda
+            </h2>
+            <p className="landing-section-subtitle">
+              Pakai langsung dari browser — tanpa unduh, tanpa instal. Atau tunggu
+              aplikasi Android kami yang sedang dalam persiapan rilis di Google Play.
+            </p>
+            <div className="landing-download-actions">
+              <button
+                type="button"
+                className="landing-btn landing-btn-primary landing-btn-large"
+                onClick={() => navigate('/login?mode=register')}
+              >
+                🌐 Pakai Versi Web Sekarang
+              </button>
+              <span
+                className="landing-download-badge"
+                title="Aplikasi Android Ruang Performer — segera di Google Play Store"
+                aria-disabled="true"
+              >
+                <span className="landing-download-badge-icon" aria-hidden="true">▶</span>
+                <span className="landing-download-badge-text">
+                  <span className="landing-download-badge-top">SEGERA DI</span>
+                  <span className="landing-download-badge-main">Google Play</span>
+                </span>
+              </span>
+            </div>
+            <p className="landing-download-note">
+              💡 Tips: di HP Android, buka situs ini di Chrome lalu pilih
+              <strong> "Tambahkan ke Layar Utama"</strong> untuk pengalaman seperti aplikasi.
+            </p>
+          </div>
+          <div className="landing-download-visual" aria-hidden="true">
+            <img
+              src="/icon-512x512.png"
+              alt=""
+              width="160"
+              height="160"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="landing-section">
         <div className="landing-section-header">

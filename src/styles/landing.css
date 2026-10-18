@@ -693,3 +693,101 @@
     align-items: flex-start;
   }
 }
+
+/* ========================================
+   DOWNLOAD / GOOGLE PLAY SECTION
+   ======================================== */
+.landing-download {
+  padding: 96px 24px;
+}
+
+.landing-download-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 48px;
+}
+
+.landing-download-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.landing-download-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.landing-download-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  border: 1px solid var(--border-color, #2a3350);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: default;
+  user-select: none;
+  opacity: 0.85;
+}
+
+.landing-download-badge-icon {
+  font-size: 26px;
+  line-height: 1;
+  color: #34a853;
+}
+
+.landing-download-badge-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.landing-download-badge-top {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #9aa3b8);
+}
+
+.landing-download-badge-main {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.landing-download-note {
+  margin-top: 16px;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #9aa3b8);
+}
+
+.landing-download-visual img {
+  display: block;
+  border-radius: 24px;
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.25);
+}
+
+@media (max-width: 768px) {
+  .landing-download-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .landing-download-actions {
+    justify-content: center;
+  }
+
+  .landing-download-visual {
+    order: -1;
+  }
+
+  .landing-download-visual img {
+    width: 120px;
+    height: 120px;
+  }
+}
