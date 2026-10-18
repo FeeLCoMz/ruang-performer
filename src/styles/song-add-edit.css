@@ -523,17 +523,17 @@ body.dark-mode .studio-error {
   color: var(--text-secondary);
 }
 
-/* ---- INFORMASI UTAMA: deliberate three-column grid on wide screens ----
+/* ---- INFORMASI UTAMA: deliberate four-column grid on wide screens ----
    Dense by design: the metadata is context for the lyrics, not the main event,
    so fields stay short and the editor below keeps the vertical space.
    Wide screens read as:
-     Judul Lagu | Artis          | Genre
-     Nada Dasar | Tempo          | Time Signature
-     Keyboard Patch (2 cols)    | Partitur
+     Judul Lagu | Artis    | Genre | Nada Dasar
+     Tempo      | Time Sig | YouTube | Partitur
+     Keyboard Patch (full width)
    so each field has a stable home and the rows never reshuffle. */
 .studio-fields {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--spacing-sm) var(--spacing-md);
 }
 
@@ -552,13 +552,56 @@ body.dark-mode .studio-error {
   font-size: var(--font-size-sm);
 }
 
-/* Partitur trigger: looks like an input so it lines up with its neighbours,
-   but opens the MusicXML modal instead of accepting inline text. */
+/* Keyboard Patch: last row, spans every column of the 4-col grid. */
+.studio-field-full {
+  grid-column: 1 / -1;
+}
+
+/* ---- Uniform styling for every control inside the info panel -------------
+   Inputs, selects, and the Partitur trigger button share the same height,
+   font, and border treatment so the panel reads as one form, not a mix. */
+.studio-fields .form-input-field {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+}
+
+.studio-fields .form-input-field:focus {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent) 14%, transparent);
+}
+
+.studio-fields select.form-input-field {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+    linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 30px;
+}
+
+.studio-fields textarea.form-input-field {
+  min-height: 52px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+/* The Partitur trigger button matches an input visually: left-aligned text,
+   same height/padding/border, no button chrome. */
 .studio-sheet-btn {
   text-align: left;
   cursor: pointer;
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
+  background: var(--input-bg, var(--primary-bg));
+  border: 1px solid var(--border-color);
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .studio-sheet-btn.has-value {
@@ -566,10 +609,9 @@ body.dark-mode .studio-error {
   font-weight: 600;
 }
 
-/* Row 3 — Keyboard Patch takes two columns, Partitur takes the third so the
-   button sits on the same row as the patch instead of wrapping below it. */
+/* Patch field no longer spans two columns: it is the only field on its row. */
 .studio-field-span {
-  grid-column: span 2;
+  grid-column: 1 / -1;
 }
 
 .studio-field-sheet {
@@ -663,12 +705,14 @@ body.dark-mode .studio-error {
    takes the wide column on the left. */
 .studio-columns {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+  /* Editor column width is overridable via the slide divider (--studio-editor-col
+     set inline by the drag handler). Fallback keeps today's proportions. */
+  grid-template-columns: var(--studio-editor-col, minmax(0, 1fr)) auto minmax(0, 340px);
   grid-template-areas:
-    "info  info"
-    "editor media";
+    "info  info  info"
+    "editor divider media";
   gap: var(--spacing-md);
-  align-items: start;
+  align-items: stretch;
 }
 
 .studio-editor-info.studio-info-full {
@@ -678,12 +722,64 @@ body.dark-mode .studio-error {
   border-top: none;
 }
 
+/* ---- Slide divider: drag to resize the editor/media split ---------------- */
+.studio-columns-divider {
+  grid-area: divider;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  margin-left: -5px;
+  margin-right: -5px;
+  cursor: col-resize;
+  touch-action: none;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.studio-columns-divider:hover,
+.studio-columns-divider:focus-visible {
+  background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
+}
+
+.studio-columns-divider:focus-visible {
+  outline: 2px solid var(--primary-accent);
+  outline-offset: 2px;
+}
+
+.studio-columns-divider-grip {
+  width: 3px;
+  height: 48px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-color) 85%, var(--text-secondary));
+  transition: background var(--transition-fast), height var(--transition-fast);
+}
+
+.studio-columns-divider:hover .studio-columns-divider-grip {
+  height: 64px;
+  background: var(--primary-accent);
+}
+
+/* While dragging, the media column takes whatever space is left. */
+.studio-columns.is-resizing {
+  grid-template-columns: var(--studio-editor-col, minmax(0, 1fr)) auto minmax(0, 1fr);
+  cursor: col-resize;
+  user-select: none;
+}
+
+@media (max-width: 900px) {
+  .studio-columns-divider {
+    display: none;
+  }
+}
+
 .studio-editor {
   grid-area: editor;
 }
 
 .studio-media {
   grid-area: media;
+  min-width: 0;
 }
 
 /* Editor and media panels are cards in their own right; the info band above
@@ -729,7 +825,8 @@ body.dark-mode .studio-error {
   line-height: 1.4;
 }
 
-/* Narrow screens stack back to a single column: info, then editor, then media. */
+/* Narrow screens stack back to a single column: info, then editor, then media.
+   The slide divider disappears — there is nothing to split. */
 @media (max-width: 900px) {
   .studio-columns {
     grid-template-columns: minmax(0, 1fr);

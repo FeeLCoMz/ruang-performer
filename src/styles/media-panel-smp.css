@@ -220,15 +220,15 @@
       "media";
   }
 
-  /* Three columns get cramped below this width: the identity row and the
+  /* Four columns get cramped below this width: the identity row and the
      musical facts drop to two columns, so every row wraps predictably. */
   .studio-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* Row 3 keeps its pairing: patch on the left, Partitur on the right. */
+  /* Patch keeps its full-width row even in the two-column grid. */
   .studio-field-span {
-    grid-column: span 1;
+    grid-column: 1 / -1;
   }
 
 /* ---- Studio: mobile ---- */

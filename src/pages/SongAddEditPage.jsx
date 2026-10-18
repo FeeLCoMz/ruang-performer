@@ -102,6 +102,45 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [barsPerLine, setBarsPerLine] = useState(4);
   const [lyricsEditError, setLyricsEditError] = useState('');
 
+  // Rasio kolom editor/media, dikendalikan divider geser. String kosong =
+  // pakai lebar default dari CSS (tanpa inline var).
+  const [splitRatio, setSplitRatio] = useState('');
+  const [isResizingColumns, setIsResizingColumns] = useState(false);
+  const columnsRef = useRef(null);
+
+  // Drag divider: hitung lebar kolom editor dari posisi pointer di dalam grid.
+  const handleDividerPointerDown = useCallback((event) => {
+    event.preventDefault();
+    const columns = columnsRef.current;
+    if (!columns) return;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const move = (e) => {
+      const rect = columns.getBoundingClientRect();
+      const fraction = (e.clientX - rect.left) / rect.width;
+      // Media butuh minimal ruang video dan editor min 320px.
+      const minEditorPx = 320;
+      const minMediaPx = 280;
+      const maxEditorPx = rect.width - minMediaPx - 40; /* gap + divider */
+      const clamped = Math.max(minEditorPx, Math.min(maxEditorPx, fraction * rect.width));
+      setSplitRatio(clamped.toFixed(2) + 'px');
+    };
+
+    setIsResizingColumns(true);
+
+    const up = () => {
+      setIsResizingColumns(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  }, []);
+
   // Single source of truth for video playback, shared by the practice panel and
   // the timestamp buttons inside the lyrics preview.
   const [isYoutubePlaying, setIsYoutubePlaying] = useState(false);
@@ -770,11 +809,17 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         </div>
       )}
 
-      <div className="studio-columns">
+      <div
+        ref={columnsRef}
+        className={`studio-columns${isResizingColumns ? ' is-resizing' : ''}`}
+        style={{ '--studio-editor-col': splitRatio }}
+      >
         {/* INFORMASI UTAMA — the song's identity, full width above the split.
-              Wide screens read as three columns: Judul | Artis | Genre, then
-              Nada Dasar | Tempo | Time Signature. The long fields (YouTube,
-              patch, score) span the full row so they never squeeze the grid. */}
+              Wide screens read as four columns per row:
+                Judul | Artis | Genre | Nada Dasar
+                Tempo | Time Signature | YouTube | Partitur
+                Keyboard Patch (full width)
+              The patch textarea spans the full row so it never squeezes the grid. */}
         <div className="studio-editor-section studio-editor-info studio-info-full">
           <div className="studio-card-head">
             <span className="studio-card-title">INFORMASI UTAMA</span>
@@ -921,7 +966,19 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 )}
               </label>
 
-              <label className="studio-field studio-field-span">
+              <label className="studio-field studio-field-sheet">
+                <span className="studio-field-label">Partitur (MusicXML)</span>
+                <button
+                  type="button"
+                  className={`form-input-field studio-sheet-btn${sheetMusicXml ? ' has-value' : ''}`}
+                  onClick={() => setShowSheetMusicModal(true)}
+                >
+                  {sheetMusicXml ? '🎼 Partitur terisi — Edit' : '🎼 Tambah Partitur (MusicXML)'}
+                </button>
+              </label>
+
+              {/* Keyboard Patch: satu field melebar penuh di baris terakhir. */}
+              <label className="studio-field studio-field-span studio-field-full">
                 <span className="studio-field-label">🎹 Keyboard Patch</span>
                 <textarea
                   id="song-keyboard-patch"
@@ -932,17 +989,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   rows={2}
                   className="form-input-field studio-field-compact"
                 />
-              </label>
-
-              <label className="studio-field studio-field-sheet">
-                <span className="studio-field-label">Partitur (MusicXML)</span>
-                <button
-                  type="button"
-                  className={`form-input-field studio-sheet-btn${sheetMusicXml ? ' has-value' : ''}`}
-                  onClick={() => setShowSheetMusicModal(true)}
-                >
-                  {sheetMusicXml ? '🎼 Partitur terisi — Edit' : '🎼 Tambah Partitur (MusicXML)'}
-                </button>
               </label>
             </div>
         </div>
@@ -977,6 +1023,23 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               onTimestampPause: handlePreviewPause,
             }}
           />
+        </div>
+
+        {/* Divider geser: atur rasio kolom editor (kiri) dan panel media (kanan).
+            Drag mengubah lebar kolom via CSS var; double-click mereset ke default. */}
+        <div
+          className="studio-columns-divider"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Atur lebar panel editor dan media"
+          title="Geser untuk atur lebar panel editor/media (klik dua kali untuk reset)"
+          onPointerDown={handleDividerPointerDown}
+          onDoubleClick={() => {
+            setSplitRatio('');
+            setIsResizingColumns(false);
+          }}
+        >
+          <span className="studio-columns-divider-grip" aria-hidden="true" />
         </div>
 
         <SongMediaPanel
