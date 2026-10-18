@@ -12,7 +12,9 @@ import '../styles/stage-mode.css';
 import {
   AUTO_SCROLL_MODES,
   computeManualScrollSpeed,
-  computeMusicalLineDuration,
+  computeMusicalScrollSpeed,
+  estimateBarCount,
+  estimateChordCount,
   normalizeAutoScrollMode,
   parseTimeSignatureNumerator,
 } from '../utils/autoscrollSpeedUtils.js';
@@ -363,9 +365,9 @@ export default function StageModePage({
     writeStored(STORAGE_KEYS.STAGE_AUTOSCROLL_MODE, autoScrollMode);
   }, [autoScrollMode]);
   const [autoScrollActive, setAutoScrollActive] = useState(false);
-  // scrollSpeed HANYA untuk display metronome/tempo di AutoScrollControl —
-  // kecepatan scroll aktual dihitung dari mode: MANUAL pakai manualSpeedLevel,
-  // MUSICAL pakai BPM × time signature (lihat effect autoscroll di bawah).
+  // scrollSpeed = BPM efektif untuk autoscroll MUSICAL (tombol −/+ di
+  // AutoScrollControl mengubahnya, sama seperti mode normal) dan juga
+  // display metronome/tempo. Mode MANUAL memakai manualSpeedLevel.
   const [scrollSpeed, setScrollSpeed] = useState(120);
   const [manualSpeedLevel, setManualSpeedLevel] = useState(5);
   const [sheetOpen, setSheetOpen] = useState(null); // null | 'song' | 'setlist' | 'search'
@@ -425,8 +427,9 @@ export default function StageModePage({
   // Autoscroll: digerakkan di sini (container .stage-mode-body). Kecepatan
   // dihitung dengan utilitas resmi aplikasi (autoscrollSpeedUtils) supaya
   // perilakunya identik dengan panel lirik biasa:
-  // - MUSICAL: V = tinggi baris / durasi musik baris (barCount dari jumlah
-  //   chord-line × (60/BPM) × pembilang time signature).
+  // - MUSICAL: V = tinggi baris / durasi musik baris, diukur PER BARIS (baris
+  //   pertama yang masuk viewport) dengan barCount/chordCount dari teks
+  //   baris chord — sama seperti SongChordsLyricsDisplay.
   // - MANUAL : multiplier × level^1.55 (level 1 = sangat lambat).
   // hasSong di dep: container body baru ada setelah lagu termuat — jangan
   // pasang loop autoscroll pada elemen empty-state.
@@ -438,48 +441,74 @@ export default function StageModePage({
     let lastTs = null;
     let accumulator = 0;
 
-    // Kecepatan di-cache dan hanya diukur ulang tiap ~500ms (atau bila zoom/
-    // font berubah otomatis saat lirik berubah ukuran). Sebelumnya diukur
-    // per frame — querySelectorAll + getBoundingClientRect × 60/s.
-    let cachedSpeed = 24;
-    let lastMeasure = 0;
-    const measureSpeed = () => {
+    // Metrik baris untuk mode MUSICAL — identik dengan panel lirik normal:
+    // baris yang diukur adalah baris pertama (.cd-chord/.cd-number) yang
+    // masih berada di viewport, sehingga kecepatan mengikuti bar yang
+    // sedang dinyanyikan, bukan rata-rata seluruh lagu.
+    const measureLineMetrics = () => {
       const lineEls = Array.from(container.querySelectorAll('.cd-chord, .cd-number, .cd-lyrics-line'));
-      if (lineEls.length === 0) return 24; // fallback aman
+      if (lineEls.length === 0) {
+        return { lineHeightsPx: 24, barCount: 0, chordCount: 0, text: '' };
+      }
+      const containerTop = container.getBoundingClientRect().top;
+      const firstEl = lineEls.find((el) => {
+        const rect = el.getBoundingClientRect();
+        return rect.bottom > containerTop;
+      }) || lineEls[0];
+      const style = window.getComputedStyle(firstEl);
+      const lineHeight = parseFloat(style.lineHeight)
+        || parseFloat(style.fontSize) * 1.6
+        || firstEl.getBoundingClientRect().height
+        || 24;
 
-      // Tinggi blok per baris: jarak baris chord ke baris chord berikutnya
-      // (mencakup chord + baris liriknya) — sama seperti panel lirik normal.
-      let blockHeight = 24;
-      if (lineEls.length > 1) {
-        const distance = lineEls[1].getBoundingClientRect().top - lineEls[0].getBoundingClientRect().top;
-        if (Number.isFinite(distance) && distance > 8) blockHeight = distance;
+      // Tinggi blok per baris: jarak baris chord ini ke baris chord
+      // berikutnya (mencakup chord + baris liriknya) — sama seperti panel
+      // lirik normal.
+      let blockHeight = Math.max(8, Math.round(lineHeight));
+      const nextEl = lineEls[lineEls.indexOf(firstEl) + 1];
+      if (nextEl) {
+        const distance = Math.round(nextEl.getBoundingClientRect().top - firstEl.getBoundingClientRect().top);
+        if (Number.isFinite(distance) && distance > blockHeight) {
+          blockHeight = distance;
+        }
       }
 
+      const text = firstEl.textContent || '';
+      return {
+        lineHeightsPx: blockHeight,
+        barCount: estimateBarCount(text),
+        chordCount: estimateChordCount(text),
+        text,
+      };
+    };
+
+    const computePixelsPerSecond = () => {
       if (normalizedAutoScrollMode === AUTO_SCROLL_MODES.MANUAL) {
         return computeManualScrollSpeed({ userSpeedLevel: manualSpeedLevel });
       }
-
-      // MUSICAL: total durasi lagu = barCount × (60/BPM) × pembilang; barCount
-      // = jumlah baris chord. Total tinggi = jarak scroll aktual (scrollHeight
-      // − clientHeight), bukan blockHeight × jumlah baris — lirik lanjutan
-      // (tanpa chord) menempel di blok yang sama sehingga estimasi lama
-      // melebih-lebihkan tinggi dan kecepatan meleset.
-      const barCount = Math.max(1, container.querySelectorAll('.cd-chord, .cd-number').length || 1);
-      const totalHeight = Math.max(blockHeight, container.scrollHeight - container.clientHeight);
-      const totalDuration = computeMusicalLineDuration({
-        barCount,
-        chordCount: 0,
-        bpm,
+      // MUSICAL: per baris, dari BPM efektif (scrollSpeed — tombol −/+
+      // di AutoScrollControl mengubah nilai ini, sama seperti mode normal)
+      // + time signature lagu.
+      const metrics = measureLineMetrics();
+      return computeMusicalScrollSpeed({
+        lineHeightsPx: metrics.lineHeightsPx,
+        barCount: metrics.barCount,
+        chordCount: metrics.chordCount,
+        bpm: scrollSpeed,
         timeSignatureNumerator: parseTimeSignatureNumerator(song?.time_signature || '4/4'),
+        beatsPerChord: parseTimeSignatureNumerator(song?.time_signature || '4/4'),
       });
-      // V rata-rata supaya seluruh lirik selesai tepat saat lagu selesai.
-      return Math.max(2, totalHeight / Math.max(1, totalDuration));
     };
 
+    let cachedSpeed = computePixelsPerSecond();
+    let lastMeasure = 0;
     const speedPxPerSecond = (ts) => {
+      // Kecepatan di-cache dan diukur ulang tiap ~500ms (baris aktif bisa
+      // pindah, zoom/font bisa berubah) — querySelectorAll +
+      // getBoundingClientRect terlalu mahal untuk per frame.
       if (ts - lastMeasure >= 500) {
         lastMeasure = ts;
-        cachedSpeed = measureSpeed();
+        cachedSpeed = computePixelsPerSecond();
       }
       return cachedSpeed;
     };
@@ -508,7 +537,7 @@ export default function StageModePage({
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [stageMode, autoScrollActive, hasSong, normalizedAutoScrollMode, manualSpeedLevel, bpm, song?.id, song?.time_signature]);
+  }, [stageMode, autoScrollActive, hasSong, normalizedAutoScrollMode, manualSpeedLevel, scrollSpeed, song?.id, song?.time_signature]);
 
   // Key master lagu (tanpa override setlist) — pembanding untuk auto-apply
   // transpose. song.key sudah berisi override setlist, jadi bukan pembanding

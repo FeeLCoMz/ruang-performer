@@ -1,9 +1,11 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { transposeChord, getTransposeSteps } from '../utils/chordUtils.js';
+import { MUSICAL_KEYS_MAJOR, MUSICAL_KEYS_MINOR, parseKeyLabel } from '../utils/keyPicker.js';
 
 /**
  * TransposeKeyControl - Component for displaying and transposing musical keys
- * 
+ *
  * @param {string} originalKey - The original key (e.g., 'C', 'G#', 'Am')
  * @param {number} transpose - Current transpose value in semitones
  * @param {function} onTransposeChange - Callback when transpose changes
@@ -73,6 +75,85 @@ export default function TransposeKeyControl({
     }
   };
 
+  /* ======== Picker key: pilih key target langsung dari daftar ======== */
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const openPicker = () => setPickerOpen(true);
+  const closePicker = React.useCallback(() => setPickerOpen(false), []);
+
+  // Pilih key dari daftar: hitung steps dari originalKey ke key pilihan.
+  // Jika key pilihan == key asli, steps 0 (reset transpose).
+  const handlePickKey = (key) => {
+    const steps = getTransposeSteps(originalKey, key);
+    safeOnTransposeChange(steps === null ? 0 : steps);
+    closePicker();
+  };
+
+  // Tutup modal saat tekan Esc.
+  React.useEffect(() => {
+    if (!pickerOpen) return undefined;
+    const handleKey = (e) => {
+      if (e.key === 'Escape') closePicker();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [pickerOpen, closePicker]);
+
+  // Key aktif (setelah transpose) untuk highlight di daftar.
+  const activeKeyLabel = parseKeyLabel(transposedKey) || transposedKey;
+  // Key asli untuk tanda referensi di daftar.
+  const originalKeyLabel = parseKeyLabel(originalKey) || originalKey;
+
+  // Hanya tampilkan key dengan mood yang sama dengan key asli: key asli mayor
+  // → hanya 12 key mayor; minor → hanya 12 key minor. Jika key asli tidak
+  // bisa diparse (format aneh), fallback ke daftar lengkap 24 key.
+  const isOriginalMinor = originalKeyLabel ? originalKeyLabel.endsWith('m') : false;
+  const pickerKeys = originalKeyLabel
+    ? (isOriginalMinor ? MUSICAL_KEYS_MINOR : MUSICAL_KEYS_MAJOR)
+    : [...MUSICAL_KEYS_MAJOR, ...MUSICAL_KEYS_MINOR];
+
+  const pickerModal = pickerOpen ? createPortal(
+    <div
+      className="key-picker-overlay"
+      onClick={closePicker}
+      role="presentation"
+    >
+      <div
+        className="key-picker"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Pilih key"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="key-picker-title">Pilih key</div>
+        <div className="key-picker-subtitle">
+          Key asli: {originalKeyLabel} ({isOriginalMinor ? 'minor' : 'mayor'}) — key pilihan diterapkan sebagai transpose.
+        </div>
+        <div className="key-picker-grid" role="listbox" aria-label={`Daftar key ${isOriginalMinor ? 'minor' : 'mayor'}`}>
+          {pickerKeys.map((key) => (
+            <button
+              key={key}
+              type="button"
+              role="option"
+              aria-selected={key === activeKeyLabel}
+              className={`key-picker-option${key === activeKeyLabel ? ' is-active' : ''}${key === originalKeyLabel ? ' is-original' : ''}`}
+              onClick={() => handlePickKey(key)}
+            >
+              {key}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="key-picker-close"
+          onClick={closePicker}
+        >
+          Tutup
+        </button>
+      </div>
+    </div>,
+    document.body,
+  ) : null;
+
   // Tombol "key mudah": bagian dari kontrol transpose agar ukuran/posisinya
   // seragam di semua tempat yang memakai komponen ini (tab Info, toolbar lirik).
   const recommendedSteps = Number(pianoRecommendation?.transposeFromCurrent) || 0;
@@ -106,10 +187,14 @@ export default function TransposeKeyControl({
         >
           −
         </button>
-        <div
+        <button
+          type="button"
           className="transpose-key-value"
+          onClick={openPicker}
+          aria-haspopup="dialog"
+          aria-expanded={pickerOpen}
           aria-live="polite"
-          title={transpose !== 0 ? `${originalKey} → ${transposedKey}` : `Key aktif: ${originalKey}`}
+          title={transpose !== 0 ? `${originalKey} → ${transposedKey} — klik untuk pilih key` : `${originalKey} — klik untuk pilih key`}
         >
           {transpose !== 0 ? (
             <>
@@ -124,7 +209,7 @@ export default function TransposeKeyControl({
           ) : (
             <span className="transpose-key-current">{originalKey}</span>
           )}
-        </div>
+        </button>
         <button
           type="button"
           onClick={handleTransposeUp}
@@ -159,6 +244,7 @@ export default function TransposeKeyControl({
             ⟲
           </button>
         )}
+        {pickerModal}
       </div>
     );
   }
@@ -175,7 +261,14 @@ export default function TransposeKeyControl({
         >
           −
         </button>
-        <div className="song-info-key-display">
+        <button
+          type="button"
+          className="song-info-key-display"
+          onClick={openPicker}
+          aria-haspopup="dialog"
+          aria-expanded={pickerOpen}
+          title={transpose !== 0 ? `${originalKey} → ${transposedKey} — klik untuk pilih key` : `${originalKey} — klik untuk pilih key`}
+        >
           {transpose !== 0 ? (
             <>
               <span className="song-info-key-original">{originalKey}</span>
@@ -185,7 +278,7 @@ export default function TransposeKeyControl({
           ) : (
             <span className="song-info-value">{originalKey}</span>
           )}
-        </div>
+        </button>
         <button
           type="button"
           onClick={handleTransposeUp}
@@ -227,6 +320,7 @@ export default function TransposeKeyControl({
           {transpose > 0 ? `+${transpose}` : transpose} semitone
         </div>
       )}
+      {pickerModal}
     </div>
   );
 }

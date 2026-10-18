@@ -569,3 +569,224 @@ body.stage-mode .btn-secondary {
   padding: 8px 18px;
   font-size: 0.85rem;
 }
+
+/* ========== RESPONSIVE ========== */
+/* Prinsip: di layar kecil (HP, dipakai manggung tanpa meja), teks lirik dan
+   area sentuh jadi prioritas — header/footer dipadatkan, sheet hampir
+   setinggi layar. Di landscape HP (tinggi < 480px) biarkan lebih banyak
+   ruang untuk lirik dengan memperkecil chrome di atas/bawah. */
+
+/* ===== Tablet ke bawah / HP (≤ 768px) ===== */
+@media (max-width: 768px) {
+  /* Header: judul lebih kecil, pill key/tempo boleh menyusut. */
+  .stage-mode-header {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .stage-mode-header-info {
+    font-size: 0.92rem;
+  }
+
+  .stage-mode-pill {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+  }
+
+  .stage-mode-instruments {
+    max-width: 110px;
+  }
+
+  /* Konteks band/setlist: label diperkecil agar tidak memakan header. */
+  .stage-mode-context-band {
+    max-width: 110px;
+    font-size: 0.66rem;
+  }
+
+  .stage-mode-context-setlist {
+    max-width: 140px;
+    font-size: 0.78rem;
+  }
+
+  /* Body lirik: padding sisi lebih ramping supaya baris lirik tak sering wrap. */
+  .stage-mode-body {
+    padding: 8px 10px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .stage-mode-body .cd {
+    /* Basis font lirik sedikit lebih kecil di HP (tetap dikendalikan pinch). */
+    font-size: calc(clamp(0.78rem, 3.6vw, 0.95rem) * var(--lyrics-font-scale, 1));
+    padding-bottom: 32px;
+  }
+
+  /* Footer: baris tombol bisa turun ke dua baris — beri jarak sentuh. */
+  .stage-mode-footer {
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    gap: 6px;
+  }
+
+  .stage-mode-footer .btn,
+  .stage-mode-footer-btn {
+    min-height: 44px;
+    padding: 6px 10px;
+    font-size: 0.88rem;
+  }
+
+  /* Nav prev/next jauh lebih lebar di HP: sering dipakai sambil main. */
+  .stage-mode-footer-btn.stage-mode-nav-btn {
+    flex: 1 1 auto;
+    min-width: 72px;
+  }
+
+  /* Sheet: hampir fullscreen agar daftar lagu mudah digulir sambil berdiri. */
+  .stage-mode-sheet {
+    width: 100%;
+    max-height: 86vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .stage-mode-sheet--tall {
+    max-height: 88vh;
+  }
+
+  .stage-mode-sheet-list {
+    max-height: 58vh;
+  }
+
+  .stage-mode-sheet-list--search {
+    max-height: 62vh;
+  }
+
+  /* Info lagu: grid satu kolom di HP agar nilai panjang tidak terpotong. */
+  .stage-mode-info-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .stage-mode-info {
+    max-height: 35vh;
+  }
+
+  /* Player referensi: melebar penuh, lebih dekat ke footer. */
+  .stage-mode-player {
+    left: 8px;
+    right: 8px;
+    bottom: 96px;
+    max-width: none;
+  }
+
+  /* Daftar pilih lagu (empty-state): lebar penuh. */
+  .stage-mode-pick-list {
+    width: 100%;
+  }
+
+  /* Kontrol transpose & autoscroll di footer: biar wrap, tidak dipaksa menyusut. */
+  .stage-mode-footer .transpose-control,
+  .stage-mode-footer .autoscroll-control {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+}
+
+/* ===== HP sangat kecil (≤ 400px) ===== */
+@media (max-width: 400px) {
+  .stage-mode-header-info {
+    font-size: 0.85rem;
+  }
+
+  .stage-mode-pill {
+    display: none; /* key & tempo tetap ada di panel info (tombol ℹ️). */
+  }
+
+  /* Footer: tombol ikon jadi kotak simetris, nav tetap dominan. */
+  .stage-mode-footer {
+    gap: 5px;
+  }
+
+  .stage-mode-footer .btn,
+  .stage-mode-footer-btn {
+    flex: 0 0 auto;
+    padding: 6px 8px;
+  }
+
+  .stage-mode-footer-btn.stage-mode-nav-btn {
+    flex: 1 1 100%;
+    order: 9; /* nav turun ke baris sendiri di bawah ikon-ikon. */
+  }
+}
+
+/* ===== Landscape HP / layar pendek (max-height ≤ 480px) ===== */
+@media (max-height: 480px) {
+  .stage-mode-header {
+    padding: 4px 8px;
+  }
+
+  .stage-mode-context-band {
+    display: none; /* di layar pendek cukup nama setlist. */
+  }
+
+  .stage-mode-body {
+    padding: 6px 10px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .stage-mode-footer {
+    padding: 4px 8px calc(4px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .stage-mode-footer .btn,
+  .stage-mode-footer-btn {
+    min-height: 40px;
+    padding: 4px 10px;
+  }
+
+  .stage-mode-info {
+    max-height: 40vh;
+  }
+
+  .stage-mode-player {
+    bottom: 58px;
+  }
+
+  /* Sheet: batasi tinggi agar tidak menutup seluruh layar landscape. */
+  .stage-mode-sheet {
+    max-height: 88vh;
+  }
+
+  .stage-mode-sheet-list {
+    max-height: 60vh;
+  }
+}
+
+/* ===== Tablet / layar lebar (≥ 1200px): lirik maksimal keterbacaan. */
+@media (min-width: 1200px) {
+  .stage-mode-body .cd {
+    font-size: calc(clamp(0.9rem, 1.4vw, 1.15rem) * var(--lyrics-font-scale, 1));
+  }
+
+  .stage-mode-body {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  /* Batasi lebar kolom lirik di layar sangat lebar (kinerja baca). */
+  .stage-mode-body .cd {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+}
+
+/* ===== Layar sentuh: hilangkan hover-rely, garansi area sentuh ≥ 40px ===== */
+@media (hover: none) and (pointer: coarse) {
+  .stage-mode-pick-item,
+  .stage-mode-sheet-item {
+    min-height: 44px;
+  }
+
+  .stage-mode-pick-item:hover,
+  .stage-mode-sheet-item:hover,
+  .stage-mode-sheet-link:hover .stage-mode-sheet-name {
+    /* Di sentuh, hover bisa "nyangkut" setelah tap — tampilkan efek netral. */
+    border-color: #3a3a5a;
+    color: inherit;
+  }
+}

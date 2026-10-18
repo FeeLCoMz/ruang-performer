@@ -7,7 +7,7 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  padding: 3px 6px;
+  padding: 3px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
   border: 1px solid var(--border-color);
@@ -25,7 +25,7 @@
   align-items: center;
   gap: 3px;
   min-width: 28px;
-  height: 26px;
+  height: 30px;
   padding: 0 6px;
   border: none;
   border-radius: 999px;
@@ -47,7 +47,7 @@
   align-items: center;
   gap: 3px;
   min-width: 26px;
-  height: 26px;
+  height: 30px;
   padding: 0 6px;
   justify-content: center;
   border: none;
@@ -68,8 +68,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  height: 26px;
+  min-width: 28px;
+  height: 30px;
   padding: 0;
   border: none;
   border-radius: 999px;
@@ -106,8 +106,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  height: 26px;
+  min-width: 28px;
+  height: 30px;
   padding: 0;
   border: none;
   border-radius: 999px;
