@@ -1,4 +1,11 @@
-import { isChordLine, parseSection, transposeChord } from './chordUtils.js';
+import {
+  isChordLine,
+  parseSection,
+  transposeChord,
+  isMetadataLine,
+  isCueMarkKeyword,
+  isInstrumentKeywordWord,
+} from './chordUtils.js';
 import { toNumberNotation } from './notationUtils.js';
 
 const LIKELY_CHORD_SYMBOL_REGEX = /^[A-Ga-g][#b♭♯]?(?:(?:maj|major|min|minor|m|dim|aug|sus|add|M|no|omit|\+|-)?[0-9#b♭♯+\-]*)*(?:\/[A-Ga-g][#b♭♯]?)?$/i;
@@ -352,6 +359,17 @@ function normalizeSectionTagLine(line, info) {
   return `[${info.label}]`;
 }
 
+/**
+ * Tag bagian + baris perform (instrumen/cue/metadata) dengan kurung siku.
+ *
+ * A line is only bracketed when the parser already understands it, so ordinary
+ * lyrics never get wrapped:
+ *   - section labels ("Intro:", "Reff")  -> [Intro], [Chorus]
+ *   - instrument labels ("Gitar:", "Keys: Stage Piano") -> [Gitar], [Keys: ...]
+ *   - cue marks ("Stop", "Fill in", "Tutti") -> [Stop], [Fill in]
+ *   - metadata keys ("Cue: ...", "Intensitas: 2") -> [Cue: ...]
+ * Lines already tagged are normalised (label casing/spacing) instead of re-wrapped.
+ */
 export function autoTagSongSections(text) {
   return normalizeLineEndings(text)
     .split('\n')
@@ -359,10 +377,44 @@ export function autoTagSongSections(text) {
       const parsed = parseSection(line);
       if (parsed?.type && parsed.type !== 'structure') return line;
       const info = parsed?.type === 'structure' ? detectSectionInfo(parsed.label) : detectSectionInfo(line);
-      if (!info) return line;
-      return normalizeSectionTagLine(line, info);
+      if (info) return normalizeSectionTagLine(line, info);
+      return tagPerformLine(line);
     })
     .join('\n');
+}
+
+/**
+ * Bracket a single instrument/cue/metadata line that the parser understands.
+ * Returns the line untouched when it is already tagged or not a perform line.
+ */
+function tagPerformLine(line) {
+  const trimmed = String(line || '').trim();
+  if (!trimmed) return line;
+  if (trimmed.startsWith('[')) return line;
+
+  // Metadata keys: "Cue: Drum masuk bar 9", "Intensitas: 2" -> [Cue: ...]
+  const metadataKeyMatch = trimmed.match(/^([A-Za-z]+)\s*:\s*(.+)$/);
+  if (metadataKeyMatch && isMetadataLine(trimmed)) {
+    return `[${trimmed}]`;
+  }
+
+  // Preset cue without brackets: "Keys: Stage Piano | PC: 0 | CH: 1"
+  const colonMatch = trimmed.match(/^([A-Za-z][A-Za-z0-9 ]*)\s*:\s*(.+)$/);
+  if (colonMatch && isInstrumentKeywordWord(colonMatch[1].trim())) {
+    return `[${trimmed}]`;
+  }
+
+  // Bare instrument label: "Gitar", "Keys", "Sax & Strings"
+  if (/^[A-Za-z][A-Za-z0-9 /&+()\-]*$/.test(trimmed) && isInstrumentKeywordWord(trimmed.replace(/[.,;:]+$/, '').trim())) {
+    return `[${trimmed.replace(/[.,;:]+$/, '').trim()}]`;
+  }
+
+  // Cue marks: "Stop", "Fill in", "Tutti"
+  if (isCueMarkKeyword(trimmed)) {
+    return `[${trimmed.replace(/[.,;:]+$/, '').trim()}]`;
+  }
+
+  return line;
 }
 
 export function standardizeChordNotation(text) {

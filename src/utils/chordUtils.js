@@ -117,13 +117,13 @@ function splitBracketCompoundLine(line) {
   return matches.map((match) => match[0].trim());
 }
 
-const CUE_MARK_KEYWORDS = [
+export const CUE_MARK_KEYWORDS = [
   'tutti', 'hit', 'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out', 'ritardando', 'rit.'
 ];
 
 const instrumentKeywords = [
   'gitar', 'guitar', 'bass', 'ukulele', 'mandolin', 'sape',
-  'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'pianika', 'melodika','epiano', 
+  'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'pianika', 'melodika','epiano',
   'brass', 'horn section', 'horns', 'trombone', 'tuba', 'euphonium', 'cornet',
   'saxophone', 'saksofon', 'sax', 'saxo', 'saxofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet', 'bansi',
   'violin', 'biola', 'cello', 'kontrabas', 'strings',
@@ -133,6 +133,11 @@ const instrumentKeywords = [
   'bell', 'bell pads',
   'pads'
 ];
+
+/** True when the whole value is exactly one known instrument keyword. */
+export const isInstrumentKeywordWord = (value = '') => (
+  typeof value === 'string' && instrumentKeywords.includes(value.trim().toLowerCase())
+);
 
 const matchKeywordPattern = (keyword = '') => {
   const escaped = String(keyword || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
@@ -235,7 +240,7 @@ const findInlineInstrumentMatch = (candidate = '') => {
   return false;
 };
 
-const isCueMarkKeyword = (candidate = '') => {
+export const isCueMarkKeyword = (candidate = '') => {
   if (typeof candidate !== 'string') return false;
 
   const normalized = String(candidate || '').trim();

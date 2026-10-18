@@ -69,6 +69,33 @@ describe('lyricsEditorUtils', () => {
     expect(autoTagSongSections(input)).toBe('[Verse 1] Aku kembali\n[Pre-Chorus] sampai\n[Chorus] na na');
   });
 
+  test('autoTagSongSections tags instrument labels, cues, and metadata keys', () => {
+    const input = [
+      'Gitar',
+      'Keys: Stage Piano | PC: 0 | CH: 1',
+      'Stop',
+      'Fill in',
+      'Cue: Drum masuk di bar 9',
+      'Intensitas: 2',
+      'Aku kembali ke rumah',
+    ].join('\n');
+
+    expect(autoTagSongSections(input)).toBe([
+      '[Gitar]',
+      '[Keys: Stage Piano | PC: 0 | CH: 1]',
+      '[Stop]',
+      '[Fill in]',
+      '[Cue: Drum masuk di bar 9]',
+      '[Intensitas: 2]',
+      'Aku kembali ke rumah',
+    ].join('\n'));
+  });
+
+  test('autoTagSongSections does not tag chord lines or plain lyrics', () => {
+    const input = 'Am F G\nMendung idak guruh jugo';
+    expect(autoTagSongSections(input)).toBe(input);
+  });
+
   test('detectSectionBadges returns section labels with line numbers', () => {
     expect(detectSectionBadges('[Intro]\nAm F\nPost Chorus:\nChorus:')).toEqual([
       { lineNumber: 1, label: 'Intro', tone: 'intro' },
