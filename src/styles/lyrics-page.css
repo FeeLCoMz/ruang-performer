@@ -70,6 +70,9 @@
 
 .song-info-row-label {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -108,6 +111,14 @@
 .song-info-row-control:has(.mastery-chip-root) {
   overflow-x: visible;
   overflow-y: visible;
+}
+
+/* Layar sangat sempit (<= 480px): label row info disembunyikan,
+   hanya icon yang tampil supaya baris lebih hemat ruang. */
+@media (max-width: 480px) {
+  .song-info-row-label-text {
+    display: none;
+  }
 }
 
 /* Teks polos di dalam row-control (mis. daftar instrumen) */

@@ -207,7 +207,7 @@ export default function SongChordsInfo({
           <div className="song-info-control-rows">
             {(originalKey || targetKey) && (
               <div className="song-info-control-row">
-                <span className="song-info-row-label">🎹 Key</span>
+                <span className="song-info-row-label"><span className="song-info-row-label-icon">🎹</span><span className="song-info-row-label-text">Key</span></span>
                 <div className="song-info-row-control">
                   <TransposeKeyControl
                     originalKey={originalKey}
@@ -233,7 +233,8 @@ export default function SongChordsInfo({
             {tempo && (
               <div className="song-info-control-row">
                 <span className="song-info-row-label">
-                  ⏱️ Tempo
+                  <span className="song-info-row-label-icon">⏱️</span>
+                  <span className="song-info-row-label-text">Tempo</span>
                 </span>
                 <div className="song-info-row-control">
                   <TempoControl
@@ -266,7 +267,7 @@ export default function SongChordsInfo({
             {keyboardPatch && (
               // Satu gaya dengan baris kontrol: radius/background seragam.
               <div className="song-info-control-row">
-                <span className="song-info-row-label">🎹 Patch</span>
+                <span className="song-info-row-label"><span className="song-info-row-label-icon">🎹</span><span className="song-info-row-label-text">Patch</span></span>
                 <div className="song-info-row-control">
                   {/* Teks polos — bukan chip. */}
                   <span className="song-info-row-text">{keyboardPatch}</span>
@@ -276,7 +277,7 @@ export default function SongChordsInfo({
             {detectedInstrumentList.length > 0 && (
               // Satu gaya dengan baris kontrol: radius/background seragam.
               <div className="song-info-control-row">
-                <span className="song-info-row-label">🎼 Instrumen</span>
+                <span className="song-info-row-label"><span className="song-info-row-label-icon">🎼</span><span className="song-info-row-label-text">Instrumen</span></span>
                 <div className="song-info-row-control" aria-label="Daftar instrumen terdeteksi">
                   {/* Teks polos dipisah koma — bukan chip. */}
                   <span className="song-info-row-text">{detectedInstrumentList.join(', ')}</span>
