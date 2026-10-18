@@ -9,3 +9,5 @@ dist
 .env*.local
 # Database backups contain real user data — never commit them
 backups/
+
+.env.test
