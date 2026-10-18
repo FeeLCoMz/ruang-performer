@@ -146,7 +146,6 @@ Aplikasi memakai mode gelap permanen — class `dark-mode` diterapkan pada `<bod
 | Komponen | Fungsi |
 | --- | --- |
 | `YouTubeViewer.jsx` | Player embed, seek via time marker |
-| `FloatingYouTubePlayer.jsx` | Player mengambang yang tetap terlihat saat scroll |
 | `YouTubeTrendingPage.jsx` | Eksplorasi lagu trending, simpan langsung ke repertoire |
 | `youtubeUtils.js` | Ekstraksi & normalisasi YouTube ID dari URL |
 

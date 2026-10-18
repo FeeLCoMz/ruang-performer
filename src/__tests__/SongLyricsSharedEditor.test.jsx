@@ -16,10 +16,6 @@ vi.mock('../components/SongMediaPanel.jsx', () => ({
   default: () => <div data-testid="song-chords-media-panel" />,
 }));
 
-vi.mock('../components/FloatingYouTubePlayer.jsx', () => ({
-  default: ({ isOpen }) => (isOpen ? <div data-testid="floating-youtube-player" /> : null),
-}));
-
 vi.mock('../hooks/useSongFetch.js', () => ({
   useSongFetch: () => ({
     song: { id: '1', title: 'Song A', key: 'G', lyrics: 'G D C', youtubeId: 'dQw4w9WgXcQ' },
