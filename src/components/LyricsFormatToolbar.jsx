@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import EditorMenuBar from "./EditorMenuBar.jsx";
 import {
   applyTransformToSelection,
@@ -38,6 +38,9 @@ export default function LyricsFormatToolbar({
   showPianoControls = false,
   onOpenPiano,
   insertNotesEnabled = false,
+  /** When provided, the toolbar renders its own Insert ON/OFF switch. */
+  onToggleInsertNotes,
+  pianoOpen = false,
   showSaveCancelButtons = false,
   savingLyrics = false,
   handleSaveLyrics,
@@ -55,6 +58,22 @@ export default function LyricsFormatToolbar({
 
   const [barsPerLine, setBarsPerLine] = useState(4);
   const [formatPreview, setFormatPreview] = useState(null);
+
+  // Alt+P opens/closes the piano from anywhere in the page — the fastest path
+  // to the instrument without hunting through the Sisip dropdown.
+  useEffect(() => {
+    if (!showPianoControls || disabled || typeof onOpenPiano !== 'function') return undefined;
+
+    const onKeyDown = (event) => {
+      if (!event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key !== 'p' && event.key !== 'P') return;
+      event.preventDefault();
+      onOpenPiano();
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showPianoControls, disabled, onOpenPiano]);
 
   /** Apply a transformer to the current selection, restoring it afterwards. */
   const applyToSelection = (transformer) => {
@@ -237,8 +256,9 @@ export default function LyricsFormatToolbar({
       key: 'piano',
       icon: 'P',
       label: 'Virtual Piano...',
-      title: 'Buka Virtual Piano untuk memasukkan not ke lirik',
+      title: 'Buka Virtual Piano untuk memasukkan not ke lirik (Alt+P)',
       disabled: disabled || !showPianoControls,
+      shortcut: 'Alt+P',
       hint: showPianoControls ? (insertNotesEnabled ? 'insert ON' : 'insert OFF') : 'tidak tersedia',
       onSelect: () => onOpenPiano?.(),
     },
@@ -279,7 +299,41 @@ export default function LyricsFormatToolbar({
 
   return (
     <div className="lyric-format">
-      <EditorMenuBar menus={menus} ariaLabel="Menu editor lirik" />
+      <div className="lyric-format-row">
+        <EditorMenuBar menus={menus} ariaLabel="Menu editor lirik" />
+
+        {showPianoControls && (
+          <div className="lyric-format-quick">
+            <button
+              type="button"
+              className={`lyric-quick-btn lyric-quick-piano${pianoOpen ? ' is-active' : ''}`}
+              onClick={() => onOpenPiano?.()}
+              disabled={disabled}
+              aria-pressed={pianoOpen}
+              title="Virtual Piano (Alt+P)"
+            >
+              <span aria-hidden="true">🎹</span>
+              <span className="lyric-quick-label">Piano</span>
+            </button>
+
+            {typeof onToggleInsertNotes === 'function' && (
+              <button
+                type="button"
+                className={`lyric-quick-btn lyric-quick-insert${insertNotesEnabled ? ' is-active' : ''}`}
+                onClick={() => onToggleInsertNotes()}
+                disabled={disabled}
+                aria-pressed={insertNotesEnabled}
+                title="Sisipkan not yang diklik ke lirik (bukan hanya dibunyikan)"
+              >
+                <span aria-hidden="true">✍</span>
+                <span className="lyric-quick-label">
+                  Insert {insertNotesEnabled ? 'ON' : 'OFF'}
+                </span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
 
       {formatPreview && (

@@ -922,6 +922,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               editorActions={buildAddEditEditorActions({
                 onOpenPiano: () => setShowLyricsPiano(true),
                 insertNotesToLyrics,
+                onToggleInsertNotes: () => setInsertNotesToLyrics((prev) => !prev),
+                pianoOpen: showLyricsPiano,
               })}
               autoFocus={false}
               previewSong={{ key: songKey, tempo, lyrics }}

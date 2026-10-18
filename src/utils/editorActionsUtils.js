@@ -12,6 +12,8 @@ function buildEditorActions({
   handleCancelEditLyrics,
   onOpenPiano,
   insertNotesToLyrics,
+  onToggleInsertNotes,
+  pianoOpen,
 }) {
   return {
     showSaveCancelButtons,
@@ -21,6 +23,8 @@ function buildEditorActions({
     showPianoControls: true,
     onOpenPiano,
     insertNotesEnabled: insertNotesToLyrics,
+    onToggleInsertNotes,
+    pianoOpen,
   };
 }
 

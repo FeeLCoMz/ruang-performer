@@ -35,6 +35,21 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
     setPosition(nextPosition);
   }, [isOpen]);
 
+  // Escape closes the piano from the keyboard, so the popup never traps focus
+  // for users who opened it with Alt+P and never reach for the mouse.
+  useEffect(() => {
+    if (!isOpen || typeof onClose !== 'function') return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return;
+      event.stopPropagation();
+      onClose();
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -223,6 +238,8 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
   return (
     <div
       className="piano-popup"
+      role="dialog"
+      aria-label="Virtual Piano"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -243,7 +260,8 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
           type="button"
           className="piano-popup-close"
           onClick={onClose}
-          aria-label="Close"
+          aria-label="Tutup Virtual Piano"
+          title="Tutup (Esc)"
         >
           ✕
         </button>

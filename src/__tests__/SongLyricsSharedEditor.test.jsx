@@ -328,6 +328,100 @@ describe('Song lyrics shared editor rendering', () => {
     expect(toolbarKeySelect).toBeFalsy();
   });
 
+  test('Given piano controls, Then the quick Piano button opens the piano in one click', async () => {
+    const onOpenPiano = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <SongLyricsEditorPanel
+          lyricsRef={{ current: null }}
+          lyricsValue={'[C]Hello'}
+          setLyricsValue={noop}
+          error={null}
+          disabled={false}
+          editorActions={{
+            showPianoControls: true,
+            onOpenPiano,
+            insertNotesEnabled: false,
+            onToggleInsertNotes: noop,
+            pianoOpen: false,
+          }}
+          autoFocus={false}
+        />
+      );
+    });
+
+    const quickPiano = container.querySelector('.lyric-quick-piano');
+    expect(quickPiano).toBeTruthy();
+
+    await act(async () => {
+      quickPiano.click();
+    });
+    expect(onOpenPiano).toHaveBeenCalledTimes(1);
+  });
+
+  test('Given piano controls, Then the Insert switch toggles without opening the piano', async () => {
+    const onToggleInsertNotes = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <SongLyricsEditorPanel
+          lyricsRef={{ current: null }}
+          lyricsValue={'[C]Hello'}
+          setLyricsValue={noop}
+          error={null}
+          disabled={false}
+          editorActions={{
+            showPianoControls: true,
+            onOpenPiano: noop,
+            insertNotesEnabled: false,
+            onToggleInsertNotes,
+            pianoOpen: false,
+          }}
+          autoFocus={false}
+        />
+      );
+    });
+
+    const insertToggle = container.querySelector('.lyric-quick-insert');
+    expect(insertToggle).toBeTruthy();
+    expect(insertToggle.getAttribute('aria-pressed')).toBe('false');
+
+    await act(async () => {
+      insertToggle.click();
+    });
+    expect(onToggleInsertNotes).toHaveBeenCalledTimes(1);
+  });
+
+  test('Given piano controls, Then Alt+P opens the piano from the keyboard', async () => {
+    const onOpenPiano = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <SongLyricsEditorPanel
+          lyricsRef={{ current: null }}
+          lyricsValue={'[C]Hello'}
+          setLyricsValue={noop}
+          error={null}
+          disabled={false}
+          editorActions={{
+            showPianoControls: true,
+            onOpenPiano,
+            insertNotesEnabled: false,
+            onToggleInsertNotes: noop,
+            pianoOpen: false,
+          }}
+          autoFocus={false}
+        />
+      );
+    });
+
+    await act(async () => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', altKey: true, bubbles: true }));
+    });
+    expect(onOpenPiano).toHaveBeenCalledTimes(1);
+  });
+
   test('Given recognized section labels, Then no detected-section badges are rendered', async () => {
     await act(async () => {
       root.render(

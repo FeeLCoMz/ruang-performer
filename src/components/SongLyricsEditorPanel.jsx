@@ -69,6 +69,8 @@ export default function SongLyricsEditorPanel({
     showPianoControls = false,
     onOpenPiano,
     insertNotesEnabled = false,
+    onToggleInsertNotes,
+    pianoOpen = false,
   } = editorActions;
 
   /**
@@ -115,6 +117,8 @@ export default function SongLyricsEditorPanel({
             showPianoControls={showPianoControls}
             onOpenPiano={onOpenPiano}
             insertNotesEnabled={insertNotesEnabled}
+            onToggleInsertNotes={onToggleInsertNotes}
+            pianoOpen={pianoOpen}
             showSaveCancelButtons={showSaveCancelButtons}
             savingLyrics={savingLyrics}
             handleSaveLyrics={handleSaveLyrics}

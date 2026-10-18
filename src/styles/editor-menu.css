@@ -202,6 +202,83 @@
   padding: 4px 6px;
 }
 
+/* ---- Quick-access row: menu bar on the left, one-click tools on the right ----
+   The piano used to live only inside the Sisip dropdown; these buttons put the
+   two commands a lyricist reaches for most within a single click. */
+.lyric-format-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lyric-format-row .ed-menubar {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lyric-format-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.lyric-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 30px;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.lyric-quick-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary-accent) 40%, var(--border-color));
+}
+
+.lyric-quick-btn.is-active {
+  background: color-mix(in srgb, var(--primary-accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--primary-accent) 55%, var(--border-color));
+  color: var(--primary-accent);
+}
+
+.lyric-quick-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lyric-quick-insert .lyric-quick-label {
+  text-transform: none;
+}
+
+@media (max-width: 768px) {
+  .lyric-format-row {
+    gap: 6px;
+  }
+
+  .lyric-format-quick {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .lyric-quick-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 40px;
+  }
+}
+
 @media (max-width: 768px) {
   .ed-menubar {
     gap: 0;
