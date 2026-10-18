@@ -264,10 +264,14 @@ export default function SongChordsInfo({
         {(keyboardPatch || detectedInstrumentList.length > 0) && (
           <div className="song-info-chip-row">
             {keyboardPatch && (
-              <span className="song-info-item song-info-item-wide">
-                <span className="song-info-label">🎹 Patch</span>
-                <span className="song-info-value">{keyboardPatch}</span>
-              </span>
+              // Satu gaya dengan baris kontrol: radius/background seragam.
+              <div className="song-info-control-row">
+                <span className="song-info-row-label">🎹 Patch</span>
+                <div className="song-info-row-control">
+                  {/* Teks polos — bukan chip. */}
+                  <span className="song-info-row-text">{keyboardPatch}</span>
+                </div>
+              </div>
             )}
             {detectedInstrumentList.length > 0 && (
               // Satu gaya dengan baris kontrol: radius/background seragam.
