@@ -14,6 +14,56 @@ export default function LandingPage() {
     });
   }, []);
 
+  const scrollToSection = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const stats = [
+    { value: '100%', label: 'Gratis Selamanya' },
+    { value: 'PWA', label: 'Bisa Dipakai Offline' },
+    { value: '< 1s', label: 'Transpose Chord Instan' },
+    { value: '24/7', label: 'Sinkron Antar Personel' },
+  ];
+
+  const previewSetlist = [
+    { song: 'Perfect — Key C, 63 BPM', tag: 'Pop', active: false },
+    { song: 'Kangen Band — Key G, 72 BPM', tag: 'LIVE', active: true },
+    { song: 'Melukis Senja — Key A, 80 BPM', tag: 'Pop', active: false },
+    { song: 'Runtuh — Key F, 68 BPM', tag: 'Balada', active: false },
+  ];
+
+  const benefitMetrics = [
+    { label: 'Lagu tersimpan', value: '128' },
+    { label: 'Setlist aktif', value: '6' },
+    { label: 'Gig mendatang', value: '3' },
+  ];
+
+  const audiences = [
+    {
+      icon: '🎸',
+      title: 'Band Panggung & Wedding',
+      desc: 'Atur urutan lagu per sesi, tampilkan lirik besar di panggung, dan tetap tenang saat set berjalan.',
+    },
+    {
+      icon: '🎤',
+      title: 'Solo & Duo Performer',
+      desc: 'Simpan aransemen versi Anda sendiri, transpose sesuai kenyamanan vokal, dan bawa request lagu dengan cepat.',
+    },
+    {
+      icon: '🎹',
+      title: 'Musisi Sesi & Worship',
+      desc: 'Ikut tim dengan cepat lewat setlist terbagi, lengkap dengan nada dasar, BPM, dan catatan aransemen.',
+    },
+  ];
+
+  const benefits = [
+    'Semua lagu, chord, dan setlist dalam satu tempat yang rapi.',
+    'Mode panggung dengan font besar dan autoscroll yang halus.',
+    'Ekspor setlist ke PDF atau gambar siap cetak dan bagikan.',
+    'Jadwal gigs terpantau agar tidak ada tanggal yang terlewat.',
+  ];
+
   const features = [
     {
       icon: '🎸',
@@ -88,6 +138,14 @@ export default function LandingPage() {
       q: 'Apakah saya bisa membagikan setlist ke personil lain?',
       a: 'Bisa. Anda dapat mengundang personil ke band Anda, membagikan tautan, atau mengekspor setlist ke format gambar/PDF siap cetak.',
     },
+    {
+      q: 'Apakah data lagu dan setlist saya aman?',
+      a: 'Akun Anda terproteksi dengan enkripsi password dan data tersimpan terpisah per band. Anda memegang kendali penuh atas siapa yang bisa mengakses aransemen Anda.',
+    },
+    {
+      q: 'Perangkat apa saja yang didukung?',
+      a: 'Ruang Performer berjalan langsung di browser HP, tablet, dan laptop. Tidak perlu instalasi khusus, cukup tambahkan ke layar utama untuk pengalaman seperti aplikasi native.',
+    },
   ];
 
   return (
@@ -150,10 +208,7 @@ export default function LandingPage() {
             <button
               type="button"
               className="landing-btn landing-btn-outline landing-btn-large"
-              onClick={() => {
-                const el = document.getElementById('fitur');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => scrollToSection('fitur')}
             >
               Lihat Fitur Lengkap ↓
             </button>
@@ -161,6 +216,46 @@ export default function LandingPage() {
           <p className="landing-hero-note">
             ✓ Tanpa kartu kredit &bull; ✓ Akses dari HP, Tablet, & Laptop &bull; ✓ Siap Dipakai di Panggung
           </p>
+        </div>
+
+        <div className="landing-hero-preview">
+          <div className="landing-preview-window">
+            <div className="landing-preview-bar">
+              <span className="landing-preview-dot" />
+              <span className="landing-preview-dot" />
+              <span className="landing-preview-dot" />
+              <span className="landing-preview-title">Setlist — Panggung Utama</span>
+            </div>
+            <div className="landing-preview-body">
+              {previewSetlist.map((item, idx) => (
+                <div
+                  key={item.song}
+                  className={`landing-preview-row${item.active ? ' landing-preview-row-active' : ''}`}
+                >
+                  <span className="landing-preview-index">
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
+                  <span className="landing-preview-song">{item.song}</span>
+                  {item.tag && (
+                    <span
+                      className={`landing-preview-tag${item.active ? ' landing-preview-tag-live' : ''}`}
+                    >
+                      {item.tag}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="landing-stats">
+          {stats.map((stat) => (
+            <div key={stat.label} className="landing-stat">
+              <span className="landing-stat-value">{stat.value}</span>
+              <span className="landing-stat-label">{stat.label}</span>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -182,6 +277,65 @@ export default function LandingPage() {
               <div className="landing-card-icon">{feature.icon}</div>
               <h3 className="landing-card-title">{feature.title}</h3>
               <p className="landing-card-text">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="landing-section landing-benefits">
+        <div className="landing-benefits-inner">
+          <div className="landing-benefits-text">
+            <span className="landing-section-tag">Kenapa Ruang Performer</span>
+            <h2 className="landing-section-title">
+              Performa Rapi, Tanpa Ribet Persiapannya
+            </h2>
+            <p className="landing-section-subtitle">
+              Tinggalkan catatan berserakan dan file chord yang berantakan. Semua kebutuhan panggung Anda tersusun rapi dan siap diakses kapan saja.
+            </p>
+            <ul className="landing-benefits-list">
+              {benefits.map((item) => (
+                <li key={item} className="landing-benefits-item">
+                  <span className="landing-benefits-check">✓</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              className="landing-btn landing-btn-primary landing-btn-large"
+              onClick={() => navigate('/login?mode=register')}
+            >
+              Coba Sekarang — Gratis
+            </button>
+          </div>
+          <div className="landing-benefits-card">
+            <div className="landing-benefits-card-head">Ringkasan Hari Ini</div>
+            {benefitMetrics.map((metric) => (
+              <div key={metric.label} className="landing-benefits-metric">
+                <span className="landing-benefits-metric-label">{metric.label}</span>
+                <span className="landing-benefits-metric-value">{metric.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Audience Section */}
+      <section className="landing-section landing-section-dark">
+        <div className="landing-section-header">
+          <span className="landing-section-tag">Untuk Siapa</span>
+          <h2 className="landing-section-title">Cocok untuk Semua Jenis Performer</h2>
+          <p className="landing-section-subtitle">
+            Dari band wedding hingga musisi worship, Ruang Performer menyesuaikan cara Anda tampil.
+          </p>
+        </div>
+        <div className="landing-grid">
+          {audiences.map((audience, idx) => (
+            <div key={idx} className="landing-card">
+              <div className="landing-card-icon">{audience.icon}</div>
+              <h3 className="landing-card-title">{audience.title}</h3>
+              <p className="landing-card-text">{audience.desc}</p>
             </div>
           ))}
         </div>
@@ -239,6 +393,16 @@ export default function LandingPage() {
           >
             Buat Akun Sekarang — Gratis
           </button>
+          <p className="landing-cta-banner-note">
+            Sudah punya akun?{' '}
+            <button
+              type="button"
+              className="landing-cta-banner-link"
+              onClick={() => navigate('/login')}
+            >
+              Masuk di sini
+            </button>
+          </p>
         </div>
       </section>
 

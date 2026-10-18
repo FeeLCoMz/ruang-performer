@@ -116,6 +116,132 @@
   text-align: center;
 }
 
+.landing-hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Hero app preview mockup */
+.landing-hero-preview {
+  margin: 40px auto 0;
+  max-width: 720px;
+}
+
+.landing-preview-window {
+  background: var(--card-bg, #161d33);
+  border: 1px solid var(--border-color, #2a3350);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  text-align: left;
+}
+
+.landing-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-color, #2a3350);
+}
+
+.landing-preview-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.landing-preview-title {
+  margin-left: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted, #8b93ab);
+}
+
+.landing-preview-body {
+  padding: 8px;
+}
+
+.landing-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  color: var(--text-secondary, #cbd2e3);
+}
+
+.landing-preview-row-active {
+  background: rgba(139, 92, 246, 0.14);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  color: #fff;
+}
+
+.landing-preview-index {
+  font-weight: 700;
+  color: var(--primary-accent, #8b5cf6);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.landing-preview-song {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.landing-preview-tag {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #8b93ab);
+}
+
+.landing-preview-tag-live {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+}
+
+/* Stats strip */
+.landing-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border-color, #2a3350);
+}
+
+.landing-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.landing-stat-value {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.landing-stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted, #8b93ab);
+}
+
 .landing-badge {
   display: inline-block;
   padding: 6px 16px;
@@ -250,6 +376,94 @@
   line-height: 1.6;
 }
 
+/* Benefits */
+.landing-benefits {
+  padding-top: 40px;
+}
+
+.landing-benefits-inner {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 40px;
+  align-items: center;
+  background: rgba(20, 26, 46, 0.6);
+  border: 1px solid var(--border-color, #2a3350);
+  border-radius: 24px;
+  padding: 48px;
+}
+
+.landing-benefits-text .landing-section-title {
+  text-align: left;
+}
+
+.landing-benefits-text .landing-section-subtitle {
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.landing-benefits-list {
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.landing-benefits-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.98rem;
+  color: var(--text-secondary, #cbd2e3);
+  line-height: 1.5;
+}
+
+.landing-benefits-check {
+  color: #34d399;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+.landing-benefits-card {
+  background: var(--card-bg, #161d33);
+  border: 1px solid var(--border-color, #2a3350);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.landing-benefits-card-head {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted, #8b93ab);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color, #2a3350);
+}
+
+.landing-benefits-metric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.landing-benefits-metric-label {
+  font-size: 0.95rem;
+  color: var(--text-secondary, #cbd2e3);
+}
+
+.landing-benefits-metric-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+}
+
 /* Steps */
 .landing-steps {
   display: grid;
@@ -344,6 +558,27 @@
   margin: 0 auto 28px;
 }
 
+.landing-cta-banner-note {
+  font-size: 0.92rem !important;
+  color: var(--text-muted, #8b93ab) !important;
+  margin: 20px auto 0 !important;
+}
+
+.landing-cta-banner-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--primary-accent, #8b5cf6);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.landing-cta-banner-link:hover {
+  color: #a78bfa;
+}
+
 /* Footer */
 .landing-footer {
   border-top: 1px solid var(--border-color, #2a3350);
@@ -391,6 +626,25 @@
   color: #fff;
 }
 
+@media (max-width: 900px) {
+  .landing-benefits-inner {
+    grid-template-columns: 1fr;
+    padding: 32px 24px;
+    gap: 28px;
+  }
+
+  .landing-benefits-text .landing-section-title,
+  .landing-benefits-text .landing-section-subtitle {
+    text-align: center;
+  }
+
+  .landing-benefits-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
 @media (max-width: 640px) {
   .landing-faq-list {
     grid-template-columns: 1fr;
@@ -400,5 +654,42 @@
   }
   .landing-section {
     padding: 50px 16px;
+  }
+  .landing-nav-inner {
+    padding: 12px 16px;
+  }
+  .landing-brand-name {
+    font-size: 1.05rem;
+  }
+  .landing-nav-actions {
+    gap: 8px;
+  }
+  .landing-btn {
+    padding: 8px 14px;
+    font-size: 0.88rem;
+  }
+  .landing-btn-large {
+    padding: 12px 20px;
+    font-size: 0.98rem;
+    width: 100%;
+  }
+  .landing-hero-cta {
+    flex-direction: column;
+    width: 100%;
+  }
+  .landing-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .landing-preview-row {
+    font-size: 0.82rem;
+    padding: 12px;
+  }
+  .landing-cta-banner-inner {
+    padding: 40px 20px;
+  }
+  .landing-footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
