@@ -1,5 +1,5 @@
 # robots.txt for Ruang Performer
-# https://ruangperformer.app
+# https://ruang-performer.vercel.app
 
 User-agent: *
 Allow: /
@@ -10,4 +10,4 @@ Disallow: /api/
 Disallow: /reset-password
 
 # Sitemap
-Sitemap: https://ruangperformer.app/sitemap.xml
+Sitemap: https://ruang-performer.vercel.app/sitemap.xml

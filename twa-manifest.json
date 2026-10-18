@@ -1,0 +1,51 @@
+{
+  "packageId": "com.ruangperformer.app",
+  "host": "https://ruang-performer.vercel.app",
+  "name": "Ruang Performer",
+  "launcherName": "Ruang Performer",
+  "display": "standalone",
+  "themeColor": "#667eea",
+  "themeColorDark": "#0f0f0f",
+  "navigationColor": "#0f0f0f",
+  "navigationColorDark": "#0f0f0f",
+  "navigationDividerColor": "#0f0f0f",
+  "navigationDividerColorDark": "#0f0f0f",
+  "backgroundColor": "#0f0f0f",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://ruang-performer.vercel.app/icon-512x512-maskable.png",
+  "maskableIconUrl": "https://ruang-performer.vercel.app/icon-512x512-maskable.png",
+  "monochromeIconUrl": "https://ruang-performer.vercel.app/icon-512x512-maskable.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "2.0.10",
+  "appVersionCode": 1,
+  "shortcuts": [
+    { "name": "Setlist", "shortName": "Setlist", "url": "/?page=setlist", "icons": [{ "url": "https://ruang-performer.vercel.app/icon-192x192.png", "sizes": "192x192" }] },
+    { "name": "Konser", "shortName": "Konser", "url": "/?page=konser", "icons": [{ "url": "https://ruang-performer.vercel.app/icon-192x192.png", "sizes": "192x192" }] },
+    { "name": "Lagu", "shortName": "Lagu", "url": "/?page=songs", "icons": [{ "url": "https://ruang-performer.vercel.app/icon-192x192.png", "sizes": "192x192" }] }
+  ],
+  "fallback": {
+    "custom": ["https://ruang-performer.vercel.app"],
+    "play": "https://play.google.com/store/apps/details?id=com.ruangperformer.app"
+  },
+  "features": {
+    "locationDelegation": { "enabled": false },
+    "playBilling": { "enabled": false }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableWideColorGamut": false,
+  "shareTarget": {
+    "enabled": false
+  },
+  "settings": {
+    "trustedScopes": ["https://ruang-performer.vercel.app"],
+    "retainedBundles": []
+  },
+  "retries": 0
+}
