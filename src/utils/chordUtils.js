@@ -23,6 +23,29 @@ export function splitSectionLabelWithChords(line) {
   return [`${labelToken}:`, trailing];
 }
 
+/**
+ * Pecah baris "[Label] chords" (tanpa titik dua) menjadi label seksi + baris chord.
+ * Contoh: "[Intro] A# F A#-C Dm" -> ["[Intro]", "A# F A#-C Dm"].
+ * Baris compound penuh bracket ("[Intro] [00:05]") ditangani splitBracketCompoundLine,
+ * jadi di sini sisa teks harus ada dan harus baris chord.
+ */
+function splitBracketLabelWithChords(line) {
+  if (typeof line !== 'string') return null;
+  const trimmed = line.trim();
+  const match = trimmed.match(/^(\[[^\]]+\])\s*(.+)$/);
+  if (!match) return null;
+
+  const labelToken = match[1].trim();
+  const trailing = match[2].trim();
+  if (!trailing) return null;
+
+  const section = parseSection(labelToken);
+  if (!section || section.type !== 'structure') return null;
+  if (!isChordLine(trailing)) return null;
+
+  return [labelToken, trailing];
+}
+
 function normalizeSectionReferenceKey(label) {
   if (typeof label !== 'string') return null;
 
@@ -568,12 +591,14 @@ export function parseLines(lines, transpose) {
       continue;
     }
 
-    const sectionChunks = splitSectionLabelWithChords(line);
+    const sectionChunks = splitSectionLabelWithChords(line)
+      || splitBracketLabelWithChords(line);
     const sectionKey = getSectionReferenceKey(line);
     const section = parseSection(line);
     const isStandaloneStructureTag = Boolean(
       section?.type === 'structure' &&
       !splitSectionLabelWithChords(line) &&
+      !splitBracketLabelWithChords(line) &&
       !splitBracketCompoundLine(line)
     );
     const isStyledRepeatReference =
