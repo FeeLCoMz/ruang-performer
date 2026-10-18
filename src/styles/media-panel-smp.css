@@ -230,6 +230,7 @@
   .studio-field-span {
     grid-column: 1 / -1;
   }
+}
 
 /* ---- Studio: mobile ---- */
 @media (max-width: 768px) {
