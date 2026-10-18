@@ -7,6 +7,8 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  /* Tinggi kapsul = tinggi isi (tombol 26px) + padding 3px + border 1px,
+     sama persis dengan .song-lyrics-toolbar-group-viewmode. */
   padding: 3px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
@@ -25,7 +27,7 @@
   align-items: center;
   gap: 3px;
   min-width: 28px;
-  height: 30px;
+  height: 26px;
   padding: 0 6px;
   border: none;
   border-radius: 999px;
@@ -47,7 +49,7 @@
   align-items: center;
   gap: 3px;
   min-width: 26px;
-  height: 30px;
+  height: 26px;
   padding: 0 6px;
   justify-content: center;
   border: none;
@@ -69,7 +71,7 @@
   align-items: center;
   justify-content: center;
   min-width: 28px;
-  height: 30px;
+  height: 26px;
   padding: 0;
   border: none;
   border-radius: 999px;
@@ -107,7 +109,7 @@
   align-items: center;
   justify-content: center;
   min-width: 28px;
-  height: 30px;
+  height: 26px;
   padding: 0;
   border: none;
   border-radius: 999px;
