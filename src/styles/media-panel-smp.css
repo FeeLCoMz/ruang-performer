@@ -220,11 +220,16 @@
       "media";
   }
 
-  /* Three columns get cramped below this width; drop the metadata to two. */
+  /* Three columns get cramped below this width: the identity row and the
+     musical facts drop to two columns, so every row wraps predictably. */
   .studio-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
+
+  /* Row 3 keeps its pairing: patch on the left, Partitur on the right. */
+  .studio-field-span {
+    grid-column: span 1;
+  }
 
 /* ---- Studio: mobile ---- */
 @media (max-width: 768px) {

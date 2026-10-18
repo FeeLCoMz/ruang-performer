@@ -526,8 +526,11 @@ body.dark-mode .studio-error {
 /* ---- INFORMASI UTAMA: deliberate three-column grid on wide screens ----
    Dense by design: the metadata is context for the lyrics, not the main event,
    so fields stay short and the editor below keeps the vertical space.
-   Wide screens read as: Judul | Artis | Genre, then Nada Dasar | Tempo | Time
-   Signature; the long fields (YouTube, patch, score) span the full row. */
+   Wide screens read as:
+     Judul Lagu | Artis          | Genre
+     Nada Dasar | Tempo          | Time Signature
+     Keyboard Patch (2 cols)    | Partitur
+   so each field has a stable home and the rows never reshuffle. */
 .studio-fields {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -541,7 +544,7 @@ body.dark-mode .studio-error {
   min-width: 0;
 }
 
-/* Compact variant: shorter controls for the secondary fields (patch, score). */
+/* Keyboard Patch textarea keeps its own row height compact. */
 .studio-field-compact {
   min-height: 0;
   padding-top: 4px;
@@ -549,15 +552,108 @@ body.dark-mode .studio-error {
   font-size: var(--font-size-sm);
 }
 
-/* Full-row field (e.g. the YouTube URL, which needs the whole width). */
+/* Partitur trigger: looks like an input so it lines up with its neighbours,
+   but opens the MusicXML modal instead of accepting inline text. */
+.studio-sheet-btn {
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.studio-sheet-btn.has-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Row 3 — Keyboard Patch takes two columns, Partitur takes the third so the
+   button sits on the same row as the patch instead of wrapping below it. */
 .studio-field-span {
-  grid-column: 1 / -1;
+  grid-column: span 2;
+}
+
+.studio-field-sheet {
+  grid-column: span 1;
+  align-self: end;
 }
 
 .studio-field-label {
   font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+/* ---- Sheet music modal (Partitur) ---- */
+.sheet-music-modal {
+  max-width: 720px;
+  width: min(720px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.sheet-music-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.sheet-music-modal-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sheet-music-modal-close {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.sheet-music-modal-close:hover {
+  background: color-mix(in srgb, var(--primary-accent) 12%, transparent);
+  color: var(--text-primary);
+}
+
+.sheet-music-modal-desc {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.sheet-music-modal .song-sheetmusic-textarea {
+  min-height: 260px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--font-size-sm);
+}
+
+.sheet-music-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 600px) {
+  .sheet-music-modal {
+    padding: var(--spacing-lg);
+  }
+
+  .sheet-music-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .sheet-music-modal-actions .btn {
+    width: 100%;
+    min-height: 42px;
+  }
 }
 
 /* ---- Layout: full-width info row above a two-column split ---------------

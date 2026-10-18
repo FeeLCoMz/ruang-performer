@@ -5,6 +5,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import TapTempo from '../components/TapTempo';
 import VirtualPiano from '../components/VirtualPiano';
 import AIAutofillModal from '../components/AIAutofillModal';
+import SheetMusicModal from '../components/SheetMusicModal.jsx';
 import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
 import SongStudioTopbar from '../components/SongStudioTopbar.jsx';
 import SongMediaPanel from '../components/SongMediaPanel.jsx';
@@ -88,6 +89,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [error, setError] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
+  const [showSheetMusicModal, setShowSheetMusicModal] = useState(false);
   const [aiResult, setAiResult] = useState(null);
   const [aiConfirmFields, setAiConfirmFields] = useState({});
   const [showLyricsPiano, setShowLyricsPiano] = useState(false);
@@ -788,7 +790,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
           </div>
 
           <div className="studio-fields">
-              <label className="studio-field">
+              <label className="studio-field studio-field-title">
                 <span className="studio-field-label">
                   Judul Lagu <span className="required-asterisk">*</span>
                 </span>
@@ -804,7 +806,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 />
               </label>
 
-              <label className="studio-field">
+              <label className="studio-field studio-field-artist">
                 <span className="studio-field-label">Artis / Band</span>
                 <input
                   id="song-artist"
@@ -817,7 +819,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 />
               </label>
 
-              <label className="studio-field">
+              <label className="studio-field studio-field-genre">
                 <span className="studio-field-label">Genre / Mood</span>
                 <input
                   id="song-genre"
@@ -836,7 +838,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 </datalist>
               </label>
 
-              <label className="studio-field">
+              <label className="studio-field studio-field-key">
                 <span className="studio-field-label">Nada Dasar (Key)</span>
                 <select
                   id="song-key"
@@ -860,7 +862,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 {fieldErrors.key && <span className="song-field-error">{fieldErrors.key}</span>}
               </label>
 
-              <label className="studio-field">
+              <label className="studio-field studio-field-tempo">
                 <span className="studio-field-label">BPM / Tempo</span>
                 <div className="song-field-inline">
                   <input
@@ -880,7 +882,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 {fieldErrors.tempo && <span className="song-field-error">{fieldErrors.tempo}</span>}
               </label>
 
-              <label className="studio-field">
+              <label className="studio-field studio-field-time-signature">
                 <span className="studio-field-label">Time Signature</span>
                 <select
                   id="song-time-signature"
@@ -901,7 +903,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 )}
               </label>
 
-              <label className="studio-field studio-field-span">
+              <label className="studio-field studio-field-youtube">
                 <span className="studio-field-label">YouTube URL atau ID</span>
                 <input
                   id="song-youtube"
@@ -932,17 +934,15 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                 />
               </label>
 
-              <label className="studio-field studio-field-span">
+              <label className="studio-field studio-field-sheet">
                 <span className="studio-field-label">Partitur (MusicXML)</span>
-                <textarea
-                  id="song-sheet-music"
-                  name="sheetMusicXml"
-                  value={sheetMusicXml}
-                  onChange={(e) => setSheetMusicXml(e.target.value)}
-                  placeholder="Paste MusicXML di sini..."
-                  rows={3}
-                  className="form-input-field song-sheetmusic-textarea studio-field-compact"
-                />
+                <button
+                  type="button"
+                  className={`form-input-field studio-sheet-btn${sheetMusicXml ? ' has-value' : ''}`}
+                  onClick={() => setShowSheetMusicModal(true)}
+                >
+                  {sheetMusicXml ? '🎼 Partitur terisi — Edit' : '🎼 Tambah Partitur (MusicXML)'}
+                </button>
               </label>
             </div>
         </div>
@@ -1055,6 +1055,14 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             setShowAiModal(false);
             setAiResult(null);
           }}
+        />
+      )}
+
+      {showSheetMusicModal && (
+        <SheetMusicModal
+          value={sheetMusicXml}
+          onSave={setSheetMusicXml}
+          onClose={() => setShowSheetMusicModal(false)}
         />
       )}
     </div>
