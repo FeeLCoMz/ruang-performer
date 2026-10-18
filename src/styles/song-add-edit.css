@@ -616,7 +616,12 @@ body.dark-mode .studio-error {
 
 .studio-field-sheet {
   grid-column: span 1;
-  align-self: end;
+}
+
+/* Semua field pada baris yang sama memakai baseline start, sehingga label
+   dan kontrol (termasuk tombol Partitur) sejajar rata atas. */
+.studio-field {
+  align-self: start;
 }
 
 .studio-field-label {
