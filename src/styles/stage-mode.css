@@ -481,3 +481,91 @@ body.stage-mode .btn-secondary {
   font-size: 0.75rem;
   color: #9aa3bd;
 }
+
+/* ======== Sheet: input pencarian ======== */
+/* Seluruh sheet (pemilih setlist & cari lagu) memakai pola yang sama:
+   field dibungkus .stage-mode-sheet-search / .stage-mode-sheet-field
+   dengan padding konsisten 16px. */
+.stage-mode-sheet-search {
+  padding: 0 16px 10px;
+}
+
+.stage-mode-sheet-search-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: #10101c;
+  border: 1px solid #4a4a6a;
+  border-radius: var(--radius-md, 10px);
+  color: #ffffff;
+  font-size: 1rem;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.stage-mode-sheet-search-input::placeholder {
+  color: #6b7285;
+}
+
+.stage-mode-sheet-search-input:focus {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent) 25%, transparent);
+}
+
+/* ======== Sheet: toolbar dropdown (Band / Setlist) ======== */
+.stage-mode-sheet-toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px 10px;
+}
+
+.stage-mode-sheet-field {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stage-mode-sheet-field-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9aa3bd;
+}
+
+.stage-mode-sheet-select {
+  width: 100%;
+  padding: 9px 12px;
+  background: #10101c;
+  border: 1px solid #4a4a6a;
+  border-radius: var(--radius-md, 10px);
+  color: #ffffff;
+  font-size: 0.92rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.stage-mode-sheet-select:focus {
+  border-color: var(--primary-accent);
+}
+
+/* ======== Sheet: empty-state / loading / error ======== */
+.stage-mode-sheet-empty {
+  padding: 18px 16px;
+  font-size: 0.9rem;
+  color: #9aa3bd;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Tombol "Coba lagi" di empty-state error: varian inline dari ext-btn
+   (tanpa flex:1 yang meregangkan tombol selebar sheet). */
+.stage-mode-sheet-empty .stage-mode-sheet-ext-btn {
+  flex: 0 0 auto;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+}

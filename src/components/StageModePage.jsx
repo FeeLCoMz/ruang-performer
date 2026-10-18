@@ -86,6 +86,10 @@ export default function StageModePage({
   const [setlistId, setSetlistId] = useState(() => readStored(STORAGE_KEYS.STAGE_SETLIST));
   const [selectedSongId, setSelectedSongId] = useState(() => readStored(STORAGE_KEYS.STAGE_SONG));
   const [dataLoading, setDataLoading] = useState(true);
+  // Pesan error bila fetch data Stage Mode gagal (dengan tombol coba lagi).
+  const [dataError, setDataError] = useState('');
+  // Nonce untuk memicu ulang fetch data (tombol "Coba lagi").
+  const [dataReloadNonce, setDataReloadNonce] = useState(0);
   const [allSongs, setAllSongs] = useState(Array.isArray(songsProp) ? songsProp : []);
 
   // Sinkronkan data yang sudah di-fetch aplikasi mode normal (props dari App):
@@ -97,6 +101,20 @@ export default function StageModePage({
   useEffect(() => {
     if (Array.isArray(setlistsProp) && setlistsProp.length > 0) setSetlists(setlistsProp);
   }, [setlistsProp]);
+  // Songs juga harus terus tersinkron: props dari App bisa tiba SETELAH
+  // Stage Mode terpasang (mis. fetch App selesai belakangan, atau user
+  // menambah/menghapus lagu), dan fetch internal bisa saja gagal. Tanpa
+  // sinkron ini, `allSongs` bisa tetap kosong dan pencarian "tidak ada lagu".
+  useEffect(() => {
+    if (!Array.isArray(songsProp) || songsProp.length === 0) return;
+    setAllSongs((prev) => {
+      // Ambil versi props bila sebelumnya kosong, atau daftar id berbeda
+      // (data berubah di aplikasi) — hindari re-render saat sama saja.
+      if (prev.length === 0 || prev.length !== songsProp.length) return songsProp;
+      const prevIds = new Set(prev.map((s) => String(s.id)));
+      return songsProp.every((s) => prevIds.has(String(s.id))) ? prev : songsProp;
+    });
+  }, [songsProp]);
 
   // Hanya fetch data yang BELUM di-fetch oleh aplikasi (props kosong).
   useEffect(() => {
@@ -110,6 +128,7 @@ export default function StageModePage({
     }
     let cancelled = false;
     setDataLoading(true);
+    setDataError('');
     // Fetch selektif: hanya request yang benar-benar dibutuhkan.
     Promise.allSettled([
       needsBands ? apiClient.fetchBands() : Promise.resolve(undefined),
@@ -127,13 +146,19 @@ export default function StageModePage({
         if (Array.isArray(songsRes.value) && songsRes.value.length > 0) {
           setAllSongs(songsRes.value);
         }
+        // Request yang gagal dilaporkan: request masih bisa sukses (fulfilled)
+        // dengan nilai undefined bila props sudah menyediakan datanya.
+        const failed = [bandsRes, setlistsRes, songsRes]
+          .some((r) => r.status === 'rejected');
+        if (failed) setDataError('Gagal memuat data. Periksa koneksi, lalu coba lagi.');
         setDataLoading(false);
       });
     return () => { cancelled = true; };
     // songsProp/bandsProp/setlistsProp sengaja tidak di dep — penilaian
-    // "data tersedia" cukup dilakukan saat Stage Mode dinyalakan.
+    // "data tersedia" cukup dilakukan saat Stage Mode dinyalakan (dan lewat
+    // effect sinkron di atas). dataReloadNonce dipakai tombol "Coba lagi".
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stageMode]);
+  }, [stageMode, dataReloadNonce]);
 
   // =========================
   // Setlist aktif
@@ -364,6 +389,11 @@ export default function StageModePage({
     setAutoScrollActive(false);
     setScrollSpeed(Number(song?.tempo) || 120);
     setPlayerVisible(false);
+    // Lirik kembali ke awal: scroll container lirik ke atas. Dijalankan
+    // juga saat song id berubah dari/ke null (empty-state) — container
+    // mungkin belum terpasang, maka dicek dulu.
+    const el = stageBodyRef.current;
+    if (el) el.scrollTop = 0;
   }, [effectiveSongId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset state player YouTube saat pindah lagu — progress/durasi/status
@@ -1148,7 +1178,22 @@ export default function StageModePage({
                   />
                 </div>
                 <div className="stage-mode-sheet-list stage-mode-sheet-list--search" role="menu">
-                  {searchInSetlist.length > 0 && (
+                  {dataLoading && (
+                    <div className="stage-mode-sheet-empty">Memuat data lagu…</div>
+                  )}
+                  {!dataLoading && dataError && (
+                    <div className="stage-mode-sheet-empty">
+                      {dataError}
+                      <button
+                        type="button"
+                        className="stage-mode-sheet-ext-btn"
+                        onClick={() => setDataReloadNonce((n) => n + 1)}
+                      >
+                        Coba lagi
+                      </button>
+                    </div>
+                  )}
+                  {!dataLoading && !dataError && searchInSetlist.length > 0 && (
                     <div className="stage-mode-sheet-group-label">Dalam setlist ({searchInSetlist.length})</div>
                   )}
                   {searchInSetlist.map((s) => (
@@ -1167,10 +1212,10 @@ export default function StageModePage({
                       {s.key && <span className="stage-mode-pill">{s.key}</span>}
                     </button>
                   ))}
-                  {searchAllSongs.length > 0 && (
+                  {!dataLoading && !dataError && searchAllSongs.length > 0 && (
                     <div className="stage-mode-sheet-group-label">Repertoire aplikasi ({searchAllSongs.length})</div>
                   )}
-                  {searchAllSongs.map((s) => (
+                  {!dataLoading && !dataError && searchAllSongs.map((s) => (
                     <button
                       key={s.id}
                       type="button"
@@ -1186,7 +1231,7 @@ export default function StageModePage({
                       {s.key && <span className="stage-mode-pill">{s.key}</span>}
                     </button>
                   ))}
-                  {q && (
+                  {!dataLoading && !dataError && q && (
                     <>
                       <div className="stage-mode-sheet-group-label">Di luar aplikasi</div>
                       <div className="stage-mode-sheet-external">
@@ -1214,10 +1259,14 @@ export default function StageModePage({
                       </p>
                     </>
                   )}
-                  {!hasLocalResults && !q && (
-                    <div className="stage-mode-sheet-empty">Ketik untuk mencari lagu…</div>
+                  {!hasLocalResults && !q && !dataLoading && !dataError && (
+                    <div className="stage-mode-sheet-empty">
+                      {setlistSongs.length === 0 && allSongs.length === 0
+                        ? 'Belum ada lagu di aplikasi — tambahkan lewat menu Lagu.'
+                        : 'Ketik untuk mencari lagu…'}
+                    </div>
                   )}
-                  {!hasLocalResults && q && (
+                  {!hasLocalResults && q && !dataLoading && !dataError && (
                     <div className="stage-mode-sheet-empty">Tidak ada di aplikasi — cari di Google/YouTube.</div>
                   )}
                 </div>
