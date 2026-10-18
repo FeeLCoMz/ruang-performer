@@ -362,7 +362,7 @@ describe('Song lyrics shared editor rendering', () => {
     expect(onOpenPiano).toHaveBeenCalledTimes(1);
   });
 
-  test('Given piano controls, Then the Insert switch toggles without opening the piano', async () => {
+  test('Given piano controls, Then the Insert ON/OFF switch is not rendered in the toolbar', async () => {
     const onToggleInsertNotes = vi.fn();
 
     await act(async () => {
@@ -385,14 +385,8 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
-    const insertToggle = container.querySelector('.lyric-quick-insert');
-    expect(insertToggle).toBeTruthy();
-    expect(insertToggle.getAttribute('aria-pressed')).toBe('false');
-
-    await act(async () => {
-      insertToggle.click();
-    });
-    expect(onToggleInsertNotes).toHaveBeenCalledTimes(1);
+    // The Insert switch lives inside the Virtual Piano modal, not the menubar.
+    expect(container.querySelector('.lyric-quick-insert')).toBeFalsy();
   });
 
   test('Given piano controls, Then Alt+P opens the piano from the keyboard', async () => {

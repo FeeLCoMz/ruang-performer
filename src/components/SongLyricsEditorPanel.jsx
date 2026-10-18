@@ -68,8 +68,6 @@ export default function SongLyricsEditorPanel({
     handleCancelEditLyrics,
     showPianoControls = false,
     onOpenPiano,
-    insertNotesEnabled = false,
-    onToggleInsertNotes,
     pianoOpen = false,
     onTranspose,
     onCopyLyrics,
@@ -119,11 +117,9 @@ export default function SongLyricsEditorPanel({
             selectionRange={selectionRange}
             showPianoControls={showPianoControls}
             onOpenPiano={onOpenPiano}
-            insertNotesEnabled={insertNotesEnabled}
             onTranspose={onTranspose}
             onCopyLyrics={onCopyLyrics}
             copyFeedback={copyFeedback}
-            onToggleInsertNotes={onToggleInsertNotes}
             pianoOpen={pianoOpen}
             showSaveCancelButtons={showSaveCancelButtons}
             savingLyrics={savingLyrics}

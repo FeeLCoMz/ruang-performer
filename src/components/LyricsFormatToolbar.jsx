@@ -37,13 +37,10 @@ export default function LyricsFormatToolbar({
   /** Non-formatting hooks owned by the page. */
   showPianoControls = false,
   onOpenPiano,
-  insertNotesEnabled = false,
   /** Quick transpose + copy, owned by the page. */
   onTranspose,
   onCopyLyrics,
   copyFeedback = '',
-  /** When provided, the toolbar renders its own Insert ON/OFF switch. */
-  onToggleInsertNotes,
   pianoOpen = false,
   showSaveCancelButtons = false,
   savingLyrics = false,
@@ -289,7 +286,6 @@ export default function LyricsFormatToolbar({
       title: 'Buka Virtual Piano untuk memasukkan not ke lirik (Alt+P)',
       disabled: disabled || !showPianoControls,
       shortcut: 'Alt+P',
-      hint: showPianoControls ? (insertNotesEnabled ? 'insert ON' : 'insert OFF') : 'tidak tersedia',
       onSelect: () => onOpenPiano?.(),
     },
   ];
@@ -372,22 +368,6 @@ export default function LyricsFormatToolbar({
                   <span aria-hidden="true">🎹</span>
                   <span className="lyric-quick-label">Piano</span>
                 </button>
-
-                {typeof onToggleInsertNotes === 'function' && (
-                  <button
-                    type="button"
-                    className={`lyric-quick-btn lyric-quick-insert${insertNotesEnabled ? ' is-active' : ''}`}
-                    onClick={() => onToggleInsertNotes()}
-                    disabled={disabled}
-                    aria-pressed={insertNotesEnabled}
-                    title="Sisipkan not yang diklik ke lirik (bukan hanya dibunyikan)"
-                  >
-                    <span aria-hidden="true">✍</span>
-                    <span className="lyric-quick-label">
-                      Insert {insertNotesEnabled ? 'ON' : 'OFF'}
-                    </span>
-                  </button>
-                )}
               </>
             )}
           </div>
