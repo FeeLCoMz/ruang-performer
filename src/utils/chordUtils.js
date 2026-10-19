@@ -5,7 +5,6 @@ import {
   METADATA_KEYS as CONFIG_METADATA_KEYS,
   PATCH_DEFINING_KEYS as PATCH_DEFINING_KEYS_CONFIG,
   INSTRUMENT_PATCH_KEYS as CONFIG_INSTRUMENT_PATCH_KEYS,
-  PRESET_CUE_SECTION_KEYWORDS as PRESET_CUE_SECTION_KEYWORDS_CONFIG,
   CHORD_REGEX_SOURCE,
   NO_CHORD_TOKENS,
   CUE_MARK_KEYWORDS as CONFIG_CUE_MARK_KEYWORDS,
@@ -1402,8 +1401,6 @@ const INSTRUMENT_PATCH_KEYS = new Set(CONFIG_INSTRUMENT_PATCH_KEYS);
  */
 const PATCH_DEFINING_KEYS = new Set(PATCH_DEFINING_KEYS_CONFIG);
 
-const PRESET_CUE_SECTION_KEYWORDS = PRESET_CUE_SECTION_KEYWORDS_CONFIG;
-
 const normalizeMidiByte = (value, { max = 127 } = {}) => {
   const numeric = Number.parseInt(String(value || '').trim(), 10);
   if (!Number.isFinite(numeric)) return null;
@@ -1476,16 +1473,6 @@ const parseCueOptionFields = (rawOptions = '') => {
     });
 
   return fields;
-};
-
-const isLikelyCueSectionLabel = (label = '') => {
-  const normalized = String(label || '').toLowerCase();
-  if (!normalized) return false;
-
-  return PRESET_CUE_SECTION_KEYWORDS.some((keyword) => {
-    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
-    return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i').test(normalized);
-  });
 };
 
 const getDefaultMidiChannelByContext = (contextText = '') => {
@@ -1581,7 +1568,7 @@ export const parsePresetCueLine = (line) => {
   if (!section || !patch) return null;
 
   const hasMidiHints = /(?:\bpc\b|\bprogram\b|\bch\b|\bchannel\b|\bbank\b|\bmsb\b|\blsb\b)/i.test(optionsRaw);
-  if (!hasMidiHints && !isLikelyCueSectionLabel(section)) return null;
+  if (!hasMidiHints) return null;
 
   const midi = mergeMidiWithInference({
     explicitMidi: parseMidiFromFields(parseCueOptionFields(optionsRaw)),

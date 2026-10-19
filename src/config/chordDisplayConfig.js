@@ -105,14 +105,6 @@ export const INSTRUMENT_PATCH_KEYS = dedupe([
   'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb',
 ]);
 
-/** Label seksi yang membuat "[Label: Patch]" dianggap preset cue walau
- *  tanpa opsi MIDI (parsePresetCueLine) — semua section + label patch. */
-export const PRESET_CUE_SECTION_KEYWORDS = dedupe([
-  ...STRUCTURE_SECTION_KEYWORDS,
-  'hook', 'drop', 'ending', 'ending tag',
-  'keys', 'keyboard', 'guitar', 'gitar',
-]);
-
 /* ------------------------------------------------------------------
  * 4. CHORD
  * ------------------------------------------------------------------

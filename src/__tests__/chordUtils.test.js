@@ -653,16 +653,18 @@ describe('chordUtils', () => {
     });
   });
 
-  test('parsePresetCueLine accepts [Keys: ...] and [Guitar: ...] notation', () => {
-    const keysCue = parsePresetCueLine('[Keys: EP Soft]');
-    expect(keysCue).toMatchObject({
+  test('parsePresetCueLine requires explicit MIDI hints; [Keys: ...] without MIDI is no longer a cue', () => {
+    // Tanpa opsi MIDI: tidak lagi dianggap preset cue (deteksi
+    // PRESET_CUE_SECTION_KEYWORDS sudah dihapus).
+    expect(parsePresetCueLine('[Keys: EP Soft]')).toBe(null);
+
+    // Dengan opsi MIDI tetap dikenali.
+    expect(parsePresetCueLine('[Keys: EP Soft | PC: 4 | CH: 1]')).toMatchObject({
       type: 'preset_cue',
       section: 'Keys',
       patch: 'EP Soft',
+      midi: { program: 4, channel: 1 },
     });
-    expect(keysCue.midi).toBeTruthy();
-    expect(keysCue.midi.channel).toBe(1);
-    expect(Number.isFinite(keysCue.midi.program)).toBe(true);
 
     expect(parsePresetCueLine('[Guitar: Crunch Lead | PC: 30 | CH: 3]')).toMatchObject({
       type: 'preset_cue',

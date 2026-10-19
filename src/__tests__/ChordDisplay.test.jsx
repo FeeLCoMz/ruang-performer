@@ -65,7 +65,7 @@ describe('ChordDisplay lyrics mode', () => {
     act(() => {
       root.render(
         <ChordDisplay
-          song={{ lyrics: '[Verse: Acoustic Piano]\n| C | G |' }}
+          song={{ lyrics: '[Keys: Acoustic Piano | PC: 0 | CH: 1]\n| C | G |' }}
           showChords={true}
         />
       );
@@ -73,7 +73,7 @@ describe('ChordDisplay lyrics mode', () => {
 
     const cueBadge = container.querySelector('.cd-preset-cue');
     expect(cueBadge).toBeTruthy();
-    expect(cueBadge.textContent).toContain('[Verse: Acoustic Piano]');
+    expect(cueBadge.textContent).toContain('[Keys: Acoustic Piano]');
     expect(container.querySelector('.cd-preset-cue-inline')).toBeFalsy();
 
     act(() => {

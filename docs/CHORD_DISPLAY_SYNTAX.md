@@ -88,11 +88,8 @@
 #   [Guitar: Crunch Lead | PC: 30 | CH: 3]
 #   [Intro] [Keys: Acoustic Grand Piano | PC: 0 | CH: 1]     <- bisa digabung di 1 baris
 
-# 3d. Preset cue section keywords (agar [Label: Patch] dianggap preset cue
-#     walau tanpa MIDI hint):
-#     intro, verse, chorus, bridge, outro, interlude, coda, reff, refrain,
-#     pre-chorus, post-chorus, solo, musik, instrumental, hook, drop, ending,
-#     ending tag, keys, keyboard, guitar, gitar
+# 3d. Preset cue HANYA dikenali jika ada opsi MIDI eksplisit (PC/CH/Bank/MSB/LSB).
+#     Baris "[Label: Patch]" tanpa opsi MIDI TIDAK lagi dianggap preset cue.
 
 # 3e. Metadata lain (baris "Key: Value" tanpa patch key -> type 'metadata'):
 #   Cue: Drum masuk di bar 9
