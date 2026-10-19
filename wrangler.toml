@@ -1,0 +1,38 @@
+# Cloudflare Workers configuration for Ruang Performer.
+#
+# Build the bundle first:  npm run build:cloudflare
+# Local development:       npm run dev:cloudflare   (wrangler dev)
+# Deploy:                  npm run deploy:cloudflare
+#
+# Non-secret values can go in [vars] below. Secrets must NOT be committed —
+# create them once per environment:
+#   npx wrangler secret put JWT_SECRET
+#   npx wrangler secret put TURSO_AUTH_TOKEN
+#   npx wrangler secret put GEMINI_API_KEY
+#   ... (TURSO_DATABASE_URL may stay a plain var, it is a URL not a token)
+
+name = "ruang-performer"
+main = "cloudflare/.build/worker.js"
+compatibility_date = "2024-11-01"
+# bcryptjs / jsonwebtoken / node:crypto / node:buffer need the Node polyfills.
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+[assets]
+# `npm run build` output (Vite).
+directory = "./dist"
+# Unknown paths fall back to index.html so the SPA router works.
+not_found_handling = "single-page-application"
+
+[vars]
+# Runtime marker — api/middleware/rateLimiter.js skips its module-level timer.
+RUNTIME = "cloudflare"
+APP_URL = "https://ruang-performer.<your-subdomain>.workers.dev"
+
+# Preview / staging overrides
+[env.staging]
+name = "ruang-performer-staging"
+[env.staging.vars]
+RUNTIME = "cloudflare"
