@@ -8,6 +8,9 @@ import {
   STRUCTURE_SECTION_KEYWORDS,
   MODULATION_KEYWORDS,
   METADATA_KEYS as CONFIG_METADATA_KEYS,
+  SONG_INFO_KEYS as CONFIG_SONG_INFO_KEYS,
+  PERFORMANCE_HINT_KEYS as CONFIG_PERFORMANCE_HINT_KEYS,
+  NOTE_KEYS as CONFIG_NOTE_KEYS,
   PATCH_DEFINING_KEYS as PATCH_DEFINING_KEYS_CONFIG,
   INSTRUMENT_PATCH_KEYS as CONFIG_INSTRUMENT_PATCH_KEYS,
   CHORD_REGEX_SOURCE,
@@ -1388,10 +1391,13 @@ export function parseSection(line) {
   // Contoh cocok: [Intro], Intro:, [Gitar], Gitar:
   const match = trimmedLine.match(/^(?:\[)?([A-Za-z0-9 .:_\-\+&(),\/']+?)(?:\])?\s*:?\s*(?:\(([^)]+)\))?\s*$/);
   if (match) {
-    const originalLabel = match[1].trim();
-    const annotation = match[2]?.trim();
-    const displayLabel = annotation ? `${originalLabel} (${annotation})` : originalLabel;
-    const labelLower = originalLabel.toLowerCase();
+    // "[Chorus: Piano Math]" / "Chorus (2x)": kata setelah titik dua dan
+    // anotasi kurung adalah keterangan, bukan bagian label seksi.
+    const [rawLabel, ...labelRest] = match[1].split(':');
+    const labelCore = rawLabel.trim();
+    const annotation = match[2]?.trim() || labelRest.join(':').trim();
+    const displayLabel = annotation ? `${labelCore} (${annotation})` : labelCore;
+    const labelLower = labelCore.toLowerCase();
     // Setiap keyword dicocokkan sebagai kata utuh, bukan substring:
     // "Interlude" cocok, "Soloist" tidak. "Time Signature:" TIDAK, karena
     // "signature" hanyalah satu kata dari kata kunci multi-kata — tanpa
@@ -1409,8 +1415,14 @@ export function parseSection(line) {
     }
   }
 
-  // Deteksi modulasi/key change
-  const modulationMatch = trimmedLine.match(MODULATION_LINE_REGEX);
+  // Deteksi modulasi/key change. Bentuk ber-bracket ("[Modulation: G]",
+  // "[Key Change: G]") juga dikenali supaya penulisan bracket konsisten dengan
+  // metadata lain, tidak jatuh ke lirik.
+  const modulationMatch = trimmedLine
+    .replace(/^\[/, '')
+    .replace(/\]$/, '')
+    .trim()
+    .match(MODULATION_LINE_REGEX);
   if (modulationMatch) {
     const targetKey = modulationMatch[1].trim();
     return { type: 'modulation', label: targetKey };
@@ -1422,6 +1434,18 @@ export function parseSection(line) {
 const METADATA_KEYS = new Set(CONFIG_METADATA_KEYS.map((key) => key.toLowerCase()));
 
 const INSTRUMENT_PATCH_KEYS = new Set(CONFIG_INSTRUMENT_PATCH_KEYS);
+
+/**
+ * Key milik grup C (info lagu, petunjuk permainan, catatan & efek). Baris yang
+ * berisi salah satu key ini bukan patch: "Style: Koplo | Patch: X" harus tetap
+ * metadata, dan "Feel: Half-time | CH: 1" tidak boleh menghasilkan Program
+ * Change hasil tebakan.
+ */
+const NON_PATCH_METADATA_KEYS = new Set([
+  ...CONFIG_SONG_INFO_KEYS,
+  ...CONFIG_PERFORMANCE_HINT_KEYS,
+  ...CONFIG_NOTE_KEYS,
+]);
 
 /** Alias key patch -> nama field kanonik yang dipakai parseMidiFromFields. */
 const PATCH_FIELD_ALIASES = {
@@ -1489,11 +1513,18 @@ export const parseInstrumentPatchLine = (line) => {
 
   const fields = {};
   const rawFieldKeys = new Set();
+  let hasGroupCKey = false;
   for (const segment of segments) {
     const idx = segment.indexOf(':');
     if (idx <= 0 || idx >= segment.length - 1) continue;
 
     const rawKey = segment.slice(0, idx).trim().toLowerCase();
+    const normalizedKey = rawKey.replace(/[\s_]+/g, ' ').trim();
+    if (NON_PATCH_METADATA_KEYS.has(normalizedKey)) {
+      hasGroupCKey = true;
+      continue;
+    }
+
     const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '').replace(/\s+/g, '');
     if (!INSTRUMENT_PATCH_KEYS.has(key)) continue;
 
@@ -1511,6 +1542,8 @@ export const parseInstrumentPatchLine = (line) => {
     }
   }
 
+  // Baris yang membawa key grup C bukan patch, walau juga berisi key patch.
+  if (hasGroupCKey) return null;
   if (!Object.keys(fields).length) return null;
 
   // Require an explicit patch-ish key. A bare "Layer:", "Volume:", "Split:" or
@@ -1544,10 +1577,7 @@ export const parseInstrumentPatchLine = (line) => {
 const isKnownMetadataKey = (rawKey = '') => {
   const normalized = String(rawKey).trim().toLowerCase().replace(/[\s_]+/g, ' ');
   const key = normalized.replace(/^[\[(]+|[\])]+$/g, '').trim();
-  return METADATA_KEYS.has(key)
-    || METADATA_KEYS.has(key.replace(/\s+/g, ''))
-    || key === 'style'
-    || key === 'cue';
+  return METADATA_KEYS.has(key) || METADATA_KEYS.has(key.replace(/\s+/g, ''));
 };
 
 export const isMetadataLine = (line) => {
