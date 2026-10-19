@@ -168,8 +168,14 @@ export default function StageModePage({
   // Setlist aktif = setlist yang sedang dibuka di mode normal (initialSetlist
   // dari App). Jika Stage Mode diaktifkan di luar halaman setlist, pakai
   // preferensi tersimpan. Lagu aktif tetap dari preferensi tersimpan.
+  // Menandai bahwa user sudah memilih setlist sendiri di dalam Stage Mode.
+  // Setelah itu, initialSetlist dari App (setlist yang terbuka di mode normal)
+  // tidak boleh menimpa pilihan user lagi — kalau tidak, setlist yang baru
+  // dipilih langsung "kembali" ke setlist halaman semula.
+  const setlistOverriddenRef = useRef(false);
   useEffect(() => {
     if (!stageMode || !initialSetlist?.id) return;
+    if (setlistOverriddenRef.current) return;
     if (String(setlistId) !== String(initialSetlist.id)) {
       setSetlistId(String(initialSetlist.id));
       writeStored(STORAGE_KEYS.STAGE_SETLIST, String(initialSetlist.id));
@@ -190,10 +196,12 @@ export default function StageModePage({
   // Menunda pembukaan sheet daftar lagu sampai detail setlist (urutan lagu)
   // tersedia — dipicu oleh handleSelectSetlist.
   const pendingSongSheetRef = useRef(false);
-  const activeSetlistCandidate = useMemo(
-    () => (initialSetlist?.id ? initialSetlist : setlists.find((sl) => String(sl.id) === String(setlistId)) || null),
-    [initialSetlist, setlists, setlistId],
-  );
+  const activeSetlistCandidate = useMemo(() => {
+    // Pilihan user di Stage Mode menang: bila sudah override, initialSetlist
+    // (setlist halaman mode normal) tidak dipakai lagi.
+    if (!setlistOverriddenRef.current && initialSetlist?.id) return initialSetlist;
+    return setlists.find((sl) => String(sl.id) === String(setlistId)) || null;
+  }, [initialSetlist, setlists, setlistId]);
   const activeSetlistNeedsDetail = useMemo(() => {
     if (!activeSetlistCandidate) return false;
     // Sudah cukup bila daftar lagunya tersedia.
@@ -257,6 +265,7 @@ export default function StageModePage({
   };
 
   const handleSelectSetlist = (nextSetlistId) => {
+    setlistOverriddenRef.current = true;
     setSetlistId(nextSetlistId);
     writeStored(STORAGE_KEYS.STAGE_SETLIST, nextSetlistId);
     setSelectedSongId('');
