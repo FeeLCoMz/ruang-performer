@@ -12,7 +12,14 @@ import {
   AUTOCOMPLETE_INSTRUMENTS as CONFIG_INSTRUMENTS,
 } from '../config/chordDisplayConfig.js';
 
-/** Section tags, matching what autoTagSongSections() produces. */
+/**
+ * Section tags, matching what autoTagSongSections() produces.
+ *
+ * Also offered in a bracketed variant (e.g. `[Patch: ]`) for metadata and
+ * instrument names so they can be completed from an open `[` tag: the parser
+ * only treats a bracketed line as a section header, so inline chips render the
+ * same way, and the cursor lands right after the `: ` separator.
+ */
 const SECTION_COMPLETIONS = [...new Set(CONFIG_SECTION_LABELS)].map((label) => ({
   label: `[${label}]`,
   type: 'keyword',
@@ -21,46 +28,61 @@ const SECTION_COMPLETIONS = [...new Set(CONFIG_SECTION_LABELS)].map((label) => (
 }));
 
 /** Key:value metadata understood by the chord parser. */
-const METADATA_COMPLETIONS = CONFIG_METADATA.map(({ label, detail, info }) => ({
-  label,
-  type: 'property',
-  detail,
-  info: info || undefined,
-  apply: `${label} `,
-}));
+const METADATA_COMPLETIONS = CONFIG_METADATA.flatMap(({ label, detail, info }) => [
+  {
+    label,
+    type: 'property',
+    detail,
+    info: info || undefined,
+    apply: `${label} `,
+  },
+  {
+    label: `[${label} ]`,
+    type: 'property',
+    detail,
+    info: info || undefined,
+    apply: `[${label} ]`,
+  },
+]);
+
+/** Instrument words highlighted by the editor. */
+const INSTRUMENT_COMPLETIONS = [...new Set(CONFIG_INSTRUMENTS)].flatMap((name) => [
+  {
+    label: name,
+    type: 'variable',
+    detail: 'Instrumen',
+    apply: `${name}: `,
+  },
+  {
+    label: `[${name}: ]`,
+    type: 'variable',
+    detail: 'Instrumen',
+    apply: `[${name}: ]`,
+  },
+]);
 
 const ALL_COMPLETIONS = [
   ...SECTION_COMPLETIONS,
   ...METADATA_COMPLETIONS,
 ];
 
-/** Instrument words highlighted by the editor. */
-const INSTRUMENT_COMPLETIONS = [...new Set(CONFIG_INSTRUMENTS)].map((name) => ({
-  label: name,
-  type: 'variable',
-  detail: 'Instrumen',
-  apply: `${name}: `,
-}));
-
 const options = [...ALL_COMPLETIONS, ...INSTRUMENT_COMPLETIONS];
 
-/** Match the word/tag fragment immediately before the cursor. */
+/** Match the unfinished `[` tag immediately before the cursor. */
 function tokenBefore(state, pos) {
   const line = state.doc.lineAt(pos);
   const before = line.text.slice(0, pos - line.from);
-  // Either an unfinished [Section, or a key:value fragment.
+  // Only an unfinished [Section / [Key: tag matters here.
   const bracket = before.match(/\[[^\]\n]*$/);
   if (bracket) return { from: pos - bracket[0].length, text: bracket[0] };
-  const word = before.match(/[A-Za-z]+$/);
-  if (word) return { from: pos - word[0].length, text: word[0] };
   return null;
 }
 
 /**
- * Completion source. Deliberately simple: it offers the known syntaxes whenever
- * the user starts a `[` tag, or a capitalised word that could begin a metadata
- * key. It never completes chord names — those are typed far too often for a
- * popup to be helpful.
+ * Completion source. Deliberately simple: it only offers the known syntaxes
+ * once the user opens a `[` tag (sections, and bracketed metadata/instrument
+ * variants). It never triggers on plain words, so chord names and lyrics —
+ * which are typed far too often for a popup to be helpful — stay undisturbed.
  *
  * The `from` position ALWAYS comes from our own token scan (`token.from`),
  * never from `context.matchBefore`: matchBefore matches an empty string at
@@ -69,13 +91,9 @@ function tokenBefore(state, pos) {
  * that wrong offset and yanked the cursor to the start of the line.
  */
 export function lyricsCompletionSource(context) {
+  // Only trigger on an opened '[' tag; plain words never open the popup.
   const token = tokenBefore(context.state, context.pos);
   if (!token) return null;
-
-  // Only trigger on '[' or on a word that starts a likely metadata key.
-  const isTag = token.text.startsWith('[');
-  const isWordStart = /^[A-Z]/.test(token.text);
-  if (!isTag && !isWordStart) return null;
 
   return {
     from: token.from,
