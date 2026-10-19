@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { connectMidi, isWebMidiSupported } from '../midi/midiAccess.js';
+﻿import React, { useEffect, useRef, useState } from 'react';
+import { connectMidi, isWebMidiSupported } from './midiAccess.js';
+import { useMidiEnabled } from './useMidiEnabled.js';
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
@@ -23,6 +24,7 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
   const [activeKeys, setActiveKeys] = useState(new Set());
   const [midiStatus, setMidiStatus] = useState('MIDI: belum terhubung');
   const [position, setPosition] = useState({ x: 24, y: 48 });
+  const [midiEnabled, setMidiEnabled] = useMidiEnabled();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -111,11 +113,11 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
     event.preventDefault();
   };
 
-  // Koneksi MIDI input via modul src/midi/midiAccess.js (plugin-style).
+  // Koneksi MIDI input via modul src/modules/midi/midiAccess.js (plugin-style).
   // Komponen ini hanya menerjemahkan pesan note on/off; akses perangkat
   // dikelola modul agar bisa dipakai ulang komponen/hook lain.
   useEffect(() => {
-    if (!isOpen || !isWebMidiSupported()) return undefined;
+    if (!isOpen || !midiEnabled || !isWebMidiSupported()) return undefined;
 
     let cancelled = false;
 
@@ -151,7 +153,9 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
       setMidiStatus('MIDI: siap menerima input');
     }).catch(() => {
       if (!cancelled) {
-        setMidiStatus('MIDI: browser menolak akses perangkat');
+        setMidiStatus(isMidiEnabled()
+          ? 'MIDI: browser menolak akses perangkat'
+          : 'MIDI: dimatikan pengguna');
       }
     });
 
@@ -162,7 +166,7 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
         midiAccessRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen, midiEnabled]);
 
   if (!isOpen) return null;
 
@@ -249,7 +253,7 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
         onTouchStart={handleHeaderPointerDown}
       >
         <h4 className="piano-popup-title">
-          🎹 Virtual Piano
+          ðŸŽ¹ Virtual Piano
         </h4>
         <button
           type="button"
@@ -258,7 +262,7 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
           aria-label="Tutup Virtual Piano"
           title="Tutup (Esc)"
         >
-          ✕
+          âœ•
         </button>
       </div>
       <div className="piano-popup-body">
@@ -268,6 +272,25 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
         <p style={{ marginBottom: 'var(--spacing-sm)', fontSize: '0.8em', color: 'var(--text-secondary)' }}>
           {midiStatus}
         </p>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5em',
+            marginBottom: 'var(--spacing-sm)',
+            fontSize: '0.8em',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={midiEnabled}
+            onChange={(event) => setMidiEnabled(event.target.checked)}
+            aria-label="Aktifkan atau nonaktifkan modul MIDI"
+          />
+          Aktifkan MIDI input
+        </label>
         {insertControls && <div className="piano-popup-insert-controls">{insertControls}</div>}
         <div className="virtual-piano">
           <div className="piano-keys">

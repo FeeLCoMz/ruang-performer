@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 // import { usePermission } from "../hooks/usePermission.js";
 // import { PERMISSIONS } from "../utils/permissionUtils.js";
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import TapTempo from '../components/TapTempo';
-import VirtualPiano from '../components/VirtualPiano';
+import VirtualPiano from '../modules/midi/VirtualPiano';
 import AIAutofillModal from '../components/AIAutofillModal';
 import SheetMusicModal from '../components/SheetMusicModal.jsx';
 import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
@@ -710,7 +710,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         aria-pressed={insertNotesToLyrics}
         title="Tentukan apakah klik not disisipkan ke lirik atau hanya dibunyikan"
       >
-        ✍ Insert {insertNotesToLyrics ? 'ON' : 'OFF'}
+        âœ Insert {insertNotesToLyrics ? 'ON' : 'OFF'}
       </button>
 
       {insertNotesToLyrics && (
@@ -755,7 +755,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             aria-pressed={insertTrailingSpace}
             title="Tambahkan spasi otomatis setelah not yang disisipkan"
           >
-            ␠ Spasi {insertTrailingSpace ? 'ON' : 'OFF'}
+            â  Spasi {insertTrailingSpace ? 'ON' : 'OFF'}
           </button>
         </>
       )}
@@ -763,14 +763,14 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   );
 
   /**
-   * The studio arrangement: a sticky command bar, then two columns — the media
+   * The studio arrangement: a sticky command bar, then two columns â€” the media
    * player on the left, and ONE editor workspace on the right that carries every
    * editable fact: song metadata, the lyrics/chord editor, and the extra info.
    * Keeping them in a single panel means the user never leaves the editor to
    * change a field that belongs to the same song.
    */
   const statusText = loading
-    ? 'Menyimpan…'
+    ? 'Menyimpanâ€¦'
     : hasUnsavedChanges
       ? 'Ada perubahan belum disimpan'
       : 'Tersimpan';
@@ -781,7 +781,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         modeLabel={
           isEditMode ? 'EDITOR LIRIK & CHORD' : newVersionMode ? 'VERSI BARU' : 'LAGU BARU'
         }
-        eyebrowIcon={isEditMode ? '📝' : newVersionMode ? '🧬' : '➕'}
+        eyebrowIcon={isEditMode ? 'ðŸ“' : newVersionMode ? 'ðŸ§¬' : 'âž•'}
         title={
           title.trim() ||
           (isEditMode ? 'Edit Lagu' : newVersionMode ? 'Buat Versi Baru' : 'Tambah Lagu Baru')
@@ -798,7 +798,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
       {newVersionMode && (
         <div className="studio-note">
-          <span aria-hidden="true">🧬</span>
+          <span aria-hidden="true">ðŸ§¬</span>
           Form ini membuat versi baru dari lagu yang sudah ada. Ubah judul, aransemen, atau detail
           lain seperlunya sebelum menyimpan.
         </div>
@@ -815,7 +815,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         className={`studio-columns${isResizingColumns ? ' is-resizing' : ''}${hasCustomSplit ? ' has-custom-split' : ''}`}
         style={{ '--studio-editor-col': splitRatio }}
       >
-        {/* INFORMASI UTAMA — the song's identity, full width above the split.
+        {/* INFORMASI UTAMA â€” the song's identity, full width above the split.
               Wide screens read as four columns per row:
                 Judul | Artis | Genre | Nada Dasar
                 Tempo | Time Signature | YouTube | Partitur
@@ -831,7 +831,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               className="btn btn-secondary song-ai-autofill-btn"
               title="Isi otomatis data lagu dari AI (judul wajib diisi)"
             >
-              🤖 {aiLoading ? 'Mencari…' : 'AI Autofill'}
+              ðŸ¤– {aiLoading ? 'Mencariâ€¦' : 'AI Autofill'}
             </button>
           </div>
 
@@ -898,7 +898,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   }}
                   aria-invalid={Boolean(fieldErrors.key)}
                 >
-                  <option value="">— pilih key —</option>
+                  <option value="">â€” pilih key â€”</option>
                   {SONG_KEY_OPTIONS.map((option) => (
                     <option key={option} value={option}>
                       {option}
@@ -974,13 +974,13 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                   className={`form-input-field studio-sheet-btn${sheetMusicXml ? ' has-value' : ''}`}
                   onClick={() => setShowSheetMusicModal(true)}
                 >
-                  {sheetMusicXml ? '🎼 Partitur terisi — Edit' : '🎼 Tambah Partitur (MusicXML)'}
+                  {sheetMusicXml ? 'ðŸŽ¼ Partitur terisi â€” Edit' : 'ðŸŽ¼ Tambah Partitur (MusicXML)'}
                 </button>
               </label>
 
               {/* Keyboard Patch: satu field melebar penuh di baris terakhir. */}
               <label className="studio-field studio-field-span studio-field-full">
-                <span className="studio-field-label">🎹 Keyboard Patch</span>
+                <span className="studio-field-label">ðŸŽ¹ Keyboard Patch</span>
                 <textarea
                   id="song-keyboard-patch"
                   name="keyboardPatch"
@@ -996,7 +996,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
         <div className="studio-editor">
           <div className="studio-panel-head">
-            <span className="studio-panel-title">🎤 Editor Lirik &amp; Chord</span>
+            <span className="studio-panel-title">ðŸŽ¤ Editor Lirik &amp; Chord</span>
           </div>
 
           <SongLyricsEditorPanel
@@ -1058,7 +1058,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             typeof ytRef.current?.currentTime === 'number' ? ytRef.current.currentTime : 0
           }
           onTimeUpdate={(t, d) => {
-            // Simpan posisi pemutaran agar tombol «5s / 5s» dan label waktu
+            // Simpan posisi pemutaran agar tombol Â«5s / 5sÂ» dan label waktu
             // menghitung dari posisi yang benar, bukan selalu dari 0.
             if (typeof t === 'number' && Number.isFinite(t)) setYtCurrentTime(t);
             if (typeof d === 'number' && Number.isFinite(d)) setYtDuration(d);
@@ -1074,10 +1074,10 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         <div className="song-editor-hero" data-mode={newVersionMode ? 'version' : 'loading'}>
           <div className="song-editor-hero-main">
             <span className="song-editor-hero-eyebrow">
-              {newVersionMode ? '🧬 Versi Baru' : '⏳ Memuat'}
+              {newVersionMode ? 'ðŸ§¬ Versi Baru' : 'â³ Memuat'}
             </span>
             <h1 className="song-editor-hero-title">
-              {newVersionMode ? 'Buat Versi Baru Lagu' : 'Memuat Lagu…'}
+              {newVersionMode ? 'Buat Versi Baru Lagu' : 'Memuat Laguâ€¦'}
             </h1>
           </div>
         </div>

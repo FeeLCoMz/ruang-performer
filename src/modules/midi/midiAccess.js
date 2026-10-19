@@ -9,7 +9,13 @@
  *   - isWebMidiSupported()
  *   - requestMidiAccess({ sysex })
  *   - connectMidi({ onMessage, onStateChange, sysex })
+ *
+ * Semua fungsi di sini MENGHORMATI toggle on/off modul MIDI dari
+ * midiSettings.js: saat MIDI dinonaktifkan pengguna, requestMidiAccess
+ * dan connectMidi langsung gagal (throw) tanpa menyentuh perangkat.
  */
+
+import { isMidiEnabled } from './midiSettings.js';
 
 /**
  * Cek dukungan Web MIDI API di browser saat ini.
@@ -26,6 +32,9 @@ export const isWebMidiSupported = () => (
  * @returns {Promise<MIDIAccess>}
  */
 export const requestMidiAccess = async ({ sysex = false } = {}) => {
+  if (!isMidiEnabled()) {
+    throw new Error('Modul MIDI dinonaktifkan pengguna');
+  }
   if (!isWebMidiSupported()) {
     throw new Error('Web MIDI API tidak didukung browser ini');
   }

@@ -1,8 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
-import VirtualPiano from '../components/VirtualPiano.jsx';
+import VirtualPiano from '../../../modules/midi/VirtualPiano.jsx';
 
 describe('VirtualPiano MIDI input', () => {
   let container;

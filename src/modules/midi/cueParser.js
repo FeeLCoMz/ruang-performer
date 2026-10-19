@@ -1,4 +1,4 @@
-/**
+﻿/**
  * cueParser.js
  *
  * Modul MIDI: parsing cue/patch dari teks lirik menjadi data MIDI terstruktur.
@@ -18,7 +18,7 @@
  *   - hasMidiHintOptions(rawOptions)
  */
 
-import { findClosestGmPatch } from '../utils/gmSoundbank.js';
+import { findClosestGmPatch } from './gmSoundbank.js';
 
 export const normalizeMidiByte = (value, { max = 127 } = {}) => {
   const numeric = Number.parseInt(String(value || '').trim(), 10);
