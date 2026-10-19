@@ -17,6 +17,7 @@ export const NAV_ITEMS = [
   { path: '/gigs', label: 'Gigs', icon: '🎤', bottomNav: true },
   { path: '/bands/manage', label: 'Band', icon: '🎸' },
   { path: '/youtube-trending', label: 'Trending', icon: '📺' },
+  { path: '/modules', label: 'Modul', icon: '🧩' },
 ];
 
 export function useNavItems() {

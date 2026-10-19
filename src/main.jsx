@@ -9,6 +9,7 @@ import './styles/responsive-anim.css';
 import './styles/setlist-songs.css';
 import './styles/song-editor.css';
 import './styles/tools.css';
+import './styles/modules.css';
 import './styles/chord-display.css';
 import './styles/zoom-skeleton.css';
 import './styles/playback.css';

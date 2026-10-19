@@ -1,4 +1,5 @@
 import ToolsPage from "./pages/ToolsPage.jsx";
+import ModulesPage from "./pages/ModulesPage.jsx";
 import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from "react-router-dom";
 
@@ -447,6 +448,7 @@ function AppContent() {
               <Route path="/bands/:id" element={<BandDetailPage />} />
               {/* InvitationPage and PendingInvitationsPage removed */}
               <Route path="/tools" element={<ToolsPage />} />
+              <Route path="/modules" element={<ModulesPage />} />
               <Route path="/user-management" element={<UserManagementPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

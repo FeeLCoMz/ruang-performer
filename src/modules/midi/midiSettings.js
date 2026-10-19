@@ -59,4 +59,6 @@ export const subscribeMidiEnabled = (listener) => {
   return () => listeners.delete(listener);
 };
 
+export const subscribe = subscribeMidiEnabled;
+
 export const DEFAULT_MIDI_ENABLED = DEFAULT_ENABLED;
