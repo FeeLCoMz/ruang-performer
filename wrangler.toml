@@ -29,7 +29,8 @@ not_found_handling = "single-page-application"
 [vars]
 # Runtime marker — api/middleware/rateLimiter.js skips its module-level timer.
 RUNTIME = "cloudflare"
-APP_URL = "https://ruang-performer.<your-subdomain>.workers.dev"
+APP_URL = "https://ruang-performer.novicalz.workers.dev"
+rz_TURSO_DATABASE_URL="libsql://ronz-chord-pro-vercel-icfg-ieyuznoadvcakegsjsihudlc.aws-us-east-1.turso.io"
 
 # Preview / staging overrides
 [env.staging]
