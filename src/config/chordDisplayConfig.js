@@ -12,14 +12,29 @@
  */
 
 /* ------------------------------------------------------------------
+ * UTILITAS
+ * ------------------------------------------------------------------
+ * Kapitalisasi kata kunci untuk ditampilkan di popup:
+ *   kata pendek/teknis -> KAPITAL penuh ('fx' -> 'FX', 'pc' -> 'PC')
+ *   kata lain          -> Title Case  ('pre-chorus' -> 'Pre-Chorus')
+ */
+const titleCaseKeyword = (keyword) => keyword
+  .split(/([\s-]+)/)
+  .map((part) => (/^[a-z]+$/.test(part) && part.length > 2
+    ? part[0].toUpperCase() + part.slice(1)
+    : part.toUpperCase()))
+  .join('');
+
+/** Hapus duplikat dari sebuah daftar (urutan tetap terjaga). */
+const dedupe = (list) => [...new Set(list)];
+
+/* ------------------------------------------------------------------
  * 1. SECTION / STRUKTUR LAGU
  * ------------------------------------------------------------------
  * Kata kunci yang dikenali parseSection() sebagai struktur lagu.
  * Label harus mengandung kata ini sebagai kata utuh, contoh:
  *   "Verse 1", "Pre-Chorus", "Bridge - Koplo", "Interlude 2".
  */
-
-/** Dipakai parser (parseSection) untuk mendeteksi [Section] / Section: */
 export const STRUCTURE_SECTION_KEYWORDS = [
   'intro',
   'verse',
@@ -38,15 +53,9 @@ export const STRUCTURE_SECTION_KEYWORDS = [
 ];
 
 /**
- * Label yang ditawarkan autocompletion — DITURUNKAN dari STRUCTURE_SECTION_KEYWORDS
- * di atas, sehingga autocomplete dan parser SELALU memakai kata kunci yang sama.
- * Huruf kapital di awal kata otomatis (contoh: 'pre-chorus' -> 'Pre-Chorus').
+ * Label yang ditawarkan autocompletion — DITURUNKAN dari STRUCTURE_SECTION_KEYWORDS,
+ * sehingga autocomplete dan parser SELALU memakai kata kunci yang sama.
  */
-const titleCaseKeyword = (keyword) => keyword
-  .split(/([\s-]+)/)
-  .map((part) => (/^[a-z]+$/.test(part) && part.length > 2 ? part[0].toUpperCase() + part.slice(1) : part.toUpperCase()))
-  .join('');
-
 export const AUTOCOMPLETE_SECTION_LABELS = STRUCTURE_SECTION_KEYWORDS.map(titleCaseKeyword);
 
 /* ------------------------------------------------------------------
@@ -54,8 +63,6 @@ export const AUTOCOMPLETE_SECTION_LABELS = STRUCTURE_SECTION_KEYWORDS.map(titleC
  * ------------------------------------------------------------------
  * Kata kunci pengganti key di tengah lagu. Chord setelah baris ini
  * ditranspose mengikuti label yang ditulis (contoh: Modulation: G).
- * Kata "modulation" dan "key change" selalu aktif; tambah di sini
- * jika ingin menerima sinonim lain (misal "modulasi").
  */
 export const MODULATION_KEYWORDS = ['modulation', 'key change'];
 
@@ -67,38 +74,44 @@ export const MODULATION_KEYWORDS = ['modulation', 'key change'];
 
 /** Semua key metadata yang dikenali (isMetadataLine). */
 export const METADATA_KEYS = [
-  'patch', 'layer', 'intensitas', 'intensity', 'dynamics', 'dinamik',
-  'cue', 'notes', 'catatan',
+  // patch & sound
+  'patch', 'preset', 'sound', 'tone', 'program',
   'instrument', 'instrumen',
-  'sound', 'tone', 'fx', 'effect', 'effects', 'voicing', 'texture',
-  'split', 'zone', 'program', 'preset', 'scene', 'part', 'fill',
-  'groove', 'feel',
+  // layering & split keyboard
+  'layer', 'split', 'zone',
+  // MIDI routing
   'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb',
-  'style',
+  // dinamika & feel
+  'intensitas', 'intensity', 'dynamics', 'dinamik',
+  'groove', 'feel', 'style', 'texture', 'voicing',
+  // catatan & efek
+  'cue', 'notes', 'catatan',
+  'fx', 'effect', 'effects',
+  // lain-lain
+  'scene', 'part', 'fill',
 ];
 
 /** Key yang WAJIB ada agar baris dianggap instrument_patch (punya MIDI).
  *  Baris "Layer: Warm Pad" saja TIDAK jadi patch tanpa key dari daftar ini. */
 export const PATCH_DEFINING_KEYS = [
-  'patch', 'preset', 'sound', 'tone', 'instrument', 'instrumen',
-  'program', 'pc',
+  'patch', 'preset', 'sound', 'tone', 'instrument', 'instrumen', 'program', 'pc',
 ];
 
-/** Key yang boleh muncul di baris instrument patch (parseInstrumentPatchLine). */
-export const INSTRUMENT_PATCH_KEYS = [
-  'patch', 'layer', 'split', 'zone', 'program', 'preset', 'scene',
-  'sound', 'tone', 'instrument', 'instrumen',
-  'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb',
-];
+/** Key yang boleh muncul di baris instrument patch (parseInstrumentPatchLine) —
+ *  PATCH_DEFINING_KEYS + layering & MIDI routing. */
+export const INSTRUMENT_PATCH_KEYS = dedupe([
+  ...PATCH_DEFINING_KEYS,
+  'layer', 'split', 'zone', 'scene',
+  'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb',
+]);
 
 /** Label seksi yang membuat "[Label: Patch]" dianggap preset cue walau
- *  tanpa opsi MIDI (parsePresetCueLine). */
-export const PRESET_CUE_SECTION_KEYWORDS = [
-  'intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda',
-  'reff', 'refrain', 'pre-chorus', 'post-chorus', 'solo', 'musik',
-  'instrumental', 'hook', 'drop', 'ending', 'ending tag',
+ *  tanpa opsi MIDI (parsePresetCueLine) — semua section + label patch. */
+export const PRESET_CUE_SECTION_KEYWORDS = dedupe([
+  ...STRUCTURE_SECTION_KEYWORDS,
+  'hook', 'drop', 'ending', 'ending tag',
   'keys', 'keyboard', 'guitar', 'gitar',
-];
+]);
 
 /* ------------------------------------------------------------------
  * 4. CHORD
@@ -135,73 +148,94 @@ export const NON_DISPLAY_INSTRUMENT_CUES = [
  * 6. INSTRUMEN
  * ------------------------------------------------------------------
  * Kata kunci instrumen yang dikenali parser (highlight inline
- * "Gitar: teks", "(Sax)", "Cue: (Sax)", dst).
+ * "Gitar: teks", "(Sax)", "Cue: (Sax)", dst), dikelompokkan per keluarga.
  */
 export const INSTRUMENT_KEYWORDS = [
+  // senar (strings)
   'gitar', 'guitar', 'bass', 'ukulele', 'mandolin', 'sape',
+  // keyboard
   'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer',
   'pianika', 'melodika', 'epiano',
+  // brass
   'brass', 'horn section', 'horns', 'trombone', 'tuba', 'euphonium', 'cornet',
+  // woodwind
   'saxophone', 'saksofon', 'sax', 'saxo', 'saxofon', 'trumpet', 'terompet',
   'flute', 'suling', 'clarinet', 'klarinet', 'bansi',
+  // strings orkestra
   'violin', 'biola', 'cello', 'kontrabas', 'strings',
+  // vokal
   'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
+  // perkusi & ritmis
   'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas',
   'rebana',
+  // tradisional
   'kenong', 'gamelan', 'kendang', 'gong', 'angklung', 'rebab',
+  // efek/lain-lain
   'bell', 'bell pads', 'pads',
 ];
 
 /** Suffix deskriptor yang digabung ke label instrumen (mis. "Piano Warm"). */
 export const INSTRUMENT_DESCRIPTOR_SUFFIXES = [
+  // distorsi & waveforms
   'dist', 'distortion', 'saw', 'sawtooth', 'square', 'triangle', 'pulse',
-  'sine', 'wave', 'pad', 'warm', 'bright', 'dark', 'clean', 'mono', 'stereo',
-  'ambient', 'pluck', 'sub', 'noise', 'perc', 'percussion', 'stac', 'staccato',
+  'sine', 'wave',
+  // karakter suara
+  'pad', 'warm', 'bright', 'dark', 'clean', 'ambient', 'pluck', 'sub', 'noise',
+  // stereo & teknik
+  'mono', 'stereo', 'perc', 'percussion', 'stac', 'staccato',
 ];
 
 /* ------------------------------------------------------------------
  * 7. AUTOCOMPLETION DI EDITOR
  * ------------------------------------------------------------------
- */
-
-/**
  * Entri metadata yang ditawarkan autocompletion — DITURUNKAN dari
  * METADATA_KEYS + MODULATION_KEYWORDS di atas, sehingga autocomplete dan
  * parser SELALU memakai daftar key yang sama.
- *   detail : deskripsi singkat di popup (override per-key, boleh kosong)
- *   info   : penjelasan panjang (override per-key, boleh kosong)
+ * Tabel di bawah hanya menyimpan deskripsi popup per key (boleh dikosongkan);
+ * key tanpa entri tetap ditawarkan tanpa deskripsi.
  */
+
+/** Deskripsi yang dipakai beberapa key sekaligus (sinonim). */
+const DETAIL_PATCH = {
+  detail: 'Patch keyboard',
+  info: 'Contoh: Patch: Stage Piano | Layer: Warm Pad',
+};
+const DETAIL_INSTRUMENT = {
+  detail: 'Label instrumen',
+  info: 'Menandai instrumen yang bermain di bagian ini.',
+};
+const DETAIL_MODULATION = {
+  detail: 'Ganti key di tengah lagu',
+  info: 'Chord ikut ditranspose. Contoh: Modulation: G',
+};
+const DETAIL_CUE = {
+  detail: 'Catatan perform',
+  info: 'Contoh: Cue: Drum masuk di bar 9',
+};
+const DETAIL_INTENSITAS = { detail: 'Tingkat intensitas', info: '' };
+const DETAIL_CATATAN = { detail: 'Catatan aransemen', info: '' };
+const DETAIL_FEEL = {
+  detail: 'Feel/groove',
+  info: 'Contoh: Feel: Half-time',
+};
+const DETAIL_FX = { detail: 'Efek', info: '' };
+
 const AUTOCOMPLETE_METADATA_DETAILS = {
-  patch: {
-    detail: 'Patch keyboard',
-    info: 'Contoh: Patch: Stage Piano | Layer: Warm Pad',
-  },
-  preset: { detail: 'Preset keyboard', info: '' },
-  instrument: {
-    detail: 'Label instrumen',
-    info: 'Menandai instrumen yang bermain di bagian ini.',
-  },
-  instrumen: {
-    detail: 'Label instrumen',
-    info: 'Menandai instrumen yang bermain di bagian ini.',
-  },
-  modulation: {
-    detail: 'Ganti key di tengah lagu',
-    info: 'Chord ikut ditranspose. Contoh: Modulation: G',
-  },
-  cue: {
-    detail: 'Catatan perform',
-    info: 'Contoh: Cue: Drum masuk di bar 9',
-  },
-  intensitas: { detail: 'Tingkat intensitas', info: '' },
-  intensity: { detail: 'Tingkat intensitas', info: '' },
-  feel: {
-    detail: 'Feel/groove',
-    info: 'Contoh: Feel: Half-time',
-  },
-  fx: { detail: 'Efek', info: '' },
-  notes: { detail: 'Catatan aransemen', info: '' },
-  catatan: { detail: 'Catatan aransemen', info: '' },
+  patch: DETAIL_PATCH,
+  preset: DETAIL_PATCH,
+  sound: DETAIL_PATCH,
+  tone: DETAIL_PATCH,
+  instrument: DETAIL_INSTRUMENT,
+  instrumen: DETAIL_INSTRUMENT,
+  modulation: DETAIL_MODULATION,
+  'key change': DETAIL_MODULATION,
+  cue: DETAIL_CUE,
+  intensitas: DETAIL_INTENSITAS,
+  intensity: DETAIL_INTENSITAS,
+  notes: DETAIL_CATATAN,
+  catatan: DETAIL_CATATAN,
+  feel: DETAIL_FEEL,
+  fx: DETAIL_FX,
 };
 
 export const AUTOCOMPLETE_METADATA = [
@@ -218,4 +252,4 @@ export const AUTOCOMPLETE_METADATA = [
  * INSTRUMENT_KEYWORDS di atas, sehingga autocomplete dan parser SELALU
  * memakai kata kunci yang sama (dimasukkan sebagai "Nama: ").
  */
-export const AUTOCOMPLETE_INSTRUMENTS = INSTRUMENT_KEYWORDS.map(titleCaseKeyword);
+export const AUTOCOMPLETE_INSTRUMENTS = dedupe(INSTRUMENT_KEYWORDS.map(titleCaseKeyword));
