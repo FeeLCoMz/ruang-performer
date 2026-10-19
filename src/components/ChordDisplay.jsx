@@ -38,6 +38,29 @@ const getSectionIcon = (label = '') => {
   return hit ? hit.icon : '🎵';
 };
 
+/**
+ * Gaya chord yang bisa dipilih dari panel lirik.
+ * Satu pilihan untuk SEMUA chord — berbeda dengan tiga flag lama
+ * (showChordNumbers/showJazzChords/showSimpleChords) yang saling menimpa
+ * dan bisa aktif bersamaan.
+ */
+export const CHORD_STYLES = {
+  DEFAULT: 'DEFAULT',
+  SIMPLE: 'SIMPLE',
+  JAZZ: 'JAZZ',
+  NUMBER: 'NUMBER',
+};
+
+export const CHORD_STYLE_OPTIONS = [
+  { value: CHORD_STYLES.DEFAULT, label: 'Default' },
+  { value: CHORD_STYLES.SIMPLE, label: 'Simple' },
+  { value: CHORD_STYLES.JAZZ, label: 'Jazz' },
+  { value: CHORD_STYLES.NUMBER, label: 'Angka' },
+];
+
+export const normalizeChordStyle = (value, fallback = CHORD_STYLES.DEFAULT) =>
+  CHORD_STYLE_OPTIONS.some((option) => option.value === value) ? value : fallback;
+
 const getInstrumentTokenClass = (label = '') => {
   const normalized = String(label || '').trim().toLowerCase();
   if (!normalized) return 'cd-instrument-token--default';
@@ -60,6 +83,9 @@ const ChordDisplayBase = memo(function ChordDisplay({
     showChordNumbers = false,
     showJazzChords = false,
     showSimpleChords = false,
+    // Gaya chord tunggal (Default | Simple | Jazz | Angka). Bila kosong,
+    // fallback ke flag lama supaya pemakai lama tetap jalan.
+    chordStyle = '',
     keySignature = 'C',
     onTimestampClick,
     onTimestampPause,
@@ -92,10 +118,21 @@ const ChordDisplayBase = memo(function ChordDisplay({
       .join(' | ');
   };
 
+  const resolvedChordStyle = chordStyle
+    ? normalizeChordStyle(chordStyle)
+    : (showChordNumbers
+      ? CHORD_STYLES.NUMBER
+      : showJazzChords
+        ? CHORD_STYLES.JAZZ
+        : showSimpleChords
+          ? CHORD_STYLES.SIMPLE
+          : CHORD_STYLES.DEFAULT);
+  const showNumberNotation = resolvedChordStyle === CHORD_STYLES.NUMBER;
+
   const formatChordToken = (token) => {
-    if (showChordNumbers) return chordTextToNumberText(token, keySignature);
-    if (showJazzChords) return chordTextToJazzText(token);
-    if (showSimpleChords) return chordTextToSimpleText(token);
+    if (resolvedChordStyle === CHORD_STYLES.NUMBER) return chordTextToNumberText(token, keySignature);
+    if (resolvedChordStyle === CHORD_STYLES.JAZZ) return chordTextToJazzText(token);
+    if (resolvedChordStyle === CHORD_STYLES.SIMPLE) return chordTextToSimpleText(token);
     return token;
   };
 
@@ -148,7 +185,9 @@ const ChordDisplayBase = memo(function ChordDisplay({
 
   // --- Hooks (must all run before any early return, per the Rules of Hooks) ---
   const lines = useMemo(() => song?.lyrics ? song.lyrics.split(/\r?\n/) : [], [song?.lyrics]);
-  const effectiveTranspose = showChordNumbers ? 0 : transpose;
+  // Nada angka relatif terhadap key, jadi transpose tidak boleh ikut diterapkan
+  // dua kali.
+  const effectiveTranspose = showNumberNotation ? 0 : transpose;
   // Parsing the whole lyric is the expensive part of a render, and in the
   // editor this component re-renders on every keystroke. Memoising on the
   // actual inputs keeps typing cheap: the text still changes per keystroke, but

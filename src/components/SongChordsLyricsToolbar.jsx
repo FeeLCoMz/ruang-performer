@@ -1,6 +1,7 @@
 import React from 'react';
 import AutoScrollControl from './AutoScrollControl.jsx';
 import { AUTO_SCROLL_MODES, normalizeAutoScrollMode } from '../utils/autoscrollSpeedUtils.js';
+import { CHORD_STYLE_OPTIONS, normalizeChordStyle } from './ChordDisplay.jsx';
 
 /**
  * SongChordsLyricsToolbar
@@ -11,6 +12,8 @@ import { AUTO_SCROLL_MODES, normalizeAutoScrollMode } from '../utils/autoscrollS
  * dan panel media. Kontrol lama lain (gaya chord, YouTube) juga sudah dihapus.
  *
  * Mode lirik: satu tombol toggle — aktif = hanya lirik (chord disembunyikan).
+ * Gaya chord: satu pilihan (Default | Simple | Jazz | Angka) menggantikan tiga
+ * switch lama yang bisa aktif bersamaan.
  */
 export default function SongChordsLyricsToolbar({
   // Autoscroll lirik
@@ -31,6 +34,9 @@ export default function SongChordsLyricsToolbar({
   // Mode tampilan: 'BOTH' (lirik+chord) | 'LYRICS' | 'CHORDS'
   displayMode = 'BOTH',
   setDisplayMode,
+  // Gaya chord: 'DEFAULT' | 'SIMPLE' | 'JAZZ' | 'NUMBER'
+  chordStyle = 'DEFAULT',
+  setChordStyle,
     // Tempo (dipakai indikator autoscroll musik saja)
     tempo,
   }) {
@@ -39,8 +45,10 @@ export default function SongChordsLyricsToolbar({
   const clampFontScale = (value) => Math.min(MAX_FONT_SCALE, Math.max(MIN_FONT_SCALE, Number(value) || 1));
 
   const autoScrollMode = normalizeAutoScrollMode(autoScrollModeProp || AUTO_SCROLL_MODES.MUSICAL);
+  const activeChordStyle = normalizeChordStyle(chordStyle);
 
   return (
+    <>
     <div className="song-lyrics-toolbar song-lyrics-toolbar--normal">
       {/* Autoscroll lirik — shared AutoScrollControl */}
       <AutoScrollControl
@@ -67,7 +75,6 @@ export default function SongChordsLyricsToolbar({
         >
           Lirik
         </button>
-
 
         <span className="song-lyrics-toolbar-divider" aria-hidden="true" />
 
@@ -127,5 +134,30 @@ export default function SongChordsLyricsToolbar({
       {/* Navigasi setlist dipindah ke SetlistNavFooter (sticky footer di atas
           bottom nav, mobile) — lihat SetlistNavFooter.jsx */}
     </div>
+
+    {/* Baris baru khusus gaya chord: pilihan tunggal (segmented control) supaya
+        jelas hanya satu gaya yang aktif — mis. Simple + Jazz tidak bisa menyala
+        bareng. Dipisah dari baris toolbar agar kapsul tampilan tidak melebar. */}
+    <div className="song-lyrics-chord-style-row">
+      <div className="song-lyrics-chord-style" role="group" aria-label="Gaya chord">
+        <span className="song-lyrics-chord-style-label">Gaya chord</span>
+        <div className="song-lyrics-chord-style-options">
+          {CHORD_STYLE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={`song-lyrics-chord-style-btn${activeChordStyle === option.value ? ' is-active' : ''}`}
+              onClick={() => setChordStyle?.(option.value)}
+              aria-pressed={activeChordStyle === option.value}
+              disabled={typeof setChordStyle !== 'function'}
+              title={`Gaya chord: ${option.label}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+    </>
   );
 }

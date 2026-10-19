@@ -57,6 +57,29 @@ describe('ChordDisplay lyrics mode', () => {
     document.body.removeChild(container);
   });
 
+  test('applies the selected chord style: Simple, Jazz, and Angka', () => {
+    const renderChords = (props) => {
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const root = createRoot(container);
+      act(() => {
+        root.render(<ChordDisplay song={{ lyrics: '| Cmaj7 | Am7 | G |' }} showChords={true} {...props} />);
+      });
+      const text = container.textContent;
+      act(() => {
+        root.unmount();
+      });
+      document.body.removeChild(container);
+      return text;
+    };
+
+    expect(renderChords({ chordStyle: 'DEFAULT' })).toContain('Cmaj7');
+    expect(renderChords({ chordStyle: 'SIMPLE' })).toContain('C');
+    expect(renderChords({ chordStyle: 'SIMPLE' })).not.toContain('Cmaj7');
+    expect(renderChords({ chordStyle: 'JAZZ' })).toContain('Cmaj9');
+    expect(renderChords({ chordStyle: 'NUMBER', keySignature: 'C' })).toContain('1maj7');
+  });
+
   test('renders preset cue badge inline above the following chord line', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

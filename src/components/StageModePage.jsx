@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import ChordDisplay from './ChordDisplay.jsx';
+import ChordDisplay, { normalizeChordStyle } from './ChordDisplay.jsx';
 import AutoScrollControl from './AutoScrollControl.jsx';
+import { CHORD_STYLE_EVENT, getStoredChordStyle } from '../utils/chordStyleStore.js';
 import TransposeKeyControl from './TransposeKeyControl.jsx';
 import SongMediaPanel from './SongMediaPanel.jsx';
 import { useSongFetch } from '../hooks/useSongFetch.js';
@@ -356,6 +357,13 @@ export default function StageModePage({
   // Bila user sudah mengubah transpose manual untuk lagu ini, auto-apply
   // transpose dari setlist tidak boleh menimpanya. Flag direset saat pindah lagu.
   const userAdjustedTransposeRef = useRef(false);
+  // Gaya chord mengikuti preferensi panel lirik (SongChordsPage).
+  const [chordStyle, setChordStyle] = useState(() => getStoredChordStyle(normalizeChordStyle));
+  useEffect(() => {
+    const sync = (event) => setChordStyle(normalizeChordStyle(event?.detail));
+    window.addEventListener(CHORD_STYLE_EVENT, sync);
+    return () => window.removeEventListener(CHORD_STYLE_EVENT, sync);
+  }, []);
   const [fontScale, setFontScale] = useState(() => {
     const stored = Number(readStored(STORAGE_KEYS.STAGE_FONT_SCALE));
     return Number.isFinite(stored) && stored >= 0.85 && stored <= 3 ? stored : 1.2;
@@ -869,6 +877,7 @@ export default function StageModePage({
             fontScale={fontScale}
             currentBeat={0}
             showChords
+            chordStyle={chordStyle}
             keySignature={song?.key || 'C'}
             isPlaying={isYoutubePlaying}
             onTimestampClick={(seconds) => {

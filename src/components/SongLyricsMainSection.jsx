@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import SongChordsLyricsToolbar from '../components/SongChordsLyricsToolbar.jsx';
 import SongChordsLyricsDisplay from '../components/SongChordsLyricsDisplay.jsx';
 import { STORAGE_KEYS } from '../utils/storageKeys.js';
+import { normalizeChordStyle } from './ChordDisplay.jsx';
+import { CHORD_STYLE_EVENT, getStoredChordStyle, setStoredChordStyle } from '../utils/chordStyleStore.js';
 
 const MIN_FONT_SCALE = 0.85;
 const MAX_FONT_SCALE = 2.5;
@@ -90,6 +92,25 @@ export default function SongLyricsMainSection({
       return 'BOTH';
     }
   });
+  // Gaya chord panel lirik: Default | Simple | Jazz | Angka (persist lintas
+  // sesi). Satu pilihan menggantikan tiga switch lama yang bisa aktif bareng.
+  const [chordStyle, setChordStyleState] = useState(() => getStoredChordStyle(normalizeChordStyle));
+
+  const setChordStyle = (next) => {
+    const value = normalizeChordStyle(next);
+    setChordStyleState(value);
+    setStoredChordStyle(value);
+  };
+
+  // Pilihan gaya bisa datang dari luar (mis. panel lain di halaman yang sama)
+  // — ikuti perubahannya supaya semua panel menampilkan gaya yang sama.
+  useEffect(() => {
+    const sync = (event) => setChordStyleState(
+      normalizeChordStyle(event?.detail || getStoredChordStyle(normalizeChordStyle))
+    );
+    window.addEventListener(CHORD_STYLE_EVENT, sync);
+    return () => window.removeEventListener(CHORD_STYLE_EVENT, sync);
+  }, []);
 
   const setFontScale = (next) => {
     const clamped = clampFontScale(next);
@@ -151,6 +172,8 @@ export default function SongLyricsMainSection({
         setScreenLocked={setScreenLocked}
         displayMode={displayMode}
         setDisplayMode={setDisplayMode}
+        chordStyle={chordStyle}
+        setChordStyle={setChordStyle}
       />
 
         {loading ? (
@@ -171,6 +194,7 @@ export default function SongLyricsMainSection({
               showChordNumbers={showChordNumbers}
               showJazzChords={showJazzChords}
               showSimpleChords={showSimpleChords}
+              chordStyle={chordStyle}
               keySignature={keySignature}
               zoom={zoom}
               setZoom={setZoom}

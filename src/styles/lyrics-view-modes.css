@@ -117,6 +117,108 @@
   }
 }
 
+/* Gaya chord punya baris sendiri di bawah toolbar, bukan di dalam kapsul
+   tampilan: empat opsi terlalu lebar untuk pill satu baris. */
+.song-lyrics-chord-style-row {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* Gaya chord: segmented control — satu gaya aktif pada satu waktu
+   (Default | Simple | Jazz | Angka). */
+.song-lyrics-chord-style {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
+  box-sizing: border-box;
+  height: var(--toolbar-capsule-h, 32px);
+}
+
+.song-lyrics-chord-style-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.song-lyrics-chord-style-options {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-bg) 70%, transparent);
+}
+
+.song-lyrics-chord-style-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--toolbar-inner-h, 26px);
+  height: var(--toolbar-inner-h, 26px);
+  padding: 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.song-lyrics-chord-style-btn:hover:not(:disabled):not(.is-active) {
+  background: rgba(127, 127, 127, 0.15);
+  color: var(--text-primary);
+}
+
+.song-lyrics-chord-style-btn.is-active {
+  background: var(--primary-accent);
+  color: #fff;
+}
+
+.song-lyrics-chord-style-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (max-width: 768px) {
+  /* Di HP baris ini memakai lebar penuh: label menyusut, opsi mengisi sisa
+     ruang dengan tombol yang sama lebar agar mudah disentuh. */
+  .song-lyrics-chord-style {
+    width: 100%;
+    height: var(--toolbar-capsule-h, 30px);
+    padding: 2px 3px 2px 9px;
+    gap: 6px;
+  }
+
+  .song-lyrics-chord-style-label {
+    font-size: 0.6rem;
+  }
+
+  .song-lyrics-chord-style-options {
+    flex: 1 1 auto;
+  }
+
+  .song-lyrics-chord-style-btn {
+    flex: 1 1 0;
+    padding: 0 6px;
+    font-size: 0.68rem;
+  }
+}
+
 /* Tombol .btn di dalam grup tampilan (Fokus, Kunci) diseragamkan dengan
    gaya tombol kapsul autoscroll: ghost pill transparan, tinggi 26px.
    btn-secondary/btn-primary dari class global dibuang di sini. */

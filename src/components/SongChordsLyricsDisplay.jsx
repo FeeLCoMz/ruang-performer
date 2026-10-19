@@ -69,6 +69,8 @@ export default function SongChordsLyricsDisplay({
   showChordNumbers,
   showJazzChords,
   showSimpleChords,
+  // Gaya chord tunggal dari toolbar panel lirik (Default|Simple|Jazz|Angka).
+  chordStyle = '',
   keySignature,
   autoScrollActive,
   scrollSpeed,
@@ -362,7 +364,7 @@ export default function SongChordsLyricsDisplay({
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, [autoScrollActive, autoScrollMode, manualSpeedLevel, normalizedBpm, normalizedScrollSpeed, beatsPerBar, lyricsDisplayRef, setAutoScrollActive, song?.id, showChords, showChordNumbers, showJazzChords, showSimpleChords, zoom]);
+  }, [autoScrollActive, autoScrollMode, manualSpeedLevel, normalizedBpm, normalizedScrollSpeed, beatsPerBar, lyricsDisplayRef, setAutoScrollActive, song?.id, showChords, showChordNumbers, showJazzChords, showSimpleChords, chordStyle, zoom]);
 
   // Indikator ketukan visual saat autoscroll nonaktif.
   useEffect(() => {
@@ -445,6 +447,7 @@ export default function SongChordsLyricsDisplay({
         showChordNumbers={showChordNumbers}
         showJazzChords={showJazzChords}
         showSimpleChords={showSimpleChords}
+        chordStyle={chordStyle}
         keySignature={keySignature || song?.key || 'C'}
         isPlaying={isYoutubePlaying}
         focusSectionKey={focusMode ? activeFocusSection : null}
