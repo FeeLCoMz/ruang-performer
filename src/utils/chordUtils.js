@@ -434,7 +434,9 @@ const isInlineCueMarkToken = (token) => {
   const trimmed = token.trim();
   if (!trimmed) return false;
 
-  const raw = trimmed.replace(/^\((.*)\)$/, '$1').trim();
+  // Strip kurung biasa dan kurung siku: keyword cue mark boleh ditulis
+  // "(Stop)" maupun "[Stop]" — keduanya harus terdeteksi.
+  const raw = trimmed.replace(/^[\[(](.*)[\])}]$/, '$1').trim();
   if (!raw) return false;
 
   if (isCueMarkKeyword(raw)) {

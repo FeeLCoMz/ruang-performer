@@ -132,7 +132,7 @@
 ## 5. CUE MARKS (INLINE)
 ## ----------------------
 # CUE_MARK_KEYWORDS — ditandai sebagai cue saat inline dalam baris chord/lirik
-# (biasanya dalam kurung):  (Stop), (Aksen), (Hit), (Tutti)
+# dalam kurung biasa atau kurung siku:  (Stop), [Stop], (Aksen), [Hit], [Tutti]
 #   tutti, hit, aksen, stop, break, bbreak, fill-in, fill in,
 #   fade in, fade out, fade in/out, ritardando, rit.
 
