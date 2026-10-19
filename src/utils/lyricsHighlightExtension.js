@@ -213,30 +213,125 @@ export const lyricsHighlighting = ViewPlugin.fromClass(
   { decorations: (instance) => instance.decorations }
 );
 
+/** Class on the editor wrapper; every popup rule is scoped to it. */
+export const LYRICS_EDITOR_SCOPE_CLASS = 'song-lyrics-codemirror';
+
+/**
+ * Popup autocomplete lirik/chord.
+ *
+ * Hanya memuat aturan untuk tooltip/popup — gaya badan editor dipisah ke
+ * `lyricsEditorTheme` supaya popup tidak mewarisi `fontSize` atau background
+ * transparan dari editor (itu sebabnya popup lama nyaris tak terbaca).
+ */
+export const lyricsAutocompleteTheme = EditorView.theme({
+  '.cm-tooltip': {
+    border: '1px solid var(--border-color)',
+    borderRadius: '8px',
+    backgroundColor: 'var(--card-bg)',
+    color: 'var(--text-primary)',
+    boxShadow: '0 10px 24px rgba(2, 6, 23, 0.45)',
+    overflow: 'hidden',
+    fontSize: '13px',
+    lineHeight: '1.4',
+  },
+  '.cm-tooltip.cm-tooltip-autocomplete': {
+    // Jangan melebar melewati layar pada HP.
+    maxWidth: 'min(340px, calc(100vw - 24px))',
+  },
+  '.cm-tooltip.cm-tooltip-autocomplete > ul': {
+    fontFamily: '"Segoe UI", system-ui, -apple-system, sans-serif',
+    padding: '4px',
+    maxHeight: '240px',
+  },
+  '.cm-tooltip.cm-tooltip-autocomplete > ul > li': {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 10px',
+    borderRadius: '6px',
+    color: 'var(--text-primary)',
+    lineHeight: '1.35',
+    cursor: 'pointer',
+  },
+  '.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]': {
+    backgroundColor: 'color-mix(in srgb, var(--primary-accent) 22%, transparent)',
+    color: 'var(--text-primary)',
+  },
+  '.cm-tooltip-autocomplete .cm-completionLabel': {
+    color: 'var(--text-primary)',
+    fontSize: '0.82rem',
+    fontWeight: '600',
+    flex: '0 0 auto',
+  },
+  '.cm-tooltip-autocomplete .cm-completionMatchedText': {
+    color: 'var(--primary-accent)',
+    fontWeight: '800',
+    textDecoration: 'none',
+  },
+  '.cm-tooltip-autocomplete .cm-completionDetail': {
+    marginLeft: 'auto',
+    color: 'var(--text-secondary)',
+    fontStyle: 'normal',
+    fontSize: '0.7rem',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  '.cm-tooltip-autocomplete .cm-completionIcon': {
+    opacity: '0.7',
+    width: '1.1em',
+    margin: '0',
+  },
+  '.cm-tooltip-autocomplete .cm-completionIcon-keyword::after': { content: '"§"' },
+  '.cm-tooltip-autocomplete .cm-completionIcon-property::after': { content: '"≡"' },
+  '.cm-tooltip-autocomplete .cm-completionIcon-variable::after': { content: '"♪"' },
+  '.cm-tooltip.cm-completionInfo': {
+    padding: '8px 10px',
+    marginLeft: '6px',
+    maxWidth: '240px',
+    backgroundColor: 'var(--secondary-bg)',
+    border: '1px solid var(--border-color)',
+    borderRadius: '8px',
+    color: 'var(--text-secondary)',
+    fontSize: '0.72rem',
+  },
+  '.cm-tooltip-autocomplete > ul > li .cm-completionInfo': {
+    color: 'var(--text-secondary)',
+  },
+  '.cm-tooltip .cm-scroll': { scrollbarWidth: 'thin' },
+});
+
 /**
  * CodeMirror theme tuned to the app's CSS variables. Each `cm-lyr-*` class is
  * styled from src/styles/lyrics-editor.css.
+ *
+ * `dark: true` matters for plugins, not looks: CodeMirror only injects its
+ * built-in dark tooltip rules (background/border on non-themed tooltips) for
+ * dark themes, so without it the autocomplete popup kept a light default skin.
  */
-export const lyricsEditorTheme = EditorView.theme({
-  '&': { fontSize: '14px', backgroundColor: 'transparent' },
-  '.cm-content': {
-    fontFamily: '"Courier New", "JetBrains Mono", Courier, monospace',
-    lineHeight: '1.6',
-    padding: '12px 0',
-    caretColor: 'var(--primary-accent)',
+export const lyricsEditorTheme = EditorView.theme(
+  {
+    '&': { fontSize: '14px', backgroundColor: 'transparent' },
+    '.cm-content': {
+      fontFamily: '"Courier New", "JetBrains Mono", Courier, monospace',
+      lineHeight: '1.6',
+      padding: '12px 0',
+      caretColor: 'var(--primary-accent)',
+    },
+    '.cm-gutters': {
+      backgroundColor: 'transparent',
+      border: 'none',
+      color: 'var(--text-secondary)',
+      paddingRight: '8px',
+    },
+    '.cm-activeLine': { backgroundColor: 'rgba(59, 130, 246, 0.07)' },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'transparent',
+      color: 'var(--primary-accent)',
+      fontWeight: '700',
+    },
+    '&.cm-focused': { outline: 'none' },
+    '.cm-selectionBackground, ::selection': { backgroundColor: 'rgba(59, 130, 246, 0.25)' },
   },
-  '.cm-gutters': {
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: 'var(--text-secondary)',
-    paddingRight: '8px',
-  },
-  '.cm-activeLine': { backgroundColor: 'rgba(59, 130, 246, 0.07)' },
-  '.cm-activeLineGutter': {
-    backgroundColor: 'transparent',
-    color: 'var(--primary-accent)',
-    fontWeight: '700',
-  },
-  '&.cm-focused': { outline: 'none' },
-  '.cm-selectionBackground, ::selection': { backgroundColor: 'rgba(59, 130, 246, 0.25)' },
-});
+  { dark: true }
+);

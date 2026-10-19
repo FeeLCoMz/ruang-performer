@@ -21,6 +21,8 @@ export const STORAGE_KEYS = {
   LYRICS_DISPLAY_MODE: 'ruangperformer_lyrics_display_mode_v1',
   // Switch tampilan chord di panel lirik ('1' = tampil, '0' = sembunyikan).
   LYRICS_SHOW_CHORDS: 'ruangperformer_lyrics_show_chords_v1',
+  // Gaya chord panel lirik: 'DEFAULT' | 'SIMPLE' | 'JAZZ' | 'NUMBER'.
+  LYRICS_CHORD_STYLE: 'ruangperformer_lyrics_chord_style_v1',
   // Stage Mode: tema kontras tinggi untuk panggung (toggle di app header).
   STAGE_MODE: 'ruangperformer_stage_mode_v1',
   // Stage Mode: pilihan band, setlist, dan lagu aktif (persist lintas sesi).

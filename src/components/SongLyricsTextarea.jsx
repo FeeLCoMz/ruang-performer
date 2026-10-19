@@ -5,7 +5,12 @@ import { Prec } from "@codemirror/state";
 import { history, historyKeymap, defaultKeymap, indentWithTab, undo, redo } from "@codemirror/commands";
 import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
 import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
-import { lyricsHighlighting, lyricsEditorTheme } from "../utils/lyricsHighlightExtension.js";
+import {
+  lyricsHighlighting,
+  lyricsEditorTheme,
+  lyricsAutocompleteTheme,
+  LYRICS_EDITOR_SCOPE_CLASS,
+} from "../utils/lyricsHighlightExtension.js";
 import { lyricsCompletionSource } from "../utils/lyricsCompletion.js";
 const PLACEHOLDER =
   "Masukkan lirik dan chord...\nContoh:\n[C]Amazing grace how [F]sweet the [C]sound";
@@ -87,6 +92,11 @@ export default function SongLyricsTextarea({
         override: [lyricsCompletionSource],
         activateOnTyping: true,
         closeOnBlur: true,
+        // Batasi tinggi daftar di layar kecil; detail tampil di tooltip info
+        // (bukan di setiap baris) supaya popup tidak melebar.
+        maxRenderedOptions: 40,
+        defaultKeymap: true,
+        icons: true,
       }),
       // Enter keeps the default newline behaviour; no custom Enter binding here.
       // searchKeymap provides Ctrl+F / Ctrl+H / F3 navigation.
@@ -101,6 +111,8 @@ export default function SongLyricsTextarea({
       ),
       lyricsHighlighting,
       lyricsEditorTheme,
+      // Popup autocomplete (tooltip) memakai tema gelap aplikasi.
+      lyricsAutocompleteTheme,
       EditorView.lineWrapping,
       EditorView.contentAttributes.of({
         "aria-label": "Editor lirik dan chord",
@@ -228,7 +240,7 @@ export default function SongLyricsTextarea({
         autoFocus={false}
         theme="none"
         placeholder={PLACEHOLDER}
-        className="song-lyrics-textarea song-lyrics-codemirror"
+        className={`song-lyrics-textarea ${LYRICS_EDITOR_SCOPE_CLASS}`}
         // No `height` prop: the responsive CSS owns the editor height, so the
         // mobile breakpoints can shrink it. A hardcoded 500px here overrode them.
         editable={!disabled}

@@ -543,6 +543,111 @@ body.dark-mode .cm-lyr-timestamp {
   opacity: 0.65;
 }
 
+/* ---- Autocomplete popup (inline syntax help) ----
+   Tooltip dirender di dalam root `.song-lyrics-codemirror`, jadi aturan di sini
+   hanya menyentuh popup editor lirik. Warna memakai token tema supaya tetap
+   terbaca di dark mode dan tidak mewarisi background transparan editor. */
+.song-lyrics-codemirror .cm-tooltip {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
+  z-index: 40;
+}
+
+.song-lyrics-codemirror .cm-tooltip.cm-tooltip-autocomplete {
+  overflow: hidden;
+}
+
+.song-lyrics-codemirror .cm-tooltip.cm-tooltip-autocomplete > ul {
+  max-height: 240px;
+  padding: 4px;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--card-bg);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.song-lyrics-codemirror .cm-tooltip.cm-tooltip-autocomplete > ul > li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.song-lyrics-codemirror .cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: color-mix(in srgb, var(--primary-accent) 24%, transparent);
+  color: var(--text-primary);
+}
+
+.song-lyrics-codemirror .cm-completionIcon {
+  width: 1.1em;
+  margin: 0;
+  opacity: 0.75;
+}
+
+.song-lyrics-codemirror .cm-completionIcon-keyword::after { content: "§"; }
+.song-lyrics-codemirror .cm-completionIcon-property::after { content: "≡"; }
+.song-lyrics-codemirror .cm-completionIcon-variable::after { content: "♪"; }
+
+.song-lyrics-codemirror .cm-completionLabel {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.song-lyrics-codemirror .cm-completionMatchedText {
+  color: var(--primary-accent);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.song-lyrics-codemirror .cm-completionDetail {
+  margin-left: auto;
+  padding-left: 8px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-style: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Panel info (opsi yang sedang disorot): latar solid, teks sekunder. */
+.song-lyrics-codemirror .cm-tooltip.cm-completionInfo {
+  margin-left: 6px;
+  max-width: 240px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--secondary-bg);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+/* Layar sempit: popup dibatasi lebar viewport dan detail disembunyikan agar
+   label opsi tetap terbaca utuh. */
+@media (max-width: 640px) {
+  .song-lyrics-codemirror .cm-tooltip.cm-tooltip-autocomplete {
+    max-width: calc(100vw - 16px);
+  }
+
+  .song-lyrics-codemirror .cm-tooltip.cm-tooltip-autocomplete > ul {
+    max-height: 200px;
+  }
+
+  .song-lyrics-codemirror .cm-tooltip-autocomplete .cm-completionDetail,
+  .song-lyrics-codemirror .cm-tooltip.cm-completionInfo {
+    display: none;
+  }
+}
+
 /* Lyrics editor workspace: editor + live preview side by side */
 .lyrics-editor-workspace {
   display: flex;
