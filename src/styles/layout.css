@@ -103,6 +103,12 @@
   letter-spacing: 0.05em;
 }
 
+/* Wrapper tombol Stage Mode di sidebar */
+.sidebar-stage-mode {
+  padding: 0;
+  margin-top: var(--spacing-sm);
+}
+
 .sidebar-nav-item {
   display: flex;
   align-items: center;

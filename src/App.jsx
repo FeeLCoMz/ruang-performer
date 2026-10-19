@@ -224,6 +224,8 @@ function AppContent() {
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
+          stageMode={stageMode}
+          onToggleStageMode={setStageMode}
         />
         <MobileBottomNav />
         <Toast message={toastMessage} onClose={() => setToastMessage("")} />

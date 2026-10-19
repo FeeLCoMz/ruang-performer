@@ -7,11 +7,61 @@
   flex-shrink: 0;
   font-size: var(--font-size-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
+  /* Clamp: label menyusut mulus di layar sempit tanpa overflow. */
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .stage-mode-btn-icon {
   font-size: var(--font-size-base);
   line-height: 1;
+}
+
+/* Label bisa disembunyikan per breakpoint — ikon tetap fungsional. */
+.stage-mode-btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Layar sangat sempit (<= 360px, mis. iPhone SE): header hanya muat
+   branding + ikon, label disembunyikan agar tidak memaksa wrap. */
+@media (max-width: 360px) {
+  .app-header-mobile .stage-mode-btn .stage-mode-btn-label {
+    display: none;
+  }
+  .app-header-mobile .stage-mode-btn {
+    padding: var(--spacing-xs);
+  }
+}
+
+/* Sidebar desktop: tombol mengisi lebar menu, teks rata kiri selaras item. */
+.sidebar-stage-mode .stage-mode-btn {
+  width: 100%;
+  justify-content: flex-start;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  margin-left: 0;
+}
+
+/* Sidebar saat Stage Mode aktif: tetap terbaca di tema kontras tinggi. */
+body.stage-mode .sidebar-stage-mode .stage-mode-btn.btn-primary {
+  background: rgba(167, 139, 250, 0.18);
+  border-color: var(--primary-accent);
+  color: #ffffff;
+}
+
+/* Sidebar area sempit (tablet, <= 1024px): label diperpendek visualnya
+   dengan ukuran font sedikit lebih kecil supaya satu baris. */
+@media (max-width: 1024px) {
+  .sidebar-stage-mode .stage-mode-btn {
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Touch target minimal 44px di perangkat sentuh (aksesibilitas). */
+@media (hover: none) {
+  .stage-mode-btn {
+    min-height: 44px;
+  }
 }
 
 /* Stage Mode: tema kontras tinggi untuk pencahayaan panggung yang redup. */

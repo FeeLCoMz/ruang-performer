@@ -2,8 +2,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNavItems } from '../hooks/useNavItems.js';
+import StageModeButton from './StageModeButton.jsx';
 
-export default function Sidebar({ isOpen, onClose }) {
+export default function Sidebar({ isOpen, onClose, stageMode, onToggleStageMode }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { items: navItems, isActive } = useNavItems();
@@ -66,6 +67,14 @@ export default function Sidebar({ isOpen, onClose }) {
                 )}
               </button>
             ))}
+          </div>
+
+          {/* Toggle Stage Mode — pintasan ke mode panggung dari menu. */}
+          <div className="sidebar-nav-section">
+            <h3 className="sidebar-nav-title">Performa</h3>
+            <div className="sidebar-stage-mode">
+              <StageModeButton stageMode={stageMode} onToggle={() => onToggleStageMode?.(!stageMode)} />
+            </div>
           </div>
         </nav>
 
