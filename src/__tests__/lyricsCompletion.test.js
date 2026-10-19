@@ -19,12 +19,13 @@ describe('lyricsCompletionOptions', () => {
 
   test('Given metadata keys, Then the syntaxes from the removed help modal are all present', () => {
     // These were the entries in the old "Panduan Metadata Lirik" modal.
+    // "Original Key:" was removed: parser tidak mengenalinya sebagai key
+    // (autocomplete kini diturunkan 1:1 dari METADATA_KEYS + MODULATION_KEYWORDS).
     for (const key of [
       'Patch:',
       'Preset:',
       'Instrument:',
       'Modulation:',
-      'Original Key:',
       'Cue:',
       'Intensitas:',
       'Feel:',

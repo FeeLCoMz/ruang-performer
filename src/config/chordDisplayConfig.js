@@ -44,7 +44,7 @@ export const STRUCTURE_SECTION_KEYWORDS = [
  */
 const titleCaseKeyword = (keyword) => keyword
   .split(/([\s-]+)/)
-  .map((part) => (/^[a-z]/.test(part) ? part[0].toUpperCase() + part.slice(1) : part))
+  .map((part) => (/^[a-z]+$/.test(part) && part.length > 2 ? part[0].toUpperCase() + part.slice(1) : part.toUpperCase()))
   .join('');
 
 export const AUTOCOMPLETE_SECTION_LABELS = STRUCTURE_SECTION_KEYWORDS.map(titleCaseKeyword);
@@ -69,6 +69,7 @@ export const MODULATION_KEYWORDS = ['modulation', 'key change'];
 export const METADATA_KEYS = [
   'patch', 'layer', 'intensitas', 'intensity', 'dynamics', 'dinamik',
   'cue', 'notes', 'catatan',
+  'instrument', 'instrumen',
   'sound', 'tone', 'fx', 'effect', 'effects', 'voicing', 'texture',
   'split', 'zone', 'program', 'preset', 'scene', 'part', 'fill',
   'groove', 'feel',
@@ -164,63 +165,53 @@ export const INSTRUMENT_DESCRIPTOR_SUFFIXES = [
  */
 
 /**
- * Entri metadata yang ditawarkan autocompletion.
- *   label : teks yang ditampilkan & dimasukkan (tanpa "apply" khusus)
- *   detail: deskripsi singkat di popup
- *   info  : penjelasan panjang (boleh kosong)
+ * Entri metadata yang ditawarkan autocompletion — DITURUNKAN dari
+ * METADATA_KEYS + MODULATION_KEYWORDS di atas, sehingga autocomplete dan
+ * parser SELALU memakai daftar key yang sama.
+ *   detail : deskripsi singkat di popup (override per-key, boleh kosong)
+ *   info   : penjelasan panjang (override per-key, boleh kosong)
  */
-export const AUTOCOMPLETE_METADATA = [
-  {
-    label: 'Patch:',
+const AUTOCOMPLETE_METADATA_DETAILS = {
+  patch: {
     detail: 'Patch keyboard',
     info: 'Contoh: Patch: Stage Piano | Layer: Warm Pad',
   },
-  {
-    label: 'Preset:',
-    detail: 'Preset keyboard',
-    info: '',
-  },
-  {
-    label: 'Instrument:',
+  preset: { detail: 'Preset keyboard', info: '' },
+  instrument: {
     detail: 'Label instrumen',
     info: 'Menandai instrumen yang bermain di bagian ini.',
   },
-  {
-    label: 'Modulation:',
+  instrumen: {
+    detail: 'Label instrumen',
+    info: 'Menandai instrumen yang bermain di bagian ini.',
+  },
+  modulation: {
     detail: 'Ganti key di tengah lagu',
     info: 'Chord ikut ditranspose. Contoh: Modulation: G',
   },
-  {
-    label: 'Original Key:',
-    detail: 'Key asli lagu',
-    info: 'Tidak ikut ditranspose.',
-  },
-  {
-    label: 'Cue:',
+  cue: {
     detail: 'Catatan perform',
     info: 'Contoh: Cue: Drum masuk di bar 9',
   },
-  {
-    label: 'Intensitas:',
-    detail: 'Tingkat intensitas',
-    info: '',
-  },
-  {
-    label: 'Feel:',
+  intensitas: { detail: 'Tingkat intensitas', info: '' },
+  intensity: { detail: 'Tingkat intensitas', info: '' },
+  feel: {
     detail: 'Feel/groove',
     info: 'Contoh: Feel: Half-time',
   },
-  {
-    label: 'FX:',
-    detail: 'Efek',
-    info: '',
-  },
-  {
-    label: 'Notes:',
-    detail: 'Catatan aransemen',
-    info: '',
-  },
-];
+  fx: { detail: 'Efek', info: '' },
+  notes: { detail: 'Catatan aransemen', info: '' },
+  catatan: { detail: 'Catatan aransemen', info: '' },
+};
+
+export const AUTOCOMPLETE_METADATA = [
+  ...METADATA_KEYS,
+  ...MODULATION_KEYWORDS,
+].map((keyword) => ({
+  label: `${titleCaseKeyword(keyword)}:`,
+  detail: AUTOCOMPLETE_METADATA_DETAILS[keyword]?.detail || '',
+  info: AUTOCOMPLETE_METADATA_DETAILS[keyword]?.info || '',
+}));
 
 /**
  * Nama instrumen yang ditawarkan autocompletion — DITURUNKAN dari
