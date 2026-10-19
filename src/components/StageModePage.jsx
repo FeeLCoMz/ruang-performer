@@ -183,6 +183,10 @@ export default function StageModePage({
   const [resolvedSetlist, setResolvedSetlist] = useState(null);
   // Menandai setlist detail sedang dimuat (fetchSetListById berjalan).
   const [setlistDetailLoading, setSetlistDetailLoading] = useState(false);
+  // Pesan kegagalan fetch detail setlist — ditampilkan di sheet dengan tombol coba lagi.
+  const [setlistDetailError, setSetlistDetailError] = useState('');
+  // Counter untuk memicu ulang fetch detail (tombol "Coba lagi").
+  const [setlistDetailRetry, setSetlistDetailRetry] = useState(0);
   // Menunda pembukaan sheet daftar lagu sampai detail setlist (urutan lagu)
   // tersedia — dipicu oleh handleSelectSetlist.
   const pendingSongSheetRef = useRef(false);
@@ -202,6 +206,7 @@ export default function StageModePage({
     if (!stageMode || !activeSetlistNeedsDetail || !activeSetlistCandidate?.id) return undefined;
     let cancelled = false;
     setSetlistDetailLoading(true);
+    setSetlistDetailError('');
     apiClient.fetchSetListById(activeSetlistCandidate.id)
       .then((detail) => {
         if (cancelled) return;
@@ -214,14 +219,16 @@ export default function StageModePage({
           setSheetOpen('song');
         }
       })
-      .catch(() => {
-        // Gagal memuat: tutup loading & jangan buka sheet lagu otomatis,
-        // biarkan UI menampilkan pesan kosong (user bisa coba lagi).
+      .catch((err) => {
+        if (cancelled) return;
+        // Gagal memuat: tutup loading, jangan buka sheet lagu otomatis,
+        // dan tampilkan pesan error + tombol coba lagi di sheet.
         pendingSongSheetRef.current = false;
         setSetlistDetailLoading(false);
+        setSetlistDetailError(err?.message || 'Gagal memuat lagu setlist. Periksa koneksi dan coba lagi.');
       });
     return () => { cancelled = true; };
-  }, [stageMode, activeSetlistNeedsDetail, activeSetlistCandidate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stageMode, activeSetlistNeedsDetail, activeSetlistCandidate?.id, setlistDetailRetry]); // eslint-disable-line react-hooks/exhaustive-deps
   const activeSetlist = useMemo(() => {
     if (activeSetlistCandidate && (!activeSetlistNeedsDetail || Array.isArray(activeSetlistCandidate.songs))) {
       return activeSetlistCandidate;
@@ -1184,7 +1191,20 @@ export default function StageModePage({
                       {s.key && <span className="stage-mode-pill">{s.key}</span>}
                     </button>
                   ))}
-                  {!setlistDetailLoading && setlistSongs.length === 0 && (
+                  {!setlistDetailLoading && setlistDetailError && (
+                    <div className="stage-mode-sheet-empty">
+                      <div>{setlistDetailError}</div>
+                      <button
+                        type="button"
+                        className="btn btn-secondary stage-mode-footer-btn"
+                        style={{ marginTop: 8 }}
+                        onClick={() => setSetlistDetailRetry((v) => v + 1)}
+                      >
+                        Coba lagi
+                      </button>
+                    </div>
+                  )}
+                  {!setlistDetailLoading && !setlistDetailError && setlistSongs.length === 0 && (
                     <div className="stage-mode-sheet-empty">Setlist ini masih kosong.</div>
                   )}
                 </div>
