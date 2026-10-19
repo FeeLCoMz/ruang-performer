@@ -1,4 +1,19 @@
 import { findClosestGmPatch } from './gmSoundbank.js';
+import {
+  STRUCTURE_SECTION_KEYWORDS,
+  STRUCTURE_SECTION_ALIASES,
+  MODULATION_KEYWORDS,
+  METADATA_KEYS as CONFIG_METADATA_KEYS,
+  PATCH_DEFINING_KEYS as PATCH_DEFINING_KEYS_CONFIG,
+  INSTRUMENT_PATCH_KEYS as CONFIG_INSTRUMENT_PATCH_KEYS,
+  PRESET_CUE_SECTION_KEYWORDS as PRESET_CUE_SECTION_KEYWORDS_CONFIG,
+  CHORD_REGEX_SOURCE,
+  NO_CHORD_TOKENS,
+  CUE_MARK_KEYWORDS as CONFIG_CUE_MARK_KEYWORDS,
+  NON_DISPLAY_INSTRUMENT_CUES as CONFIG_NON_DISPLAY_INSTRUMENT_CUES,
+  INSTRUMENT_KEYWORDS as CONFIG_INSTRUMENT_KEYWORDS,
+  INSTRUMENT_DESCRIPTOR_SUFFIXES as CONFIG_INSTRUMENT_DESCRIPTOR_SUFFIXES,
+} from '../config/chordDisplayConfig.js';
 
 /**
  * Mem-parse array baris lirik menjadi struktur token untuk rendering.
@@ -117,22 +132,9 @@ function splitBracketCompoundLine(line) {
   return matches.map((match) => match[0].trim());
 }
 
-export const CUE_MARK_KEYWORDS = [
-  'tutti', 'hit', 'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out', 'ritardando', 'rit.'
-];
+export const CUE_MARK_KEYWORDS = CONFIG_CUE_MARK_KEYWORDS;
 
-const instrumentKeywords = [
-  'gitar', 'guitar', 'bass', 'ukulele', 'mandolin', 'sape',
-  'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'pianika', 'melodika','epiano',
-  'brass', 'horn section', 'horns', 'trombone', 'tuba', 'euphonium', 'cornet',
-  'saxophone', 'saksofon', 'sax', 'saxo', 'saxofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet', 'bansi',
-  'violin', 'biola', 'cello', 'kontrabas', 'strings',
-  'vokal', 'vocal', 'vocalist', 'vokalist', 'choir', 'vokal grup',
-  'drum', 'drums', 'perkusi', 'percussion', 'cajon', 'tamborin', 'marakas', 'rebana',
-  'kenong', 'gamelan', 'kendang', 'gong', 'angklung', 'rebab',
-  'bell', 'bell pads',
-  'pads'
-];
+const instrumentKeywords = CONFIG_INSTRUMENT_KEYWORDS;
 
 /** True when the whole value is exactly one known instrument keyword. */
 export const isInstrumentKeywordWord = (value = '') => (
@@ -299,9 +301,7 @@ const splitInlineTokens = (text = '') => {
   return text.match(regex) || [];
 };
 
-const INSTRUMENT_DESCRIPTOR_SUFFIXES = new Set([
-  'dist', 'distortion', 'saw', 'sawtooth', 'square', 'triangle', 'pulse', 'sine', 'wave', 'pad', 'warm', 'bright', 'dark', 'clean', 'mono', 'stereo', 'ambient', 'pluck', 'bass', 'sub', 'noise', 'perc', 'percussion', 'stac', 'staccato'
-]);
+const INSTRUMENT_DESCRIPTOR_SUFFIXES = new Set(CONFIG_INSTRUMENT_DESCRIPTOR_SUFFIXES);
 
 const isGenericInstrumentSuffix = (value = '') => {
   if (typeof value !== 'string') return false;
@@ -662,9 +662,7 @@ export function parseLines(lines, transpose) {
   return parsed;
 }
 
-const NON_DISPLAY_INSTRUMENT_CUES = new Set([
-  'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in', 'fade in', 'fade out', 'fade in/out'
-]);
+const NON_DISPLAY_INSTRUMENT_CUES = new Set(CONFIG_NON_DISPLAY_INSTRUMENT_CUES);
 
 const REAL_INSTRUMENT_KEYWORDS = instrumentKeywords.filter((keyword) => !NON_DISPLAY_INSTRUMENT_CUES.has(keyword));
 
@@ -1051,9 +1049,12 @@ export function mergeDetectedTimestampsIntoMarkers(lyricsText, existingMarkers =
   return [...normalizedExisting, ...appended].sort((a, b) => a.time - b.time);
 }
 // Global regex untuk deteksi chord (standar, konsisten di semua fungsi)
-// Support: C, Cm, Cmaj7, Cm7b5, C7#11, Csus4, Cadd9, BbMajb5, C#maj7#11, Amadd9, dll
-const CHORD_REGEX = /^[A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\d+)?(?:[#b]\d+)*(?:\/[A-G][#b]?)?$/i;
-const NO_CHORD_REGEX = /^(N\.C\.|NC|No\s*Chord|No\s*Chords?)$/i;
+// Sumber regex: src/config/chordDisplayConfig.js (CHORD_REGEX_SOURCE)
+const CHORD_REGEX = new RegExp(CHORD_REGEX_SOURCE, 'i');
+const NO_CHORD_REGEX = new RegExp(
+  `^(${NO_CHORD_TOKENS.map((token) => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*')).join('|')})$`,
+  'i',
+);
 
 /**
  * Validasi apakah sebuah token adalah No Chord (N.C.).
@@ -1360,14 +1361,15 @@ export function parseSection(line) {
     const displayLabel = annotation ? `${originalLabel} (${annotation})` : originalLabel;
     const labelLower = originalLabel.toLowerCase();
     // Daftar kata kunci struktur lagu
-    const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain', 'pre-chorus', 'post-chorus', 'solo', 'musik', 'instrumental'];
+    const structureKeywords = STRUCTURE_SECTION_KEYWORDS;
+    const structureAliases = STRUCTURE_SECTION_ALIASES;
     const hasKeywordAsWholeWord = (text, keyword) => {
       const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const pattern = escaped.replace(/\s+/g, '[\\s_-]+');
       return new RegExp(`(^|[^a-z0-9])${pattern}($|[^a-z0-9])`, 'i').test(text);
     };
 
-    if (labelLower === 'int' || structureKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
+    if (structureAliases.includes(labelLower) || structureKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
       return { type: 'structure', label: displayLabel };
     }
 
@@ -1379,7 +1381,7 @@ export function parseSection(line) {
   }
 
   // Deteksi modulasi/key change
-  const modulationMatch = trimmedLine.match(/^(?:modulation|key\s+change)\s*:\s*(.+)$/i);
+  const modulationMatch = trimmedLine.match(new RegExp(`^(?:${MODULATION_KEYWORDS.map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\s+/g, '\\s+')).join('|')})\\s*:\\s*(.+)$`, 'i'));
   if (modulationMatch) {
     const targetKey = modulationMatch[1].trim();
     return { type: 'modulation', label: targetKey };
@@ -1388,17 +1390,9 @@ export function parseSection(line) {
   return null;
 }
 
-const METADATA_KEYS = new Set([
-  'patch', 'layer', 'intensitas', 'intensity', 'dynamics', 'dinamik', 'cue', 'notes', 'catatan',
-  'sound', 'tone', 'fx', 'effect', 'effects', 'voicing', 'texture',
-  'split', 'zone', 'program', 'preset', 'scene', 'part', 'fill', 'groove', 'feel',
-  'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb'
-]);
+const METADATA_KEYS = new Set(CONFIG_METADATA_KEYS);
 
-const INSTRUMENT_PATCH_KEYS = new Set([
-  'patch', 'layer', 'split', 'zone', 'program', 'preset', 'scene', 'sound', 'tone', 'instrument', 'instrumen',
-  'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb'
-]);
+const INSTRUMENT_PATCH_KEYS = new Set(CONFIG_INSTRUMENT_PATCH_KEYS);
 
 /**
  * Keys that genuinely name a sound. Without one of these, a line like
@@ -1406,15 +1400,9 @@ const INSTRUMENT_PATCH_KEYS = new Set([
  * Treating those as patches made the MIDI inference fall back to program 0
  * (Acoustic Grand Piano), which could send a wrong Program Change on stage.
  */
-const PATCH_DEFINING_KEYS = new Set([
-  'patch', 'preset', 'sound', 'tone', 'instrument', 'instrumen', 'program', 'pc'
-]);
+const PATCH_DEFINING_KEYS = new Set(PATCH_DEFINING_KEYS_CONFIG);
 
-const PRESET_CUE_SECTION_KEYWORDS = [
-  'intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain',
-  'pre-chorus', 'post-chorus', 'solo', 'musik', 'instrumental', 'hook', 'drop', 'ending', 'ending tag',
-  'keys', 'keyboard', 'guitar', 'gitar'
-];
+const PRESET_CUE_SECTION_KEYWORDS = PRESET_CUE_SECTION_KEYWORDS_CONFIG;
 
 const normalizeMidiByte = (value, { max = 127 } = {}) => {
   const numeric = Number.parseInt(String(value || '').trim(), 10);

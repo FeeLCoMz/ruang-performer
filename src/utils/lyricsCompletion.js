@@ -6,11 +6,14 @@
  * at the moment they are typing.
  */
 
+import {
+  AUTOCOMPLETE_SECTION_LABELS as CONFIG_SECTION_LABELS,
+  AUTOCOMPLETE_METADATA as CONFIG_METADATA,
+  AUTOCOMPLETE_INSTRUMENTS as CONFIG_INSTRUMENTS,
+} from '../config/chordDisplayConfig.js';
+
 /** Section tags, matching what autoTagSongSections() produces. */
-const SECTION_COMPLETIONS = [
-  'Intro', 'Verse 1', 'Verse 2', 'Pre-Chorus', 'Post-Chorus',
-  'Chorus', 'Bridge', 'Interlude', 'Solo', 'Outro', 'Coda',
-].map((label) => ({
+const SECTION_COMPLETIONS = CONFIG_SECTION_LABELS.map((label) => ({
   label: `[${label}]`,
   type: 'keyword',
   detail: 'Bagian lagu',
@@ -18,74 +21,13 @@ const SECTION_COMPLETIONS = [
 }));
 
 /** Key:value metadata understood by the chord parser. */
-const METADATA_COMPLETIONS = [
-  {
-    label: 'Patch:',
-    type: 'property',
-    detail: 'Patch keyboard',
-    info: 'Contoh: Patch: Stage Piano | Layer: Warm Pad',
-    apply: 'Patch: ',
-  },
-  {
-    label: 'Preset:',
-    type: 'property',
-    detail: 'Preset keyboard',
-    apply: 'Preset: ',
-  },
-  {
-    label: 'Instrument:',
-    type: 'property',
-    detail: 'Label instrumen',
-    info: 'Menandai instrumen yang bermain di bagian ini.',
-    apply: 'Instrument: ',
-  },
-  {
-    label: 'Modulation:',
-    type: 'property',
-    detail: 'Ganti key di tengah lagu',
-    info: 'Chord ikut ditranspose. Contoh: Modulation: G',
-    apply: 'Modulation: ',
-  },
-  {
-    label: 'Original Key:',
-    type: 'property',
-    detail: 'Key asli lagu',
-    info: 'Tidak ikut ditranspose.',
-    apply: 'Original Key: ',
-  },
-  {
-    label: 'Cue:',
-    type: 'property',
-    detail: 'Catatan perform',
-    info: 'Contoh: Cue: Drum masuk di bar 9',
-    apply: 'Cue: ',
-  },
-  {
-    label: 'Intensitas:',
-    type: 'property',
-    detail: 'Tingkat intensitas',
-    apply: 'Intensitas: ',
-  },
-  {
-    label: 'Feel:',
-    type: 'property',
-    detail: 'Feel/groove',
-    info: 'Contoh: Feel: Half-time',
-    apply: 'Feel: ',
-  },
-  {
-    label: 'FX:',
-    type: 'property',
-    detail: 'Efek',
-    apply: 'FX: ',
-  },
-  {
-    label: 'Notes:',
-    type: 'property',
-    detail: 'Catatan aransemen',
-    apply: 'Notes: ',
-  },
-];
+const METADATA_COMPLETIONS = CONFIG_METADATA.map(({ label, detail, info }) => ({
+  label,
+  type: 'property',
+  detail,
+  info: info || undefined,
+  apply: `${label} `,
+}));
 
 const ALL_COMPLETIONS = [
   ...SECTION_COMPLETIONS,
@@ -93,10 +35,7 @@ const ALL_COMPLETIONS = [
 ];
 
 /** Instrument words highlighted by the editor. */
-const INSTRUMENT_COMPLETIONS = [
-  'Piano', 'Keys', 'Guitar', 'Bass', 'Drums', 'Strings', 'Brass',
-  'Vokal', 'Sax', 'Suling', 'Violin',
-].map((name) => ({
+const INSTRUMENT_COMPLETIONS = CONFIG_INSTRUMENTS.map((name) => ({
   label: name,
   type: 'variable',
   detail: 'Instrumen',
