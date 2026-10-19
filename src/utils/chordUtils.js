@@ -1,4 +1,9 @@
-import { findClosestGmPatch } from './gmSoundbank.js';
+﻿import {
+  parseMidiFromFields,
+  parseCueOptionFields,
+  mergeMidiWithInference,
+  hasMidiHintOptions,
+} from '../midi/cueParser.js';
 import {
   STRUCTURE_SECTION_KEYWORDS,
   MODULATION_KEYWORDS,
@@ -434,7 +439,7 @@ const isInlineCueMarkToken = (token) => {
   if (!trimmed) return false;
 
   // Strip kurung biasa dan kurung siku: keyword cue mark boleh ditulis
-  // "(Stop)" maupun "[Stop]" — keduanya harus terdeteksi.
+  // "(Stop)" maupun "[Stop]" â€” keduanya harus terdeteksi.
   const raw = trimmed.replace(/^[\[(](.*)[\])}]$/, '$1').trim();
   if (!raw) return false;
 
@@ -479,7 +484,7 @@ function parseLine(line, transpose) {
   if (/^Cue\s*:/i.test(trimmed)) {
     return { type: 'metadata', text: line.trim() };
   }
-  // Jangan transpose baris "Original Key:" — tetap tampilkan metadata asli tanpa transposi
+  // Jangan transpose baris "Original Key:" â€” tetap tampilkan metadata asli tanpa transposi
   if (/^Original\s+Key:/i.test(trimmed)) {
     return {
       type: 'lyrics',
@@ -1095,7 +1100,7 @@ function isNumberNotationToken(token) {
   const normalized = cleaned
     .replace(/^[\(\[]+/, '')
     .replace(/[\)\]]+$/g, '')
-    .replace(/[’]/g, '\'');
+    .replace(/[â€™]/g, '\'');
 
   if (!normalized) return false;
 
@@ -1401,157 +1406,6 @@ const INSTRUMENT_PATCH_KEYS = new Set(CONFIG_INSTRUMENT_PATCH_KEYS);
  */
 const PATCH_DEFINING_KEYS = new Set(PATCH_DEFINING_KEYS_CONFIG);
 
-const normalizeMidiByte = (value, { max = 127 } = {}) => {
-  const numeric = Number.parseInt(String(value || '').trim(), 10);
-  if (!Number.isFinite(numeric)) return null;
-  if (numeric < 0 || numeric > max) return null;
-  return numeric;
-};
-
-const normalizeMidiChannel = (value) => {
-  const numeric = Number.parseInt(String(value || '').trim(), 10);
-  if (!Number.isFinite(numeric)) return null;
-  if (numeric >= 1 && numeric <= 16) return numeric;
-  if (numeric >= 0 && numeric <= 15) return numeric + 1;
-  return null;
-};
-
-const parseMidiFromFields = (fields = {}) => {
-  const rawProgram = fields.program ?? fields.preset ?? fields.pc;
-  const rawChannel = fields.channel ?? fields.ch;
-  const rawBankMsb = fields.bankmsb ?? fields.msb ?? fields.bank;
-  const rawBankLsb = fields.banklsb ?? fields.lsb;
-
-  const midi = {};
-
-  if (rawProgram !== undefined) {
-    const program = normalizeMidiByte(rawProgram);
-    if (program !== null) midi.program = program;
-  }
-
-  if (rawChannel !== undefined) {
-    const channel = normalizeMidiChannel(rawChannel);
-    if (channel !== null) midi.channel = channel;
-  }
-
-  if (rawBankMsb !== undefined) {
-    const bankMsb = normalizeMidiByte(rawBankMsb);
-    if (bankMsb !== null) midi.bankMsb = bankMsb;
-  }
-
-  if (rawBankLsb !== undefined) {
-    const bankLsb = normalizeMidiByte(rawBankLsb);
-    if (bankLsb !== null) midi.bankLsb = bankLsb;
-  }
-
-  if (!Object.keys(midi).length) return null;
-  return midi;
-};
-
-const parseCueOptionFields = (rawOptions = '') => {
-  if (typeof rawOptions !== 'string' || !rawOptions.trim()) return {};
-
-  const fields = {};
-  rawOptions
-    .split('|')
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-    .forEach((segment) => {
-      const idx = segment.indexOf(':');
-      if (idx <= 0 || idx >= segment.length - 1) return;
-
-      const rawKey = segment.slice(0, idx).trim().toLowerCase();
-      const key = rawKey.replace(/\s+/g, '');
-      const value = segment.slice(idx + 1).trim();
-      if (!value) return;
-
-      if (key === 'program' || key === 'pc') fields.program = value;
-      if (key === 'preset') fields.preset = value;
-      if (key === 'channel' || key === 'ch') fields.channel = value;
-      if (key === 'bank' || key === 'bankmsb' || key === 'msb') fields.bankmsb = value;
-      if (key === 'banklsb' || key === 'lsb') fields.banklsb = value;
-    });
-
-  return fields;
-};
-
-const getDefaultMidiChannelByContext = (contextText = '') => {
-  const normalized = String(contextText || '').toLowerCase();
-  if (/\bguitar\b|\bgitar\b/.test(normalized)) return 2;
-  return 1;
-};
-
-const inferCategoryHintFromContext = (contextText = '') => {
-  const normalized = String(contextText || '').toLowerCase();
-  if (/\bguitar\b|\bgitar\b/.test(normalized)) return 'guitar';
-  if (/\bkeys\b|\bkeyboard\b|\bpiano\b|\borgan\b|\bep\b/.test(normalized)) return 'piano-keys';
-  if (/\bbass\b/.test(normalized)) return 'bass';
-  if (/\bstring\b|\borchestra\b|\bchoir\b/.test(normalized)) return 'strings-orchestra';
-  if (/\bbrass\b|\btrumpet\b|\bsax\b|\bflute\b|\bclarinet\b/.test(normalized)) return 'brass-reed-wind';
-  if (/\blead\b|\bpad\b|\bsynth\b|\bfx\b/.test(normalized)) return 'synth-lead-pad-fx';
-  return 'all';
-};
-
-const inferProgramByCommonInstrumentName = (contextText = '') => {
-  const normalized = String(contextText || '').toLowerCase();
-
-  if (/\bpiano\b|\bacoustic\s+grand\b/.test(normalized)) return 0;
-  if (/\bbright\s+piano\b/.test(normalized)) return 1;
-  if (/\belectric\s+piano\b|\bep\b/.test(normalized)) return 4;
-  if (/\borgan\b/.test(normalized)) return 16;
-  if (/\bnylon\b/.test(normalized)) return 24;
-  if (/\bsteel\b/.test(normalized)) return 25;
-  if (/\bclean\b/.test(normalized)) return 27;
-  if (/\bmuted\b/.test(normalized)) return 28;
-  if (/\boverdriven\b/.test(normalized)) return 29;
-  if (/\bdistortion\b|\bcrunch\b/.test(normalized)) return 30;
-  if (/\bbass\b/.test(normalized)) return 33;
-  if (/\bstrings?\b/.test(normalized)) return 48;
-  if (/\bchoir\b/.test(normalized)) return 52;
-  if (/\btrumpet\b/.test(normalized)) return 56;
-  if (/\bsax\b/.test(normalized)) return 66;
-  if (/\bflute\b/.test(normalized)) return 73;
-  if (/\blead\b/.test(normalized)) return 81;
-  if (/\bpad\b/.test(normalized)) return 89;
-
-  return null;
-};
-
-const inferMidiFromPatchContext = ({ section = '', patch = '', instrument = '' } = {}) => {
-  const context = `${section} ${instrument} ${patch}`.trim();
-  const commonProgram = inferProgramByCommonInstrumentName(context);
-  if (Number.isFinite(commonProgram)) {
-    return {
-      program: commonProgram,
-      channel: getDefaultMidiChannelByContext(context),
-    };
-  }
-
-  const categoryHint = inferCategoryHintFromContext(context);
-  const closestPatch = findClosestGmPatch(patch || context, categoryHint);
-  if (!closestPatch || !Number.isFinite(Number(closestPatch.program))) return null;
-
-  return {
-    program: Number(closestPatch.program),
-    channel: getDefaultMidiChannelByContext(context),
-  };
-};
-
-const mergeMidiWithInference = ({ explicitMidi, section = '', patch = '', instrument = '' } = {}) => {
-  const inferred = inferMidiFromPatchContext({ section, patch, instrument });
-  const merged = {
-    ...(inferred || {}),
-    ...(explicitMidi || {}),
-  };
-
-  if (!Number.isFinite(Number(merged.program))) return null;
-  if (!Number.isFinite(Number(merged.channel))) {
-    merged.channel = getDefaultMidiChannelByContext(`${section} ${instrument} ${patch}`);
-  }
-
-  return merged;
-};
-
 export const parsePresetCueLine = (line) => {
   if (typeof line !== 'string') return null;
   const trimmed = line.trim();
@@ -1567,8 +1421,7 @@ export const parsePresetCueLine = (line) => {
 
   if (!section || !patch) return null;
 
-  const hasMidiHints = /(?:\bpc\b|\bprogram\b|\bch\b|\bchannel\b|\bbank\b|\bmsb\b|\blsb\b)/i.test(optionsRaw);
-  if (!hasMidiHints) return null;
+  if (!hasMidiHintOptions(optionsRaw)) return null;
 
   const midi = mergeMidiWithInference({
     explicitMidi: parseMidiFromFields(parseCueOptionFields(optionsRaw)),

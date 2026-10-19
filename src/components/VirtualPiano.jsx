@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { connectMidi, isWebMidiSupported } from '../midi/midiAccess.js';
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
@@ -110,61 +111,55 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
     event.preventDefault();
   };
 
+  // Koneksi MIDI input via modul src/midi/midiAccess.js (plugin-style).
+  // Komponen ini hanya menerjemahkan pesan note on/off; akses perangkat
+  // dikelola modul agar bisa dipakai ulang komponen/hook lain.
   useEffect(() => {
-    if (!isOpen || typeof navigator === 'undefined' || typeof navigator.requestMIDIAccess !== 'function') {
-      return undefined;
-    }
+    if (!isOpen || !isWebMidiSupported()) return undefined;
 
     let cancelled = false;
 
-    const connectMidi = async () => {
-      try {
-        const access = await navigator.requestMIDIAccess({ sysex: false });
-        if (cancelled) return;
-        midiAccessRef.current = access;
-        setMidiStatus('MIDI: siap menerima input');
+    connectMidi({
+      onMessage: (event) => {
+        const [statusByte, noteNumber, velocity] = event.data || [];
+        const command = statusByte & 0xf0;
+        const midiNote = Number(noteNumber);
+        const noteName = midiNumberToNoteName(midiNote);
 
-        const attachInputs = () => {
-          const inputs = Array.from(access.inputs.values());
-          inputs.forEach((input) => {
-            input.onmidimessage = (event) => {
-              const [statusByte, noteNumber, velocity] = event.data || [];
-              const command = statusByte & 0xf0;
-              const midiNote = Number(noteNumber);
-              const noteName = midiNumberToNoteName(midiNote);
+        if (!noteName) return;
 
-              if (!noteName) return;
-
-              if (command === 0x90 && velocity > 0) {
-                playNote(midiNumberToFrequency(midiNote), noteName, true);
-              } else if (command === 0x80 || (command === 0x90 && velocity === 0)) {
-                setActiveKeys((prev) => {
-                  const next = new Set(prev);
-                  next.delete(noteName);
-                  return next;
-                });
-              }
-            };
+        if (command === 0x90 && velocity > 0) {
+          playNote(midiNumberToFrequency(midiNote), noteName, true);
+        } else if (command === 0x80 || (command === 0x90 && velocity === 0)) {
+          setActiveKeys((prev) => {
+            const next = new Set(prev);
+            next.delete(noteName);
+            return next;
           });
-        };
-
-        attachInputs();
-        access.onstatechange = () => attachInputs();
-      } catch (error) {
-        if (!cancelled) {
-          setMidiStatus('MIDI: browser menolak akses perangkat');
         }
+      },
+      onStateChange: () => {
+        if (cancelled) return;
+        setMidiStatus('MIDI: siap menerima input');
+      },
+    }).then((connection) => {
+      if (cancelled) {
+        connection.dispose();
+        return;
       }
-    };
+      midiAccessRef.current = connection;
+      setMidiStatus('MIDI: siap menerima input');
+    }).catch(() => {
+      if (!cancelled) {
+        setMidiStatus('MIDI: browser menolak akses perangkat');
+      }
+    });
 
-    connectMidi();
     return () => {
       cancelled = true;
       if (midiAccessRef.current) {
-        midiAccessRef.current.onstatechange = null;
-        Array.from(midiAccessRef.current.inputs.values()).forEach((input) => {
-          input.onmidimessage = null;
-        });
+        midiAccessRef.current.dispose();
+        midiAccessRef.current = null;
       }
     };
   }, [isOpen]);
