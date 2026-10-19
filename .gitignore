@@ -11,3 +11,4 @@ dist
 backups/
 
 .env.test
+.wrangler

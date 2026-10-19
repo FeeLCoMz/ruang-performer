@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "ruang-performer" generated at 2026-10-19T17:22:41.760Z.
