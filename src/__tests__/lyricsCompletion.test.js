@@ -12,7 +12,7 @@ describe('lyricsCompletionOptions', () => {
   });
 
   test('Given the documented section set, Then every section is offered', () => {
-    for (const section of ['[Intro]', '[Verse 1]', '[Chorus]', '[Bridge]', '[Outro]', '[Coda]']) {
+    for (const section of ['[Intro]', '[Pre-Chorus]', '[Chorus]', '[Bridge]', '[Outro]', '[Coda]']) {
       expect(labels, section).toContain(section);
     }
   });

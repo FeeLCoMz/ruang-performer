@@ -41,13 +41,16 @@ export const STRUCTURE_SECTION_KEYWORDS = [
 export const STRUCTURE_SECTION_ALIASES = ['int'];
 
 /**
- * Label yang ditawarkan autocompletion. Boleh berbeda dari daftar parser
- * di atas (contoh: "Verse 1" dan "Verse 2" keduanya cocok parser "verse").
+ * Label yang ditawarkan autocompletion — DITURUNKAN dari STRUCTURE_SECTION_KEYWORDS
+ * di atas, sehingga autocomplete dan parser SELALU memakai kata kunci yang sama.
+ * Huruf kapital di awal kata otomatis (contoh: 'pre-chorus' -> 'Pre-Chorus').
  */
-export const AUTOCOMPLETE_SECTION_LABELS = [
-  'Intro', 'Verse 1', 'Verse 2', 'Pre-Chorus', 'Post-Chorus',
-  'Chorus', 'Bridge', 'Interlude', 'Solo', 'Outro', 'Coda',
-];
+const titleCaseKeyword = (keyword) => keyword
+  .split(/([\s-]+)/)
+  .map((part) => (/^[a-z]/.test(part) ? part[0].toUpperCase() + part.slice(1) : part))
+  .join('');
+
+export const AUTOCOMPLETE_SECTION_LABELS = STRUCTURE_SECTION_KEYWORDS.map(titleCaseKeyword);
 
 /* ------------------------------------------------------------------
  * 2. MODULATION / KEY CHANGE
