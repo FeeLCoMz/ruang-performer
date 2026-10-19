@@ -37,9 +37,6 @@ export const STRUCTURE_SECTION_KEYWORDS = [
   'instrumental',
 ];
 
-/** Alias tunggal yang juga dianggap struktur (dicocokkan pada label penuh). */
-export const STRUCTURE_SECTION_ALIASES = ['int'];
-
 /**
  * Label yang ditawarkan autocompletion — DITURUNKAN dari STRUCTURE_SECTION_KEYWORDS
  * di atas, sehingga autocomplete dan parser SELALU memakai kata kunci yang sama.

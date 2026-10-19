@@ -1,7 +1,6 @@
 import { findClosestGmPatch } from './gmSoundbank.js';
 import {
   STRUCTURE_SECTION_KEYWORDS,
-  STRUCTURE_SECTION_ALIASES,
   MODULATION_KEYWORDS,
   METADATA_KEYS as CONFIG_METADATA_KEYS,
   PATCH_DEFINING_KEYS as PATCH_DEFINING_KEYS_CONFIG,
@@ -1362,14 +1361,13 @@ export function parseSection(line) {
     const labelLower = originalLabel.toLowerCase();
     // Daftar kata kunci struktur lagu
     const structureKeywords = STRUCTURE_SECTION_KEYWORDS;
-    const structureAliases = STRUCTURE_SECTION_ALIASES;
     const hasKeywordAsWholeWord = (text, keyword) => {
       const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const pattern = escaped.replace(/\s+/g, '[\\s_-]+');
       return new RegExp(`(^|[^a-z0-9])${pattern}($|[^a-z0-9])`, 'i').test(text);
     };
 
-    if (structureAliases.includes(labelLower) || structureKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
+    if (structureKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
       return { type: 'structure', label: displayLabel };
     }
 
