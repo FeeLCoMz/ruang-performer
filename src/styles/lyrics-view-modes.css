@@ -44,12 +44,16 @@
 /* Toolbar panel lirik: grup tampilan */
 
 /* Kapsul grup tampilan — satu pill menyatu, selaras dengan kapsul autoscroll.
-   Isi: switch Chord | divider | font A−/%/A+ | Fokus | Kunci. */
+   Isi: switch Chord | divider | font A−/%/A+ | Fokus | Kunci.
+   Tinggi dikunci via variabel toolbar (sama dengan kapsul autoscroll);
+   padding hanya horizontal agar tinggi tidak melebihi kapsul lain. */
 .song-lyrics-toolbar-group-viewmode {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 6px;
+  height: var(--toolbar-capsule-h, 32px);
+  box-sizing: border-box;
+  padding: 0 6px;
   border: 1px solid var(--border-color);
   border-radius: 999px;
   background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
@@ -118,7 +122,7 @@
    btn-secondary/btn-primary dari class global dibuang di sini. */
 .song-lyrics-toolbar-group-viewmode .btn {
   min-height: 26px;
-  height: 26px;
+  height: var(--toolbar-inner-h, 26px);
   padding: 0 0.6rem;
   gap: 4px;
   border: none;
@@ -164,7 +168,7 @@
 
 .song-lyrics-font-btn {
   min-height: 26px;
-  height: 26px;
+  height: var(--toolbar-inner-h, 26px);
   padding: 0 0.5rem;
   border: none;
   border-radius: 999px;
@@ -208,10 +212,11 @@
    di atas bottom nav. Style grup ini hanya sisa desktop; tak lagi dipakai.) */
 
 /* Di layar sempit: label teks tombol disembunyikan (ikon saja) dan kapsul
-   tampilan diperkecil agar toolbar tetap muat satu-dua baris. */
+   tampilan diperkecil agar toolbar tetap muat satu-dua baris. Tinggi semua
+   elemen tetap seragam via variabel toolbar (--toolbar-inner-h). */
 @media (max-width: 768px) {
   .song-lyrics-toolbar-group-viewmode {
-    padding: 3px 5px;
+    padding: 0 5px;
     gap: 4px;
   }
 
@@ -224,7 +229,8 @@
   }
 
   .song-lyrics-display-switcher-btn {
-    min-height: 38px;
+    min-height: var(--toolbar-inner-h, 26px);
+    height: var(--toolbar-inner-h, 26px);
     padding: 0 8px;
     font-size: 0.8rem;
   }
@@ -236,7 +242,8 @@
   }
 
   .song-lyrics-font-btn {
-    min-height: 38px;
+    min-height: var(--toolbar-inner-h, 26px);
+    height: var(--toolbar-inner-h, 26px);
     padding: 0 0.45rem;
   }
 }

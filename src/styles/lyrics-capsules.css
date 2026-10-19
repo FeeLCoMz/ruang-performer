@@ -7,9 +7,11 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  /* Tinggi kapsul = tinggi isi (tombol 26px) + padding 3px + border 1px,
-     sama persis dengan .song-lyrics-toolbar-group-viewmode. */
-  padding: 3px;
+  /* Tinggi kapsul dipegang variabel toolbar (--toolbar-capsule-h, default
+     32px) supaya semua elemen toolbar seragam dan responsif sekaligus. */
+  height: var(--toolbar-capsule-h, 32px);
+  box-sizing: border-box;
+  padding: 0 3px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--secondary-bg) 78%, transparent);
   border: 1px solid var(--border-color);
@@ -27,7 +29,7 @@
   align-items: center;
   gap: 3px;
   min-width: 28px;
-  height: 26px;
+  height: var(--toolbar-inner-h, 26px);
   padding: 0 6px;
   border: none;
   border-radius: 999px;
@@ -49,7 +51,7 @@
   align-items: center;
   gap: 3px;
   min-width: 26px;
-  height: 26px;
+  height: var(--toolbar-inner-h, 26px);
   padding: 0 6px;
   justify-content: center;
   border: none;
@@ -71,7 +73,7 @@
   align-items: center;
   justify-content: center;
   min-width: 28px;
-  height: 26px;
+  height: var(--toolbar-inner-h, 26px);
   padding: 0;
   border: none;
   border-radius: 999px;
@@ -109,7 +111,7 @@
   align-items: center;
   justify-content: center;
   min-width: 28px;
-  height: 26px;
+  height: var(--toolbar-inner-h, 26px);
   padding: 0;
   border: none;
   border-radius: 999px;

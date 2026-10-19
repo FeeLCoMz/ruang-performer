@@ -1612,6 +1612,11 @@
   gap: var(--spacing-md);
   align-items: center;
   flex-wrap: wrap;
+  /* Tinggi kapsul seragam untuk SEMUA elemen toolbar (kapsul autoscroll,
+     grup tampilan, LED tempo, grup key) — 32px = isi 26px + padding 3px×2.
+     Diubah satu variabel ini cukup untuk menyetel semua di semua breakpoint. */
+  --toolbar-capsule-h: 32px;
+  --toolbar-inner-h: 26px;
 }
 
 /* Desktop: toolbar wajib satu baris — label tombol yang tidak penting
@@ -1629,11 +1634,15 @@
 .song-lyrics-toolbar-group-viewmode { order: 3; }
 .song-lyrics-tempo-led-compact { order: 4; }
 
-/* Grup key tidak meregang ï¿½ cukup selebar isinya */
+/* Grup key tidak meregang — cukup selebar isinya, tinggi seragam. */
 .song-lyrics-toolbar--normal .song-lyrics-toolbar-group-key {
   flex: 0 0 auto;
   flex-wrap: nowrap;
   gap: 6px;
+  height: var(--toolbar-capsule-h);
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .song-lyrics-toolbar--normal .transpose-key-control-compact {
@@ -1644,9 +1653,15 @@
   white-space: nowrap;
 }
 
-/* Di layar sempit, LED tempo menyusut duluan (angka B PM bisa dipendekkan)
-   tapi tetap di baris yang sama dengan key. */
+/* Di layar sempit, LED tempo menyusut duluan (angka BPM bisa dipendekkan)
+   tapi tetap di baris yang sama dengan key. Semua kapsul menyusut seragam. */
 @media (max-width: 480px) {
+  .song-lyrics-toolbar {
+    --toolbar-capsule-h: 30px;
+    --toolbar-inner-h: 24px;
+    gap: var(--spacing-sm);
+  }
+
   .song-lyrics-toolbar--normal .song-lyrics-tempo-led-compact {
     padding: 0 5px;
     gap: 4px;
@@ -1661,13 +1676,15 @@
   }
 }
 
-/* LED tempo compact di toolbar (pulse mengikuti BPM lagu) */
+/* LED tempo compact di toolbar (pulse mengikuti BPM lagu) — tinggi
+   mengikuti variabel seragam toolbar, bukan nilai hardcode terpisah. */
 .song-lyrics-tempo-led-compact {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 0 8px;
-  height: 34px;
+  height: var(--toolbar-capsule-h);
+  box-sizing: border-box;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--secondary-bg);
