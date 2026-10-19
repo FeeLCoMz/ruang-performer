@@ -1,4 +1,4 @@
-﻿import {
+import {
   parseMidiFromFields,
   parseCueOptionFields,
   mergeMidiWithInference,
@@ -19,10 +19,10 @@ import {
 } from '../config/chordDisplayConfig.js';
 
 /**
- * Mem-parse array baris lirik menjadi struktur token untuk rendering.
- * @param {string[]} lines - Array baris lirik
- * @param {number} transpose - Jumlah transposisi chord
- * @returns {Array} Array objek baris terstruktur
+ * Pecah baris "Label: chords" menjadi label seksi + baris chord.
+ * Contoh: "Intro: Am..Em" -> ["Intro:", "Am..Em"].
+ * Return null jika label bukan section valid atau sisa teks bukan baris chord
+ * (agar "Intro: ku menunggu" tetap dibaca sebagai lirik).
  */
 export function splitSectionLabelWithChords(line) {
   if (typeof line !== 'string') return null;
@@ -96,10 +96,10 @@ function findNextNonEmptyLineIndex(lines, startIndex) {
   return -1;
 }
 
-function shouldExpandSectionReference(lines, lineIndex) {
+function shouldExpandSectionReference(lines, lineIndex, sectionKey = null) {
   const currentLine = lines[lineIndex];
-  const sectionKey = getSectionReferenceKey(currentLine);
-  if (!sectionKey) return false;
+  const key = sectionKey || getSectionReferenceKey(currentLine);
+  if (!key) return false;
 
   const nextNonEmptyLineIndex = findNextNonEmptyLineIndex(lines, lineIndex + 1);
   if (nextNonEmptyLineIndex === -1) return true;
@@ -121,18 +121,33 @@ function collectSectionBodyLines(lines, sectionStartIndex, inlineChordLine = nul
   return bodyLines;
 }
 
+/**
+ * Pecah baris yang isinya hanya beberapa bracket menjadi satu baris per tag.
+ * Contoh: "[Verse 2] [Style: Pop] [Cue: Fill Bell]".
+ *
+ * Bracket jam ([00:05] atau [1:02:03]) TIDAK ikut dipecah: parseSection akan
+ * membacanya sebagai label seksi bernama "00:05" sehingga baris kosong yang
+ * tidak bisa dirender. Timestamp memang hanya berarti di ChordDisplay step
+ * ekspor, jadi di sini baris dibiarkan utuh.
+ */
 function splitBracketCompoundLine(line) {
   if (typeof line !== 'string') return null;
   const trimmed = line.trim();
   if (!trimmed) return null;
 
-  const matches = Array.from(trimmed.matchAll(/\[[^\]]+\]/g));
-  if (matches.length <= 1) return null;
+  const chunks = trimmed
+    .replace(/\[\d{1,2}:\d{2}(?::\d{2})?\]/g, '')
+    .match(/\[[^\]]+\]/g);
+  if (!chunks || chunks.length <= 1) return null;
 
-  const remainingText = trimmed.replace(/\[[^\]]+\]/g, '').trim();
+  const remainingText = trimmed
+    .replace(/\[[^\]]+\]/g, '')
+    .trim();
   if (remainingText) return null;
 
-  return matches.map((match) => match[0].trim());
+  return trimmed.match(/\[[^\]]+\]/g)
+    .map((chunk) => chunk.trim())
+    .filter((chunk) => !TIMESTAMP_BRACKET_REGEX.test(chunk));
 }
 
 export const CUE_MARK_KEYWORDS = CONFIG_CUE_MARK_KEYWORDS;
@@ -594,7 +609,7 @@ export function parseLines(lines, transpose) {
     const line = lines[index];
     const sourceLine = index + 1;
     const bracketChunks = splitBracketCompoundLine(line);
-    if (bracketChunks) {
+    if (bracketChunks && bracketChunks.length > 1) {
       bracketChunks.forEach((chunk) => {
         pushRow(parseLine(chunk, transpose), sourceLine);
       });
@@ -605,23 +620,23 @@ export function parseLines(lines, transpose) {
       || splitBracketLabelWithChords(line);
     const sectionKey = getSectionReferenceKey(line);
     const section = parseSection(line);
+    // Reuse the already computed splits instead of re-scanning the line four
+    // times per row (parseLines runs on every keystroke through ChordDisplay).
     const isStandaloneStructureTag = Boolean(
       section?.type === 'structure' &&
-      !splitSectionLabelWithChords(line) &&
-      !splitBracketLabelWithChords(line) &&
-      !splitBracketCompoundLine(line)
+      !sectionChunks &&
+      !bracketChunks
     );
-    const isStyledRepeatReference =
-      sectionKey &&
+    // A standalone tag repeats the stored body when it is followed by another
+    // section (or EOF), e.g. "Chorus:" after a full Chorus block. The row also
+    // carries isRepeatedReference so the renderer can style it as a jump.
+    const canExpandReference =
+      Boolean(sectionKey) &&
       isStandaloneStructureTag &&
-      shouldExpandSectionReference(lines, index) &&
       sectionBodies.has(sectionKey) &&
-      sectionLabels.has(sectionKey) &&
-      section.label &&
-      sectionLabels.get(sectionKey) !== section.label &&
-      /[-/]/.test(section.label);
+      shouldExpandSectionReference(lines, index, sectionKey);
 
-    if (sectionKey && isStandaloneStructureTag && (isStyledRepeatReference || (shouldExpandSectionReference(lines, index) && sectionBodies.has(sectionKey)))) {
+    if (canExpandReference) {
       const repeatedSectionLine = parseLine(line, transpose);
       if (repeatedSectionLine?.type === 'structure') {
         repeatedSectionLine.isRepeatedReference = true;
@@ -646,7 +661,7 @@ export function parseLines(lines, transpose) {
     }
 
     if (sectionKey) {
-      const sectionLabel = parseSection(line)?.label || null;
+      const sectionLabel = section?.label || null;
       if (sectionLabel) {
         sectionLabels.set(sectionKey, sectionLabel);
       }
@@ -929,7 +944,8 @@ export function parseTimestampToken(token) {
   return null;
 }
 
-const TIMESTAMP_INLINE_REGEX = /\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]/g;
+/** Fresh regex per call: a shared /g literal keeps lastIndex between calls. */
+const createTimestampRegex = () => /\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]/g;
 
 function formatMarkerTime(seconds) {
   const total = Math.max(0, Math.floor(seconds || 0));
@@ -973,10 +989,10 @@ export function extractTimestampSeconds(text) {
   if (typeof text !== 'string' || !text.trim()) return [];
 
   const found = new Set();
-  TIMESTAMP_INLINE_REGEX.lastIndex = 0;
+  const timestampRegex = createTimestampRegex();
 
   let match;
-  while ((match = TIMESTAMP_INLINE_REGEX.exec(text)) !== null) {
+  while ((match = timestampRegex.exec(text)) !== null) {
     const token = `[${match[1]}:${match[2]}${match[3] ? `:${match[3]}` : ''}]`;
     const seconds = parseTimestampToken(token);
     if (seconds !== null) {
@@ -1053,6 +1069,10 @@ export function mergeDetectedTimestampsIntoMarkers(lyricsText, existingMarkers =
 
   return [...normalizedExisting, ...appended].sort((a, b) => a.time - b.time);
 }
+
+/** Bracket jam [mm:ss] / [hh:mm:ss] — bukan label seksi, bukan metadata. */
+const TIMESTAMP_BRACKET_REGEX = /^\[\d{1,2}:\d{2}(?::\d{2})?\]$/;
+
 // Global regex untuk deteksi chord (standar, konsisten di semua fungsi)
 // Sumber regex: src/config/chordDisplayConfig.js (CHORD_REGEX_SOURCE)
 const CHORD_REGEX = new RegExp(CHORD_REGEX_SOURCE, 'i');
@@ -1344,7 +1364,20 @@ export function wrapBarsPerLine(text, barsPerLine = 4) {
  *   - getAllChords(parsedSong): string[]
  *   - getChordsByBar(parsedSong): string[][]
  */
-// parseChordLine dihapus, gunakan isChordLine sebagai pengganti
+// parseChordLine dihapus, gunakan isChordLine sebagai pengganti.
+
+/**
+ * Kata kunci struktur -> regex batas kata. Di-cache: parseSection dipanggil
+ * beberapa kali per baris dan regex ini sebelumnya dibangun ulang tiap kali.
+ */
+const STRUCTURE_KEYWORD_PATTERNS = STRUCTURE_SECTION_KEYWORDS.map((keyword) => (
+  new RegExp(`(^|[^a-z0-9])${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+')}($|[^a-z0-9])`, 'i')
+));
+
+const MODULATION_LINE_REGEX = new RegExp(
+  `^(?:${MODULATION_KEYWORDS.map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')).join('|')})\\s*:\\s*(.+)$`,
+  'i',
+);
 
 // Fungsi untuk mendeteksi section/struktur lagu atau instrumen
 export function parseSection(line) {
@@ -1365,15 +1398,9 @@ export function parseSection(line) {
     const annotation = match[2]?.trim();
     const displayLabel = annotation ? `${originalLabel} (${annotation})` : originalLabel;
     const labelLower = originalLabel.toLowerCase();
-    // Daftar kata kunci struktur lagu
-    const structureKeywords = STRUCTURE_SECTION_KEYWORDS;
-    const hasKeywordAsWholeWord = (text, keyword) => {
-      const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const pattern = escaped.replace(/\s+/g, '[\\s_-]+');
-      return new RegExp(`(^|[^a-z0-9])${pattern}($|[^a-z0-9])`, 'i').test(text);
-    };
-
-    if (structureKeywords.some(k => hasKeywordAsWholeWord(labelLower, k))) {
+    // Setiap keyword dicocokkan sebagai kata utuh, bukan substring:
+    // "Interlude" cocok, "Soloist" tidak.
+    if (STRUCTURE_KEYWORD_PATTERNS.some((pattern) => pattern.test(labelLower))) {
       return { type: 'structure', label: displayLabel };
     }
 
@@ -1385,7 +1412,7 @@ export function parseSection(line) {
   }
 
   // Deteksi modulasi/key change
-  const modulationMatch = trimmedLine.match(new RegExp(`^(?:${MODULATION_KEYWORDS.map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\s+/g, '\\s+')).join('|')})\\s*:\\s*(.+)$`, 'i'));
+  const modulationMatch = trimmedLine.match(MODULATION_LINE_REGEX);
   if (modulationMatch) {
     const targetKey = modulationMatch[1].trim();
     return { type: 'modulation', label: targetKey };
@@ -1397,6 +1424,16 @@ export function parseSection(line) {
 const METADATA_KEYS = new Set(CONFIG_METADATA_KEYS);
 
 const INSTRUMENT_PATCH_KEYS = new Set(CONFIG_INSTRUMENT_PATCH_KEYS);
+
+/** Alias key patch -> nama field kanonik yang dipakai parseMidiFromFields. */
+const PATCH_FIELD_ALIASES = {
+  instrumen: 'instrument',
+  ch: 'channel',
+  msb: 'bankmsb',
+  bank: 'bankmsb',
+  lsb: 'banklsb',
+  pc: 'program',
+};
 
 /**
  * Keys that genuinely name a sound. Without one of these, a line like
@@ -1449,7 +1486,11 @@ export const parseInstrumentPatchLine = (line) => {
   const segments = trimmed.split('|').map((segment) => segment.trim()).filter(Boolean);
   if (!segments.length) return null;
 
+  const openingBracket = trimmed.startsWith('[') ? '[' : null;
+  const closeBracket = openingBracket && trimmed.endsWith(']') ? ']' : null;
+
   const fields = {};
+  const rawFieldKeys = new Set();
   for (const segment of segments) {
     const idx = segment.indexOf(':');
     if (idx <= 0 || idx >= segment.length - 1) continue;
@@ -1458,13 +1499,18 @@ export const parseInstrumentPatchLine = (line) => {
     const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '').replace(/\s+/g, '');
     if (!INSTRUMENT_PATCH_KEYS.has(key)) continue;
 
-    let fieldKey = key === 'instrumen' ? 'instrument' : key;
-    if (fieldKey === 'ch') fieldKey = 'channel';
-    if (fieldKey === 'msb' || fieldKey === 'bank') fieldKey = 'bankmsb';
-    if (fieldKey === 'lsb') fieldKey = 'banklsb';
-    if (fieldKey === 'pc') fieldKey = 'program';
-    const value = segment.slice(idx + 1).trim();
-    if (value) fields[fieldKey] = value;
+    const fieldKey = PATCH_FIELD_ALIASES[key] || key;
+    // Baris patch berkurung berakhir dengan "]": "[Keys: Piano | CH: 2]" membuat
+    // nilai channel jadi "2]", yang lalu dibuang normalisasi MIDI. Buang kurung
+    // penutup hanya bila ia menutup bracket pembuka di baris yang sama.
+    let value = segment.slice(idx + 1).trim();
+    if (closeBracket && value.endsWith(closeBracket)) {
+      value = value.slice(0, -closeBracket.length).trim();
+    }
+    if (value) {
+      fields[fieldKey] = value;
+      rawFieldKeys.add(key);
+    }
   }
 
   if (!Object.keys(fields).length) return null;
@@ -1472,7 +1518,8 @@ export const parseInstrumentPatchLine = (line) => {
   // Require an explicit patch-ish key. A bare "Layer:", "Volume:", "Split:" or
   // "Scene:" line carries no sound of its own, so it must not become a cue with
   // a guessed MIDI program.
-  const hasPatchDefiningKey = Object.keys(fields).some((key) => PATCH_DEFINING_KEYS.has(key));
+  // Dicek terhadap key asli (sebelum alias), sama seperti sebelumnya.
+  const hasPatchDefiningKey = [...rawFieldKeys].some((key) => PATCH_DEFINING_KEYS.has(key));
   if (!hasPatchDefiningKey) return null;
 
   const patch = String(fields.patch || fields.preset || fields.sound || fields.tone || '').trim();
@@ -1689,12 +1736,12 @@ const MINOR_SCALE_ALTERNATE = {
   11: '7',
 };
 
+/** 'Am', 'A min', 'Amin', 'A minor' -> minor; selain itu major. */
 const getScaleTypeFromKey = (key = 'C') => {
   if (!key) return 'major';
   const normalized = key.trim().toLowerCase();
-  if (normalized.endsWith('m') && !normalized.includes('maj')) return 'minor';
-  if (normalized.startsWith('m') && normalized.length === 1) return 'minor';
-  return 'major';
+  if (normalized.includes('maj')) return 'major';
+  return /(?:^|[a-g][#b]?)\s*(?:m|min|minor)$/.test(normalized) ? 'minor' : 'major';
 };
 
 const getScaleDegreeFromRoot = (rootNote, key = 'C', scaleType = 'major') => {
@@ -1767,14 +1814,14 @@ export const chordToNumber = (chord, key = 'C') => {
 
   const root = match[1];
   let remainder = match[2] || '';
+  const scaleType = getScaleTypeFromKey(key);
 
-  // Handle slash bass
+  // Slash bass: derajat bass dihitung pada kualitas yang sama dengan chord induk
+  // (mis. Am/C di atas A minor -> 1m/<b3>), bukan selalu tangga mayor.
   let bassDegree = '';
   const slashMatch = remainder.match(/\/([A-G][#b]?)/);
   if (slashMatch) {
-    const bassRoot = slashMatch[1];
-    const baseScaleType = getScaleTypeFromKey(key);
-    const bassValue = getScaleDegreeFromRoot(bassRoot, key, baseScaleType);
+    const bassValue = getScaleDegreeFromRoot(slashMatch[1], key, scaleType);
     if (bassValue) {
       bassDegree = '/' + bassValue;
     }
@@ -1783,7 +1830,6 @@ export const chordToNumber = (chord, key = 'C') => {
   }
 
   const quality = normalizeChordQuality(remainder);
-  const scaleType = getScaleTypeFromKey(key);
   const degree = getScaleDegreeFromRoot(root, key, scaleType);
   if (!degree) return null;
 
@@ -1968,8 +2014,10 @@ export const isChordLine = (line) => {
 
 // Fungsi untuk expand compact chord format (D..Gm..Bb) menjadi format spaced
 const expandCompactChords = (line) => {
-  // Check if line contains compact format (chord..chord..chord or chord-chord)
-  const compactPattern = /(-?[A-G][#b]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)(?:\.\.|-)/g;
+  // Check if line contains compact format (chord..chord..chord or chord-chord).
+  // Non-global on purpose: a /g regex keeps lastIndex between calls, and the
+  // old test matched against the line before split() consumed it.
+  const compactPattern = /-?[A-G][#b]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/[A-G][#b]?)?(?:\.\.|-)/;
 
   if (!compactPattern.test(line)) return line;
 
@@ -2119,15 +2167,14 @@ const parseStandardFormat = (lines) => {
       // Expand compact format if present (D..Gm..Bb -> D   Gm   Bb)
       const expandedLine = expandCompactChords(currentLine);
 
+      // Extract chords using CHORD_REGEX_GLOBAL
+      const chords = [...expandedLine.matchAll(CHORD_REGEX_GLOBAL)].map((match) => ({
+        chord: match[0],
+        position: match.index,
+      }));
+
       // Jika ada baris berikutnya dan bukan chord line, gabungkan
       if (nextLine && !isChordLine(nextLine) && nextLine.trim()) {
-        // Extract chords using CHORD_REGEX_GLOBAL
-        const matches = [...expandedLine.matchAll(CHORD_REGEX_GLOBAL)];
-        const chords = matches.map(match => ({
-          chord: match[0],
-          position: match.index
-        }));
-
         parsed.push({
           type: 'line_with_chords',
           chords,
@@ -2139,12 +2186,6 @@ const parseStandardFormat = (lines) => {
         i++; // Skip next line karena sudah diproses
       } else {
         // Chord line tanpa lirik di bawahnya
-        const matches = [...expandedLine.matchAll(CHORD_REGEX_GLOBAL)];
-        const chords = matches.map(match => ({
-          chord: match[0],
-          position: match.index
-        }));
-
         parsed.push({
           type: 'line_with_chords',
           chords,
@@ -2290,7 +2331,8 @@ const MINOR_SCALE_PROFILE = {
   qualities: ['minor', 'diminished', 'major', 'minor', 'minor', 'major', 'major'],
 };
 
-const KEY_LABELS_SHARP = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+/** Nada dasar tiap pitch class (0..11), memilih enharmonik yang paling umum. */
+const KEY_ROOT_BY_PITCH_CLASS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
 
 const getChordQualityFamily = (chord) => {
   if (!chord || typeof chord !== 'string') return 'major';
@@ -2350,12 +2392,18 @@ export const estimateKeyFromChordUsage = (usageCounts = []) => {
         const actualQuality = getChordQualityFamily(chord);
         if (actualQuality === expectedQuality) {
           score += weight * 0.8;
-        } else if (expectedQuality === 'major' && actualQuality === 'augmented') {
-          score += weight * 0.2;
         }
       });
 
-      const tonicLabel = KEY_LABELS_SHARP[tonic];
+      // C major and A minor share the exact same diatonic chords, so the
+      // membership score alone can never separate them. Break the tie with
+      // the tonic itself: heavier use of the tonic chord favours that mode.
+      const tonicUsage = usageCounts
+        .filter(({ chord }) => getNoteIndex(extractChordRoot(chord)) === tonic)
+        .reduce((sum, { count }) => sum + (Number(count) || 0), 0);
+      score += tonicUsage * 0.3;
+
+      const tonicLabel = KEY_ROOT_BY_PITCH_CLASS[tonic];
       const key = mode === 'major' ? tonicLabel : `${tonicLabel}m`;
 
       return {
@@ -2394,6 +2442,13 @@ export const estimateKeyFromChordUsage = (usageCounts = []) => {
   };
 };
 
+/** Estimasi key untuk satu jendela chord, null bila keyakinan di bawah ambang. */
+const detectWindowKey = (chords, minConfidence) => {
+  if (!Array.isArray(chords) || chords.length === 0) return null;
+  const estimation = estimateKeyFromChordUsage(buildUsageCountsFromChordList(chords));
+  return estimation && estimation.confidence >= minConfidence ? estimation : null;
+};
+
 /**
  * Deteksi modulasi berdasarkan pergeseran estimasi key antar blok chord berurutan.
  */
@@ -2427,6 +2482,7 @@ export const detectChordModulations = (parsedSong, options = {}) => {
     return { hasModulation: false, modulationCount: 0, transitions: [], timeline: [] };
   }
 
+  // Estimasi key dihitung per jendela (lineWindow baris chord terakhir).
   const keyPerLine = chordLines.map((line, idx) => {
     const windowStart = Math.max(0, idx - lineWindow + 1);
     const windowChords = [];
@@ -2434,11 +2490,9 @@ export const detectChordModulations = (parsedSong, options = {}) => {
       windowChords.push(...chordLines[i].chords);
     }
 
-    const usageCounts = buildUsageCountsFromChordList(windowChords);
-    const estimation = estimateKeyFromChordUsage(usageCounts);
     return {
       ...line,
-      detectedKey: estimation && estimation.confidence >= minDetectedConfidence ? estimation : null,
+      detectedKey: detectWindowKey(windowChords, minDetectedConfidence),
     };
   });
 
@@ -2448,12 +2502,7 @@ export const detectChordModulations = (parsedSong, options = {}) => {
     const confidence = line.detectedKey?.confidence || 0;
 
     const lastSegment = timeline[timeline.length - 1];
-    if (!key) {
-      if (lastSegment) {
-        lastSegment.endSourceLine = line.sourceLine;
-      }
-      return;
-    }
+    if (!key) return;
 
     if (!lastSegment || lastSegment.key !== key) {
       timeline.push({
