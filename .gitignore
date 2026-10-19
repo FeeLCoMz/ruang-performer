@@ -7,6 +7,10 @@ dist
 .vscode
 .vercel
 .env*.local
+# Cloudflare local secrets (wrangler dev) + build output
+.dev.vars
+.dev.vars.*
+cloudflare/.build/
 # Database backups contain real user data — never commit them
 backups/
 
