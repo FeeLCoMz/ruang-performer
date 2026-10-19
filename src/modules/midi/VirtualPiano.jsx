@@ -20,18 +20,23 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
   const audioContextRef = useRef(null);
   const midiAccessRef = useRef(null);
   const dragStateRef = useRef(null);
-  const positionRef = useRef({ x: 24, y: 48 });
+  const positionRef = useRef(null);
   const [activeKeys, setActiveKeys] = useState(new Set());
   const [midiStatus, setMidiStatus] = useState('MIDI: belum terhubung');
-  const [position, setPosition] = useState({ x: 24, y: 48 });
+  const [position, setPosition] = useState(null);
   const [midiEnabled, setMidiEnabled] = useMidiEnabled();
 
   useEffect(() => {
     if (!isOpen) return;
 
+    // Default: tengah layar, dihitung dari ukuran popup saat dibuka.
+    const popupEl = document.querySelector('.piano-popup');
+    const popupWidth = popupEl ? popupEl.offsetWidth : 460;
+    const popupHeight = popupEl ? popupEl.offsetHeight : 280;
+
     const nextPosition = {
-      x: Math.min(Math.max(window.innerWidth - 470, 20), window.innerWidth - 260),
-      y: Math.min(Math.max(window.innerHeight - 350, 20), window.innerHeight - 220),
+      x: Math.max(Math.round((window.innerWidth - popupWidth) / 2), 20),
+      y: Math.max(Math.round((window.innerHeight - popupHeight) / 2), 20),
     };
 
     positionRef.current = nextPosition;
@@ -240,10 +245,9 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
       role="dialog"
       aria-label="Virtual Piano"
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        right: 'auto',
-        bottom: 'auto',
+        ...(position
+          ? { left: `${position.x}px`, top: `${position.y}px`, right: 'auto', bottom: 'auto' }
+          : { visibility: 'hidden' }),
       }}
     >
       <div

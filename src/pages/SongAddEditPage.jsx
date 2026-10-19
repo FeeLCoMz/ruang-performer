@@ -710,7 +710,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         aria-pressed={insertNotesToLyrics}
         title="Tentukan apakah klik not disisipkan ke lirik atau hanya dibunyikan"
       >
-        ✍ Insert {insertNotesToLyrics ? 'ON' : 'OFF'}
+        ✍ Insert {insertNotesToLyrics ? 'ON' : 'OFF'}
       </button>
 
       {insertNotesToLyrics && (
@@ -755,7 +755,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
             aria-pressed={insertTrailingSpace}
             title="Tambahkan spasi otomatis setelah not yang disisipkan"
           >
-            ␠ Spasi {insertTrailingSpace ? 'ON' : 'OFF'}
+            Spasi {insertTrailingSpace ? 'ON' : 'OFF'}
           </button>
         </>
       )}
