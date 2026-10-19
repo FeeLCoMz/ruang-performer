@@ -9191,30 +9191,6 @@ var init_turso = __esm({
   }
 });
 
-// cloudflare/nodemailer-stub.js
-var nodemailer_stub_exports = {};
-__export(nodemailer_stub_exports, {
-  createTransport: () => createTransport,
-  default: () => nodemailer_stub_default
-});
-function createTransport() {
-  return {
-    sendMail() {
-      return Promise.reject(
-        new Error(
-          "SMTP is not available on Cloudflare Workers. Set MAIL_PROVIDER=resend (RESEND_API_KEY) or MAIL_PROVIDER=postmark (POSTMARK_SERVER_TOKEN), or send mail from an external service."
-        )
-      );
-    }
-  };
-}
-var nodemailer_stub_default;
-var init_nodemailer_stub = __esm({
-  "cloudflare/nodemailer-stub.js"() {
-    nodemailer_stub_default = { createTransport, __rpStub: true };
-  }
-});
-
 // node_modules/busboy/lib/utils.js
 var require_utils = __commonJS({
   "node_modules/busboy/lib/utils.js"(exports, module) {
@@ -13973,7 +13949,7 @@ var import_jsonwebtoken = __toESM(require_jsonwebtoken(), 1);
 init_env();
 var DEFAULT_SECRET = "your-secret-key-change-in-production";
 function getSecret(req) {
-  return req && getReqEnv(req, "JWT_SECRET") || DEFAULT_SECRET;
+  return getReqEnv(req, "JWT_SECRET") || DEFAULT_SECRET;
 }
 function verifyToken(req, res) {
   if (isTestEnv(req)) {
@@ -13981,7 +13957,7 @@ function verifyToken(req, res) {
     return true;
   }
   const authHeader = req.headers.authorization || req.headers.Authorization;
-  const token = typeof authHeader === "string" ? authHeader.replace("Bearer ", "") : null;
+  const token = authHeader?.replace("Bearer ", "");
   if (!token) {
     res.status(401).json({ error: "No authorization token provided" });
     return false;
@@ -13998,96 +13974,10 @@ function verifyToken(req, res) {
 
 // api/songs/index.js
 init_turso();
-
-// api/_core/crypto.js
-function webCrypto() {
-  const seen = globalThis.crypto;
-  if (seen && typeof seen.getRandomValues === "function") return seen;
-  return null;
-}
-function randomBytesFallback(size) {
-  const seen = webCrypto();
-  if (seen) {
-    const bytes2 = new Uint8Array(size);
-    seen.getRandomValues(bytes2);
-    return bytes2;
-  }
-  const bytes = new Uint8Array(size);
-  for (let i = 0; i < size; i += 1) bytes[i] = Math.floor(Math.random() * 256);
-  return bytes;
-}
-function uuid() {
-  try {
-    const native = webCrypto();
-    if (native && typeof native.randomUUID === "function") return native.randomUUID();
-  } catch {
-  }
-  const bytes = randomBytesFallback(16);
-  bytes[6] = bytes[6] & 15 | 64;
-  bytes[8] = bytes[8] & 63 | 128;
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-function randomHex(size = 32) {
-  return Array.from(randomBytesFallback(size), (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-// api/_core/body.js
-function getParsedBody(req) {
-  if (!req) return void 0;
-  if (req.rpParsedBody !== void 0) return req.rpParsedBody;
-  if (req.body === void 0 || req.body === null) return void 0;
-  if (typeof req.body !== "object") return void 0;
-  if (typeof req.body.arrayBuffer === "function") return void 0;
-  if (req.body.byteLength !== void 0 && typeof req.body.get !== "function") return void 0;
-  return req.body;
-}
-async function readRawBody(req) {
-  if (!req) return "";
-  if (req.rpBodyText !== void 0 && req.rpBodyText !== null) return req.rpBodyText;
-  if (typeof req.arrayBuffer === "function") {
-    const buffer = await req.arrayBuffer();
-    return new TextDecoder().decode(buffer);
-  }
-  if (req.rawBody) {
-    return typeof req.rawBody === "string" ? req.rawBody : Buffer.from(req.rawBody).toString("utf8");
-  }
-  if (req.readableEnded) {
-    if (req.rawBody) {
-      return typeof req.rawBody === "string" ? req.rawBody : Buffer.from(req.rawBody).toString("utf8");
-    }
-    return "";
-  }
-  if (typeof req.on !== "function") return "";
-  return await new Promise((resolve, reject) => {
-    let data = "";
-    req.setEncoding?.("utf8");
-    req.on("data", (chunk) => {
-      data += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
-    });
-    req.on("end", () => resolve(data));
-    req.on("error", reject);
-  });
-}
-async function readJson(req, { strict = false } = {}) {
-  const parsed = getParsedBody(req);
-  if (parsed !== void 0) return parsed;
-  const raw = await readRawBody(req);
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw);
-  } catch (error) {
-    if (strict) throw error;
-    return {};
-  }
-}
-
-// api/songs/index.js
-init_env();
+import { randomUUID } from "crypto";
 
 // api/songs/[id].js
 init_turso();
-init_env();
 
 // src/utils/permissionUtils.js
 var PERMISSIONS = {
@@ -14204,6 +14094,23 @@ var PERMISSION_NAMES = {
 // api/songs/[id].js
 var _schemaEnsured = false;
 var _schemaEnsurePromise = null;
+async function readJson(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
+}
 async function ensureSongsColumns(client) {
   const columnsResult = await client.execute(`PRAGMA table_info(songs)`);
   const columns = (columnsResult.rows || []).map((row) => row.name);
@@ -14442,7 +14349,7 @@ async function handler(req, res) {
     }
     let client;
     try {
-      client = getTursoClient();
+      client = getTursoClient(req);
       if (!_schemaEnsured) {
         if (!_schemaEnsurePromise) {
           _schemaEnsurePromise = (async () => {
@@ -14474,7 +14381,7 @@ async function handler(req, res) {
     res.status(405).json({ error: "Method not allowed" });
   } catch (err) {
     console.error("API /api/songs/[id] error:", err);
-    res.status(500).json({ error: "Internal Server Error", message: err.message, details: getReqEnv(req, "NODE_ENV") === "development" ? err.stack : void 0 });
+    res.status(500).json({ error: "Internal Server Error", message: err.message, details: false ? err.stack : void 0 });
   }
 }
 
@@ -14492,6 +14399,23 @@ async function ensureSchema(client) {
     })();
   }
   await _schemaEnsurePromise2;
+}
+async function readJson2(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
 }
 async function ensureSongsColumns2(client) {
   const columnsResult = await client.execute(`PRAGMA table_info(songs)`);
@@ -14585,8 +14509,8 @@ async function filterMasteryForViewer2(client, songBandId, masteryList, viewerUs
     return bandMembers.has(entryUserId) || entryUserId === normalizedViewerId;
   });
 }
-async function fetchYouTubeTrending(req) {
-  const apiKey = getReqEnv(req, "VITE_YOUTUBE_API_KEY") || getReqEnv(req, "YOUTUBE_API_KEY");
+async function fetchYouTubeTrending() {
+  const apiKey = process.env.VITE_YOUTUBE_API_KEY;
   if (!apiKey) {
     return null;
   }
@@ -14668,7 +14592,7 @@ async function handleSongMastery(req, res, client, songId) {
     return;
   }
   if (req.method === "PUT" || req.method === "PATCH") {
-    const body = await readJson(req);
+    const body = await readJson2(req);
     const requestedStatus = String(body?.status || "").toLowerCase();
     const masteredValue = requestedStatus === "learning" ? 0 : 1;
     const mastered = masteredValue === 1;
@@ -14682,7 +14606,7 @@ async function handleSongMastery(req, res, client, songId) {
            masteredAt = excluded.masteredAt,
            updatedAt = excluded.updatedAt`,
         [
-          uuid(),
+          randomUUID(),
           songId,
           userId,
           masteredValue,
@@ -14724,25 +14648,21 @@ async function handler2(req, res) {
     const rewrittenMasterySongId = req.query?.id || req.query?.songId;
     const rewrittenPathMarker = req.query?.path || req.query?.endpoint;
     if (pathSegments.length === 2 && pathSegments[1] === "mastery") {
-      const client2 = getTursoClient();
+      const client2 = getTursoClient(req);
       await ensureSchema(client2);
       return handleSongMastery(req, res, client2, pathSegments[0]);
     }
     if (rewrittenMasterySongId && rewrittenPathMarker === "mastery") {
-      const client2 = getTursoClient();
+      const client2 = getTursoClient(req);
       await ensureSchema(client2);
       return handleSongMastery(req, res, client2, rewrittenMasterySongId);
     }
     if (relativePath && (req.method === "GET" || req.method === "PUT" || req.method === "PATCH" || req.method === "DELETE")) {
-      if (req.query && Object.prototype.hasOwnProperty.call(req.query, "id")) {
-        req.query = { ...req.query };
-        delete req.query.id;
-      }
       req.params = { ...req.params, id: relativePath };
       req.query = { ...req.query, id: relativePath };
       return handler(req, res);
     }
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     await client.execute(
       `CREATE TABLE IF NOT EXISTS songs (
         id TEXT PRIMARY KEY,
@@ -14752,7 +14672,7 @@ async function handler2(req, res) {
         lyrics TEXT,
         key TEXT,
         tempo TEXT,
-        genre TEXT,
+        genre TEXT,                
         time_markers TEXT,
         time_signature TEXT,
         userId TEXT,
@@ -14905,7 +14825,7 @@ async function handler2(req, res) {
         }
       }));
       if (includeTrending) {
-        const trending = await fetchYouTubeTrending(req);
+        const trending = await fetchYouTubeTrending();
         res.status(200).json({ songs: list, trending: trending || [] });
         return;
       }
@@ -14917,7 +14837,7 @@ async function handler2(req, res) {
         if (typeof str !== "string") return "";
         return str.replace(/[<>"'`]/g, "").slice(0, maxLen);
       };
-      const body = await readJson(req);
+      const body = await readJson2(req);
       const now = (/* @__PURE__ */ new Date()).toISOString();
       const userId = req.user?.userId;
       const upsertOne = async (item) => {
@@ -14934,7 +14854,7 @@ async function handler2(req, res) {
           const tempoInt = parseInt(String(item.tempo).replace(/,/g, "."), 10);
           if (!isNaN(tempoInt)) tempoStr = tempoInt.toString();
         }
-        const id = item.id?.toString() || uuid();
+        const id = item.id?.toString() || randomUUID();
         await client.execute(
           `INSERT INTO songs (id, title, artist, youtubeId, lyrics, key, tempo, genre, time_markers, time_signature, arrangement_style, keyboard_patch, sheet_music_xml, userId, bandId, createdAt, updatedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -14999,7 +14919,7 @@ async function handler2(req, res) {
     res.status(405).json({ error: "Method not allowed" });
   } catch (err) {
     console.error("API /api/songs error:", err);
-    res.status(500).json({ error: "Internal Server Error", message: err.message, details: getReqEnv(req, "NODE_ENV") === "development" ? err.stack : void 0 });
+    res.status(500).json({ error: "Internal Server Error", message: err.message, details: false ? err.stack : void 0 });
   }
 }
 async function ensureBandSongPracticeStatsTable(client) {
@@ -15027,6 +14947,24 @@ async function ensureBandSongPracticeStatsTable(client) {
 
 // api/setlists/index.js
 init_turso();
+import { randomUUID as randomUUID2 } from "crypto";
+async function readJson3(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
+}
 function normalizeSongId(songId) {
   if (songId === null || songId === void 0) return "";
   return String(songId).trim();
@@ -15119,7 +15057,7 @@ async function upsertBandPreferredKeys(client, bandId, setlistSongMeta, allowedS
        VALUES (?, ?, ?, ?, ?, ?)
        ON CONFLICT(bandId, songId)
        DO UPDATE SET preferredKey = excluded.preferredKey, updatedAt = excluded.updatedAt`,
-      [uuid(), bandId, row.songId, row.preferredKey, nowIso, nowIso]
+      [randomUUID2(), bandId, row.songId, row.preferredKey, nowIso, nowIso]
     );
   }
 }
@@ -15141,7 +15079,7 @@ async function handler3(req, res) {
       let client2;
       const userId2 = req.user?.userId;
       try {
-        client2 = getTursoClient();
+        client2 = getTursoClient(req);
       } catch (clientErr) {
         console.error(`[setlists/[id]] Failed to get Turso client:`, clientErr.message);
         res.status(500).json({ error: "Database connection error", details: clientErr.message });
@@ -15208,7 +15146,7 @@ async function handler3(req, res) {
         }
       }
       if (req.method === "PUT" || req.method === "PATCH") {
-        const body = await readJson(req);
+        const body = await readJson3(req);
         const now = (/* @__PURE__ */ new Date()).toISOString();
         const normalizedMetaPatch = body?.setlistSongMetaPatch && typeof body.setlistSongMetaPatch === "object" && !Array.isArray(body.setlistSongMetaPatch) ? body.setlistSongMetaPatch : null;
         const setlistRowResult = await client2.execute(
@@ -15234,7 +15172,7 @@ async function handler3(req, res) {
           return;
         }
         await client2.execute(
-          `UPDATE setlists SET
+          `UPDATE setlists SET 
              name = COALESCE(?, name),
              description = COALESCE(?, description),
              bandId = COALESCE(?, bandId),
@@ -15329,7 +15267,7 @@ async function handler3(req, res) {
       res.status(405).json({ error: "Method not allowed" });
       return;
     }
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     const userId = req.user?.userId;
     const summaryParam = req.query?.summary || new URL(req.url, "http://localhost").searchParams.get("summary");
     const isSummaryRequest = ["1", "true", "yes"].includes(String(summaryParam || "").toLowerCase());
@@ -15472,7 +15410,7 @@ async function handler3(req, res) {
         if (typeof str !== "string") return "";
         return str.replace(/[<>"'`]/g, "").slice(0, maxLen);
       };
-      const body = await readJson(req);
+      const body = await readJson3(req);
       const name = sanitize(body.name, 100);
       if (!name || name.length < 1) {
         res.status(400).json({ error: "Setlist name is required" });
@@ -15488,7 +15426,7 @@ async function handler3(req, res) {
           return;
         }
       }
-      const id2 = body.id?.toString() || uuid();
+      const id2 = body.id?.toString() || randomUUID2();
       const now = (/* @__PURE__ */ new Date()).toISOString();
       const dedupedSongs = Array.isArray(body.songs) ? dedupeSongIds(body.songs) : [];
       const preferredKeyMap = await getBandPreferredKeyMap(client, bandId, dedupedSongs);
@@ -15575,86 +15513,31 @@ async function handler3(req, res) {
 // api/bands/index.js
 init_turso();
 
-// api/_mailer.js
-init_env();
-var loadNodemailer = () => Promise.resolve().then(() => (init_nodemailer_stub(), nodemailer_stub_exports));
-function getMailConfig(req) {
-  return {
-    host: getReqEnv(req, "SMTP_HOST") || getReqEnv(req, "EMAIL_HOST") || "smtp.gmail.com",
-    port: Number(getReqEnv(req, "SMTP_PORT") || getReqEnv(req, "EMAIL_PORT") || 587),
-    user: getReqEnv(req, "SMTP_USER") || getReqEnv(req, "EMAIL_USER"),
-    pass: getReqEnv(req, "SMTP_PASS") || getReqEnv(req, "EMAIL_PASSWORD"),
-    from: getReqEnv(req, "MAIL_FROM") || getReqEnv(req, "SMTP_USER") || getReqEnv(req, "EMAIL_USER"),
-    provider: getReqEnv(req, "MAIL_PROVIDER"),
-    resendKey: getReqEnv(req, "RESEND_API_KEY"),
-    postmarkToken: getReqEnv(req, "POSTMARK_SERVER_TOKEN")
-  };
-}
-async function sendViaHttp(config, message) {
-  if (config.provider === "resend" && config.resendKey) {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${config.resendKey}`,
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        from: message.from || config.from,
-        to: Array.isArray(message.to) ? message.to : [message.to],
-        subject: message.subject,
-        html: message.html,
-        text: message.text
-      })
-    });
-    if (!response.ok) throw new Error(`Resend error: HTTP ${response.status}`);
-    return response.json();
-  }
-  if (config.provider === "postmark" && config.postmarkToken) {
-    const response = await fetch("https://api.postmarkapp.com/email", {
-      method: "POST",
-      headers: {
-        "x-postmark-server-token": config.postmarkToken,
-        "content-type": "application/json",
-        accept: "application/json"
-      },
-      body: JSON.stringify({
-        From: message.from || config.from,
-        To: Array.isArray(message.to) ? message.to.join(",") : message.to,
-        Subject: message.subject,
-        HtmlBody: message.html,
-        TextBody: message.text
-      })
-    });
-    if (!response.ok) throw new Error(`Postmark error: HTTP ${response.status}`);
-    return response.json();
-  }
-  throw new Error(
-    "No email transport available: configure SMTP_HOST/SMTP_USER/SMTP_PASS (Node) or MAIL_PROVIDER + provider API key (Cloudflare)."
-  );
-}
-async function sendMail(req, message) {
-  const config = getMailConfig(req);
-  const nodemailer = await loadNodemailer();
-  const factory = nodemailer?.createTransport;
-  const isStub = !factory || nodemailer && nodemailer.__rpStub;
-  if (isStub) return sendViaHttp(config, message);
-  const transporter = factory({
-    host: config.host,
-    port: config.port,
-    secure: false,
-    auth: { user: config.user, pass: config.pass }
-  });
-  return transporter.sendMail({ ...message, from: message.from || config.from });
-}
-
 // api/bands/[id].js
 init_turso();
+async function readJson4(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
+}
 async function handler4(req, res) {
   try {
     if (!verifyToken(req, res)) {
       return;
     }
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     const userId = req.user?.userId;
     const bandId = req.query?.id || req.params?.id || req.url?.split("/").pop();
     if (!userId) {
@@ -15704,7 +15587,7 @@ async function handler4(req, res) {
       });
     }
     if (req.method === "PUT") {
-      const body = await readJson(req);
+      const body = await readJson4(req);
       const { name, description, genre } = body;
       const bandResult = await client.execute(
         "SELECT createdBy FROM bands WHERE id = ?",
@@ -15743,6 +15626,20 @@ async function handler4(req, res) {
     res.status(500).json({ error: error.message || "Internal server error" });
   }
 }
+
+// cloudflare/nodemailer-stub.js
+function createTransport() {
+  return {
+    sendMail() {
+      return Promise.reject(
+        new Error(
+          "SMTP is not available on Cloudflare Workers. Set MAIL_PROVIDER=resend (RESEND_API_KEY) or MAIL_PROVIDER=postmark (POSTMARK_SERVER_TOKEN), or send mail from an external service."
+        )
+      );
+    }
+  };
+}
+var nodemailer_stub_default = { createTransport, __rpStub: true };
 
 // api/middleware/rateLimiter.js
 var rateLimitStore = /* @__PURE__ */ new Map();
@@ -15803,7 +15700,7 @@ function createRateLimiter(options = {}) {
   };
 }
 function defaultKeyGenerator(req) {
-  const ip = req.ip || req.connection?.remoteAddress || "127.0.0.1";
+  const ip = req.ip || req.connection.remoteAddress || "127.0.0.1";
   return `rate-limit:${ip}`;
 }
 function cleanupRateLimits() {
@@ -15815,16 +15712,36 @@ function cleanupRateLimits() {
     }
   }
 }
-if (typeof setInterval === "function") {
-  try {
-    const timer = setInterval(cleanupRateLimits, 60 * 60 * 1e3);
-    timer.unref?.();
-  } catch {
-  }
-}
+setInterval(cleanupRateLimits, 60 * 60 * 1e3);
 
 // api/bands/index.js
+var transporter = nodemailer_stub_default.createTransport({
+  host: process.env.EMAIL_HOST || "smtp.gmail.com",
+  port: process.env.EMAIL_PORT || 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  }
+});
 var rateLimiter = createRateLimiter({ ...RATE_LIMITS.API_WRITE });
+async function readJson5(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
+}
 async function handler5(req, res) {
   try {
     if (!verifyToken(req, res)) {
@@ -15838,7 +15755,7 @@ async function handler5(req, res) {
       req.query = { ...req.query, id: relativePath };
       return handler4(req, res);
     }
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     const userId = req.user?.userId;
     try {
       await client.execute(`
@@ -15904,7 +15821,7 @@ async function handler5(req, res) {
       if (!hasPermission(userRole, BAND_CREATE)) {
         return res.status(403).json({ error: "You do not have permission to create bands" });
       }
-      const body = await readJson(req);
+      const body = await readJson5(req);
       const name = sanitize(body.name, 100);
       if (!name || name.length < 1) {
         return res.status(400).json({ error: "Band name is required" });
@@ -15946,7 +15863,7 @@ async function handler6(req, res) {
   const bandId = req.params?.id || req.query?.bandId || (req.url.split("/")[3] || "").split("?")[0];
   const userId = req.params?.userId || req.query?.userId || (req.url.split("/")[5] || "").split("?")[0];
   if (!verifyToken(req, res)) return;
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   const currentUserId = req.user?.userId;
   if (req.method === "GET") {
     const members = await client.execute(
@@ -15996,6 +15913,24 @@ async function handler6(req, res) {
 
 // api/events/index.js
 init_turso();
+import { randomUUID as randomUUID3 } from "crypto";
+async function readJson6(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
+}
 function getTable(type) {
   if (type === "gig") return "gigs";
   throw new Error("Invalid type");
@@ -16016,7 +15951,7 @@ async function handler7(req, res) {
     return;
   }
   const table = getTable(type);
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   const userId = req.user?.userId || req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   try {
@@ -16034,7 +15969,7 @@ async function handler7(req, res) {
         }
       }
       if (req.method === "PUT" || req.method === "PATCH") {
-        const body = await readJson(req);
+        const body = await readJson6(req);
         const now = (/* @__PURE__ */ new Date()).toISOString();
         if (type === "gig") {
           const gigCheck = await client.execute(`SELECT userId, bandId FROM gigs WHERE id = ?`, [id]);
@@ -16089,10 +16024,10 @@ async function handler7(req, res) {
       }
     }
     if (req.method === "POST") {
-      const body = await readJson(req);
+      const body = await readJson6(req);
       const now = (/* @__PURE__ */ new Date()).toISOString();
       if (type === "gig") {
-        const id2 = uuid();
+        const id2 = randomUUID3();
         await client.execute(`INSERT INTO gigs (id, bandId, userId, date, venue, city, fee, setlistId, notes, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [id2, body.bandId ?? null, userId, body.date ?? null, body.venue ?? "", body.city ?? "", body.fee ?? null, body.setlistId ?? null, body.notes ?? "", now, now]);
         res.status(201).json({ id: id2 });
         return;
@@ -16107,7 +16042,7 @@ async function handler7(req, res) {
 }
 
 // api/ai.js
-init_env();
+var import_busboy = __toESM(require_lib(), 1);
 var GEMINI_TEXT_MODELS_SUPPORTED = [
   // Verified via ModelService.ListModels (v1beta) — gemini-2.0-* and gemma-3-*
   // are no longer served for standard API keys and only produce 404s.
@@ -16146,64 +16081,22 @@ function buildGeminiModelCandidates(requestedModel) {
   return unique;
 }
 var songInfoCache = {};
-var env = (req, name) => getReqEnv(req, name);
-async function readMultipart(req) {
-  const field = "audio";
-  const contentType = req.headers?.["content-type"] || req.headers?.["Content-Type"] || "";
-  if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
-    throw new Error("Multipart/form-data expected");
-  }
-  if (typeof FormData !== "undefined" && globalThis.Request) {
-    try {
-      const request = req.rawRequest || new Request("http://localhost/", {
-        method: "POST",
-        headers: { "content-type": contentType },
-        body: req.body
-      });
-      const form = await request.formData();
-      const file = form.get(field);
-      if (file && typeof file.arrayBuffer === "function") {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        return {
-          buffer,
-          mimeType: file.type || "audio/mpeg",
-          fileName: file.name || "audio.mp3"
-        };
-      }
-      throw new Error("Audio file required or empty");
-    } catch (error) {
-      if (/Audio file required/.test(error.message)) throw error;
-    }
-  }
-  const { default: busboy } = await Promise.resolve().then(() => __toESM(require_lib(), 1));
-  const bb = busboy({ headers: req.headers });
-  let audioBuffer = null;
-  let mimeType = "audio/mpeg";
-  await new Promise((resolve, reject) => {
-    bb.on("file", (fieldname, file, info) => {
-      if (fieldname === field) {
-        mimeType = info.mimeType || "audio/mpeg";
-        const chunks = [];
-        file.on("data", (chunk) => {
-          chunks.push(chunk);
-        });
-        file.on("end", () => {
-          audioBuffer = Buffer.concat(chunks);
-        });
-        file.on("error", reject);
-      } else {
-        file.resume();
+async function readJson7(req) {
+  if (req.body && typeof req.body === "object") return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
       }
     });
-    bb.on("close", resolve);
-    bb.on("error", reject);
-    if (Buffer.isBuffer(req.body) || req.body instanceof Uint8Array) {
-      bb.end(Buffer.from(req.body));
-    } else {
-      req.pipe(bb);
-    }
+    req.on("error", reject);
   });
-  return { buffer: audioBuffer, mimeType };
 }
 async function handleRecommendSetlist(req, res) {
   if (req.method !== "POST") {
@@ -16211,12 +16104,12 @@ async function handleRecommendSetlist(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
   try {
-    const body = await readJson(req);
+    const body = await readJson7(req);
     const genre = (body.genre || "").toString();
     const mood = (body.mood || "").toString();
     const numSongs = parseInt(body.numSongs, 10) || 6;
     const { getTursoClient: getTursoClient2 } = await Promise.resolve().then(() => (init_turso(), turso_exports));
-    const client = getTursoClient2();
+    const client = getTursoClient2(req);
     let query = "SELECT id, title, artist, genre FROM songs";
     const params = [];
     const filters = [];
@@ -16266,11 +16159,11 @@ async function handleChat(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
   try {
-    const apiKey = env(req, "GEMINI_API_KEY");
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: "GEMINI_API_KEY tidak diset" });
     }
-    const body = await readJson(req);
+    const body = await readJson7(req);
     const prompt = (body?.prompt || "").toString();
     const context = (body?.context || "").toString();
     const system = (body?.system || "").toString();
@@ -16346,19 +16239,16 @@ function buildChordLinks(title, artist) {
     { title: "Google Search", site: "google.com", url: `https://www.google.com/search?q=${encodeURIComponent(`${title} ${artist || ""} chord`)}` }
   ];
 }
-async function searchYoutube(title, artist, req) {
+async function searchYoutube(title, artist) {
   const debug = {};
-  const youtubeKey = env(req, "VITE_YOUTUBE_API_KEY") || env(req, "YOUTUBE_API_KEY");
-  if (!youtubeKey) {
+  if (!process.env.VITE_YOUTUBE_API_KEY) {
     console.warn("Warning: VITE_YOUTUBE_API_KEY not configured");
     debug.youtubeKeyMissing = true;
     return { youtubeId: null, debug };
   }
   try {
-    const youtubeUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(`${title} ${artist}`)}&key=${youtubeKey}`;
-    const youtubeResponse = await fetch(youtubeUrl, {
-      signal: typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(5e3) : void 0
-    });
+    const youtubeUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(`${title} ${artist}`)}&key=${process.env.VITE_YOUTUBE_API_KEY}`;
+    const youtubeResponse = await fetch(youtubeUrl, { timeout: 5e3 });
     if (!youtubeResponse.ok) {
       debug.youtubeStatus = youtubeResponse.status;
       console.error(`YouTube API returned ${youtubeResponse.status}`);
@@ -16373,9 +16263,9 @@ async function searchYoutube(title, artist, req) {
     return { youtubeId: null, debug };
   }
 }
-async function fetchSongInfoFromGemini(prompt, req) {
+async function fetchSongInfoFromGemini(prompt) {
   const { GoogleGenerativeAI: GoogleGenerativeAI2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
-  const genAI = new GoogleGenerativeAI2(env(req, "GEMINI_API_KEY"));
+  const genAI = new GoogleGenerativeAI2(process.env.GEMINI_API_KEY);
   const deniedModels = /* @__PURE__ */ new Set();
   let lastError = null;
   for (const modelName of GEMINI_TEXT_MODELS_SUPPORTED) {
@@ -16429,7 +16319,7 @@ async function handleSongSearch(req, res) {
   }
   let body = {};
   try {
-    body = await readJson(req, { strict: true });
+    body = await readJson7(req);
   } catch (err) {
     console.error("Body parsing error:", err);
     return res.status(400).json({ error: "Invalid request body" });
@@ -16457,12 +16347,12 @@ async function handleSongSearch(req, res) {
       chordLinks: [],
       debug: {}
     };
-    const youtube = await searchYoutube(title, artist, req);
+    const youtube = await searchYoutube(title, artist);
     results.youtubeId = youtube.youtubeId;
     results.debug = { ...results.debug, ...youtube.debug };
     results.chordLinks = buildChordLinks(title, artist);
-    if (env(req, "GEMINI_API_KEY")) {
-      const gemini = await fetchSongInfoFromGemini(buildSongInfoPrompt(title, artist), req);
+    if (process.env.GEMINI_API_KEY) {
+      const gemini = await fetchSongInfoFromGemini(buildSongInfoPrompt(title, artist));
       Object.assign(results, gemini.fields);
       results.debug = { ...results.debug, ...gemini.debug };
       if (gemini.success) {
@@ -16477,7 +16367,7 @@ async function handleSongSearch(req, res) {
     return res.status(200).json(results);
   } catch (error) {
     console.error("Error in song search:", error);
-    return res.status(500).json({ error: "Failed to search song information", message: error.message, details: env(req, "NODE_ENV") === "development" ? error.stack : void 0 });
+    return res.status(500).json({ error: "Failed to search song information", message: error.message, details: false ? error.stack : void 0 });
   }
 }
 async function handleTranscribe(req, res) {
@@ -16486,14 +16376,36 @@ async function handleTranscribe(req, res) {
     return;
   }
   try {
-    const { buffer: audioBuffer, mimeType } = await readMultipart(req);
+    const bb = (0, import_busboy.default)({ headers: req.headers });
+    let audioBuffer = null;
+    let mimeType = "audio/mpeg";
+    let fileName = "";
+    await new Promise((resolve, reject) => {
+      bb.on("file", (fieldname, file, info) => {
+        if (fieldname === "audio") {
+          mimeType = info.mimeType || "audio/mpeg";
+          fileName = info.filename || "audio.mp3";
+          const chunks = [];
+          file.on("data", (chunk) => {
+            chunks.push(chunk);
+          });
+          file.on("end", () => {
+            audioBuffer = Buffer.concat(chunks);
+          });
+          file.on("error", reject);
+        }
+      });
+      bb.on("close", resolve);
+      bb.on("error", reject);
+      req.pipe(bb);
+    });
     if (!audioBuffer || audioBuffer.length === 0) {
       res.status(400).json({ error: "Audio file required or empty" });
       return;
     }
-    const base64Audio = Buffer.from(audioBuffer).toString("base64");
+    const base64Audio = audioBuffer.toString("base64");
     const { GoogleGenerativeAI: GoogleGenerativeAI2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
-    const client = new GoogleGenerativeAI2(env(req, "GEMINI_API_KEY"));
+    const client = new GoogleGenerativeAI2(process.env.GEMINI_API_KEY);
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
     const response = await model.generateContent([
       { inlineData: { mimeType, data: base64Audio } },
@@ -16511,7 +16423,7 @@ async function handleTranscribe(req, res) {
 init_turso();
 async function handler9(req, res) {
   if (!verifyToken(req, res)) return;
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   if (req.method === "GET") {
     try {
       const [songs, setlists, bands, users] = await Promise.all([
@@ -16619,7 +16531,7 @@ async function handler10(req, res) {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   try {
     const tablesRes = await client.execute(
       `SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`
@@ -16682,7 +16594,7 @@ async function handler11(req, res) {
     return res.status(400).json({ error: "File SQL kosong atau tidak valid." });
   }
   const allowed = /^(INSERT|UPDATE|DELETE|CREATE TABLE|DROP TABLE|ALTER TABLE)/i;
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   try {
     const statements = sql.split(";").map((s) => s.trim()).filter((s) => s && !s.startsWith("--"));
     if (statements.length === 0) {
@@ -16708,7 +16620,7 @@ async function handler11(req, res) {
 init_turso();
 async function handler12(req, res) {
   if (!verifyToken(req, res)) return;
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   if (req.user.role !== "owner") {
     return res.status(403).json({ error: "Hanya owner yang dapat mengakses daftar users" });
   }
@@ -18485,7 +18397,7 @@ var bcryptjs_default = {
 // api/users/[id].js
 async function handler13(req, res) {
   if (!verifyToken(req, res)) return;
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   const userId = req.query.id || req.params.id;
   if (req.user.role !== "owner") {
     return res.status(403).json({ error: "Hanya owner yang dapat mengelola users" });
@@ -18600,7 +18512,7 @@ async function handler13(req, res) {
 init_turso();
 async function handler14(req, res) {
   if (!verifyToken(req, res)) return;
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   const userId = req.query.id || req.params.id;
   if (req.user.role !== "owner") {
     return res.status(403).json({ error: "Hanya owner yang dapat reset password user" });
@@ -18640,8 +18552,24 @@ async function handler14(req, res) {
 // api/auth/register.js
 var import_jsonwebtoken2 = __toESM(require_jsonwebtoken(), 1);
 init_turso();
-init_env();
-var getJwtSecret = (req) => getReqEnv(req, "JWT_SECRET", "your-secret-key-change-in-production");
+var JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+async function readJson8(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
+}
 var rateLimiter2 = createRateLimiter({ ...RATE_LIMITS.AUTH_REGISTER });
 async function handler15(req, res) {
   await rateLimiter2(req, res, () => {
@@ -18651,7 +18579,7 @@ async function handler15(req, res) {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Method not allowed" });
     }
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     await client.execute(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -18662,7 +18590,7 @@ async function handler15(req, res) {
         updatedAt TEXT
       )
     `);
-    const body = await readJson(req);
+    const body = await readJson8(req);
     const { email, username, password } = body;
     if (!email || !username || !password) {
       return res.status(400).json({ error: "Email, username, and password required" });
@@ -18690,7 +18618,7 @@ async function handler15(req, res) {
     );
     const token = import_jsonwebtoken2.default.sign(
       { userId, email, username, role },
-      getJwtSecret(req),
+      JWT_SECRET,
       { expiresIn: "7d" }
     );
     return res.status(201).json({
@@ -18709,8 +18637,24 @@ async function handler15(req, res) {
 // api/auth/login.js
 var import_jsonwebtoken3 = __toESM(require_jsonwebtoken(), 1);
 init_turso();
-init_env();
-var getJwtSecret2 = (req) => getReqEnv(req, "JWT_SECRET", "your-secret-key-change-in-production");
+var JWT_SECRET2 = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+async function readJson9(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
+}
 var rateLimiter3 = createRateLimiter({ ...RATE_LIMITS.AUTH_LOGIN });
 async function handler16(req, res) {
   let allowed = false;
@@ -18728,7 +18672,7 @@ async function handler16(req, res) {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Method not allowed" });
     }
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     await client.execute(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -18739,7 +18683,7 @@ async function handler16(req, res) {
         updatedAt TEXT
       )
     `);
-    const body = await readJson(req);
+    const body = await readJson9(req);
     const { email, password } = body;
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password required" });
@@ -18758,7 +18702,7 @@ async function handler16(req, res) {
     }
     const token = import_jsonwebtoken3.default.sign(
       { userId: user.id, email: user.email, username: user.username, role: user.role },
-      getJwtSecret2(req),
+      JWT_SECRET2,
       { expiresIn: "7d" }
     );
     return res.status(200).json({
@@ -18776,11 +18720,10 @@ async function handler16(req, res) {
 // api/auth/me.js
 var import_jsonwebtoken4 = __toESM(require_jsonwebtoken(), 1);
 init_turso();
-init_env();
-var getJwtSecret3 = (req) => getReqEnv(req, "JWT_SECRET", "your-secret-key-change-in-production");
+var JWT_SECRET3 = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 async function handler17(req, res) {
   try {
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     if (req.method === "GET") {
       const token = req.headers.authorization?.replace("Bearer ", "");
       if (!token) {
@@ -18788,7 +18731,7 @@ async function handler17(req, res) {
       }
       let decoded;
       try {
-        decoded = import_jsonwebtoken4.default.verify(token, getJwtSecret3(req));
+        decoded = import_jsonwebtoken4.default.verify(token, JWT_SECRET3);
       } catch (error) {
         return res.status(401).json({ error: "Invalid or expired token" });
       }
@@ -18840,12 +18783,25 @@ async function handler17(req, res) {
       }
       let decoded;
       try {
-        decoded = import_jsonwebtoken4.default.verify(token, getJwtSecret3(req));
+        decoded = import_jsonwebtoken4.default.verify(token, JWT_SECRET3);
       } catch (error) {
         return res.status(401).json({ error: "Invalid or expired token" });
       }
       const userId = decoded.userId;
-      const body = req.body || await readJson(req);
+      const body = req.body || await new Promise((resolve, reject) => {
+        let data = "";
+        req.on("data", (chunk) => {
+          data += chunk;
+        });
+        req.on("end", () => {
+          try {
+            resolve(data ? JSON.parse(data) : {});
+          } catch (e) {
+            reject(e);
+          }
+        });
+        req.on("error", reject);
+      });
       const fields = {};
       if (body.displayName) fields.displayName = body.displayName;
       if (body.bio) fields.bio = body.bio;
@@ -18874,16 +18830,14 @@ async function handler17(req, res) {
 }
 
 // api/auth/forgot-password.js
-import crypto2 from "node:crypto";
+import crypto2 from "crypto";
 init_turso();
-init_env();
-var smtpConfig = (req) => ({
-  host: getReqEnv(req, "SMTP_HOST") || getReqEnv(req, "EMAIL_HOST"),
-  port: getReqEnv(req, "SMTP_PORT") || getReqEnv(req, "EMAIL_PORT"),
-  user: getReqEnv(req, "SMTP_USER") || getReqEnv(req, "EMAIL_USER"),
-  pass: getReqEnv(req, "SMTP_PASS") || getReqEnv(req, "EMAIL_PASSWORD"),
-  appUrl: getReqEnv(req, "APP_URL", "http://localhost:5173")
-});
+var JWT_SECRET4 = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+var SMTP_HOST = process.env.SMTP_HOST;
+var SMTP_PORT = process.env.SMTP_PORT;
+var SMTP_USER = process.env.SMTP_USER;
+var SMTP_PASS = process.env.SMTP_PASS;
+var APP_URL = process.env.APP_URL || "http://localhost:5173";
 var rateLimiter4 = createRateLimiter({ ...RATE_LIMITS.AUTH_FORGOT });
 async function handler18(req, res) {
   await rateLimiter4(req, res, () => {
@@ -18893,7 +18847,7 @@ async function handler18(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
   try {
-    const { email } = await readJson(req);
+    const { email } = req.body;
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
     }
@@ -18901,7 +18855,7 @@ async function handler18(req, res) {
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "Invalid email format" });
     }
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     const userResult = await client.execute(
       "SELECT id, username FROM users WHERE email = ?",
       [email]
@@ -18912,20 +18866,28 @@ async function handler18(req, res) {
       });
     }
     const userId = userResult.rows[0].id;
-    const resetToken = randomHex(32);
+    const resetToken = crypto2.randomBytes(32).toString("hex");
     const tokenHash = crypto2.createHash("sha256").update(resetToken).digest("hex");
     const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1e3);
     await client.execute(
-      `INSERT INTO password_reset_tokens
-       (userId, tokenHash, expiresAt, createdAt)
+      `INSERT INTO password_reset_tokens 
+       (userId, tokenHash, expiresAt, createdAt) 
        VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
       [userId, tokenHash, expiresAt.toISOString()]
     );
-    const smtp = smtpConfig(req);
-    const resetLink = `${smtp.appUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    const resetLink = `${APP_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
     try {
-      await sendMail(req, {
-        from: smtp.user,
+      const transporter2 = nodemailer_stub_default.createTransport({
+        host: SMTP_HOST,
+        port: SMTP_PORT,
+        secure: false,
+        auth: {
+          user: SMTP_USER,
+          pass: SMTP_PASS
+        }
+      });
+      await transporter2.sendMail({
+        from: SMTP_USER,
         to: email,
         subject: "Ruang Performer - Reset Your Password",
         html: `
@@ -18976,7 +18938,7 @@ async function handler18(req, res) {
 }
 
 // api/auth/reset-password.js
-import crypto3 from "node:crypto";
+import crypto3 from "crypto";
 init_turso();
 var rateLimiter5 = createRateLimiter({ ...RATE_LIMITS.AUTH_RESET });
 async function handler19(req, res) {
@@ -18987,14 +18949,14 @@ async function handler19(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
   try {
-    const { token, email, newPassword } = await readJson(req);
+    const { token, email, newPassword } = req.body;
     if (!token || !email || !newPassword) {
       return res.status(400).json({ error: "Token, email, and password are required" });
     }
     if (newPassword.length < 6) {
       return res.status(400).json({ error: "Password must be at least 6 characters" });
     }
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     const userResult = await client.execute(
       "SELECT id FROM users WHERE email = ?",
       [email]
@@ -19042,21 +19004,37 @@ async function handler19(req, res) {
 // api/auth/change-password.js
 var import_jsonwebtoken5 = __toESM(require_jsonwebtoken(), 1);
 init_turso();
-init_env();
-var getJwtSecret4 = (req) => getReqEnv(req, "JWT_SECRET", "your-secret-key-change-in-production");
+var JWT_SECRET5 = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+async function readJson10(req) {
+  if (req.body) return req.body;
+  return await new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
+}
 async function handler20(req, res) {
   const token = req.headers.authorization?.replace("Bearer ", "");
   if (!token) return res.status(401).json({ error: "No token provided" });
   let decoded;
   try {
-    decoded = import_jsonwebtoken5.default.verify(token, getJwtSecret4(req));
+    decoded = import_jsonwebtoken5.default.verify(token, JWT_SECRET5);
   } catch (e) {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
   const userId = decoded.userId;
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   if (req.method === "POST") {
-    const body = await readJson(req);
+    const body = await readJson10(req);
     const { oldPassword, newPassword } = body;
     if (!oldPassword || !newPassword) {
       return res.status(400).json({ error: "Old and new password required" });
@@ -19083,21 +19061,20 @@ async function handler20(req, res) {
 // api/auth/user-audit-logs.js
 var import_jsonwebtoken6 = __toESM(require_jsonwebtoken(), 1);
 init_turso();
-init_env();
-var getJwtSecret5 = (req) => getReqEnv(req, "JWT_SECRET", "your-secret-key-change-in-production");
+var JWT_SECRET6 = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 async function handler21(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
   try {
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (!token) {
       return res.status(401).json({ error: "No token provided" });
     }
     let decoded;
     try {
-      decoded = import_jsonwebtoken6.default.verify(token, getJwtSecret5(req));
+      decoded = import_jsonwebtoken6.default.verify(token, JWT_SECRET6);
     } catch (error) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
@@ -19325,7 +19302,7 @@ function headersToObject(headers) {
   }
   return out;
 }
-function createRequestContext(request, { body, bodyText, params = {}, path, query, env: env2 } = {}) {
+function createRequestContext(request, { body, bodyText, params = {}, path, query, env } = {}) {
   const url = new URL(request.url);
   const pathname = path || decodePath(url.pathname);
   const headerObject = headersToObject(request.headers);
@@ -19340,7 +19317,7 @@ function createRequestContext(request, { body, bodyText, params = {}, path, quer
     params,
     headers: headerObject,
     body: rawBody,
-    rpEnv: env2 || {},
+    rpEnv: env || {},
     ip: headerObject["cf-connecting-ip"] || headerObject["x-forwarded-for"]?.split(",")[0]?.trim() || "127.0.0.1",
     // Keep the Web Request around for multipart streams (busboy-compatible).
     rawRequest: request,
@@ -19468,9 +19445,9 @@ async function bufferBody(request) {
   }
   return { body, bodyText: null };
 }
-async function handleApi(request, env2) {
+async function handleApi(request, env) {
   const { body, bodyText } = await bufferBody(request);
-  const ctx = createRequestContext(request, { body, bodyText, env: env2 });
+  const ctx = createRequestContext(request, { body, bodyText, env });
   const { req, res } = ctx;
   try {
     const { matched } = await dispatch(req, res);
@@ -19485,14 +19462,14 @@ async function handleApi(request, env2) {
     });
   }
 }
-async function serveAsset(request, env2) {
-  const assets = env2.ASSETS;
+async function serveAsset(request, env) {
+  const assets = env.ASSETS;
   if (!assets || typeof assets.fetch !== "function") return null;
   const response = await assets.fetch(request);
   return response && response.status !== 404 ? response : null;
 }
-async function serveSpaFallback(request, env2) {
-  const assets = env2.ASSETS;
+async function serveSpaFallback(request, env) {
+  const assets = env.ASSETS;
   if (!assets || typeof assets.fetch !== "function") return null;
   const url = new URL(request.url);
   url.pathname = "/index.html";
@@ -19500,10 +19477,10 @@ async function serveSpaFallback(request, env2) {
   return response && response.status !== 404 ? response : null;
 }
 var worker_default = {
-  async fetch(request, env2) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === API_PREFIX || url.pathname.startsWith(`${API_PREFIX}/`)) {
-      return handleApi(request, env2);
+      return handleApi(request, env);
     }
     if (request.method === "OPTIONS") {
       return new Response(null, {
@@ -19515,9 +19492,9 @@ var worker_default = {
         }
       });
     }
-    const asset = await serveAsset(request, env2);
+    const asset = await serveAsset(request, env);
     if (asset) return asset;
-    const fallback = await serveSpaFallback(request, env2);
+    const fallback = await serveSpaFallback(request, env);
     if (fallback) return fallback;
     return jsonResponse(404, { error: "Not found" });
   }

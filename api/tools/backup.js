@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   try {
     // 1. Get all user tables (ignore sqlite internal tables)
     const tablesRes = await client.execute(

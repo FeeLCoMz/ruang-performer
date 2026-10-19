@@ -36,12 +36,12 @@ const missing = await call('/api/does-not-exist');
 assert.equal(missing.status, 404);
 assert.match(missing.headers.get('content-type') || '', /application\/json/);
 
-// 3. Protected route + per-request env bag. NODE_ENV is forced by the test
-//    setup (api/test-helpers), so Turso is mocked and the failure below proves
-//    the env bag is what the handler reads.
+// 3. Protected route + per-request env bag. `NODE_ENV: 'test'` in the Cloudflare
+//    env bag bypasses JWT and returns the mock Turso client, so a 200 proves the
+//    handler saw `req.rpEnv` (a module-level `process.env` read would 401).
 const guarded = await call('/api/songs', { method: 'GET' });
-assert.equal(guarded.status, 500, 'JWT bypassed; missing Turso config reported as JSON 500');
-assert.match(await guarded.text(), /TURSO_DATABASE_URL/);
+assert.equal(guarded.status, 200, 'JWT bypassed via per-request env; Turso mocked');
+assert.match(guarded.headers.get('content-type') || '', /application\/json/);
 
 // 4. JSON body is parsed once and visible to handlers.
 const rawJson = JSON.stringify({ title: 'Song Test', artist: 'Test Artist' });
@@ -64,8 +64,9 @@ const scopedEnv = { TEST_ONLY_VALUE: 'from-bindings' };
 assert.equal(getReqEnv({ rpEnv: scopedEnv }, 'TEST_ONLY_VALUE'), 'from-bindings');
 assert.equal(getReqEnv(null, 'TEST_ONLY_VALUE'), undefined);
 
-// 7. verifyToken reads JWT_SECRET per request (no module-level capture).
-const tokenReq = { headers: {}, rpEnv: { JWT_SECRET: 'per-request-secret' } };
+// 7. verifyToken: no token -> 401 (the secret is read per request, not frozen
+//    at module load).
+const tokenReq = { headers: {}, rpEnv: { JWT_SECRET: 'per-request-secret', NODE_ENV: 'production' } };
 let failureStatus = 0;
 const fakeRes = { status: (code) => { failureStatus = code; return { json: () => {} }; } };
 assert.equal(verifyToken(tokenReq, fakeRes), false);
@@ -75,3 +76,5 @@ assert.equal(failureStatus, 401);
 assert.match(uuid(), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 
 console.log('Cloudflare adapter smoke tests passed.');
+// Exit explicitly: the in-memory rate limiter may leave timers behind.
+process.exit(0);

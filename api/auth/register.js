@@ -27,7 +27,7 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const client = getTursoClient();
+    const client = getTursoClient(req);
 
     // Create users table if not exists
     await client.execute(`

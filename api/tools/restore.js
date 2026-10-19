@@ -26,7 +26,7 @@ export default async function handler(req, res) {
 
   // Validasi minimal: hanya statement INSERT, UPDATE, DELETE, dan CREATE TABLE yang diizinkan
   const allowed = /^(INSERT|UPDATE|DELETE|CREATE TABLE|DROP TABLE|ALTER TABLE)/i;
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   try {
     // Split by ;, trim, and filter out comments/blank lines
     const statements = sql

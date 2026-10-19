@@ -4,7 +4,7 @@ import { verifyToken } from '../_auth.js';
 export default async function handler(req, res) {
   if (!verifyToken(req, res)) return;
 
-  const client = getTursoClient();
+  const client = getTursoClient(req);
 
   // Only owner can list all users
   if (req.user.role !== 'owner') {

@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 export default async function handler(req, res) {
   if (!verifyToken(req, res)) return;
 
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   const userId = req.query.id || req.params.id;
 
   // Only owner can manage users

@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 export default async function handler(req, res) {
   try {
-    const client = getTursoClient();
+    const client = getTursoClient(req);
 
     if (req.method === 'GET') {
       // Get token from Authorization header

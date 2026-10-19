@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
   const userId = decoded.userId;
-  const client = getTursoClient();
+  const client = getTursoClient(req);
 
   if (req.method === 'POST') {
     // Change password

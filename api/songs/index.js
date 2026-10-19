@@ -297,13 +297,13 @@ export default async function handler(req, res) {
     const rewrittenPathMarker = req.query?.path || req.query?.endpoint;
 
     if (pathSegments.length === 2 && pathSegments[1] === 'mastery') {
-      const client = getTursoClient();
+      const client = getTursoClient(req);
       await ensureSchema(client);
       return handleSongMastery(req, res, client, pathSegments[0]);
     }
 
     if (rewrittenMasterySongId && rewrittenPathMarker === 'mastery') {
-      const client = getTursoClient();
+      const client = getTursoClient(req);
       await ensureSchema(client);
       return handleSongMastery(req, res, client, rewrittenMasterySongId);
     }
@@ -315,7 +315,7 @@ export default async function handler(req, res) {
       return songIdHandler(req, res);
     }
 
-    const client = getTursoClient();
+    const client = getTursoClient(req);
 
     await client.execute(
       `CREATE TABLE IF NOT EXISTS songs (

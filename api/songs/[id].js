@@ -297,7 +297,7 @@ export default async function handler(req, res) {
 
     let client;
     try {
-      client = getTursoClient();
+      client = getTursoClient(req);
       if (!_schemaEnsured) {
         if (!_schemaEnsurePromise) {
           _schemaEnsurePromise = (async () => {

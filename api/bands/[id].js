@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     const userId = req.user?.userId;
     const bandId = req.query?.id || req.params?.id || req.url?.split('/').pop();
 

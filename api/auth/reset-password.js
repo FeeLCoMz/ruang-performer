@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    const client = getTursoClient();
+    const client = getTursoClient(req);
 
     // Find user by email
     const userResult = await client.execute(

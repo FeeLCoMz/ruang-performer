@@ -19,7 +19,7 @@ async function readJson(req) {
 
 export default async function handler(req, res) {
   try {
-    const client = getTursoClient();
+    const client = getTursoClient(req);
 
     // Create users table if not exists
     await client.execute(`

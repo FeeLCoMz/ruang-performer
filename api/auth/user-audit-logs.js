@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   try {
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     // Get token from Authorization header
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) {

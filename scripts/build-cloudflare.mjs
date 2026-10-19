@@ -54,6 +54,9 @@ const result = await build({
   alias: {
     '@libsql/client': '@libsql/client/web',
     nodemailer: path.join(root, 'cloudflare/nodemailer-stub.js'),
+    // Subpath first: esbuild appends `/config` to the alias target, so
+    // `dotenv/config` must map to an exact file, not to a directory.
+    'dotenv/config': path.join(root, 'cloudflare/dotenv-stub.js'),
     dotenv: path.join(root, 'cloudflare/dotenv-stub.js'),
   },
   define: {

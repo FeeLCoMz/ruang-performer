@@ -260,7 +260,7 @@ export default async function handler(req, res) {
     return;
   }
   const table = getTable(type);
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   const userId = req.user?.userId || req.user?.id;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 

@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   const userId = req.params?.userId || req.query?.userId || (req.url.split('/')[5] || '').split('?')[0];
 
   if (!verifyToken(req, res)) return;
-  const client = getTursoClient();
+  const client = getTursoClient(req);
   const currentUserId = req.user?.userId;
 
   // Permission check: only band owner/admin can add/remove/update members

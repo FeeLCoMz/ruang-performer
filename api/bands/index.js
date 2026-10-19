@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       return bandIdHandler(req, res);
     }
 
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     const userId = req.user?.userId;
 
     // Create tables if not exist

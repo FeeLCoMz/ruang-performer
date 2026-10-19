@@ -76,7 +76,7 @@ async function handleRecommendSetlist(req, res) {
 
     // Ambil daftar lagu dari database (songs table)
     const { getTursoClient } = await import('./_turso.js');
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     let query = 'SELECT id, title, artist, genre FROM songs';
     const params = [];
     const filters = [];

@@ -154,7 +154,7 @@ export default async function handler(req, res) {
       let client;
       const userId = req.user?.userId;
       try {
-        client = getTursoClient();
+        client = getTursoClient(req);
       } catch (clientErr) {
         console.error(`[setlists/[id]] Failed to get Turso client:`, clientErr.message);
         res.status(500).json({ error: 'Database connection error', details: clientErr.message });
@@ -357,7 +357,7 @@ export default async function handler(req, res) {
       // --- End logic from [id].js ---
     }
 
-    const client = getTursoClient();
+    const client = getTursoClient(req);
     const userId = req.user?.userId;
     const summaryParam = req.query?.summary || new URL(req.url, 'http://localhost').searchParams.get('summary');
     const isSummaryRequest = ['1', 'true', 'yes'].includes(String(summaryParam || '').toLowerCase());

@@ -1,6 +1,12 @@
 import jwt from 'jsonwebtoken';
+import { getReqEnv, isTestEnv } from './_core/env.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const DEFAULT_SECRET = 'your-secret-key-change-in-production';
+
+// Read per request: Cloudflare bindings only exist inside the request scope.
+function getSecret(req) {
+  return getReqEnv(req, 'JWT_SECRET') || DEFAULT_SECRET;
+}
 
 /**
  * Verify JWT token from request headers
@@ -11,7 +17,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
  */
 export function verifyToken(req, res) {
   // Bypass JWT auth in test environment
-  if (process.env.NODE_ENV === 'test') {
+  if (isTestEnv(req)) {
     req.user = { id: 'test-user', userId: 'test-user', email: 'test@example.com', role: 'owner' };
     return true;
   }
@@ -25,7 +31,7 @@ export function verifyToken(req, res) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getSecret(req));
     req.user = decoded;
     return true;
   } catch (error) {
