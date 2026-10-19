@@ -10,6 +10,7 @@ import {
   AUTOCOMPLETE_SECTION_LABELS as CONFIG_SECTION_LABELS,
   AUTOCOMPLETE_METADATA as CONFIG_METADATA,
   AUTOCOMPLETE_INSTRUMENTS as CONFIG_INSTRUMENTS,
+  CUE_MARK_KEYWORDS as CONFIG_CUE_MARK_KEYWORDS,
 } from '../config/chordDisplayConfig.js';
 
 /**
@@ -45,6 +46,15 @@ const METADATA_COMPLETIONS = CONFIG_METADATA.flatMap(({ label, detail, info }) =
   },
 ]);
 
+/** Capitalise each word, matching autoTagSongSections()/config labels. */
+function titleCaseKeyword(keyword) {
+  return String(keyword)
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 /** Instrument words highlighted by the editor. */
 const INSTRUMENT_COMPLETIONS = [...new Set(CONFIG_INSTRUMENTS)].flatMap((name) => [
   {
@@ -61,12 +71,25 @@ const INSTRUMENT_COMPLETIONS = [...new Set(CONFIG_INSTRUMENTS)].flatMap((name) =
   },
 ]);
 
+/**
+ * Inline cue marks (Stop, Hit, Aksen, ...) recognised by isCueMarkKeyword().
+ * Offered in both bracket styles the parser accepts: `(Hit)` and `[Hit]`.
+ */
+const CUE_LABELS = [
+  ...new Set(CONFIG_CUE_MARK_KEYWORDS.map(titleCaseKeyword)),
+];
+
+const CUE_COMPLETIONS = CUE_LABELS.flatMap((name) => [
+  { label: `[${name}]`, type: 'keyword', detail: 'Cue mark', apply: `[${name}]` },
+  { label: `(${name})`, type: 'keyword', detail: 'Cue mark', apply: `(${name})` },
+]);
+
 const ALL_COMPLETIONS = [
   ...SECTION_COMPLETIONS,
   ...METADATA_COMPLETIONS,
 ];
 
-const options = [...ALL_COMPLETIONS, ...INSTRUMENT_COMPLETIONS];
+const options = [...ALL_COMPLETIONS, ...INSTRUMENT_COMPLETIONS, ...CUE_COMPLETIONS];
 
 /** Match the unfinished `[` tag immediately before the cursor. */
 function tokenBefore(state, pos) {
@@ -80,9 +103,10 @@ function tokenBefore(state, pos) {
 
 /**
  * Completion source. Deliberately simple: it only offers the known syntaxes
- * once the user opens a `[` tag (sections, and bracketed metadata/instrument
- * variants). It never triggers on plain words, so chord names and lyrics —
- * which are typed far too often for a popup to be helpful — stay undisturbed.
+ * once the user opens a `[` tag (sections, bracketed metadata/instrument
+ * variants and cue marks). It never triggers on plain words, so chord names and
+ * lyrics — which are typed far too often for a popup to be helpful — stay
+ * undisturbed.
  *
  * The `from` position ALWAYS comes from our own token scan (`token.from`),
  * never from `context.matchBefore`: matchBefore matches an empty string at

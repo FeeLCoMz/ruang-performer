@@ -38,18 +38,20 @@ const dedupe = (list) => [...new Set(list)];
 export const STRUCTURE_SECTION_KEYWORDS = [
   'intro',
   'verse',
+  'bridge',  
   'pre-chorus',
   'chorus',
-  'post-chorus',
   'reff',
   'refrain',
-  'bridge',
+  'post-chorus',
   'interlude',
-  'solo',
-  'outro',
   'coda',
+  'outro',  
   'musik',
+  'music',
+  'solo',  
   'instrumental',
+  'int.'
 ];
 
 /**
