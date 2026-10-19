@@ -89,7 +89,9 @@ describe('buildGeminiModelCandidates', () => {
 
   test('falls back to known-good models after the requested one', () => {
     const candidates = buildGeminiModelCandidates('gemini-2.5-flash');
-    expect(candidates).toContain('gemini-2.5-pro');
+    // 2.5-* hanya dipertahankan untuk project lama; model 3.x & alias "-latest"
+    // tetap tersedia sebagai fallback setelahnya.
+    expect(candidates).toContain('gemini-3.6-flash');
     expect(candidates).toContain('gemini-flash-latest');
     expect(candidates).not.toContain('gemini-2.0-flash');
   });
@@ -98,7 +100,8 @@ describe('buildGeminiModelCandidates', () => {
     const fallbackOnly = buildGeminiModelCandidates('');
     expect(buildGeminiModelCandidates(null)).toEqual(fallbackOnly);
     expect(buildGeminiModelCandidates(undefined)).toEqual(fallbackOnly);
-    expect(fallbackOnly[0]).toBe('gemini-flash-latest');
+    // Kepala fallback harus model yang masih aktif untuk API key baru.
+    expect(fallbackOnly[0]).toBe('gemini-3.6-flash');
   });
 
   test('never repeats a model', () => {
@@ -197,7 +200,7 @@ describe('handleChat model fallback', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.text).toBe('second try works');
     // First candidate denied, second candidate (fallback list head) succeeded.
-    expect(res.body.modelUsed).toBe('gemini-flash-latest');
+    expect(res.body.modelUsed).toBe('gemini-3.6-flash');
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 

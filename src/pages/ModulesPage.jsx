@@ -8,6 +8,7 @@
  * berpengaruh ke fitur terkait (mis. modul MIDI menghentikan akses Web MIDI).
  */
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useModulesEnabled } from '../hooks/useModulesEnabled.js';
 import { getModulesWithStatus } from '../modules/registry.js';
 
@@ -51,6 +52,18 @@ export default function ModulesPage() {
                 </label>
               </div>
               <p>{mod.description}</p>
+              {mod.path && (
+                <Link
+                  to={mod.path}
+                  className={`btn btn-secondary modules-open${enabled ? '' : ' is-disabled'}`}
+                  aria-disabled={!enabled}
+                  onClick={(event) => {
+                    if (!enabled) event.preventDefault();
+                  }}
+                >
+                  Buka modul →
+                </Link>
+              )}
             </div>
           );
         })}

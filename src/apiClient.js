@@ -305,6 +305,43 @@ export async function transcribeAudio(audioFile) {
   });
 }
 
+/**
+ * AI Chord & Sheet Music Transcriber.
+ *
+ * @param {Object} payload
+ * @param {Blob|File} payload.audio File rekaman/buku audio.
+ * @param {string} [payload.prompt] Prompt siap pakai (lihat modules/chord-transcriber/transcribePrompt.js).
+ * @param {string} [payload.sourceType] 'audio' atau 'midi'.
+ * @param {string} [payload.sourceName] Nama sumber untuk konteks AI.
+ * @param {string} [payload.keyHint] Nada dasar preferensi.
+ * @param {string} [payload.midiSummary] Ringkasan MIDI hasil parsing klien.
+ */
+export async function transcribeChordAudio({
+  audio,
+  prompt,
+  sourceType = 'audio',
+  sourceName = '',
+  keyHint = '',
+  midiSummary = '',
+} = {}) {
+  const formData = new FormData();
+  if (audio) {
+    const fileName = audio.name || (sourceType === 'midi' ? 'recording.mid' : 'recording.webm');
+    formData.append('audio', audio, fileName);
+  }
+  if (prompt) formData.append('prompt', prompt);
+  formData.append('sourceType', sourceType);
+  if (sourceName) formData.append('sourceName', sourceName);
+  if (keyHint) formData.append('keyHint', keyHint);
+  if (midiSummary) formData.append('midiSummary', midiSummary);
+  return request('/ai/chord-transcribe', {
+    method: 'POST',
+    sendContentType: false,
+    body: formData,
+    fallbackError: 'Gagal mentranskripsi audio menjadi chord',
+  });
+}
+
 export async function aiSongSearch({ title, artist }) {
   return request('/ai/song-search', {
     method: 'POST',

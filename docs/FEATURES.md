@@ -172,7 +172,22 @@ Server menyediakan `POST /api/extract-chord` sebagai proxy untuk melewati batasa
 | Autofill chord & lirik | Diberikan judul + artist, AI menghasilkan draf kord |
 | Pencarian lagu AI | Metadata lagu dari judul/artist |
 | Transkripsi audio | Unggah audio → teks lirik |
+| **Chord & Sheet Music Transcriber** | Modul `chord-transcriber`: rekam mikrofon / unggah audio / upload MIDI → draf key, tempo, chord per bagian, lirik, dan melodi not angka. `POST /api/ai/chord-transcribe` |
 | Pilih model | Daftar model Gemini yang didukung, dapat dipilih user |
+
+### Modul AI Chord & Sheet Music Transcriber
+
+Lokasi: `src/modules/chord-transcriber/` · Halaman: `/chord-transcriber` (buka dari **Modul → Buka modul**)
+
+| Berkas | Fungsi |
+| --- | --- |
+| `ChordTranscriberPage.jsx` | UI rekam/unggah, pengaturan key & transpose, hasil chord per section, editor teks lagu, ekspor & "Buat Lagu dari Draf" |
+| `useAudioRecorder.js` | Hook MediaRecorder (rekam, jeda, lanjut, stop) |
+| `midiFileParser.js` | Parser SMF di browser (notes, tempo, deteksi key & chord ringkas) |
+| `transcribePrompt.js` | Prompt JSON + parser jawaban AI + konversi ke format teks lagu |
+| `transcriberSettings.js` | Toggle on/off di halaman Modul (`ruang-performer:module:chord-transcriber-enabled`) |
+
+Alur: rekam/unggah → AI menganalisis → hasil dapat disalin, diunduh `.txt`, atau dibawa ke `/songs/add` lewat `location.state.prefill`.
 
 ---
 

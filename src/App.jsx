@@ -30,6 +30,7 @@ const BandManagementPage = lazy(() => import("./pages/BandManagementPage.jsx"));
 const GigPage = lazy(() => import("./pages/GigPage.jsx"));
 const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx"));
 const UserManagementPage = lazy(() => import("./pages/UserManagementPage.jsx"));
+const ChordTranscriberPage = lazy(() => import("./modules/chord-transcriber/ChordTranscriberPage.jsx"));
 
 // Loading fallback component
 import { SongListSkeleton } from './components/LoadingSkeleton.jsx';
@@ -449,6 +450,7 @@ function AppContent() {
               {/* InvitationPage and PendingInvitationsPage removed */}
               <Route path="/tools" element={<ToolsPage />} />
               <Route path="/modules" element={<ModulesPage />} />
+              <Route path="/chord-transcriber" element={<ChordTranscriberPage />} />
               <Route path="/user-management" element={<UserManagementPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

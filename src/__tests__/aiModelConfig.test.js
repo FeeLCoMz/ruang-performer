@@ -7,9 +7,17 @@ describe('Gemini model configuration', () => {
     expect(buildGeminiModelCandidates('gemma-3n-e2b-it')).not.toContain('gemma-3n-e2b-it');
   });
 
-  it('keeps a safe default fallback model', () => {
+  it('keeps the requested model first', () => {
     const candidates = buildGeminiModelCandidates('gemini-2.5-flash');
     expect(candidates[0]).toBe('gemini-2.5-flash');
     expect(candidates).toContain('gemini-2.5-flash');
+  });
+
+  it('uses current Gemini 3.x flash models as audio fallbacks', () => {
+    const candidates = buildGeminiModelCandidates('gemini-2.5-flash');
+    // 2.5-* ditolak untuk API key baru (404), jadi model 3.x harus sudah ada
+    // di rantai fallback dan diurutkan sebelum alias "-latest".
+    expect(candidates).toContain('gemini-3.6-flash');
+    expect(candidates.indexOf('gemini-3.6-flash')).toBeLessThan(candidates.indexOf('gemini-flash-latest'));
   });
 });

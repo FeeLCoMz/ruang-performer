@@ -13,6 +13,9 @@ import { MODULES_REGISTRY } from '../modules/registry.js';
 
 const buildStorageKey = (id) => `ruang-performer:module:${id}`;
 
+/** Key yang benar-benar dipakai modul: metadata `storageKey`, atau fallback pola id. */
+const resolveStorageKey = (mod) => mod.storageKey || buildStorageKey(mod.id);
+
 export const useModulesEnabled = () => {
   const [statuses, setStatuses] = useState(() =>
     Object.fromEntries(MODULES_REGISTRY.map((mod) => [mod.id, mod.isEnabled()])),
@@ -28,7 +31,7 @@ export const useModulesEnabled = () => {
       }
       // Fallback: sinkron antar tab via storage event.
       const onStorage = (event) => {
-        if (event.key === buildStorageKey(mod.id)) {
+        if (event.key === resolveStorageKey(mod)) {
           setStatuses((prev) => ({ ...prev, [mod.id]: mod.isEnabled() }));
         }
       };

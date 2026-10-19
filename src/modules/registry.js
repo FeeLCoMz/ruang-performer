@@ -22,6 +22,12 @@ import {
   setMidiEnabled,
   DEFAULT_MIDI_ENABLED,
 } from './midi/midiSettings.js';
+import {
+  isTranscriberEnabled,
+  setTranscriberEnabled,
+  subscribeTranscriberEnabled,
+  DEFAULT_TRANSCRIBER_ENABLED,
+} from './chord-transcriber/transcriberSettings.js';
 
 export const MODULES_REGISTRY = [
   {
@@ -34,6 +40,19 @@ export const MODULES_REGISTRY = [
     storageKey: 'ruang-performer:midiEnabled',
     isEnabled: isMidiEnabled,
     setEnabled: setMidiEnabled,
+  },
+  {
+    id: 'chord-transcriber',
+    name: 'AI Chord & Sheet Music Transcriber',
+    description:
+      'Rekam suara latihan atau unggah file audio/MIDI, lalu AI mengubahnya menjadi draf lirik + chord dan Not Angka yang siap dipakai sebagai repertoire baru.',
+    icon: '🤖',
+    path: '/chord-transcriber',
+    defaultEnabled: DEFAULT_TRANSCRIBER_ENABLED,
+    storageKey: 'ruang-performer:module:chord-transcriber-enabled',
+    isEnabled: isTranscriberEnabled,
+    setEnabled: setTranscriberEnabled,
+    subscribe: subscribeTranscriberEnabled,
   },
 ];
 

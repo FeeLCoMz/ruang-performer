@@ -216,6 +216,25 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lyrics, barsPerLine]);
 
+  // Prefill dari modul AI Chord & Sheet Music Transcriber:
+  // navigasi ke /songs/add dengan state.prefill { title, key, tempo,
+  // timeSignature, lyrics, genre, artist }. Hanya untuk lagu baru, dan hanya
+  // sekali (di-memo per object) agar user tetap bisa mengedit.
+  const transcriberPrefill = !id && location.state?.prefill ? location.state.prefill : null;
+  useEffect(() => {
+    if (!transcriberPrefill) return;
+    if (transcriberPrefill.title) setTitle(transcriberPrefill.title);
+    if (transcriberPrefill.artist) setArtist(transcriberPrefill.artist);
+    if (transcriberPrefill.key) {
+      setSongKey(transcriberPrefill.key);
+      setInsertNumberKeySignature(getNumericNotationKey(transcriberPrefill.key));
+    }
+    if (transcriberPrefill.tempo) setTempo(String(transcriberPrefill.tempo));
+    if (transcriberPrefill.timeSignature) setTimeSignature(transcriberPrefill.timeSignature);
+    if (transcriberPrefill.genre) setGenre(transcriberPrefill.genre);
+    if (transcriberPrefill.lyrics) setLyrics(transcriberPrefill.lyrics);
+  }, [transcriberPrefill]);
+
   // Load source song for edit or duplicate mode
   useEffect(() => {
     if (id) {

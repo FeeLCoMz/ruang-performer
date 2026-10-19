@@ -1,10 +1,21 @@
-// Text-only Gemini models that support generateContent for song metadata lookup.
-// Keep multimodal/audio/image/video models out of this list to avoid 404s here.
-// NOTE: Gemma 3n variants are not consistently available in the v1beta generateContent API
-// for all projects, so we intentionally exclude them to prevent 404s on production traffic.
+// Gemini models that support generateContent for song metadata lookup AND
+// inline audio input (transcriber). Exclude TTS/image/video/live models.
+// NOTE: Gemma variants are not consistently available in the v1beta generateContent
+// API for all projects, so we intentionally exclude them to prevent 404s on
+// production traffic.
+//
+// Urutan penting — dipakai sebagai rantai fallback:
+//   - model baru lebih dulu (3.x) karena 2.5-* sudah ditolak untuk API key baru,
+//   - alias "-latest" diletakkan di akhir karena bisa menggantung lama (timeout),
+//   - "hint" untuk audio hanya memakai model yang cepat & paham audio;
+//   - transcribe-live memakai bidiGenerateContent, jadi tidak pernah masuk sini.
 export const GEMINI_TEXT_MODELS_SUPPORTED = [
-  // Verified via ModelService.ListModels (v1beta) — gemini-2.0-* and gemma-3-*
-  // are no longer served for standard API keys and only produce 404s.
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3.8-flash',
+  'gemini-3.7-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3-flash-preview',
   'gemini-flash-latest',
   'gemini-2.5-flash',
   'gemini-flash-lite-latest',
@@ -22,10 +33,18 @@ const UNSUPPORTED_GEMINI_MODELS = new Set([
 ]);
 
 const GEMINI_FALLBACK_MODELS = [
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3.8-flash',
   'gemini-flash-latest',
   'gemini-2.5-flash',
-  'gemini-2.5-pro',
 ];
+
+/** Batas satu percobaan model untuk audio: cukup untuk klip 18 MB, jauh di bawah timeout klien. */
+const GEMINI_AUDIO_REQUEST_TIMEOUT_MS = 45000;
+
+/** Default model untuk endpoint audio (transcriber): harus cepat & multimodal. */
+export const DEFAULT_GEMINI_AUDIO_MODEL = 'gemini-3.6-flash';
 
 function isGeminiProjectDeniedAccess(status, message) {
   if (status !== 403) return false;
@@ -48,6 +67,7 @@ const songInfoCache = {};
 
 import 'dotenv/config';
 import busboy from 'busboy';
+import { buildTranscribePrompt, parseTranscriptionResponse } from '../src/modules/chord-transcriber/transcribePrompt.js';
 
 async function readJson(req) {
   if (req.body && typeof req.body === 'object') return req.body;
@@ -123,6 +143,7 @@ export default async function handler(req, res) {
       error: 'Endpoint ini tidak digunakan lagi. Gunakan /api/songs?include=trending untuk data trending YouTube.'
     });
   }
+  if (url.startsWith('/chord-transcribe')) return await handleChordTranscribe(req, res);
   if (url.startsWith('/transcribe')) return await handleTranscribe(req, res);
   if (url.startsWith('/recommend-setlist')) return await handleRecommendSetlist(req, res);
   return await handleChat(req, res);
@@ -385,6 +406,192 @@ async function handleSongSearch(req, res) {
 
 // --- Spotify helpers ---
 // Spotify integration removed: feature deprecated.
+
+// --- AI Chord & Sheet Music Transcriber handler ---
+// Menerima multipart:
+//   - audio   : file rekaman (mp3/wav/m4a/ogg/webm)  -> dikirim inline ke Gemini
+//   - midi    : file .mid (opsional)                 -> diparsing di klien, dipakai sebagai teks
+//   - prompt  : prompt siap pakai dari klien
+//   - sourceName, sourceType, hasAudio
+const MAX_TRANSCRIBE_AUDIO_BYTES = 18 * 1024 * 1024; // batas aman inline request Gemini
+
+function readMultipartFields(req, { fileFields = ['audio', 'midi'], maxFileBytes = MAX_TRANSCRIBE_AUDIO_BYTES } = {}) {
+  return new Promise((resolve, reject) => {
+    const bb = busboy({ headers: req.headers, limits: { fileSize: maxFileBytes, files: 4 } });
+    const fields = {};
+    const files = {};
+    bb.on('field', (name, value) => {
+      fields[name] = value;
+    });
+    bb.on('file', (fieldname, file, info) => {
+      if (!fileFields.includes(fieldname)) {
+        file.resume();
+        return;
+      }
+      const chunks = [];
+      let total = 0;
+      let truncated = false;
+      file.on('data', (chunk) => {
+        total += chunk.length;
+        if (total <= maxFileBytes) chunks.push(chunk);
+      });
+      file.on('limit', () => { truncated = true; });
+      file.on('end', () => {
+        files[fieldname] = {
+          buffer: Buffer.concat(chunks),
+          mimeType: info.mimeType || 'application/octet-stream',
+          fileName: info.filename || '',
+          truncated,
+        };
+      });
+      file.on('error', reject);
+    });
+    bb.on('close', () => resolve({ fields, files }));
+    bb.on('error', reject);
+    req.pipe(bb);
+  });
+}
+
+async function handleChordTranscribe(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'GEMINI_API_KEY tidak diset' });
+  }
+
+  try {
+    const { fields, files } = await readMultipartFields(req);
+    const audio = files.audio;
+    const midi = files.midi;
+    if (audio?.truncated) {
+      return res.status(413).json({
+        error: `File audio terlalu besar. Maksimal ${Math.round(MAX_TRANSCRIBE_AUDIO_BYTES / (1024 * 1024))} MB — potong rekaman atau unggah bagian per bagian.`,
+      });
+    }
+    if ((!audio || audio.buffer.length === 0) && (!midi || midi.buffer.length === 0)) {
+      return res.status(400).json({ error: 'File audio atau MIDI diperlukan' });
+    }
+
+    const sourceType = (fields.sourceType || (midi && !audio ? 'midi' : 'audio')).toString();
+    let prompt = (fields.prompt || '').toString().trim();
+    if (prompt.length > 20000) prompt = prompt.slice(0, 20000);
+    if (!prompt) {
+      // Fallback bila klien lama belum mengirim prompt.
+      prompt = buildTranscribePrompt({
+        sourceType,
+        sourceName: fields.sourceName || audio?.fileName || midi?.fileName || '',
+        keyHint: fields.keyHint || '',
+        midiSummary: (fields.midiSummary || '').toString(),
+      });
+    }
+
+    const parts = [];
+    if (audio && audio.buffer.length > 0) {
+      parts.push({
+        inlineData: {
+          mimeType: audio.mimeType || 'audio/mpeg',
+          data: audio.buffer.toString('base64'),
+        },
+      });
+    }
+    parts.push({ text: prompt });
+
+    const requestedModel = (fields.model || '').toString() || DEFAULT_GEMINI_AUDIO_MODEL;
+    let text = '';
+    let modelUsed = null;
+    let lastStatus = 500;
+    let lastMessage = 'Gemini API gagal';
+    const attemptedModels = [];
+
+    for (const candidateModel of buildGeminiModelCandidates(requestedModel)) {
+      const modelStart = Date.now();
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${candidateModel}:generateContent?key=${apiKey}`;
+      let resp;
+      let data = {};
+      try {
+        resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts }],
+            // thinkingBudget 0: audio recorder tidak butuh chain-of-thought dan
+            // model thinking bisa menggantung >60 detik (timeout di klien).
+            generationConfig: {
+              temperature: 0.3,
+              responseMimeType: 'application/json',
+              thinkingConfig: { thinkingBudget: 0 },
+            },
+          }),
+          signal: AbortSignal.timeout(GEMINI_AUDIO_REQUEST_TIMEOUT_MS),
+        });
+        data = await resp.json().catch(() => ({}));
+      } catch (err) {
+        const timedOut = err?.name === 'TimeoutError' || err?.name === 'AbortError';
+        const message = timedOut
+          ? `Model ${candidateModel} tidak merespons dalam ${GEMINI_AUDIO_REQUEST_TIMEOUT_MS / 1000} detik.`
+          : (err?.message || 'Gagal menghubungi Gemini');
+        attemptedModels.push({ model: candidateModel, status: timedOut ? 504 : 0, message, ms: Date.now() - modelStart });
+        lastStatus = timedOut ? 504 : 502;
+        lastMessage = message;
+        console.error(`Chord transcribe error (model: ${candidateModel}):`, message);
+        continue;
+      }
+      if (resp.ok) {
+        text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('\n') || '';
+        if (text.trim()) {
+          modelUsed = candidateModel;
+          break;
+        }
+        lastMessage = `Model ${candidateModel} mengembalikan jawaban kosong.`;
+        attemptedModels.push({ model: candidateModel, status: 200, message: lastMessage, ms: Date.now() - modelStart });
+        continue;
+      }
+      const message = data?.error?.message || 'Gemini API gagal';
+      attemptedModels.push({ model: candidateModel, status: resp.status, message, ms: Date.now() - modelStart });
+      lastStatus = resp.status;
+      lastMessage = message;
+      console.error(`Chord transcribe error (model: ${candidateModel}):`, message);
+
+      // Lolos ke model berikutnya hanya untuk masalah yang bersifat model:
+      //   404 = model tidak tersedia untuk API key ini,
+      //   429 = kuota model habis,
+      //   503 = model sedang kelebihan beban ("high demand").
+      // 400/403/413 = masalah request/akses project -> percuma mencoba model lain.
+      const retryable = resp.status === 404 || resp.status === 429 || resp.status >= 500;
+      if (!retryable) break;
+    }
+
+    if (!modelUsed) {
+      const overloaded = attemptedModels.some((attempt) => /high demand|overloaded|unavailable/i.test(attempt.message || ''));
+      return res.status(lastStatus).json({
+        error: lastMessage,
+        attemptedModels,
+        suggestion: overloaded
+          ? 'Semua model sedang kelebihan beban. Tunggu 1–2 menit lalu coba lagi, atau unggah file MIDI untuk hasil instan tanpa antrean model.'
+          : 'Coba lagi sebentar lagi. Jika memakai file audio, unggah file MIDI lebih dulu jika tersedia — hasilnya lebih akurat.',
+      });
+    }
+
+    const result = parseTranscriptionResponse(text);
+    return res.status(200).json({
+      success: true,
+      ...result,
+      raw: undefined,
+      sourceType,
+      modelUsed,
+      attemptedModels,
+    });
+  } catch (error) {
+    console.error('Chord transcribe error:', error);
+    return res.status(500).json({
+      error: error.message || 'Gagal mentranskripsi audio',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    });
+  }
+}
 
 // --- Transcribe handler ---
 async function handleTranscribe(req, res) {
