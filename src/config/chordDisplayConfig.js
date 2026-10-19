@@ -89,6 +89,8 @@ export const METADATA_KEYS = [
   // catatan & efek
   'cue', 'notes', 'catatan',
   'fx', 'effect', 'effects',
+  // info lagu (informasional, tidak mempengaruhi transpose)
+  'original key', 'time signature',
   // lain-lain
   'scene', 'part', 'fill',
 ];
@@ -213,6 +215,14 @@ const DETAIL_FEEL = {
   info: 'Contoh: Feel: Half-time',
 };
 const DETAIL_FX = { detail: 'Efek', info: '' };
+const DETAIL_ORIGINAL_KEY = {
+  detail: 'Nada dasar asli',
+  info: 'Hanya informasi; chord tidak ditranspose. Contoh: Original Key: G',
+};
+const DETAIL_TIME_SIGNATURE = {
+  detail: 'Birama lagu',
+  info: 'Contoh: Time Signature: 4/4',
+};
 
 const AUTOCOMPLETE_METADATA_DETAILS = {
   patch: DETAIL_PATCH,
@@ -230,6 +240,8 @@ const AUTOCOMPLETE_METADATA_DETAILS = {
   catatan: DETAIL_CATATAN,
   feel: DETAIL_FEEL,
   fx: DETAIL_FX,
+  'original key': DETAIL_ORIGINAL_KEY,
+  'time signature': DETAIL_TIME_SIGNATURE,
 };
 
 export const AUTOCOMPLETE_METADATA = [

@@ -499,16 +499,9 @@ function parseLine(line, transpose) {
   if (/^Cue\s*:/i.test(trimmed)) {
     return { type: 'metadata', text: line.trim() };
   }
-  // Jangan transpose baris "Original Key:" — tetap tampilkan metadata asli tanpa transposi
-  if (/^Original\s+Key:/i.test(trimmed)) {
-    return {
-      type: 'lyrics',
-      tokens: line.split(/(\s+)/).map(token => ({
-        token,
-        isSpace: /^\s+$/.test(token)
-      }))
-    };
-  }
+  // Metadata info lagu ("Original Key:", "Time Signature:") sekarang resmi
+  // metadata: dirender sebagai chip dan tidak pernah ikut ditranspose, sehingga
+  // cabang lirik khusus "Original Key:" tidak diperlukan lagi.
   const presetCue = parsePresetCueLine(line);
   if (presetCue) {
     return presetCue;
@@ -1370,9 +1363,10 @@ export function wrapBarsPerLine(text, barsPerLine = 4) {
  * Kata kunci struktur -> regex batas kata. Di-cache: parseSection dipanggil
  * beberapa kali per baris dan regex ini sebelumnya dibangun ulang tiap kali.
  */
-const STRUCTURE_KEYWORD_PATTERNS = STRUCTURE_SECTION_KEYWORDS.map((keyword) => (
-  new RegExp(`(^|[^a-z0-9])${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+')}($|[^a-z0-9])`, 'i')
-));
+const STRUCTURE_KEYWORD_PATTERNS = STRUCTURE_SECTION_KEYWORDS.map((keyword) => ({
+  keyword,
+  pattern: new RegExp(`(^|[^a-z0-9])${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+')}($|[^a-z0-9])`, 'i'),
+}));
 
 const MODULATION_LINE_REGEX = new RegExp(
   `^(?:${MODULATION_KEYWORDS.map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')).join('|')})\\s*:\\s*(.+)$`,
@@ -1399,8 +1393,12 @@ export function parseSection(line) {
     const displayLabel = annotation ? `${originalLabel} (${annotation})` : originalLabel;
     const labelLower = originalLabel.toLowerCase();
     // Setiap keyword dicocokkan sebagai kata utuh, bukan substring:
-    // "Interlude" cocok, "Soloist" tidak.
-    if (STRUCTURE_KEYWORD_PATTERNS.some((pattern) => pattern.test(labelLower))) {
+    // "Interlude" cocok, "Soloist" tidak. "Time Signature:" TIDAK, karena
+    // "signature" hanyalah satu kata dari kata kunci multi-kata — tanpa
+    // pengecekan ini label parsial itu lolos sebagai section.
+    if (STRUCTURE_KEYWORD_PATTERNS.some(({ keyword, pattern }) => (
+      !keyword.includes(' ') && pattern.test(labelLower)
+    ))) {
       return { type: 'structure', label: displayLabel };
     }
 
@@ -1421,7 +1419,7 @@ export function parseSection(line) {
   return null;
 }
 
-const METADATA_KEYS = new Set(CONFIG_METADATA_KEYS);
+const METADATA_KEYS = new Set(CONFIG_METADATA_KEYS.map((key) => key.toLowerCase()));
 
 const INSTRUMENT_PATCH_KEYS = new Set(CONFIG_INSTRUMENT_PATCH_KEYS);
 
@@ -1538,6 +1536,20 @@ export const parseInstrumentPatchLine = (line) => {
   };
 };
 
+/**
+ * Key metadata dikenal? Multi-kata ("original key", "time signature") dicocokkan
+ * apa adanya, bukan dirapatkan jadi "originalkey" — alias lama seperti
+ * "bank msb" tetap dirapatkan agar tetap cocok.
+ */
+const isKnownMetadataKey = (rawKey = '') => {
+  const normalized = String(rawKey).trim().toLowerCase().replace(/[\s_]+/g, ' ');
+  const key = normalized.replace(/^[\[(]+|[\])]+$/g, '').trim();
+  return METADATA_KEYS.has(key)
+    || METADATA_KEYS.has(key.replace(/\s+/g, ''))
+    || key === 'style'
+    || key === 'cue';
+};
+
 export const isMetadataLine = (line) => {
   if (parseInstrumentPatchLine(line)) return true;
   if (typeof line !== 'string') return false;
@@ -1547,9 +1559,7 @@ export const isMetadataLine = (line) => {
 
   const singleBracketMatch = trimmed.match(/^\[([^\]]+):\s*([^\]]+)\]$/);
   if (singleBracketMatch) {
-    const rawKey = singleBracketMatch[1].trim().toLowerCase();
-    const key = rawKey.replace(/\s+/g, '');
-    return METADATA_KEYS.has(key) || key === 'style' || key === 'cue';
+    return isKnownMetadataKey(singleBracketMatch[1]);
   }
 
   if (!trimmed.includes(':')) return false;
@@ -1560,9 +1570,7 @@ export const isMetadataLine = (line) => {
   return segments.some((segment) => {
     const idx = segment.indexOf(':');
     if (idx <= 0 || idx >= segment.length - 1) return false;
-    const rawKey = segment.slice(0, idx).trim().toLowerCase();
-    const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '').replace(/\s+/g, '');
-    return METADATA_KEYS.has(key) || key === 'style' || key === 'cue';
+    return isKnownMetadataKey(segment.slice(0, idx));
   });
 };
 /**
