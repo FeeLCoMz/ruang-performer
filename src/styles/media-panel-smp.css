@@ -1,5 +1,5 @@
 ﻿/* ========================================================================
-   SongMediaPanel (smp) â€” komponen shared video + kontrol playback
+   SongMediaPanel (smp) — komponen shared video + kontrol playback
    + time marker. Satu aturan CSS yang sama untuk semua halaman yang
    menampilkan video: song view, add/edit studio, daftar lagu, setlist,
    dan mini player mengambang.
@@ -63,7 +63,7 @@
   gap: 4px;
 }
 
-/* Video embed: rasio 16:9, tidak meluap â€” aturan yang sama di semua halaman */
+/* Video embed: rasio 16:9, tidak meluap — aturan yang sama di semua halaman */
 .smp-video {
   aspect-ratio: 16 / 9;
   width: 100%;

@@ -1531,7 +1531,7 @@
 .song-lyrics-main {
   display: flex;
   flex-direction: column;
-  /* Layar lebar: panel pas dengan sisa tinggi viewport â€” lirik panjang
+  /* Layar lebar: panel pas dengan sisa tinggi viewport — lirik panjang
      di-scroll DI DALAM panel, bukan memicu vertical scroll di halaman.
      Di layar sempit tetap mengalir alami (tanpa height terkunci). */
 }

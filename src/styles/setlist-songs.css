@@ -916,7 +916,7 @@
 }
 
 /* Indikator status penguasaan: merah = belum, kuning = latihan, hijau = dikuasai.
-   Gaya low-key: tanpa latar â€” hanya ikon + teks berwarna. Warna status lewat
+   Gaya low-key: tanpa latar — hanya ikon + teks berwarna. Warna status lewat
    variabel --mastery-color yang berlaku untuk chip dan item menu dropdown.
    mastery-ready dipertahankan sebagai alias lama dari mastery-mastered. */
 .song-mastery-chip,

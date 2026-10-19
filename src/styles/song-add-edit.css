@@ -932,8 +932,8 @@ body.dark-mode .studio-error {
 
 /* ---- SongMediaPanel: responsif terhadap LEBAR KOMPONEN (container query),
    bukan lebar layar. Semua pemakaian panel (tanpa prop apa pun) otomatis:
-   - kontainer < 768px (di bawah tablet) : satu kolom â€” video di atas, Time Marker di bawah
-   - kontainer >= 768px (minimal tablet) : 2 kolom â€” video 60% kiri, marker 40% kanan
+   - kontainer < 768px (di bawah tablet) : satu kolom — video di atas, Time Marker di bawah
+   - kontainer >= 768px (minimal tablet) : 2 kolom — video 60% kiri, marker 40% kanan
 
    Catatan: @container tidak bisa menanyakan kontainernya sendiri, jadi
    .smp-layout-wrap (container) dan .smp-layout (grid yang di-query) harus
@@ -964,7 +964,7 @@ body.dark-mode .studio-error {
     max-height: 70vh;
     overflow-y: auto;
     /* Margin-top .smp-markers (sisa layout satu kolom) di-nolkan: jarak
-       antar kolom sudah ditangani gap grid â€” tanpa ini kartu marker
+       antar kolom sudah ditangani gap grid — tanpa ini kartu marker
        turun lebih rendah dari panel video. */
     margin-top: 0;
   }

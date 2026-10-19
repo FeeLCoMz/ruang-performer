@@ -253,7 +253,7 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
         onTouchStart={handleHeaderPointerDown}
       >
         <h4 className="piano-popup-title">
-          ðŸŽ¹ Virtual Piano
+          🎹 Virtual Piano
         </h4>
         <button
           type="button"
@@ -262,7 +262,7 @@ export default function VirtualPiano({ onKeySelect, isOpen, onClose, helperText,
           aria-label="Tutup Virtual Piano"
           title="Tutup (Esc)"
         >
-          âœ•
+          ✕
         </button>
       </div>
       <div className="piano-popup-body">

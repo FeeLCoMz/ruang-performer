@@ -439,7 +439,7 @@ const isInlineCueMarkToken = (token) => {
   if (!trimmed) return false;
 
   // Strip kurung biasa dan kurung siku: keyword cue mark boleh ditulis
-  // "(Stop)" maupun "[Stop]" â€” keduanya harus terdeteksi.
+  // "(Stop)" maupun "[Stop]" — keduanya harus terdeteksi.
   const raw = trimmed.replace(/^[\[(](.*)[\])}]$/, '$1').trim();
   if (!raw) return false;
 
@@ -484,7 +484,7 @@ function parseLine(line, transpose) {
   if (/^Cue\s*:/i.test(trimmed)) {
     return { type: 'metadata', text: line.trim() };
   }
-  // Jangan transpose baris "Original Key:" â€” tetap tampilkan metadata asli tanpa transposi
+  // Jangan transpose baris "Original Key:" — tetap tampilkan metadata asli tanpa transposi
   if (/^Original\s+Key:/i.test(trimmed)) {
     return {
       type: 'lyrics',
@@ -1100,7 +1100,7 @@ function isNumberNotationToken(token) {
   const normalized = cleaned
     .replace(/^[\(\[]+/, '')
     .replace(/[\)\]]+$/g, '')
-    .replace(/[â€™]/g, '\'');
+    .replace(/[’]/g, '\'');
 
   if (!normalized) return false;
 

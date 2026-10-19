@@ -12,7 +12,7 @@
   font-size: calc(clamp(0.75rem, 4vw, 1rem) * var(--lyrics-font-scale));
 }
 
-/* (Mode panggung panel lirik dihapus â€” overlay lirik kini selalu gelap.) */
+/* (Mode panggung panel lirik dihapus — overlay lirik kini selalu gelap.) */
 
 /* Mode fokus: baris di luar bagian aktif diredupkan; header bagian aktif
    disorot dengan aksen. Mengikuti pattern cd-sync-row (aturan kiri). */
