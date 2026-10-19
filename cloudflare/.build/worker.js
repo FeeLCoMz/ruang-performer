@@ -10,6 +10,8 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
   if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
+import { createRequire } from "node:module";
+var __require = /* @__PURE__ */ createRequire(import.meta.url);
 var __esm = (fn, res, err) => function __init() {
   if (err) throw err[0];
   try {
@@ -49,7 +51,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 // node_modules/safe-buffer/index.js
 var require_safe_buffer = __commonJS({
   "node_modules/safe-buffer/index.js"(exports, module) {
-    var buffer = __require("buffer");
+    var buffer = __require("node:buffer");
     var Buffer2 = buffer.Buffer;
     function copyProps(src, dst) {
       for (var key in src) {
@@ -108,8 +110,8 @@ var require_safe_buffer = __commonJS({
 var require_data_stream = __commonJS({
   "node_modules/jws/lib/data-stream.js"(exports, module) {
     var Buffer2 = require_safe_buffer().Buffer;
-    var Stream2 = __require("stream");
-    var util = __require("util");
+    var Stream2 = __require("node:stream");
+    var util = __require("node:util");
     function DataStream(data) {
       this.buffer = null;
       this.writable = true;
@@ -320,8 +322,8 @@ var require_ecdsa_sig_formatter = __commonJS({
 var require_buffer_equal_constant_time = __commonJS({
   "node_modules/buffer-equal-constant-time/index.js"(exports, module) {
     "use strict";
-    var Buffer2 = __require("buffer").Buffer;
-    var SlowBuffer = __require("buffer").SlowBuffer;
+    var Buffer2 = __require("node:buffer").Buffer;
+    var SlowBuffer = __require("node:buffer").SlowBuffer;
     module.exports = bufferEq;
     function bufferEq(a, b) {
       if (!Buffer2.isBuffer(a) || !Buffer2.isBuffer(b)) {
@@ -354,9 +356,9 @@ var require_buffer_equal_constant_time = __commonJS({
 var require_jwa = __commonJS({
   "node_modules/jwa/index.js"(exports, module) {
     var Buffer2 = require_safe_buffer().Buffer;
-    var crypto4 = __require("crypto");
+    var crypto4 = __require("node:crypto");
     var formatEcdsa = require_ecdsa_sig_formatter();
-    var util = __require("util");
+    var util = __require("node:util");
     var MSG_INVALID_ALGORITHM = '"%s" is not a valid algorithm.\n  Supported algorithms are:\n  "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512" and "none".';
     var MSG_INVALID_SECRET = "secret must be a string or buffer";
     var MSG_INVALID_VERIFIER_KEY = "key must be a string or a buffer";
@@ -577,7 +579,7 @@ var require_jwa = __commonJS({
 // node_modules/jws/lib/tostring.js
 var require_tostring = __commonJS({
   "node_modules/jws/lib/tostring.js"(exports, module) {
-    var Buffer2 = __require("buffer").Buffer;
+    var Buffer2 = __require("node:buffer").Buffer;
     module.exports = function toString(obj) {
       if (typeof obj === "string")
         return obj;
@@ -594,9 +596,9 @@ var require_sign_stream = __commonJS({
     var Buffer2 = require_safe_buffer().Buffer;
     var DataStream = require_data_stream();
     var jwa = require_jwa();
-    var Stream2 = __require("stream");
+    var Stream2 = __require("node:stream");
     var toString = require_tostring();
-    var util = __require("util");
+    var util = __require("node:util");
     function base64url(string2, encoding) {
       return Buffer2.from(string2, encoding).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
     }
@@ -669,9 +671,9 @@ var require_verify_stream = __commonJS({
     var Buffer2 = require_safe_buffer().Buffer;
     var DataStream = require_data_stream();
     var jwa = require_jwa();
-    var Stream2 = __require("stream");
+    var Stream2 = __require("node:stream");
     var toString = require_tostring();
-    var util = __require("util");
+    var util = __require("node:util");
     var JWS_REGEX = /^[a-zA-Z0-9\-_]+?\.[a-zA-Z0-9\-_]+?\.([a-zA-Z0-9\-_]+)?$/;
     function isObject(thing) {
       return Object.prototype.toString.call(thing) === "[object Object]";
@@ -3110,7 +3112,7 @@ var require_verify = __commonJS({
     var validateAsymmetricKey = require_validateAsymmetricKey();
     var PS_SUPPORTED = require_psSupported();
     var jws = require_jws();
-    var { KeyObject, createSecretKey, createPublicKey } = __require("crypto");
+    var { KeyObject, createSecretKey, createPublicKey } = __require("node:crypto");
     var PUB_KEY_ALGS = ["RS256", "RS384", "RS512"];
     var EC_KEY_ALGS = ["ES256", "ES384", "ES512"];
     var RSA_KEY_ALGS = ["RS256", "RS384", "RS512"];
@@ -3750,7 +3752,7 @@ var require_sign = __commonJS({
     var isPlainObject = require_lodash5();
     var isString = require_lodash6();
     var once = require_lodash7();
-    var { KeyObject, createSecretKey, createPrivateKey } = __require("crypto");
+    var { KeyObject, createSecretKey, createPrivateKey } = __require("node:crypto");
     var SUPPORTED_ALGS = ["RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "HS256", "HS384", "HS512", "none"];
     if (PS_SUPPORTED) {
       SUPPORTED_ALGS.splice(3, 0, "PS256", "PS384", "PS512");
@@ -11279,7 +11281,7 @@ var require_sbmh = __commonJS({
 var require_multipart = __commonJS({
   "node_modules/busboy/lib/types/multipart.js"(exports, module) {
     "use strict";
-    var { Readable, Writable } = __require("stream");
+    var { Readable, Writable } = __require("node:stream");
     var StreamSearch = require_sbmh();
     var {
       basename,
@@ -12326,7 +12328,7 @@ var require_multipart = __commonJS({
 var require_urlencoded = __commonJS({
   "node_modules/busboy/lib/types/urlencoded.js"(exports, module) {
     "use strict";
-    var { Writable } = __require("stream");
+    var { Writable } = __require("node:stream");
     var { getDecoder } = require_utils();
     var URLEncoded = class extends Writable {
       constructor(cfg) {
@@ -13974,7 +13976,7 @@ function verifyToken(req, res) {
 
 // api/songs/index.js
 init_turso();
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 
 // api/songs/[id].js
 init_turso();
@@ -14947,7 +14949,7 @@ async function ensureBandSongPracticeStatsTable(client) {
 
 // api/setlists/index.js
 init_turso();
-import { randomUUID as randomUUID2 } from "crypto";
+import { randomUUID as randomUUID2 } from "node:crypto";
 async function readJson3(req) {
   if (req.body) return req.body;
   return await new Promise((resolve, reject) => {
@@ -15913,7 +15915,7 @@ async function handler6(req, res) {
 
 // api/events/index.js
 init_turso();
-import { randomUUID as randomUUID3 } from "crypto";
+import { randomUUID as randomUUID3 } from "node:crypto";
 async function readJson6(req) {
   if (req.body) return req.body;
   return await new Promise((resolve, reject) => {
@@ -16672,7 +16674,7 @@ async function handler12(req, res) {
 init_turso();
 
 // node_modules/bcryptjs/index.js
-import nodeCrypto from "crypto";
+import nodeCrypto from "node:crypto";
 var randomFallback = null;
 function randomBytes(len) {
   try {
@@ -18830,7 +18832,7 @@ async function handler17(req, res) {
 }
 
 // api/auth/forgot-password.js
-import crypto2 from "crypto";
+import crypto2 from "node:crypto";
 init_turso();
 var JWT_SECRET4 = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 var SMTP_HOST = process.env.SMTP_HOST;
@@ -18938,7 +18940,7 @@ async function handler18(req, res) {
 }
 
 // api/auth/reset-password.js
-import crypto3 from "crypto";
+import crypto3 from "node:crypto";
 init_turso();
 var rateLimiter5 = createRateLimiter({ ...RATE_LIMITS.AUTH_RESET });
 async function handler19(req, res) {

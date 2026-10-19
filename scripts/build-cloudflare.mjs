@@ -18,12 +18,32 @@
 import { build } from 'esbuild';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const outfile = path.join(root, 'cloudflare/.build/worker.js');
+
+const NODE_BUILTINS = new Set([
+  'assert',
+  'buffer',
+  'crypto',
+  'events',
+  'fs',
+  'http',
+  'https',
+  'net',
+  'os',
+  'path',
+  'stream',
+  'tls',
+  'url',
+  'util',
+  'zlib',
+]);
 
 const result = await build({
   entryPoints: [path.join(root, 'cloudflare/worker.js')],
-  outfile: path.join(root, 'cloudflare/.build/worker.js'),
+  outfile,
   bundle: true,
   format: 'esm',
   platform: 'neutral',
@@ -31,25 +51,23 @@ const result = await build({
   conditions: ['workerd', 'worker', 'browser', 'import'],
   mainFields: ['module', 'main'],
   // Node built-ins stay external: `nodejs_compat` provides them at runtime.
-  // (Bare specifiers are needed too — bcryptjs/jsonwebtoken/busboy require
-  // 'crypto' and 'stream' without the node: prefix.)
-  external: [
-    'node:*',
-    'crypto',
-    'stream',
-    'buffer',
-    'util',
-    'events',
-    'path',
-    'fs',
-    'os',
-    'zlib',
-    'http',
-    'https',
-    'net',
-    'tls',
-    'url',
-    'assert',
+  // Only the `node:` form works in an ESM bundle — leaving bare names
+  // (`buffer`, `crypto`, ...) external makes esbuild emit `require("buffer")`
+  // for CJS deps (jsonwebtoken -> jws -> safe-buffer), and the Workers
+  // validator then rejects the script with
+  // "Dynamic require of \"buffer\" is not supported" (code 10021).
+  external: ['node:*'],
+  // Rewrite bare built-in imports from CJS dependencies to `node:` form.
+  plugins: [
+    {
+      name: 'node-builtin-imports',
+      setup(pluginBuild) {
+        pluginBuild.onResolve({ filter: /^[a-z]+$/ }, (args) => {
+          if (!NODE_BUILTINS.has(args.path)) return undefined;
+          return { path: `node:${args.path}`, external: true };
+        });
+      },
+    },
   ],
   alias: {
     '@libsql/client': '@libsql/client/web',
@@ -69,6 +87,20 @@ const result = await build({
   logLevel: 'info',
   metafile: true,
 });
+
+// esbuild's ESM output keeps its CJS interop helper as
+//   typeof require !== "undefined" ? require : throw "Dynamic require ..."
+// Workers has no `require` for ESM scripts, so the helper throws as soon as a
+// bundled CJS module (safe-buffer) runs. The imports are already rewritten to
+// `node:*` above, so route the helper to `import { createRequire } from
+// 'node:module'` instead of requiring the whole dependency tree be ESM.
+const SHIM_END = '});';
+const SHIM = `});
+import { createRequire } from "node:module";
+var __require = /* @__PURE__ */ createRequire(import.meta.url);`;
+const bundle = await readFile(outfile, 'utf8');
+if (!bundle.includes(SHIM_END)) throw new Error('esbuild ESM require shim not found; check esbuild version');
+await writeFile(outfile, bundle.replace(SHIM_END, SHIM));
 
 const outputs = Object.entries(result.metafile.outputs || {});
 const size = outputs.reduce((total, [, meta]) => total + (meta.bytes || 0), 0);
