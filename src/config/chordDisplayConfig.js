@@ -222,8 +222,9 @@ export const AUTOCOMPLETE_METADATA = [
   },
 ];
 
-/** Nama instrumen yang ditawarkan autocompletion (dimasukkan sebagai "Nama: "). */
-export const AUTOCOMPLETE_INSTRUMENTS = [
-  'Piano', 'Keys', 'Guitar', 'Bass', 'Drums', 'Strings', 'Brass',
-  'Vokal', 'Sax', 'Suling', 'Violin',
-];
+/**
+ * Nama instrumen yang ditawarkan autocompletion — DITURUNKAN dari
+ * INSTRUMENT_KEYWORDS di atas, sehingga autocomplete dan parser SELALU
+ * memakai kata kunci yang sama (dimasukkan sebagai "Nama: ").
+ */
+export const AUTOCOMPLETE_INSTRUMENTS = INSTRUMENT_KEYWORDS.map(titleCaseKeyword);

@@ -13,7 +13,7 @@ import {
 } from '../config/chordDisplayConfig.js';
 
 /** Section tags, matching what autoTagSongSections() produces. */
-const SECTION_COMPLETIONS = CONFIG_SECTION_LABELS.map((label) => ({
+const SECTION_COMPLETIONS = [...new Set(CONFIG_SECTION_LABELS)].map((label) => ({
   label: `[${label}]`,
   type: 'keyword',
   detail: 'Bagian lagu',
@@ -35,7 +35,7 @@ const ALL_COMPLETIONS = [
 ];
 
 /** Instrument words highlighted by the editor. */
-const INSTRUMENT_COMPLETIONS = CONFIG_INSTRUMENTS.map((name) => ({
+const INSTRUMENT_COMPLETIONS = [...new Set(CONFIG_INSTRUMENTS)].map((name) => ({
   label: name,
   type: 'variable',
   detail: 'Instrumen',
