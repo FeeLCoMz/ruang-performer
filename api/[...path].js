@@ -39,6 +39,9 @@ import userResetPasswordHandler from '../server/handlers/user-reset-password.js'
 import toolsHandler from '../server/handlers/tools.js';
 import toolsBackupHandler from '../server/handlers/tools-backup.js';
 import toolsRestoreHandler from '../server/handlers/tools-restore.js';
+// AI (AI Autofill + AI Chord & Sheet Music Transcriber). File-nya tetap di
+// api/ai.js, jadi modul ini ikut di-bundle ke function dan tidak di-ignore.
+import aiHandler from './ai.js';
 import { verifyToken } from '../server/_auth.js';
 
 const ORIGINAL_URL_HEADER = 'x-original-url';
@@ -175,6 +178,11 @@ async function dispatch(req, res) {
     if (second === 'restore') return toolsRestoreHandler(req, res);
     return toolsHandler(req, res);
   }
+
+  // ---- AI -----------------------------------------------------------------
+  // Dipakai frontend untuk AI Autofill (/api/ai/song-search) dan transkripsi
+  // chord (/api/ai/chord-transcribe). Tanpa cabang ini keduanya 404.
+  if (resource === 'ai') return aiHandler(req, res);
 
   res.status(404).json({ error: 'Endpoint tidak ditemukan' });
 }

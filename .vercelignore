@@ -8,13 +8,16 @@
 #   api/[...path].js   ← satu-satunya Serverless Function
 #
 # Semua handler asli (songs, setlists, bands, events, auth, users, tools) ada
-# di server/handlers/ dan util bersama di server/. File lain di api/ di bawah
-# ini hanya dipakai untuk pengembangan lokal, test, atau sisa struktur lama.
+# di server/handlers/ dan util bersama di server/.
+#
+# PENTING — jangan di-ignore:
+#   api/ai.js       diimpor api/[...path].js (AI Autofill + Transcriber)
+#   vite.config.js  dipakai `npm run build` (plugin React, manualChunks,
+#                   define __APP_NAME__, filter modulePreload)
 ########################################
 
 # === API: bukan function (dipakai lokal / test / legacy) ===
 api/index.js
-api/ai.js
 api/server.cjs
 api/__tests__/
 api/test-helpers/
@@ -25,19 +28,15 @@ src/__tests__/
 node_modules/
 runMigration.js
 .env*
-.env.local
-.env.development
 
 # === Config & build/test scripts ===
+# vite.config.js SENGAJA tidak di-ignore: build produksi membutuhkannya.
 jest.config.*
 vitest.config.js
-vite.config.js
 
 # === Test & documentation files ===
 *.test.js
 *.spec.js
-*.md
-*.MD
 *.log
 *.zip
 *.sql
