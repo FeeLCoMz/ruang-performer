@@ -284,7 +284,12 @@ export default function BulkLyricsPage() {
       setExcludedIndexes(new Set());
       setTitleOverrides({});
     } catch (err) {
-      setError(err?.message || 'Gagal menyimpan lagu secara massal.');
+      const detail = err?.message || 'Gagal menyimpan lagu secara massal.';
+      // Server menolak seluruh batch jika ada satu lagu tidak valid. Tampilkan
+      // juga jumlah lagu yang dikirim supaya user tahu apakah penyebabnya isi
+      // lagu atau batas ukuran permintaan.
+      setError(`${detail}\n
+Dikirim: ${payloads.length} lagu.`);
     } finally {
       setSaving(false);
     }
@@ -334,7 +339,7 @@ export default function BulkLyricsPage() {
 
       {error && (
         <div className="bl-banner bl-banner-error" role="alert">
-          {error}
+          <span className="bl-banner-message">{error}</span>
         </div>
       )}
 
@@ -479,6 +484,50 @@ export default function BulkLyricsPage() {
               {summary.readyCount}/{summary.total} siap
             </span>
           </div>
+
+          {selectedInvalid.length > 0 && (
+            <div className="bl-banner bl-banner-error" role="alert">
+              <span>
+                {selectedInvalid.length} lagu belum valid dan akan menolak proses simpan:
+                {' '}
+                {selectedInvalid.slice(0, 5).map((record) => `#${record.blockNumber}`).join(', ')}
+                {selectedInvalid.length > 5 ? `, +${selectedInvalid.length - 5} lainnya` : ''}.
+              </span>
+              <button
+                type="button"
+                className="btn btn-secondary bl-mini-btn"
+                onClick={() => {
+                  const rows = selectedInvalid.slice(0, 20).map(
+                    (record) => `#${record.blockNumber} ${record.title || '(tanpa judul)'}: ${record.errors.join('; ')}`,
+                  );
+                  setError(
+                    [
+                      `${selectedInvalid.length} lagu belum valid:`,
+                      ...rows,
+                      selectedInvalid.length > 20 ? `... dan ${selectedInvalid.length - 20} lainnya` : '',
+                    ].filter(Boolean).join('\n'),
+                  );
+                }}
+              >
+                Lihat detail
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary bl-mini-btn"
+                onClick={() => {
+                  // Keluarkan lagu bermasalah sekali klik supaya sisa batch bisa
+                  // langsung disimpan, lalu perbaiki satu per satu.
+                  setExcludedIndexes((prev) => {
+                    const next = new Set(prev);
+                    selectedInvalid.forEach((record) => next.add(record.index));
+                    return next;
+                  });
+                }}
+              >
+                Keluarkan semua yang error
+              </button>
+            </div>
+          )}
 
           {records.length === 0 ? (
             <div className="bl-empty">

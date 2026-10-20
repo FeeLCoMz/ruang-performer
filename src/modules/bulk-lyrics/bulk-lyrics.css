@@ -46,6 +46,11 @@
   color: var(--text-secondary);
 }
 
+.bl-banner-message {
+  white-space: pre-line;
+  word-break: break-word;
+}
+
 .bl-banner-actions {
   display: flex;
   gap: var(--spacing-sm);
