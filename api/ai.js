@@ -95,7 +95,10 @@ async function handleRecommendSetlist(req, res) {
     const numSongs = parseInt(body.numSongs, 10) || 6;
 
     // Ambil daftar lagu dari database (songs table)
-    const { getTursoClient } = await import('./_turso.js');
+    // Path relatif di-import di-resolve terhadap file INI (api/), jadi harus
+    // '../server/_turso.js' — pola yang sama dipakai _audit.js. Versi lama
+    // './_turso.js' tidak pernah ada dan membuat modul gagal di-resolve.
+    const { getTursoClient } = await import('../server/_turso.js');
     const client = getTursoClient();
     let query = 'SELECT id, title, artist, genre FROM songs';
     const params = [];

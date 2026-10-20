@@ -41,18 +41,37 @@ export default function DashboardPage() {
     setBandsLoading(true);
     setActivitiesError('');
 
-    const [setlistsResult, bandsResult, songsResult, gigsResult] = await Promise.allSettled([
-      apiClient.fetchSetLists({ summary: true }),
-      apiClient.fetchBands(),
-      apiClient.fetchSongs(),
-      apiClient.fetchGigs(),
+    // Setiap request diselesaikan sendiri-sendiri: statistik ringan (songs,
+    // gigs) harus muncul segera tanpa menunggu setlists/bands yang bisa lambat.
+    // Dengan Promise.allSettled biasa, satu request lambat menahan SEMUA stat
+    // di skeleton — judul test "summary stats render immediately" menangkapnya.
+    const track = (promise) => promise
+      .then((value) => ({ status: 'fulfilled', value }))
+      .catch((error) => ({ status: 'rejected', reason: error }));
+
+    const songsPromise = track(apiClient.fetchSongs());
+    const gigsPromise = track(apiClient.fetchGigs());
+
+    // Partial update: kirim bagian yang sudah siap ke state secepat mungkin.
+    const applyStats = (partial) => setStats((prev) => ({ ...prev, ...partial }));
+
+    const [songsResult, gigsResult] = await Promise.all([songsPromise, gigsPromise]);
+
+    const songsPayload = songsResult.status === 'fulfilled' ? songsResult.value : [];
+    const gigsData = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
+    const songsData = Array.isArray(songsPayload) ? songsPayload : Array.isArray(songsPayload?.songs) ? songsPayload.songs : [];
+
+    applyStats({ songs: songsData.length || 0, gigs: gigsData.length || 0 });
+    setRecentActivity(buildRecentActivities({ bandsData: [], setlistsData: [], songsData, gigsData }));
+    setStatsLoading(false);
+
+    const [setlistsResult, bandsResult] = await Promise.all([
+      track(apiClient.fetchSetLists({ summary: true })),
+      track(apiClient.fetchBands()),
     ]);
 
     const setlistsData = setlistsResult.status === 'fulfilled' ? setlistsResult.value : [];
     const bandsData = bandsResult.status === 'fulfilled' ? bandsResult.value : [];
-    const songsPayload = songsResult.status === 'fulfilled' ? songsResult.value : [];
-    const gigsData = gigsResult.status === 'fulfilled' ? gigsResult.value : [];
-    const songsData = Array.isArray(songsPayload) ? songsPayload : Array.isArray(songsPayload?.songs) ? songsPayload.songs : [];
 
     if (setlistsResult.status === 'rejected' || bandsResult.status === 'rejected' || songsResult.status === 'rejected' || gigsResult.status === 'rejected') {
       setActivitiesError('Sebagian data aktivitas gagal dimuat. Silakan coba lagi.');

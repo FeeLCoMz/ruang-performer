@@ -11,15 +11,19 @@ import { dirname, join } from 'node:path';
  * column name or a shortened column list is invisible to an HTTP assertion —
  * the request still returns 200 while the data is silently dropped. Two bugs of
  * exactly that shape shipped, so the contract is asserted directly.
+ *
+ * Handler asli berada di `server/handlers/` (api/*.js hanya tipis router),
+ * jadi guard ini membaca sumber di sana — bukan file router.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
-const read = (relPath) => readFileSync(join(here, '..', '..', 'api', relPath), 'utf8');
+const read = (relPath) => readFileSync(join(here, '..', '..', 'server', 'handlers', relPath), 'utf8');
 
-const createSrc = read('songs/index.js');
-const updateSrc = read('songs/[id].js');
-const toolsSrc = read('tools/index.js');
-const detailSrc = updateSrc; // songs/[id].js handles both GET-detail and PUT
+// songs.js: list + create. song-id.js: detail (GET) + update (PUT).
+const createSrc = read('songs.js');
+const updateSrc = read('song-id.js');
+const toolsSrc = read('tools.js');
+const detailSrc = updateSrc; // song-id.js handles both GET-detail and PUT
 
 /**
  * Strip comments so assertions cannot be satisfied (or broken) by prose.
@@ -75,9 +79,11 @@ describe('song field persistence contract', () => {
   });
 
   test('update writes every persisted column', () => {
+    // Batas akhir = baris parameter terakhir sebelum execute; 'WHERE id = ?'
+    // tidak ada karena WHERE-nya satu baris dengan 'updatedAt = ? WHERE id = ?'.
     const update = updateCode.slice(
       updateCode.indexOf('UPDATE songs SET'),
-      updateCode.indexOf('WHERE id = ?')
+      updateCode.indexOf('await client.execute(updateSql', updateCode.indexOf('UPDATE songs SET'))
     );
     for (const column of SQL_COLUMNS) {
       expect(update, `update statement is missing ${column}`).toContain(column);
