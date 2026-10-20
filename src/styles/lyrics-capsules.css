@@ -555,8 +555,23 @@
   font-size: 0.8rem;
 }
 
+/* Di layar lebar sheet tetap berfungsi (dibuka dari tombol posisi lagu),
+   hanya tampil sebagai panel melayang di sisi kanan, bukan bottom-sheet penuh. */
 @media (min-width: 769px) {
   .setlist-nav-sheet-overlay {
+    align-items: center;
+    justify-content: flex-end;
+    padding: 24px;
+  }
+
+  .setlist-nav-sheet {
+    width: min(420px, 100%);
+    max-height: min(70vh, 640px);
+    border-radius: var(--radius-lg);
+    padding-bottom: 8px;
+  }
+
+  .setlist-nav-sheet-handle {
     display: none;
   }
 }

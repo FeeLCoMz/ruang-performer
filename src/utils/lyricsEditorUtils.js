@@ -328,16 +328,58 @@ export function detectSectionBadges(text) {
     .filter(Boolean);
 }
 
+/**
+ * Re-case the section word inside an existing bracket tag without discarding
+ * whatever else the tag carries.
+ *
+ *   "Chorus 2"        -> "[Chorus 2]"
+ *   "Intro: C G Am F" -> "[Intro: C G Am F]"   (chords stay)
+ *   "Reff (2x)"       -> "[Chorus (2x)]"
+ */
+function normalizeBracketedSectionLabel(insideLabel, info) {
+  const rawInside = String(insideLabel || '').trim();
+  if (!rawInside) return info.label;
+
+  const colonIndex = rawInside.indexOf(':');
+  if (colonIndex >= 0) {
+    // "Intro: C G Am F" — keep chords/annotation exactly as written.
+    return `${info.label}:${rawInside.slice(colonIndex + 1)}`;
+  }
+
+  // "Chorus 2" -> "[Chorus 2]", "Reff (2x)" -> "[Chorus (2x)]".
+  const numberedMatch = rawInside.match(/[\s_-]+(\d+)$/);
+  const annotation = rawInside.match(/\s*\([^)]*\)\s*$/)?.[0] || '';
+  const numberTail = numberedMatch && !info.label.match(/\s\d+$/) && !info.label.startsWith('Verse')
+    ? ` ${numberedMatch[1]}`
+    : '';
+  return `${info.label}${numberTail}${annotation}`;
+}
+
+/**
+ * True when every token of `text` is part of a chord progression ("C G Am F",
+ * "| C | G |", "(Gitar)").
+ */
+function isChordProgressionText(text) {
+  const tokens = String(text || '').trim().match(/\S+/g) || [];
+  if (!tokens.length) return false;
+  return tokens.every((token) => (
+    /^(\|:|:\||\[\:|:\]|\|\||\|)$/.test(token) || /^\(\d+x\)$/i.test(token) || isLikelyChordSymbol(token)
+  ));
+}
+
 function normalizeSectionTagLine(line, info) {
   const trimmed = String(line || '').trim();
   if (!trimmed) return line;
 
-  const alreadyTaggedMatch = trimmed.match(/^\[([^\]]+)\](.*)$/);
-  if (alreadyTaggedMatch) {
-    const [, label, trailing = ''] = alreadyTaggedMatch;
-    const normalizedLabel = detectSectionInfo(label)?.label || label.trim();
+  // "[Intro: C G Am F]" / "[Intro (2x)]" — an existing tag whose brackets also
+  // wrap trailing detail. Rebuilding it from the detected label alone threw that
+  // detail (chords, annotation) away, so keep the inside of the original label
+  // tag untouched and only re-case the section word itself.
+  const bracketedContentMatch = trimmed.match(/^\[([^\]]+)\](.*)$/);
+  if (bracketedContentMatch) {
+    const [, insideLabel, trailing = ''] = bracketedContentMatch;
     const suffix = trailing.trim();
-    return suffix ? `[${normalizedLabel}] ${suffix}` : `[${normalizedLabel}]`;
+    return suffix ? `[${normalizeBracketedSectionLabel(insideLabel, info)}] ${suffix}` : `[${normalizeBracketedSectionLabel(insideLabel, info)}]`;
   }
 
   const escapedLabel = info.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -350,9 +392,13 @@ function normalizeSectionTagLine(line, info) {
   ];
 
   for (const variant of labelVariants) {
-    const match = trimmed.match(new RegExp(`^${variant}\\s*[:\-]?\\s*(.*)$`, 'i'));
+    const match = trimmed.match(new RegExp(`^${variant}\\s*[:-]?\\s*(.*)$`, 'i'));
     if (!match) continue;
     const suffix = match[1].trim();
+    // "Reff: C G" — chords that only sit on the label line are not lyrics;
+    // bracketing the whole line would turn them into part of the section badge
+    // and they would vanish from the chord line.
+    if (suffix && isChordProgressionText(suffix)) return `[${info.label}]`;
     return suffix ? `[${info.label}] ${suffix}` : `[${info.label}]`;
   }
 

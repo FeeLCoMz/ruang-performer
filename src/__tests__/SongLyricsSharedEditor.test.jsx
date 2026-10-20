@@ -566,6 +566,47 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.setlist-nav-footer')).toBeFalsy();
   });
 
+  test('Given SetlistNavFooter outside a setlist, Then navigation renders without the setlist button', async () => {
+    const SetlistNavFooter = (await import('../components/SetlistNavFooter.jsx')).default;
+
+    await act(async () => {
+      root.render(
+        <SetlistNavFooter
+          setlistNav={{
+            hasPrev: true,
+            hasNext: true,
+            songNumber: 2,
+            totalSongs: 4,
+            prevTitle: 'Lagu A',
+            nextTitle: 'Lagu C',
+            onPrev: noop,
+            onNext: noop,
+            onOpenSetlist: undefined,
+            songs: [
+              { id: 'a', number: 1, title: 'Lagu A', key: 'C', isCurrent: false },
+              { id: 'b', number: 2, title: 'Lagu B', key: 'D', isCurrent: true },
+            ],
+          }}
+          allSongs={[]}
+        />
+      );
+    });
+
+    const footer = container.querySelector('.setlist-nav-footer');
+    expect(footer).toBeTruthy();
+    expect(footer.querySelectorAll('button').length).toBe(3);
+    expect(footer.querySelector('[aria-label="Buka setlist aktif"]')).toBeFalsy();
+
+    // Sheet pilih lagu tidak membagi grup setlist/repertoir tanpa setlist.
+    await act(async () => {
+      footer.querySelector('.setlist-nav-footer-info-btn').click();
+    });
+    const sheet = container.querySelector('.setlist-nav-sheet');
+    expect(sheet).toBeTruthy();
+    expect(sheet.textContent).toContain('repertoir');
+    expect(sheet.textContent).not.toContain('Di luar setlist');
+  });
+
   test('Given no setlist nav, Then the navigation group is not rendered', async () => {
     await act(async () => {
       root.render(

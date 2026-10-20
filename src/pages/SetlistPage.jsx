@@ -2,10 +2,10 @@ import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SetlistForm from '../components/SetlistForm.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
-import { fetchBands, addSetList, updateSetList, fetchSetLists } from '../apiClient.js';
+import { fetchBands, addSetList, updateSetList, deleteSetList, fetchSetLists } from '../apiClient.js';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import { usePermission } from '../hooks/usePermission.js';
-import { PERMISSIONS, canPerformAction, canEditSetlist } from '../utils/permissionUtils.js';
+import { PERMISSIONS, canPerformAction, canEditSetlist, canDeleteSetlist } from '../utils/permissionUtils.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
 export default function SetlistPage({
@@ -31,6 +31,10 @@ export default function SetlistPage({
   const [editError, setEditError] = React.useState('');
   const [autoSourceSetlists, setAutoSourceSetlists] = React.useState([]);
   const [autoSourceLoading, setAutoSourceLoading] = React.useState(false);
+  // Konfirmasi hapus setlist (setlist pribadi maupun band)
+  const [deleteTarget, setDeleteTarget] = React.useState(null);
+  const [deleteLoading, setDeleteLoading] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState('');
 
   // Filter & Sort States
   const [search, setSearch] = React.useState('');
@@ -182,6 +186,35 @@ export default function SetlistPage({
 
   const hasActiveFilters = Boolean(search) || bandFilter !== 'all';
 
+  const openDeleteSetlist = (setlist) => {
+    setDeleteError('');
+    setDeleteTarget(setlist);
+  };
+
+  const closeDeleteSetlist = () => {
+    if (deleteLoading) return;
+    setDeleteTarget(null);
+    setDeleteError('');
+  };
+
+  const confirmDeleteSetlist = async () => {
+    if (!deleteTarget || deleteLoading) return;
+    setDeleteLoading(true);
+    setDeleteError('');
+    try {
+      await deleteSetList(deleteTarget.id);
+      if (setSetlists) {
+        setSetlists(prev => (Array.isArray(prev) ? prev : []).filter(s => String(s.id) !== String(deleteTarget.id)));
+      }
+      setDeleteTarget(null);
+      await refreshSetlists();
+    } catch (err) {
+      setDeleteError(err.message || 'Gagal menghapus setlist');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   if (loadingSetlists) {
     return (
       <div className="page-container">
@@ -311,6 +344,7 @@ export default function SetlistPage({
         <div className="song-list-container">
           {filteredSetlists.map(setlist => {
             const canEdit = canEditSetlist(setlist, userBandInfo, user);
+            const canDelete = canDeleteSetlist(setlist, userBandInfo, user);
             return (
               <div
                 key={setlist.id}
@@ -346,6 +380,16 @@ export default function SetlistPage({
                       aria-label={`Edit setlist ${setlist.name}`}
                     >
                       <span aria-hidden="true">✎</span>
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={() => openDeleteSetlist(setlist)}
+                      className="btn btn-secondary setlist-action-icon-btn setlist-action-icon-btn-danger"
+                      title="Hapus setlist"
+                      aria-label={`Hapus setlist ${setlist.name}`}
+                    >
+                      <span aria-hidden="true">🗑</span>
                     </button>
                   )}
                 </div>
@@ -457,6 +501,34 @@ export default function SetlistPage({
               }
             }}
           />
+        </div>
+      )}
+
+      {/* Konfirmasi Hapus Setlist */}
+      {deleteTarget && (
+        <div
+          className="modal-overlay"
+          tabIndex={-1}
+          aria-label="Konfirmasi hapus setlist"
+          onClick={(e) => { if (e.target === e.currentTarget) closeDeleteSetlist(); }}
+          onKeyDown={e => { if (e.key === 'Escape') closeDeleteSetlist(); }}
+        >
+          <div className="modal delete-confirm-modal" role="dialog" aria-modal="true" tabIndex={0}>
+            <div className="modal-title">Konfirmasi Hapus Setlist</div>
+            <div className="modal-message">
+              Apakah Anda yakin ingin menghapus setlist "{deleteTarget.name}"?
+              Tindakan ini tidak bisa dibatalkan.
+            </div>
+            {deleteError && <div className="error-text modal-error-bottom">{deleteError}</div>}
+            <div className="modal-actions">
+              <button className="btn btn-red" onClick={confirmDeleteSetlist} disabled={deleteLoading}>
+                {deleteLoading ? 'Menghapus...' : 'Ya, Hapus'}
+              </button>
+              <button className="btn btn-secondary" onClick={closeDeleteSetlist} disabled={deleteLoading}>
+                Batal
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

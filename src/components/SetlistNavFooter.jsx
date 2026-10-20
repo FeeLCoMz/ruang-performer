@@ -15,6 +15,10 @@ export default function SetlistNavFooter({ setlistNav, allSongs = [], onOpenSetl
   const [query, setQuery] = useState('');
   const searchRef = React.useRef(null);
 
+  // Konteks setlist aktif? Tanpa setlist, footer tetap tampil sebagai navigasi
+  // lagu di repertoire, tetapi tombol 📋 dan grup "dalam/di luar setlist" disembunyikan.
+  const inSetlistMode = Boolean(setlistNav?.setlistName || onOpenSetlist);
+
   // Tutup sheet saat pindah lagu/halaman.
   useEffect(() => {
     setSheetOpen(false);
@@ -48,6 +52,19 @@ export default function SetlistNavFooter({ setlistNav, allSongs = [], onOpenSetl
 
   if (!setlistNav) return null;
 
+  // Pencarian cepat: lagu dalam setlist + lagu di luar setlist (repertoire).
+  // Di luar konteks setlist tidak ada pembagian grup — semua lagu satu urutan.
+  const q = query.trim().toLowerCase();
+  const inSetlistSongs = (setlistNav.songs || []).filter((item) =>
+    !q || (item.title || '').toLowerCase().includes(q) || (item.key || '').toLowerCase().includes(q));
+  const setlistIds = new Set((setlistNav.songs || []).map((s) => String(s.id)));
+  const outsideSongs = (inSetlistMode ? (Array.isArray(allSongs) ? allSongs : []) : [])
+    .filter((s) => !setlistIds.has(String(s.id)))
+    .filter((s) => !q
+      || (s.title || '').toLowerCase().includes(q)
+      || (s.artist || '').toLowerCase().includes(q));
+  const hasResults = inSetlistSongs.length > 0 || outsideSongs.length > 0;
+
   const handlePick = (event) => {
     const btn = event.target?.closest?.('button');
     const songId = btn?.getAttribute?.('data-song-id');
@@ -59,18 +76,6 @@ export default function SetlistNavFooter({ setlistNav, allSongs = [], onOpenSetl
       setlistNav.goToSong?.(songId);
     }
   };
-
-  // Pencarian cepat: lagu dalam setlist + lagu di luar setlist (repertoire).
-  const q = query.trim().toLowerCase();
-  const inSetlistSongs = (setlistNav.songs || []).filter((item) =>
-    !q || (item.title || '').toLowerCase().includes(q) || (item.key || '').toLowerCase().includes(q));
-  const setlistIds = new Set((setlistNav.songs || []).map((s) => String(s.id)));
-  const outsideSongs = (Array.isArray(allSongs) ? allSongs : [])
-    .filter((s) => !setlistIds.has(String(s.id)))
-    .filter((s) => !q
-      || (s.title || '').toLowerCase().includes(q)
-      || (s.artist || '').toLowerCase().includes(q));
-  const hasResults = inSetlistSongs.length > 0 || outsideSongs.length > 0;
 
   const renderSheetItem = (item, { outside = false } = {}) => (
     <button
@@ -105,26 +110,28 @@ export default function SetlistNavFooter({ setlistNav, allSongs = [], onOpenSetl
           <div
             className="setlist-nav-sheet"
             role="menu"
-            aria-label="Pilih lagu dalam setlist"
+            aria-label={inSetlistMode ? 'Pilih lagu dalam setlist' : 'Pilih lagu'}
             onClick={handlePick}
           >
             <div className="setlist-nav-sheet-handle" aria-hidden="true" />
             <div className="setlist-nav-sheet-title">
-              {setlistNav.setlistName || 'Setlist'} — {setlistNav.totalSongs} lagu
+              {inSetlistMode
+                ? `${setlistNav.setlistName || 'Setlist'} — ${setlistNav.totalSongs} lagu`
+                : `${setlistNav.totalSongs} lagu dalam repertoir`}
             </div>
             <div className="setlist-nav-sheet-search">
               <input
                 ref={searchRef}
                 type="search"
                 className="setlist-nav-sheet-search-input"
-                placeholder="Cari lagu… (termasuk di luar setlist)"
+                placeholder={inSetlistMode ? 'Cari lagu… (termasuk di luar setlist)' : 'Cari lagu…'}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 aria-label="Cari lagu"
               />
             </div>
             <div className="setlist-nav-sheet-list" role="menu">
-              {inSetlistSongs.length > 0 && (
+              {inSetlistMode && inSetlistSongs.length > 0 && (
                 <div className="setlist-nav-sheet-group-label">Dalam setlist</div>
               )}
               {inSetlistSongs.map((item) => renderSheetItem(item))}

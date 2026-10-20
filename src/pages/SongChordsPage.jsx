@@ -394,9 +394,10 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
     }
   };
 
-  // Navigasi antar lagu dalam setlist (tombol di toolbar panel lirik).
-  // Urutan mengikuti daftar lagu setlist aktif; lagu non-setlist tidak
-  // menampilkan grup navigasi ini.
+  // Navigasi antar lagu di panel lirik.
+  // - Dalam konteks setlist: urutan mengikuti daftar lagu setlist aktif.
+  // - Di luar setlist: urutan mengikuti repertoir semua lagu (songsProp) supaya
+  //   panel navigasi tetap ada, tanpa tombol setlist.
   const setlistNav = useMemo(() => {
     const songList = Array.isArray(navSetlist?.songs) && navSetlist.songs.length
       && typeof navSetlist.songs[0] === 'object'
@@ -411,6 +412,9 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
     } else if (idList) {
       const byId = new Map(pool.map((s) => [String(s.id), s]));
       orderedSongs = idList.map((sid) => byId.get(String(sid))).filter(Boolean);
+    } else {
+      // Bukan dari setlist: pakai repertoir lagu sebagai urutan navigasi.
+      orderedSongs = pool;
     }
     if (!orderedSongs || !orderedSongs.length) return null;
 
@@ -421,6 +425,10 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
     const go = (nextIndex) => {
       const target = orderedSongs[nextIndex];
       if (!target) return;
+      if (!navSetlist?.id) {
+        navigate(`/songs/view/${target.id}`);
+        return;
+      }
       navigate(`/setlists/${navSetlist.id}/songs/${target.id}`, {
         state: {
           setlistId: navSetlist.id,
@@ -437,7 +445,7 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
       totalSongs: orderedSongs.length,
       prevTitle: orderedSongs[index - 1]?.title || '',
       nextTitle: orderedSongs[index + 1]?.title || '',
-      setlistName: navSetlist.name || '',
+      setlistName: navSetlist?.name || '',
       onPrev: () => go(index - 1),
       onNext: () => go(index + 1),
       goToSong: (songId) => {
@@ -451,7 +459,8 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
         navigate(`/songs/view/${songId}`);
       },
       // Kembali ke daftar lagu setlist aktif (tombol 📋 di footer + Up Next).
-      onOpenSetlist: () => navigate(`/setlists/${navSetlist.id}`),
+      // Hanya tersedia saat ada setlist; di luar setlist tombolnya tidak dirender.
+      onOpenSetlist: navSetlist?.id ? () => navigate(`/setlists/${navSetlist.id}`) : undefined,
       // Daftar lagu untuk sheet pilih-lagu (footer): nomor, judul, key, aktif
       songs: orderedSongs.map((s, i) => ({
         id: String(s?.id),
@@ -763,14 +772,13 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
         </div>
       </div>
 
-      {/* Footer navigasi lagu setlist: sticky di mobile; di desktop tampil
-          sebagai bar inline saat dalam konteks setlist. Tombol 📋 membuka
-          setlist aktif dengan cepat dari lagu mana pun. */}
+      {/* Footer navigasi lagu: sticky di mobile; di desktop tampil sebagai bar
+          inline. Di luar setlist navigasi memakai urutan repertoir dan tombol
+          setlist (📋) tidak dirender. */}
       <SetlistNavFooter
         setlistNav={setlistNav}
         allSongs={Array.isArray(songsProp) ? songsProp : []}
         variant="inline"
-        onOpenSetlist={setlistNav && setlistId ? () => navigate(`/setlists/${setlistId}`) : undefined}
       />
     </div>
   );

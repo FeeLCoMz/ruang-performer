@@ -96,6 +96,27 @@ describe('lyricsEditorUtils', () => {
     expect(autoTagSongSections(input)).toBe(input);
   });
 
+  test('autoTagSongSections keeps chords written inside an existing section tag', () => {
+    const input = [
+      '[Intro: C G Am F]',
+      '[Verse 1: C G]',
+      '[Chorus: Am F C G]',
+      '[Intro: C G Am F] Am',
+    ].join('\n');
+
+    expect(autoTagSongSections(input)).toBe(input);
+  });
+
+  test('autoTagSongSections moves chords off a label line instead of swallowing them', () => {
+    const input = 'Intro: C G Am F\nReff: C G';
+    expect(autoTagSongSections(input)).toBe('[Intro]\n[Chorus]');
+  });
+
+  test('autoTagSongSections normalises the section word but keeps number and annotation', () => {
+    const input = '[Chorus 2]\n[Reff (2x)]\n[Verse 2]';
+    expect(autoTagSongSections(input)).toBe('[Chorus 2]\n[Chorus (2x)]\n[Verse 2]');
+  });
+
   test('detectSectionBadges returns section labels with line numbers', () => {
     expect(detectSectionBadges('[Intro]\nAm F\nPost Chorus:\nChorus:')).toEqual([
       { lineNumber: 1, label: 'Intro', tone: 'intro' },

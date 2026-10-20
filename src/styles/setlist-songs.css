@@ -1518,6 +1518,14 @@ button.song-mastery-chip:not(:disabled):hover {
   border-radius: var(--radius-md);
 }
 
+.setlist-action-icon-btn-danger {
+  color: var(--error);
+}
+
+.setlist-action-icon-btn-danger:hover {
+  border-color: var(--error);
+}
+
 .setlist-error-box {
   padding: 20px;
 }
