@@ -17,6 +17,7 @@ describe('splitBulkSongBlocks', () => {
       'Time Signature: 6/8',
       'YouTube: https://youtube.com/watch?v=dQw4w9WgXcQ',
       'Keyboard Patch: Piano + Strings',
+      'Partitur: ada',
       '',
       'Am        G',
       'Baris lirik pertama',
@@ -39,8 +40,9 @@ describe('splitBulkSongBlocks', () => {
       youtubeId: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
       keyboardPatch: 'Piano + Strings',
     });
+    expect(blocks[0].sheetMusicXml).toBe('ada');
     expect(blocks[0].lyrics).toBe('Am        G\nBaris lirik pertama');
-    expect(blocks[1].title).toBe('Lagu Dua');
+    expect(blocks[1]).toMatchObject({ title: 'Lagu Dua', key: 'C' });
     expect(blocks[1].lyrics).toBe('C G Am F');
   });
 
@@ -81,6 +83,120 @@ describe('splitBulkSongBlocks', () => {
     expect(blocks[0].artist).toBe('X');
     expect(blocks[0].key).toBe('D');
     expect(blocks[0].lyrics).toBe('D A Bm G');
+  });
+
+  it('membaca judul yang baru muncul setelah metadata key/tempo', () => {
+    // Chart tanpa pemisah: judul ditaruh setelah key, tempo, dan partitur.
+    const text = [
+      'Key : Am',
+      'Tempo: 85',
+      'Partitur: ada',
+      'Judul: Rindu Setengah Mati',
+      'Am       G',
+      'Ku menunggu',
+    ].join('\n');
+    const single = splitBulkSongBlocks(text);
+    expect(single).toHaveLength(1);
+    expect(single[0]).toMatchObject({ title: 'Rindu Setengah Mati', key: 'Am', tempo: '85' });
+    expect(single[0].lyrics).toBe('Am       G\nKu menunggu');
+  });
+
+  it('judul baru tanpa pemisah setelah lirik memulai lagu baru', () => {
+    const blocks = splitBulkSongBlocks([
+      'Judul: Lagu Satu',
+      'Key: C',
+      'C G Am F',
+      'Judul: Lagu Dua',
+      'Key: G',
+      'G D Em C',
+    ].join('\n'));
+    expect(blocks.map((block) => block.title)).toEqual(['Lagu Satu', 'Lagu Dua']);
+    expect(blocks.map((block) => block.key)).toEqual(['C', 'G']);
+  });
+
+  it('key/tempo yang ditulis di atas judul berikutnya belum bisa dipastikan (bug known)', () => {
+    // "Key: G" di akhir lagu pertama tidak bisa dibedakan dari metadata lagu
+    // pertama; format yang disarankan: tulis key lagu kedua SETELAH judulnya.
+    const blocks = splitBulkSongBlocks([
+      'Judul: Lagu Satu',
+      'Key: C',
+      'C G Am F',
+      'Key: G',
+      'Judul: Lagu Dua',
+      'G D Em C',
+    ].join('\n'));
+    expect(blocks.map((block) => block.title)).toEqual(['Lagu Satu', 'Lagu Dua']);
+    expect(blocks[1].key).toBe('');
+  });
+
+  it('header di atas pemisah "##" ikut ke lagu berikutnya', () => {
+    const blocks = splitBulkSongBlocks(['Artis: Band', 'Key: Am', '', '## Lagu Satu', 'Am F C G'].join('\n'));
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({ title: 'Lagu Satu', artist: 'Band', key: 'Am' });
+  });
+
+  it('key/tempo/partitur di atas "Judul:" tidak membuat blok tanpa judul', () => {
+    const blocks = splitBulkSongBlocks([
+      '## Lagu Satu',
+      'Artis: Band',
+      '',
+      'Key: Am',
+      'Tempo: 85',
+      'Partitur: ada',
+      'Judul: Lagu Satu',
+      'Am F C G',
+    ].join('\n'));
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      title: 'Lagu Satu',
+      artist: 'Band',
+      key: 'Am',
+      tempo: '85',
+      sheetMusicXml: 'ada',
+    });
+    expect(blocks[0].lyrics).toBe('Am F C G');
+  });
+
+  it('chart berawalan key lalu "Judul:" tetap satu lagu berjudul', () => {
+    const blocks = splitBulkSongBlocks(['Key : Am', 'Tempo: 85', 'Judul: Rindu', 'Am G F E'].join('\n'));
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({ title: 'Rindu', key: 'Am', tempo: '85' });
+  });
+
+  it('judul di bawah header "##" tidak memecah lagu menjadi blok baru', () => {
+    const text = ['## Lagu Lengkap', 'Judul: Lagu Lengkap', 'Key: C', 'C G'].join('\n');
+    const blocks = splitBulkSongBlocks(text);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].title).toBe('Lagu Lengkap');
+    expect(blocks[0].key).toBe('C');
+  });
+
+  it('judul baru yang muncul setelah lirik memulai lagu baru', () => {
+    const text = ['## Lagu', 'C G', 'Judul: Refrain', 'Am F'].join('\n');
+    const blocks = splitBulkSongBlocks(text);
+    expect(blocks.map((block) => block.title)).toEqual(['Lagu', 'Refrain']);
+  });
+
+  it('label "Judul:" yang sama persis di tengah lirik tidak memecah lagu', () => {
+    const text = ['Judul: Sama', 'C G', 'Judul: Sama', 'Am F'].join('\n');
+    const blocks = splitBulkSongBlocks(text);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].title).toBe('Sama');
+    expect(blocks[0].lyrics).toBe('C G\nAm F');
+  });
+
+  it('label seksi bukan judul, dan baris lirik "Kunci:" tidak dianggap metadata', () => {
+    const section = splitBulkSongBlocks(['Judul: Lagu', 'Verse: C G', 'Kunci: hatiku', 'C G'].join('\n'));
+    expect(section).toHaveLength(1);
+    expect(section[0].key).toBe('');
+    expect(section[0].lyrics).toBe('Verse: C G\nKunci: hatiku\nC G');
+  });
+
+  it('Key dan Tempo dengan spasi sebelum titik dua tetap terbaca', () => {
+    const [block] = splitBulkSongBlocks(['## Lagu', 'Key : Bb', 'BPM : 72', 'Bb Eb F'].join('\n'));
+    expect(block.key).toBe('Bb');
+    expect(block.tempo).toBe('72');
+    expect(block.lyrics).toBe('Bb Eb F');
   });
 });
 

@@ -18,6 +18,16 @@
  * Metadata blok: Artis, Key/Nada, Tempo/BPM, Genre, Time Signature/Birama,
  * YouTube, Keyboard Patch, Partitur.
  *
+ * Model parsing (penting):
+ *  - Header (artis/key/tempo/genre/birama/youtube/patch/partitur) hanya
+ *    berlaku selama lagu belum punya baris lirik. Posisinya terhadap baris
+ *    judul tidak masalah: boleh di atas judul, boleh di bawahnya.
+ *  - Blok baru dibuka hanya ketika judul yang BERBEDA muncul.
+ *  - Header tanpa judul yang kemudian diikuti lagu berjudul masuk ke lagu
+ *    berjudul itu (chart siaran menyimpan satu header band di paling atas).
+ *  - Header yang ditulis setelah lirik lagu sebelumnya menjadi milik lagu
+ *    berikutnya ("Key: G" lalu "Judul: Lagu Dua").
+ *
  * Modul ini murni fungsi (tanpa React/DOM) agar mudah diuji.
  */
 
@@ -48,10 +58,41 @@ const LABEL_LOOKUP = new Map(
   Object.entries(METADATA_LABELS).flatMap(([field, labels]) => labels.map((label) => [label, field])),
 );
 
-const METADATA_LINE_REGEX = /^([A-Za-z][A-Za-z ]{0,20})\s*[:=]\s*(.*)$/;
+const METADATA_LINE_REGEX = /^([A-Za-z][A-Za-z .]{0,24}?)\s*[:=]\s*(.*)$/;
+
+/** Kata lirik yang kebetulan diawali "judul"; jangan dijadikan judul lagu. */
+const TITLE_STOPWORDS = new Set(['keyakinan', 'keyakinanku']);
+
+const KEY_SIGNATURE_REGEX = /^[A-G][#b]?(m|maj|min|minor|major|sus|dim|aug|add)?(\/[A-G][#b]?)?$/i;
+
+/** Label seksi ("[Chorus]", "[Intro]", "[Verse 1]"). */
+const SECTION_LABEL_REGEX = /^\[\s*(intro|outro|coda|verse|pre[- ]?chorus|chorus|post[- ]?chorus|reff|refrain|bridge|interlude|instrumental|musik|music|solo|int\.?)\b[^\]]*\]\s*[:-]?\s*$/i;
+const SECTION_HEADER_REGEX = /^\[?\s*(intro|outro|coda|verse|pre[- ]?chorus|chorus|post[- ]?chorus|reff|refrain|bridge|interlude|instrumental|musik|music|solo|int\.?)\b[^:\]]*[:\]]\s*$/i;
+
+const BLOCK_FIELDS = [
+  'artist',
+  'key',
+  'tempo',
+  'genre',
+  'timeSignature',
+  'youtubeId',
+  'keyboardPatch',
+  'sheetMusicXml',
+];
 
 function normalizeNewlines(text) {
   return String(text ?? '').replace(/\r\n?/g, '\n');
+}
+
+function normalizeLabel(label) {
+  return String(label || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function normalizeTitle(rawTitle) {
+  return String(rawTitle || '')
+    .replace(/^#+\s*/, '')
+    .replace(/^[|\-:]+|[|\-:]+$/g, '')
+    .trim();
 }
 
 function splitSeparatorLine(line) {
@@ -63,18 +104,60 @@ function splitSeparatorLine(line) {
 function parseMetadataLine(line) {
   const match = line.trim().match(METADATA_LINE_REGEX);
   if (!match) return null;
-  const label = match[1].trim().toLowerCase().replace(/\s+/g, ' ');
+  const label = normalizeLabel(match[1]);
   const field = LABEL_LOOKUP.get(label);
   if (!field) return null;
-  return { field, value: match[2].trim() };
+  return { field, label, value: match[2].trim() };
 }
 
-function normalizeTitle(rawTitle) {
-  return String(rawTitle || '')
-    .replace(/^#+\s*/, '')
-    .replace(/^[|\-:]+|[|\-:]+$/g, '')
-    .trim();
+/**
+ * Cek apakah "Kata: nilai" benar-benar metadata lagu, bukan lirik. Nilai harus
+ * masuk akal supaya baris seperti "Kunci: hatiku" tetap lirik.
+ */
+function isSongMetadata(metadata) {
+  if (!metadata || !metadata.value) return false;
+  switch (metadata.field) {
+    case 'title':
+      return !TITLE_STOPWORDS.has(metadata.label.replace(/\s+/g, ''));
+    case 'key':
+      return KEY_SIGNATURE_REGEX.test(metadata.value);
+    case 'tempo':
+      return /\d/.test(metadata.value);
+    case 'youtube':
+      return /youtu\.?be|^[A-Za-z0-9_-]{11}$|https?:/i.test(metadata.value);
+    default:
+      return true;
+  }
 }
+
+/** Baris label seksi ("Verse", "[Outro]"): milik lirik, bukan judul lagu. */
+function isSectionLine(line) {
+  const trimmed = String(line || '').trim();
+  if (!trimmed) return true;
+  if (SECTION_LABEL_REGEX.test(trimmed) || SECTION_HEADER_REGEX.test(trimmed)) return true;
+  return /^(intro|outro|coda|verse\s*\d*|chorus|reff|bridge|interlude|solo)$/i.test(trimmed);
+}
+
+function createBlock(title) {
+  return {
+    title,
+    artist: '',
+    key: '',
+    tempo: '',
+    genre: '',
+    timeSignature: '',
+    youtubeId: '',
+    keyboardPatch: '',
+    sheetMusicXml: '',
+    lyricsLines: [],
+  };
+}
+
+const hasLyrics = (block) => Boolean(block && block.lyricsLines.some((line) => line.trim()));
+
+const hasHeader = (block) => BLOCK_FIELDS.some((field) => block[field]);
+
+const isEmptyBlock = (block) => !block.title && !hasLyrics(block) && !hasHeader(block);
 
 /**
  * Pecah teks mentah menjadi blok-blok lagu.
@@ -88,41 +171,67 @@ export function splitBulkSongBlocks(text) {
   const lines = normalizeNewlines(text).split('\n');
   const blocks = [];
   let current = null;
+  let lastTitle = '';
+  /**
+   * Header yang belum (pasti) punya judul. Disimpan berurutan:
+   * [{ field, value }]. Header di atas judul berikutnya ikut pindah ke lagu
+   * itu; header di bawah judul lagu ini dikembalikan ke lagu ini.
+   */
+  let headerQueue = [];
 
-  const hasBlockContent = (block) => Boolean(
-    block
-    && (
-      block.lyricsLines.some((line) => line.trim())
-      || block.title
-      || block.artist
-      || block.key
-      || block.tempo
-      || block.genre
-    ),
-  );
-
-  /** Tutup blok aktif. Blok kosong (tanpa lirik & metadata) tidak ikut masuk. */
-  const finishBlock = () => {
-    if (current && hasBlockContent(current)) blocks.push(current);
-    current = null;
+  const applyHeader = (block, field, value) => {
+    if (field === 'sheetMusic') {
+      // "Partitur: tidak ada" bukan MusicXML.
+      if (/xml|score|ada/i.test(value)) block.sheetMusicXml = value;
+      return;
+    }
+    if (field === 'youtube') {
+      block.youtubeId = value;
+      return;
+    }
+    block[field] = value;
   };
 
-  /** Mulai blok baru; blok aktif yang kosong dibuang. */
-  const openBlock = (initial = {}) => {
-    finishBlock();
-    current = {
-      title: '',
-      artist: '',
-      key: '',
-      tempo: '',
-      genre: '',
-      timeSignature: '',
-      youtubeId: '',
-      keyboardPatch: '',
-      sheetMusicXml: '',
-      lyricsLines: [],
-      ...initial,
-    };
+  /** Header blok tanpa judul hanya milik lagu berjudul berikutnya. */
+  const isAnonHeaderBlock = (block) => Boolean(block && !block.title && !hasLyrics(block) && hasHeader(block));
+
+  const commitCurrent = (forAnotherSong = false) => {
+    if (!current || isEmptyBlock(current)) return;
+    if (forAnotherSong && isAnonHeaderBlock(current)) return;
+    blocks.push(current);
+  };
+
+  const startSong = (title) => {
+    // Header anonim (blok tanpa judul & tanpa lirik) menjadi milik lagu
+    // berjudul yang muncul sekarang.
+    const anonHeaders = isAnonHeaderBlock(current) ? current : null;
+    const queued = [...headerQueue];
+    headerQueue = [];
+    if (current && !isEmptyBlock(current) && !anonHeaders) blocks.push(current);
+    current = createBlock(title);
+    lastTitle = title;
+    [anonHeaders, queued].forEach((source) => {
+      if (!source) return;
+      BLOCK_FIELDS.forEach((field) => {
+        if (source[field] && !current[field]) applyHeader(current, field, source[field]);
+      });
+    });
+  };
+
+  const closeSong = () => {
+    commitCurrent();
+    current = createBlock('');
+    headerQueue = [];
+    lastTitle = '';
+  };
+
+  const defineTitle = (title) => {
+    if (current && title.toLowerCase() === lastTitle.toLowerCase()) {
+      // Judul berulang: lanjutan lagu yang sama, bukan lagu baru.
+      current.title = current.title || title;
+      return;
+    }
+    startSong(title);
   };
 
   for (const rawLine of lines) {
@@ -131,44 +240,67 @@ export function splitBulkSongBlocks(text) {
     if (separator) {
       const explicitTitle = normalizeTitle(separator.title);
       if (explicitTitle) {
-        // "## Judul" / "Judul: ..." = awal lagu baru.
-        openBlock({ title: explicitTitle });
-      } else {
-        // "===" / "---" tanpa judul = penutup blok aktif.
-        finishBlock();
+        // "## Judul" = penanda judul lagu.
+        defineTitle(explicitTitle);
+      } else if (current && (hasLyrics(current) || current.title)) {
+        // "===" / "---" tanpa judul = penutup lagu aktif (bukan garis dekorasi
+        // di bawah header judul).
+        closeSong();
       }
       continue;
     }
 
     if (!current) {
-      // Teks sebelum pemisah pertama menjadi blok pertama.
       if (!rawLine.trim()) continue;
-      openBlock();
+      current = createBlock('');
+      headerQueue = [];
     }
 
     const metadata = parseMetadataLine(rawLine);
-    // Metadata hanya berlaku sebelum lirik dimulai. Setelah itu baris seperti
-    // "[Keys: Piano]" atau "Key: ..." adalah bagian aransemen/lirik.
-    const lyricsStarted = current.lyricsLines.some((line) => line.trim());
-    if (metadata && !lyricsStarted) {
-      if (metadata.field === 'title') {
-        const nextTitle = normalizeTitle(metadata.value);
-        if (nextTitle) openBlock({ title: nextTitle });
-      } else if (metadata.field === 'youtube') {
-        current.youtubeId = metadata.value;
-      } else if (metadata.field === 'sheetMusic') {
-        // "Partitur: tidak ada" bukan MusicXML.
-        if (/xml|score|ada/i.test(metadata.value)) current.sheetMusicXml = metadata.value;
-      } else {
-        current[metadata.field] = metadata.value;
+    if (!metadata || !isSongMetadata(metadata)) {
+      current.lyricsLines.push(rawLine);
+      continue;
+    }
+
+    if (metadata.field === 'title') {
+      const nextTitle = normalizeTitle(metadata.value);
+      if (isSectionLine(nextTitle)) {
+        // "Judul: Verse 2" / "Judul: Outro" adalah label bagian, bukan judul.
+        current.lyricsLines.push(rawLine);
+        continue;
+      }
+      defineTitle(nextTitle);
+      continue;
+    }
+
+    const lyricsStarted = hasLyrics(current);
+
+    if (!lyricsStarted) {
+      // Header lagu: posisinya relatif terhadap judul tidak penting.
+      applyHeader(current, metadata.field, metadata.value);
+      // Blok tanpa judul: header ini menunggu judul. Bila judul yang muncul
+      // berikutnya berbeda, header pindah ke lagu itu (tidak tertinggal sebagai
+      // lagu tanpa judul). Header tetap disimpan di antrean meski sudah
+      // diterapkan ke blok ini, supaya bisa ikut pindah.
+      if (!current.title) {
+        headerQueue = [...headerQueue.filter((item) => item.field !== metadata.field), {
+          field: metadata.field,
+          value: metadata.value,
+        }];
       }
       continue;
     }
 
-    current.lyricsLines.push(rawLine);
+    // Setelah lirik dimulai, header dicatat sebagai calon header lagu berikutnya.
+    // Hanya bila header ini ditulis setelah lagu berjudul & berlirik: "Key: G"
+    // tepat di atas "Judul: Lagu Dua" milik lagu kedua.
+    const isNextSongHeader = Boolean(current.title && lyricsStarted);
+    if (isNextSongHeader) {
+      headerQueue = [...headerQueue, { field: metadata.field, value: metadata.value }];
+    }
   }
 
-  finishBlock();
+  commitCurrent();
 
   return blocks.map(({ lyricsLines, ...rest }) => ({
     ...rest,
