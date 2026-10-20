@@ -29,7 +29,7 @@ import {
 } from './bulkLyricsParser.js';
 import { useBulkLyricsEnabled } from './useBulkLyricsEnabled.js';
 
-const MAX_BLOCKS = 200;
+const MAX_BLOCKS = 1000;
 
 /** Hitung jumlah baris & kata untuk statistik ringkas di preview. */
 function describeLyrics(lyrics) {
@@ -142,14 +142,17 @@ export default function BulkLyricsPage() {
   const resolvedRecords = useMemo(() => records.map((record) => {
     const override = titleOverrides[record.index];
     if (override === undefined) return record;
-    const title = override.trim();
+    // Judul disimpan apa adanya (termasuk spasi di akhir saat mengetik); hanya
+    // dibersihkan saat payload dibuat, bukan saat menilai status "siap".
+    const title = override.trim() || record.title;
+    const titleFilledByUser = Boolean(override.trim()) && record.title !== title;
     return {
       ...record,
-      title: title || record.title,
-      errors: title
-        ? record.errors.filter((message) => !message.startsWith('Judul') && message !== 'Judul lagu wajib diisi.')
+      title,
+      errors: titleFilledByUser
+        ? record.errors.filter((message) => !message.startsWith('Judul'))
         : record.errors,
-      titleGuessed: record.titleGuessed && !title,
+      titleGuessed: record.titleGuessed && !titleFilledByUser,
     };
   }), [records, titleOverrides]);
 

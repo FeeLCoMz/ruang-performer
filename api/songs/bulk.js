@@ -135,11 +135,11 @@ export default async function handler(req, res) {
       res.status(400).json({ error: 'Tidak ada lagu untuk disimpan' });
       return;
     }
-    // Batas aman supaya satu permintaan tidak menghabiskan kuota database.
-    if (songs.length > 200) {
-      res.status(400).json({ error: 'Maksimal 200 lagu per proses bulk' });
-      return;
-    }
+      // Batas aman supaya satu permintaan tidak menghabiskan kuota database.
+      if (songs.length > 1000) {
+        res.status(400).json({ error: 'Maksimal 1000 lagu per proses bulk' });
+        return;
+      }
 
     const client = getTursoClient();
     await ensureSchema(client);
@@ -148,7 +148,12 @@ export default async function handler(req, res) {
     const failures = [];
     const prepared = songs.map((item, index) => {
       const source = item && typeof item === 'object' ? item : {};
-      const title = sanitizeText(source.title, 100).trim();
+      // Judul hanya dibersihkan dari spasi berlebih: karakter seperti `"`, `<`,
+      // atau `'` adalah bagian dari judul lagu yang wajar (mis. "Don't Stop"),
+      // jadi TIDAK boleh disanitasi — dulu sanitasi bisa mengosongkan judul yang
+      // sebenarnya terisi sehingga simpan gagal dengan "Judul lagu wajib diisi".
+      const rawTitle = typeof source.title === 'string' ? source.title.trim() : '';
+      const title = rawTitle.replace(/\s+/g, ' ').slice(0, 200);
       if (!title) {
         failures.push({
           index,
@@ -159,6 +164,8 @@ export default async function handler(req, res) {
       return {
         index,
         title,
+        // Judul asli untuk pesan error (sebelum normalisasi).
+        displayTitle: rawTitle.slice(0, 100),
         artist: sanitizeText(source.artist, 100),
         genre: sanitizeText(source.genre, 50),
         key: sanitizeText(source.key, 20),
@@ -178,7 +185,7 @@ export default async function handler(req, res) {
       // Pesan utama menyebut lagu mana yang bermasalah supaya user tidak perlu
       // menebak dari 20 lagu sekaligus.
       const firstFailure = failures[0];
-      const firstTitle = prepared[firstFailure.index]?.title || `lagu #${firstFailure.index + 1}`;
+      const firstTitle = prepared[firstFailure.index]?.displayTitle || `lagu #${firstFailure.index + 1}`;
       res.status(400).json({
         error:
           failures.length === 1
@@ -209,6 +216,10 @@ export default async function handler(req, res) {
     }
 
     // ---- Simpan -------------------------------------------------------------
+    // 341+ lagu dalam satu permintaan bisa melewati batas waktu function, dan
+    // satu insert lambat membuat seluruh batch gagal. Chunk di bawah ini
+    // membuat permintaan per 50 lagu, berurutan, supaya risiko timeout kecil.
+    const CHUNK_SIZE = 50;
     const now = new Date().toISOString();
     const insertSql = `INSERT INTO songs
         (id, title, artist, youtubeId, lyrics, key, tempo, genre, time_markers,
@@ -218,36 +229,42 @@ export default async function handler(req, res) {
 
     const createdIds = [];
     try {
-      for (const item of prepared) {
-        const id = randomUUID();
-        await client.execute(insertSql, [
-          id,
-          item.title,
-          item.artist || null,
-          item.youtubeId || null,
-          item.lyrics || null,
-          item.key || null,
-          item.tempo,
-          item.genre || null,
-          null,
-          item.timeSignature,
-          null,
-          item.keyboardPatch || null,
-          item.sheetMusicXml || null,
-          userId,
-          item.bandId,
-          now,
-          now,
-        ]);
-        createdIds.push(id);
+      for (let offset = 0; offset < prepared.length; offset += CHUNK_SIZE) {
+        const chunk = prepared.slice(offset, offset + CHUNK_SIZE);
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.all(chunk.map(async (item) => {
+          const id = randomUUID();
+          await client.execute(insertSql, [
+            id,
+            item.title,
+            item.artist || null,
+            item.youtubeId || null,
+            item.lyrics || null,
+            item.key || null,
+            item.tempo,
+            item.genre || null,
+            null,
+            item.timeSignature,
+            null,
+            item.keyboardPatch || null,
+            item.sheetMusicXml || null,
+            userId,
+            item.bandId,
+            now,
+            now,
+          ]);
+          createdIds.push(id);
+        }));
       }
     } catch (error) {
       // Rollback manual: hapus lagu yang sudah dibuat agar tidak setengah masuk.
       if (createdIds.length > 0) {
-        const placeholders = createdIds.map(() => '?').join(', ');
-        await client
-          .execute(`DELETE FROM songs WHERE id IN (${placeholders})`, createdIds)
-          .catch(() => {});
+        for (let offset = 0; offset < createdIds.length; offset += 100) {
+          const ids = createdIds.slice(offset, offset + 100);
+          const placeholders = ids.map(() => '?').join(', ');
+          // eslint-disable-next-line no-await-in-loop
+          await client.execute(`DELETE FROM songs WHERE id IN (${placeholders})`, ids).catch(() => {});
+        }
       }
       throw error;
     }
