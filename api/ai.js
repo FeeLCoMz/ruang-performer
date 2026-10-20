@@ -89,7 +89,22 @@ import jwt from 'jsonwebtoken';
 import { buildTranscribePrompt, parseTranscriptionResponse } from '../src/modules/chord-transcriber/transcribePrompt.js';
 
 async function readJson(req) {
-  if (req.body && typeof req.body === 'object') return req.body;
+  // Vercel mengisi req.body sebagai OBJEK (sudah di-parse) atau STRING JSON,
+  // tergantung runtime. Versi lama hanya menerima objek; bila body berupa
+  // string, ia dilewatkan ke pembaca stream yang sudah habis → hasil {} →
+  // handler menjawab 400 "Title required" walau klien mengirim body benar.
+  if (req.body !== undefined && req.body !== null) {
+    if (typeof req.body === 'object' && !Buffer.isBuffer(req.body)) return req.body;
+    if (typeof req.body === 'string') {
+      if (!req.body.trim()) return {};
+      try {
+        return JSON.parse(req.body);
+      } catch {
+        return {};
+      }
+    }
+  }
+  if (typeof req.on !== 'function') return {};
   return await new Promise((resolve, reject) => {
     let data = '';
     req.on('data', chunk => { data += chunk; });
@@ -369,6 +384,11 @@ async function handleSongSearch(req, res) {
   }
   const { title, artist } = body;
   if (!title) {
+    // Log supaya penyebab 400 langsung terlihat (body kosong vs field hilang).
+    console.warn('[ai/song-search] title kosong. Body diterima:', {
+      keys: body && typeof body === 'object' ? Object.keys(body) : typeof body,
+      url: req.url,
+    });
     return res.status(400).json({ error: 'Title required' });
   }
   // Cache key based on title and artist (case-insensitive)

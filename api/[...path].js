@@ -245,13 +245,33 @@ export default async function handler(req, res) {
       if (!verifyToken(req, res)) return;
     }
 
-    // Express sudah mem-parse body; di Vercel body masih mentah.
-    if (!req.body && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-      try {
-        req.body = await readJson(req);
-      } catch {
-        res.status(400).json({ error: 'Body JSON tidak valid' });
-        return;
+    // Express sudah mem-parse body; di Vercel body bisa OBJECT, STRING JSON,
+    // atau masih mentah (stream). Versi lama hanya memeriksa !req.body,
+    // sehingga body berupa STRING lolos tanpa di-parse — handler lalu menerima
+    // string (bukan objek) dan menjawab 400 "Title required".
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      if (typeof req.body === 'string') {
+        try {
+          req.body = req.body.trim() ? JSON.parse(req.body) : {};
+        } catch {
+          res.status(400).json({ error: 'Body JSON tidak valid' });
+          return;
+        }
+      } else if (Buffer.isBuffer(req.body)) {
+        try {
+          const text = req.body.toString('utf8').trim();
+          req.body = text ? JSON.parse(text) : {};
+        } catch {
+          res.status(400).json({ error: 'Body JSON tidak valid' });
+          return;
+        }
+      } else if (!req.body) {
+        try {
+          req.body = await readJson(req);
+        } catch {
+          res.status(400).json({ error: 'Body JSON tidak valid' });
+          return;
+        }
       }
     }
 
