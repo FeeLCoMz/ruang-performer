@@ -188,7 +188,20 @@ async function dispatch(req, res) {
   // chord (/api/ai/chord-transcribe). Tanpa cabang ini keduanya 404.
   if (resource === 'ai') {
     if (second === 'usage') return aiUsageHandler(req, res);
-    return aiHandler(req, res);
+    // api/ai.js memilih handler dari req.url dengan prefix TANPA '/api/ai'
+    // (Express memotongnya saat mount). Catch-all meneruskan URL utuh
+    // ('/api/ai/song-search'), sehingga tanpa normalisasi ini semua request
+    // jatuh ke handler chat → "prompt atau context diperlukan".
+    const originalUrl = req.url;
+    const aiSubPath = segments.slice(1).join('/');
+    const queryIndex = String(originalUrl || '').indexOf('?');
+    const aiSearch = queryIndex >= 0 ? String(originalUrl).slice(queryIndex) : '';
+    req.url = `/${aiSubPath}${aiSearch}`;
+    try {
+      return await aiHandler(req, res);
+    } finally {
+      req.url = originalUrl;
+    }
   }
 
   // ---- Audit logs (owner only; handler memeriksa role) --------------------
