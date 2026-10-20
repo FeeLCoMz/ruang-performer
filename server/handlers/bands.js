@@ -1,9 +1,9 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { PERMISSIONS, hasPermission } from '../../src/utils/permissionUtils.js';
-import bandIdHandler from './[id].js';
+import bandIdHandler from './band-id.js';
 import nodemailer from 'nodemailer';
-import { createRateLimiter, RATE_LIMITS } from '../middleware/rateLimiter.js';
+import { createRateLimiter, RATE_LIMITS } from '../middleware-rateLimiter.js';
 // Invitations email setup
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',

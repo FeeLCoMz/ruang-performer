@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getTursoClient } from '../_turso.js';
-import { createRateLimiter, RATE_LIMITS } from '../middleware/rateLimiter.js';
+import { createRateLimiter, RATE_LIMITS } from '../middleware-rateLimiter.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 

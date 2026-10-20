@@ -14,7 +14,7 @@ const APP_URL = process.env.APP_URL || 'http://localhost:5173';
  * POST /api/auth/forgot-password
  * Request password reset token via email
  */
-import { createRateLimiter, RATE_LIMITS } from '../middleware/rateLimiter.js';
+import { createRateLimiter, RATE_LIMITS } from '../middleware-rateLimiter.js';
 const rateLimiter = createRateLimiter({ ...RATE_LIMITS.AUTH_FORGOT });
 export default async function handler(req, res) {
   await rateLimiter(req, res, () => {});

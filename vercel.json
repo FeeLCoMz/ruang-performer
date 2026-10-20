@@ -3,57 +3,18 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/**/*.js": {
-      "maxDuration": 10
+    "api/[...path].js": {
+      "maxDuration": 60,
+      "memory": 1024
     }
   },
   "routes": [
     {
-      "src": "/api/auth/me",
-      "dest": "/api/auth/me.js"
-    },
-    {
-      "src": "/api/auth/user-audit-logs",
-      "dest": "/api/auth/user-audit-logs.js"
-    },
-    {
-      "src": "/api/auth/(login|register|forgot-password|reset-password)",
-      "dest": "/api/auth/index.js"
-    },
-    {
-      "src": "/api/auth/change-password",
-      "dest": "/api/auth/change-password.js"
-    },
-    {
-      "src": "/api/bands/([^/]+)/members(?:/([^/]+))?",
-      "dest": "/api/bands/members.js?id=$1&userId=$2"
-    },
-    {
-      "src": "/api/bands/([^/]+)$",
-      "dest": "/api/bands/[id].js?id=$1"
-    },
-    {
-      "src": "/api/events/gig/([^/]+)$",
-      "dest": "/api/events/index.js?type=gig&id=$1"
-    },
-    {
-      "src": "/api/events/gig$",
-      "dest": "/api/events/index.js?type=gig"
-    },
-    {
-      "src": "/api/songs(/.*)?$",
-      "dest": "/api/songs.js",
-      "headers": {
-        "x-original-url": "$0"
-      }
-    },
-    {
-      "src": "/api/setlists/([^/]+)$",
-      "dest": "/api/setlists/index.js?id=$1"
-    },    
-    {
       "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "dest": "/api/[...path].js",
+      "headers": {
+        "x-original-url": "/api/$1"
+      }
     },
     {
       "handle": "filesystem"

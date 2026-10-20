@@ -2,26 +2,19 @@
 # .vercelignore (cleaned & grouped)
 ########################################
 
-# === API: Unused/disabled/over-quota endpoints ===
-# Catatan penting:
-#  - api/songs/index.js WAJIB ter-deploy: ia router yang dipanggil api/songs.js.
-#  - Jangan meng-ignore api/auth/register.js / login.js / me.js — ketiganya
-#    dipakai frontend (AuthContext memanggil /api/auth/me).
-#  - Batas Vercel Hobby: 12 function. File lain di api/ yang ingin di-ignore
-#    harus dipindahkan dulu import-nya, bukan sekadar ditambahkan ke sini,
-#    karena modul yang diimpor tetap ikut dihitung sebagai function.
-api/__tests__/
-api/ai.js
+# === API: Unused/disabled endpoints ===
+# Vercel Hobby menghitung SETIAP file .js di folder api/ sebagai satu
+# Serverless Function (maksimal 12). Karena itu hanya api/[...path].js yang
+# memuat semua route; handler lainnya tinggal di server/handlers/.
+# api/index.js, api/ai.js, api/tools/**, api/users/** tetap dipertahankan sebagai
+# implementasi lokal/legacy dan di-ignore dari deployment.
 api/index.js
 api/server.cjs
-api/auth/change-password.js
-api/auth/delete-account.js
-api/auth/forgot-password.js
-api/auth/reset-password.js
-api/auth/user-audit-logs.js
-api/test-helpers/
+api/ai.js
 api/tools/
 api/users/
+api/__tests__/
+api/test-helpers/
 
 # === Database, test, and dev files ===
 db/

@@ -1,11 +1,34 @@
+/**
+ * Router internal untuk songs — dipanggil oleh api/[...path].js.
+ *
+ * Menangani:
+ *   POST /api/songs/bulk          → handleBulkSongs (modul Bulk Add Lirik & Chord)
+ *   GET/PUT/PATCH /api/songs/:id/mastery → handleSongMastery
+ *   GET/POST /api/songs           → daftar & tambah lagu
+ *   GET/PUT/DELETE /api/songs/:id → diteruskan ke ./song-id.js
+ */
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { randomUUID } from 'crypto';
-import songIdHandler from './[id].js';
+import songIdHandler from './song-id.js';
 
 // Module-level flags: schema checks run only once per server instance
 let _schemaEnsured = false;
 let _schemaEnsurePromise = null;
+
+const SONG_ID_METHODS = new Set(['GET', 'PUT', 'PATCH', 'DELETE']);
+
+/**
+ * Path asli request. Vercel rewrite tidak memindahkan query param seperti
+ * ?id=...&path=mastery, jadi header x-original-url dipakai lebih dulu.
+ */
+const ORIGINAL_URL_HEADER = 'x-original-url';
+
+function resolveRequestPath(req) {
+  const forwarded = req.headers?.[ORIGINAL_URL_HEADER];
+  if (typeof forwarded === 'string' && forwarded) return forwarded.split('?')[0];
+  return req.path || (req.url || '/').split('?')[0];
+}
 
 async function ensureSchema(client) {
   if (_schemaEnsured) return;
@@ -22,12 +45,15 @@ async function ensureSchema(client) {
 
 export async function readJson(req) {
   if (req.body) return req.body;
-  return await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     let data = '';
-    req.on('data', chunk => { data += chunk; });
+    req.on('data', (chunk) => { data += chunk; });
     req.on('end', () => {
-      try { resolve(data ? JSON.parse(data) : {}); }
-      catch (e) { reject(e); }
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (error) {
+        reject(error);
+      }
     });
     req.on('error', reject);
   });
@@ -35,15 +61,20 @@ export async function readJson(req) {
 
 async function ensureSongsColumns(client) {
   const columnsResult = await client.execute(`PRAGMA table_info(songs)`);
-  const columns = (columnsResult.rows || []).map(row => row.name);
-  if (!columns.includes('userId')) {
-    await client.execute(`ALTER TABLE songs ADD COLUMN userId TEXT`);
-  }
-  if (!columns.includes('bandId')) {
-    await client.execute(`ALTER TABLE songs ADD COLUMN bandId TEXT`);
-  }
-  if (!columns.includes('time_signature')) {
-    await client.execute(`ALTER TABLE songs ADD COLUMN time_signature TEXT`);
+  const columns = (columnsResult.rows || []).map((row) => row.name);
+  const extraColumns = {
+    userId: 'TEXT',
+    bandId: 'TEXT',
+    time_signature: 'TEXT',
+    arrangement_style: 'TEXT',
+    keyboard_patch: 'TEXT',
+    sheet_music_xml: 'TEXT',
+  };
+  for (const [name, type] of Object.entries(extraColumns)) {
+    if (!columns.includes(name)) {
+      // eslint-disable-next-line no-await-in-loop
+      await client.execute(`ALTER TABLE songs ADD COLUMN ${name} ${type}`);
+    }
   }
 }
 
@@ -60,24 +91,24 @@ async function ensureSongMasteryTable(client) {
       FOREIGN KEY (songId) REFERENCES songs(id) ON DELETE CASCADE,
       FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
       UNIQUE(songId, userId)
-    )`
+    )`,
   );
   await client.execute(
-    `CREATE INDEX IF NOT EXISTS idx_song_user_mastery_songId ON song_user_mastery(songId)`
+    `CREATE INDEX IF NOT EXISTS idx_song_user_mastery_songId ON song_user_mastery(songId)`,
   );
   await client.execute(
-    `CREATE INDEX IF NOT EXISTS idx_song_user_mastery_userId ON song_user_mastery(userId)`
+    `CREATE INDEX IF NOT EXISTS idx_song_user_mastery_userId ON song_user_mastery(userId)`,
   );
 
   // Backfill from legacy table if it exists, so previous marks are preserved.
   const legacyTable = await client.execute(
-    `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'song_member_mastery' LIMIT 1`
+    `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'song_member_mastery' LIMIT 1`,
   );
   if (legacyTable.rows?.length) {
     await client.execute(
       `INSERT OR IGNORE INTO song_user_mastery (id, songId, userId, mastered, masteredAt, createdAt, updatedAt)
        SELECT id, songId, userId, mastered, masteredAt, createdAt, updatedAt
-       FROM song_member_mastery`
+       FROM song_member_mastery`,
     );
   }
 }
@@ -93,10 +124,7 @@ function toMasteryRows(rows) {
   }));
 }
 
-/**
- * Daftar status penguasaan untuk satu lagu. Menyertakan baris mastered=0
- * (Perlu Latihan) — baris ini tetap disimpan di tabel.
- */
+/** Daftar status penguasaan untuk satu lagu (termasuk baris mastered=0). */
 async function getSongMasteryList(client, songId) {
   const rows = await client.execute(
     `SELECT sm.userId, sm.mastered, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
@@ -104,7 +132,7 @@ async function getSongMasteryList(client, songId) {
      LEFT JOIN users u ON u.id = sm.userId
      WHERE sm.songId = ?
      ORDER BY datetime(COALESCE(sm.masteredAt, sm.updatedAt, sm.createdAt)) DESC`,
-    [songId]
+    [songId],
   );
   return toMasteryRows(rows);
 }
@@ -117,7 +145,7 @@ async function getActiveBandMemberSet(client, bandId) {
          status IS NULL
          OR lower(status) IN ('active', 'accepted', 'member')
        )`,
-    [bandId]
+    [bandId],
   );
   return new Set((members.rows || []).map((row) => String(row.userId)));
 }
@@ -147,9 +175,7 @@ async function filterMasteryForViewer(client, songBandId, masteryList, viewerUse
 
 async function fetchYouTubeTrending() {
   const apiKey = process.env.VITE_YOUTUBE_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
+  if (!apiKey) return null;
 
   try {
     const url = new URL('https://www.googleapis.com/youtube/v3/videos');
@@ -178,7 +204,7 @@ async function fetchYouTubeTrending() {
         publishedAt: snippet.publishedAt || '',
         viewCount: item.statistics?.viewCount || null,
         thumbnailUrl: thumbnail.url || '',
-        description: snippet.description || ''
+        description: snippet.description || '',
       };
     });
   } catch (error) {
@@ -196,7 +222,7 @@ async function handleSongMastery(req, res, client, songId) {
 
   const songResult = await client.execute(
     `SELECT id, bandId FROM songs WHERE id = ? LIMIT 1`,
-    [songId]
+    [songId],
   );
   const song = songResult.rows?.[0];
   if (!song) {
@@ -215,7 +241,7 @@ async function handleSongMastery(req, res, client, songId) {
   } else {
     const ownerRow = await client.execute(
       `SELECT userId FROM songs WHERE id = ? LIMIT 1`,
-      [songId]
+      [songId],
     );
     const ownerId = ownerRow.rows?.[0]?.userId;
     if (ownerId && String(ownerId) !== String(userId)) {
@@ -243,7 +269,6 @@ async function handleSongMastery(req, res, client, songId) {
     //   1 = Dikuasai, 0 = Perlu Latihan, dan 'none' (Belum Diulik) = hapus baris.
     const requestedStatus = String(body?.status || '').toLowerCase();
     const masteredValue = requestedStatus === 'learning' ? 0 : 1;
-    const mastered = masteredValue === 1;
 
     if (requestedStatus !== 'none') {
       const now = new Date().toISOString();
@@ -255,12 +280,12 @@ async function handleSongMastery(req, res, client, songId) {
            masteredAt = excluded.masteredAt,
            updatedAt = excluded.updatedAt`,
         [randomUUID(), songId, userId, masteredValue,
-         requestedStatus === 'learning' ? null : now, now, now]
+          requestedStatus === 'learning' ? null : now, now, now],
       );
     } else {
       await client.execute(
         `DELETE FROM song_user_mastery WHERE songId = ? AND userId = ?`,
-        [songId, userId]
+        [songId, userId],
       );
     }
 
@@ -269,7 +294,7 @@ async function handleSongMastery(req, res, client, songId) {
     const ownEntry = masteryAll.find((entry) => String(entry.userId) === String(userId));
     res.status(200).json({
       songId,
-      mastered,
+      mastered: masteredValue === 1,
       status: ownEntry?.status || 'none',
       masteredBy,
       isMasteredByCurrentUser: ownEntry?.status === 'mastered',
@@ -282,27 +307,11 @@ async function handleSongMastery(req, res, client, songId) {
   res.status(405).json({ error: 'Method not allowed' });
 }
 
-/**
- * GET/PUT/DELETE via Vercel diarahkan ke api/songs.js (lihat vercel.json).
- * rewrite tidak memindahkan query param seperti mastery, jadi path asli tetap
- * tersedia lewat header ini.
- */
-const ORIGINAL_URL_HEADER = 'x-original-url';
-
-function resolveRequestPath(req) {
-  const forwarded = req.headers?.[ORIGINAL_URL_HEADER];
-  if (typeof forwarded === 'string' && forwarded) return forwarded.split('?')[0];
-  return req.path || req.url.split('?')[0];
-}
-
 export default async function handler(req, res) {
   try {
     // Verify JWT token first
-    if (!verifyToken(req, res)) {
-      return;
-    }
+    if (!verifyToken(req, res)) return;
 
-    // Check if this is a request for a specific song ID
     const path = resolveRequestPath(req);
     const relativePath = path.replace(/^\/api\/songs\/?/, '').replace(/^\//, '');
     const pathSegments = relativePath ? relativePath.split('/').filter(Boolean) : [];
@@ -315,10 +324,7 @@ export default async function handler(req, res) {
       return handleSongMastery(req, res, client, pathSegments[0]);
     }
 
-    // Bulk add (modul Bulk Add Lirik & Chord). Satu-satunya function lagu di
-    // Vercel adalah api/songs.js → api/songs/index.js, jadi endpoint bulk
-    // ditangani di sini. Tanpa cabang ini, POST /api/songs/bulk jatuh ke
-    // validasi judul tunggal dan dibalas 400 "Judul lagu wajib diisi".
+    // Bulk add (modul Bulk Add Lirik & Chord).
     if (pathSegments.length === 1 && pathSegments[0] === 'bulk' && req.method === 'POST') {
       return handleBulkSongs(req, res);
     }
@@ -329,8 +335,8 @@ export default async function handler(req, res) {
       return handleSongMastery(req, res, client, rewrittenMasterySongId);
     }
 
-    if (relativePath && (req.method === 'GET' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE')) {
-      // Delegate to [id].js handler
+    if (relativePath && SONG_ID_METHODS.has(req.method)) {
+      // Delegate to ./song-id.js handler
       req.params = { ...req.params, id: relativePath };
       req.query = { ...req.query, id: relativePath };
       return songIdHandler(req, res);
@@ -347,13 +353,13 @@ export default async function handler(req, res) {
         lyrics TEXT,
         key TEXT,
         tempo TEXT,
-        genre TEXT,                
+        genre TEXT,
         time_markers TEXT,
         time_signature TEXT,
         userId TEXT,
         createdAt TEXT DEFAULT (datetime('now')),
         updatedAt TEXT
-      )`
+      )`,
     );
     await ensureSchema(client);
 
@@ -361,7 +367,11 @@ export default async function handler(req, res) {
       const userId = req.user?.userId || req.user?.id;
       const viewerId = String(userId || '');
       const requestedBandId = req.query?.bandId ? String(req.query.bandId) : null;
-      const includeTrending = String(req.query?.include || '').split(',').map((value) => value.trim()).filter(Boolean).includes('trending');
+      const includeTrending = String(req.query?.include || '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .includes('trending');
 
       if (requestedBandId) {
         const membership = await client.execute(
@@ -369,7 +379,7 @@ export default async function handler(req, res) {
            WHERE bandId = ? AND userId = ?
              AND (status IS NULL OR lower(status) IN ('active', 'accepted', 'member'))
            LIMIT 1`,
-          [requestedBandId, viewerId]
+          [requestedBandId, viewerId],
         );
         if (!membership.rows?.length) {
           res.status(403).json({ error: 'Forbidden - band access required' });
@@ -378,8 +388,7 @@ export default async function handler(req, res) {
       }
 
       // Join ke tabel users untuk ambil nama kontributor
-      let songsQuery =
-        `SELECT songs.id,
+      let songsQuery = `SELECT songs.id,
                 songs.title,
                 songs.artist,
                 songs.youtubeId,
@@ -397,7 +406,7 @@ export default async function handler(req, res) {
                 songs.updatedAt,
                 songs.sheet_music_xml,
                 users.username AS contributorUsername,
-                  bands.name AS bandName,
+                bands.name AS bandName,
                 bps.sessionCount AS practiceSessionCount,
                 bps.practicedCount AS practiceMarkedCount,
                 bps.ratingAvg AS practiceRatingAvg,
@@ -405,7 +414,7 @@ export default async function handler(req, res) {
                 bps.lastRating AS lastPracticeRating
          FROM songs
          LEFT JOIN users ON users.id = songs.userId
-                LEFT JOIN bands ON bands.id = songs.bandId
+         LEFT JOIN bands ON bands.id = songs.bandId
          LEFT JOIN band_song_practice_stats bps
            ON bps.songId = songs.id
           AND bps.bandId = songs.bandId`;
@@ -419,8 +428,8 @@ export default async function handler(req, res) {
 
       const masteryRows = await client.execute(
         `SELECT sm.songId, sm.userId, sm.mastered, sm.masteredAt, sm.updatedAt, sm.createdAt, u.username
-        FROM song_user_mastery sm
-         LEFT JOIN users u ON u.id = sm.userId`
+         FROM song_user_mastery sm
+         LEFT JOIN users u ON u.id = sm.userId`,
       );
       const masteryMap = {};
       for (const row of masteryRows.rows || []) {
@@ -437,7 +446,7 @@ export default async function handler(req, res) {
         (rows.rows || [])
           .map((row) => row.bandId)
           .filter((bandId) => bandId)
-          .map((bandId) => String(bandId))
+          .map((bandId) => String(bandId)),
       ));
 
       const viewerBandsRows = await client.execute(
@@ -447,7 +456,7 @@ export default async function handler(req, res) {
              status IS NULL
              OR lower(status) IN ('active', 'accepted', 'member')
            )`,
-        [viewerId]
+        [viewerId],
       );
       const viewerBandSet = new Set((viewerBandsRows.rows || []).map((row) => String(row.bandId)));
 
@@ -461,7 +470,7 @@ export default async function handler(req, res) {
                status IS NULL
                OR lower(status) IN ('active', 'accepted', 'member')
              )`,
-          songBandIds
+          songBandIds,
         );
 
         for (const member of membersRows.rows || []) {
@@ -471,50 +480,49 @@ export default async function handler(req, res) {
         }
       }
 
-      const list = (rows.rows ?? []).map(row => ({
-        ...(() => {
-          const rawMasteredBy = masteryMap[row.id] || [];
-          const rowBandId = row.bandId ? String(row.bandId) : null;
-          let visibleMasteredBy = [];
+      const list = (rows.rows ?? []).map((row) => {
+        const rawMasteredBy = masteryMap[row.id] || [];
+        const rowBandId = row.bandId ? String(row.bandId) : null;
+        let visibleMasteredBy = [];
 
-          if (!rowBandId) {
-            visibleMasteredBy = rawMasteredBy.filter((entry) => String(entry.userId) === viewerId);
-          } else if (viewerBandSet.has(rowBandId)) {
-            const allowedUsers = bandMemberMap[rowBandId] || new Set();
-            visibleMasteredBy = rawMasteredBy.filter((entry) => {
-              const entryUserId = String(entry.userId || '');
-              return allowedUsers.has(entryUserId) || entryUserId === viewerId;
-            });
-          } else {
-            visibleMasteredBy = rawMasteredBy.filter((entry) => String(entry.userId) === viewerId);
-          }
+        if (!rowBandId) {
+          visibleMasteredBy = rawMasteredBy.filter((entry) => String(entry.userId) === viewerId);
+        } else if (viewerBandSet.has(rowBandId)) {
+          const allowedUsers = bandMemberMap[rowBandId] || new Set();
+          visibleMasteredBy = rawMasteredBy.filter((entry) => {
+            const entryUserId = String(entry.userId || '');
+            return allowedUsers.has(entryUserId) || entryUserId === viewerId;
+          });
+        } else {
+          visibleMasteredBy = rawMasteredBy.filter((entry) => String(entry.userId) === viewerId);
+        }
 
-          return {
-            masteredBy: visibleMasteredBy,
-            isMasteredByCurrentUser: visibleMasteredBy.some((entry) =>
-              String(entry.userId) === viewerId && entry.status === 'mastered'),
-            currentUserStatus: visibleMasteredBy.find((entry) => String(entry.userId) === viewerId)?.status || 'none',
-          };
-        })(),
-        ...row,
-        contributorName: row.contributorUsername, // alias agar frontend tetap pakai contributorName
-        time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
-        sheetMusicXml: row.sheet_music_xml || '',
-        // The editor reads camelCase. Without these the fields came back
-        // undefined, so reopening a song showed them empty and the next save
-        // wrote that emptiness back over the stored value — a silent, permanent
-        // loss of aransemen and keyboard patch.
-        arrangementStyle: row.arrangement_style || '',
-        keyboardPatch: row.keyboard_patch || '',
-        canMarkMastery: true,
-        practiceStats: {
-          sessionCount: Number(row.practiceSessionCount || 0),
-          markedCount: Number(row.practiceMarkedCount || 0),
-          ratingAvg: row.practiceRatingAvg == null ? null : Number(row.practiceRatingAvg),
-          lastPracticedAt: row.lastPracticedAt || null,
-          lastRating: row.lastPracticeRating == null ? null : Number(row.lastPracticeRating),
-        },
-      }));
+        return {
+          ...row,
+          masteredBy: visibleMasteredBy,
+          isMasteredByCurrentUser: visibleMasteredBy.some(
+            (entry) => String(entry.userId) === viewerId && entry.status === 'mastered',
+          ),
+          currentUserStatus:
+            visibleMasteredBy.find((entry) => String(entry.userId) === viewerId)?.status || 'none',
+          contributorName: row.contributorUsername, // alias agar frontend tetap pakai contributorName
+          time_markers: row.time_markers ? JSON.parse(row.time_markers) : [],
+          sheetMusicXml: row.sheet_music_xml || '',
+          // The editor reads camelCase. Without these the fields came back
+          // undefined, so reopening a song showed them empty and the next save
+          // wrote that emptiness back over the stored value.
+          arrangementStyle: row.arrangement_style || '',
+          keyboardPatch: row.keyboard_patch || '',
+          canMarkMastery: true,
+          practiceStats: {
+            sessionCount: Number(row.practiceSessionCount || 0),
+            markedCount: Number(row.practiceMarkedCount || 0),
+            ratingAvg: row.practiceRatingAvg == null ? null : Number(row.practiceRatingAvg),
+            lastPracticedAt: row.lastPracticedAt || null,
+            lastRating: row.lastPracticeRating == null ? null : Number(row.lastPracticeRating),
+          },
+        };
+      });
       if (includeTrending) {
         const trending = await fetchYouTubeTrending();
         res.status(200).json({ songs: list, trending: trending || [] });
@@ -581,9 +589,9 @@ export default async function handler(req, res) {
             tempoStr,
             genre || null,
             // The client sends `time_markers` (the same key the PUT handler reads).
-            // Reading `item.timestamps` here silently wrote null on every create,
-            // so time markers were lost whenever a song was added rather than edited.
-            (Array.isArray(item.time_markers) ? JSON.stringify(item.time_markers) : (item.time_markers || null)),
+            Array.isArray(item.time_markers)
+              ? JSON.stringify(item.time_markers)
+              : (item.time_markers || null),
             item.time_signature || '4/4',
             item.arrangementStyle || null,
             item.keyboardPatch || null,
@@ -591,8 +599,8 @@ export default async function handler(req, res) {
             userId,
             item.bandId || null,
             item.createdAt || now,
-            now
-          ]
+            now,
+          ],
         );
         return id;
       };
@@ -600,6 +608,7 @@ export default async function handler(req, res) {
         if (Array.isArray(body)) {
           const ids = [];
           for (const item of body) {
+            // eslint-disable-next-line no-await-in-loop
             const id = await upsertOne(item);
             ids.push(id);
           }
@@ -618,23 +627,20 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     console.error('API /api/songs error:', err);
-    res.status(500).json({ error: 'Internal Server Error', message: err.message, details: process.env.NODE_ENV === 'development' ? err.stack : undefined });
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: err.message,
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    });
   }
 }
 
 /* --------------------------------------------------------------------------
  * Bulk add (modul Bulk Add Lirik & Chord)
- *
- * Semua lagu disimpan dalam SATU permintaan. Endpoint ini TIDAK berupa file
- * function tersendiri karena Vercel Hobby membatasi 12 Serverless Functions
- * per deployment; api/songs.js sudah menyerahkan semua /api/songs/* ke sini.
- *
- * Body: { songs: Array<{ title, artist?, key?, tempo?, time_signature?,
- *   genre?, lyrics?, youtubeId?, keyboardPatch?, sheetMusicXml?, bandId? }> }
  * ------------------------------------------------------------------------ */
 
 const BULK_MAX_SONGS = 1000;
-/** Ukuran chunk insert: permintaan per 50 lagu agar tidak kena batas waktu. */
+/** Chunk insert: 50 lagu per putaran supaya tidak kena batas waktu function. */
 const BULK_CHUNK_SIZE = 50;
 
 function sanitizeBulkText(value, maxLen = 100) {
@@ -655,7 +661,7 @@ async function assertBandWriteAccess(client, bandId, userId) {
      WHERE bandId = ? AND userId = ?
        AND (status IS NULL OR lower(status) IN ('active', 'accepted', 'member'))
      LIMIT 1`,
-    [bandId, String(userId)]
+    [bandId, String(userId)],
   );
   return Boolean(membership.rows?.length);
 }
@@ -685,19 +691,17 @@ async function handleBulkSongs(req, res) {
   const client = getTursoClient();
   await ensureSchema(client);
 
-  // ---- Validasi menyeluruh dulu -------------------------------------------
+  // ---- Validasi menyeluruh dulu -----------------------------------------
   const failures = [];
   const prepared = songs.map((item, index) => {
     const source = item && typeof item === 'object' ? item : {};
-    // Judul hanya dibersihkan dari spasi berlebih: karakter seperti `"`, `<`,
-    // atau `'` adalah bagian dari judul lagu yang wajar (mis. "Don't Stop"),
-    // jadi TIDAK boleh disanitasi — dulu sanitasi bisa mengosongkan judul yang
-    // sebenarnya terisi sehingga simpan gagal dengan "Judul lagu wajib diisi".
+    // Judul hanya dirapikan spasinya: karakter `"`, `<`, `'` adalah bagian dari
+    // judul lagu yang wajar (mis. "Don't Stop"), jadi TIDAK disanitasi — dulu
+    // sanitasi bisa mengosongkan judul terisi sehingga simpan gagal dengan
+    // "Judul lagu wajib diisi".
     const rawTitle = typeof source.title === 'string' ? source.title.trim() : '';
     const title = rawTitle.replace(/\s+/g, ' ').slice(0, 200);
-    if (!title) {
-      failures.push({ index, title: '', error: 'Judul lagu wajib diisi' });
-    }
+    if (!title) failures.push({ index, title: '', error: 'Judul lagu wajib diisi' });
     return {
       index,
       title,
@@ -707,8 +711,7 @@ async function handleBulkSongs(req, res) {
       genre: sanitizeBulkText(source.genre, 50),
       key: sanitizeBulkText(source.key, 20),
       youtubeId: sanitizeBulkText(source.youtubeId, 60),
-      // Lirik & chord TIDAK boleh disanitasi: karakter < > " ' ` adalah bagian
-      // dari penulisan chord/lirik, dan menghapusnya merusak hasil bulk.
+      // Lirik & chord TIDAK disanitasi: karakter < > " ' ` bagian dari chord.
       lyrics: typeof source.lyrics === 'string' ? source.lyrics.slice(0, 50000) : '',
       tempo: normalizeBulkTempo(source.tempo),
       timeSignature: sanitizeBulkText(source.time_signature || source.timeSignature, 10) || '4/4',
@@ -731,8 +734,7 @@ async function handleBulkSongs(req, res) {
     return;
   }
 
-  // Cek izin tulis per band (biasanya semua lagu di bulk ditujukan ke band yang
-  // sama, jadi hasilnya di-cache per bandId).
+  // Izin tulis per band (biasanya satu band yang sama, jadi di-cache).
   const bandAccess = new Map();
   for (const item of prepared) {
     if (!item.bandId) continue;
@@ -745,7 +747,7 @@ async function handleBulkSongs(req, res) {
     }
   }
 
-  // ---- Simpan -------------------------------------------------------------
+  // ---- Simpan ------------------------------------------------------------
   const now = new Date().toISOString();
   const insertSql = `INSERT INTO songs
       (id, title, artist, youtubeId, lyrics, key, tempo, genre, time_markers,
@@ -811,10 +813,10 @@ async function ensureBandSongPracticeStatsTable(client) {
       FOREIGN KEY (bandId) REFERENCES bands(id) ON DELETE CASCADE,
       FOREIGN KEY (songId) REFERENCES songs(id) ON DELETE CASCADE,
       UNIQUE(bandId, songId)
-    )`
+    )`,
   );
   await client.execute(
     `CREATE INDEX IF NOT EXISTS idx_band_song_practice_stats_band_song
-     ON band_song_practice_stats(bandId, songId)`
+     ON band_song_practice_stats(bandId, songId)`,
   );
 }

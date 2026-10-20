@@ -15,26 +15,32 @@ import https from 'https';
 import http from 'http';
 
 // --- Middleware & utils ---
-import { createRateLimiter, userKeyGenerator, RATE_LIMITS } from './middleware/rateLimiter.js';
+import { createRateLimiter, userKeyGenerator, RATE_LIMITS } from '../server/middleware-rateLimiter.js';
+import { verifyToken } from '../server/_auth.js';
 
 // --- API Handlers ---
-// Bulk songs ditangani di router /api/songs (api/songs/index.js, segmen "bulk")
-// supaya Vercel Hobby tetap hanya memakai satu function untuk seluruh lagu.
-import songsHandler from './songs/index.js';
-import setlistsHandler from './setlists/index.js';
-import bandsHandler from './bands/index.js';
-import bandMembersHandler from './bands/members.js';
+// Handler asli tinggal di server/handlers/ (di luar folder api/) karena Vercel
+// Hobby menghitung setiap file .js di api/ sebagai satu Serverless Function.
+import songsHandler from '../server/handlers/songs.js';
+import setlistsHandler from '../server/handlers/setlists.js';
+import bandsHandler from '../server/handlers/bands.js';
+import bandMembersHandler from '../server/handlers/band-members.js';
+import bandIdHandler from '../server/handlers/band-id.js';
+import eventsHandler from '../server/handlers/events.js';
 import aiHandler from './ai.js';
-import authRegisterHandler from './auth/register.js';
-import authLoginHandler from './auth/login.js';
-import authMeHandler from './auth/me.js';
-import authForgotHandler from './auth/forgot-password.js';
-import authResetHandler from './auth/reset-password.js';
+import catchAllHandler from './[...path].js';
+import authRegisterHandler from '../server/handlers/auth-register.js';
+import authLoginHandler from '../server/handlers/auth-login.js';
+import authMeHandler from '../server/handlers/auth-me.js';
+import authForgotHandler from '../server/handlers/auth-forgot-password.js';
+import authResetHandler from '../server/handlers/auth-reset-password.js';
+import authAuditLogsHandler from '../server/handlers/auth-audit-logs.js';
+import authChangePasswordHandler from '../server/handlers/auth-change-password.js';
 // Tools handler (export/import)
 import toolsHandler from './tools/index.js';
 import toolsBackupHandler from './tools/backup.js';
 import toolsRestoreHandler from './tools/restore.js';
-import userAuditLogsHandler from './auth/user-audit-logs.js';
+import userAuditLogsHandler from '../server/handlers/auth-audit-logs.js';
 // Users management handler
 import usersHandler from './users/index.js';
 import userByIdHandler from './users/[id].js';
@@ -54,40 +60,31 @@ app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 
 // Backup SQL route (must be before /api/tools catch-all)
-app.use('/api/tools/backup', verifyToken, (req, res, next) => {
+app.use('/api/tools/backup', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(toolsBackupHandler(req, res)).catch(next);
 });
 
 // Restore SQL route
-app.use('/api/tools/restore', verifyToken, (req, res, next) => {
+app.use('/api/tools/restore', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(toolsRestoreHandler(req, res)).catch(next);
 });
 
 // Tools API (export/import data)
-app.use('/api/tools', verifyToken, (req, res, next) => {
+app.use('/api/tools', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(toolsHandler(req, res)).catch(next);
 });
 
-// --- JWT Middleware ---
-export function verifyToken(req, res, next) {
+// --- JWT Middleware (dipakai route Express di bawah; logikanya di server/_auth.js) ---
+function verifyTokenMiddleware(req, res, next) {
   if (process.env.NODE_ENV === 'test') {
     req.user = { userId: 'test-user', email: 'test@example.com', role: 'owner' };
     next();
     return;
   }
-
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
+  if (!verifyToken(req, res)) return;
+  next();
 }
+export { verifyToken };
 
 // Wrap handler functions so this file can be used for local Express dev
 app.post('/api/auth/register', (req, res, next) => {
@@ -100,24 +97,23 @@ app.post('/api/auth/login', (req, res, next) => {
 
 
 // GET profile
-app.get('/api/auth/me', verifyToken, (req, res, next) => {
+app.get('/api/auth/me', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(authMeHandler(req, res)).catch(next);
 });
 
 // UPDATE profile
-app.put('/api/auth/me', verifyToken, (req, res, next) => {
+app.put('/api/auth/me', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(authMeHandler(req, res)).catch(next);
 });
 
 // User audit logs
-app.get('/api/auth/user-audit-logs', verifyToken, (req, res, next) => {
+app.get('/api/auth/user-audit-logs', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(userAuditLogsHandler(req, res)).catch(next);
 });
 
 // Change password
-import changePasswordHandler from './auth/change-password.js';
-app.post('/api/auth/change-password', verifyToken, (req, res, next) => {
-  Promise.resolve(changePasswordHandler(req, res)).catch(next);
+app.post('/api/auth/change-password', verifyTokenMiddleware, (req, res, next) => {
+  Promise.resolve(authChangePasswordHandler(req, res)).catch(next);
 });
 
 app.post('/api/auth/forgot-password', (req, res, next) => {
@@ -128,19 +124,24 @@ app.post('/api/auth/reset-password', (req, res, next) => {
   Promise.resolve(authResetHandler(req, res)).catch(next);
 });
 
-app.use('/api/songs', verifyToken, (req, res, next) => {
+app.use('/api/songs', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(songsHandler(req, res)).catch(next);
 });
 
-app.use('/api/setlists', verifyToken, (req, res, next) => {
+app.use('/api/setlists', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(setlistsHandler(req, res)).catch(next);
 });
 
 // Band members endpoints (harus sebelum /api/bands agar tidak tertimpa)
-app.use('/api/bands/:id/members/:userId?', verifyToken, (req, res, next) => {
+app.use('/api/bands/:id/members/:userId?', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(bandMembersHandler(req, res)).catch(next);
 });
-app.use('/api/bands', verifyToken, (req, res, next) => {
+// Hanya GET/PUT/DELETE oleh-id; POST /api/bands tetap ke handler daftar/band baru.
+app.use('/api/bands/:id', verifyTokenMiddleware, (req, res, next) => {
+  if (req.method === 'POST') return next();
+  Promise.resolve(bandIdHandler(req, res)).catch(next);
+});
+app.use('/api/bands', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(bandsHandler(req, res)).catch(next);
 });
 
@@ -148,25 +149,31 @@ app.use('/api/bands', verifyToken, (req, res, next) => {
 
 
 // Practice and gigs endpoints now handled by their own handlers
-import eventsHandler from './events/index.js';
-app.use('/api/events/:type/:id?', verifyToken, (req, res, next) => {
+app.use('/api/events/:type/:id?', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(eventsHandler(req, res)).catch(next);
 });
 
+// Fallback utama (dev): satu handler untuk seluruh /api/*, sama seperti di
+// Vercel (api/[...path].js). Route khusus di atas tetap menang karena
+// didaftarkan lebih dulu.
+app.use('/api', (req, res, next) => {
+  Promise.resolve(catchAllHandler(req, res)).catch(next);
+});
+
 // Users management endpoints (owner only)
-app.post('/api/users/:id/reset-password', verifyToken, (req, res, next) => {
+app.post('/api/users/:id/reset-password', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(userResetPasswordHandler(req, res)).catch(next);
 });
-app.get('/api/users/:id', verifyToken, (req, res, next) => {
+app.get('/api/users/:id', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(userByIdHandler(req, res)).catch(next);
 });
-app.put('/api/users/:id', verifyToken, (req, res, next) => {
+app.put('/api/users/:id', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(userByIdHandler(req, res)).catch(next);
 });
-app.delete('/api/users/:id', verifyToken, (req, res, next) => {
+app.delete('/api/users/:id', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(userByIdHandler(req, res)).catch(next);
 });
-app.get('/api/users', verifyToken, (req, res, next) => {
+app.get('/api/users', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(usersHandler(req, res)).catch(next);
 });
 
