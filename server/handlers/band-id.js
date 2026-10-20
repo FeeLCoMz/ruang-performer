@@ -1,5 +1,6 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
+import { writeAuditLog, getRequestMeta } from '../_audit.js';
 
 async function readJson(req) {
   if (req.body) return req.body;
@@ -107,6 +108,18 @@ export default async function handler(req, res) {
         [name, description || null, genre || null, now, bandId]
       );
 
+      const { ipAddress, userAgent } = getRequestMeta(req);
+      await writeAuditLog(client, {
+        action: 'BAND_UPDATED',
+        userId,
+        bandId,
+        resourceId: bandId,
+        resourceType: 'band',
+        description: `Band diperbarui: ${name || bandId}`,
+        ipAddress,
+        userAgent,
+      });
+
       return res.status(200).json({ success: true });
     }
 
@@ -128,6 +141,18 @@ export default async function handler(req, res) {
 
       // Delete band (cascade will delete members, setlists, etc.)
       await client.execute('DELETE FROM bands WHERE id = ?', [bandId]);
+
+      const { ipAddress, userAgent } = getRequestMeta(req);
+      await writeAuditLog(client, {
+        action: 'BAND_DELETED',
+        userId,
+        bandId,
+        resourceId: bandId,
+        resourceType: 'band',
+        description: `Band dihapus: ${bandId}`,
+        ipAddress,
+        userAgent,
+      });
 
       return res.status(200).json({ success: true });
     }

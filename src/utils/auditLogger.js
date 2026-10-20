@@ -8,8 +8,11 @@ export const AUDIT_ACTIONS = {
   USER_REGISTER: 'USER_REGISTER',
   USER_LOGIN: 'USER_LOGIN',
   USER_LOGOUT: 'USER_LOGOUT',
+  USER_LOGIN_FAILED: 'USER_LOGIN_FAILED',
   USER_PASSWORD_CHANGE: 'USER_PASSWORD_CHANGE',
   USER_PASSWORD_RESET: 'USER_PASSWORD_RESET',
+  USER_UPDATED: 'USER_UPDATED',
+  USER_DELETED: 'USER_DELETED',
 
   // Band actions
   BAND_CREATED: 'BAND_CREATED',
@@ -70,6 +73,7 @@ export function getActionSeverity(action) {
     AUDIT_ACTIONS.USER_PASSWORD_CHANGE,
     AUDIT_ACTIONS.MEMBER_ROLE_CHANGED,
     AUDIT_ACTIONS.PERMISSION_REVOKED,
+    AUDIT_ACTIONS.USER_DELETED,
   ];
 
   const highActions = [
@@ -77,6 +81,8 @@ export function getActionSeverity(action) {
     AUDIT_ACTIONS.MEMBER_INVITED,
     AUDIT_ACTIONS.MEMBER_JOINED,
     AUDIT_ACTIONS.PERMISSION_GRANTED,
+    AUDIT_ACTIONS.USER_PASSWORD_RESET,
+    AUDIT_ACTIONS.USER_LOGIN_FAILED,
   ];
 
   if (criticalActions.includes(action)) return SEVERITY_LEVELS.CRITICAL;
@@ -93,8 +99,10 @@ export function getActionSeverity(action) {
 export function getActionCategory(action) {
   if (action.startsWith('USER_')) return ACTION_CATEGORIES.USER;
   if (action.startsWith('BAND_')) return ACTION_CATEGORIES.BAND;
+  // Perubahan role anggota adalah aksi permission, bukan sekadar member.
+  if (action === AUDIT_ACTIONS.MEMBER_ROLE_CHANGED) return ACTION_CATEGORIES.PERMISSION;
   if (action.startsWith('MEMBER_')) return ACTION_CATEGORIES.MEMBER;
-  if (action.startsWith('PERMISSION_') || action.startsWith('ROLE_')) 
+  if (action.startsWith('PERMISSION_') || action.startsWith('ROLE_'))
     return ACTION_CATEGORIES.PERMISSION;
   if (action.startsWith('SONG_')) return ACTION_CATEGORIES.SONG;
   if (action.startsWith('SETLIST_')) return ACTION_CATEGORIES.SETLIST;
@@ -201,6 +209,7 @@ export function getSeverityColor(severity) {
 export function isSecurityAction(action) {
   const securityActions = [
     AUDIT_ACTIONS.USER_LOGIN,
+    AUDIT_ACTIONS.USER_LOGIN_FAILED,
     AUDIT_ACTIONS.USER_PASSWORD_CHANGE,
     AUDIT_ACTIONS.MEMBER_ROLE_CHANGED,
     AUDIT_ACTIONS.BAND_DELETED,

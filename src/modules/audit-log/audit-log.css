@@ -1,0 +1,112 @@
+/* Audit Log — halaman modul khusus Owner */
+
+.audit-log-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 20px;
+  margin-bottom: 16px;
+}
+
+.audit-log-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.audit-log-filters select {
+  min-width: 140px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+}
+
+.audit-log-count {
+  margin-left: auto;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.audit-log-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.audit-log-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+}
+
+.audit-log-stat strong {
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+.audit-log-stat span {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.audit-log-stat-warn strong {
+  color: #ef4444;
+}
+
+.audit-log-table-wrap {
+  overflow-x: auto;
+  padding: 0;
+}
+
+.audit-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.audit-log-table th,
+.audit-log-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.audit-log-table th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.audit-log-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.audit-log-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.audit-log-empty {
+  padding: 24px 16px;
+  text-align: center;
+  opacity: 0.75;
+}
+
+@media (max-width: 640px) {
+  .audit-log-count {
+    margin-left: 0;
+  }
+}

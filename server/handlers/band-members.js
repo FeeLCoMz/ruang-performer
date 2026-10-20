@@ -1,6 +1,7 @@
 // Band Members API handler for /api/bands/[bandId]/members and /api/bands/[bandId]/members/[userId]
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
+import { writeAuditLog, getRequestMeta } from '../_audit.js';
 
 export default async function handler(req, res) {
   // URL: /api/bands/:id/members or /api/bands/:id/members/:userId (Express: req.params.id)
@@ -36,6 +37,20 @@ export default async function handler(req, res) {
       'INSERT INTO band_members (bandId, userId, role, joinedAt) VALUES (?, ?, ?, ?)',
       [bandId, newUser.id, role, new Date().toISOString()]
     );
+
+    const { ipAddress, userAgent } = getRequestMeta(req);
+    await writeAuditLog(client, {
+      action: 'MEMBER_INVITED',
+      userId: currentUserId,
+      bandId,
+      targetUserId: newUser.id,
+      resourceId: bandId,
+      resourceType: 'band_member',
+      description: `Anggota ditambahkan: ${email} (${role})`,
+      ipAddress,
+      userAgent,
+    });
+
     return res.json({ success: true });
   }
 
@@ -55,6 +70,21 @@ export default async function handler(req, res) {
       'UPDATE band_members SET role = ? WHERE bandId = ? AND userId = ?',
       [role, bandId, userId]
     );
+
+    const { ipAddress, userAgent } = getRequestMeta(req);
+    await writeAuditLog(client, {
+      action: 'MEMBER_ROLE_CHANGED',
+      userId: currentUserId,
+      bandId,
+      targetUserId: userId,
+      resourceId: bandId,
+      resourceType: 'band_member',
+      description: `Role anggota diubah menjadi ${role}`,
+      changes: { role },
+      ipAddress,
+      userAgent,
+    });
+
     return res.json({ success: true });
   }
 
@@ -65,6 +95,20 @@ export default async function handler(req, res) {
       'DELETE FROM band_members WHERE bandId = ? AND userId = ?',
       [bandId, userId]
     );
+
+    const { ipAddress, userAgent } = getRequestMeta(req);
+    await writeAuditLog(client, {
+      action: 'MEMBER_REMOVED',
+      userId: currentUserId,
+      bandId,
+      targetUserId: userId,
+      resourceId: bandId,
+      resourceType: 'band_member',
+      description: 'Anggota dihapus dari band',
+      ipAddress,
+      userAgent,
+    });
+
     return res.json({ success: true });
   }
 

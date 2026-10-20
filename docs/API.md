@@ -35,7 +35,28 @@ Karena handler ditulis secara isomorfis, satu kontrak endpoint dilayani oleh dua
 | `POST` | `/api/auth/forgot-password` | ❌ | `{ email }` → kirim email reset (selalu respons sukses) |
 | `POST` | `/api/auth/reset-password` | ❌ | `{ token, email, newPassword }` |
 | `GET` | `/api/auth/user-audit-logs` | 🔒 | Riwayat audit milik user sendiri |
+| `POST` | `/api/auth/logout` | 🔒 | Catat `USER_LOGOUT` di audit log (JWT tetap stateless) |
+| `GET` | `/api/audit-logs?limit=200` | 🔒 owner | Audit log seluruh user (modul Audit Log) |
 | `DELETE` | `/api/auth/delete-account` | 🔒 | Hapus akun (soft delete) |
+
+### Audit log otomatis
+
+Handler berikut menulis entri `audit_logs` lewat `server/_audit.js` (`writeAuditLog`) setelah aksi berhasil:
+
+| Aksi | Endpoint |
+| --- | --- |
+| `SONG_CREATED` | `POST /api/songs`, `POST /api/songs/bulk` (satu entri per batch) |
+| `SONG_UPDATED` / `SONG_DELETED` | `PUT /api/songs/:id`, `DELETE /api/songs/:id` |
+| `SETLIST_CREATED` / `SETLIST_UPDATED` / `SETLIST_DELETED` | `POST /api/setlists`, `PUT /api/setlists/:id`, `DELETE /api/setlists/:id` |
+| `BAND_CREATED` | `POST /api/bands` |
+| `BAND_UPDATED` / `BAND_DELETED` | `PUT /api/bands/:id`, `DELETE /api/bands/:id` |
+| `MEMBER_INVITED` / `MEMBER_ROLE_CHANGED` / `MEMBER_REMOVED` | `POST/PATCH/DELETE /api/bands/:id/members` |
+| `USER_UPDATED` / `MEMBER_ROLE_CHANGED` / `USER_DELETED` | `PUT /api/users/:id`, `DELETE /api/users/:id` |
+| `USER_PASSWORD_RESET` | `POST /api/users/:id/reset-password` |
+| `USER_LOGIN` / `USER_LOGIN_FAILED` | `POST /api/auth/login` (gagal: status `failed`, severity `high`, alasan di `details`) |
+| `USER_LOGOUT` | `POST /api/auth/logout` (dipanggil klien sebelum token dibuang) |
+
+Penulisan audit bersifat *best-effort*: bila tabel/kolom audit tidak tersedia, kegagalan hanya di-log dan request utama tetap sukses.
 
 Rate limit ketat: login 5/15 menit; register/forgot/reset 3/jam.
 

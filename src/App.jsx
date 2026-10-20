@@ -32,6 +32,8 @@ const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx")
 const UserManagementPage = lazy(() => import("./pages/UserManagementPage.jsx"));
 const ChordTranscriberPage = lazy(() => import("./modules/chord-transcriber/ChordTranscriberPage.jsx"));
 const BulkLyricsPage = lazy(() => import("./modules/bulk-lyrics/BulkLyricsPage.jsx"));
+const BackupRestorePage = lazy(() => import("./modules/backup-restore/BackupRestorePage.jsx"));
+const AuditLogPage = lazy(() => import("./modules/audit-log/AuditLogPage.jsx"));
 
 // Loading fallback component
 import { SongListSkeleton } from './components/LoadingSkeleton.jsx';
@@ -454,6 +456,8 @@ function AppContent() {
               <Route path="/modules" element={<ModulesPage />} />
               <Route path="/chord-transcriber" element={<ChordTranscriberPage />} />
               <Route path="/bulk-lyrics" element={<BulkLyricsPage />} />
+              <Route path="/backup-restore" element={<BackupRestorePage />} />
+              <Route path="/audit-logs" element={<AuditLogPage />} />
               <Route path="/user-management" element={<UserManagementPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

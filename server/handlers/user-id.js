@@ -1,5 +1,6 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
+import { writeAuditLog, getRequestMeta } from '../_audit.js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
@@ -110,6 +111,22 @@ export default async function handler(req, res) {
         });
       }
 
+      const { ipAddress, userAgent } = getRequestMeta(req);
+      await writeAuditLog(client, {
+        action: role && role !== checkUser.rows[0].role ? 'MEMBER_ROLE_CHANGED' : 'USER_UPDATED',
+        userId: req.user.userId,
+        targetUserId: userId,
+        resourceId: userId,
+        resourceType: 'user',
+        description: `User diperbarui: ${userId}`,
+        changes: {
+          ...(role ? { role: { from: checkUser.rows[0].role, to: role } } : {}),
+          ...(isActive !== undefined ? { isActive } : {}),
+        },
+        ipAddress,
+        userAgent,
+      });
+
       res.json({ success: true, message: 'User berhasil diupdate' });
     } catch (err) {
       console.error('Error updating user:', err);
@@ -137,6 +154,18 @@ export default async function handler(req, res) {
       await client.execute({
         sql: "UPDATE users SET deletedAt = datetime('now') WHERE id = ?",
         args: [userId]
+      });
+
+      const { ipAddress, userAgent } = getRequestMeta(req);
+      await writeAuditLog(client, {
+        action: 'USER_DELETED',
+        userId: req.user.userId,
+        targetUserId: userId,
+        resourceId: userId,
+        resourceType: 'user',
+        description: `User dihapus (soft delete): ${userId}`,
+        ipAddress,
+        userAgent,
       });
 
       res.json({ success: true, message: 'User berhasil dihapus' });

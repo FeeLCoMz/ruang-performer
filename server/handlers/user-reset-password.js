@@ -1,5 +1,6 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
+import { writeAuditLog, getRequestMeta } from '../_audit.js';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
@@ -39,6 +40,18 @@ export default async function handler(req, res) {
       await client.execute({
         sql: "UPDATE users SET passwordHash = ?, updatedAt = datetime('now') WHERE id = ?",
         args: [passwordHash, userId]
+      });
+
+      const { ipAddress, userAgent } = getRequestMeta(req);
+      await writeAuditLog(client, {
+        action: 'USER_PASSWORD_RESET',
+        userId: req.user.userId,
+        targetUserId: userId,
+        resourceId: userId,
+        resourceType: 'user',
+        description: `Password direset oleh owner: ${checkUser.rows[0].email}`,
+        ipAddress,
+        userAgent,
       });
 
       res.json({ 

@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getTursoClient } from '../_turso.js';
+import { writeAuditLog, getRequestMeta } from '../_audit.js';
 import { createRateLimiter, RATE_LIMITS } from '../middleware-rateLimiter.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -58,6 +59,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Email and password required' });
     }
 
+    const { ipAddress, userAgent } = getRequestMeta(req);
+
 
     // Find user (fetch role as well)
     const result = await client.execute(
@@ -66,6 +69,16 @@ export default async function handler(req, res) {
     );
 
     if (!result.rows || result.rows.length === 0) {
+      // Email tidak dikenal: tidak ada userId, catat supaya percobaan acak
+      // tetap terlihat di modul Audit Log.
+      await writeAuditLog(client, {
+        action: 'USER_LOGIN_FAILED',
+        status: 'failed',
+        errorMessage: 'Email tidak terdaftar',
+        description: `Login gagal untuk ${String(email).slice(0, 100)}`,
+        ipAddress,
+        userAgent,
+      });
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -74,6 +87,15 @@ export default async function handler(req, res) {
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
+      await writeAuditLog(client, {
+        action: 'USER_LOGIN_FAILED',
+        userId: user.id,
+        status: 'failed',
+        errorMessage: 'Password salah',
+        description: `Login gagal: password salah (${user.username || user.email})`,
+        ipAddress,
+        userAgent,
+      });
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -83,6 +105,14 @@ export default async function handler(req, res) {
       JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    await writeAuditLog(client, {
+      action: 'USER_LOGIN',
+      userId: user.id,
+      description: `Login berhasil: ${user.username || user.email}`,
+      ipAddress,
+      userAgent,
+    });
 
     return res.status(200).json({
       success: true,

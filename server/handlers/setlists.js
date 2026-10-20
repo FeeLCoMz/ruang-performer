@@ -1,6 +1,7 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { randomUUID } from 'crypto';
+import { writeAuditLog, getRequestMeta } from '../_audit.js';
 import { PERMISSIONS, hasPermission as hasPermissionUtil } from '../../src/utils/permissionUtils.js';
 
 async function readJson(req) {
@@ -327,6 +328,19 @@ export default async function handler(req, res) {
         } else {
           await upsertBandPreferredKeys(client, effectiveBandId, body.setlistSongMeta, Object.keys(body.setlistSongMeta || {}), now);
         }
+
+        const { ipAddress, userAgent } = getRequestMeta(req);
+        await writeAuditLog(client, {
+          action: 'SETLIST_UPDATED',
+          userId,
+          bandId: existingSetlistRow.bandId || null,
+          resourceId: idStr,
+          resourceType: 'setlist',
+          description: `Setlist diperbarui: ${body.name || idStr}`,
+          ipAddress,
+          userAgent,
+        });
+
         res.status(200).json({ id: idStr });
         return;
       }
@@ -355,6 +369,19 @@ export default async function handler(req, res) {
         }
 
         await client.execute(`DELETE FROM setlists WHERE id = ?`, [idStr]);
+
+        const { ipAddress, userAgent } = getRequestMeta(req);
+        await writeAuditLog(client, {
+          action: 'SETLIST_DELETED',
+          userId,
+          bandId: targetSetlist.bandId || null,
+          resourceId: idStr,
+          resourceType: 'setlist',
+          description: `Setlist dihapus: ${idStr}`,
+          ipAddress,
+          userAgent,
+        });
+
         res.status(204).end();
         return;
       }
@@ -369,7 +396,7 @@ export default async function handler(req, res) {
     const summaryParam = req.query?.summary || new URL(req.url, 'http://localhost').searchParams.get('summary');
     const isSummaryRequest = ['1', 'true', 'yes'].includes(String(summaryParam || '').toLowerCase());
 
-    if (req.method === 'GET') {      
+    if (req.method === 'GET') {
       // Get only setlists user has access to
       // Rules: setlists owned by user OR setlists from bands where user is a member
       if (isSummaryRequest) {
@@ -579,6 +606,20 @@ export default async function handler(req, res) {
           }
         }
         await upsertBandPreferredKeys(client, bandId, body.setlistSongMeta, dedupedSongs, now);
+
+        const { ipAddress, userAgent } = getRequestMeta(req);
+        await writeAuditLog(client, {
+          action: 'SETLIST_CREATED',
+          userId,
+          bandId: bandId || null,
+          resourceId: id,
+          resourceType: 'setlist',
+          description: `Setlist dibuat: ${name}`,
+          changes: { songCount: dedupedSongs.length },
+          ipAddress,
+          userAgent,
+        });
+
         res.status(201).json({ id });
       } catch (insertErr) {
         // Check if it's a duplicate key error

@@ -11,6 +11,7 @@ import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { randomUUID } from 'crypto';
 import songIdHandler from './song-id.js';
+import { writeAuditLog, getRequestMeta } from '../_audit.js';
 
 // Module-level flags: schema checks run only once per server instance
 let _schemaEnsured = false;
@@ -615,6 +616,17 @@ export default async function handler(req, res) {
           res.status(200).json({ ids });
         } else {
           const id = await upsertOne(body);
+          const { ipAddress, userAgent } = getRequestMeta(req);
+          await writeAuditLog(client, {
+            action: 'SONG_CREATED',
+            userId,
+            bandId: body?.bandId || null,
+            resourceId: id,
+            resourceType: 'song',
+            description: `Lagu dibuat: ${sanitize(body?.title, 100)}`,
+            ipAddress,
+            userAgent,
+          });
           res.status(201).json({ id });
         }
       } catch (err) {
@@ -794,6 +806,19 @@ async function handleBulkSongs(req, res) {
     }
     throw error;
   }
+
+  // Satu entri audit per batch — bukan per lagu — agar bulk 1000 lagu tidak
+  // membanjiri tabel audit_logs.
+  const { ipAddress, userAgent } = getRequestMeta(req);
+  await writeAuditLog(client, {
+    action: 'SONG_CREATED',
+    userId,
+    resourceType: 'song',
+    description: `Bulk add: ${createdIds.length} lagu ditambahkan`,
+    changes: { count: createdIds.length, source: 'bulk' },
+    ipAddress,
+    userAgent,
+  });
 
   res.status(201).json({ ids: createdIds, created: createdIds.length });
 }

@@ -1,5 +1,6 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
+import { writeAuditLog, getRequestMeta } from '../_audit.js';
 import { PERMISSIONS, hasPermission } from '../../src/utils/permissionUtils.js';
 
 // Module-level flags: schema checks run only once per server instance
@@ -104,7 +105,7 @@ async function filterMasteryForViewer(client, songBandId, masteryList, viewerUse
  */
 async function loadSongWithOwnership(client, idStr, res) {
   const songCheck = await client.execute(
-    'SELECT userId, bandId FROM songs WHERE id = ?',
+    'SELECT userId, bandId, title FROM songs WHERE id = ?',
     [idStr]
   );
   if (!songCheck.rows || songCheck.rows.length === 0) {
@@ -241,6 +242,18 @@ async function handleUpdateSong(req, res, client, idStr) {
 
   await client.execute(updateSql, updateParams);
 
+  const { ipAddress, userAgent } = getRequestMeta(req);
+  await writeAuditLog(client, {
+    action: 'SONG_UPDATED',
+    userId,
+    bandId: song.bandId || body.bandId || null,
+    resourceId: idStr,
+    resourceType: 'song',
+    description: `Lagu diperbarui: ${body.title || song.title || idStr}`,
+    ipAddress,
+    userAgent,
+  });
+
   res.status(200).json({ id: idStr });
 }
 
@@ -274,6 +287,19 @@ async function handleDeleteSong(req, res, client, idStr) {
   }
 
   await client.execute(`DELETE FROM songs WHERE id = ?`, [idStr]);
+
+  const { ipAddress, userAgent } = getRequestMeta(req);
+  await writeAuditLog(client, {
+    action: 'SONG_DELETED',
+    userId,
+    bandId: song.bandId || null,
+    resourceId: idStr,
+    resourceType: 'song',
+    description: `Lagu dihapus: ${song.title || idStr}`,
+    ipAddress,
+    userAgent,
+  });
+
   res.status(204).end();
 }
 

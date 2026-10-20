@@ -1,5 +1,6 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
+import { writeAuditLog, getRequestMeta } from '../_audit.js';
 import { PERMISSIONS, hasPermission } from '../../src/utils/permissionUtils.js';
 import bandIdHandler from './band-id.js';
 import nodemailer from 'nodemailer';
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
     // Check if this is a request for a specific band ID
     const path = req.path || req.url.split('?')[0];
     const relativePath = path.replace(/^\/api\/bands\/?/, '').replace(/^\//, '');
-    
+
     // Check for special endpoints (members, invitations)
     if (relativePath.includes('/')) {
       // Let this fall through to handle members/invitations routes below
@@ -132,8 +133,7 @@ export default async function handler(req, res) {
       const name = sanitize(body.name, 100);
       if (!name || name.length < 1) {
         return res.status(400).json({ error: 'Band name is required' });
-      }
-      const description = sanitize(body.description || '', 300);
+      }      const description = sanitize(body.description || '', 300);
       const genre = sanitize(body.genre || '', 50);
       const bandId = `band_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date().toISOString();
@@ -145,6 +145,19 @@ export default async function handler(req, res) {
         'INSERT INTO band_members (bandId, userId, role, joinedAt) VALUES (?, ?, ?, ?)',
         [bandId, userId, 'owner', now]
       );
+
+      const { ipAddress, userAgent } = getRequestMeta(req);
+      await writeAuditLog(client, {
+        action: 'BAND_CREATED',
+        userId,
+        bandId,
+        resourceId: bandId,
+        resourceType: 'band',
+        description: `Band dibuat: ${name}`,
+        ipAddress,
+        userAgent,
+      });
+
       return res.status(201).json({
         id: bandId,
         name,

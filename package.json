@@ -22,6 +22,8 @@
     "audit-fix": "npm audit fix",
     "generate-icons": "node scripts/generate-icons.cjs",
     "lint": "eslint src/",
+    "migrate:schema": "node runMigration.js schema.sql",
+    "check:audit": "node scripts/check-audit-sqlite.mjs",
     "format": "prettier --write src/"
   },
   "dependencies": {

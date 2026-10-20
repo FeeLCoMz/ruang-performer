@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { getTursoClient } from '../_turso.js';
+import { ensureAuditLogTable } from '../_audit.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -21,6 +22,8 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
     const userId = decoded.userId;
+    // Database lama belum punya tabel audit_logs → buat sebelum dibaca.
+    await ensureAuditLogTable(client);
     // Ambil audit log user
     const result = await client.execute(
       `SELECT id, action, category, severity, status, bandId, description, details, ipAddress, userAgent, changes, createdAt

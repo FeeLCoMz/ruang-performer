@@ -60,6 +60,7 @@ function resolveUrl(path) {
  * @param {boolean} [options.sendContentType=true] Send a JSON content type.
  * @param {'json'|'text'} [options.expect='json'] Response body format.
  * @param {string} [options.fallbackError] Message used when the server gives none.
+ * @param {number} [options.timeoutMs] Batas waktu request (opsional).
  */
 async function request(path, options = {}) {
   const {
@@ -70,6 +71,7 @@ async function request(path, options = {}) {
     sendContentType = true,
     expect = 'json',
     fallbackError = 'Permintaan gagal',
+    timeoutMs = 0,
   } = options;
 
   const baseHeaders = sendContentType
@@ -80,6 +82,13 @@ async function request(path, options = {}) {
     : { ...baseHeaders, ...headers };
 
   const init = { method, headers: requestHeaders };
+  // Race dengan timer: fetch tidak punya timeout bawaan, dan logout tidak boleh
+  // menggantung bila jaringan lambat.
+  if (timeoutMs > 0) {
+    const controller = new AbortController();
+    init.signal = controller.signal;
+    setTimeout(() => controller.abort(), timeoutMs);
+  }
   if (body !== undefined && body !== null) {
     // Pass FormData/Blob/ReadableStream bodies through untouched.
     const isRawBody =
@@ -129,6 +138,34 @@ export async function login(email, password) {
 
 export async function getCurrentUser() {
   return request('/auth/me', { fallbackError: 'Gagal mengambil data user saat ini' });
+}
+
+/**
+ * Catat logout di audit log (USER_LOGOUT).
+ *
+ * Dipanggil SEBELUM token dihapus, karena endpoint ini butuh Authorization.
+ * Best-effort: gagal jaringan/timeout tidak boleh menahan user keluar.
+ */
+export async function logout() {
+  try {
+    return await request('/auth/logout', {
+      method: 'POST',
+      fallbackError: 'Gagal mencatat logout',
+      timeoutMs: 4000,
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Audit log seluruh user (khusus Owner).
+ * @param {{ limit?: number }} [options]
+ * @returns {Promise<{ logs: Array<Object> }>}
+ */
+export async function getAuditLogs({ limit } = {}) {
+  const query = Number.isFinite(limit) ? `?limit=${limit}` : '';
+  return request(`/audit-logs${query}`, { fallbackError: 'Gagal mengambil audit log' });
 }
 
 // Password Reset endpoints

@@ -42,6 +42,9 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    // Catat USER_LOGOUT selagi token masih ada, lalu bersihkan sesi lokal.
+    // Tidak di-await: navigasi keluar tidak boleh menunggu jaringan.
+    apiClient.logout();
     authUtils.logout();
     setUser(null);
     setError(null);

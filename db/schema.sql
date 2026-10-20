@@ -208,6 +208,28 @@ CREATE TABLE IF NOT EXISTS gigs (
 );
 
 
+-- Audit log: riwayat aktivitas (login, perubahan data, aksi kritis).
+-- Ditulis oleh server/_audit.js dan dibaca modul Audit Log (owner).
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id TEXT PRIMARY KEY,
+  userId TEXT,
+  action TEXT NOT NULL,
+  category TEXT,
+  severity TEXT DEFAULT 'low',
+  status TEXT DEFAULT 'success',
+  bandId TEXT,
+  targetUserId TEXT,
+  resourceId TEXT,
+  resourceType TEXT,
+  description TEXT,
+  details TEXT,
+  ipAddress TEXT,
+  userAgent TEXT,
+  changes TEXT,
+  createdAt TEXT DEFAULT (datetime('now'))
+);
+
+
 -- Indexes for faster searches
 CREATE INDEX IF NOT EXISTS idx_songs_title ON songs(title);
 CREATE INDEX IF NOT EXISTS idx_setlists_name ON setlists(name);
@@ -228,3 +250,6 @@ CREATE INDEX IF NOT EXISTS idx_band_song_practice_stats_band_song ON band_song_p
 CREATE INDEX IF NOT EXISTS idx_gigs_bandId ON gigs(bandId);
 CREATE INDEX IF NOT EXISTS idx_gigs_status ON gigs(status);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_userId_createdAt ON audit_logs(userId, createdAt);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_createdAt ON audit_logs(createdAt);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);

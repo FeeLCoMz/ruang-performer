@@ -136,7 +136,9 @@ Route yang ada:
 | `/gigs` | Gig |
 | `/bands/manage`, `/bands/:id` | Band |
 | `/youtube-trending` | Trending YouTube |
-| `/tools`, `/audit-logs`, `/user-management` | Utilitas & pengaturan |
+| `/tools`, `/user-management` | Utilitas & pengaturan (owner) |
+| `/backup-restore` | Modul Backup & Restore database (owner) |
+| `/audit-logs` | Modul Audit Log (owner) |
 
 Halaman non-kritis di-`lazy()` dan dibungkus `Suspense` dengan `PageLoader`.
 

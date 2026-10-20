@@ -40,6 +40,18 @@ import {
   subscribeBulkLyricsEnabled,
   DEFAULT_BULK_LYRICS_ENABLED,
 } from './bulk-lyrics/bulkLyricsSettings.js';
+import {
+  isBackupRestoreEnabled,
+  setBackupRestoreEnabled,
+  subscribeBackupRestoreEnabled,
+  DEFAULT_BACKUP_RESTORE_ENABLED,
+} from './backup-restore/backupRestoreSettings.js';
+import {
+  isAuditLogEnabled,
+  setAuditLogEnabled,
+  subscribeAuditLogEnabled,
+  DEFAULT_AUDIT_LOG_ENABLED,
+} from './audit-log/auditLogSettings.js';
 
 export const MODULES_REGISTRY = [
   {
@@ -91,6 +103,32 @@ export const MODULES_REGISTRY = [
     isEnabled: isBulkLyricsEnabled,
     setEnabled: setBulkLyricsEnabled,
     subscribe: subscribeBulkLyricsEnabled,
+  },
+  {
+    id: 'backup-restore',
+    name: 'Backup & Restore Database',
+    description:
+      'Backup seluruh database ke file SQL (dump) dan pulihkan kembali dari file backup — khusus Owner aplikasi.',
+    icon: '💾',
+    path: '/backup-restore',
+    defaultEnabled: DEFAULT_BACKUP_RESTORE_ENABLED,
+    storageKey: 'ruang-performer:module:backup-restore-enabled',
+    isEnabled: isBackupRestoreEnabled,
+    setEnabled: setBackupRestoreEnabled,
+    subscribe: subscribeBackupRestoreEnabled,
+  },
+  {
+    id: 'audit-log',
+    name: 'Audit Log',
+    description:
+      'Riwayat aktivitas pengguna (login, perubahan data, aksi kritis) dengan filter kategori & severity serta deteksi aktivitas mencurigakan — khusus Owner.',
+    icon: '🔍',
+    path: '/audit-logs',
+    defaultEnabled: DEFAULT_AUDIT_LOG_ENABLED,
+    storageKey: 'ruang-performer:module:audit-log-enabled',
+    isEnabled: isAuditLogEnabled,
+    setEnabled: setAuditLogEnabled,
+    subscribe: subscribeAuditLogEnabled,
   },
 ];
 

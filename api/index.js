@@ -41,6 +41,8 @@ import toolsHandler from '../server/handlers/tools.js';
 import toolsBackupHandler from '../server/handlers/tools-backup.js';
 import toolsRestoreHandler from '../server/handlers/tools-restore.js';
 import userAuditLogsHandler from '../server/handlers/auth-audit-logs.js';
+import authLogoutHandler from '../server/handlers/auth-logout.js';
+import auditLogsHandler from '../server/handlers/audit-logs.js';
 // Users management handler
 import usersHandler from '../server/handlers/users.js';
 import userByIdHandler from '../server/handlers/user-id.js';
@@ -111,9 +113,19 @@ app.get('/api/auth/user-audit-logs', verifyTokenMiddleware, (req, res, next) => 
   Promise.resolve(userAuditLogsHandler(req, res)).catch(next);
 });
 
+// Audit log seluruh user (owner only)
+app.get('/api/audit-logs', verifyTokenMiddleware, (req, res, next) => {
+  Promise.resolve(auditLogsHandler(req, res)).catch(next);
+});
+
 // Change password
 app.post('/api/auth/change-password', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(authChangePasswordHandler(req, res)).catch(next);
+});
+
+// Logout (mencatat audit; JWT tetap stateless)
+app.post('/api/auth/logout', verifyTokenMiddleware, (req, res, next) => {
+  Promise.resolve(authLogoutHandler(req, res)).catch(next);
 });
 
 app.post('/api/auth/forgot-password', (req, res, next) => {

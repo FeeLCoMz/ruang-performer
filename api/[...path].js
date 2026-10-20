@@ -33,12 +33,14 @@ import authDeleteAccountHandler from '../server/handlers/auth-delete-account.js'
 import authForgotPasswordHandler from '../server/handlers/auth-forgot-password.js';
 import authResetPasswordHandler from '../server/handlers/auth-reset-password.js';
 import authAuditLogsHandler from '../server/handlers/auth-audit-logs.js';
+import authLogoutHandler from '../server/handlers/auth-logout.js';
 import usersHandler from '../server/handlers/users.js';
 import userIdHandler from '../server/handlers/user-id.js';
 import userResetPasswordHandler from '../server/handlers/user-reset-password.js';
 import toolsHandler from '../server/handlers/tools.js';
 import toolsBackupHandler from '../server/handlers/tools-backup.js';
 import toolsRestoreHandler from '../server/handlers/tools-restore.js';
+import auditLogsHandler from '../server/handlers/audit-logs.js';
 // AI (AI Autofill + AI Chord & Sheet Music Transcriber). File-nya tetap di
 // api/ai.js, jadi modul ini ikut di-bundle ke function dan tidak di-ignore.
 import aiHandler from './ai.js';
@@ -109,6 +111,7 @@ async function dispatch(req, res) {
     if (req.method === 'POST' && second === 'register') return authRegisterHandler(req, res);
     if (second === 'me') return authMeHandler(req, res);
     if (req.method === 'POST' && second === 'change-password') return authChangePasswordHandler(req, res);
+    if (req.method === 'POST' && second === 'logout') return authLogoutHandler(req, res);
     if (req.method === 'DELETE' && second === 'delete-account') return authDeleteAccountHandler(req, res);
     if (req.method === 'POST' && second === 'forgot-password') return authForgotPasswordHandler(req, res);
     if (req.method === 'POST' && second === 'reset-password') return authResetPasswordHandler(req, res);
@@ -183,6 +186,9 @@ async function dispatch(req, res) {
   // Dipakai frontend untuk AI Autofill (/api/ai/song-search) dan transkripsi
   // chord (/api/ai/chord-transcribe). Tanpa cabang ini keduanya 404.
   if (resource === 'ai') return aiHandler(req, res);
+
+  // ---- Audit logs (owner only; handler memeriksa role) --------------------
+  if (resource === 'audit-logs') return auditLogsHandler(req, res);
 
   res.status(404).json({ error: 'Endpoint tidak ditemukan' });
 }
