@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useNavItems } from '../hooks/useNavItems.js';
-import StageModeButton from './StageModeButton.jsx';
+import StageModeButton from '../modules/stage-mode/StageModeButton.jsx';
 
 export default function Sidebar({ isOpen, onClose, stageMode, onToggleStageMode }) {
   const navigate = useNavigate();

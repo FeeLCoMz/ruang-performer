@@ -6,9 +6,14 @@
  * AppContent dan dipersist di localStorage (STORAGE_KEYS.STAGE_MODE).
  */
 import React from 'react';
-import '../styles/stage-mode.css';
+import './stage-mode.css';
+import { useStageModeEnabled } from './useStageModeEnabled.js';
 
 export default function StageModeButton({ stageMode = false, onToggle }) {
+  // Modul Stage Mode dimatikan dari halaman Modul: tombol tidak ditampilkan.
+  const [moduleEnabled] = useStageModeEnabled();
+  if (!moduleEnabled) return null;
+
   return (
     <button
       type="button"

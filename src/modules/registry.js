@@ -58,6 +58,12 @@ import {
   subscribeMidiCueEnabled,
   DEFAULT_MIDI_CUE_ENABLED,
 } from './midi-cue/midiCueSettings.js';
+import {
+  isStageModeEnabled,
+  setStageModeEnabled,
+  subscribeStageModeEnabled,
+  DEFAULT_STAGE_MODE_ENABLED,
+} from './stage-mode/stageModeSettings.js';
 
 export const MODULES_REGISTRY = [
   {
@@ -147,6 +153,18 @@ export const MODULES_REGISTRY = [
     isEnabled: isMidiCueEnabled,
     setEnabled: setMidiCueEnabled,
     subscribe: subscribeMidiCueEnabled,
+  },
+  {
+    id: 'stage-mode',
+    name: 'Stage Mode',
+    description:
+      'Tampilan panggung fullscreen dengan kontras tinggi: lirik besar, autoscroll, transpose, dan panel media — dirancang untuk dibaca dari atas panggung.',
+    icon: '🎤',
+    defaultEnabled: DEFAULT_STAGE_MODE_ENABLED,
+    storageKey: 'ruang-performer:module:stage-mode-enabled',
+    isEnabled: isStageModeEnabled,
+    setEnabled: setStageModeEnabled,
+    subscribe: subscribeStageModeEnabled,
   },
 ];
 

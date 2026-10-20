@@ -1,15 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import ChordDisplay, { normalizeChordStyle } from './ChordDisplay.jsx';
-import AutoScrollControl from './AutoScrollControl.jsx';
-import { CHORD_STYLE_EVENT, getStoredChordStyle } from '../utils/chordStyleStore.js';
-import TransposeKeyControl from './TransposeKeyControl.jsx';
-import SongMediaPanel from './SongMediaPanel.jsx';
-import { useSongFetch } from '../hooks/useSongFetch.js';
-import * as apiClient from '../apiClient.js';
-import { STORAGE_KEYS } from '../utils/storageKeys.js';
-import { getTransposeSteps, extractDetectedInstrumentsFromLyrics } from '../utils/chordUtils.js';
-import '../styles/stage-mode.css';
+import ChordDisplay, { normalizeChordStyle } from '../../components/ChordDisplay.jsx';
+import AutoScrollControl from '../../components/AutoScrollControl.jsx';
+import { CHORD_STYLE_EVENT, getStoredChordStyle } from '../../utils/chordStyleStore.js';
+import TransposeKeyControl from '../../components/TransposeKeyControl.jsx';
+import SongMediaPanel from '../../components/SongMediaPanel.jsx';
+import { useSongFetch } from '../../hooks/useSongFetch.js';
+import { useStageModeEnabled } from './useStageModeEnabled.js';
+import * as apiClient from '../../apiClient.js';
+import { STORAGE_KEYS } from '../../utils/storageKeys.js';
+import { getTransposeSteps, extractDetectedInstrumentsFromLyrics } from '../../utils/chordUtils.js';
+import './stage-mode.css';
 import {
   AUTO_SCROLL_MODES,
   computeManualScrollSpeed,
@@ -18,7 +19,7 @@ import {
   estimateChordCount,
   normalizeAutoScrollMode,
   parseTimeSignatureNumerator,
-} from '../utils/autoscrollSpeedUtils.js';
+} from '../../utils/autoscrollSpeedUtils.js';
 
 /* ======== Helpers ======== */
 
@@ -80,6 +81,10 @@ export default function StageModePage({
   setlists: setlistsProp = [],
   activeSetlist: initialSetlist = null,
 }) {
+  // Modul Stage Mode bisa dimatikan dari halaman Modul. Halaman tetap bisa
+  // dibuka, tetapi tidak memasang scroll-lock, autoscroll, atau fetch data.
+  const [moduleEnabled] = useStageModeEnabled();
+
   // =========================
   // Data band & setlist
   // =========================
@@ -121,7 +126,7 @@ export default function StageModePage({
 
   // Hanya fetch data yang BELUM di-fetch oleh aplikasi (props kosong).
   useEffect(() => {
-    if (!stageMode) return undefined;
+    if (!stageMode || !moduleEnabled) return undefined;
     const needsSongs = !Array.isArray(songsProp) || songsProp.length === 0;
     const needsBands = !Array.isArray(bandsProp) || bandsProp.length === 0;
     const needsSetlists = !Array.isArray(setlistsProp) || setlistsProp.length === 0;
@@ -630,7 +635,7 @@ export default function StageModePage({
 
   // Esc: tutup sheet dulu (jika terbuka), baru keluar Stage Mode.
   useEffect(() => {
-    if (!stageMode) return undefined;
+    if (!stageMode || !moduleEnabled) return undefined;
     const handleKey = (e) => {
       if (e.key !== 'Escape') return;
       if (sheetOpen) {
@@ -657,7 +662,7 @@ export default function StageModePage({
       window.removeEventListener('keydown', handleKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [stageMode, sheetOpen, infoOpen, playerVisible, onExit]);
+  }, [stageMode, moduleEnabled, sheetOpen, infoOpen, playerVisible, onExit]);
 
   // ======== Gestur panggung ========
   // - Pinch (2 jari): perbesar/perkecil font lirik (fontScale).
@@ -804,6 +809,24 @@ export default function StageModePage({
   const youtubeSearchUrl = q ? `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}` : '';
 
   if (!stageMode) return null;
+
+  // Modul dimatikan: jangan pasang tampilan panggung sama sekali (termasuk
+  // scroll-lock body dan pintasan keyboard) — cukup beri jalan keluar.
+  if (!moduleEnabled) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <h1>🎤 Stage Mode</h1>
+        </div>
+        <div className="ct-banner ct-banner-warn" role="status">
+          Modul Stage Mode sedang dinonaktifkan.
+        </div>
+        <button type="button" className="btn btn-primary" onClick={() => onExit?.()}>
+          Keluar
+        </button>
+      </div>
+    );
+  }
 
   const content = (
     <div className="stage-mode-page" role="dialog" aria-modal="true" aria-label="Stage Mode">

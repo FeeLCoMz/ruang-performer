@@ -16,8 +16,8 @@ import Toast from "./components/Toast.jsx";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import * as apiClient from "./apiClient.js";
 import { STORAGE_KEYS } from "./utils/storageKeys.js";
-import StageModeButton from "./components/StageModeButton.jsx";
-import StageModePage from "./components/StageModePage.jsx";
+import StageModeButton from "./modules/stage-mode/StageModeButton.jsx";
+import StageModePage from "./modules/stage-mode/StageModePage.jsx";
 
 // Lazy load non-critical pages for code splitting
 const SongListPage = lazy(() => import("./pages/SongListPage.jsx"));
