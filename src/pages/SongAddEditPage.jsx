@@ -4,7 +4,9 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import TapTempo from '../components/TapTempo';
 import VirtualPiano from '../modules/midi/VirtualPiano';
-import AIAutofillModal from '../components/AIAutofillModal';
+import AIAutofillModal from '../modules/ai-autofill/AIAutofillModal';
+import { useAIAutofillEnabled } from '../modules/ai-autofill/useAIAutofillEnabled';
+import { autofillSongMetadata, buildDefaultAiConfirmFields } from '../modules/ai-autofill/aiAutofillApi.js';
 import SheetMusicModal from '../components/SheetMusicModal.jsx';
 import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
 import SongStudioTopbar from '../components/SongStudioTopbar.jsx';
@@ -87,6 +89,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(!!id);
   const [error, setError] = useState('');
+  // Modul AI Autofill default nonaktif (berbiaya API) — lihat aiAutofillSettings.
+  const [aiAutofillEnabled] = useAIAutofillEnabled();
   const [aiLoading, setAiLoading] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [showSheetMusicModal, setShowSheetMusicModal] = useState(false);
@@ -314,30 +318,10 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     setError('');
 
     try {
-      const res = await fetch('/api/ai/song-search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeader(),
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          artist: artist.trim(),
-        }),
-      });
-
-      if (!res.ok) throw new Error('Gagal mendapatkan data AI');
-
-      const data = await res.json();
+      // Gate modul + pemanggilan API ada di modul ai-autofill.
+      const data = await autofillSongMetadata({ title, artist });
       setAiResult(data);
-      setAiConfirmFields({
-        artist: !!data.artist,
-        key: !!data.key,
-        tempo: !!data.tempo,
-        genre: !!data.genre,
-        youtubeId: !!data.youtubeId,
-        keyboardPatch: !!data.keyboardPatch,
-      });
+      setAiConfirmFields(buildDefaultAiConfirmFields(data));
       setShowAiModal(true);
     } catch (err) {
       setError(err.message || 'Gagal autofill AI');
@@ -855,15 +839,17 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         <div className="studio-editor-section studio-editor-info studio-info-full">
           <div className="studio-card-head">
             <span className="studio-card-title">INFORMASI UTAMA</span>
-            <button
-              type="button"
-              onClick={handleAIAutofill}
-              disabled={aiLoading}
-              className="btn btn-secondary song-ai-autofill-btn"
-              title="Isi otomatis data lagu dari AI (judul wajib diisi)"
-            >
-              🤖 {aiLoading ? 'Mencari…' : 'AI Autofill'}
-            </button>
+            {aiAutofillEnabled && (
+              <button
+                type="button"
+                onClick={handleAIAutofill}
+                disabled={aiLoading}
+                className="btn btn-secondary song-ai-autofill-btn"
+                title="Isi otomatis data lagu dari AI (judul wajib diisi)"
+              >
+                🤖 {aiLoading ? 'Mencari…' : 'AI Autofill'}
+              </button>
+            )}
           </div>
 
           <div className="studio-fields">

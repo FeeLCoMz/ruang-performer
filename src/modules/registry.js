@@ -64,6 +64,12 @@ import {
   subscribeStageModeEnabled,
   DEFAULT_STAGE_MODE_ENABLED,
 } from './stage-mode/stageModeSettings.js';
+import {
+  isAIAutofillEnabled,
+  setAIAutofillEnabled,
+  subscribeAIAutofillEnabled,
+  DEFAULT_AI_AUTOFILL_ENABLED,
+} from './ai-autofill/aiAutofillSettings.js';
 
 export const MODULES_REGISTRY = [
   {
@@ -165,6 +171,18 @@ export const MODULES_REGISTRY = [
     isEnabled: isStageModeEnabled,
     setEnabled: setStageModeEnabled,
     subscribe: subscribeStageModeEnabled,
+  },
+  {
+    id: 'ai-autofill',
+    name: 'AI Autofill',
+    description:
+      'Isi otomatis artist, key, tempo, genre, YouTube, dan chord link dari judul lagu memakai Gemini. Nonaktif secara default karena setiap pemakaian memakai kuota API.',
+    icon: '🪄',
+    defaultEnabled: DEFAULT_AI_AUTOFILL_ENABLED,
+    storageKey: 'ruang-performer:module:ai-autofill-enabled',
+    isEnabled: isAIAutofillEnabled,
+    setEnabled: setAIAutofillEnabled,
+    subscribe: subscribeAIAutofillEnabled,
   },
 ];
 

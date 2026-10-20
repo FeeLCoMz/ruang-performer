@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import AIAutofillModal from '../components/AIAutofillModal.jsx';
+import AIAutofillModal from '../modules/ai-autofill/AIAutofillModal.jsx';
 
 describe('AIAutofillModal', () => {
   it('does not render the lyrics recommendation option', () => {
