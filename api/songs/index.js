@@ -2,7 +2,6 @@ import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { randomUUID } from 'crypto';
 import songIdHandler from './[id].js';
-import bulkSongsHandler from './bulk.js';
 
 // Module-level flags: schema checks run only once per server instance
 let _schemaEnsured = false;
@@ -21,7 +20,7 @@ async function ensureSchema(client) {
   await _schemaEnsurePromise;
 }
 
-async function readJson(req) {
+export async function readJson(req) {
   if (req.body) return req.body;
   return await new Promise((resolve, reject) => {
     let data = '';
@@ -283,6 +282,19 @@ async function handleSongMastery(req, res, client, songId) {
   res.status(405).json({ error: 'Method not allowed' });
 }
 
+/**
+ * GET/PUT/DELETE via Vercel diarahkan ke api/songs.js (lihat vercel.json).
+ * rewrite tidak memindahkan query param seperti mastery, jadi path asli tetap
+ * tersedia lewat header ini.
+ */
+const ORIGINAL_URL_HEADER = 'x-original-url';
+
+function resolveRequestPath(req) {
+  const forwarded = req.headers?.[ORIGINAL_URL_HEADER];
+  if (typeof forwarded === 'string' && forwarded) return forwarded.split('?')[0];
+  return req.path || req.url.split('?')[0];
+}
+
 export default async function handler(req, res) {
   try {
     // Verify JWT token first
@@ -291,7 +303,7 @@ export default async function handler(req, res) {
     }
 
     // Check if this is a request for a specific song ID
-    const path = req.path || req.url.split('?')[0];
+    const path = resolveRequestPath(req);
     const relativePath = path.replace(/^\/api\/songs\/?/, '').replace(/^\//, '');
     const pathSegments = relativePath ? relativePath.split('/').filter(Boolean) : [];
     const rewrittenMasterySongId = req.query?.id || req.query?.songId;
@@ -303,12 +315,12 @@ export default async function handler(req, res) {
       return handleSongMastery(req, res, client, pathSegments[0]);
     }
 
-    // Bulk add (modul Bulk Add Lirik & Chord). Ditangani di sini — bukan hanya
-    // di api/songs/bulk.js — karena server Express (npm run dev) merutekan
-    // SEMUA /api/songs/* ke handler ini. Tanpa cabang ini, POST /api/songs/bulk
-    // jatuh ke validasi judul tunggal dan dibalas 400 "Judul lagu wajib diisi".
+    // Bulk add (modul Bulk Add Lirik & Chord). Satu-satunya function lagu di
+    // Vercel adalah api/songs.js → api/songs/index.js, jadi endpoint bulk
+    // ditangani di sini. Tanpa cabang ini, POST /api/songs/bulk jatuh ke
+    // validasi judul tunggal dan dibalas 400 "Judul lagu wajib diisi".
     if (pathSegments.length === 1 && pathSegments[0] === 'bulk' && req.method === 'POST') {
-      return bulkSongsHandler(req, res);
+      return handleBulkSongs(req, res);
     }
 
     if (rewrittenMasterySongId && rewrittenPathMarker === 'mastery') {
@@ -608,6 +620,180 @@ export default async function handler(req, res) {
     console.error('API /api/songs error:', err);
     res.status(500).json({ error: 'Internal Server Error', message: err.message, details: process.env.NODE_ENV === 'development' ? err.stack : undefined });
   }
+}
+
+/* --------------------------------------------------------------------------
+ * Bulk add (modul Bulk Add Lirik & Chord)
+ *
+ * Semua lagu disimpan dalam SATU permintaan. Endpoint ini TIDAK berupa file
+ * function tersendiri karena Vercel Hobby membatasi 12 Serverless Functions
+ * per deployment; api/songs.js sudah menyerahkan semua /api/songs/* ke sini.
+ *
+ * Body: { songs: Array<{ title, artist?, key?, tempo?, time_signature?,
+ *   genre?, lyrics?, youtubeId?, keyboardPatch?, sheetMusicXml?, bandId? }> }
+ * ------------------------------------------------------------------------ */
+
+const BULK_MAX_SONGS = 1000;
+/** Ukuran chunk insert: permintaan per 50 lagu agar tidak kena batas waktu. */
+const BULK_CHUNK_SIZE = 50;
+
+function sanitizeBulkText(value, maxLen = 100) {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[<>"'`]/g, '').slice(0, maxLen);
+}
+
+function normalizeBulkTempo(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = parseInt(String(value).replace(/,/g, '.'), 10);
+  return Number.isNaN(parsed) ? null : parsed.toString();
+}
+
+async function assertBandWriteAccess(client, bandId, userId) {
+  if (!bandId) return true;
+  const membership = await client.execute(
+    `SELECT 1 FROM band_members
+     WHERE bandId = ? AND userId = ?
+       AND (status IS NULL OR lower(status) IN ('active', 'accepted', 'member'))
+     LIMIT 1`,
+    [bandId, String(userId)]
+  );
+  return Boolean(membership.rows?.length);
+}
+
+async function handleBulkSongs(req, res) {
+  const userId = req.user?.userId || req.user?.id;
+  if (!userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const body = await readJson(req);
+  const songs = Array.isArray(body) ? body : Array.isArray(body?.songs) ? body.songs : null;
+  if (!songs) {
+    res.status(400).json({ error: 'Body harus berisi array songs' });
+    return;
+  }
+  if (songs.length === 0) {
+    res.status(400).json({ error: 'Tidak ada lagu untuk disimpan' });
+    return;
+  }
+  if (songs.length > BULK_MAX_SONGS) {
+    res.status(400).json({ error: `Maksimal ${BULK_MAX_SONGS} lagu per proses bulk` });
+    return;
+  }
+
+  const client = getTursoClient();
+  await ensureSchema(client);
+
+  // ---- Validasi menyeluruh dulu -------------------------------------------
+  const failures = [];
+  const prepared = songs.map((item, index) => {
+    const source = item && typeof item === 'object' ? item : {};
+    // Judul hanya dibersihkan dari spasi berlebih: karakter seperti `"`, `<`,
+    // atau `'` adalah bagian dari judul lagu yang wajar (mis. "Don't Stop"),
+    // jadi TIDAK boleh disanitasi — dulu sanitasi bisa mengosongkan judul yang
+    // sebenarnya terisi sehingga simpan gagal dengan "Judul lagu wajib diisi".
+    const rawTitle = typeof source.title === 'string' ? source.title.trim() : '';
+    const title = rawTitle.replace(/\s+/g, ' ').slice(0, 200);
+    if (!title) {
+      failures.push({ index, title: '', error: 'Judul lagu wajib diisi' });
+    }
+    return {
+      index,
+      title,
+      // Judul asli untuk pesan error (sebelum normalisasi).
+      displayTitle: rawTitle.slice(0, 100),
+      artist: sanitizeBulkText(source.artist, 100),
+      genre: sanitizeBulkText(source.genre, 50),
+      key: sanitizeBulkText(source.key, 20),
+      youtubeId: sanitizeBulkText(source.youtubeId, 60),
+      // Lirik & chord TIDAK boleh disanitasi: karakter < > " ' ` adalah bagian
+      // dari penulisan chord/lirik, dan menghapusnya merusak hasil bulk.
+      lyrics: typeof source.lyrics === 'string' ? source.lyrics.slice(0, 50000) : '',
+      tempo: normalizeBulkTempo(source.tempo),
+      timeSignature: sanitizeBulkText(source.time_signature || source.timeSignature, 10) || '4/4',
+      keyboardPatch: sanitizeBulkText(source.keyboardPatch, 200),
+      sheetMusicXml: typeof source.sheetMusicXml === 'string' ? source.sheetMusicXml : null,
+      bandId: source.bandId ? String(source.bandId) : null,
+    };
+  });
+
+  if (failures.length > 0) {
+    const firstFailure = failures[0];
+    const firstTitle = prepared[firstFailure.index]?.displayTitle || `lagu #${firstFailure.index + 1}`;
+    res.status(400).json({
+      error:
+        failures.length === 1
+          ? `Lagu "${firstTitle}": ${firstFailure.error.toLowerCase()}`
+          : `${failures.length} lagu belum valid (pertama: "${firstTitle}") — perbaiki dulu sebelum menyimpan.`,
+      failures: failures.map((failure) => ({ ...failure, blockNumber: failure.index + 1 })),
+    });
+    return;
+  }
+
+  // Cek izin tulis per band (biasanya semua lagu di bulk ditujukan ke band yang
+  // sama, jadi hasilnya di-cache per bandId).
+  const bandAccess = new Map();
+  for (const item of prepared) {
+    if (!item.bandId) continue;
+    if (!bandAccess.has(item.bandId)) {
+      bandAccess.set(item.bandId, await assertBandWriteAccess(client, item.bandId, userId));
+    }
+    if (!bandAccess.get(item.bandId)) {
+      res.status(403).json({ error: `Anda bukan anggota aktif band untuk lagu "${item.title}"` });
+      return;
+    }
+  }
+
+  // ---- Simpan -------------------------------------------------------------
+  const now = new Date().toISOString();
+  const insertSql = `INSERT INTO songs
+      (id, title, artist, youtubeId, lyrics, key, tempo, genre, time_markers,
+       time_signature, arrangement_style, keyboard_patch, sheet_music_xml,
+       userId, bandId, createdAt, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+  const createdIds = [];
+  try {
+    for (let offset = 0; offset < prepared.length; offset += BULK_CHUNK_SIZE) {
+      const chunk = prepared.slice(offset, offset + BULK_CHUNK_SIZE);
+      // eslint-disable-next-line no-await-in-loop
+      await Promise.all(chunk.map(async (item) => {
+        const id = randomUUID();
+        await client.execute(insertSql, [
+          id,
+          item.title,
+          item.artist || null,
+          item.youtubeId || null,
+          item.lyrics || null,
+          item.key || null,
+          item.tempo,
+          item.genre || null,
+          null,
+          item.timeSignature,
+          null,
+          item.keyboardPatch || null,
+          item.sheetMusicXml || null,
+          userId,
+          item.bandId,
+          now,
+          now,
+        ]);
+        createdIds.push(id);
+      }));
+    }
+  } catch (error) {
+    // Rollback manual: hapus lagu yang sudah dibuat agar tidak setengah masuk.
+    for (let offset = 0; offset < createdIds.length; offset += 100) {
+      const ids = createdIds.slice(offset, offset + 100);
+      const placeholders = ids.map(() => '?').join(', ');
+      // eslint-disable-next-line no-await-in-loop
+      await client.execute(`DELETE FROM songs WHERE id IN (${placeholders})`, ids).catch(() => {});
+    }
+    throw error;
+  }
+
+  res.status(201).json({ ids: createdIds, created: createdIds.length });
 }
 
 async function ensureBandSongPracticeStatsTable(client) {

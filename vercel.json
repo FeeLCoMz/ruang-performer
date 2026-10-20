@@ -41,16 +41,11 @@
       "dest": "/api/events/index.js?type=gig"
     },
     {
-      "src": "/api/songs/bulk$",
-      "dest": "/api/songs/bulk.js"
-    },
-    {
-      "src": "/api/songs/([^/]+)$",
-      "dest": "/api/songs/[id].js?id=$1"
-    },
-    {
-      "src": "/api/songs/([^/]+)/mastery$",
-      "dest": "/api/songs/index.js?id=$1&path=mastery"
+      "src": "/api/songs(/.*)?$",
+      "dest": "/api/songs.js",
+      "headers": {
+        "x-original-url": "$0"
+      }
     },
     {
       "src": "/api/setlists/([^/]+)$",
