@@ -52,6 +52,12 @@ import {
   subscribeAuditLogEnabled,
   DEFAULT_AUDIT_LOG_ENABLED,
 } from './audit-log/auditLogSettings.js';
+import {
+  isMidiCueEnabled,
+  setMidiCueEnabled,
+  subscribeMidiCueEnabled,
+  DEFAULT_MIDI_CUE_ENABLED,
+} from './midi-cue/midiCueSettings.js';
 
 export const MODULES_REGISTRY = [
   {
@@ -129,6 +135,18 @@ export const MODULES_REGISTRY = [
     isEnabled: isAuditLogEnabled,
     setEnabled: setAuditLogEnabled,
     subscribe: subscribeAuditLogEnabled,
+  },
+  {
+    id: 'midi-cue',
+    name: 'MIDI Cue & Patch Sound',
+    description:
+      'Mengubah baris cue di lirik (mis. [Keys: Stage Piano | PC: 0 | CH: 1]) menjadi data MIDI terstruktur: program, channel, dan bank MSB/LSB — tanpa perlu keyboard MIDI fisik. Menonaktifkannya membuat baris cue tampil sebagai teks biasa.',
+    icon: '🎼',
+    defaultEnabled: DEFAULT_MIDI_CUE_ENABLED,
+    storageKey: 'ruang-performer:module:midi-cue-enabled',
+    isEnabled: isMidiCueEnabled,
+    setEnabled: setMidiCueEnabled,
+    subscribe: subscribeMidiCueEnabled,
   },
 ];
 

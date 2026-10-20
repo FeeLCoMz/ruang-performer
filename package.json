@@ -24,6 +24,7 @@
     "lint": "eslint src/",
     "migrate:schema": "node runMigration.js schema.sql",
     "check:audit": "node scripts/check-audit-sqlite.mjs",
+    "check:midi-cue": "node scripts/check-midi-cue.mjs",
     "format": "prettier --write src/"
   },
   "dependencies": {

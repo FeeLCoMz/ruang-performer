@@ -3,7 +3,7 @@ import {
   parseCueOptionFields,
   mergeMidiWithInference,
   hasMidiHintOptions,
-} from '../modules/midi/cueParser.js';
+} from '../modules/midi-cue/cueParser.js';
 import {
   STRUCTURE_SECTION_KEYWORDS,
   MODULATION_KEYWORDS,

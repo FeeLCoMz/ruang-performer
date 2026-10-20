@@ -21,6 +21,7 @@
 import React, { memo, useMemo, useEffect, useRef, useState } from 'react';
 import NumberToken from './NumberToken.jsx';
 import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
+import { useMidiCueVersion } from '../modules/midi-cue/useMidiCueVersion.js';
 
 // Icon per seksi lagu, dicocokkan dari label seksi (mis. "[Chorus]").
 const SECTION_ICONS = [
@@ -193,9 +194,13 @@ const ChordDisplayBase = memo(function ChordDisplay({
   // actual inputs keeps typing cheap: the text still changes per keystroke, but
   // unrelated re-renders (preview toggle, follow state, playback state) no
   // longer re-parse the document.
+  //
+  // midiCueVersion ikut jadi dependency: saat modul MIDI Cue dimatikan, hasil
+  // parse berubah (cue tidak lagi menghasilkan data MIDI) tanpa teks berubah.
+  const midiCueVersion = useMidiCueVersion();
   const parsedLines = useMemo(
     () => parseLines(lines, effectiveTranspose),
-    [lines, effectiveTranspose]
+    [lines, effectiveTranspose, midiCueVersion]
   );
 
   // Auto-fit horizontal dihapus: lirik tidak lagi otomatis diubah ukurannya —

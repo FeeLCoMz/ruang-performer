@@ -16,9 +16,21 @@
  *   - inferMidiFromPatchContext({ section, patch, instrument })
  *   - mergeMidiWithInference({ explicitMidi, section, patch, instrument })
  *   - hasMidiHintOptions(rawOptions)
+ *   - isMidiCueActive()
+ *
+ * Modul `midi-cue` bisa dimatikan dari halaman Modul (lihat
+ * midiCueSettings.js). Saat nonaktif, semua fungsi inferensi mengembalikan
+ * null sehingga baris cue tampil sebagai teks biasa.
  */
 
 import { findClosestGmPatch } from './gmSoundbank.js';
+import { isMidiCueEnabled } from './midiCueSettings.js';
+
+/**
+ * Apakah fitur MIDI Cue aktif? Dipakai parser untuk memutuskan nilai `midi`.
+ * @returns {boolean}
+ */
+export const isMidiCueActive = () => isMidiCueEnabled();
 
 export const normalizeMidiByte = (value, { max = 127 } = {}) => {
   const numeric = Number.parseInt(String(value || '').trim(), 10);
@@ -141,6 +153,8 @@ export const inferProgramByCommonInstrumentName = (contextText = '') => {
 };
 
 export const inferMidiFromPatchContext = ({ section = '', patch = '', instrument = '' } = {}) => {
+  if (!isMidiCueActive()) return null;
+
   const context = `${section} ${instrument} ${patch}`.trim();
   const commonProgram = inferProgramByCommonInstrumentName(context);
   if (Number.isFinite(commonProgram)) {
@@ -161,6 +175,8 @@ export const inferMidiFromPatchContext = ({ section = '', patch = '', instrument
 };
 
 export const mergeMidiWithInference = ({ explicitMidi, section = '', patch = '', instrument = '' } = {}) => {
+  if (!isMidiCueActive()) return null;
+
   const inferred = inferMidiFromPatchContext({ section, patch, instrument });
   const merged = {
     ...(inferred || {}),
