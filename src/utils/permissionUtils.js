@@ -43,6 +43,9 @@ export function canDeleteSetlist(setlist, userBandInfo, user) {
   } else {
     // Setlist pribadi: hanya owner (userId) yang boleh delete
     if (!user) return false;
+    // userId setlist bisa kosong (data legacy/impor); jangan sampai
+    // undefined === undefined dianggap sebagai pemilik.
+    if (!setlist.userId) return false;
     return String(setlist.userId) === String(user.userId || user.id);
   }
 }
@@ -59,8 +62,11 @@ export function canEditSetlist(setlist, userBandInfo, user) {
     const role = resolveUserBandRole(userBandInfo, setlist.bandId);
     return Boolean(role && hasPermission(role, PERMISSIONS.SETLIST_EDIT));
   } else {
-    // Setlist pribadi: hanya owner (userId) yang boleh edit
+    // Setlist pribadi: hanya owner (userId) yang boleh edit.
+    // userId kosong/undefined tidak boleh dianggap sebagai pemilik, kalau tidak
+    // perbandingan undefined === undefined membuka akses edit tanpa pemilik.
     if (!user) return false;
+    if (!setlist.userId) return false;
     return String(setlist.userId) === String(user.userId || user.id);
   }
 }

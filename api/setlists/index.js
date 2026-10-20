@@ -225,8 +225,9 @@ export default async function handler(req, res) {
         const normalizedMetaPatch = body?.setlistSongMetaPatch && typeof body.setlistSongMetaPatch === 'object' && !Array.isArray(body.setlistSongMetaPatch)
           ? body.setlistSongMetaPatch
           : null;
+        // userId ikut diambil: setlist pribadi (bandId NULL) hanya boleh diubah pemiliknya.
         const setlistRowResult = await client.execute(
-          `SELECT bandId FROM setlists WHERE id = ? LIMIT 1`,
+          `SELECT bandId, userId FROM setlists WHERE id = ? LIMIT 1`,
           [idStr]
         );
         const existingSetlistRow = setlistRowResult.rows?.[0] || null;
@@ -237,10 +238,18 @@ export default async function handler(req, res) {
         const effectiveBandId = body.bandId !== undefined ? body.bandId : existingSetlistRow.bandId;
         const dedupedSongs = Array.isArray(body.songs) ? dedupeSongIds(body.songs) : [];
 
+        // BandId yang dikirim body tidak boleh berbeda dari band setlist aslinya,
+        // kalau tidak setlist pribadi bisa diklaim ke band lain (bandId NULL -
+        // bandId baru) hanya dengan mengirim field bandId.
+        if (existingSetlistRow.bandId ? String(existingSetlistRow.bandId) !== String(effectiveBandId || '') : Boolean(effectiveBandId)) {
+          res.status(403).json({ error: 'Tidak boleh memindahkan setlist ke band lain lewat update' });
+          return;
+        }
+
         const permissionCheck = await ensureSetlistPermission(
           client,
           userId,
-          effectiveBandId,
+          existingSetlistRow.bandId,
           PERMISSIONS.SETLIST_EDIT,
           existingSetlistRow.userId
         );
@@ -251,22 +260,20 @@ export default async function handler(req, res) {
 
         // Update setlist main fields
         await client.execute(
-          `UPDATE setlists SET 
-             name = COALESCE(?, name),
-             description = COALESCE(?, description),
-             bandId = COALESCE(?, bandId),
-             completedSongs = COALESCE(?, completedSongs),
-             updatedAt = ?
-           WHERE id = ?`,
-          [
-            body.name ?? null,
-            body.description ?? null,
-            body.bandId !== undefined ? body.bandId : null,
-            body.completedSongs ? JSON.stringify(body.completedSongs) : null,
-            now,
-            idStr,
-          ]
-        );
+             `UPDATE setlists SET
+               name = COALESCE(?, name),
+               description = COALESCE(?, description),
+               completedSongs = COALESCE(?, completedSongs),
+               updatedAt = ?
+             WHERE id = ?`,
+            [
+              body.name ?? null,
+              body.description ?? null,
+              body.completedSongs ? JSON.stringify(body.completedSongs) : null,
+              now,
+              idStr,
+            ]
+          );
         // Update setlist_songs: remove all then insert new
         if (Array.isArray(body.songs)) {
           await client.execute(`DELETE FROM setlist_songs WHERE setlist_id = ?`, [idStr]);

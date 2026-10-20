@@ -6,7 +6,9 @@ import {
   hasAnyPermission,
   isRoleHigherThan,
   getPermissionsForRole,
-  resolveUserBandRole
+  resolveUserBandRole,
+  canEditSetlist,
+  canDeleteSetlist
 } from '../utils/permissionUtils.js';
 
 describe('permissionUtils', () => {
@@ -47,5 +49,24 @@ describe('permissionUtils', () => {
     expect(role).toBe('admin');
     expect(hasPermission(role, PERMISSIONS.SETLIST_EDIT)).toBe(true);
     expect(hasPermission(role, PERMISSIONS.SETLIST_CREATE)).toBe(true);
+  });
+
+  it('should only let the owner edit/delete a personal setlist', () => {
+    const owner = { userId: 'user-1' };
+    const personalSetlist = { id: 's1', bandId: null, userId: 'user-1' };
+
+    expect(canEditSetlist(personalSetlist, null, owner)).toBe(true);
+    expect(canEditSetlist(personalSetlist, null, { userId: 'user-2' })).toBe(false);
+    expect(canDeleteSetlist(personalSetlist, null, owner)).toBe(true);
+    expect(canDeleteSetlist(personalSetlist, null, { userId: 'user-2' })).toBe(false);
+  });
+
+  it('should not treat a personal setlist without userId as owned by the current user', () => {
+    const legacySetlist = { id: 's2', bandId: null };
+
+    expect(canEditSetlist(legacySetlist, null, { userId: 'user-1' })).toBe(false);
+    expect(canDeleteSetlist(legacySetlist, null, { userId: 'user-1' })).toBe(false);
+    expect(canEditSetlist(legacySetlist, null, {})).toBe(false);
+    expect(canEditSetlist(legacySetlist, null, { userId: undefined })).toBe(false);
   });
 });
