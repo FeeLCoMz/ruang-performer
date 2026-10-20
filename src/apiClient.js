@@ -203,6 +203,22 @@ export async function addSong(song) {
   return request('/songs', { method: 'POST', body: song, fallbackError: 'Gagal menambahkan lagu' });
 }
 
+/**
+ * Tambah banyak lagu sekaligus (modul Bulk Add Lirik & Chord).
+ * Endpoint /api/songs sudah menerima array payload, jadi bulk cukup satu
+ * permintaan — tidak ada setengah proses yang tersimpan diam-diam.
+ *
+ * @param {Array<Object>} songs Daftar payload lagu.
+ * @returns {Promise<{ ids: string[] }>}
+ */
+export async function addSongsBulk(songs) {
+  return request('/songs/bulk', {
+    method: 'POST',
+    body: { songs: Array.isArray(songs) ? songs : [] },
+    fallbackError: 'Gagal menambahkan lagu secara massal',
+  });
+}
+
 export async function updateSong(id, song) {
   return request(`/songs/${id}`, { method: 'PUT', body: song, fallbackError: 'Gagal memperbarui lagu' });
 }

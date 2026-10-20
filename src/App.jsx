@@ -31,6 +31,7 @@ const GigPage = lazy(() => import("./pages/GigPage.jsx"));
 const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx"));
 const UserManagementPage = lazy(() => import("./pages/UserManagementPage.jsx"));
 const ChordTranscriberPage = lazy(() => import("./modules/chord-transcriber/ChordTranscriberPage.jsx"));
+const BulkLyricsPage = lazy(() => import("./modules/bulk-lyrics/BulkLyricsPage.jsx"));
 
 // Loading fallback component
 import { SongListSkeleton } from './components/LoadingSkeleton.jsx';
@@ -287,6 +288,7 @@ function AppContent() {
                           navigate(`/songs/edit/${id}`, { state: { from } });
                         else if (action === "newVersion" && id)
                           navigate(`/songs/new-version/${id}`, { state: { from } });
+                        else if (action === "bulk") navigate("/bulk-lyrics", { state: { from } });
                         else if (action === "delete" && id) {
                           if (confirm("Yakin ingin menghapus lagu ini?")) {
                             apiClient
@@ -451,6 +453,7 @@ function AppContent() {
               <Route path="/tools" element={<ToolsPage />} />
               <Route path="/modules" element={<ModulesPage />} />
               <Route path="/chord-transcriber" element={<ChordTranscriberPage />} />
+              <Route path="/bulk-lyrics" element={<BulkLyricsPage />} />
               <Route path="/user-management" element={<UserManagementPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

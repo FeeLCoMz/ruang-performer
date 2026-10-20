@@ -13,10 +13,12 @@ import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
 import useMetronome from '../hooks/useMetronome.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
 import { STORAGE_KEYS } from '../utils/storageKeys.js';
+import { useBulkLyricsEnabled } from '../modules/bulk-lyrics/useBulkLyricsEnabled.js';
 
 export default function SongListPage({ songs, loading, error, onSongClick }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [bulkEnabled] = useBulkLyricsEnabled();
   const [masteryError, setMasteryError] = useState(null);
   const [masteryUpdatingId, setMasteryUpdatingId] = useState(null);
   // Override mastery lokal per lagu setelah chip diubah (prop songs bersifat
@@ -494,6 +496,16 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           <p>{filteredSongs.length} lagu</p>
         </div>
         <div className="page-header-actions">
+          {bulkEnabled && (
+            <button
+              className="btn btn-secondary song-bulk-btn"
+              onClick={() => onSongClick('bulk')}
+              title="Tambah banyak lagu sekaligus (lirik & chord)"
+            >
+              <span aria-hidden="true">📚</span>
+              <span className="song-bulk-btn-label">Bulk</span>
+            </button>
+          )}
           <button
             className="btn song-add-btn"
             onClick={() => onSongClick('add')}

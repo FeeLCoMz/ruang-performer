@@ -19,6 +19,7 @@ import './styles/lyrics-capsules.css';
 import './styles/lyrics-editor.css';
 import './modules/midi/virtual-piano.css';
 import './modules/chord-transcriber/chord-transcriber.css';
+import './modules/bulk-lyrics/bulk-lyrics.css';
 import './styles/mobile-polish.css';
 import './styles/song-add-edit.css';
 import './styles/media-panel-smp.css';

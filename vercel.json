@@ -41,6 +41,10 @@
       "dest": "/api/events/index.js?type=gig"
     },
     {
+      "src": "/api/songs/bulk$",
+      "dest": "/api/songs/bulk.js"
+    },
+    {
       "src": "/api/songs/([^/]+)$",
       "dest": "/api/songs/[id].js?id=$1"
     },

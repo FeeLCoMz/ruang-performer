@@ -34,6 +34,12 @@ import {
   subscribeYouTubeTrendingEnabled,
   DEFAULT_YOUTUBE_TRENDING_ENABLED,
 } from './youtube-trending/youtubeTrendingSettings.js';
+import {
+  isBulkLyricsEnabled,
+  setBulkLyricsEnabled,
+  subscribeBulkLyricsEnabled,
+  DEFAULT_BULK_LYRICS_ENABLED,
+} from './bulk-lyrics/bulkLyricsSettings.js';
 
 export const MODULES_REGISTRY = [
   {
@@ -72,6 +78,19 @@ export const MODULES_REGISTRY = [
     isEnabled: isYouTubeTrendingEnabled,
     setEnabled: setYouTubeTrendingEnabled,
     subscribe: subscribeYouTubeTrendingEnabled,
+  },
+  {
+    id: 'bulk-lyrics',
+    name: 'Bulk Add Lirik & Chord',
+    description:
+      'Tempel banyak lagu sekaligus (atau impor file .txt/.md), validasi per lagu, lalu simpan semuanya dalam satu proses — lengkap dengan judul, artis, key, tempo, dan chord.',
+    icon: '📚',
+    path: '/bulk-lyrics',
+    defaultEnabled: DEFAULT_BULK_LYRICS_ENABLED,
+    storageKey: 'ruang-performer:module:bulk-lyrics-enabled',
+    isEnabled: isBulkLyricsEnabled,
+    setEnabled: setBulkLyricsEnabled,
+    subscribe: subscribeBulkLyricsEnabled,
   },
 ];
 
