@@ -490,7 +490,10 @@ async function handleSongSearch(req, res) {
       } else {
         // Tetap return hasil YouTube, chordLinks, dan field lain yang tidak bergantung Gemini.
         // Jangan return error status, biarkan frontend handle error dari debug.geminiError
-        songInfoCache[cacheKey] = results;
+        //
+        // JANGAN di-cache: entri yang gagal (mis. kuota Gemini habis) akan
+        // diputar ulang ke semua permintaan berikutnya, sehingga youtubeId /
+        // metadata tidak pernah terisi lagi sampai server di-restart.
         return res.status(200).json(results);
       }
     }
@@ -498,8 +501,12 @@ async function handleSongSearch(req, res) {
     // Always return artist (from input or AI)
     if (!results.artist) results.artist = artist || null;
 
-    // Save to cache before returning
-    songInfoCache[cacheKey] = results;
+    // Cache hanya hasil yang lengkap. youtubeId null bisa berarti kunci belum
+    // diset / kuota YouTube habis / timeout — semuanya bisa pulih sendiri tanpa
+    // restart server, jadi jangan di-cache.
+    if (results.youtubeId) {
+      songInfoCache[cacheKey] = results;
+    }
     return res.status(200).json(results);
   } catch (error) {
     console.error('Error in song search:', error);
