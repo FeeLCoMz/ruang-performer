@@ -20,6 +20,8 @@ api/auth/forgot-password.js
 api/auth/reset-password.js
 api/auth/user-audit-logs.js
 api/test-helpers/
+api/tools/
+api/users/
 
 # === Database, test, and dev files ===
 db/
