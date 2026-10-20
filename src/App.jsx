@@ -17,7 +17,9 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import * as apiClient from "./apiClient.js";
 import { STORAGE_KEYS } from "./utils/storageKeys.js";
 import StageModeButton from "./modules/stage-mode/StageModeButton.jsx";
-import StageModePage from "./modules/stage-mode/StageModePage.jsx";
+// Stage Mode dimuat terpisah (chunk sendiri, termasuk CSS-nya) dan hanya
+// di-mount saat dipakai — pengguna HP/latihan tidak menanggung bundelnya.
+const StageModePage = lazy(() => import("./modules/stage-mode/StageModePage.jsx"));
 
 // Lazy load non-critical pages for code splitting
 const SongListPage = lazy(() => import("./pages/SongListPage.jsx"));
@@ -45,6 +47,33 @@ function PageLoader() {
         <div className="page-loader-icon">⏳</div>
         <p className="page-loader-text">Memuat...</p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Fallback saat Stage Mode diaktifkan: tampilan panggung gelap dengan spinner,
+ * supaya tidak ada kilatan UI terang di panggung selama chunk dimuat.
+ */
+function StageModeLoading() {
+  return (
+    <div
+      className="stage-mode-loading"
+      role="status"
+      aria-live="polite"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#000',
+        color: '#fff',
+        fontSize: '1.1rem',
+      }}
+    >
+      Memuat Stage Mode...
     </div>
   );
 }
@@ -254,15 +283,21 @@ function AppContent() {
           </header>
         </div>
 
-        {/* Halaman khusus Stage Mode: fullscreen di atas seluruh UI saat aktif. */}
-        <StageModePage
-          stageMode={stageMode}
-          onExit={() => setStageMode(false)}
-          songs={songs}
-          bands={userBandInfo}
-          setlists={setlists}
-          activeSetlist={activeSetlist}
-        />
+        {/* Halaman khusus Stage Mode: fullscreen di atas seluruh UI saat aktif.
+            Di-mount hanya setelah diaktifkan supaya chunk-nya tidak diunduh
+            bagi pengguna yang tidak memakai Stage Mode. */}
+        {stageMode && (
+          <Suspense fallback={<StageModeLoading />}>
+            <StageModePage
+              stageMode={stageMode}
+              onExit={() => setStageMode(false)}
+              songs={songs}
+              bands={userBandInfo}
+              setlists={setlists}
+              activeSetlist={activeSetlist}
+            />
+          </Suspense>
+        )}
 
         <main className="main-content">
           <Suspense fallback={<PageLoader />}>

@@ -6,7 +6,9 @@
  * AppContent dan dipersist di localStorage (STORAGE_KEYS.STAGE_MODE).
  */
 import React from 'react';
-import './stage-mode.css';
+// Hanya gaya tombol (eager); gaya halaman panggung ada di stage-mode-page.css
+// yang ikut chunk lazy StageModePage.
+import './stage-mode-button.css';
 import { useStageModeEnabled } from './useStageModeEnabled.js';
 
 export default function StageModeButton({ stageMode = false, onToggle }) {

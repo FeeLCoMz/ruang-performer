@@ -1,69 +1,3 @@
-﻿/* Tombol Stage Mode di app header: toggle tema kontras tinggi untuk panggung. */
-.stage-mode-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  margin-left: auto;
-  flex-shrink: 0;
-  font-size: var(--font-size-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  /* Clamp: label menyusut mulus di layar sempit tanpa overflow. */
-  white-space: nowrap;
-  max-width: 100%;
-}
-
-.stage-mode-btn-icon {
-  font-size: var(--font-size-base);
-  line-height: 1;
-}
-
-/* Label bisa disembunyikan per breakpoint — ikon tetap fungsional. */
-.stage-mode-btn-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Layar sangat sempit (<= 360px, mis. iPhone SE): header hanya muat
-   branding + ikon, label disembunyikan agar tidak memaksa wrap. */
-@media (max-width: 360px) {
-  .app-header-mobile .stage-mode-btn .stage-mode-btn-label {
-    display: none;
-  }
-  .app-header-mobile .stage-mode-btn {
-    padding: var(--spacing-xs);
-  }
-}
-
-/* Sidebar desktop: tombol mengisi lebar menu, teks rata kiri selaras item. */
-.sidebar-stage-mode .stage-mode-btn {
-  width: 100%;
-  justify-content: flex-start;
-  padding: var(--spacing-sm) var(--spacing-lg);
-  margin-left: 0;
-}
-
-/* Sidebar saat Stage Mode aktif: tetap terbaca di tema kontras tinggi. */
-body.stage-mode .sidebar-stage-mode .stage-mode-btn.btn-primary {
-  background: rgba(167, 139, 250, 0.18);
-  border-color: var(--primary-accent);
-  color: #ffffff;
-}
-
-/* Sidebar area sempit (tablet, <= 1024px): label diperpendek visualnya
-   dengan ukuran font sedikit lebih kecil supaya satu baris. */
-@media (max-width: 1024px) {
-  .sidebar-stage-mode .stage-mode-btn {
-    font-size: var(--font-size-xs);
-  }
-}
-
-/* Touch target minimal 44px di perangkat sentuh (aksesibilitas). */
-@media (hover: none) {
-  .stage-mode-btn {
-    min-height: 44px;
-  }
-}
-
 /* Stage Mode: tema kontras tinggi untuk pencahayaan panggung yang redup. */
 body.stage-mode {
   --primary-bg: #000000;
@@ -307,7 +241,7 @@ body.stage-mode .btn-secondary {
   white-space: nowrap;
 }
 
-/* Konteks band/setlist di header — tombol dua baris yang bisa diklik. */
+/* Konteks band/setlist di header � tombol dua baris yang bisa diklik. */
 .stage-mode-context {
   flex: 0 1 auto;
   min-width: 0;
@@ -346,7 +280,7 @@ body.stage-mode .btn-secondary {
   white-space: nowrap;
 }
 
-/* Panel info lagu (toggle dari tombol ℹ️) */
+/* Panel info lagu (toggle dari tombol ??) */
 .stage-mode-info {
   flex: 0 0 auto;
   padding: 10px 16px;
@@ -622,11 +556,11 @@ body.stage-mode .btn-secondary {
 
 /* ========== RESPONSIVE ========== */
 /* Prinsip: di layar kecil (HP, dipakai manggung tanpa meja), teks lirik dan
-   area sentuh jadi prioritas — header/footer dipadatkan, sheet hampir
+   area sentuh jadi prioritas � header/footer dipadatkan, sheet hampir
    setinggi layar. Di landscape HP (tinggi < 480px) biarkan lebih banyak
    ruang untuk lirik dengan memperkecil chrome di atas/bawah. */
 
-/* ===== Tablet ke bawah / HP (≤ 768px) ===== */
+/* ===== Tablet ke bawah / HP (= 768px) ===== */
 @media (max-width: 768px) {
   /* Header: judul lebih kecil, pill key/tempo boleh menyusut. */
   .stage-mode-header {
@@ -669,7 +603,7 @@ body.stage-mode .btn-secondary {
     padding-bottom: 32px;
   }
 
-  /* Footer: baris tombol bisa turun ke dua baris — beri jarak sentuh. */
+  /* Footer: baris tombol bisa turun ke dua baris � beri jarak sentuh. */
   .stage-mode-footer {
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
     gap: 6px;
@@ -738,14 +672,14 @@ body.stage-mode .btn-secondary {
   }
 }
 
-/* ===== HP sangat kecil (≤ 400px) ===== */
+/* ===== HP sangat kecil (= 400px) ===== */
 @media (max-width: 400px) {
   .stage-mode-header-info {
     font-size: 0.85rem;
   }
 
   .stage-mode-pill {
-    display: none; /* key & tempo tetap ada di panel info (tombol ℹ️). */
+    display: none; /* key & tempo tetap ada di panel info (tombol ??). */
   }
 
   /* Footer: tombol ikon jadi kotak simetris, nav tetap dominan. */
@@ -765,7 +699,7 @@ body.stage-mode .btn-secondary {
   }
 }
 
-/* ===== Landscape HP / layar pendek (max-height ≤ 480px) ===== */
+/* ===== Landscape HP / layar pendek (max-height = 480px) ===== */
 @media (max-height: 480px) {
   .stage-mode-header {
     padding: 4px 8px;
@@ -807,7 +741,7 @@ body.stage-mode .btn-secondary {
   }
 }
 
-/* ===== Tablet / layar lebar (≥ 1200px): lirik maksimal keterbacaan. */
+/* ===== Tablet / layar lebar (= 1200px): lirik maksimal keterbacaan. */
 @media (min-width: 1200px) {
   .stage-mode-body .cd {
     font-size: calc(clamp(0.9rem, 1.4vw, 1.15rem) * var(--lyrics-font-scale, 1));
@@ -825,7 +759,7 @@ body.stage-mode .btn-secondary {
   }
 }
 
-/* ===== Layar sentuh: hilangkan hover-rely, garansi area sentuh ≥ 40px ===== */
+/* ===== Layar sentuh: hilangkan hover-rely, garansi area sentuh = 40px ===== */
 @media (hover: none) and (pointer: coarse) {
   .stage-mode-pick-item,
   .stage-mode-sheet-item {
@@ -835,7 +769,7 @@ body.stage-mode .btn-secondary {
   .stage-mode-pick-item:hover,
   .stage-mode-sheet-item:hover,
   .stage-mode-sheet-link:hover .stage-mode-sheet-name {
-    /* Di sentuh, hover bisa "nyangkut" setelah tap — tampilkan efek netral. */
+    /* Di sentuh, hover bisa "nyangkut" setelah tap � tampilkan efek netral. */
     border-color: #3a3a5a;
     color: inherit;
   }

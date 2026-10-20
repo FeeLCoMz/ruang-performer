@@ -10,7 +10,7 @@ import { useStageModeEnabled } from './useStageModeEnabled.js';
 import * as apiClient from '../../apiClient.js';
 import { STORAGE_KEYS } from '../../utils/storageKeys.js';
 import { getTransposeSteps, extractDetectedInstrumentsFromLyrics } from '../../utils/chordUtils.js';
-import './stage-mode.css';
+import './stage-mode-page.css';
 import {
   AUTO_SCROLL_MODES,
   computeManualScrollSpeed,
