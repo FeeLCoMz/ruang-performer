@@ -62,11 +62,23 @@ function readJson(req) {
 
 function resolveUrl(req) {
   const forwarded = req.headers?.[ORIGINAL_URL_HEADER];
-  const raw = typeof forwarded === 'string' && forwarded
+  const raw = (typeof forwarded === 'string' && forwarded)
     ? forwarded
-    : req.originalUrl || req.url || '/';
-  const [pathname, search = ''] = String(raw).split('?');
-  return { pathname: pathname.replace(/\/+$/, '') || '/', search };
+    : (req.originalUrl || req.url || '/');
+  const [rawPath, search = ''] = String(raw).split('?');
+  let pathname = (rawPath || '/').replace(/\/+$/, '') || '/';
+
+  // Vercel bisa memberi path internal function (/api/[...path].js); path rute
+  // asli tetap ada di header x-original-url. Kalau header tidak dipakai,
+  // coba pulihkan dari req.query.path yang diisi Vercel? Tidak — gunakan
+  // /api sebagai fallback agar auth tetap dianggap rute API.
+  if (pathname.includes('[...')) pathname = '/api';
+  return { pathname, search };
+}
+
+/** Segmen rute dari path (tanpa prefix /api) atau dari format rewrite lama. */
+function routeSegments(pathname) {
+  return pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
 }
 
 function mergeQuery(req, search) {
@@ -80,8 +92,10 @@ function mergeQuery(req, search) {
 }
 
 async function dispatch(req, res) {
-  const { pathname, search } = resolveUrl(req);
-  const segments = pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
+  const { search } = resolveUrl(req);
+  const segments = Array.isArray(req.__segments) && req.__segments.length > 0
+    ? req.__segments
+    : routeSegments(resolveUrl(req).pathname);
   mergeQuery(req, search);
 
   const [resource, second, third] = segments;
@@ -165,15 +179,56 @@ async function dispatch(req, res) {
   res.status(404).json({ error: 'Endpoint tidak ditemukan' });
 }
 
+/**
+ * Endpoint publik: login/register/forgot/reset-password tidak boleh dijaga
+ * verifyToken — user belum punya token saat mengaksesnya. Dulu catch-all
+ * memverifikasi token untuk SEMUA /api/*, sehingga login di Vercel selalu
+ * ditolak 401 "No authorization token provided".
+ *
+ * Kunci rute dibentuk TANPA garis miring pembuka ("POST auth/login"), sama
+ * dengan hasil segments.join('/'); versi awal memakai "/auth/login" sehingga
+ * tidak pernah cocok dan login tetap diblokir.
+ */
+const PUBLIC_ROUTES = new Set([
+  'POST auth/login',
+  'POST auth/register',
+  'POST auth/forgot-password',
+  'POST auth/reset-password',
+]);
+
+function isPublicRoute(method, segments) {
+  return PUBLIC_ROUTES.has(`${method} ${segments.slice(0, 2).join('/')}`);
+}
+
 export default async function handler(req, res) {
   try {
     res.setHeader('Cache-Control', 'no-store');
 
-    // Sama seperti api/index.js: di mode test token dianggap valid.
-    if (process.env.NODE_ENV !== 'test' && !verifyToken(req, res)) return;
+    // Path asli diambil dari header rewrite Vercel. Bila header tidak ada
+    // (mis. function dipanggil langsung), pakai req.url apa adanya.
+    const { pathname } = resolveUrl(req);
+    let segments = routeSegments(pathname);
 
-    // Express sudah mem-parse body; di Vercel body mentah perlu dibaca sekali.
-    if (!req.body && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    // Fallback: sebagian deployment memberi path internal function
+    // ("/api/[...path].js") tanpa header. Path rute asli masih bisa dibaca dari
+    // req.query.catchAll yang diisi Vercel untuk catch-all function.
+    if (segments[0] === '[...path].js' || segments.length === 0) {
+      const catchAll = req.query?.catchAll ?? req.query?.path;
+      const fromQuery = Array.isArray(catchAll) ? catchAll.join('/') : catchAll;
+      if (typeof fromQuery === 'string' && fromQuery && fromQuery !== '[...path].js') {
+        segments = fromQuery.split('/').filter(Boolean);
+      }
+    }
+
+    // Login/register/forgot/reset-password harus bisa diakses TANPA token:
+    // itulah saat user belum punya token.
+    const publicRoute = isPublicRoute(req.method, segments);
+    if (process.env.NODE_ENV !== 'test' && !publicRoute) {
+      if (!verifyToken(req, res)) return;
+    }
+
+    // Express sudah mem-parse body; di Vercel body masih mentah.
+    if (!req.body && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
       try {
         req.body = await readJson(req);
       } catch {
@@ -186,6 +241,9 @@ export default async function handler(req, res) {
     const forwardedFor = req.headers?.['x-forwarded-for'];
     if (forwardedFor && !req.ip) req.ip = String(forwardedFor).split(',')[0].trim();
 
+    // Serahkan segmen hasil normalisasi ke dispatch lewat req.__segments agar
+    // dispatch tidak perlu menebak ulang path.
+    req.__segments = segments;
     await dispatch(req, res);
   } catch (error) {
     console.error('API dispatch error:', error);

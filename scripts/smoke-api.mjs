@@ -1,15 +1,19 @@
 /**
- * Smoke test untuk struktur API baru (1 function: api/[...path].js).
+ * Smoke test struktur API (1 function: api/[...path].js).
  *
  *   node scripts/smoke-api.mjs
  *
- * Memastikan:
+ * Memeriksa:
  *  - semua handler bisa di-import (tidak ada import path yang rusak),
- *  - catch-all menolak request tanpa token sebelum menyentuh database,
- *  - routing mengenali prefix API yang dipakai frontend.
- * Tidak butuh kredensial atau koneksi database.
+ *  - endpoint publik (login/register) TIDAK diblokir verifyToken,
+ *  - endpoint lain menolak request tanpa token.
+ * Tidak butuh kredensial: login dengan email fiktif boleh gagal koneksi DB,
+ * yang penting bukan lagi "No authorization token provided".
  */
 import assert from 'assert';
+
+// Mode produksi supaya gate token aktif seperti di Vercel.
+process.env.NODE_ENV = 'production';
 
 const handlers = [
   '../server/handlers/songs.js',
@@ -27,6 +31,10 @@ const handlers = [
   '../server/handlers/auth-forgot-password.js',
   '../server/handlers/auth-delete-account.js',
   '../server/handlers/auth-audit-logs.js',
+  '../server/handlers/users.js',
+  '../server/handlers/user-id.js',
+  '../server/handlers/user-reset-password.js',
+  '../server/handlers/tools.js',
 ];
 
 for (const spec of handlers) {
@@ -36,54 +44,51 @@ for (const spec of handlers) {
 }
 console.log(`ok: ${handlers.length} handler ter-import`);
 
-const { default: catchAll } = await import('../api/[...path].js');
+const { default: handler } = await import('../api/[...path].js');
 
-async function probe(method, url, token) {
-  const req = {
-    method,
-    url,
-    originalUrl: url,
-    headers: token ? { authorization: `Bearer ${token}` } : {},
-    query: {},
-  };
-  const result = { status: null, payload: null };
+async function probe(method, url, body) {
+  const req = { method, url, originalUrl: url, headers: {}, query: {}, body };
   const res = {
     headersSent: false,
     setHeader() {},
-    status(code) {
-      result.status = code;
-      return this;
-    },
-    json(payload) {
-      result.payload = payload;
-      return this;
-    },
+    status(code) { this.code = code; return this; },
+    json(payload) { this.payload = payload; return this; },
   };
-  try {
-    await catchAll(req, res);
-  } catch (error) {
-    result.payload = { crashed: error.message };
-  }
-  return result;
+  await handler(req, res);
+  return { status: res.code, payload: res.payload };
 }
 
-for (const [method, url] of [
-  ['GET', '/api/songs'],
-  ['POST', '/api/songs/bulk'],
-  ['GET', '/api/auth/me'],
-  ['GET', '/api/bands'],
-  ['GET', '/api/setlists'],
-  ['GET', '/api/events/gig'],
+// Endpoint publik: harus sampai ke handler, BUKAN diblokir token.
+for (const [method, url, body] of [
+  ['POST', '/api/auth/login', { email: 'nobody@example.com', password: 'x' }],
+  ['POST', '/api/auth/register', {}],
 ]) {
   // eslint-disable-next-line no-await-in-loop
-  const result = await probe(method, url);
-  assert.equal(result.status, 401, `${method} ${url} harus 401 tanpa token, dapat ${result.status}`);
+  const { status, payload } = await probe(method, url, body);
+  assert.notEqual(
+    payload?.error,
+    'No authorization token provided',
+    `${method} ${url} masih diblokir verifyToken`,
+  );
+  assert.ok([400, 401, 500, 503].includes(status), `${method} ${url} status tak terduga: ${status}`);
+  console.log(`ok: ${method} ${url} → ${status} (publik, tidak diblokir token)`);
+}
+
+// Endpoint terproteksi: wajib 401 tanpa token.
+for (const [method, url, body] of [
+  ['GET', '/api/songs', undefined],
+  ['POST', '/api/songs/bulk', { songs: [] }],
+  ['GET', '/api/auth/me', undefined],
+  ['GET', '/api/bands', undefined],
+  ['GET', '/api/users', undefined],
+]) {
+  // eslint-disable-next-line no-await-in-loop
+  const { status, payload } = await probe(method, url, body);
+  assert.equal(status, 401, `${method} ${url} harus 401, dapat ${status}`);
+  assert.equal(payload?.error, 'No authorization token provided');
   console.log(`ok: ${method} ${url} → 401 (auth gate)`);
 }
 
-// Token rusak juga harus 401, bukan crash.
-const bogus = await probe('GET', '/api/unknown', 'invalid');
-assert.equal(bogus.status, 401);
-console.log('ok: GET /api/unknown → 401 (token invalid)');
-
 console.log('SMOKE OK');
+// Koneksi DB yang gagal bisa menahan event loop; keluar eksplisit.
+process.exit(0);

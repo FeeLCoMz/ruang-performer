@@ -88,7 +88,17 @@ export function createRateLimiter(options = {}) {
  * @returns {string} Rate limit key
  */
 function defaultKeyGenerator(req) {
-  const ip = req.ip || req.connection.remoteAddress || '127.0.0.1';
+  // Vercel tidak menyediakan req.connection/socket, jadi IP diambil berurutan
+  // dari header proxy → req.ip → header x-real-ip → fallback. Versi lama
+  // mengakses req.connection.remoteAddress tanpa guard dan membuat handler
+  // login crash 500 di Vercel.
+  const forwarded = req.headers?.['x-forwarded-for'];
+  const ip = req.ip
+    || (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : '')
+    || req.headers?.['x-real-ip']
+    || req.socket?.remoteAddress
+    || req.connection?.remoteAddress
+    || 'unknown';
   return `rate-limit:${ip}`;
 }
 
