@@ -82,6 +82,12 @@ import {
   subscribeMetronomeEnabled,
   DEFAULT_METRONOME_ENABLED,
 } from './metronome/metronomeSettings.js';
+import {
+  isExportShareEnabled,
+  setExportShareEnabled,
+  subscribeExportShareEnabled,
+  DEFAULT_EXPORT_SHARE_ENABLED,
+} from './export-share/exportShareSettings.js';
 
 export const MODULES_REGISTRY = [
   {
@@ -219,6 +225,18 @@ export const MODULES_REGISTRY = [
     isEnabled: isMetronomeEnabled,
     setEnabled: setMetronomeEnabled,
     subscribe: subscribeMetronomeEnabled,
+  },
+  {
+    id: 'export-share',
+    name: 'Export & Share',
+    description:
+      'Bagikan jadwal gigs dan setlist: salin teks, unduh kalender .ics, serta ekspor poster ke JPG/PDF.',
+    icon: '📤',
+    defaultEnabled: DEFAULT_EXPORT_SHARE_ENABLED,
+    storageKey: 'ruang-performer:module:export-share-enabled',
+    isEnabled: isExportShareEnabled,
+    setEnabled: setExportShareEnabled,
+    subscribe: subscribeExportShareEnabled,
   },
 ];
 

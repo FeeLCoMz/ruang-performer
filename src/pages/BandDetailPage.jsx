@@ -8,7 +8,7 @@ import {
   createGigCalendar,
   downloadTextFile,
   downloadCalendarFile
-} from '../utils/scheduleShareUtils.js';
+} from '../modules/export-share/scheduleShareUtils.js';
 
 export default function BandDetailPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);

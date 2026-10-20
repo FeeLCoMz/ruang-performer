@@ -1,4 +1,4 @@
-import { createGigScheduleText, createGigCalendar } from '../utils/scheduleShareUtils.js';
+import { createGigScheduleText, createGigCalendar } from '../modules/export-share/scheduleShareUtils.js';
 
 describe('scheduleShareUtils', () => {
   const gigs = [

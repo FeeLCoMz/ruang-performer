@@ -7,14 +7,16 @@ import {
   createGigCalendar,
   downloadTextFile,
   downloadCalendarFile
-} from '../utils/scheduleShareUtils.js';
+} from '../modules/export-share/scheduleShareUtils.js';
+import { useExportShareEnabled } from '../modules/export-share/useExportShareEnabled.js';
 import '../styles/setlist-poster.css';
-import { downloadCalendarAsJPG, downloadCalendarAsPDF } from '../utils/calendarDownloadUtil.js';
+import { downloadCalendarAsJPG, downloadCalendarAsPDF } from '../modules/export-share/calendarDownloadUtil.js';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 import CalendarView from '../components/CalendarView.jsx';
 
 export default function GigPage() {
   const { user } = useAuth();
+  const [exportShareEnabled] = useExportShareEnabled();
   const [gigs, setGigs] = useState([]);
   const [bands, setBands] = useState([]);
   const [setlists, setSetlists] = useState([]);
@@ -293,7 +295,7 @@ export default function GigPage() {
               <button className="btn" onClick={handleCreateGig}>
                 <span aria-hidden="true">＋</span> Buat Gigs
               </button>
-              {gigs.length > 0 && (
+              {gigs.length > 0 && exportShareEnabled && (
                 <button className="btn btn-secondary gig-share-trigger-btn" onClick={() => setShowShareModal(true)}>
                   📤 Bagikan Jadwal
                 </button>
@@ -449,7 +451,7 @@ export default function GigPage() {
         </div>
       )}
 
-      {showShareModal && (
+      {showShareModal && exportShareEnabled && (
         <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
           <div className="modal add-song-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Bagikan Jadwal Gigs</div>
