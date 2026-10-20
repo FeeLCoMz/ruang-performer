@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import * as apiClient from '../apiClient.js';
+import { useYouTubeTrendingEnabled } from '../modules/youtube-trending/useYouTubeTrendingEnabled.js';
 
 function formatViews(value) {
   const number = Number(value);
@@ -273,6 +275,7 @@ function ShareAllTrendingModal({ isOpen, trending, onClose }) {
 }
 
 export default function YouTubeTrendingPage() {
+  const [enabled] = useYouTubeTrendingEnabled();
   const [trending, setTrending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -281,6 +284,13 @@ export default function YouTubeTrendingPage() {
   const [selectedVideo, setSelectedVideo] = useState(null);
 
   useEffect(() => {
+    // Modul nonaktif: jangan panggil API (hemat kuota YouTube Data API).
+    if (!enabled) {
+      setTrending([]);
+      setLoading(false);
+      return undefined;
+    }
+
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -303,7 +313,7 @@ export default function YouTubeTrendingPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   const handleShareClick = (e, video) => {
     e.preventDefault();
@@ -324,6 +334,29 @@ export default function YouTubeTrendingPage() {
   const handleCloseShareAll = () => {
     setShowShareAllModal(false);
   };
+
+  if (!enabled) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <div>
+            <h1>📺 Trending YouTube</h1>
+            <p>Lagu musik paling populer di YouTube saat ini</p>
+          </div>
+        </div>
+
+        <div className="card youtube-trending-panel">
+          <div className="youtube-trending-status youtube-trending-status-error">
+            <span className="youtube-trending-status-icon" aria-hidden="true">🧩</span>
+            <p>Modul Trending YouTube sedang nonaktif.</p>
+            <Link to="/modules" className="btn btn-primary">
+              Buka pengaturan modul →
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">

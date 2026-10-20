@@ -28,6 +28,12 @@ import {
   subscribeTranscriberEnabled,
   DEFAULT_TRANSCRIBER_ENABLED,
 } from './chord-transcriber/transcriberSettings.js';
+import {
+  isYouTubeTrendingEnabled,
+  setYouTubeTrendingEnabled,
+  subscribeYouTubeTrendingEnabled,
+  DEFAULT_YOUTUBE_TRENDING_ENABLED,
+} from './youtube-trending/youtubeTrendingSettings.js';
 
 export const MODULES_REGISTRY = [
   {
@@ -53,6 +59,19 @@ export const MODULES_REGISTRY = [
     isEnabled: isTranscriberEnabled,
     setEnabled: setTranscriberEnabled,
     subscribe: subscribeTranscriberEnabled,
+  },
+  {
+    id: 'youtube-trending',
+    name: 'Trending YouTube',
+    description:
+      'Daftar lagu musik paling populer di YouTube (berdasarkan YouTube Data API), lengkap dengan info channel, jumlah tayangan, dan tombol bagikan ke media sosial.',
+    icon: '📺',
+    path: '/youtube-trending',
+    defaultEnabled: DEFAULT_YOUTUBE_TRENDING_ENABLED,
+    storageKey: 'ruang-performer:module:youtube-trending-enabled',
+    isEnabled: isYouTubeTrendingEnabled,
+    setEnabled: setYouTubeTrendingEnabled,
+    subscribe: subscribeYouTubeTrendingEnabled,
   },
 ];
 

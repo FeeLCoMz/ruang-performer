@@ -16,7 +16,6 @@ export const NAV_ITEMS = [
   { path: '/setlists', label: 'Setlist', icon: '📋', bottomNav: true },
   { path: '/gigs', label: 'Gigs', icon: '🎤', bottomNav: true },
   { path: '/bands/manage', label: 'Band', icon: '🎸' },
-  { path: '/youtube-trending', label: 'Trending', icon: '📺' },
   { path: '/modules', label: 'Modul', icon: '🧩' },
 ];
 
