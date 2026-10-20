@@ -6,6 +6,7 @@ import TapTempo from '../modules/metronome/TapTempo';
 import VirtualPiano from '../modules/midi/VirtualPiano';
 import AIAutofillModal from '../modules/ai-autofill/AIAutofillModal';
 import { useAIAutofillEnabled } from '../modules/ai-autofill/useAIAutofillEnabled';
+import { useAIUsage } from '../modules/ai-autofill/useAIUsage.js';
 import { autofillSongMetadata, buildDefaultAiConfirmFields } from '../modules/ai-autofill/aiAutofillApi.js';
 import SheetMusicModal from '../components/SheetMusicModal.jsx';
 import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
@@ -91,6 +92,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [error, setError] = useState('');
   // Modul AI Autofill default nonaktif (berbiaya API) — lihat aiAutofillSettings.
   const [aiAutofillEnabled] = useAIAutofillEnabled();
+  const { usage: aiUsage, refresh: refreshAiUsage } = useAIUsage(aiAutofillEnabled);
   const [aiLoading, setAiLoading] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [showSheetMusicModal, setShowSheetMusicModal] = useState(false);
@@ -320,6 +322,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     try {
       // Gate modul + pemanggilan API ada di modul ai-autofill.
       const data = await autofillSongMetadata({ title, artist });
+      // Perbarui sisa kuota setelah pemakaian berhasil.
+      refreshAiUsage();
       setAiResult(data);
       setAiConfirmFields(buildDefaultAiConfirmFields(data));
       setShowAiModal(true);
@@ -849,6 +853,14 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
               >
                 🤖 {aiLoading ? 'Mencari…' : 'AI Autofill'}
               </button>
+            )}
+            {aiAutofillEnabled && aiUsage && (
+              <span
+                className="song-ai-quota"
+                title={`${aiUsage.used}/${aiUsage.limit} pemakaian bulan ${aiUsage.period}`}
+              >
+                {aiUsage.remaining}/{aiUsage.limit} tersisa
+              </span>
             )}
           </div>
 

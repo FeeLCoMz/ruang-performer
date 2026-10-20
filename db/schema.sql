@@ -230,6 +230,17 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 
+-- Kuota AI Autofill per user per bulan (YYYY-MM).
+-- Ditulis oleh server/_aiUsage.js dan dibaca GET /api/ai/usage.
+CREATE TABLE IF NOT EXISTS ai_usage (
+  userId TEXT NOT NULL,
+  period TEXT NOT NULL,
+  used INTEGER NOT NULL DEFAULT 0,
+  updatedAt TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (userId, period)
+);
+
+
 -- Indexes for faster searches
 CREATE INDEX IF NOT EXISTS idx_songs_title ON songs(title);
 CREATE INDEX IF NOT EXISTS idx_setlists_name ON setlists(name);

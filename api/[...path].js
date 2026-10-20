@@ -44,6 +44,7 @@ import auditLogsHandler from '../server/handlers/audit-logs.js';
 // AI (AI Autofill + AI Chord & Sheet Music Transcriber). File-nya tetap di
 // api/ai.js, jadi modul ini ikut di-bundle ke function dan tidak di-ignore.
 import aiHandler from './ai.js';
+import aiUsageHandler from '../server/handlers/ai-usage.js';
 import { verifyToken } from '../server/_auth.js';
 
 const ORIGINAL_URL_HEADER = 'x-original-url';
@@ -185,7 +186,10 @@ async function dispatch(req, res) {
   // ---- AI -----------------------------------------------------------------
   // Dipakai frontend untuk AI Autofill (/api/ai/song-search) dan transkripsi
   // chord (/api/ai/chord-transcribe). Tanpa cabang ini keduanya 404.
-  if (resource === 'ai') return aiHandler(req, res);
+  if (resource === 'ai') {
+    if (second === 'usage') return aiUsageHandler(req, res);
+    return aiHandler(req, res);
+  }
 
   // ---- Audit logs (owner only; handler memeriksa role) --------------------
   if (resource === 'audit-logs') return auditLogsHandler(req, res);

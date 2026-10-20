@@ -403,6 +403,11 @@ export async function aiSongSearch({ title, artist }) {
   });
 }
 
+/** Kuota AI Autofill bulan ini untuk user yang login. */
+export async function getAIUsage() {
+  return request('/ai/usage', { fallbackError: 'Gagal mengambil kuota AI' });
+}
+
 // Bands API
 export async function fetchBands() {
   return request('/bands', { fallbackError: 'Gagal mengambil daftar band' });

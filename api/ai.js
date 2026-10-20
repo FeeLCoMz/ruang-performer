@@ -65,8 +65,27 @@ export function buildGeminiModelCandidates(requestedModel) {
 // Simple in-memory cache for song info (title+artist)
 const songInfoCache = {};
 
+/**
+ * Ambil userId dari header Authorization tanpa menolak request.
+ * Kuota AI bersifat tambahan: user tanpa token (atau token kedaluwarsa) tetap
+ * boleh memakai endpoint seperti sebelumnya, hanya tidak dihitung.
+ */
+function decodeUserFromRequest(req) {
+  const header = req.headers?.authorization || req.headers?.Authorization;
+  const token = typeof header === 'string' ? header.replace('Bearer ', '') : '';
+  if (!token) return {};
+  try {
+    const payload = jwt.decode(token);
+    if (!payload || typeof payload !== 'object') return {};
+    return { userId: payload.userId || payload.id || null };
+  } catch {
+    return {};
+  }
+}
+
 import 'dotenv/config';
 import busboy from 'busboy';
+import jwt from 'jsonwebtoken';
 import { buildTranscribePrompt, parseTranscriptionResponse } from '../src/modules/chord-transcriber/transcribePrompt.js';
 
 async function readJson(req) {
@@ -355,7 +374,32 @@ async function handleSongSearch(req, res) {
   // Cache key based on title and artist (case-insensitive)
   const cacheKey = `${title.toLowerCase()}|${(artist || '').toLowerCase()}`;
   if (songInfoCache[cacheKey]) {
-    return res.status(200).json(songInfoCache[cacheKey]);
+    return res.status(200).json({ ...songInfoCache[cacheKey], cached: true });
+  }
+
+  // Kuota AI Autofill per user per bulan. Hanya panggilan yang benar-benar
+  // memakai Gemini (cache miss + ada API key) yang dihitung.
+  let usageClient = null;
+  let usageUserId = null;
+  try {
+    const { userId } = decodeUserFromRequest(req);
+    usageUserId = userId;
+    if (userId && process.env.GEMINI_API_KEY) {
+      const { getTursoClient } = await import('../server/_turso.js');
+      const { checkQuota } = await import('../server/_aiUsage.js');
+      usageClient = getTursoClient();
+      const quota = await checkQuota(usageClient, userId);
+      if (!quota.allowed) {
+        return res.status(429).json({
+          error: 'Kuota AI Autofill habis',
+          message: `Batas ${quota.usage.limit} pemakaian/bulan tercapai. Sisa: ${quota.usage.remaining}.`,
+          usage: quota.usage,
+        });
+      }
+    }
+  } catch (quotaError) {
+    // Fail-open: masalah DB tidak boleh mematikan fitur.
+    console.warn('AI quota check skipped:', quotaError?.message || quotaError);
   }
 
   try {
@@ -383,6 +427,12 @@ async function handleSongSearch(req, res) {
     // Gemini song info
     if (process.env.GEMINI_API_KEY) {
       const gemini = await fetchSongInfoFromGemini(buildSongInfoPrompt(title, artist));
+      // Catat pemakaian setelah panggilan Gemini dilakukan (berhasil atau tidak —
+      // kuota vendor tetap terpakai untuk request yang gagal di sisi respons).
+      if (usageClient && usageUserId) {
+        const { incrementUsage } = await import('../server/_aiUsage.js');
+        await incrementUsage(usageClient, usageUserId);
+      }
       Object.assign(results, gemini.fields);
       results.debug = { ...results.debug, ...gemini.debug };
       if (gemini.success) {
