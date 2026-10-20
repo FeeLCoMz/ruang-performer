@@ -2,6 +2,7 @@ import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { randomUUID } from 'crypto';
 import songIdHandler from './[id].js';
+import bulkSongsHandler from './bulk.js';
 
 // Module-level flags: schema checks run only once per server instance
 let _schemaEnsured = false;
@@ -300,6 +301,14 @@ export default async function handler(req, res) {
       const client = getTursoClient();
       await ensureSchema(client);
       return handleSongMastery(req, res, client, pathSegments[0]);
+    }
+
+    // Bulk add (modul Bulk Add Lirik & Chord). Ditangani di sini — bukan hanya
+    // di api/songs/bulk.js — karena server Express (npm run dev) merutekan
+    // SEMUA /api/songs/* ke handler ini. Tanpa cabang ini, POST /api/songs/bulk
+    // jatuh ke validasi judul tunggal dan dibalas 400 "Judul lagu wajib diisi".
+    if (pathSegments.length === 1 && pathSegments[0] === 'bulk' && req.method === 'POST') {
+      return bulkSongsHandler(req, res);
     }
 
     if (rewrittenMasterySongId && rewrittenPathMarker === 'mastery') {

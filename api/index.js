@@ -18,6 +18,10 @@ import http from 'http';
 import { createRateLimiter, userKeyGenerator, RATE_LIMITS } from './middleware/rateLimiter.js';
 
 // --- API Handlers ---
+// Bulk songs dulu: Express memakai prefix matching, jadi /api/songs/bulk harus
+// didaftarkan SEBELUM app.use('/api/songs') agar tidak jatuh ke handler lagu
+// tunggal (yang dibalas 400 "Judul lagu wajib diisi" untuk array bulk).
+import bulkSongsHandler from './songs/bulk.js';
 import songsHandler from './songs/index.js';
 import setlistsHandler from './setlists/index.js';
 import bandsHandler from './bands/index.js';
@@ -124,6 +128,10 @@ app.post('/api/auth/forgot-password', (req, res, next) => {
 
 app.post('/api/auth/reset-password', (req, res, next) => {
   Promise.resolve(authResetHandler(req, res)).catch(next);
+});
+
+app.use('/api/songs/bulk', verifyToken, (req, res, next) => {
+  Promise.resolve(bulkSongsHandler(req, res)).catch(next);
 });
 
 app.use('/api/songs', verifyToken, (req, res, next) => {
