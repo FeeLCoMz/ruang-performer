@@ -285,26 +285,56 @@ function buildChordLinks(title, artist) {
  */
 async function searchYoutube(title, artist) {
   const debug = {};
-  if (!process.env.VITE_YOUTUBE_API_KEY) {
-    console.warn('Warning: VITE_YOUTUBE_API_KEY not configured');
+
+  // Nama env: proyek ini memakai prefix VITE_* (dipakai juga oleh trending),
+  // tetapi deployment sering hanya mengisi nama tanpa prefix. Terima keduanya.
+  const apiKey = process.env.VITE_YOUTUBE_API_KEY
+    || process.env.YOUTUBE_API_KEY
+    || process.env.rz_YOUTUBE_API_KEY
+    || process.env.RZ_YOUTUBE_API_KEY;
+
+  if (!apiKey) {
+    console.warn('Warning: VITE_YOUTUBE_API_KEY / YOUTUBE_API_KEY not configured');
     debug.youtubeKeyMissing = true;
     return { youtubeId: null, debug };
   }
 
   try {
-    const youtubeUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(`${title} ${artist}`)}&key=${process.env.VITE_YOUTUBE_API_KEY}`;
-    const youtubeResponse = await fetch(youtubeUrl, { timeout: 5000 });
+    // Artist bisa kosong: hindari query berspasi ganda / spasi di akhir.
+    const query = [title, artist].map((part) => String(part || '').trim()).filter(Boolean).join(' ');
+    const url = new URL('https://www.googleapis.com/youtube/v3/search');
+    url.searchParams.set('part', 'snippet');
+    url.searchParams.set('type', 'video');
+    url.searchParams.set('maxResults', '1');
+    url.searchParams.set('videoCategoryId', '10'); // Music
+    url.searchParams.set('q', query);
+    url.searchParams.set('key', apiKey);
+
+    // `timeout` bukan opsi fetch yang sah (diabaikan), jadi pakai AbortSignal:
+    // tanpa ini request bisa menggantung dan seluruh autofill ikut menunggu.
+    const youtubeResponse = await fetch(url.toString(), {
+      signal: AbortSignal.timeout(5000),
+    });
+
     if (!youtubeResponse.ok) {
+      // Sertakan alasan dari Google supaya terlihat di debug (mis. quotaExceeded).
+      const errorData = await youtubeResponse.json().catch(() => ({}));
       debug.youtubeStatus = youtubeResponse.status;
-      console.error(`YouTube API returned ${youtubeResponse.status}`);
+      debug.youtubeError = errorData?.error?.message || youtubeResponse.statusText;
+      console.error(`YouTube API returned ${youtubeResponse.status}:`, debug.youtubeError);
       return { youtubeId: null, debug };
     }
+
     const data = await youtubeResponse.json();
     const items = Array.isArray(data?.items) ? data.items : [];
+    debug.youtubeQuery = query;
+    debug.youtubeResults = items.length;
     return { youtubeId: items.length > 0 ? items[0]?.id?.videoId ?? null : null, debug };
   } catch (err) {
     console.error('YouTube search error:', err);
-    debug.youtubeError = err.message;
+    debug.youtubeError = err?.name === 'TimeoutError'
+      ? 'YouTube API timeout (5s)'
+      : err.message;
     return { youtubeId: null, debug };
   }
 }

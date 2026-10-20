@@ -7,7 +7,7 @@ import VirtualPiano from '../modules/midi/VirtualPiano';
 import AIAutofillModal from '../modules/ai-autofill/AIAutofillModal';
 import { useAIAutofillEnabled } from '../modules/ai-autofill/useAIAutofillEnabled';
 import { useAIUsage } from '../modules/ai-autofill/useAIUsage.js';
-import { autofillSongMetadata, buildDefaultAiConfirmFields } from '../modules/ai-autofill/aiAutofillApi.js';
+import { autofillSongMetadata, buildDefaultAiConfirmFields, describeYouTubeFailure } from '../modules/ai-autofill/aiAutofillApi.js';
 import SheetMusicModal from '../components/SheetMusicModal.jsx';
 import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
 import SongStudioTopbar from '../components/SongStudioTopbar.jsx';
@@ -324,6 +324,9 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       const data = await autofillSongMetadata({ title, artist });
       // Perbarui sisa kuota setelah pemakaian berhasil.
       refreshAiUsage();
+      // Metadata lain tetap dipakai; hanya YouTube yang dilaporkan bila kosong.
+      const youtubeIssue = describeYouTubeFailure(data);
+      if (youtubeIssue) setError(youtubeIssue);
       setAiResult(data);
       setAiConfirmFields(buildDefaultAiConfirmFields(data));
       setShowAiModal(true);
