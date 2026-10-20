@@ -721,64 +721,76 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   // Insert settings rendered inside the Virtual Piano modal, so configuring the
   // insert format happens where the notes are actually being entered.
   const pianoInsertControls = (
-    <>
-      <button
-        type="button"
-        className={`btn ${insertNotesToLyrics ? 'btn-primary' : 'btn-secondary'}`}
-        onClick={() => setInsertNotesToLyrics((prev) => !prev)}
-        aria-pressed={insertNotesToLyrics}
-        title="Tentukan apakah klik not disisipkan ke lirik atau hanya dibunyikan"
-      >
-        ✍ Insert {insertNotesToLyrics ? 'ON' : 'OFF'}
-      </button>
+    <div className="piano-insert-bar">
+      {/* Baris 1: saklar utama + opsi yang hanya relevan saat insert aktif. */}
+      <div className="piano-insert-row">
+        <button
+          type="button"
+          className={`piano-insert-switch ${insertNotesToLyrics ? 'is-on' : 'is-off'}`}
+          onClick={() => setInsertNotesToLyrics((prev) => !prev)}
+          aria-pressed={insertNotesToLyrics}
+          title="Tentukan apakah klik not disisipkan ke lirik atau hanya dibunyikan"
+        >
+          <span className="piano-insert-switch-icon" aria-hidden="true">✍️</span>
+          <span className="piano-insert-switch-label">
+            Insert {insertNotesToLyrics ? 'ON' : 'OFF'}
+          </span>
+          <span className="piano-insert-switch-state" aria-hidden="true">
+            {insertNotesToLyrics ? 'aktif' : 'mati'}
+          </span>
+        </button>
 
-      {insertNotesToLyrics && (
-        <>
-          <label className="song-lyrics-insert-format" htmlFor="lyrics-insert-format-select">
-            Format
-            <select
-              id="lyrics-insert-format-select"
-              className="song-lyrics-bar-wrap-select"
-              value={insertNoteFormat}
-              onChange={(e) => setInsertNoteFormat(e.target.value)}
-            >
-              <option value="bracket">[C]</option>
-              <option value="plain">C</option>
-              <option value="number">1-7</option>
-            </select>
-          </label>
-
-          {insertNoteFormat === 'number' && (
-            <label className="song-lyrics-insert-key" htmlFor="lyrics-insert-key-select">
-              Key
+        {insertNotesToLyrics && (
+          <div className="piano-insert-options">
+            <label className="piano-insert-field" htmlFor="lyrics-insert-format-select">
+              <span className="piano-insert-field-label">Format</span>
               <select
-                id="lyrics-insert-key-select"
-                className="song-lyrics-bar-wrap-select"
-                value={insertNumberKeySignature || getNumericNotationKey(songKey || 'C')}
-                onChange={(e) => setInsertNumberKeySignature(e.target.value)}
-                aria-label="Pilih key untuk angka chord"
+                id="lyrics-insert-format-select"
+                className="piano-insert-select"
+                value={insertNoteFormat}
+                onChange={(e) => setInsertNoteFormat(e.target.value)}
               >
-                {NUMBER_NOTATION_KEY_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
+                <option value="bracket">[C] (kurung)</option>
+                <option value="plain">C (huruf)</option>
+                <option value="number">1–7 (angka)</option>
               </select>
             </label>
-          )}
 
-          <button
-            type="button"
-            className={`btn ${insertTrailingSpace ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setInsertTrailingSpace((prev) => !prev)}
-            aria-pressed={insertTrailingSpace}
-            title="Tambahkan spasi otomatis setelah not yang disisipkan"
-          >
-            Spasi {insertTrailingSpace ? 'ON' : 'OFF'}
-          </button>
-        </>
-      )}
-    </>
+            {insertNoteFormat === 'number' && (
+              <label className="piano-insert-field" htmlFor="lyrics-insert-key-select">
+                <span className="piano-insert-field-label">Key</span>
+                <select
+                  id="lyrics-insert-key-select"
+                  className="piano-insert-select"
+                  value={insertNumberKeySignature || getNumericNotationKey(songKey || 'C')}
+                  onChange={(e) => setInsertNumberKeySignature(e.target.value)}
+                  aria-label="Pilih key untuk angka chord"
+                >
+                  {NUMBER_NOTATION_KEY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            <button
+              type="button"
+              className={`piano-insert-chip ${insertTrailingSpace ? 'is-on' : ''}`}
+              onClick={() => setInsertTrailingSpace((prev) => !prev)}
+              aria-pressed={insertTrailingSpace}
+              title="Tambahkan spasi otomatis setelah not yang disisipkan"
+            >
+              Spasi
+              <span className="piano-insert-chip-state" aria-hidden="true">
+                {insertTrailingSpace ? 'ON' : 'OFF'}
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 
   /**

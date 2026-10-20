@@ -348,16 +348,157 @@ body.dark-mode .lyric-format-preview-unchanged {
     justify-content: center;
   }}
 
+/* ---- Kontrol insert di dalam popup Virtual Piano -------
+   Satu baris: saklar utama di kiri, opsi turunan (format, key,
+   spasi) mengalir di kanannya dan pindah baris bila sempit. */
 .piano-popup-insert-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
+}
+
+.piano-insert-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
   padding: var(--spacing-sm);
   border: 1px solid color-mix(in srgb, var(--border-color) 75%, transparent);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--secondary-bg) 65%, var(--card-bg));
+}
+
+.piano-insert-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Saklar utama: pill yang jelas ON/OFF */
+.piano-insert-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 4px var(--spacing-sm);
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.piano-insert-switch:hover {
+  border-color: var(--primary-accent);
+}
+
+.piano-insert-switch.is-on {
+  background: var(--primary-accent);
+  border-color: var(--primary-accent);
+  color: #fff;
+}
+
+.piano-insert-switch-state {
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+.piano-insert-switch.is-on .piano-insert-switch-state {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Opsi turunan (hanya tampil saat insert aktif) */
+.piano-insert-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.piano-insert-field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.piano-insert-field-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Select global lebarnya 100% dan padding besar — kecilkan di dalam piano. */
+.piano-insert-field .piano-insert-select {
+  width: auto;
+  min-height: 32px;
+  padding: 4px var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  border-radius: var(--radius-sm);
+}
+
+/* Chip toggle ringkas: Spasi ON/OFF */
+.piano-insert-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-height: 32px;
+  padding: 4px var(--spacing-sm);
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.piano-insert-chip:hover {
+  border-color: var(--primary-accent);
+}
+
+.piano-insert-chip.is-on {
+  border-color: var(--primary-accent);
+  background: color-mix(in srgb, var(--primary-accent) 18%, transparent);
+  color: var(--text-primary);
+}
+
+.piano-insert-chip-state {
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+.piano-insert-chip.is-on .piano-insert-chip-state {
+  color: var(--primary-accent);
+  opacity: 1;
+}
+
+/* Layar sempit: opsi turunan turun ke baris sendiri dan tiap select
+   mengisi sisa ruang agar mudah disentuh. */
+@media (max-width: 480px) {
+  .piano-insert-options {
+    flex-basis: 100%;
+  }
+
+  .piano-insert-field {
+    flex: 1 1 140px;
+  }
+
+  .piano-insert-field .piano-insert-select {
+    width: 100%;
+    flex: 1 1 auto;
+  }
 }
 
 .song-lyrics-zoom-controls {

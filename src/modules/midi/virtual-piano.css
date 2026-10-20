@@ -1,26 +1,35 @@
 ﻿/* =============================================
    Virtual Piano Component
+   Berisi style popup Virtual Piano.
+
+   Semua ukuran & warna tuts diturunkan dari custom property
+   pada `.virtual-piano`, sehingga desktop/tablet/ponsel cukup
+   mengganti variabelnya — tanpa duplikasi blok aturan dan
+   tanpa koordinat manual untuk tiap tuts hitam.
    ============================================= */
-/* Piano Popup Window */
+
+/* ---------- 1. Popup window ---------- */
+
 .piano-popup {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   z-index: 9999;
-  max-width: 450px;
   width: 90%;
-  border: 2px solid var(--border-color);
+  max-width: 450px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 .piano-popup-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
   padding: var(--spacing-md) var(--spacing-lg);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-accent) 0%, var(--primary-accent-dark) 100%);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   cursor: move;
   user-select: none;
@@ -29,30 +38,40 @@
 
 .piano-popup-title {
   margin: 0;
-  color: white;
+  color: #fff;
   font-size: var(--font-size-base);
   font-weight: 600;
 }
 
 .piano-popup-close {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
   flex: 0 0 auto;
-  transition: all var(--transition-fast);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
 .piano-popup-close:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.piano-popup-close:active {
+  transform: scale(0.94);
+}
+
+.piano-popup-close:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 .piano-popup-body {
@@ -61,106 +80,142 @@
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-.piano-modal {
-  max-width: 600px;
-  width: 90%;
+/* ---------- 2. Teks bantuan & status ---------- */
+
+.piano-popup-hint,
+.piano-popup-midi-status,
+.piano-popup-midi-disabled {
+  margin: 0 0 var(--spacing-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
 }
 
-.piano-modal .modal-body {
-  overflow-x: auto;
-  padding: var(--spacing-xl);
+.piano-popup-hint {
+  font-size: var(--font-size-sm);
 }
+
+.piano-popup-midi-status {
+  font-size: var(--font-size-xs);
+}
+
+.piano-popup-midi-disabled {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+}
+
+
+/* ---------- 3. Papan piano ---------- */
 
 .virtual-piano {
-  margin-top: 0;
+  --piano-white-width: 50px;
+  --piano-white-height: 180px;
+  --piano-black-width: 32px;
+  --piano-black-height: 110px;
+  --piano-key-gap: 1px;
+  --piano-key-radius: 5px;
+  --piano-white-from: #ffffff;
+  --piano-white-to: #f4f4f4;
+  --piano-black-from: #3a3a3a;
+  --piano-black-to: #0a0a0a;
+
   padding: var(--spacing-lg);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-accent) 0%, var(--primary-accent-dark) 100%);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   overflow-x: auto;
-  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
 }
 
 .piano-keys {
-  display: flex;
   position: relative;
-  height: 180px;
-  width: 357px; /* 7 white keys x 51px (50px + 1px gap) */
+  display: flex;
+  /* 7 tuts putih + jarak antar tuts */
+  width: calc(7 * var(--piano-white-width) + 6 * var(--piano-key-gap));
+  height: var(--piano-white-height);
   margin: 0 auto;
 }
 
+/* ---------- 4. Tuts (shared) ---------- */
+
 .piano-key {
-  border: none;
-  cursor: pointer;
-  transition: all 0.1s ease;
-  font-size: 11px;
-  font-weight: 600;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 10px;
-  user-select: none;
   flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
-.piano-key:active,
-.piano-key.active {
-  transform: translateY(3px);
+.piano-key:focus-visible {
+  outline: 2px solid var(--chord-bright);
+  outline-offset: -2px;
 }
 
-/* White Keys */
+/* ---------- 5. Tuts putih ---------- */
+
 .white-key {
-  width: 50px;
-  height: 180px;
-  background: linear-gradient(to bottom, #ffffff 0%, #f8f8f8 100%);
-  border: 2px solid #333;
-  border-radius: 0 0 5px 5px;
+  position: relative;
+  z-index: 1;
+  width: var(--piano-white-width);
+  height: var(--piano-white-height);
+  margin-right: var(--piano-key-gap);
+  padding: 0 0 10px;
+  border: 1px solid #333;
+  border-radius: 0 0 var(--piano-key-radius) var(--piano-key-radius);
+  background: linear-gradient(to bottom, var(--piano-white-from) 0%, var(--piano-white-to) 100%);
   box-shadow:
     0 4px 6px rgba(0, 0, 0, 0.1),
     inset 0 -3px 5px rgba(0, 0, 0, 0.05);
-  z-index: 1;
-  position: relative;
-  margin-right: 1px;
 }
 
-.white-key:last-of-type {
+/* Tuts putih terakhir (B, anak ke-12) tidak perlu jarak kanan. */
+.piano-keys > .white-key:last-child {
   margin-right: 0;
 }
 
 .white-key:hover {
-  background: linear-gradient(to bottom, #f5f5f5 0%, #efefef 100%);
+  background: linear-gradient(to bottom, #f5f5f5 0%, #ececec 100%);
 }
 
 .white-key:active,
 .white-key.active {
-  background: linear-gradient(to bottom, #e8e8e8 0%, #ddd 100%);
+  background: linear-gradient(to bottom, #e8e8e8 0%, #dcdcdc 100%);
   box-shadow:
     0 2px 3px rgba(0, 0, 0, 0.2),
     inset 0 2px 5px rgba(0, 0, 0, 0.1);
+  transform: translateY(2px);
 }
 
 .white-key .piano-key-label {
   color: #333;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
 }
 
-/* Black Keys */
+/* ---------- 6. Tuts hitam ---------- */
+
 .black-key {
-  width: 32px;
-  height: 110px;
-  background: linear-gradient(to bottom, #333 0%, #000 100%);
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  width: var(--piano-black-width);
+  height: var(--piano-black-height);
+  padding: 0 0 6px;
   border: 1px solid #000;
-  border-radius: 0 0 3px 3px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(to bottom, var(--piano-black-from) 0%, var(--piano-black-to) 100%);
   box-shadow:
     0 5px 8px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  position: absolute;
-  z-index: 2;
-  top: 0;
 }
 
 .black-key:hover {
-  background: linear-gradient(to bottom, #444 0%, #111 100%);
+  background: linear-gradient(to bottom, #4d4d4d 0%, #141414 100%);
 }
 
 .black-key:active,
@@ -169,82 +224,64 @@
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.6),
     inset 0 2px 5px rgba(0, 0, 0, 0.5);
+  transform: translateY(2px);
 }
 
 .black-key .piano-key-label {
   color: #fff;
   font-size: 9px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-/* Specific black key positions (centered between white keys) */
-.piano-keys > button:nth-child(2) {
-  left: 35px;
-} /* C# between C and D */
-.piano-keys > button:nth-child(4) {
-  left: 86px;
-} /* D# between D and E */
-.piano-keys > button:nth-child(7) {
-  left: 188px;
-} /* F# between F and G */
-.piano-keys > button:nth-child(9) {
-  left: 239px;
-} /* G# between G and A */
-.piano-keys > button:nth-child(11) {
-  left: 290px;
-} /* A# between A and B */
+/* Posisi tuts hitam dihitung dari tepi tuts putih di kiri-kanannya,
+   jadi tetap presisi di semua ukuran tanpa koordinat manual. */
+.piano-keys > .piano-key:nth-child(2) {
+  left: calc(var(--piano-white-width) - var(--piano-black-width) / 2);
+}
 
-/* Responsive Piano */
+.piano-keys > .piano-key:nth-child(4) {
+  left: calc(2 * (var(--piano-white-width) + var(--piano-key-gap)) - var(--piano-black-width) / 2);
+}
+
+.piano-keys > .piano-key:nth-child(7) {
+  left: calc(4 * (var(--piano-white-width) + var(--piano-key-gap)) - var(--piano-black-width) / 2);
+}
+
+.piano-keys > .piano-key:nth-child(9) {
+  left: calc(5 * (var(--piano-white-width) + var(--piano-key-gap)) - var(--piano-black-width) / 2);
+}
+
+.piano-keys > .piano-key:nth-child(11) {
+  left: calc(6 * (var(--piano-white-width) + var(--piano-key-gap)) - var(--piano-black-width) / 2);
+}
+
+/* ---------- 7. Responsive: cukup ganti variabel ukuran ---------- */
+
 @media (max-width: 768px) {
   .virtual-piano {
+    --piano-white-width: 40px;
+    --piano-white-height: 140px;
+    --piano-black-width: 26px;
+    --piano-black-height: 85px;
+
     padding: var(--spacing-md);
   }
 
-  .piano-keys {
-    height: 140px;
-    width: 287px; /* 7 x 41px */
-  }
-
-  .white-key {
-    width: 40px;
-    height: 140px;
-  }
-
-  .black-key {
-    width: 26px;
-    height: 85px;
-  }
-
-  .piano-keys > button:nth-child(2) {
-    left: 28px;
-  }
-  .piano-keys > button:nth-child(4) {
-    left: 69px;
-  }
-  .piano-keys > button:nth-child(7) {
-    left: 151px;
-  }
-  .piano-keys > button:nth-child(9) {
-    left: 192px;
-  }
-  .piano-keys > button:nth-child(11) {
-    left: 233px;
-  }
-
-  .piano-key-label {
+  .piano-key {
     font-size: 9px;
   }
 
   .black-key .piano-key-label {
     font-size: 7px;
   }
-}@media (max-width: 480px){
+}
+
+@media (max-width: 480px) {
   .piano-popup {
-    bottom: 10px;
     right: 10px;
+    bottom: 10px;
     left: 10px;
-    max-width: none;
     width: auto;
+    max-width: none;
   }
 
   .piano-popup-header {
@@ -259,44 +296,44 @@
     padding: var(--spacing-sm);
   }
 
-  .piano-keys {
-    height: 110px;
-    width: 217px; /* 7 x 31px */
+  .virtual-piano {
+    --piano-white-width: 30px;
+    --piano-white-height: 110px;
+    --piano-black-width: 20px;
+    --piano-black-height: 65px;
+
+    padding: var(--spacing-sm);
+  }
+
+  .piano-key {
+    font-size: 7px;
   }
 
   .white-key {
-    width: 30px;
-    height: 110px;
+    padding-bottom: 6px;
   }
 
   .black-key {
-    width: 20px;
-    height: 65px;
-  }
-
-  .piano-keys > button:nth-child(2) {
-    left: 21px;
-  }
-  .piano-keys > button:nth-child(4) {
-    left: 52px;
-  }
-  .piano-keys > button:nth-child(7) {
-    left: 114px;
-  }
-  .piano-keys > button:nth-child(9) {
-    left: 145px;
-  }
-  .piano-keys > button:nth-child(11) {
-    left: 176px;
-  }
-
-  .piano-key-label {
-    font-size: 7px;
+    padding-bottom: 4px;
   }
 
   .black-key .piano-key-label {
     font-size: 6px;
-  }}
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .piano-key,
+  .piano-popup-close {
+    transition: none;
+  }
+}
+
+/* =============================================
+   Style kartu lagu di bawah ikut dimuat lewat file ini.
+   Tidak terkait Virtual Piano; dipertahankan agar urutan
+   cascade tetap sama — pindahkan ke song-card.css bila dirapikan.
+   ============================================= */
 
 /* Author (kontributor) di akhir baris meta kartu lagu */
 .song-author {
