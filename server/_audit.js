@@ -51,8 +51,8 @@ export function resolveActionCategory(action) {
 export function resolveActionSeverity(action) {
   if (CRITICAL_ACTIONS.has(action)) return 'critical';
   if (HIGH_ACTIONS.has(action)) return 'high';
-  // Login gagal adalah indikasi brute-force → setara aksi berisiko tinggi.
-  if (action === 'USER_LOGIN_FAILED') return 'high';
+  // Login gagal / diblokir adalah indikasi brute-force → setara aksi berisiko tinggi.
+  if (action === 'USER_LOGIN_FAILED' || action === 'USER_LOGIN_BLOCKED') return 'high';
   if (action.includes('UPDATED')) return 'medium';
   return 'low';
 }

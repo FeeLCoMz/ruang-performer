@@ -63,6 +63,10 @@ export function createRateLimiter(options = {}) {
       const oldestRequest = data.requests[0];
       const retryAfter = Math.ceil((windowMs - (now - oldestRequest)) / 1000);
 
+      // Tandai di req: pemanggil (mis. login) bisa mencatat percobaan yang
+      // diblokir ke audit log. Ini tetap respons 429 seperti biasa.
+      req.rateLimited = { key, retryAfter, maxRequests, windowMs };
+
       return res.status(429).json({
         error: 'Too many requests',
         retryAfter,

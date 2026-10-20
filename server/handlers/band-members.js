@@ -97,14 +97,18 @@ export default async function handler(req, res) {
     );
 
     const { ipAddress, userAgent } = getRequestMeta(req);
+    // Menghapus diri sendiri = keluar dari band (MEMBER_LEFT), bukan dikeluarkan.
+    const isSelfLeave = String(currentUserId) === String(userId);
     await writeAuditLog(client, {
-      action: 'MEMBER_REMOVED',
+      action: isSelfLeave ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
       userId: currentUserId,
       bandId,
       targetUserId: userId,
       resourceId: bandId,
       resourceType: 'band_member',
-      description: 'Anggota dihapus dari band',
+      description: isSelfLeave
+        ? 'Anggota keluar dari band'
+        : 'Anggota dihapus dari band oleh pengelola',
       ipAddress,
       userAgent,
     });

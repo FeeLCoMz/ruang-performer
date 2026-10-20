@@ -20,13 +20,47 @@ async function readJson(req) {
 }
 
 const rateLimiter = createRateLimiter({ ...RATE_LIMITS.AUTH_LOGIN });
+
+/**
+ * Catat login yang diblokir rate limiter.
+ *
+ * Tidak bisa memakai writeAuditLog dengan client dari handler utama karena
+ * respons sudah terkirim sebelum client dibuat; client dibuat sendiri di sini
+ * dan kegagalannya diabaikan (429 tetap harus terkirim).
+ */
+async function logRateLimitedLogin(req) {
+  try {
+    const { getTursoClient } = await import('../_turso.js');
+    const client = getTursoClient();
+    const { ipAddress, userAgent } = getRequestMeta(req);
+    const retryAfter = req.rateLimited?.retryAfter;
+
+    await writeAuditLog(client, {
+      action: 'USER_LOGIN_BLOCKED',
+      status: 'failed',
+      description: `Login diblokir rate limit (coba lagi ${retryAfter ?? '?'} detik)`,
+      changes: { retryAfter, limitKey: req.rateLimited?.key },
+      errorMessage: 'Too many requests',
+      ipAddress,
+      userAgent,
+    });
+  } catch (error) {
+    console.warn('Rate-limited login audit skipped:', error?.message || error);
+  }
+}
+
 export default async function handler(req, res) {
   // The limiter only calls the continuation when the request is allowed;
   // if it denies, it responds 429 itself and never invokes the callback.
   let allowed = false;
   await rateLimiter(req, res, () => { allowed = true; });
-  // If rate limiter already sent a response, stop handler
-  if (res.headersSent) return;
+  // If rate limiter already sent a response, stop handler — tetapi catat
+  // dulu ke audit log: percobaan brute-force paling terlihat justru dari
+  // request yang DIBLOKIR (sebelumnya hilang sama sekali dari riwayat).
+  if (res.headersSent) {
+    if (req.rateLimited) await logRateLimitedLogin(req);
+    return;
+  }
   if (!allowed) {
     return res.status(429).json({
       error: 'Too many requests',

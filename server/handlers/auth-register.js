@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getTursoClient } from '../_turso.js';
+import { writeAuditLog, getRequestMeta } from '../_audit.js';
 import { createRateLimiter, RATE_LIMITS } from '../middleware-rateLimiter.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -80,6 +81,19 @@ export default async function handler(req, res) {
       'INSERT INTO users (id, email, username, passwordHash, role) VALUES (?, ?, ?, ?, ?)',
       [userId, email, username, passwordHash, role]
     );
+
+    // Akun baru = bergabung ke aplikasi sebagai member.
+    const { ipAddress, userAgent } = getRequestMeta(req);
+    await writeAuditLog(client, {
+      action: 'MEMBER_JOINED',
+      userId,
+      targetUserId: userId,
+      resourceId: userId,
+      resourceType: 'user',
+      description: `Pendaftaran akun baru: ${username}`,
+      ipAddress,
+      userAgent,
+    });
 
     // Generate token with role
     const token = jwt.sign(
