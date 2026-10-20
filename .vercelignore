@@ -3,6 +3,13 @@
 ########################################
 
 # === API: Unused/disabled/over-quota endpoints ===
+# Catatan penting:
+#  - api/songs/index.js WAJIB ter-deploy: ia router yang dipanggil api/songs.js.
+#  - Jangan meng-ignore api/auth/register.js / login.js / me.js — ketiganya
+#    dipakai frontend (AuthContext memanggil /api/auth/me).
+#  - Batas Vercel Hobby: 12 function. File lain di api/ yang ingin di-ignore
+#    harus dipindahkan dulu import-nya, bukan sekadar ditambahkan ke sini,
+#    karena modul yang diimpor tetap ikut dihitung sebagai function.
 api/__tests__/
 api/ai.js
 api/index.js
@@ -13,8 +20,6 @@ api/auth/forgot-password.js
 api/auth/reset-password.js
 api/auth/user-audit-logs.js
 api/test-helpers/
-api/tools/
-api/users/
 
 # === Database, test, and dev files ===
 db/
@@ -35,8 +40,10 @@ vite.config.js
 *.spec.js
 *.md
 *.MD
-*.txt
 *.log
+*.zip
+*.sql
+backups/
 .DS_Store
 
 # === Project docs & misc ===
