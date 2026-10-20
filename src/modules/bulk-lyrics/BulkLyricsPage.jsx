@@ -126,8 +126,35 @@ export default function BulkLyricsPage() {
     }));
   }, [blocks, importedBlocks, autoFormat, defaultKey, defaultTempo, excludedIndexes]);
 
-  const summary = useMemo(() => summarizeBulkRecords(records), [records]);
-  const selectableRecords = records.filter((record) => !record.excluded);
+  /**
+   * Judul yang diubah manual di preview. Judul hasil parser bisa keliru dari
+   * format yang tidak standar, dan tombol simpan tidak boleh terhalang hanya
+   * karena itu — user bisa langsung memperbaikinya di kartu lagu ("Judul lagu
+   * wajib diisi" adalah error yang paling sering muncul di sini).
+   */
+  const [titleOverrides, setTitleOverrides] = useState({});
+
+  const updateTitleOverride = useCallback((record, value) => {
+    setTitleOverrides((prev) => ({ ...prev, [record.index]: value }));
+    setError('');
+  }, []);
+
+  const resolvedRecords = useMemo(() => records.map((record) => {
+    const override = titleOverrides[record.index];
+    if (override === undefined) return record;
+    const title = override.trim();
+    return {
+      ...record,
+      title: title || record.title,
+      errors: title
+        ? record.errors.filter((message) => !message.startsWith('Judul') && message !== 'Judul lagu wajib diisi.')
+        : record.errors,
+      titleGuessed: record.titleGuessed && !title,
+    };
+  }), [records, titleOverrides]);
+
+  const summary = useMemo(() => summarizeBulkRecords(resolvedRecords), [resolvedRecords]);
+  const selectableRecords = resolvedRecords.filter((record) => !record.excluded);
   const selectedReady = selectableRecords.filter((record) => record.errors.length === 0);
   const selectedInvalid = selectableRecords.filter((record) => record.errors.length > 0);
 
@@ -145,6 +172,7 @@ export default function BulkLyricsPage() {
   const handleInsertDemo = () => {
     setRawText(DEMO_BULK_SONGS);
     setExcludedIndexes(new Set());
+    setTitleOverrides({});
     setResult(null);
     setError('');
   };
@@ -154,6 +182,7 @@ export default function BulkLyricsPage() {
     setRawText('');
     setImportedBlocks([]);
     setExcludedIndexes(new Set());
+    setTitleOverrides({});
     setResult(null);
     setError('');
   };
@@ -206,8 +235,8 @@ export default function BulkLyricsPage() {
     setError('');
     setResult(null);
 
-    if (rawText.trim() && records.length > MAX_BLOCKS) {
-      setError(`Terlalu banyak lagu dalam satu proses (${records.length}). Maksimal ${MAX_BLOCKS} per simpan.`);
+    if (rawText.trim() && resolvedRecords.length > MAX_BLOCKS) {
+      setError(`Terlalu banyak lagu dalam satu proses (${resolvedRecords.length}). Maksimal ${MAX_BLOCKS} per simpan.`);
       return;
     }
     if (selectableRecords.length === 0) {
@@ -227,6 +256,18 @@ export default function BulkLyricsPage() {
       return;
     }
 
+    // Pengaman terakhir: judul kosong tidak boleh lolos ke server (server akan
+    // menolak seluruh batch). Sorot kartu yang bermasalah agar cepat diperbaiki.
+    const emptyTitleIndexes = selectedReady
+      .filter((record) => !String(record.title || '').trim())
+      .map((record) => record.blockNumber);
+    if (emptyTitleIndexes.length > 0) {
+      setError(
+        `Lagu #${emptyTitleIndexes.join(', #')} belum punya judul. Isi judulnya di kolom "Judul lagu" pada preview.`,
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       const response = await addSongsBulk(payloads);
@@ -238,6 +279,7 @@ export default function BulkLyricsPage() {
       setRawText('');
       setImportedBlocks([]);
       setExcludedIndexes(new Set());
+      setTitleOverrides({});
     } catch (err) {
       setError(err?.message || 'Gagal menyimpan lagu secara massal.');
     } finally {
@@ -444,13 +486,13 @@ export default function BulkLyricsPage() {
             </div>
           ) : (
             <ul className="bl-preview-list">
-              {records.map((record) => {
+              {resolvedRecords.map((record) => {
                 const stats = describeLyrics(record.lyrics);
                 const blocking = record.errors.filter((message) => !message.startsWith('Judul belum'));
                 const status = record.errors.length === 0 ? 'ok' : blocking.length ? 'error' : 'warn';
                 return (
                   <li
-                    key={`${record.index}-${record.title}`}
+                    key={record.blockNumber}
                     className={`bl-preview-item bl-status-${status}${record.excluded ? ' is-excluded' : ''}`}
                   >
                     <div className="bl-preview-head">
@@ -460,6 +502,18 @@ export default function BulkLyricsPage() {
                         {status === 'ok' ? '✓ Siap' : status === 'warn' ? '⚠️ Periksa judul' : '⛔ Error'}
                       </span>
                     </div>
+
+                    <label className="bl-preview-title-field">
+                      <span className="bl-preview-title-label">Judul lagu</span>
+                      <input
+                        type="text"
+                        className="bl-preview-title-input"
+                        value={titleOverrides[record.index] ?? record.title}
+                        onChange={(event) => updateTitleOverride(record, event.target.value)}
+                        placeholder="Tulis judul lagu"
+                        aria-invalid={!String(record.title || '').trim()}
+                      />
+                    </label>
 
                     <div className="bl-preview-meta">
                       {record.artist && <span>👤 {record.artist}</span>}

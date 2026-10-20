@@ -333,6 +333,36 @@
   color: var(--error);
 }
 
+.bl-preview-title-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bl-preview-title-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.bl-preview-title-input {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.bl-preview-title-input:focus {
+  outline: none;
+  border-color: var(--primary-accent);
+}
+
+.bl-preview-title-input[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
 .bl-preview-meta {
   display: flex;
   flex-wrap: wrap;

@@ -175,9 +175,19 @@ export default async function handler(req, res) {
     });
 
     if (failures.length > 0) {
+      // Pesan utama menyebut lagu mana yang bermasalah supaya user tidak perlu
+      // menebak dari 20 lagu sekaligus.
+      const firstFailure = failures[0];
+      const firstTitle = prepared[firstFailure.index]?.title || `lagu #${firstFailure.index + 1}`;
       res.status(400).json({
-        error: `${failures.length} lagu belum valid — perbaiki dulu sebelum menyimpan.`,
-        failures,
+        error:
+          failures.length === 1
+            ? `Lagu "${firstTitle}": ${firstFailure.error.toLowerCase()}`
+            : `${failures.length} lagu belum valid (pertama: "${firstTitle}") — perbaiki dulu sebelum menyimpan.`,
+        failures: failures.map((failure) => ({
+          ...failure,
+          blockNumber: failure.index + 1,
+        })),
       });
       return;
     }

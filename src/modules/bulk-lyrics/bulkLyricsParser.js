@@ -226,6 +226,7 @@ export function splitBulkSongBlocks(text) {
   };
 
   const defineTitle = (title) => {
+    if (!title) return;
     if (current && title.toLowerCase() === lastTitle.toLowerCase()) {
       // Judul berulang: lanjutan lagu yang sama, bukan lagu baru.
       current.title = current.title || title;
@@ -269,7 +270,8 @@ export function splitBulkSongBlocks(text) {
         current.lyricsLines.push(rawLine);
         continue;
       }
-      defineTitle(nextTitle);
+      // "Judul:" dengan nilai kosong bukan penanda lagu baru.
+      if (nextTitle) defineTitle(nextTitle);
       continue;
     }
 
