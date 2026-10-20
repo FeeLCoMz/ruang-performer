@@ -15,7 +15,7 @@ import * as chordUtils from '../utils/chordUtils.js';
 import { buildSmartSetlistPlan } from '../utils/setlistSmartAssistant.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
 import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
-import useMetronome from '../hooks/useMetronome.js';
+import useMetronome from '../modules/metronome/useMetronome.js';
 import { updateSongMastery } from '../apiClient.js';
 import { STORAGE_KEYS } from '../utils/storageKeys.js';
 import MasteryChip from '../components/MasteryChip.jsx';

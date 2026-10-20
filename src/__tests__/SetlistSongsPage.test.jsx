@@ -20,7 +20,7 @@ vi.mock('../hooks/usePermission.js', () => ({
   usePermission: () => ({ user: { id: 'user-1' }, can: () => true }),
 }));
 
-vi.mock('../hooks/useMetronome.js', () => ({
+vi.mock('../modules/metronome/useMetronome.js', () => ({
   default: () => [false, vi.fn()],
 }));
 

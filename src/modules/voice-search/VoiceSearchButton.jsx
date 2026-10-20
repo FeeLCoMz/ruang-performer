@@ -1,7 +1,11 @@
 import React, { useRef } from 'react';
+import { useVoiceSearchEnabled } from './useVoiceSearchEnabled.js';
 
 export default function VoiceSearchButton({ onResult, onError, disabled }) {
   const recognitionRef = useRef(null);
+  // Modul Voice Search default nonaktif (Web Speech API tidak tersedia di
+  // semua browser dan meminta izin mikrofon).
+  const [moduleEnabled] = useVoiceSearchEnabled();
   const reportError = (message) => {
     if (typeof onError === 'function') onError(message);
   };
@@ -26,6 +30,8 @@ export default function VoiceSearchButton({ onResult, onError, disabled }) {
     recognitionRef.current = recognition;
     recognition.start();
   };
+
+  if (!moduleEnabled) return null;
 
   return (
     <button

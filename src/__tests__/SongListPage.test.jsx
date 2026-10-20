@@ -26,9 +26,9 @@ vi.mock('../utils/permissionUtils.js', () => ({
 }));
 
 vi.mock('../components/SongMediaPanel.jsx', () => ({ default: () => null }));
-vi.mock('../components/VoiceSearchButton.jsx', () => ({ default: () => null }));
+vi.mock('../modules/voice-search/VoiceSearchButton.jsx', () => ({ default: () => null }));
 vi.mock('../components/LoadingSkeleton.jsx', () => ({ SongListSkeleton: () => <div /> }));
-vi.mock('../hooks/useMetronome.js', () => ({ default: () => [false, vi.fn()] }));
+vi.mock('../modules/metronome/useMetronome.js', () => ({ default: () => [false, vi.fn()] }));
 vi.mock('../utils/metaTagsUtil.js', () => ({
   updatePageMeta: vi.fn(),
   pageMetadata: { songs: {} },

@@ -70,6 +70,18 @@ import {
   subscribeAIAutofillEnabled,
   DEFAULT_AI_AUTOFILL_ENABLED,
 } from './ai-autofill/aiAutofillSettings.js';
+import {
+  isVoiceSearchEnabled,
+  setVoiceSearchEnabled,
+  subscribeVoiceSearchEnabled,
+  DEFAULT_VOICE_SEARCH_ENABLED,
+} from './voice-search/voiceSearchSettings.js';
+import {
+  isMetronomeEnabled,
+  setMetronomeEnabled,
+  subscribeMetronomeEnabled,
+  DEFAULT_METRONOME_ENABLED,
+} from './metronome/metronomeSettings.js';
 
 export const MODULES_REGISTRY = [
   {
@@ -183,6 +195,30 @@ export const MODULES_REGISTRY = [
     isEnabled: isAIAutofillEnabled,
     setEnabled: setAIAutofillEnabled,
     subscribe: subscribeAIAutofillEnabled,
+  },
+  {
+    id: 'voice-search',
+    name: 'Voice Search',
+    description:
+      'Cari lagu lewat ucapan memakai Web Speech API. Nonaktif secara default karena hanya tersedia di sebagian browser dan meminta izin mikrofon.',
+    icon: '🗣️',
+    defaultEnabled: DEFAULT_VOICE_SEARCH_ENABLED,
+    storageKey: 'ruang-performer:module:voice-search-enabled',
+    isEnabled: isVoiceSearchEnabled,
+    setEnabled: setVoiceSearchEnabled,
+    subscribe: subscribeVoiceSearchEnabled,
+  },
+  {
+    id: 'metronome',
+    name: 'Metronome & Tap Tempo',
+    description:
+      'Metronom dan Tap Tempo untuk menentukan BPM saat latihan — dipakai di halaman lagu dan editor.',
+    icon: '🥁',
+    defaultEnabled: DEFAULT_METRONOME_ENABLED,
+    storageKey: 'ruang-performer:module:metronome-enabled',
+    isEnabled: isMetronomeEnabled,
+    setEnabled: setMetronomeEnabled,
+    subscribe: subscribeMetronomeEnabled,
   },
 ];
 

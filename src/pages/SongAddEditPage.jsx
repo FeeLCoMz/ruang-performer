@@ -2,7 +2,7 @@
 // import { usePermission } from "../hooks/usePermission.js";
 // import { PERMISSIONS } from "../utils/permissionUtils.js";
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import TapTempo from '../components/TapTempo';
+import TapTempo from '../modules/metronome/TapTempo';
 import VirtualPiano from '../modules/midi/VirtualPiano';
 import AIAutofillModal from '../modules/ai-autofill/AIAutofillModal';
 import { useAIAutofillEnabled } from '../modules/ai-autofill/useAIAutofillEnabled';

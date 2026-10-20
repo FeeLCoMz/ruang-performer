@@ -1,7 +1,10 @@
 import React, { useRef, useState } from 'react';
+import { useMetronomeEnabled } from './useMetronomeEnabled.js';
 
 // Komponen TapTempo: klik/tap berulang untuk dapatkan BPM
 export default function TapTempo({ onTempo, initialTempo = '', disabled = false, label = 'Tap Tempo' }) {
+  // Dimatikan dari halaman Modul: tombol tap tidak ditampilkan.
+  const [moduleEnabled] = useMetronomeEnabled();
   const [bpm, setBpm] = useState(initialTempo || '');
   const [taps, setTaps] = useState([]);
   const timeoutRef = useRef();
@@ -28,6 +31,8 @@ export default function TapTempo({ onTempo, initialTempo = '', disabled = false,
     setBpm(e.target.value);
     if (onTempo) onTempo(e.target.value);
   }
+
+  if (!moduleEnabled) return null;
 
   return (
     <div style={{

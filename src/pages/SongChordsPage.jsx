@@ -11,7 +11,7 @@ import { PERMISSIONS } from '../utils/permissionUtils.js';
 import { useSongFetch } from '../hooks/useSongFetch.js';
 import { SongDetailSkeleton } from '../components/LoadingSkeleton.jsx';
 import { handleExportText, handleExportPDF, handleShare } from '../utils/songHandlers.js';
-import useMetronome from '../hooks/useMetronome.js';
+import useMetronome from '../modules/metronome/useMetronome.js';
 import useChordStats from '../hooks/useChordStats.js';
 import { fetchSetLists, fetchSetListById, updateSongMastery, deleteSong } from '../apiClient.js';
 import { recommendPianoFriendlyKey, extractDetectedInstrumentsFromLyrics, getTransposeSteps } from '../utils/chordUtils.js';
