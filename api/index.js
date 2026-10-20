@@ -37,14 +37,14 @@ import authResetHandler from '../server/handlers/auth-reset-password.js';
 import authAuditLogsHandler from '../server/handlers/auth-audit-logs.js';
 import authChangePasswordHandler from '../server/handlers/auth-change-password.js';
 // Tools handler (export/import)
-import toolsHandler from './tools/index.js';
-import toolsBackupHandler from './tools/backup.js';
-import toolsRestoreHandler from './tools/restore.js';
+import toolsHandler from '../server/handlers/tools.js';
+import toolsBackupHandler from '../server/handlers/tools-backup.js';
+import toolsRestoreHandler from '../server/handlers/tools-restore.js';
 import userAuditLogsHandler from '../server/handlers/auth-audit-logs.js';
 // Users management handler
-import usersHandler from './users/index.js';
-import userByIdHandler from './users/[id].js';
-import userResetPasswordHandler from './users/reset-password.js';
+import usersHandler from '../server/handlers/users.js';
+import userByIdHandler from '../server/handlers/user-id.js';
+import userResetPasswordHandler from '../server/handlers/user-reset-password.js';
 
 // --- Env setup ---
 const __filename = fileURLToPath(import.meta.url);
@@ -168,6 +168,9 @@ app.get('/api/users/:id', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(userByIdHandler(req, res)).catch(next);
 });
 app.put('/api/users/:id', verifyTokenMiddleware, (req, res, next) => {
+  Promise.resolve(userByIdHandler(req, res)).catch(next);
+});
+app.patch('/api/users/:id', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(userByIdHandler(req, res)).catch(next);
 });
 app.delete('/api/users/:id', verifyTokenMiddleware, (req, res, next) => {

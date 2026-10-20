@@ -33,6 +33,12 @@ import authDeleteAccountHandler from '../server/handlers/auth-delete-account.js'
 import authForgotPasswordHandler from '../server/handlers/auth-forgot-password.js';
 import authResetPasswordHandler from '../server/handlers/auth-reset-password.js';
 import authAuditLogsHandler from '../server/handlers/auth-audit-logs.js';
+import usersHandler from '../server/handlers/users.js';
+import userIdHandler from '../server/handlers/user-id.js';
+import userResetPasswordHandler from '../server/handlers/user-reset-password.js';
+import toolsHandler from '../server/handlers/tools.js';
+import toolsBackupHandler from '../server/handlers/tools-backup.js';
+import toolsRestoreHandler from '../server/handlers/tools-restore.js';
 import { verifyToken } from '../server/_auth.js';
 
 const ORIGINAL_URL_HEADER = 'x-original-url';
@@ -135,6 +141,26 @@ async function dispatch(req, res) {
 
   // ---- Gigs / events ------------------------------------------------------
   if (resource === 'events') return eventsHandler(req, res);
+
+  // ---- Users (owner only; handler memeriksa role) -------------------------
+  if (resource === 'users') {
+    if (!second) return usersHandler(req, res);
+    if (third === 'reset-password' && req.method === 'POST') {
+      req.params = { ...(req.params || {}), id: second };
+      req.query = { ...(req.query || {}), id: second };
+      return userResetPasswordHandler(req, res);
+    }
+    req.params = { ...(req.params || {}), id: second };
+    req.query = { ...(req.query || {}), id: second };
+    return userIdHandler(req, res);
+  }
+
+  // ---- Tools (owner only; hanya dipakai local dev, di-ignore di Vercel) ---
+  if (resource === 'tools') {
+    if (second === 'backup') return toolsBackupHandler(req, res);
+    if (second === 'restore') return toolsRestoreHandler(req, res);
+    return toolsHandler(req, res);
+  }
 
   res.status(404).json({ error: 'Endpoint tidak ditemukan' });
 }
