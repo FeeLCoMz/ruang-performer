@@ -654,6 +654,30 @@ body.dark-mode .song-editor-status-blocker {
   gap: 6px;
 }
 
+/* Field YouTube: input + tombol ikon pencarian di kanan. */
+.song-youtube-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.song-youtube-row .form-input-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-youtube-search-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  line-height: 1;
+  font-size: 1rem;
+}
+
 /* Sisa kuota AI Autofill bulan ini — informasi ringan di samping tombol. */
 .song-ai-quota {
   font-size: 0.75rem;

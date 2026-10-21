@@ -32,34 +32,28 @@ export default function YoutubeVideoPickerModal({
   const [error, setError] = useState('');
   const [pasteUrl, setPasteUrl] = useState('');
   const inputRef = useRef(null);
+  // Menahan pencarian otomatis agar tidak terpicu ulang saat state berubah.
+  const autoSearchRef = useRef(false);
 
-  // Reset & fokus saat modal dibuka; query mengikuti judul/artist terbaru.
+  // Reset saat modal dibuka; query mengikuti judul/artist terbaru.
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      autoSearchRef.current = false;
+      return undefined;
+    }
     setQuery(initialQuery || '');
     setVideos([]);
     setError('');
     setPasteUrl('');
     setLoading(false);
+    autoSearchRef.current = true;
     const timer = setTimeout(() => inputRef.current?.focus(), 50);
     return () => clearTimeout(timer);
   }, [open, initialQuery]);
 
-  // Esc menutup modal.
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (event) => {
-      if (event.key === 'Escape') onClose?.();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  const runSearch = async (event) => {
-    event?.preventDefault?.();
-    const q = query.trim();
+  /** Pencarian ke API. Dipakai oleh tombol, form, dan pencarian otomatis. */
+  const performSearch = async (rawQuery) => {
+    const q = String(rawQuery || '').trim();
     if (!q) {
       setError('Isi kata pencarian terlebih dahulu.');
       return;
@@ -78,6 +72,32 @@ export default function YoutubeVideoPickerModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  // Pencarian otomatis berdasarkan judul + artis saat modal dibuka. Hanya
+  // sekali per pembukaan: user tetap bisa mengubah kata kunci lalu mencari lagi.
+  useEffect(() => {
+    if (!open || !autoSearchRef.current) return;
+    autoSearchRef.current = false;
+    if (String(initialQuery || '').trim()) performSearch(initialQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialQuery]);
+
+  // Esc menutup modal.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (event) => {
+      if (event.key === 'Escape') onClose?.();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const runSearch = (event) => {
+    event?.preventDefault?.();
+    performSearch(query);
   };
 
   const applyPastedUrl = () => {
@@ -127,7 +147,7 @@ export default function YoutubeVideoPickerModal({
           {loading && <div className="youtube-picker-empty">Mencari video…</div>}
           {!loading && videos.length === 0 && !error && (
             <div className="youtube-picker-empty">
-              Ketik judul lagu lalu tekan Cari untuk melihat pilihan video.
+              Ketik judul lagu lalu tekan Cari, atau tempel URL di bawah.
             </div>
           )}
           {videos.map((video) => (

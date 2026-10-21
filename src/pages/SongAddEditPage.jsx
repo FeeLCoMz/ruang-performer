@@ -987,27 +987,31 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
               <label className="studio-field studio-field-youtube">
                 <span className="studio-field-label">YouTube URL atau ID</span>
-                <input
-                  id="song-youtube"
-                  name="youtubeId"
-                  type="text"
-                  value={youtubeId}
-                  onChange={(e) => setYoutubeId(e.target.value)}
-                  placeholder="https://youtube.com/watch?v=... atau dQw4w9WgXcQ"
-                  className="form-input-field"
-                />
+                <div className="song-youtube-row">
+                  <input
+                    id="song-youtube"
+                    name="youtubeId"
+                    type="text"
+                    value={youtubeId}
+                    onChange={(e) => setYoutubeId(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=... atau dQw4w9WgXcQ"
+                    className="form-input-field"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary song-youtube-search-btn"
+                    onClick={() => setShowYoutubePicker(true)}
+                    title="Cari video YouTube berdasarkan judul & artis"
+                    aria-label="Cari video YouTube"
+                  >
+                    🔍
+                  </button>
+                </div>
                 {normalizedYoutubeId && (
                   <span className="form-hint">
                     Video terdeteksi: <code>{normalizedYoutubeId}</code>
                   </span>
                 )}
-                <button
-                  type="button"
-                  className="btn btn-secondary song-youtube-search-btn"
-                  onClick={() => setShowYoutubePicker(true)}
-                >
-                  🔎 Cari video
-                </button>
               </label>
 
               <label className="studio-field studio-field-sheet">
