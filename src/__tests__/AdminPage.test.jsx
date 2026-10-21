@@ -266,6 +266,27 @@ describe('AdminPage', () => {
     expect(deleteBtn.disabled).toBe(true);
   });
 
+  test('tombol restore terkunci sampai kata konfirmasi diketik', async () => {
+    await openTab('backup');
+
+    const restoreButton = () => Array.from(container.querySelectorAll('button')).find(
+      (btn) => btn.textContent.includes('Restore dari file SQL'),
+    );
+    const confirmInput = container.querySelector('.admin-danger-confirm input');
+
+    expect(container.querySelector('.admin-danger-zone')).toBeTruthy();
+    expect(confirmInput).toBeTruthy();
+    expect(restoreButton().disabled).toBe(true);
+
+    // Kata yang salah tetap mengunci tombol.
+    await changeValue(confirmInput, 'hapus');
+    expect(restoreButton().disabled).toBe(true);
+
+    // Kata konfirmasi yang benar membuka tombol restore.
+    await changeValue(confirmInput, 'restore');
+    expect(restoreButton().disabled).toBe(false);
+  });
+
   test('filter audit log menampilkan tombol reset dan menyaring entri', async () => {
     mockGetAuditLogs.mockResolvedValue({
       logs: [

@@ -464,3 +464,61 @@
   align-items: center;
   gap: 10px;
 }
+
+.admin-panel-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Zona berisiko: restore menimpa seluruh database */
+.admin-danger-zone {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.admin-danger-zone .admin-panel-subtitle {
+  color: #ef4444;
+}
+
+.admin-danger-warning {
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.admin-danger-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 360px;
+  font-size: 0.82rem;
+  opacity: 0.9;
+}
+
+.admin-danger-confirm code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: 700;
+}
+
+.admin-danger-confirm input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  font: inherit;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-danger-confirm input:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 1px;
+}
