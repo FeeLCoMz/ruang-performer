@@ -388,7 +388,7 @@ export default function LyricsFormatToolbar({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="lyric-format-preview-head">
-              <h3>🪄 Pratinjau Rapikan Semua</h3>
+              <h3>Pratinjau Rapikan Semua</h3>
               <button
                 type="button"
                 className="btn btn-secondary"
