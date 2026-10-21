@@ -396,7 +396,7 @@ export default function LyricsFormatToolbar({
                 aria-label="Tutup pratinjau"
                 title="Tutup"
               >
-                ✕"
+                ✕
               </button>
             </div>
 
@@ -441,7 +441,7 @@ export default function LyricsFormatToolbar({
                 onClick={applyFormatPreview}
                 disabled={formatPreview.unchanged}
               >
-                ✕ Terapkan
+                Terapkan
               </button>
             </div>
           </div>

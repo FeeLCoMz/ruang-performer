@@ -6,8 +6,6 @@ import DashboardPage from '../pages/DashboardPage.jsx';
 import {
   flushPromises,
   findElementByText,
-  findButtonByText,
-  findClickableItemByText,
 } from './helpers/domTestUtils.js';
 import { applyDefaultDashboardApiMocks } from './helpers/dashboardApiMocks.js';
 
@@ -87,68 +85,6 @@ describe('DashboardPage', () => {
     });
     document.body.removeChild(container);
     openSpy.mockRestore();
-  });
-
-  test('Given popular songs are empty, When user retries, Then songs render', async () => {
-    apiClient.fetchSongs.mockResolvedValue({ songs: [], trending: [] });
-
-    await renderDashboard(root);
-
-    const emptyState = findElementByText(container, 'Tidak dapat memuat lagu populer YouTube');
-    expect(emptyState).toBeTruthy();
-
-    const retryButton = findButtonByText(container, 'Coba Lagi');
-    expect(retryButton).toBeTruthy();
-
-    apiClient.fetchSongs.mockResolvedValue({ songs: [], trending: [{ id: 'song-1', youtubeId: 'abc123', title: 'Song Alpha', artist: 'Artist One' }] });
-
-    await act(async () => {
-      retryButton.click();
-      await flushPromises();
-      await flushPromises();
-    });
-
-    const loadedSong = findElementByText(container, 'Song Alpha');
-    expect(loadedSong).toBeTruthy();
-  });
-
-  test('Given popular song item, When clicked, Then opens YouTube link with noopener and noreferrer', async () => {
-    apiClient.fetchSongs.mockResolvedValue({
-      songs: [],
-      trending: [
-        {
-          id: 'song-2',
-          youtubeId: 'safe123',
-          title: 'Safe Song',
-          artist: 'Secure Artist',
-        },
-      ],
-    });
-    apiClient.fetchPopularSongs.mockResolvedValue({
-      youtubeSongs: [
-        {
-          id: 'song-2',
-          youtubeId: 'safe123',
-          title: 'Safe Song',
-          artist: 'Secure Artist',
-        },
-      ],
-    });
-
-    await renderDashboard(root);
-
-    const clickableItem = findClickableItemByText(container, 'Safe Song');
-    expect(clickableItem).toBeTruthy();
-
-    act(() => {
-      clickableItem.click();
-    });
-
-    expect(openSpy).toHaveBeenCalledWith(
-      'https://www.youtube.com/watch?v=safe123',
-      '_blank',
-      'noopener,noreferrer'
-    );
   });
 
   test('Given slow background requests, When dashboard loads, Then summary stats render immediately', async () => {

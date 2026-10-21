@@ -733,7 +733,7 @@
   box-shadow: var(--shadow-sm);
   margin-bottom: 24px;
   /* Padding seragam untuk semua tab panel lagu (Header, Lirik, tab samping):
-     lebih lega (xl) di semua sisi � desktop maupun mobile sama. */
+     lebih lega (xl) di semua sisi — desktop maupun mobile sama. */
   padding: var(--spacing-xl);
   display: flex;
   flex-direction: column;
@@ -1436,7 +1436,7 @@ body.dark-mode .song-mood-badge.mood-peak {
   flex-wrap: wrap;
 }
 
-/* Dropdown menu mastery chip tampil keluar dari batas kartu � kartu jangan
+/* Dropdown menu mastery chip tampil keluar dari batas kartu — kartu jangan
    memotongnya (clip) supaya pilihan status tetap bisa diklik. */
 .song-heading-status {
   position: relative;

@@ -14,27 +14,8 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [bands, setBands] = useState([]);
   const [bandsLoading, setBandsLoading] = useState(true);
-  const [popularSongs, setPopularSongs] = useState([]);
-  const [popularSongsLoading, setPopularSongsLoading] = useState(true);
   const [activitiesError, setActivitiesError] = useState('');
   const [eventsError, setEventsError] = useState('');
-  const [popularSongsError, setPopularSongsError] = useState('');
-
-  /** Map the raw trending payload into the shape the popular-songs card needs. */
-  const mapTrendingSongs = (payload) =>
-    (Array.isArray(payload?.trending) ? payload.trending : []).map((item) => ({
-      id: item.videoId || item.id || item.youtubeId || item.title,
-      youtubeId: item.videoId || item.youtubeId || item.id || null,
-      title: item.title || item.snippet?.title || '',
-      artist: item.channelTitle || item.artist || item.snippet?.channelTitle || '',
-      thumbnail: item.thumbnailUrl || item.thumbnail || item.snippet?.thumbnails?.high?.url || null,
-      viewCount: item.viewCount || null,
-      publishedAt: item.publishedAt || null,
-    }));
-
-  /** Fetch trending songs and map them; shared by mount load and retry button. */
-  const fetchAndMapPopularSongs = async () =>
-    mapTrendingSongs(await apiClient.fetchSongs({ includeTrending: true }));
 
   const loadActivities = useCallback(async () => {
     setStatsLoading(true);
@@ -111,27 +92,10 @@ export default function DashboardPage() {
 
   const handleRetryEvents = loadEvents;
 
-  const loadPopularSongs = useCallback(async () => {
-    setPopularSongsLoading(true);
-    setPopularSongsError('');
-
-    try {
-      setPopularSongs(await fetchAndMapPopularSongs());
-    } catch {
-      setPopularSongs([]);
-      setPopularSongsError('Lagu populer YouTube gagal dimuat. Silakan coba lagi.');
-    } finally {
-      setPopularSongsLoading(false);
-    }
-  }, []);
-
-  const handleRetryPopularSongs = loadPopularSongs;
-
   useEffect(() => {
     loadActivities();
     loadEvents();
-    loadPopularSongs();
-  }, [loadActivities, loadEvents, loadPopularSongs]);
+  }, [loadActivities, loadEvents]);
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -263,51 +227,6 @@ export default function DashboardPage() {
                   <div className="activity-content">
                     <div className="activity-text">{event.title}</div>
                     <div className="activity-time">{formatDate(event.date)}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Popular Songs */}
-        <div className="dashboard-card">
-          <h2>🔥 Lagu Populer di YouTube</h2>
-          {popularSongsError && (
-            <div className="dashboard-inline-error">
-              <span>{popularSongsError}</span>
-              <button className="btn btn-secondary" onClick={handleRetryPopularSongs}>
-                Coba Lagi
-              </button>
-            </div>
-          )}
-          {popularSongsLoading ? (
-            <div className="dashboard-event-list">
-              {[...Array(5)].map((_, idx) => (
-                <div key={idx} className="activity-item">
-                  <span className="loading-skeleton loading-skeleton-full" />
-                </div>
-              ))}
-            </div>
-          ) : popularSongs.length === 0 ? (
-            <div className="dashboard-empty">
-              <div>Tidak dapat memuat lagu populer YouTube</div>
-              <button className="btn btn-secondary" onClick={handleRetryPopularSongs}>
-                Coba Lagi
-              </button>
-            </div>
-          ) : (
-            <div className="dashboard-popular-list">
-              {popularSongs.slice(0, 5).map((song) => (
-                <div
-                  key={song.id}
-                  className="activity-item activity-item--clickable"
-                  onClick={() => window.open(`https://www.youtube.com/watch?v=${song.youtubeId}`, '_blank', 'noopener,noreferrer')}
-                >
-                  <div className="activity-icon">🎵</div>
-                  <div className="activity-content">
-                    <div className="activity-text">{song.title}</div>
-                    <div className="activity-time">{song.artist}</div>
                   </div>
                 </div>
               ))}

@@ -17,7 +17,7 @@
   line-height: 1;
 }
 
-/* Label bisa disembunyikan per breakpoint — ikon tetap fungsional. */
+/* Label bisa disembunyikan per breakpoint â€” ikon tetap fungsional. */
 .stage-mode-btn-label {
   overflow: hidden;
   text-overflow: ellipsis;

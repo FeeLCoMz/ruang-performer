@@ -241,7 +241,7 @@ body.stage-mode .btn-secondary {
   white-space: nowrap;
 }
 
-/* Konteks band/setlist di header — tombol dua baris yang bisa diklik. */
+/* Konteks band/setlist di header â€” tombol dua baris yang bisa diklik. */
 .stage-mode-context {
   flex: 0 1 auto;
   min-width: 0;
@@ -556,7 +556,7 @@ body.stage-mode .btn-secondary {
 
 /* ========== RESPONSIVE ========== */
 /* Prinsip: di layar kecil (HP, dipakai manggung tanpa meja), teks lirik dan
-   area sentuh jadi prioritas — header/footer dipadatkan, sheet hampir
+   area sentuh jadi prioritas â€” header/footer dipadatkan, sheet hampir
    setinggi layar. Di landscape HP (tinggi < 480px) biarkan lebih banyak
    ruang untuk lirik dengan memperkecil chrome di atas/bawah. */
 
@@ -603,7 +603,7 @@ body.stage-mode .btn-secondary {
     padding-bottom: 32px;
   }
 
-  /* Footer: baris tombol bisa turun ke dua baris — beri jarak sentuh. */
+  /* Footer: baris tombol bisa turun ke dua baris â€” beri jarak sentuh. */
   .stage-mode-footer {
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
     gap: 6px;
@@ -769,7 +769,7 @@ body.stage-mode .btn-secondary {
   .stage-mode-pick-item:hover,
   .stage-mode-sheet-item:hover,
   .stage-mode-sheet-link:hover .stage-mode-sheet-name {
-    /* Di sentuh, hover bisa "nyangkut" setelah tap — tampilkan efek netral. */
+    /* Di sentuh, hover bisa "nyangkut" setelah tap â€” tampilkan efek netral. */
     border-color: #3a3a5a;
     color: inherit;
   }
