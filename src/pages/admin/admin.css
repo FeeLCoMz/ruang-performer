@@ -108,6 +108,9 @@
   border-radius: var(--radius-md, 10px);
   background: var(--admin-surface, rgba(255, 255, 255, 0.04));
   border: 1px solid var(--border-color);
+  color: inherit;
+  font: inherit;
+  text-align: left;
 }
 
 .admin-stat strong {
@@ -115,9 +118,102 @@
   line-height: 1.1;
 }
 
-.admin-stat span {
+.admin-stat-label {
   font-size: 0.8rem;
-  opacity: 0.75;
+  color: var(--text-muted, inherit);
+}
+
+.admin-stat-icon {
+  font-size: 1rem;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.admin-stat-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted, inherit);
+}
+
+.admin-stat-delta {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  color: var(--text-muted, inherit);
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.08));
+}
+
+.admin-stat-delta.is-up {
+  color: var(--admin-success, #22c55e);
+  background: var(--admin-success-surface, rgba(34, 197, 94, 0.12));
+}
+
+.admin-stat-delta.is-down {
+  color: var(--admin-danger, #ef4444);
+  background: var(--admin-danger-surface, rgba(239, 68, 68, 0.12));
+}
+
+/* Kartu statistik yang bisa diklik untuk pindah tab */
+.admin-stat.is-clickable {
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.admin-stat.is-clickable:hover {
+  border-color: var(--admin-accent-border, rgba(139, 92, 246, 0.4));
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.08));
+}
+
+.admin-stat:focus-visible {
+  outline: 2px solid var(--admin-accent, #8b5cf6);
+  outline-offset: 2px;
+}
+
+/* Pilihan periode pertumbuhan */
+.admin-period-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.admin-period-options {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--admin-surface, rgba(255, 255, 255, 0.04));
+}
+
+.admin-period {
+  padding: 5px 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted, inherit);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-period:hover {
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.08));
+}
+
+.admin-period.is-active {
+  color: var(--admin-accent, #8b5cf6);
+  background: var(--admin-accent-surface, rgba(139, 92, 246, 0.14));
+  border-color: var(--admin-accent-border, rgba(139, 92, 246, 0.4));
+}
+
+.admin-period:focus-visible {
+  outline: 2px solid var(--admin-accent, #8b5cf6);
+  outline-offset: 2px;
 }
 
 .admin-section-title {

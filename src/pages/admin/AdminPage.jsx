@@ -21,6 +21,7 @@ import { useAdminUsers } from './useAdminUsers.js';
 import { useAuditLogs } from './audit-log/useAuditLogs.js';
 import AuditLogPanel from './audit-log/AuditLogPanel.jsx';
 import UserManagementPanel from './users/UserManagementPanel.jsx';
+import { STAT_PERIODS, buildUserStatCards, getLastLoginMap, getUserGrowth } from './users/userStats.js';
 import BackupRestorePanel from './backup-restore/BackupRestorePanel.jsx';
 import './admin.css';
 
@@ -69,7 +70,7 @@ function AdminTabs({ activeTab, onSelect }) {
 }
 
 /** Tab ringkasan: statistik akun + pintasan ke tab lain. */
-function AdminOverview({ userSummary, loading, error, onNavigate }) {
+function AdminOverview({ userSummary, cards, loading, error, onNavigate, period, setPeriod }) {
   const shortcuts = [
     {
       id: 'users',
@@ -93,7 +94,30 @@ function AdminOverview({ userSummary, loading, error, onNavigate }) {
 
   return (
     <>
-      <AdminUserSummary summary={userSummary} loading={loading} error={error} />
+      <div className="admin-period-bar">
+        <span className="admin-muted">Periode pertumbuhan user</span>
+        <div className="admin-period-options" role="group" aria-label="Periode pertumbuhan user">
+          {STAT_PERIODS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className={`admin-period${option.id === period ? ' is-active' : ''}`}
+              aria-pressed={option.id === period}
+              onClick={() => setPeriod(option.id)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <AdminUserSummary
+        summary={userSummary}
+        cards={cards}
+        loading={loading}
+        error={error}
+        onNavigate={onNavigate}
+      />
       <h2 className="admin-section-title">Kelola Sistem</h2>
       <div className="tools-grid admin-actions-grid">
         {shortcuts.map((item) => (
@@ -110,24 +134,44 @@ function AdminOverview({ userSummary, loading, error, onNavigate }) {
   );
 }
 
-/** Ringkasan jumlah akun dari data user yang sama dengan tab User. */
-function AdminUserSummary({ summary, loading, error }) {
-  const stats = [
-    { value: summary.total, label: 'Total user' },
-    { value: summary.active, label: 'User aktif' },
-    { value: summary.inactive, label: 'User nonaktif' },
-    { value: summary.admins, label: 'Admin & Owner' },
-  ];
-
+/**
+ * Ringkasan akun. Kartu yang punya `tab` bisa diklik untuk membuka tab
+ * terkait, sehingga angka menjadi pintasan, bukan sekadar informasi.
+ */
+function AdminUserSummary({ summary, cards, loading, error, onNavigate }) {
   return (
     <div className="card admin-summary-card">
       <div className="admin-stat-grid">
-        {stats.map((stat) => (
-          <div key={stat.label} className="admin-stat">
-            <strong>{loading ? '…' : stat.value}</strong>
-            <span>{stat.label}</span>
-          </div>
-        ))}
+        {cards.map((stat) => {
+          const content = (
+            <>
+              <span className="admin-stat-icon" aria-hidden="true">{stat.icon}</span>
+              <strong>{loading ? '…' : stat.value}</strong>
+              <span className="admin-stat-label">{stat.label}</span>
+              {stat.hint && <span className="admin-stat-hint">{stat.hint}</span>}
+              {stat.delta !== null && stat.delta !== undefined && (
+                <span className={`admin-stat-delta${stat.delta > 0 ? ' is-up' : stat.delta < 0 ? ' is-down' : ''}`}>
+                  {stat.delta > 0 ? '▲' : stat.delta < 0 ? '▼' : '–'} {Math.abs(stat.delta)}
+                </span>
+              )}
+            </>
+          );
+
+          if (!stat.tab || loading) {
+            return <div key={stat.id} className="admin-stat">{content}</div>;
+          }
+
+          return (
+            <button
+              key={stat.id}
+              type="button"
+              className="admin-stat is-clickable"
+              onClick={() => onNavigate(stat.tab)}
+            >
+              {content}
+            </button>
+          );
+        })}
       </div>
       {error && <div className="tools-feedback tools-feedback-error">{error}</div>}
     </div>
@@ -140,6 +184,8 @@ export default function AdminPage() {
 
   // Tab aktif mengikuti URL hash supaya bisa di-bookmark / dibuka dari pintasan.
   const [activeTab, setActiveTab] = useState(getTabFromHash);
+  // Periode pembanding untuk kartu pertumbuhan user (default 30 hari).
+  const [statPeriod, setStatPeriod] = useState('30d');
 
   useEffect(() => {
     const onHashChange = () => setActiveTab(getTabFromHash());
@@ -159,8 +205,23 @@ export default function AdminPage() {
   const adminUsers = useAdminUsers({ actor: user, enabled: isAdmin });
   const userSummary = useMemo(() => summarizeUsers(adminUsers.users), [adminUsers.users]);
 
-  // Audit log hanya dimuat untuk administrator, dan baru diminta saat tab Audit dibuka.
-  const auditLogs = useAuditLogs({ limit: 50, enabled: isAdmin && activeTab === 'audit' });
+  // Audit log dimuat untuk administrator: penuh saat tab Audit dibuka, dan
+  // secukupnya di tab Ringkasan untuk menghitung "login terakhir".
+  const auditLogs = useAuditLogs({
+    limit: activeTab === 'audit' ? 50 : 100,
+    enabled: isAdmin,
+  });
+
+  const lastLoginMap = useMemo(() => getLastLoginMap(auditLogs.logs), [auditLogs.logs]);
+  const statDays = STAT_PERIODS.find((option) => option.id === statPeriod)?.days ?? null;
+  const growth = useMemo(
+    () => getUserGrowth(adminUsers.users, statDays),
+    [adminUsers.users, statDays],
+  );
+  const statCards = useMemo(
+    () => buildUserStatCards(userSummary, { lastLoginMap, growth, days: statDays }),
+    [userSummary, lastLoginMap, growth, statDays],
+  );
 
   if (!isAdmin) {
     return (
@@ -194,9 +255,12 @@ export default function AdminPage() {
         {activeTab === TAB_OVERVIEW && (
           <AdminOverview
             userSummary={userSummary}
+            cards={statCards}
             loading={adminUsers.loading}
             error={adminUsers.error}
             onNavigate={navigateToTab}
+            period={statPeriod}
+            setPeriod={setStatPeriod}
           />
         )}
 

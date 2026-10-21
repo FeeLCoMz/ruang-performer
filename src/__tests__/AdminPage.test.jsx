@@ -156,6 +156,49 @@ describe('AdminPage', () => {
     expect(mockGetAllUsers).toHaveBeenCalled();
   });
 
+  test('kartu statistik menampilkan ikon dan bisa membuka tab terkait', async () => {
+    const cards = container.querySelectorAll('.admin-stat');
+    expect(cards).toHaveLength(4);
+    expect(container.textContent).toContain('Total user');
+    expect(container.querySelectorAll('.admin-stat-icon')).toHaveLength(4);
+
+    // Kartu "Total user" adalah tombol yang membuka tab User.
+    const totalCard = Array.from(container.querySelectorAll('button.admin-stat')).find(
+      (btn) => btn.textContent.includes('Total user'),
+    );
+    expect(totalCard).toBeTruthy();
+
+    await act(async () => {
+      totalCard.click();
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(container.querySelector('#admin-tab-users').getAttribute('aria-selected')).toBe('true');
+    expect(window.location.hash).toBe('#users');
+  });
+
+  test('periode pertumbuhan user bisa diganti', async () => {
+    const periodButton = (label) => Array.from(
+      container.querySelectorAll('.admin-period'),
+    ).find((btn) => btn.textContent === label);
+
+    // Default 30 hari.
+    expect(periodButton('30 hari').getAttribute('aria-pressed')).toBe('true');
+
+    await act(async () => {
+      periodButton('7 hari').click();
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(periodButton('7 hari').getAttribute('aria-pressed')).toBe('true');
+    expect(periodButton('30 hari').getAttribute('aria-pressed')).toBe('false');
+    expect(container.textContent).toContain('baru dalam 7 hari');
+  });
+
   test('semua tab tersedia untuk owner', () => {
     const tabs = Array.from(container.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent);
     expect(tabs).toHaveLength(4);
@@ -180,10 +223,12 @@ describe('AdminPage', () => {
   });
 
   test('tab audit log memuat aktivitas saat dibuka', async () => {
-    // Tab audit belum dibuka: endpoint audit belum dipanggil.
-    expect(mockGetAuditLogs).not.toHaveBeenCalled();
+    // API audit sudah dipanggil di Ringkasan (untuk "login terakhir"), lalu
+    // dimuat ulang dengan batas entri lebih besar saat tab Audit dibuka.
+    const callsBefore = mockGetAuditLogs.mock.calls.length;
 
     await openTab('audit');
+    expect(mockGetAuditLogs.mock.calls.length).toBeGreaterThan(callsBefore);
 
     expect(findElementByText(container, 'User Login')).toBeTruthy();
     expect(mockGetAuditLogs).toHaveBeenCalled();
