@@ -36,7 +36,7 @@ Karena handler ditulis secara isomorfis, satu kontrak endpoint dilayani oleh dua
 | `POST` | `/api/auth/reset-password` | ❌ | `{ token, email, newPassword }` |
 | `GET` | `/api/auth/user-audit-logs` | 🔒 | Riwayat audit milik user sendiri |
 | `POST` | `/api/auth/logout` | 🔒 | Catat `USER_LOGOUT` di audit log (JWT tetap stateless) |
-| `GET` | `/api/audit-logs?limit=200` | 🔒 owner | Audit log seluruh user (modul Audit Log) |
+| `GET` | `/api/audit-logs?limit=200` | 🔒 admin | Audit log seluruh user (halaman Audit Log) |
 | `DELETE` | `/api/auth/delete-account` | 🔒 | Hapus akun (soft delete) |
 
 ### Audit log otomatis

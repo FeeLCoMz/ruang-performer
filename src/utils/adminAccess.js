@@ -60,6 +60,35 @@ export function getAppRoleLabel(role) {
 }
 
 /**
+ * Fitur administrator default — selalu aktif, tidak punya toggle on/off dan
+ * tidak terdaftar di `src/modules/registry.js`.
+ */
+export const ADMIN_MODULES = [
+  {
+    id: 'user-management',
+    name: 'Manajemen User',
+    icon: '👥',
+    description: 'Ubah role, aktif/nonaktifkan, reset password, atau hapus akun user.',
+    path: '/user-management',
+  },
+  {
+    id: 'backup-restore',
+    name: 'Backup & Restore Database',
+    icon: '💾',
+    description: 'Backup seluruh database ke file SQL dan pulihkan kembali dari file backup.',
+    path: '/backup-restore',
+  },
+  {
+    id: 'audit-log',
+    name: 'Audit Log',
+    icon: '🔍',
+    description:
+      'Riwayat aktivitas pengguna (login, perubahan data, aksi kritis) dengan filter kategori & severity.',
+    path: '/audit-logs',
+  },
+];
+
+/**
  * Matriks akses yang ditampilkan di halaman Administrator.
  * Semua fitur administrator (Manajemen User, Backup & Restore, Audit Log)
  * dapat diakses role `owner` maupun `admin`; hanya pemberian/pengubahan

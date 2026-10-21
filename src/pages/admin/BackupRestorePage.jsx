@@ -1,31 +1,28 @@
 /**
  * BackupRestorePage.jsx
  *
- * Halaman Backup & Restore Database (khusus Owner) — bagian dari
- * direktori `pages/admin` bersama halaman Administrator lainnya.
+ * Halaman Backup & Restore Database (role admin/owner) — fitur administrator
+ * default, bukan modul: selalu aktif dan tidak punya toggle on/off.
  *
- * Sebelumnya bagian dari ToolsPage; sekarang mandiri supaya bisa
- * diaktifkan/dinonaktifkan dari halaman Admin.
+ * Halaman ini tetap ada untuk akses langsung (/backup-restore); isi utamanya
+ * juga tersedia di halaman Administrator (/admin).
  */
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { useBackupRestoreEnabled } from '../../modules/backup-restore/useBackupRestoreEnabled.js';
-import { useSqlBackup } from '../../modules/backup-restore/useSqlBackup.js';
-import { useSqlRestore } from '../../modules/backup-restore/useSqlRestore.js';
+import { isAppAdmin } from '../../utils/adminAccess.js';
+import { useSqlBackup } from './backup-restore/useSqlBackup.js';
+import { useSqlRestore } from './backup-restore/useSqlRestore.js';
 
 export default function BackupRestorePage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [enabled] = useBackupRestoreEnabled();
   const { backingUp, backupError, backupSuccess, handleBackup } = useSqlBackup();
   const { restoring, restoreError, restoreSuccess, sqlInputRef, handleRestore } = useSqlRestore();
 
-  if (!user || user.role !== 'owner') {
+  if (!isAppAdmin(user)) {
     return (
       <div className="page-container">
         <div className="page-header"><h1>Backup & Restore</h1></div>
-        <div className="card">Hanya Owner aplikasi yang dapat mengakses halaman ini.</div>
+        <div className="card">Hanya Administrator aplikasi yang dapat mengakses halaman ini.</div>
       </div>
     );
   }
@@ -38,15 +35,6 @@ export default function BackupRestorePage() {
           <p>Backup seluruh database ke file SQL, atau pulihkan dari backup sebelumnya.</p>
         </div>
       </div>
-
-      {!enabled && (
-        <div className="ct-banner ct-banner-warn" role="status">
-          Modul ini sedang dinonaktifkan.{' '}
-          <button type="button" className="btn btn-secondary ct-link-btn" onClick={() => navigate('/admin')}>
-            Aktifkan di halaman Admin
-          </button>
-        </div>
-      )}
 
       <div className="card tools-grid">
         <div className="tool-card">

@@ -8,8 +8,6 @@
  *   - name         : nama tampilan untuk UI
  *   - description  : penjelasan singkat fungsi modul
  *   - icon         : emoji untuk daftar/halaman modul
- *   - adminOnly    : true untuk modul yang hanya tampil di halaman Administrator
- *                    (/admin) dan disembunyikan dari daftar Modul untuk pengguna
  *   - defaultEnabled: status on/off saat pertama kali (belum pernah diubah user)
  *   - storageKey   : key localStorage tempat status on/off disimpan
  *   - isEnabled()  : fungsi baca status on/off modul
@@ -17,7 +15,10 @@
  *
  * Halaman ModulesPage membaca registry ini secara otomatis — menambah modul
  * baru cukup dengan membuat foldernya dan mendaftarkan satu entri di sini.
- * Gunakan `getVisibleModules()` untuk daftar yang boleh dilihat pengguna biasa.
+ *
+ * Catatan: fitur khusus Administrator (Backup & Restore, Audit Log) BUKAN
+ * modul — fitur tersebut selalu aktif dan hanya ada di halaman /admin
+ * (lihat `src/pages/admin`).
  */
 
 import {
@@ -43,18 +44,6 @@ import {
   subscribeBulkLyricsEnabled,
   DEFAULT_BULK_LYRICS_ENABLED,
 } from './bulk-lyrics/bulkLyricsSettings.js';
-import {
-  isBackupRestoreEnabled,
-  setBackupRestoreEnabled,
-  subscribeBackupRestoreEnabled,
-  DEFAULT_BACKUP_RESTORE_ENABLED,
-} from './backup-restore/backupRestoreSettings.js';
-import {
-  isAuditLogEnabled,
-  setAuditLogEnabled,
-  subscribeAuditLogEnabled,
-  DEFAULT_AUDIT_LOG_ENABLED,
-} from './audit-log/auditLogSettings.js';
 import {
   isMidiCueEnabled,
   setMidiCueEnabled,
@@ -144,34 +133,6 @@ export const MODULES_REGISTRY = [
     subscribe: subscribeBulkLyricsEnabled,
   },
   {
-    id: 'backup-restore',
-    name: 'Backup & Restore Database',
-    description:
-      'Backup seluruh database ke file SQL (dump) dan pulihkan kembali dari file backup — khusus Owner aplikasi.',
-    icon: '💾',
-    path: '/backup-restore',
-    adminOnly: true,
-    defaultEnabled: DEFAULT_BACKUP_RESTORE_ENABLED,
-    storageKey: 'ruang-performer:module:backup-restore-enabled',
-    isEnabled: isBackupRestoreEnabled,
-    setEnabled: setBackupRestoreEnabled,
-    subscribe: subscribeBackupRestoreEnabled,
-  },
-  {
-    id: 'audit-log',
-    name: 'Audit Log',
-    description:
-      'Riwayat aktivitas pengguna (login, perubahan data, aksi kritis) dengan filter kategori & severity serta deteksi aktivitas mencurigakan — khusus Owner.',
-    icon: '🔍',
-    path: '/audit-logs',
-    adminOnly: true,
-    defaultEnabled: DEFAULT_AUDIT_LOG_ENABLED,
-    storageKey: 'ruang-performer:module:audit-log-enabled',
-    isEnabled: isAuditLogEnabled,
-    setEnabled: setAuditLogEnabled,
-    subscribe: subscribeAuditLogEnabled,
-  },
-  {
     id: 'midi-cue',
     name: 'MIDI Cue & Patch Sound',
     description:
@@ -255,10 +216,3 @@ export const getModulesWithStatus = () => MODULES_REGISTRY.map((mod) => ({
   ...mod,
   enabled: typeof mod.isEnabled === 'function' ? mod.isEnabled() : mod.defaultEnabled,
 }));
-
-/** Modul yang khusus Administrator (hanya tampil di halaman /admin). */
-export const getAdminOnlyModulesWithStatus = () =>
-  getModulesWithStatus().filter((mod) => mod.adminOnly);
-
-/** Modul yang boleh dilihat pengguna biasa (halaman Modul). */
-export const getVisibleModules = () => getModulesWithStatus().filter((mod) => !mod.adminOnly);

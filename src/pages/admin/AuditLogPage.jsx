@@ -1,7 +1,8 @@
 /**
  * AuditLogPage.jsx
  *
- * Halaman audit log lengkap (rute /audit-logs). Isi utamanya kini juga
+ * Halaman audit log lengkap (rute /audit-logs) — fitur administrator default,
+ * bukan modul: selalu aktif dan tidak punya toggle on/off. Isi utamanya juga
  * tersedia langsung di halaman Administrator; rute ini dipertahankan untuk
  * akses langsung/bookmark.
  *
@@ -11,9 +12,9 @@
  * `src/utils/auditLogger.js` supaya tidak ada duplikasi.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getAuditLogs } from '../../apiClient.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import { isAppAdmin } from '../../utils/adminAccess.js';
 import {
   ACTION_CATEGORIES,
   SEVERITY_LEVELS,
@@ -22,8 +23,7 @@ import {
   generateAuditReport,
   getSeverityColor,
 } from '../../utils/auditLogger.js';
-import { useAuditLogEnabled } from '../../modules/audit-log/useAuditLogEnabled.js';
-import '../../modules/audit-log/audit-log.css';
+import './audit-log/audit-log.css';
 
 const CATEGORY_OPTIONS = ['', ...Object.values(ACTION_CATEGORIES)];
 const SEVERITY_OPTIONS = ['', ...Object.values(SEVERITY_LEVELS)];
@@ -37,15 +37,13 @@ const formatTimestamp = (value) => {
 
 export default function AuditLogPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [enabled] = useAuditLogEnabled();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
   const [filters, setFilters] = useState({ category: '', severity: '', status: '' });
 
-  const isOwner = !!user && user.role === 'owner';
+  const isAdmin = isAppAdmin(user);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,17 +60,17 @@ export default function AuditLogPage() {
   }, []);
 
   useEffect(() => {
-    if (isOwner) load();
-  }, [isOwner, load]);
+    if (isAdmin) load();
+  }, [isAdmin, load]);
 
   const filtered = useMemo(() => filterAuditLogs(logs, filters), [logs, filters]);
   const report = useMemo(() => generateAuditReport(filtered), [filtered]);
 
-  if (!isOwner) {
+  if (!isAdmin) {
     return (
       <div className="page-container">
         <div className="page-header"><h1>Audit Log</h1></div>
-        <div className="card">Hanya Owner aplikasi yang dapat mengakses halaman ini.</div>
+        <div className="card">Hanya Administrator aplikasi yang dapat mengakses halaman ini.</div>
       </div>
     );
   }
@@ -90,15 +88,6 @@ export default function AuditLogPage() {
           {loading ? 'Memuat...' : 'Muat ulang'}
         </button>
       </div>
-
-      {!enabled && (
-        <div className="ct-banner ct-banner-warn" role="status">
-          Modul ini sedang dinonaktifkan.{' '}
-          <button type="button" className="btn btn-secondary ct-link-btn" onClick={() => navigate('/admin')}>
-            Aktifkan di halaman Admin
-          </button>
-        </div>
-      )}
 
       {error && <div className="tools-feedback tools-feedback-error">{error}</div>}
       {warning && <div className="tools-feedback">Peringatan server: {warning}</div>}

@@ -5,7 +5,7 @@
  * Dipindah dari ToolsPage agar modul Backup & Restore mandiri.
  */
 import { useRef, useState } from 'react';
-import { getAuthHeader } from '../../utils/auth.js';
+import { getAuthHeader } from '../../../utils/auth.js';
 
 export function useSqlRestore() {
   const [restoring, setRestoring] = useState(false);

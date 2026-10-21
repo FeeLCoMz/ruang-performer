@@ -178,8 +178,8 @@ Struktur folder:
 src/
 ├── components/   # UI reusable
 ├── pages/        # Komponen rute
-│   └── admin/    # Halaman khusus Administrator (Admin, User Management, Backup & Restore, Audit Log)
-├── modules/      # Modul fitur (logika + halaman modul pengguna)
+│   └── admin/    # Halaman & modul khusus Administrator (Admin, User Management, Backup & Restore, Audit Log)
+├── modules/      # Modul fitur untuk pengguna (logika + halaman modul)
 ├── contexts/     # React Context
 ├── hooks/        # Custom hooks
 ├── utils/        # Fungsi murni

@@ -10,16 +10,16 @@
  * 2. Pintasan modul administrasi.
  * 3. Kelola user langsung di halaman ini (role, status, reset password, hapus).
  * 4. Toggle modul aplikasi (sama seperti halaman Modul, tanpa harus pindah).
- * 5. Backup & Restore database langsung dari halaman ini.
- * 6. Audit log dengan filter + aktivitas terbaru.
+ * 5. Backup & Restore database — fitur admin default (selalu aktif).
+ * 6. Audit log dengan filter + aktivitas terbaru — fitur admin default.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import * as apiClient from '../../apiClient.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useModulesEnabled } from '../../hooks/useModulesEnabled.js';
-import { getAdminOnlyModulesWithStatus, getModulesWithStatus } from '../../modules/registry.js';
-import { useSqlBackup } from '../../modules/backup-restore/useSqlBackup.js';
-import { useSqlRestore } from '../../modules/backup-restore/useSqlRestore.js';
+import { getModulesWithStatus } from '../../modules/registry.js';
+import { useSqlBackup } from './backup-restore/useSqlBackup.js';
+import { useSqlRestore } from './backup-restore/useSqlRestore.js';
 import {
   ACTION_CATEGORIES,
   SEVERITY_LEVELS,
@@ -398,9 +398,8 @@ export default function AdminPage() {
   const isAdmin = isAppAdmin(user);
 
   const { statuses, setEnabled } = useModulesEnabled();
+  // Hanya modul aplikasi untuk pengguna; fitur admin default bukan modul.
   const modules = useMemo(() => getModulesWithStatus(), []);
-  // Modul khusus Administrator (Backup & Restore, Audit Log) hanya muncul di sini.
-  const adminModules = useMemo(() => getAdminOnlyModulesWithStatus(), []);
 
   // Ringkasan akun memakai data user yang sama dengan panel Kelola User.
   const { users, loading: usersLoading, error: usersError } = useAdminUsers({
@@ -501,7 +500,7 @@ export default function AdminPage() {
                 <span className="admin-muted">{mod.description}</span>
               </div>
               <span className="admin-access-tag">
-                {mod.adminOnly ? '🔒 khusus admin' : getModuleAccessLabel(mod.id)}
+                {getModuleAccessLabel(mod.id)}
               </span>
               <label className="modules-toggle">
                 <input
@@ -520,40 +519,7 @@ export default function AdminPage() {
         })}
       </div>
 
-      {/* Modul khusus Administrator */}
-      <h2 className="admin-section-title">Modul Khusus Administrator</h2>
-      <div className="card admin-modules-list">
-        {adminModules.length === 0 && (
-          <div className="admin-muted">Belum ada modul khusus administrator.</div>
-        )}
-        {adminModules.map((mod) => {
-          const enabled = !!statuses[mod.id];
-          return (
-            <div key={mod.id} className={`admin-module-row${enabled ? ' is-active' : ''}`}>
-              <div className="admin-module-info">
-                <strong>
-                  <span aria-hidden="true">{mod.icon}</span> {mod.name}
-                </strong>
-                <span className="admin-muted">{mod.description}</span>
-              </div>
-              <label className="modules-toggle">
-                <input
-                  type="checkbox"
-                  checked={enabled}
-                  onChange={(event) => setEnabled(mod.id, event.target.checked)}
-                  aria-label={formatModuleToggleLabel(mod.name, enabled)}
-                />
-                <span className="modules-toggle-track" aria-hidden="true">
-                  <span className="modules-toggle-thumb" />
-                </span>
-                <span className="modules-toggle-state">{enabled ? 'Aktif' : 'Nonaktif'}</span>
-              </label>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Backup/Restore + Audit log */}
+      {/* Backup/Restore + Audit log — fitur admin default, bukan modul. */}
       <AdminBackupAndAudit />
     </div>
   );

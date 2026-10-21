@@ -7,6 +7,7 @@ import {
   summarizeUsers,
   canManageUserRole,
   getAssignableRoles,
+  ADMIN_MODULES,
 } from '../utils/adminAccess.js';
 
 /**
@@ -43,6 +44,18 @@ describe('adminAccess', () => {
     expect(getModuleAccessLabel('backup-restore')).toBe('khusus admin');
     expect(getModuleAccessLabel('modules')).toBe('semua user');
     expect(getModuleAccessLabel('modul-tidak-dikenal')).toBe('semua user');
+  });
+
+  it('fitur admin default terdaftar terpisah dari modul', () => {
+    const ids = ADMIN_MODULES.map((mod) => mod.id);
+    expect(ids).toContain('user-management');
+    expect(ids).toContain('backup-restore');
+    expect(ids).toContain('audit-log');
+    // Fitur admin default tidak punya toggle on/off.
+    ADMIN_MODULES.forEach((mod) => {
+      expect(mod.setEnabled).toBeUndefined();
+      expect(mod.isEnabled).toBeUndefined();
+    });
   });
 
   it('admin boleh mengelola user biasa tetapi bukan owner', () => {

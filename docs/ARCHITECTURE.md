@@ -139,8 +139,8 @@ Route yang ada:
 | `/admin` | Halaman khusus Administrator (role `owner`/`admin`) — `src/pages/admin/AdminPage.jsx` |
 | `/user-management` | Manajemen user (owner) — `src/pages/admin/UserManagementPage.jsx` |
 | `/tools` | Redirect ke `/admin` (halaman lama sudah dihapus) |
-| `/backup-restore` | Backup & Restore database (owner) — `src/pages/admin/BackupRestorePage.jsx` |
-| `/audit-logs` | Audit Log (owner) — `src/pages/admin/AuditLogPage.jsx` |
+| `/backup-restore` | Backup & Restore database (admin) — fitur admin default, bukan modul |
+| `/audit-logs` | Audit Log (admin) — fitur admin default, bukan modul |
 
 Halaman non-kritis di-`lazy()` dan dibungkus `Suspense` dengan `PageLoader`.
 

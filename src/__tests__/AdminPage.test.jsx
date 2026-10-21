@@ -31,9 +31,6 @@ vi.mock('../modules/registry.js', () => ({
   getModulesWithStatus: () => [
     { id: 'midi-cue', name: 'MIDI Cue', icon: '🎼', description: 'desc' },
   ],
-  getAdminOnlyModulesWithStatus: () => [
-    { id: 'audit-log', name: 'Audit Log', icon: '🔍', description: 'desc', adminOnly: true },
-  ],
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -41,10 +38,10 @@ vi.mock('react-router-dom', () => ({
 }));
 
 // Panel backup/restore memakai hook modul; cukup distub di test ini.
-vi.mock('../modules/backup-restore/useSqlBackup.js', () => ({
+vi.mock('../pages/admin/backup-restore/useSqlBackup.js', () => ({
   useSqlBackup: () => ({ backingUp: false, backupError: null, backupSuccess: null, handleBackup: vi.fn() }),
 }));
-vi.mock('../modules/backup-restore/useSqlRestore.js', () => ({
+vi.mock('../pages/admin/backup-restore/useSqlRestore.js', () => ({
   useSqlRestore: () => ({
     restoring: false,
     restoreError: null,
@@ -118,9 +115,9 @@ describe('AdminPage', () => {
     expect(mockGetAuditLogs).toHaveBeenCalled();
   });
 
-  test('owner melihat modul khusus administrator yang dipisahkan dari modul pengguna', () => {
-    expect(container.textContent).toContain('Modul Khusus Administrator');
-    expect(container.textContent).toContain('Audit Log');
+  test('owner melihat modul pengguna, dan fitur admin bukan modul', () => {
+    expect(container.textContent).toContain('MIDI Cue');
+    expect(container.textContent).not.toContain('Modul Khusus Administrator');
   });
 
   test('admin mendapat akses ke semua fitur admin di halaman ini', async () => {
@@ -139,7 +136,6 @@ describe('AdminPage', () => {
     expect(container.textContent).toContain('Kelola User');
     expect(container.textContent).toContain('Backup Database');
     expect(findElementByText(container, 'Audit Log')).toBeTruthy();
-    expect(container.textContent).toContain('Modul Khusus Administrator');
     expect(container.textContent).not.toContain('Khusus Owner aplikasi');
     expect(mockGetAllUsers).toHaveBeenCalled();
     expect(mockGetAuditLogs).toHaveBeenCalled();

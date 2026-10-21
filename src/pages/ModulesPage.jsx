@@ -4,23 +4,22 @@
  * Halaman khusus modul: menampilkan daftar semua modul yang terdeteksi
  * dari `src/modules/registry.js`, lengkap dengan toggle on/off per modul.
  *
- * Modul bertanda `adminOnly` (mis. Backup & Restore, Audit Log) tidak ikut
- * tampil — modul tersebut hanya dikelola dari halaman Administrator (/admin).
- *
+ * Modul khusus Administrator (Backup & Restore, Audit Log) bukan modul —
+ * fitur itu selalu aktif dan hanya ada di halaman Administrator (/admin).
  * User bisa mengaktifkan / menonaktifkan modul dari sini; perubahan langsung
  * berpengaruh ke fitur terkait (mis. modul MIDI menghentikan akses Web MIDI).
  */
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useModulesEnabled } from '../hooks/useModulesEnabled.js';
-import { getVisibleModules } from '../modules/registry.js';
+import { getModulesWithStatus } from '../modules/registry.js';
 import { useAIUsage } from '../modules/ai-autofill/useAIUsage.js';
 
 export default function ModulesPage() {
   const { statuses, setEnabled } = useModulesEnabled();
-  // Modul khusus Administrator (Backup & Restore, Audit Log) tidak ditampilkan
-  // di sini — pengaturan modul tersebut ada di halaman /admin.
-  const modules = getVisibleModules();
+  // Modul khusus Administrator (Backup & Restore, Audit Log) bukan modul —
+  // fitur itu selalu tersedia di halaman /admin, jadi tidak didaftarkan di sini.
+  const modules = getModulesWithStatus();
   // Kuota AI Autofill ditampilkan di kartunya supaya user tahu sisa pemakaian
   // sebelum kena 429, tanpa harus membuka editor lagu.
   const { usage: aiUsage, loading: aiUsageLoading, refresh: refreshAiUsage } = useAIUsage(!!statuses['ai-autofill']);
