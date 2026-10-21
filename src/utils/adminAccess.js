@@ -76,7 +76,7 @@ export const ADMIN_MODULES = [
     name: 'Backup & Restore Database',
     icon: '💾',
     description: 'Backup seluruh database ke file SQL dan pulihkan kembali dari file backup.',
-    path: '/backup-restore',
+    path: '/admin#backup',
   },
   {
     id: 'audit-log',

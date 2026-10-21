@@ -35,7 +35,6 @@ const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx")
 const AdminPage = lazy(() => import("./pages/admin/AdminPage.jsx"));
 const ChordTranscriberPage = lazy(() => import("./modules/chord-transcriber/ChordTranscriberPage.jsx"));
 const BulkLyricsPage = lazy(() => import("./modules/bulk-lyrics/BulkLyricsPage.jsx"));
-const BackupRestorePage = lazy(() => import("./pages/admin/BackupRestorePage.jsx"));
 const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage.jsx"));
 
 // Loading fallback component
@@ -492,7 +491,7 @@ function AppContent() {
               <Route path="/modules" element={<ModulesPage />} />
               <Route path="/chord-transcriber" element={<ChordTranscriberPage />} />
               <Route path="/bulk-lyrics" element={<BulkLyricsPage />} />
-              <Route path="/backup-restore" element={<BackupRestorePage />} />
+              <Route path="/backup-restore" element={<Navigate to="/admin#backup" replace />} />
               <Route path="/audit-logs" element={<AuditLogPage />} />
               <Route path="/user-management" element={<Navigate to="/admin" replace />} />
               {/* Halaman khusus Administrator: hanya role akun owner/admin. */}

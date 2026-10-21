@@ -1,9 +1,9 @@
 /**
  * BackupRestorePanel.jsx
  *
- * Panel Backup & Restore database di halaman Administrator. Dipakai juga oleh
- * halaman /backup-restore agar tidak ada duplikasi markup. Fitur administrator
- * default: selalu aktif, bukan modul.
+ * Panel Backup & Restore database, ditampilkan di tab Backup halaman
+ * Administrator (/admin#backup). Fitur administrator default: selalu aktif,
+ * bukan modul. Rute lama /backup-restore dialihkan ke tab ini.
  *
  * Backup adalah tindakan aman; Restore menimpa seluruh database sehingga
  * ditempatkan di zona berisiko dan baru aktif setelah admin mengetik kata
