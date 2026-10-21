@@ -88,7 +88,21 @@ describe('AdminPage', () => {
       root.unmount();
     });
     container.remove();
+    // Tab aktif disimpan di URL hash — bersihkan agar test lain mulai dari Ringkasan.
+    window.location.hash = '';
   });
+
+  /** Pindah tab lewat tombol navigasi (tab aktif tercermin di URL hash). */
+  async function openTab(tabId) {
+    const tab = container.querySelector(`#admin-tab-${tabId}`);
+    expect(tab).toBeTruthy();
+    await act(async () => {
+      tab.click();
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+  }
 
   test('member ditolak dan tidak memuat data admin', async () => {
     mockUser = { user: { userId: 'u9', username: 'budi', role: 'member' } };
@@ -106,12 +120,44 @@ describe('AdminPage', () => {
     expect(mockGetAuditLogs).not.toHaveBeenCalled();
   });
 
-  test('owner melihat ringkasan akun dan aktivitas', () => {
+  test('owner melihat ringkasan akun', () => {
     expect(container.textContent).toContain('Total user');
     expect(container.textContent).toContain('Admin & Owner');
-    expect(findElementByText(container, 'User Login')).toBeTruthy();
     expect(mockGetAllUsers).toHaveBeenCalled();
+  });
+
+  test('semua tab tersedia untuk owner', () => {
+    const tabs = Array.from(container.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent);
+    expect(tabs).toHaveLength(4);
+    expect(tabs.join(' ')).toContain('Ringkasan');
+    expect(tabs.join(' ')).toContain('User');
+    expect(tabs.join(' ')).toContain('Backup');
+    expect(tabs.join(' ')).toContain('Audit Log');
+  });
+
+  test('URL hash membuka tab yang dituju langsung', async () => {
+    window.location.hash = 'backup';
+
+    await act(async () => {
+      root.render(<AdminPage key="deep-link" />);
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(container.querySelector('#admin-tab-backup').getAttribute('aria-selected')).toBe('true');
+    expect(container.textContent).toContain('Backup Database');
+  });
+
+  test('tab audit log memuat aktivitas saat dibuka', async () => {
+    // Tab audit belum dibuka: endpoint audit belum dipanggil.
+    expect(mockGetAuditLogs).not.toHaveBeenCalled();
+
+    await openTab('audit');
+
+    expect(findElementByText(container, 'User Login')).toBeTruthy();
     expect(mockGetAuditLogs).toHaveBeenCalled();
+    expect(window.location.hash).toBe('#audit');
   });
 
   test('fitur admin bukan modul', () => {
@@ -136,13 +182,22 @@ describe('AdminPage', () => {
       await flushPromises();
     });
 
-    // Ringkasan akun, kelola user, backup/restore, audit log, modul — semua tampil.
+    // Ringkasan akun tampil di tab default.
     expect(container.textContent).toContain('Total user');
-    expect(container.textContent).toContain('Kelola User');
-    expect(container.textContent).toContain('Backup Database');
-    expect(findElementByText(container, 'Audit Log')).toBeTruthy();
     expect(container.textContent).not.toContain('Khusus Owner aplikasi');
     expect(mockGetAllUsers).toHaveBeenCalled();
+
+    // Kelola user.
+    await openTab('users');
+    expect(container.textContent).toContain('Kelola User');
+
+    // Backup/restore.
+    await openTab('backup');
+    expect(container.textContent).toContain('Backup Database');
+
+    // Audit log.
+    await openTab('audit');
+    expect(findElementByText(container, 'Audit Log')).toBeTruthy();
     expect(mockGetAuditLogs).toHaveBeenCalled();
   });
 
@@ -154,6 +209,8 @@ describe('AdminPage', () => {
     await act(async () => {
       await flushPromises();
     });
+
+    await openTab('users');
 
     // Baris owner (u1): tidak ada <select> role maupun tombol Hapus yang aktif.
     const ownerRow = container.querySelector('#admin-users tbody tr');

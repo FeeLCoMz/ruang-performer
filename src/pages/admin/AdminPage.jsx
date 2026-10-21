@@ -4,16 +4,17 @@
  * Halaman khusus Administrator (/admin) — pusat kendali untuk role akun
  * `admin` dan `owner` aplikasi (lihat `src/utils/adminAccess.js`).
  *
- * File ini hanya bertugas merangkai panel; setiap panel ada di folder
- * fiturnya masing-masing:
- * - users/UserManagementPanel.jsx                 → kelola user + ringkasan akun
+ * Halaman ini berupa tab; tab aktif disimpan di URL hash (`#users`, `#backup`,
+ * `#audit`) sehingga bisa di-bookmark dan tombol back berfungsi. Setiap tab
+ * memuat panel dari folder fiturnya masing-masing:
+ * - users/UserManagementPanel.jsx                 → kelola user
  * - backup-restore/BackupRestorePanel.jsx         → backup & restore database
  * - audit-log/AuditLogPanel.jsx + useAuditLogs.js → audit log & aktivitas
  *
  * Data user dimiliki satu hook (`useAdminUsers`) dan dibagikan ke ringkasan
  * statistik maupun tabel user, sehingga endpoint /users hanya dipanggil sekali.
  */
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { getAppRoleLabel, isAppAdmin, summarizeUsers } from '../../utils/adminAccess.js';
 import { useAdminUsers } from './useAdminUsers.js';
@@ -28,48 +29,88 @@ import './admin.css';
 
 const ACCESS_DENIED_TEXT = 'Halaman ini hanya dapat diakses oleh Administrator aplikasi.';
 
-/** Kartu pintasan — semuanya mengarah ke bagian di halaman ini. */
-function AdminShortcuts({ onScrollTo }) {
-  const shortcuts = [
-    {
-      id: 'admin-users',
-      title: '👥 Manajemen User',
-      description: 'Ubah role, aktif/nonaktifkan, reset password, atau hapus akun user.',
-      action: 'Kelola User',
-      variant: 'btn-primary',
-    },
-    {
-      id: 'admin-backup',
-      title: '💾 Backup & Restore',
-      description: 'Backup seluruh database ke file SQL atau pulihkan dari backup sebelumnya.',
-      action: 'Buka Backup',
-      variant: 'btn-primary',
-    },
-    {
-      id: 'admin-audit',
-      title: '🔍 Audit Log',
-      description: 'Riwayat login, perubahan data, dan aksi kritis dengan filter kategori.',
-      action: 'Lihat Audit Log',
-      variant: 'btn-primary',
-    },
-  ];
+const TAB_OVERVIEW = 'ringkasan';
 
+const ADMIN_TABS = [
+  { id: TAB_OVERVIEW, label: 'Ringkasan', icon: '📊' },
+  { id: 'users', label: 'User', icon: '👥' },
+  { id: 'backup', label: 'Backup', icon: '💾' },
+  { id: 'audit', label: 'Audit Log', icon: '🔍' },
+];
+
+function getTabFromHash() {
+  const hash = window.location.hash.replace(/^#/, '');
+  return ADMIN_TABS.some((tab) => tab.id === hash) ? hash : TAB_OVERVIEW;
+}
+
+/** Navigasi tab — tombol dengan peran tab agar mudah dioperasikan keyboard. */
+function AdminTabs({ activeTab, onSelect }) {
   return (
-    <div className="tools-grid admin-actions-grid">
-      {shortcuts.map((item) => (
-        <div key={item.id} className="tool-card admin-card">
-          <h2>{item.title}</h2>
-          <p>{item.description}</p>
-          <button className={`btn ${item.variant}`} onClick={() => onScrollTo(item.id)}>
-            {item.action}
+    <div className="admin-tabs" role="tablist" aria-label="Bagian administrator">
+      {ADMIN_TABS.map((tab) => {
+        const selected = tab.id === activeTab;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            id={`admin-tab-${tab.id}`}
+            aria-selected={selected}
+            aria-controls={`admin-panel-${tab.id}`}
+            className={`admin-tab${selected ? ' is-active' : ''}`}
+            onClick={() => onSelect(tab.id)}
+          >
+            <span aria-hidden="true">{tab.icon}</span> {tab.label}
           </button>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-/** Ringkasan jumlah akun dari data user yang sama dengan tabel Kelola User. */
+/** Tab ringkasan: statistik akun + pintasan ke tab lain. */
+function AdminOverview({ userSummary, loading, error, onNavigate }) {
+  const shortcuts = [
+    {
+      id: 'users',
+      title: '👥 Manajemen User',
+      description: 'Ubah role, aktif/nonaktifkan, reset password, atau hapus akun user.',
+      action: 'Kelola User',
+    },
+    {
+      id: 'backup',
+      title: '💾 Backup & Restore',
+      description: 'Backup seluruh database ke file SQL atau pulihkan dari backup sebelumnya.',
+      action: 'Buka Backup',
+    },
+    {
+      id: 'audit',
+      title: '🔍 Audit Log',
+      description: 'Riwayat login, perubahan data, dan aksi kritis dengan filter kategori.',
+      action: 'Lihat Audit Log',
+    },
+  ];
+
+  return (
+    <>
+      <AdminUserSummary summary={userSummary} loading={loading} error={error} />
+      <h2 className="admin-section-title">Kelola Sistem</h2>
+      <div className="tools-grid admin-actions-grid">
+        {shortcuts.map((item) => (
+          <div key={item.id} className="tool-card admin-card">
+            <h2>{item.title}</h2>
+            <p>{item.description}</p>
+            <button className="btn btn-primary" onClick={() => onNavigate(item.id)}>
+              {item.action}
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** Ringkasan jumlah akun dari data user yang sama dengan tab User. */
 function AdminUserSummary({ summary, loading, error }) {
   const stats = [
     { value: summary.total, label: 'Total user' },
@@ -97,12 +138,29 @@ export default function AdminPage() {
   const { user } = useAuth();
   const isAdmin = isAppAdmin(user);
 
-  // Satu sumber data user untuk ringkasan statistik dan panel Kelola User.
+  // Tab aktif mengikuti URL hash supaya bisa di-bookmark / dibuka dari pintasan.
+  const [activeTab, setActiveTab] = useState(getTabFromHash);
+
+  useEffect(() => {
+    const onHashChange = () => setActiveTab(getTabFromHash());
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const navigateToTab = (tabId) => {
+    if (window.location.hash.replace(/^#/, '') === tabId) {
+      setActiveTab(tabId);
+      return;
+    }
+    window.location.hash = tabId;
+  };
+
+  // Satu sumber data user untuk ringkasan statistik dan tab User.
   const adminUsers = useAdminUsers({ actor: user, enabled: isAdmin });
   const userSummary = useMemo(() => summarizeUsers(adminUsers.users), [adminUsers.users]);
 
-  // Audit log hanya dimuat untuk administrator.
-  const auditLogs = useAuditLogs({ limit: 50, enabled: isAdmin });
+  // Audit log hanya dimuat untuk administrator, dan baru diminta saat tab Audit dibuka.
+  const auditLogs = useAuditLogs({ limit: 50, enabled: isAdmin && activeTab === 'audit' });
 
   if (!isAdmin) {
     return (
@@ -112,8 +170,6 @@ export default function AdminPage() {
       </div>
     );
   }
-
-  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
     <div className="page-container admin-page">
@@ -127,19 +183,31 @@ export default function AdminPage() {
         </span>
       </div>
 
-      <AdminUserSummary
-        summary={userSummary}
-        loading={adminUsers.loading}
-        error={adminUsers.error}
-      />
+      <AdminTabs activeTab={activeTab} onSelect={navigateToTab} />
 
-      <h2 className="admin-section-title">Kelola Sistem</h2>
-      <AdminShortcuts onScrollTo={scrollTo} />
+      <div
+        className="admin-tab-panel"
+        role="tabpanel"
+        id={`admin-panel-${activeTab}`}
+        aria-labelledby={`admin-tab-${activeTab}`}
+      >
+        {activeTab === TAB_OVERVIEW && (
+          <AdminOverview
+            userSummary={userSummary}
+            loading={adminUsers.loading}
+            error={adminUsers.error}
+            onNavigate={navigateToTab}
+          />
+        )}
 
-      <UserManagementPanel actor={user} adminUsers={adminUsers} />
+        {activeTab === 'users' && (
+          <UserManagementPanel actor={user} adminUsers={adminUsers} />
+        )}
 
-      <BackupRestorePanel withHeading />
-      <AuditLogPanel auditLogs={auditLogs} mode="compact" />
+        {activeTab === 'backup' && <BackupRestorePanel />}
+
+        {activeTab === 'audit' && <AuditLogPanel auditLogs={auditLogs} mode="compact" />}
+      </div>
     </div>
   );
 }
