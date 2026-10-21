@@ -77,46 +77,6 @@
   opacity: 0.75;
 }
 
-/* Daftar modul */
-.admin-modules-list {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-}
-
-.admin-module-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.admin-module-row:last-child {
-  border-bottom: none;
-}
-
-.admin-module-row.is-active {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.admin-module-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
-.admin-access-tag {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border-color);
-  opacity: 0.8;
-  white-space: nowrap;
-}
-
 /* Aktivitas */
 .admin-activity-card {
   display: flex;
@@ -183,14 +143,6 @@
 }
 
 @media (max-width: 640px) {
-  .admin-module-row {
-    flex-wrap: wrap;
-  }
-
-  .admin-module-info {
-    flex-basis: 100%;
-  }
-
   .admin-activity-item {
     flex-wrap: wrap;
   }

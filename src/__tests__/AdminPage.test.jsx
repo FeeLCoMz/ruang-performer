@@ -106,18 +106,23 @@ describe('AdminPage', () => {
     expect(mockGetAuditLogs).not.toHaveBeenCalled();
   });
 
-  test('owner melihat ringkasan akun, modul, dan aktivitas', () => {
+  test('owner melihat ringkasan akun dan aktivitas', () => {
     expect(container.textContent).toContain('Total user');
     expect(container.textContent).toContain('Admin & Owner');
-    expect(container.textContent).toContain('MIDI Cue');
     expect(findElementByText(container, 'User Login')).toBeTruthy();
     expect(mockGetAllUsers).toHaveBeenCalled();
     expect(mockGetAuditLogs).toHaveBeenCalled();
   });
 
-  test('owner melihat modul pengguna, dan fitur admin bukan modul', () => {
-    expect(container.textContent).toContain('MIDI Cue');
+  test('fitur admin bukan modul', () => {
     expect(container.textContent).not.toContain('Modul Khusus Administrator');
+  });
+
+  test('halaman admin tidak menampilkan panel modul aplikasi', () => {
+    // Toggle modul pengguna hanya ada di halaman /modules, bukan /admin.
+    expect(container.querySelector('#admin-modules')).toBeNull();
+    expect(container.querySelector('.admin-modules-list')).toBeNull();
+    expect(container.textContent).not.toContain('Modul Aplikasi');
   });
 
   test('admin mendapat akses ke semua fitur admin di halaman ini', async () => {

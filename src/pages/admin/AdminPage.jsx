@@ -7,7 +7,6 @@
  * File ini hanya bertugas merangkai panel; setiap panel ada di folder
  * fiturnya masing-masing:
  * - users/UserManagementPanel.jsx                 → kelola user + ringkasan akun
- * - modules/ModuleToggleList.jsx                  → toggle modul aplikasi
  * - backup-restore/BackupRestorePanel.jsx         → backup & restore database
  * - audit-log/AuditLogPanel.jsx + useAuditLogs.js → audit log & aktivitas
  *
@@ -16,14 +15,11 @@
  */
 import React, { useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { useModulesEnabled } from '../../hooks/useModulesEnabled.js';
-import { getModulesWithStatus } from '../../modules/registry.js';
 import { getAppRoleLabel, isAppAdmin, summarizeUsers } from '../../utils/adminAccess.js';
 import { useAdminUsers } from './useAdminUsers.js';
 import { useAuditLogs } from './audit-log/useAuditLogs.js';
 import AuditLogPanel from './audit-log/AuditLogPanel.jsx';
 import UserManagementPanel from './users/UserManagementPanel.jsx';
-import ModuleToggleList from './modules/ModuleToggleList.jsx';
 import BackupRestorePanel from './backup-restore/BackupRestorePanel.jsx';
 import './admin.css';
 
@@ -55,13 +51,6 @@ function AdminShortcuts({ onScrollTo }) {
       description: 'Riwayat login, perubahan data, dan aksi kritis dengan filter kategori.',
       action: 'Lihat Audit Log',
       variant: 'btn-primary',
-    },
-    {
-      id: 'admin-modules',
-      title: '🧩 Modul Aplikasi',
-      description: 'Aktifkan atau nonaktifkan modul tambahan. Atur langsung di daftar di bawah.',
-      action: 'Lihat Modul',
-      variant: 'btn-secondary',
     },
   ];
 
@@ -108,10 +97,6 @@ export default function AdminPage() {
   const { user } = useAuth();
   const isAdmin = isAppAdmin(user);
 
-  const { statuses, setEnabled } = useModulesEnabled();
-  // Hanya modul aplikasi untuk pengguna; fitur admin default bukan modul.
-  const modules = useMemo(() => getModulesWithStatus(), []);
-
   // Satu sumber data user untuk ringkasan statistik dan panel Kelola User.
   const adminUsers = useAdminUsers({ actor: user, enabled: isAdmin });
   const userSummary = useMemo(() => summarizeUsers(adminUsers.users), [adminUsers.users]);
@@ -135,7 +120,7 @@ export default function AdminPage() {
       <div className="page-header">
         <div>
           <h1>🛡️ Administrator</h1>
-          <p>Semua fitur administrasi: kelola user, modul, backup, dan audit log.</p>
+          <p>Semua fitur administrasi: kelola user, backup, dan audit log.</p>
         </div>
         <span className={`admin-role-badge admin-role-${user.role}`}>
           {getAppRoleLabel(user.role)}
@@ -152,9 +137,6 @@ export default function AdminPage() {
       <AdminShortcuts onScrollTo={scrollTo} />
 
       <UserManagementPanel actor={user} adminUsers={adminUsers} />
-
-      <h2 className="admin-section-title" id="admin-modules">Modul Aplikasi</h2>
-      <ModuleToggleList modules={modules} statuses={statuses} setEnabled={setEnabled} />
 
       <BackupRestorePanel withHeading />
       <AuditLogPanel auditLogs={auditLogs} mode="compact" />
