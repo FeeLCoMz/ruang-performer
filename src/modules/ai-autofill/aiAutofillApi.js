@@ -55,7 +55,10 @@ export function describeYouTubeFailure(result) {
     return `YouTube ID tidak terisi: ${debug.youtubeError}`;
   }
   if (debug.youtubeResults === 0) {
-    return 'YouTube ID tidak terisi: tidak ada video yang cocok ditemukan.';
+    const tried = Array.isArray(debug.youtubeQueriesTried) && debug.youtubeQueriesTried.length > 0
+      ? ` (dicoba: ${debug.youtubeQueriesTried.map((q) => `"${q}"`).join(', ')})`
+      : '';
+    return `YouTube ID tidak terisi: tidak ada video yang cocok ditemukan${tried}.`;
   }
   return 'YouTube ID tidak terisi: hasil pencarian kosong.';
 }

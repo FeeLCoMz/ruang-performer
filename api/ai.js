@@ -330,36 +330,59 @@ async function searchYoutube(title, artist) {
   try {
     // Artist bisa kosong: hindari query berspasi ganda / spasi di akhir.
     const query = [title, artist].map((part) => String(part || '').trim()).filter(Boolean).join(' ');
-    const url = new URL('https://www.googleapis.com/youtube/v3/search');
-    url.searchParams.set('part', 'snippet');
-    url.searchParams.set('type', 'video');
-    url.searchParams.set('maxResults', '1');
-    url.searchParams.set('videoCategoryId', '10'); // Music
-    url.searchParams.set('q', query);
-    url.searchParams.set('key', apiKey);
 
-    // `timeout` bukan opsi fetch yang sah (diabaikan), jadi pakai AbortSignal:
-    // tanpa ini request bisa menggantung dan seluruh autofill ikut menunggu.
-    const youtubeResponse = await fetch(url.toString(), {
-      signal: AbortSignal.timeout(5000),
-    });
+    /** Satu percobaan pencarian YouTube. */
+    const searchOnce = async (q) => {
+      const url = new URL('https://www.googleapis.com/youtube/v3/search');
+      url.searchParams.set('part', 'snippet');
+      url.searchParams.set('type', 'video');
+      url.searchParams.set('maxResults', '1');
+      url.searchParams.set('q', q);
+      url.searchParams.set('key', apiKey);
 
-    if (!youtubeResponse.ok) {
-      // Sertakan alasan dari Google supaya terlihat di debug (mis. quotaExceeded).
-      const errorData = await youtubeResponse.json().catch(() => ({}));
-      debug.youtubeStatus = youtubeResponse.status;
-      debug.youtubeError = errorData?.error?.message || youtubeResponse.statusText;
-      console.error(`YouTube API returned ${youtubeResponse.status}:`, debug.youtubeError);
-      return { youtubeId: null, debug };
+      // `timeout` bukan opsi fetch yang sah (diabaikan), jadi pakai AbortSignal:
+      // tanpa ini request bisa menggantung dan seluruh autofill ikut menunggu.
+      const response = await fetch(url.toString(), {
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!response.ok) {
+        // Sertakan alasan dari Google supaya terlihat di debug (mis. quotaExceeded).
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData?.error?.message || response.statusText || `HTTP ${response.status}`);
+        error.status = response.status;
+        throw error;
+      }
+
+      const data = await response.json();
+      const items = Array.isArray(data?.items) ? data.items : [];
+      return items[0]?.id?.videoId ?? null;
+    };
+
+    // Beberapa kata (mis. "live", "remastered", nama album) membuat hasil kosong
+    // padahal lagunya jelas ada. Coba bertahap dari paling spesifik:
+    //   1) title + artist, 2) title saja, 3) title tanpa isi kurung.
+    const attempts = [...new Set([
+      query,
+      String(title || '').trim(),
+      String(title || '').replace(/\s*[([{][^)\]}]*[)\]}]/g, '').trim(),
+    ])].filter(Boolean);
+
+    debug.youtubeQueriesTried = attempts;
+    let youtubeId = null;
+    let usedQuery = null;
+    for (const attempt of attempts) {
+      // eslint-disable-next-line no-await-in-loop
+      youtubeId = await searchOnce(attempt);
+      if (youtubeId) { usedQuery = attempt; break; }
     }
 
-    const data = await youtubeResponse.json();
-    const items = Array.isArray(data?.items) ? data.items : [];
-    debug.youtubeQuery = query;
-    debug.youtubeResults = items.length;
-    return { youtubeId: items.length > 0 ? items[0]?.id?.videoId ?? null : null, debug };
+    debug.youtubeQuery = usedQuery || attempts[0];
+    debug.youtubeResults = youtubeId ? 1 : 0;
+    return { youtubeId, debug };
   } catch (err) {
     console.error('YouTube search error:', err);
+    debug.youtubeStatus = err?.status;
     debug.youtubeError = err?.name === 'TimeoutError'
       ? 'YouTube API timeout (5s)'
       : err.message;

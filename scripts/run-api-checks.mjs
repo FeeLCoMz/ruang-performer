@@ -28,6 +28,7 @@ const CHECKS = [
   { file: 'check-body-parsing.mjs', label: 'body parsing' },
   { file: 'check-ai-routing.mjs', label: 'routing /api/ai/*' },
   { file: 'check-ai-cache-retry.mjs', label: 'cache kegagalan AI' },
+  { file: 'check-ai-youtube-fallback.mjs', label: 'fallback pencarian YouTube' },
   { file: 'check-ai-quota.mjs', label: 'kuota AI' },
   { file: 'check-audit-sqlite.mjs', label: 'audit log (SQLite)' },
   { file: 'check-audit-writes.mjs', label: 'penulisan audit' },
