@@ -331,7 +331,11 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       setAiConfirmFields(buildDefaultAiConfirmFields(data));
       setShowAiModal(true);
     } catch (err) {
-      setError(err.message || 'Gagal autofill AI');
+      const message = err.message || 'Gagal autofill AI';
+      // 429 = kuota habis; arahkan user ke tempat yang menjelaskan keadaannya.
+      setError(/kuota/i.test(message)
+        ? `${message} Buka halaman Modul untuk melihat sisa kuota.`
+        : message);
     } finally {
       setAiLoading(false);
     }

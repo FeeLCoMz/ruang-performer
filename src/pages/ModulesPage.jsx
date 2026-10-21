@@ -11,10 +11,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useModulesEnabled } from '../hooks/useModulesEnabled.js';
 import { getModulesWithStatus } from '../modules/registry.js';
+import { useAIUsage } from '../modules/ai-autofill/useAIUsage.js';
 
 export default function ModulesPage() {
   const { statuses, setEnabled } = useModulesEnabled();
   const modules = getModulesWithStatus();
+  // Kuota AI Autofill ditampilkan di kartunya supaya user tahu sisa pemakaian
+  // sebelum kena 429, tanpa harus membuka editor lagu.
+  const { usage: aiUsage, loading: aiUsageLoading, refresh: refreshAiUsage } = useAIUsage(!!statuses['ai-autofill']);
 
   return (
     <div className="page-container">
@@ -52,6 +56,28 @@ export default function ModulesPage() {
                 </label>
               </div>
               <p>{mod.description}</p>
+              {mod.id === 'ai-autofill' && enabled && (
+                <div
+                  className={`modules-quota${aiUsage && aiUsage.remaining === 0 ? ' modules-quota-empty' : ''}`}
+                  role="status"
+                >
+                  {aiUsageLoading && !aiUsage && 'Memuat sisa kuota…'}
+                  {aiUsage && aiUsage.remaining > 0 && (
+                    <>Sisa kuota bulan {aiUsage.period}: <strong>{aiUsage.remaining}</strong> dari {aiUsage.limit}</>
+                  )}
+                  {aiUsage && aiUsage.remaining === 0 && (
+                    <>Kuota bulan {aiUsage.period} habis (<strong>{aiUsage.used}/{aiUsage.limit}</strong>). Autofill akan ditolak sampai bulan depan.</>
+                  )}
+                  {!aiUsageLoading && !aiUsage && (
+                    <>
+                      Sisa kuota tidak tersedia.
+                      <button type="button" className="btn btn-secondary modules-quota-retry" onClick={refreshAiUsage}>
+                        Coba lagi
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
               {mod.path && (
                 <Link
                   to={mod.path}

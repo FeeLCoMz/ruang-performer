@@ -47,6 +47,41 @@
   padding: var(--spacing-md, 16px);
 }
 
+/* --- Indikator kuota AI Autofill --- */
+.modules-quota {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #6b7280);
+  background: color-mix(in srgb, var(--primary-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary-accent) 25%, transparent);
+}
+
+.modules-quota strong {
+  color: var(--text-primary, #111827);
+  font-variant-numeric: tabular-nums;
+}
+
+.modules-quota-empty {
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.modules-quota-empty strong {
+  color: #b91c1c;
+}
+
+.modules-quota-retry {
+  padding: 2px 10px;
+  font-size: 0.75rem;
+}
+
 /* --- Toggle switch --- */
 .modules-toggle {
   display: inline-flex;
