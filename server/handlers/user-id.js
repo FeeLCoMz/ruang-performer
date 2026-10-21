@@ -9,9 +9,16 @@ export default async function handler(req, res) {
   const client = getTursoClient();
   const userId = req.query.id || req.params.id;
 
-  // Only owner can manage users
-  if (req.user.role !== 'owner') {
-    return res.status(403).json({ error: 'Hanya owner yang dapat mengelola users' });
+  // Only administrator (owner/admin) can manage users
+  if (!['owner', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Hanya administrator yang dapat mengelola users' });
+  }
+
+  // Admin biasa tidak boleh memberi/mengubah role owner, agar tidak bisa
+  // menaikkan hak akses akun mana pun (termasuk dirinya) melewati Owner.
+  const isAdminAscendingToOwner = req.user.role === 'admin' && req.body?.role === 'owner';
+  if (isAdminAscendingToOwner) {
+    return res.status(403).json({ error: 'Hanya owner yang dapat memberikan role owner' });
   }
 
   if (req.method === 'GET') {
@@ -87,6 +94,12 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Tidak dapat mengubah role sendiri' });
       }
 
+      // Admin tidak boleh mengubah role seorang owner (turunkan/mengganti) —
+      // wewenang tersebut hanya milik Owner aplikasi.
+      if (req.user.role === 'admin' && role && checkUser.rows[0].role === 'owner') {
+        return res.status(403).json({ error: 'Hanya owner yang dapat mengubah role owner' });
+      }
+
       // Update user
       let updates = [];
       let args = [];
@@ -143,6 +156,17 @@ export default async function handler(req, res) {
 
       if (checkUser.rows.length === 0) {
         return res.status(404).json({ error: 'User tidak ditemukan' });
+      }
+
+      // Admin (non-owner) tidak boleh menghapus akun owner.
+      if (req.user.role === 'admin') {
+        const targetRole = await client.execute({
+          sql: 'SELECT role FROM users WHERE id = ? AND deletedAt IS NULL',
+          args: [userId]
+        });
+        if (targetRole.rows[0]?.role === 'owner') {
+          return res.status(403).json({ error: 'Hanya owner yang dapat menghapus akun owner' });
+        }
       }
 
       // Prevent deleting own account

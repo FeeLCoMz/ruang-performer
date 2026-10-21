@@ -23,8 +23,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (req.user.role !== 'owner') {
-    return res.status(403).json({ error: 'Hanya owner yang dapat mengakses audit log' });
+  if (req.user.role !== 'owner' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Hanya administrator yang dapat mengakses audit log' });
   }
 
   const requested = parseInt(req.query?.limit, 10);

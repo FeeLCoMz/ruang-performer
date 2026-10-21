@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import * as apiClient from '../apiClient.js';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import * as apiClient from '../../apiClient.js';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 
 export default function UserManagementPage() {
   const { user } = useAuth();

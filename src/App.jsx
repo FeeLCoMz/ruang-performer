@@ -1,4 +1,3 @@
-import ToolsPage from "./pages/ToolsPage.jsx";
 import ModulesPage from "./pages/ModulesPage.jsx";
 import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from "react-router-dom";
@@ -16,6 +15,7 @@ import Toast from "./components/Toast.jsx";
 import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
 import * as apiClient from "./apiClient.js";
 import { STORAGE_KEYS } from "./utils/storageKeys.js";
+import { isAppAdmin } from "./utils/adminAccess.js";
 import StageModeButton from "./modules/stage-mode/StageModeButton.jsx";
 // Stage Mode dimuat terpisah (chunk sendiri, termasuk CSS-nya) dan hanya
 // di-mount saat dipakai — pengguna HP/latihan tidak menanggung bundelnya.
@@ -31,11 +31,12 @@ const BandDetailPage = lazy(() => import("./pages/BandDetailPage.jsx"));
 const BandManagementPage = lazy(() => import("./pages/BandManagementPage.jsx"));
 const GigPage = lazy(() => import("./pages/GigPage.jsx"));
 const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx"));
-const UserManagementPage = lazy(() => import("./pages/UserManagementPage.jsx"));
+
+const AdminPage = lazy(() => import("./pages/admin/AdminPage.jsx"));
 const ChordTranscriberPage = lazy(() => import("./modules/chord-transcriber/ChordTranscriberPage.jsx"));
 const BulkLyricsPage = lazy(() => import("./modules/bulk-lyrics/BulkLyricsPage.jsx"));
-const BackupRestorePage = lazy(() => import("./modules/backup-restore/BackupRestorePage.jsx"));
-const AuditLogPage = lazy(() => import("./modules/audit-log/AuditLogPage.jsx"));
+const BackupRestorePage = lazy(() => import("./pages/admin/BackupRestorePage.jsx"));
+const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage.jsx"));
 
 // Loading fallback component
 import { SongListSkeleton } from './components/LoadingSkeleton.jsx';
@@ -487,13 +488,15 @@ function AppContent() {
               <Route path="/bands" element={<Navigate to="/bands/manage" replace />} />
               <Route path="/bands/:id" element={<BandDetailPage />} />
               {/* InvitationPage and PendingInvitationsPage removed */}
-              <Route path="/tools" element={<ToolsPage />} />
+              <Route path="/tools" element={<Navigate to="/admin" replace />} />
               <Route path="/modules" element={<ModulesPage />} />
               <Route path="/chord-transcriber" element={<ChordTranscriberPage />} />
               <Route path="/bulk-lyrics" element={<BulkLyricsPage />} />
               <Route path="/backup-restore" element={<BackupRestorePage />} />
               <Route path="/audit-logs" element={<AuditLogPage />} />
-              <Route path="/user-management" element={<UserManagementPage />} />
+              <Route path="/user-management" element={<Navigate to="/admin" replace />} />
+              {/* Halaman khusus Administrator: hanya role akun owner/admin. */}
+              <Route path="/admin" element={<AdminRoute />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
@@ -501,6 +504,20 @@ function AppContent() {
       </>
     </ErrorBoundary>
   );
+}
+
+// AdminRoute — penjaga akses halaman /admin sebelum halaman dimuat.
+function AdminRoute() {
+  const { user } = useAuth();
+  if (!isAppAdmin(user)) {
+    return (
+      <div className="page-container">
+        <div className="page-header"><h1>Administrator</h1></div>
+        <div className="card">Hanya Administrator aplikasi yang dapat mengakses halaman ini.</div>
+      </div>
+    );
+  }
+  return <AdminPage />;
 }
 
 // AddSongRoute component

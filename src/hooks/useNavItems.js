@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { isAppAdmin } from '../utils/adminAccess.js';
 
 /**
  * Definisi menu navigasi utama aplikasi.
@@ -26,7 +27,8 @@ export function useNavItems() {
 
   const items = [
     ...NAV_ITEMS,
-    ...(user && user.role === 'owner' ? [{ path: '/tools', label: 'Tools', icon: '🛠️' }] : []),
+    // Halaman khusus Administrator (role akun owner/admin).
+    ...(isAppAdmin(user) ? [{ path: '/admin', label: 'Admin', icon: '🛡️' }] : []),
     { path: 'logout', label: 'Logout', icon: '🚪' },
   ];
 

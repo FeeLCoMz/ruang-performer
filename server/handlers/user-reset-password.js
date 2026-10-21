@@ -9,9 +9,9 @@ export default async function handler(req, res) {
   const client = getTursoClient();
   const userId = req.query.id || req.params.id;
 
-  // Only owner can reset user passwords
-  if (req.user.role !== 'owner') {
-    return res.status(403).json({ error: 'Hanya owner yang dapat reset password user' });
+  // Only administrator (owner/admin) can reset user passwords
+  if (!['owner', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Hanya administrator yang dapat reset password user' });
   }
 
   if (req.method === 'POST') {

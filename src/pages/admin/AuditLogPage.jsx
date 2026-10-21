@@ -1,7 +1,9 @@
 /**
  * AuditLogPage.jsx
  *
- * Halaman modul Audit Log — khusus Owner.
+ * Halaman audit log lengkap (rute /audit-logs). Isi utamanya kini juga
+ * tersedia langsung di halaman Administrator; rute ini dipertahankan untuk
+ * akses langsung/bookmark.
  *
  * Menampilkan riwayat aktivitas (login, perubahan data, aksi kritis) dari
  * endpoint /api/audit-logs, dengan ringkasan laporan dan filter
@@ -20,8 +22,8 @@ import {
   generateAuditReport,
   getSeverityColor,
 } from '../../utils/auditLogger.js';
-import { useAuditLogEnabled } from './useAuditLogEnabled.js';
-import './audit-log.css';
+import { useAuditLogEnabled } from '../../modules/audit-log/useAuditLogEnabled.js';
+import '../../modules/audit-log/audit-log.css';
 
 const CATEGORY_OPTIONS = ['', ...Object.values(ACTION_CATEGORIES)];
 const SEVERITY_OPTIONS = ['', ...Object.values(SEVERITY_LEVELS)];
@@ -92,8 +94,8 @@ export default function AuditLogPage() {
       {!enabled && (
         <div className="ct-banner ct-banner-warn" role="status">
           Modul ini sedang dinonaktifkan.{' '}
-          <button type="button" className="btn btn-secondary ct-link-btn" onClick={() => navigate('/modules')}>
-            Aktifkan di halaman Modul
+          <button type="button" className="btn btn-secondary ct-link-btn" onClick={() => navigate('/admin')}>
+            Aktifkan di halaman Admin
           </button>
         </div>
       )}

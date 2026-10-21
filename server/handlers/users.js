@@ -6,9 +6,9 @@ export default async function handler(req, res) {
 
   const client = getTursoClient();
 
-  // Only owner can list all users
-  if (req.user.role !== 'owner') {
-    return res.status(403).json({ error: 'Hanya owner yang dapat mengakses daftar users' });
+  // Owner dan admin aplikasi boleh melihat seluruh daftar user.
+  if (!['owner', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Hanya administrator yang dapat mengakses daftar users' });
   }
 
   if (req.method === 'GET') {

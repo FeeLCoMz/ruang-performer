@@ -4,14 +4,11 @@ import { verifyToken } from '../_auth.js';
 /**
  * POST /api/tools/restore
  * Body: { sql: string }
- * Restore database from SQL dump (owner only)
+ * Restore database from SQL dump (administrator only)
  */
 export default async function handler(req, res) {
-    // Debug log
-    console.log('[Restore] req.user:', req.user);
-    console.log('[Restore] req.body.sql (first 500 chars):', req.body && req.body.sql ? req.body.sql.slice(0, 500) : req.body);
   const user = req.user;
-  if (!user || user.role !== 'owner') {
+  if (!user || !['owner', 'admin'].includes(user.role)) {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 

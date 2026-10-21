@@ -1,0 +1,315 @@
+/* Halaman khusus Administrator (/admin) */
+
+.admin-role-badge {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-role-owner {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.admin-role-admin {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.admin-summary-card {
+  margin-bottom: var(--spacing-lg);
+}
+
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.admin-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md, 10px);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+}
+
+.admin-stat strong {
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+
+.admin-stat span {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.admin-section-title {
+  margin: var(--spacing-lg) 0 var(--spacing-sm);
+  font-size: var(--font-size-lg);
+}
+
+.admin-actions-grid {
+  margin-bottom: var(--spacing-lg);
+}
+
+.admin-card {
+  min-height: 100%;
+}
+
+.admin-locked-note {
+  margin-top: var(--spacing-sm);
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+
+.admin-muted {
+  margin: 0;
+  font-size: 0.88rem;
+  opacity: 0.75;
+}
+
+/* Daftar modul */
+.admin-modules-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.admin-module-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-module-row:last-child {
+  border-bottom: none;
+}
+
+.admin-module-row.is-active {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-module-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-access-tag {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+/* Aktivitas */
+.admin-activity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.88rem;
+}
+
+.admin-activity-item:last-child {
+  border-bottom: none;
+}
+
+.admin-activity-action {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-activity-meta {
+  flex: 1;
+  min-width: 0;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-activity-status {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: lowercase;
+}
+
+.admin-activity-status.is-success {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.admin-activity-status.is-failed {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.admin-activity-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .admin-module-row {
+    flex-wrap: wrap;
+  }
+
+  .admin-module-info {
+    flex-basis: 100%;
+  }
+
+  .admin-activity-item {
+    flex-wrap: wrap;
+  }
+
+  .admin-activity-meta {
+    flex-basis: 100%;
+    white-space: normal;
+  }
+}
+
+/* ---------- Panel fitur administrator (user, audit, backup) ---------- */
+
+.admin-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: var(--spacing-lg);
+}
+
+.admin-panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-panel-header h2 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  flex: 1;
+}
+
+.admin-panel-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 10px);
+  font-size: 0.88rem;
+}
+
+.admin-panel-banner.is-success {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.admin-panel-banner.is-error {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.admin-panel-banner button {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.admin-user-table-wrap {
+  overflow-x: auto;
+  padding: 0;
+}
+
+.admin-user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.admin-user-table th,
+.admin-user-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+}
+
+.admin-user-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.admin-user-table select {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+}
+
+.admin-user-table .admin-user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-role-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border-color);
+}
+
+.admin-status-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-backup-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}

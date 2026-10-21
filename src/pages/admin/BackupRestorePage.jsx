@@ -1,17 +1,18 @@
 /**
  * BackupRestorePage.jsx
  *
- * Halaman modul Backup & Restore Database (khusus Owner).
+ * Halaman Backup & Restore Database (khusus Owner) — bagian dari
+ * direktori `pages/admin` bersama halaman Administrator lainnya.
  *
  * Sebelumnya bagian dari ToolsPage; sekarang mandiri supaya bisa
- * diaktifkan/dinonaktifkan dari halaman Modul.
+ * diaktifkan/dinonaktifkan dari halaman Admin.
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { useBackupRestoreEnabled } from './useBackupRestoreEnabled.js';
-import { useSqlBackup } from './useSqlBackup.js';
-import { useSqlRestore } from './useSqlRestore.js';
+import { useBackupRestoreEnabled } from '../../modules/backup-restore/useBackupRestoreEnabled.js';
+import { useSqlBackup } from '../../modules/backup-restore/useSqlBackup.js';
+import { useSqlRestore } from '../../modules/backup-restore/useSqlRestore.js';
 
 export default function BackupRestorePage() {
   const { user } = useAuth();
@@ -41,8 +42,8 @@ export default function BackupRestorePage() {
       {!enabled && (
         <div className="ct-banner ct-banner-warn" role="status">
           Modul ini sedang dinonaktifkan.{' '}
-          <button type="button" className="btn btn-secondary ct-link-btn" onClick={() => navigate('/modules')}>
-            Aktifkan di halaman Modul
+          <button type="button" className="btn btn-secondary ct-link-btn" onClick={() => navigate('/admin')}>
+            Aktifkan di halaman Admin
           </button>
         </div>
       )}

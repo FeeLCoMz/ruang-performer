@@ -136,9 +136,11 @@ Route yang ada:
 | `/gigs` | Gig |
 | `/bands/manage`, `/bands/:id` | Band |
 | `/youtube-trending` | Trending YouTube |
-| `/tools`, `/user-management` | Utilitas & pengaturan (owner) |
-| `/backup-restore` | Modul Backup & Restore database (owner) |
-| `/audit-logs` | Modul Audit Log (owner) |
+| `/admin` | Halaman khusus Administrator (role `owner`/`admin`) — `src/pages/admin/AdminPage.jsx` |
+| `/user-management` | Manajemen user (owner) — `src/pages/admin/UserManagementPage.jsx` |
+| `/tools` | Redirect ke `/admin` (halaman lama sudah dihapus) |
+| `/backup-restore` | Backup & Restore database (owner) — `src/pages/admin/BackupRestorePage.jsx` |
+| `/audit-logs` | Audit Log (owner) — `src/pages/admin/AuditLogPage.jsx` |
 
 Halaman non-kritis di-`lazy()` dan dibungkus `Suspense` dengan `PageLoader`.
 

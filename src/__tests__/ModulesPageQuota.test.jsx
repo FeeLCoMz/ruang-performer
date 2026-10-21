@@ -22,7 +22,7 @@ vi.mock('../hooks/useModulesEnabled.js', () => ({
 }));
 
 vi.mock('../modules/registry.js', () => ({
-  getModulesWithStatus: () => [
+  getVisibleModules: () => [
     { id: 'midi-cue', name: 'MIDI Cue', icon: '🎼', description: 'desc' },
     { id: 'ai-autofill', name: 'AI Autofill', icon: '🪄', description: 'desc' },
   ],
