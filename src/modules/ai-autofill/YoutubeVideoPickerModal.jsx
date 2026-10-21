@@ -16,7 +16,6 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { searchYoutubeVideos } from '../../apiClient.js';
-import { extractYouTubeId } from '../../utils/youtubeUtils.js';
 import './youtube-picker.css';
 
 export default function YoutubeVideoPickerModal({
@@ -30,7 +29,6 @@ export default function YoutubeVideoPickerModal({
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [pasteUrl, setPasteUrl] = useState('');
   const inputRef = useRef(null);
   // Menahan pencarian otomatis agar tidak terpicu ulang saat state berubah.
   const autoSearchRef = useRef(false);
@@ -44,7 +42,6 @@ export default function YoutubeVideoPickerModal({
     setQuery(initialQuery || '');
     setVideos([]);
     setError('');
-    setPasteUrl('');
     setLoading(false);
     autoSearchRef.current = true;
     const timer = setTimeout(() => inputRef.current?.focus(), 50);
@@ -100,15 +97,6 @@ export default function YoutubeVideoPickerModal({
     performSearch(query);
   };
 
-  const applyPastedUrl = () => {
-    const id = extractYouTubeId(pasteUrl.trim());
-    if (!id) {
-      setError('URL atau ID YouTube tidak valid.');
-      return;
-    }
-    onSelect?.({ videoId: id, title: '', channelTitle: '', thumbnail: null });
-  };
-
   return (
     <div
       className="modal-overlay youtube-picker-overlay"
@@ -143,11 +131,17 @@ export default function YoutubeVideoPickerModal({
 
         {error && <div className="tools-feedback tools-feedback-error">{error}</div>}
 
+        {initialQuery && initialQuery.trim() && (
+          <p className="youtube-picker-query-hint">
+            Dicari dari judul &amp; artis: <strong>{initialQuery.trim()}</strong>
+          </p>
+        )}
+
         <div className="youtube-picker-results">
           {loading && <div className="youtube-picker-empty">Mencari video…</div>}
           {!loading && videos.length === 0 && !error && (
             <div className="youtube-picker-empty">
-              Ketik judul lagu lalu tekan Cari, atau tempel URL di bawah.
+              Ketik judul lagu, atau ubah kata kunci di atas lalu tekan Cari.
             </div>
           )}
           {videos.map((video) => (
@@ -172,22 +166,6 @@ export default function YoutubeVideoPickerModal({
               </span>
             </button>
           ))}
-        </div>
-
-        <div className="youtube-picker-paste">
-          <label htmlFor="youtube-picker-url">Atau tempel URL / ID YouTube:</label>
-          <div className="youtube-picker-paste-row">
-            <input
-              id="youtube-picker-url"
-              type="url"
-              value={pasteUrl}
-              onChange={(event) => setPasteUrl(event.target.value)}
-              placeholder="https://youtu.be/xxxxxxxxxxx"
-            />
-            <button type="button" className="btn btn-secondary" onClick={applyPastedUrl}>
-              Pakai
-            </button>
-          </div>
         </div>
       </div>
     </div>

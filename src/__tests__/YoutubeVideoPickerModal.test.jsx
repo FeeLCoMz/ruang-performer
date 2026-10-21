@@ -56,7 +56,23 @@ describe('YoutubeVideoPickerModal', () => {
   test('tidak memanggil API bila judul & artis kosong', async () => {
     await render({ initialQuery: '', onClose: vi.fn(), onSelect: vi.fn() });
     expect(mockSearch).not.toHaveBeenCalled();
-    expect(container.textContent).toContain('tempel URL');
+    expect(container.textContent).toContain('ubah kata kunci');
+  });
+
+  test('kolom tempel URL sudah dihapus dari modal', async () => {
+    mockSearch.mockResolvedValue({ videos: [] });
+    await render({ initialQuery: 'Queen', onClose: vi.fn(), onSelect: vi.fn() });
+    expect(container.querySelector('#youtube-picker-url')).toBeNull();
+    expect(container.querySelector('.youtube-picker-paste')).toBeNull();
+  });
+
+  test('menampilkan keterangan query yang dipakai dari judul & artis', async () => {
+    mockSearch.mockResolvedValue({ videos: [] });
+    await render({ initialQuery: 'Imagine John Lennon', onClose: vi.fn(), onSelect: vi.fn() });
+    const hint = container.querySelector('.youtube-picker-query-hint');
+    expect(hint?.textContent).toContain('Imagine John Lennon');
+    const input = container.querySelector('.youtube-picker-search input');
+    expect(input.value).toBe('Imagine John Lennon');
   });
 
   test('tidak mencari ulang saat modal masih terbuka', async () => {

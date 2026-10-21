@@ -1,4 +1,4 @@
-/* Modal pemilih video YouTube (AI Autofill → tombol "Cari video") */
+/* Modal pemilih video YouTube — input + hasil pilihan. */
 
 .youtube-picker-overlay {
   z-index: 1200;
@@ -34,10 +34,36 @@
 .youtube-picker-search input {
   flex: 1;
   min-width: 0;
-  padding: 9px 12px;
+  padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid var(--border-color, #d1d5db);
   background: var(--input-bg, #fff);
+  color: var(--text-primary, #111827);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.youtube-picker-search input:focus {
+  outline: none;
+  border-color: var(--primary-accent, #7c3aed);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-accent, #7c3aed) 22%, transparent);
+}
+
+.youtube-picker-search input::placeholder {
+  font-weight: 400;
+  color: var(--text-secondary, #9ca3af);
+}
+
+/* Keterangan singkat query yang sedang dipakai. */
+.youtube-picker-query-hint {
+  margin: -4px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.youtube-picker-query-hint strong {
   color: var(--text-primary, #111827);
 }
 

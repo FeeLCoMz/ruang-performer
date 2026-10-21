@@ -993,7 +993,15 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                     name="youtubeId"
                     type="text"
                     value={youtubeId}
-                    onChange={(e) => setYoutubeId(e.target.value)}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      // Bila user menempel URL (watch?v=, youtu.be/, shorts/...),
+                      // simpan hanya ID-nya supaya kolom tetap ringkas. Ketikan
+                      // manual yang belum membentuk ID valid dibiarkan apa adanya.
+                      const extracted = extractYouTubeId(raw);
+                      const isFullId = /^[A-Za-z0-9_-]{11}$/.test(extracted);
+                      setYoutubeId(isFullId ? extracted : raw);
+                    }}
                     placeholder="https://youtube.com/watch?v=... atau dQw4w9WgXcQ"
                     className="form-input-field"
                   />
