@@ -92,6 +92,25 @@ describe('AdminPage', () => {
     window.location.hash = '';
   });
 
+  /**
+   * Ubah nilai input/select terkendali seperti aksi pengguna.
+   * Nilai di-set lewat native setter agar React menganggapnya perubahan nyata,
+   * lalu event didispatch DI DALAM act supaya pembaruan state ikut di-render.
+   */
+  async function changeValue(element, value) {
+    const proto = element.tagName === 'SELECT'
+      ? window.HTMLSelectElement.prototype
+      : window.HTMLInputElement.prototype;
+    const eventType = element.tagName === 'SELECT' ? 'change' : 'input';
+    const setter = Object.getOwnPropertyDescriptor(proto, 'value').set;
+
+    await act(async () => {
+      setter.call(element, value);
+      element.dispatchEvent(new Event(eventType, { bubbles: true }));
+      await flushPromises();
+    });
+  }
+
   /** Pindah tab lewat tombol navigasi (tab aktif tercermin di URL hash). */
   async function openTab(tabId) {
     const tab = container.querySelector(`#admin-tab-${tabId}`);
@@ -203,6 +222,12 @@ describe('AdminPage', () => {
 
   test('admin tidak bisa mengubah role atau menghapus akun owner', async () => {
     mockUser = { user: { userId: 'u3', username: 'sari', role: 'admin' } };
+    mockGetAllUsers.mockResolvedValue({
+      users: [
+        { id: 'u1', role: 'owner', isActive: 1, username: 'andi', email: 'andi@example.com' },
+        { id: 'u3', role: 'admin', isActive: 1, username: 'sari', email: 'sari@example.com' },
+      ],
+    });
     await act(async () => {
       root.render(<AdminPage key="admin-policy" />);
     });
@@ -212,14 +237,70 @@ describe('AdminPage', () => {
 
     await openTab('users');
 
-    // Baris owner (u1): tidak ada <select> role maupun tombol Hapus yang aktif.
+    // Baris owner (u1): tidak ada <select> role, dan aksi Hapus dinonaktifkan di menu.
     const ownerRow = container.querySelector('#admin-users tbody tr');
     expect(ownerRow).toBeTruthy();
     expect(ownerRow.textContent).toContain('Owner');
     expect(ownerRow.querySelector('select')).toBeNull();
-    const deleteBtn = Array.from(ownerRow.querySelectorAll('button')).find(
+
+    const trigger = ownerRow.querySelector('.admin-actions-trigger');
+    expect(trigger).toBeTruthy();
+    await act(async () => {
+      trigger.click();
+    });
+    const deleteBtn = Array.from(ownerRow.querySelectorAll('[role="menuitem"]')).find(
       (btn) => btn.textContent === 'Hapus',
     );
+    expect(deleteBtn).toBeTruthy();
     expect(deleteBtn.disabled).toBe(true);
+  });
+
+  test('pencarian dan filter status menyaring tabel user', async () => {
+    // Data realistis: pencarian memakai username/email, bukan role.
+    mockGetAllUsers.mockResolvedValue({
+      users: [
+        { id: 'u1', role: 'owner', isActive: 1, username: 'andi', email: 'andi@example.com' },
+        { id: 'u2', role: 'member', isActive: 0, username: 'budi', email: 'budi@example.com' },
+        { id: 'u3', role: 'admin', isActive: 1, username: 'sari', email: 'sari@example.com' },
+      ],
+    });
+    await act(async () => {
+      root.render(<AdminPage key="filter-setup" />);
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+
+    await openTab('users');
+
+    const search = container.querySelector('.admin-user-search');
+    const statusSelect = container.querySelectorAll('.admin-user-filters select')[1];
+    expect(search).toBeTruthy();
+    expect(container.querySelectorAll('#admin-users tbody tr')).toHaveLength(3);
+
+    await changeValue(search, 'sari');
+
+    // Hanya user yang username-nya cocok yang tersisa.
+    expect(container.querySelectorAll('#admin-users tbody tr')).toHaveLength(1);
+    expect(container.querySelector('#admin-users tbody').textContent).toContain('sari');
+    expect(container.textContent).toContain('1 dari 3 user');
+
+    // Pencarian juga mencocokkan email.
+    await changeValue(search, 'budi@');
+    expect(container.querySelectorAll('#admin-users tbody tr')).toHaveLength(1);
+    expect(container.querySelector('#admin-users tbody').textContent).toContain('budi');
+
+    // Kosongkan pencarian, lalu saring hanya user nonaktif.
+    await changeValue(search, '');
+    await changeValue(statusSelect, 'inactive');
+
+    expect(container.querySelectorAll('#admin-users tbody tr')).toHaveLength(1);
+    expect(container.querySelector('#admin-users tbody').textContent).toContain('budi');
+
+    // Filter rol menyaring sesuai role akun.
+    await changeValue(statusSelect, '');
+    await changeValue(container.querySelectorAll('.admin-user-filters select')[0], 'admin');
+    expect(container.querySelectorAll('#admin-users tbody tr')).toHaveLength(1);
+    expect(container.querySelector('#admin-users tbody').textContent).toContain('sari');
   });
 });
