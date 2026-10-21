@@ -111,6 +111,17 @@ describe('AdminPage', () => {
     });
   }
 
+  /** Tunggu sampai selector menghasilkan jumlah elemen yang diharapkan. */
+  async function waitForCount(selectFn, expected, attempts = 10) {
+    for (let i = 0; i < attempts; i += 1) {
+      await act(async () => {
+        await flushPromises();
+      });
+      if (selectFn().length === expected) return true;
+    }
+    return false;
+  }
+
   /** Pindah tab lewat tombol navigasi (tab aktif tercermin di URL hash). */
   async function openTab(tabId) {
     const tab = container.querySelector(`#admin-tab-${tabId}`);
@@ -253,6 +264,45 @@ describe('AdminPage', () => {
     );
     expect(deleteBtn).toBeTruthy();
     expect(deleteBtn.disabled).toBe(true);
+  });
+
+  test('filter audit log menampilkan tombol reset dan menyaring entri', async () => {
+    mockGetAuditLogs.mockResolvedValue({
+      logs: [
+        { id: 'l1', action: 'USER_LOGIN', username: 'andi', createdAt: '2026-01-01T00:00:00Z', severity: 'low', status: 'success' },
+        { id: 'l2', action: 'USER_DELETED', username: 'budi', createdAt: '2026-01-02T00:00:00Z', severity: 'critical', status: 'failed' },
+      ],
+    });
+
+    // Render ulang dengan mock baru; tab audit dibuka sebagai tabel awal.
+    window.location.hash = 'audit';
+    await act(async () => {
+      root.render(<AdminPage key="audit-filters-2" />);
+    });
+    expect(await waitForCount(() => container.querySelectorAll('.audit-log-table tbody tr'), 2)).toBe(true);
+    const resetButton = () => Array.from(container.querySelectorAll('button')).find(
+      (btn) => btn.textContent.startsWith('Reset filter'),
+    );
+    expect(resetButton()).toBeUndefined();
+
+    // Saring severity critical: hanya satu entri yang tersisa.
+    const severitySelect = container.querySelectorAll('.audit-log-filters select')[1];
+    await changeValue(severitySelect, 'critical');
+
+    expect(resetButton()).toBeTruthy();
+    expect(container.querySelectorAll('.audit-log-table tbody tr')).toHaveLength(1);
+    expect(container.querySelector('.audit-log-table tbody').textContent).toContain('budi');
+
+    // Reset filter mengembalikan semua entri.
+    await act(async () => {
+      resetButton().click();
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(resetButton()).toBeUndefined();
+    expect(container.querySelectorAll('.audit-log-table tbody tr')).toHaveLength(2);
   });
 
   test('pencarian dan filter status menyaring tabel user', async () => {

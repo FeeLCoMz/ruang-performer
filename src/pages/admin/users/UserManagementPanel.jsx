@@ -12,6 +12,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { getAppRoleLabel, getAssignableRoles } from '../../../utils/adminAccess.js';
 
+// State filter selalu disalin dari konstanta ini: mengirim ulang objek yang
+// sama persis membuat React mengabaikan update (bailout referensi).
+const EMPTY_FILTERS = { search: '', role: '', status: '' };
+
 const ROLE_FILTERS = [
   { value: '', label: 'Semua role' },
   { value: 'owner', label: 'Owner' },
@@ -124,7 +128,7 @@ export default function UserManagementPanel({ actor, adminUsers }) {
     canDelete,
   } = adminUsers;
 
-  const [filters, setFilters] = useState({ search: '', role: '', status: '' });
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [resetTarget, setResetTarget] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmTarget, setConfirmTarget] = useState(null);
@@ -213,7 +217,7 @@ export default function UserManagementPanel({ actor, adminUsers }) {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => setFilters({ search: '', role: '', status: '' })}
+            onClick={() => setFilters({ ...EMPTY_FILTERS })}
           >
             Reset filter ({activeFilterCount})
           </button>

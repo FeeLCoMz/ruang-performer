@@ -25,10 +25,15 @@
   color: inherit;
 }
 
+.audit-log-filters .btn {
+  align-self: flex-end;
+}
+
 .audit-log-count {
   margin-left: auto;
   font-size: 0.85rem;
   opacity: 0.75;
+  align-self: center;
 }
 
 .audit-log-summary {
@@ -97,6 +102,25 @@
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.audit-log-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.audit-log-status.is-success {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.audit-log-status.is-failed {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
 }
 
 .audit-log-empty {

@@ -24,7 +24,7 @@ function formatTimestamp(value) {
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 }
 
-function AuditFilters({ filters, setFilter, filteredCount, totalCount }) {
+function AuditFilters({ filters, setFilter, resetFilters, activeFilterCount, filteredCount, totalCount }) {
   return (
     <div className="audit-log-filters">
       <label>
@@ -51,6 +51,11 @@ function AuditFilters({ filters, setFilter, filteredCount, totalCount }) {
           ))}
         </select>
       </label>
+      {activeFilterCount > 0 && (
+        <button type="button" className="btn btn-secondary" onClick={resetFilters}>
+          Reset filter ({activeFilterCount})
+        </button>
+      )}
       <span className="audit-log-count">{filteredCount} dari {totalCount} entri</span>
     </div>
   );
@@ -85,14 +90,20 @@ function AuditTable({ logs, loading, error }) {
                 <td title={log.description || ''}>{formatActionName(log.action || '')}</td>
                 <td>{log.category || '-'}</td>
                 <td>
-                  <span
-                    className="audit-log-badge"
-                    style={{ backgroundColor: getSeverityColor(log.severity) }}
-                  >
-                    {log.severity || '-'}
-                  </span>
+                  {log.severity ? (
+                    <span
+                      className={`audit-log-badge severity-${log.severity}`}
+                      style={{ backgroundColor: getSeverityColor(log.severity) }}
+                    >
+                      {log.severity}
+                    </span>
+                  ) : '-'}
                 </td>
-                <td>{log.status || '-'}</td>
+                <td>
+                  {log.status ? (
+                    <span className={`audit-log-status is-${log.status}`}>{log.status}</span>
+                  ) : '-'}
+                </td>
                 <td>{log.ipAddress || '-'}</td>
               </tr>
             ))}
@@ -129,7 +140,18 @@ function RecentActivity({ logs, loading, error }) {
   );
 }
 export default function AuditLogPanel({ auditLogs, mode = 'compact', reloadLogs }) {
-  const { logs, filteredLogs, report, loading, error, filters, setFilter, reload } = auditLogs;
+  const {
+    logs,
+    filteredLogs,
+    report,
+    loading,
+    error,
+    filters,
+    setFilter,
+    resetFilters,
+    activeFilterCount,
+    reload,
+  } = auditLogs;
   const refresh = reloadLogs || reload;
 
   if (mode === 'compact') {
@@ -149,6 +171,8 @@ export default function AuditLogPanel({ auditLogs, mode = 'compact', reloadLogs 
           <AuditFilters
             filters={filters}
             setFilter={setFilter}
+            resetFilters={resetFilters}
+            activeFilterCount={activeFilterCount}
             filteredCount={filteredLogs.length}
             totalCount={logs.length}
           />
@@ -167,6 +191,8 @@ export default function AuditLogPanel({ auditLogs, mode = 'compact', reloadLogs 
         <AuditFilters
           filters={filters}
           setFilter={setFilter}
+          resetFilters={resetFilters}
+          activeFilterCount={activeFilterCount}
           filteredCount={filteredLogs.length}
           totalCount={logs.length}
         />

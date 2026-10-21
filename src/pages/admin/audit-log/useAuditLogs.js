@@ -16,7 +16,9 @@ export function useAuditLogs({ limit = 50, enabled = true } = {}) {
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
-  const [filters, setFilters] = useState(AUDIT_FILTER_DEFAULTS);
+  // Salin objek default: kalau state memakai referensi konstanta yang sama,
+  // resetFilters() mengirim objek identik dan React mengabaikan update-nya.
+  const [filters, setFilters] = useState({ ...AUDIT_FILTER_DEFAULTS });
 
   const load = useCallback(async () => {
     if (!enabled) return;
@@ -41,6 +43,10 @@ export function useAuditLogs({ limit = 50, enabled = true } = {}) {
     setFilters((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const resetFilters = useCallback(() => setFilters({ ...AUDIT_FILTER_DEFAULTS }), []);
+
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+
   const filteredLogs = useMemo(() => filterAuditLogs(logs, filters), [logs, filters]);
   const report = useMemo(() => generateAuditReport(filteredLogs), [filteredLogs]);
 
@@ -53,6 +59,8 @@ export function useAuditLogs({ limit = 50, enabled = true } = {}) {
     warning,
     filters,
     setFilter,
+    resetFilters,
+    activeFilterCount,
     reload: load,
   };
 }
