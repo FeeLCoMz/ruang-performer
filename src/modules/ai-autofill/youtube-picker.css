@@ -28,32 +28,73 @@
 
 .youtube-picker-search {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Label kecil di atas field, menegaskan ini input kata kunci. */
+.youtube-picker-search-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #6b7280);
+}
+
+/* Satu kotak: ikon | input | tombol Cari.
+   Memakai --secondary-bg (permukaan form aplikasi), BUKAN background putih:
+   tema ini gelap permanen dan `--input-bg` tidak didefinisikan. */
+.youtube-picker-search-box {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  padding: 4px 4px 4px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--secondary-bg);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.youtube-picker-search-box:focus-within {
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-accent) 26%, transparent);
+}
+
+.youtube-picker-search-icon {
+  flex: 0 0 auto;
+  font-size: 0.95rem;
+  line-height: 1;
+  opacity: 0.65;
 }
 
 .youtube-picker-search input {
   flex: 1;
   min-width: 0;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color, #d1d5db);
-  background: var(--input-bg, #fff);
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
   color: var(--text-primary, #111827);
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .youtube-picker-search input:focus {
   outline: none;
-  border-color: var(--primary-accent, #7c3aed);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-accent, #7c3aed) 22%, transparent);
 }
 
 .youtube-picker-search input::placeholder {
   font-weight: 400;
   color: var(--text-secondary, #9ca3af);
+}
+
+/* Tombol Cari menempel di kanan kotak. */
+.youtube-picker-search-btn {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 /* Keterangan singkat query yang sedang dipakai. */
@@ -85,16 +126,16 @@
   text-align: left;
   cursor: pointer;
   border-radius: 10px;
-  border: 1px solid var(--border-color, #e5e7eb);
-  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color);
+  background: var(--secondary-bg);
   color: inherit;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .youtube-picker-item:hover,
 .youtube-picker-item:focus-visible {
-  border-color: var(--primary-accent, #7c3aed);
-  background: color-mix(in srgb, var(--primary-accent, #7c3aed) 8%, transparent);
+  border-color: var(--primary-accent);
+  background: color-mix(in srgb, var(--primary-accent) 14%, transparent);
   outline: none;
 }
 
@@ -146,28 +187,6 @@
   text-align: center;
   font-size: 0.85rem;
   color: var(--text-secondary, #6b7280);
-}
-
-.youtube-picker-paste {
-  border-top: 1px solid var(--border-color, #e5e7eb);
-  padding-top: 12px;
-  font-size: 0.82rem;
-}
-
-.youtube-picker-paste-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.youtube-picker-paste-row input {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color, #d1d5db);
-  background: var(--input-bg, #fff);
-  color: var(--text-primary, #111827);
 }
 
 @media (max-width: 640px) {

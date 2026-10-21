@@ -116,17 +116,25 @@ export default function YoutubeVideoPickerModal({
         </div>
 
         <form className="youtube-picker-search" onSubmit={runSearch}>
-          <input
-            ref={inputRef}
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Judul lagu / artis"
-            aria-label="Kata pencarian video"
-          />
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Mencari…' : 'Cari'}
-          </button>
+          <label className="youtube-picker-search-label" htmlFor="youtube-picker-query">
+            Kata kunci
+          </label>
+          <div className="youtube-picker-search-box">
+            <span className="youtube-picker-search-icon" aria-hidden="true">🔍</span>
+            <input
+              id="youtube-picker-query"
+              ref={inputRef}
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Judul lagu / artis"
+              aria-label="Kata pencarian video"
+              autoComplete="off"
+            />
+            <button type="submit" className="btn btn-primary youtube-picker-search-btn" disabled={loading}>
+              {loading ? 'Mencari…' : 'Cari'}
+            </button>
+          </div>
         </form>
 
         {error && <div className="tools-feedback tools-feedback-error">{error}</div>}
