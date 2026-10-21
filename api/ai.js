@@ -62,8 +62,36 @@ export function buildGeminiModelCandidates(requestedModel) {
   }
   return unique;
 }
-// Simple in-memory cache for song info (title+artist)
-const songInfoCache = {};
+// Cache in-memory untuk info lagu (title+artist).
+//
+// Sebelumnya berupa objek biasa yang tumbuh tanpa batas: setiap judul unik
+// menambah entri permanen selama server hidup (kebocoran memori bertahap) dan
+// data basi tidak pernah kedaluwarsa. Kini dibatasi jumlah entri + TTL.
+const SONG_CACHE_MAX_ENTRIES = 200;
+const SONG_CACHE_TTL_MS = 60 * 60 * 1000; // 1 jam
+const songInfoCache = new Map();
+
+function readSongCache(cacheKey) {
+  const entry = songInfoCache.get(cacheKey);
+  if (!entry) return null;
+  if (Date.now() - entry.savedAt > SONG_CACHE_TTL_MS) {
+    songInfoCache.delete(cacheKey);
+    return null;
+  }
+  // Sentuh entri supaya Map berperilaku LRU (yang paling lama dipakai dibuang).
+  songInfoCache.delete(cacheKey);
+  songInfoCache.set(cacheKey, entry);
+  return entry.value;
+}
+
+function writeSongCache(cacheKey, value) {
+  songInfoCache.set(cacheKey, { value, savedAt: Date.now() });
+  // Buang entri tertua bila melewati kapasitas.
+  while (songInfoCache.size > SONG_CACHE_MAX_ENTRIES) {
+    const oldestKey = songInfoCache.keys().next().value;
+    songInfoCache.delete(oldestKey);
+  }
+}
 
 /**
  * Ambil userId dari header Authorization tanpa menolak request.
@@ -423,8 +451,9 @@ async function handleSongSearch(req, res) {
   }
   // Cache key based on title and artist (case-insensitive)
   const cacheKey = `${title.toLowerCase()}|${(artist || '').toLowerCase()}`;
-  if (songInfoCache[cacheKey]) {
-    return res.status(200).json({ ...songInfoCache[cacheKey], cached: true });
+  const cachedResult = readSongCache(cacheKey);
+  if (cachedResult) {
+    return res.status(200).json({ ...cachedResult, cached: true });
   }
 
   // Kuota AI Autofill per user per bulan. Hanya panggilan yang benar-benar
@@ -505,7 +534,7 @@ async function handleSongSearch(req, res) {
     // diset / kuota YouTube habis / timeout — semuanya bisa pulih sendiri tanpa
     // restart server, jadi jangan di-cache.
     if (results.youtubeId) {
-      songInfoCache[cacheKey] = results;
+      writeSongCache(cacheKey, results);
     }
     return res.status(200).json(results);
   } catch (error) {

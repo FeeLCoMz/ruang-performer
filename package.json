@@ -12,6 +12,8 @@
     "dev:api": "node api/index.js",
     "dev:full": "concurrently \"npm run dev:api\" \"npm run dev\"",
     "test:unit": "vitest run src/__tests__",
+    "test:api-checks": "node scripts/run-api-checks.mjs",
+    "test": "npm run test:unit && npm run test:api-checks",
     "test:unit:watch": "vitest src/__tests__",
     "test:api": "node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit",
     "test:api:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
