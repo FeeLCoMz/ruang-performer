@@ -64,10 +64,20 @@ function AuditFilters({ filters, setFilter, resetFilters, activeFilterCount, fil
 function AuditTable({ logs, loading, error }) {
   return (
     <div className="admin-user-table-wrap">
-      {loading && logs.length === 0 && <div className="audit-log-empty">Memuat audit log...</div>}
+      {loading && logs.length === 0 && (
+        <div className="admin-skeleton" aria-label="Memuat audit log" aria-busy="true">
+          <span className="admin-skeleton-row" />
+          <span className="admin-skeleton-row" />
+          <span className="admin-skeleton-row" />
+        </div>
+      )}
       {error && <div className="tools-feedback tools-feedback-error">{error}</div>}
       {!loading && !error && logs.length === 0 && (
-        <div className="audit-log-empty">Belum ada catatan yang cocok dengan filter ini.</div>
+        <div className="admin-empty-state">
+          <span className="admin-empty-icon" aria-hidden="true">📭</span>
+          <strong>Belum ada catatan</strong>
+          <span>Aktivitas login dan perubahan data akan tercatat di sini.</span>
+        </div>
       )}
       {logs.length > 0 && (
         <table className="audit-log-table">

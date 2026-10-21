@@ -227,14 +227,35 @@ export default function UserManagementPanel({ actor, adminUsers }) {
         </span>
       </div>
 
-      {loading && users.length === 0 && <div className="admin-muted">Memuat user...</div>}
+      {loading && users.length === 0 && (
+        <div className="admin-skeleton" aria-label="Memuat user" aria-busy="true">
+          <span className="admin-skeleton-row" />
+          <span className="admin-skeleton-row" />
+          <span className="admin-skeleton-row" />
+        </div>
+      )}
 
       {!loading && users.length === 0 && !error && (
-        <div className="admin-muted">Tidak ada user.</div>
+        <div className="admin-empty-state">
+          <span className="admin-empty-icon" aria-hidden="true">👥</span>
+          <strong>Belum ada user</strong>
+          <span>User baru akan muncul di sini setelah mendaftar.</span>
+        </div>
       )}
 
       {!loading && users.length > 0 && visibleUsers.length === 0 && (
-        <div className="admin-muted">Tidak ada user yang cocok dengan filter ini.</div>
+        <div className="admin-empty-state">
+          <span className="admin-empty-icon" aria-hidden="true">🔍</span>
+          <strong>Tidak ada user yang cocok</strong>
+          <span>Coba ubah kata kunci atau reset filter.</span>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setFilters({ ...EMPTY_FILTERS })}
+          >
+            Reset filter
+          </button>
+        </div>
       )}
 
       {visibleUsers.length > 0 && (
@@ -257,12 +278,12 @@ export default function UserManagementPanel({ actor, adminUsers }) {
                 const initial = (u.username || u.email || '?').charAt(0).toUpperCase();
                 return (
                   <tr key={u.id}>
-                    <td>
+                    <td data-label="Avatar">
                       <span className="admin-user-avatar" aria-hidden="true">{initial}</span>
                     </td>
-                    <td>{u.username}</td>
-                    <td>{u.email}</td>
-                    <td>
+                    <td data-label="Username">{u.username}</td>
+                    <td data-label="Email">{u.email}</td>
+                    <td data-label="Role">
                       {roleEditable ? (
                         <select
                           value={u.role}
@@ -280,12 +301,12 @@ export default function UserManagementPanel({ actor, adminUsers }) {
                         </span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <span className={`admin-status-pill${u.isActive ? ' is-active' : ''}`}>
                         {u.isActive ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Aksi">
                       <UserActionsMenu
                         user={u}
                         disabled={actionLoading}

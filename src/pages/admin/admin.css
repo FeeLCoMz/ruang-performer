@@ -1,5 +1,27 @@
 /* Halaman khusus Administrator (/admin) */
 
+/*
+ * Token lokal halaman admin. Nilainya diturunkan dari tema aplikasi
+ * (src/styles/theme.css) supaya warna admin ikut berubah bila tema diganti,
+ * bukan hardcoded rgba(255,255,255,...) yang hanya cocok untuk satu tema.
+ */
+.admin-page,
+.admin-tab-panel {
+  --admin-surface: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  --admin-surface-hover: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  --admin-surface-strong: color-mix(in srgb, var(--text-primary) 12%, transparent);
+  --admin-divider: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  --admin-field-border: color-mix(in srgb, var(--text-primary) 15%, transparent);
+  --admin-accent: var(--primary-accent, #8b5cf6);
+  --admin-accent-surface: color-mix(in srgb, var(--admin-accent) 14%, transparent);
+  --admin-accent-border: color-mix(in srgb, var(--admin-accent) 40%, transparent);
+  --admin-success: var(--success, #34d399);
+  --admin-success-surface: color-mix(in srgb, var(--success, #34d399) 12%, transparent);
+  --admin-danger: #ef4444;
+  --admin-danger-surface: color-mix(in srgb, #ef4444 12%, transparent);
+  --admin-danger-border: color-mix(in srgb, #ef4444 45%, transparent);
+}
+
 .admin-role-badge {
   align-self: flex-start;
   padding: 4px 12px;
@@ -9,17 +31,17 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   border: 1px solid var(--border-color);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--admin-surface, rgba(255, 255, 255, 0.06));
 }
 
 .admin-role-owner {
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.5);
+  color: var(--admin-danger, #ef4444);
+  border-color: var(--admin-danger-border, rgba(239, 68, 68, 0.5));
 }
 
 .admin-role-admin {
-  color: #f59e0b;
-  border-color: rgba(245, 158, 11, 0.5);
+  color: var(--warning, #f59e0b);
+  border-color: color-mix(in srgb, var(--warning, #f59e0b) 50%, transparent);
 }
 
 /* ---------- Navigasi tab ---------- */
@@ -32,7 +54,7 @@
   margin-bottom: var(--spacing-lg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md, 10px);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--admin-surface, rgba(255, 255, 255, 0.03));
 }
 
 .admin-tab {
@@ -53,18 +75,18 @@
 
 .admin-tab:hover {
   opacity: 1;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.05));
 }
 
 .admin-tab.is-active {
   opacity: 1;
-  color: var(--primary-color, #4f46e5);
-  background: rgba(79, 70, 229, 0.14);
-  border-color: rgba(79, 70, 229, 0.4);
+  color: var(--admin-accent, #4f46e5);
+  background: var(--admin-accent-surface, rgba(79, 70, 229, 0.14));
+  border-color: var(--admin-accent-border, rgba(79, 70, 229, 0.4));
 }
 
 .admin-tab:focus-visible {
-  outline: 2px solid var(--primary-color, #4f46e5);
+  outline: 2px solid var(--admin-accent, #4f46e5);
   outline-offset: 2px;
 }
 
@@ -84,7 +106,7 @@
   gap: 4px;
   padding: 14px 16px;
   border-radius: var(--radius-md, 10px);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--admin-surface, rgba(255, 255, 255, 0.04));
   border: 1px solid var(--border-color);
 }
 
@@ -143,7 +165,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--admin-divider, rgba(255, 255, 255, 0.06));
   font-size: 0.88rem;
 }
 
@@ -173,13 +195,13 @@
 }
 
 .admin-activity-status.is-success {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.12);
+  color: var(--admin-success, #22c55e);
+  background: var(--admin-success-surface, rgba(34, 197, 94, 0.12));
 }
 
 .admin-activity-status.is-failed {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
+  color: var(--admin-danger, #ef4444);
+  background: var(--admin-danger-surface, rgba(239, 68, 68, 0.12));
 }
 
 .admin-activity-footer {
@@ -231,13 +253,13 @@
 }
 
 .admin-panel-banner.is-success {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.12);
+  color: var(--admin-success, #22c55e);
+  background: var(--admin-success-surface, rgba(34, 197, 94, 0.12));
 }
 
 .admin-panel-banner.is-error {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
+  color: var(--admin-danger, #ef4444);
+  background: var(--admin-danger-surface, rgba(239, 68, 68, 0.12));
 }
 
 .admin-panel-banner button {
@@ -264,7 +286,7 @@
 .admin-user-table td {
   padding: 10px;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--admin-divider, rgba(255, 255, 255, 0.08));
   vertical-align: middle;
 }
 
@@ -278,8 +300,8 @@
 .admin-user-table select {
   padding: 4px 8px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--admin-field-border, rgba(255, 255, 255, 0.15));
+  background: var(--admin-surface, rgba(255, 255, 255, 0.05));
   color: inherit;
 }
 
@@ -302,8 +324,8 @@
 .admin-user-filters select {
   padding: 6px 8px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--admin-field-border, rgba(255, 255, 255, 0.15));
+  background: var(--admin-surface, rgba(255, 255, 255, 0.05));
   color: inherit;
 }
 
@@ -312,8 +334,8 @@
   min-width: 200px;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--admin-field-border, rgba(255, 255, 255, 0.15));
+  background: var(--admin-surface, rgba(255, 255, 255, 0.05));
   color: inherit;
   font: inherit;
   font-size: 0.85rem;
@@ -321,7 +343,7 @@
 
 .admin-user-search:focus-visible,
 .admin-user-filters select:focus-visible {
-  outline: 2px solid var(--primary-color, #4f46e5);
+  outline: 2px solid var(--admin-accent, #4f46e5);
   outline-offset: 1px;
 }
 
@@ -330,6 +352,66 @@
   font-size: 0.8rem;
   opacity: 0.7;
   white-space: nowrap;
+}
+
+/* Empty state */
+.admin-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--spacing-2xl, 32px) var(--spacing-lg, 16px);
+  text-align: center;
+  color: var(--text-muted, rgba(255, 255, 255, 0.7));
+  font-size: 0.85rem;
+}
+
+.admin-empty-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.admin-empty-state strong {
+  color: var(--text-primary, inherit);
+  font-size: 0.95rem;
+}
+
+.admin-empty-state .btn {
+  margin-top: 6px;
+}
+
+/* Skeleton loading */
+.admin-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-skeleton-row {
+  height: 38px;
+  border-radius: 8px;
+  background: var(--admin-surface, rgba(255, 255, 255, 0.05));
+  animation: admin-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.admin-skeleton-row:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.admin-skeleton-row:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes admin-skeleton-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-skeleton-row {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 
 /* Avatar user */
@@ -343,8 +425,8 @@
   border-radius: 50%;
   font-size: 0.78rem;
   font-weight: 700;
-  background: rgba(79, 70, 229, 0.2);
-  border: 1px solid rgba(79, 70, 229, 0.4);
+  background: var(--admin-accent-surface, rgba(79, 70, 229, 0.2));
+  border: 1px solid var(--admin-accent-border, rgba(79, 70, 229, 0.4));
 }
 
 /* Menu aksi per baris (⋯) */
@@ -359,8 +441,8 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--admin-field-border, rgba(255, 255, 255, 0.15));
+  background: var(--admin-surface, rgba(255, 255, 255, 0.05));
   color: inherit;
   font-size: 1rem;
   line-height: 1;
@@ -368,7 +450,7 @@
 }
 
 .admin-actions-trigger:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--admin-surface-strong, rgba(255, 255, 255, 0.12));
 }
 
 .admin-actions-trigger:disabled {
@@ -377,7 +459,7 @@
 }
 
 .admin-actions-trigger:focus-visible {
-  outline: 2px solid var(--primary-color, #4f46e5);
+  outline: 2px solid var(--admin-accent, #4f46e5);
   outline-offset: 1px;
 }
 
@@ -392,7 +474,7 @@
   padding: 4px;
   border-radius: 10px;
   border: 1px solid var(--border-color);
-  background: var(--surface-color, #1f2937);
+  background: var(--secondary-bg, #1f2937);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
@@ -409,7 +491,7 @@
 }
 
 .admin-actions-dropdown button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.08));
 }
 
 .admin-actions-dropdown button:disabled {
@@ -418,22 +500,22 @@
 }
 
 .admin-actions-dropdown button.is-danger:not(:disabled) {
-  color: #ef4444;
+  color: var(--admin-danger, #ef4444);
 }
 
 .admin-actions-dropdown button.is-danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.12);
+  background: var(--admin-danger-surface, rgba(239, 68, 68, 0.12));
 }
 
 .btn-danger {
-  background: #dc2626;
-  border-color: #dc2626;
+  background: var(--admin-danger, #dc2626);
+  border-color: var(--admin-danger, #dc2626);
   color: #fff;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: #b91c1c;
-  border-color: #b91c1c;
+  background: color-mix(in srgb, var(--admin-danger, #dc2626) 82%, #000);
+  border-color: color-mix(in srgb, var(--admin-danger, #dc2626) 82%, #000);
 }
 
 .admin-role-pill {
@@ -449,13 +531,13 @@
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 0.75rem;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-muted, rgba(255, 255, 255, 0.7));
 }
 
 .admin-status-pill.is-active {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.12);
+  color: var(--admin-success, #22c55e);
+  background: var(--admin-success-surface, rgba(34, 197, 94, 0.12));
 }
 
 .admin-backup-form {
@@ -473,20 +555,20 @@
 
 /* Zona berisiko: restore menimpa seluruh database */
 .admin-danger-zone {
-  border-color: rgba(239, 68, 68, 0.45);
-  background: rgba(239, 68, 68, 0.04);
+  border-color: var(--admin-danger-border, rgba(239, 68, 68, 0.45));
+  background: color-mix(in srgb, var(--admin-danger, #ef4444) 4%, transparent);
 }
 
 .admin-danger-zone .admin-panel-subtitle {
-  color: #ef4444;
+  color: var(--admin-danger, #ef4444);
 }
 
 .admin-danger-warning {
   padding: 10px 14px;
   border-radius: var(--radius-md, 10px);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.1);
-  color: #fca5a5;
+  border: 1px solid var(--admin-danger-border, rgba(239, 68, 68, 0.35));
+  background: var(--admin-danger-surface, rgba(239, 68, 68, 0.1));
+  color: color-mix(in srgb, var(--admin-danger, #ef4444) 70%, #fff);
   font-size: 0.85rem;
   line-height: 1.5;
 }
@@ -503,15 +585,15 @@
 .admin-danger-confirm code {
   padding: 1px 5px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.1));
   font-weight: 700;
 }
 
 .admin-danger-confirm input {
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(239, 68, 68, 0.45);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--admin-danger-border, rgba(239, 68, 68, 0.45));
+  background: var(--admin-surface, rgba(255, 255, 255, 0.05));
   color: inherit;
   font: inherit;
   letter-spacing: 0.08em;
@@ -519,6 +601,72 @@
 }
 
 .admin-danger-confirm input:focus-visible {
-  outline: 2px solid #ef4444;
+  outline: 2px solid var(--admin-danger, #ef4444);
   outline-offset: 1px;
+}
+
+/* ---------- Responsif ---------- */
+
+/* Di layar sempit, baris tabel user jadi kartu bertumpuk agar tidak perlu
+   menggeser tabel ke samping. */
+@media (max-width: 768px) {
+  .admin-user-table thead {
+    display: none;
+  }
+
+  .admin-user-table,
+  .admin-user-table tbody,
+  .admin-user-table tr,
+  .admin-user-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-user-table tr {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--admin-divider, rgba(255, 255, 255, 0.08));
+  }
+
+  .admin-user-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 10px;
+    border-bottom: none;
+  }
+
+  .admin-user-table td::before {
+    content: attr(data-label);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.6;
+  }
+
+  .admin-user-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-user-filters label {
+    justify-content: space-between;
+  }
+
+  .admin-user-count {
+    margin-left: 0;
+    text-align: right;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-tab {
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+
+  .admin-actions-dropdown {
+    right: auto;
+    left: 0;
+  }
 }
