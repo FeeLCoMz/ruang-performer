@@ -76,7 +76,6 @@ describe('AI Autofill module gate', () => {
       key: false,
       tempo: true,
       genre: false,
-      youtubeId: false,
       keyboardPatch: false,
     });
     expect(buildDefaultAiConfirmFields(null)).toEqual({
@@ -84,7 +83,6 @@ describe('AI Autofill module gate', () => {
       key: false,
       tempo: false,
       genre: false,
-      youtubeId: false,
       keyboardPatch: false,
     });
   });

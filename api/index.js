@@ -29,6 +29,7 @@ import bandIdHandler from '../server/handlers/band-id.js';
 import eventsHandler from '../server/handlers/events.js';
 import aiHandler from './ai.js';
 import aiUsageHandler from '../server/handlers/ai-usage.js';
+import aiYoutubeSearchHandler from '../server/handlers/ai-youtube-search.js';
 import catchAllHandler from './[...path].js';
 import authRegisterHandler from '../server/handlers/auth-register.js';
 import authLoginHandler from '../server/handlers/auth-login.js';
@@ -122,6 +123,11 @@ app.get('/api/audit-logs', verifyTokenMiddleware, (req, res, next) => {
 // AI usage (kuota AI Autofill)
 app.get('/api/ai/usage', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(aiUsageHandler(req, res)).catch(next);
+});
+
+// Pencarian YouTube untuk modal "Cari video"
+app.get('/api/ai/youtube-search', verifyTokenMiddleware, (req, res, next) => {
+  Promise.resolve(aiYoutubeSearchHandler(req, res)).catch(next);
 });
 app.post('/api/auth/change-password', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(authChangePasswordHandler(req, res)).catch(next);

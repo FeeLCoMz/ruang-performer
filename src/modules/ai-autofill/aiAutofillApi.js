@@ -11,11 +11,10 @@ import * as apiClient from '../../apiClient.js';
 import { isAIAutofillEnabled } from './aiAutofillSettings.js';
 
 /**
- * Cari metadata lagu (artist, key, tempo, genre, youtubeId, chord links) via AI.
+ * Cari metadata lagu (artist, key, tempo, genre, chord links) via AI.
  *
- * Bila YouTube ID kosong tetapi server menyertakan alasan di `debug`
- * (kunci belum diset / kuota habis / timeout), lempar error yang jelas supaya
- * pengguna tahu field mana yang gagal — bukan dibiarkan kosong tanpa sebab.
+ * Catatan: YouTube ID TIDAK diisi di sini. User memilih video sendiri lewat
+ * tombol "Cari video" (YoutubeVideoPickerModal) agar hasilnya tidak menebak.
  *
  * @param {{ title: string, artist?: string }} params
  * @returns {Promise<object>} Hasil dari endpoint (bentuk mengikuti server).
@@ -36,34 +35,6 @@ export async function autofillSongMetadata({ title, artist = '' } = {}) {
 }
 
 /**
- * Alasan kegagalan pengisian YouTube ID, atau null bila tidak ada masalah.
- * Dipakai UI untuk memberi keterangan tanpa menggagalkan seluruh autofill.
- *
- * @param {object} result - Respons aiSongSearch.
- * @returns {string|null}
- */
-export function describeYouTubeFailure(result) {
-  if (!result || result.youtubeId) return null;
-  const debug = result.debug || {};
-  if (debug.youtubeKeyMissing) {
-    return 'YouTube ID tidak terisi: kunci YouTube API belum diset di server (VITE_YOUTUBE_API_KEY / YOUTUBE_API_KEY).';
-  }
-  if (debug.youtubeStatus === 403) {
-    return 'YouTube ID tidak terisi: kuota YouTube API habis atau kunci tidak diizinkan (403).';
-  }
-  if (debug.youtubeError) {
-    return `YouTube ID tidak terisi: ${debug.youtubeError}`;
-  }
-  if (debug.youtubeResults === 0) {
-    const tried = Array.isArray(debug.youtubeQueriesTried) && debug.youtubeQueriesTried.length > 0
-      ? ` (dicoba: ${debug.youtubeQueriesTried.map((q) => `"${q}"`).join(', ')})`
-      : '';
-    return `YouTube ID tidak terisi: tidak ada video yang cocok ditemukan${tried}.`;
-  }
-  return 'YouTube ID tidak terisi: hasil pencarian kosong.';
-}
-
-/**
  * Ubah hasil AI menjadi peta checkbox default untuk modal konfirmasi.
  * Hanya field yang benar-benar terisi yang dicentang.
  *
@@ -77,7 +48,6 @@ export function buildDefaultAiConfirmFields(result) {
     key: !!data.key,
     tempo: !!data.tempo,
     genre: !!data.genre,
-    youtubeId: !!data.youtubeId,
     keyboardPatch: !!data.keyboardPatch,
   };
 }

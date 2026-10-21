@@ -133,19 +133,8 @@ export default function AIAutofillModal({
                 </span>
               </label>
             )}            
-            {aiResult.youtubeId && (
-              <label className="ai-autofill-field">
-                <input
-                  type="checkbox"
-                  checked={aiConfirmFields.youtubeId || false}
-                  onChange={e => setAiConfirmFields(f => ({...f, youtubeId: e.target.checked}))}
-                  className="ai-autofill-checkbox"
-                />
-                <span className="ai-autofill-field-label">
-                  🎬 YouTube ID: <span className="ai-autofill-field-value ai-autofill-youtubeid">{aiResult.youtubeId}</span>
-                </span>
-              </label>
-            )}
+            {/* YouTube ID tidak lagi ditawarkan di sini: dipilih manual lewat
+                tombol "Cari video" di dekat field YouTube. */}
             {/* Tambahkan field lain sesuai kebutuhan */}
             </div>
           </div>

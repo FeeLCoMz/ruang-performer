@@ -7,7 +7,8 @@ import VirtualPiano from '../modules/midi/VirtualPiano';
 import AIAutofillModal from '../modules/ai-autofill/AIAutofillModal';
 import { useAIAutofillEnabled } from '../modules/ai-autofill/useAIAutofillEnabled';
 import { useAIUsage } from '../modules/ai-autofill/useAIUsage.js';
-import { autofillSongMetadata, buildDefaultAiConfirmFields, describeYouTubeFailure } from '../modules/ai-autofill/aiAutofillApi.js';
+import { autofillSongMetadata, buildDefaultAiConfirmFields } from '../modules/ai-autofill/aiAutofillApi.js';
+import YoutubeVideoPickerModal from '../modules/ai-autofill/YoutubeVideoPickerModal.jsx';
 import SheetMusicModal from '../components/SheetMusicModal.jsx';
 import SongLyricsEditorPanel from '../components/SongLyricsEditorPanel.jsx';
 import SongStudioTopbar from '../components/SongStudioTopbar.jsx';
@@ -94,6 +95,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const [aiAutofillEnabled] = useAIAutofillEnabled();
   const { usage: aiUsage, refresh: refreshAiUsage } = useAIUsage(aiAutofillEnabled);
   const [aiLoading, setAiLoading] = useState(false);
+  // Modal pemilih video YouTube (mengisi field YouTube ID secara manual).
+  const [showYoutubePicker, setShowYoutubePicker] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [showSheetMusicModal, setShowSheetMusicModal] = useState(false);
   const [aiResult, setAiResult] = useState(null);
@@ -324,9 +327,6 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
       const data = await autofillSongMetadata({ title, artist });
       // Perbarui sisa kuota setelah pemakaian berhasil.
       refreshAiUsage();
-      // Metadata lain tetap dipakai; hanya YouTube yang dilaporkan bila kosong.
-      const youtubeIssue = describeYouTubeFailure(data);
-      if (youtubeIssue) setError(youtubeIssue);
       setAiResult(data);
       setAiConfirmFields(buildDefaultAiConfirmFields(data));
       setShowAiModal(true);
@@ -350,7 +350,7 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
     }
     if (aiConfirmFields.tempo && aiResult.tempo) setTempo(aiResult.tempo.toString());
     if (aiConfirmFields.genre && aiResult.genre) setGenre(aiResult.genre);
-    if (aiConfirmFields.youtubeId && aiResult.youtubeId) setYoutubeId(aiResult.youtubeId);
+    // YouTube ID sengaja tidak diisi dari AI — dipilih manual via "Cari video".
     if (aiConfirmFields.keyboardPatch && aiResult.keyboardPatch)
       setKeyboardPatch(
         Array.isArray(aiResult.keyboardPatch)
@@ -1001,6 +1001,13 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
                     Video terdeteksi: <code>{normalizedYoutubeId}</code>
                   </span>
                 )}
+                <button
+                  type="button"
+                  className="btn btn-secondary song-youtube-search-btn"
+                  onClick={() => setShowYoutubePicker(true)}
+                >
+                  🔎 Cari video
+                </button>
               </label>
 
               <label className="studio-field studio-field-sheet">
@@ -1144,6 +1151,19 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         }
         insertControls={pianoInsertControls}
       />
+
+      {showYoutubePicker && (
+        <YoutubeVideoPickerModal
+          open={showYoutubePicker}
+          initialQuery={[title, artist].filter(Boolean).join(' ')}
+          onClose={() => setShowYoutubePicker(false)}
+          onError={(message) => setError(message)}
+          onSelect={(video) => {
+            if (video?.videoId) setYoutubeId(video.videoId);
+            setShowYoutubePicker(false);
+          }}
+        />
+      )}
 
       {showAiModal && aiResult && (
         <AIAutofillModal

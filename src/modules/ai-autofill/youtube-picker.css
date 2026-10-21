@@ -1,0 +1,153 @@
+/* Modal pemilih video YouTube (AI Autofill → tombol "Cari video") */
+
+.youtube-picker-overlay {
+  z-index: 1200;
+}
+
+.youtube-picker {
+  width: min(640px, 94vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  overflow: hidden;
+}
+
+.youtube-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.youtube-picker-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.youtube-picker-search {
+  display: flex;
+  gap: 8px;
+}
+
+.youtube-picker-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #d1d5db);
+  background: var(--input-bg, #fff);
+  color: var(--text-primary, #111827);
+}
+
+.youtube-picker-results {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.youtube-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--card-bg, #fff);
+  color: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.youtube-picker-item:hover,
+.youtube-picker-item:focus-visible {
+  border-color: var(--primary-accent, #7c3aed);
+  background: color-mix(in srgb, var(--primary-accent, #7c3aed) 8%, transparent);
+  outline: none;
+}
+
+.youtube-picker-item img,
+.youtube-picker-thumb-fallback {
+  width: 108px;
+  height: 61px;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.youtube-picker-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.youtube-picker-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.youtube-picker-channel {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.youtube-picker-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  color: var(--text-secondary, #6b7280);
+  opacity: 0.8;
+}
+
+.youtube-picker-empty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.youtube-picker-paste {
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  padding-top: 12px;
+  font-size: 0.82rem;
+}
+
+.youtube-picker-paste-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.youtube-picker-paste-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #d1d5db);
+  background: var(--input-bg, #fff);
+  color: var(--text-primary, #111827);
+}
+
+@media (max-width: 640px) {
+  .youtube-picker-item img,
+  .youtube-picker-thumb-fallback {
+    width: 84px;
+    height: 47px;
+  }
+}

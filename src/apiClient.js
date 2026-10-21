@@ -408,6 +408,18 @@ export async function getAIUsage() {
   return request('/ai/usage', { fallbackError: 'Gagal mengambil kuota AI' });
 }
 
+/**
+ * Cari video YouTube untuk dipilih manual (modal "Cari video").
+ * @param {{ q: string, max?: number }} params
+ * @returns {Promise<{ query: string, videos: Array<object> }>}
+ */
+export async function searchYoutubeVideos({ q, max = 8 }) {
+  const params = new URLSearchParams({ q: String(q || ''), max: String(max) });
+  return request(`/ai/youtube-search?${params.toString()}`, {
+    fallbackError: 'Pencarian YouTube gagal',
+  });
+}
+
 // Bands API
 export async function fetchBands() {
   return request('/bands', { fallbackError: 'Gagal mengambil daftar band' });

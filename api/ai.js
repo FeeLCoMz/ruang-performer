@@ -305,92 +305,6 @@ function buildChordLinks(title, artist) {
 }
 
 /**
- * Look up a YouTube video id for the given song.
- * Never throws: failures are reported through the returned debug object so the
- * rest of the song-search response can still be returned.
- *
- * @returns {Promise<{youtubeId: string|null, debug: Object}>}
- */
-async function searchYoutube(title, artist) {
-  const debug = {};
-
-  // Nama env: proyek ini memakai prefix VITE_* (dipakai juga oleh trending),
-  // tetapi deployment sering hanya mengisi nama tanpa prefix. Terima keduanya.
-  const apiKey = process.env.VITE_YOUTUBE_API_KEY
-    || process.env.YOUTUBE_API_KEY
-    || process.env.rz_YOUTUBE_API_KEY
-    || process.env.RZ_YOUTUBE_API_KEY;
-
-  if (!apiKey) {
-    console.warn('Warning: VITE_YOUTUBE_API_KEY / YOUTUBE_API_KEY not configured');
-    debug.youtubeKeyMissing = true;
-    return { youtubeId: null, debug };
-  }
-
-  try {
-    // Artist bisa kosong: hindari query berspasi ganda / spasi di akhir.
-    const query = [title, artist].map((part) => String(part || '').trim()).filter(Boolean).join(' ');
-
-    /** Satu percobaan pencarian YouTube. */
-    const searchOnce = async (q) => {
-      const url = new URL('https://www.googleapis.com/youtube/v3/search');
-      url.searchParams.set('part', 'snippet');
-      url.searchParams.set('type', 'video');
-      url.searchParams.set('maxResults', '1');
-      url.searchParams.set('q', q);
-      url.searchParams.set('key', apiKey);
-
-      // `timeout` bukan opsi fetch yang sah (diabaikan), jadi pakai AbortSignal:
-      // tanpa ini request bisa menggantung dan seluruh autofill ikut menunggu.
-      const response = await fetch(url.toString(), {
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (!response.ok) {
-        // Sertakan alasan dari Google supaya terlihat di debug (mis. quotaExceeded).
-        const errorData = await response.json().catch(() => ({}));
-        const error = new Error(errorData?.error?.message || response.statusText || `HTTP ${response.status}`);
-        error.status = response.status;
-        throw error;
-      }
-
-      const data = await response.json();
-      const items = Array.isArray(data?.items) ? data.items : [];
-      return items[0]?.id?.videoId ?? null;
-    };
-
-    // Beberapa kata (mis. "live", "remastered", nama album) membuat hasil kosong
-    // padahal lagunya jelas ada. Coba bertahap dari paling spesifik:
-    //   1) title + artist, 2) title saja, 3) title tanpa isi kurung.
-    const attempts = [...new Set([
-      query,
-      String(title || '').trim(),
-      String(title || '').replace(/\s*[([{][^)\]}]*[)\]}]/g, '').trim(),
-    ])].filter(Boolean);
-
-    debug.youtubeQueriesTried = attempts;
-    let youtubeId = null;
-    let usedQuery = null;
-    for (const attempt of attempts) {
-      // eslint-disable-next-line no-await-in-loop
-      youtubeId = await searchOnce(attempt);
-      if (youtubeId) { usedQuery = attempt; break; }
-    }
-
-    debug.youtubeQuery = usedQuery || attempts[0];
-    debug.youtubeResults = youtubeId ? 1 : 0;
-    return { youtubeId, debug };
-  } catch (err) {
-    console.error('YouTube search error:', err);
-    debug.youtubeStatus = err?.status;
-    debug.youtubeError = err?.name === 'TimeoutError'
-      ? 'YouTube API timeout (5s)'
-      : err.message;
-    return { youtubeId: null, debug };
-  }
-}
-
-/**
  * Ask Gemini for structured song metadata, walking the supported model list
  * until one answers. Never throws.
  *
@@ -518,10 +432,10 @@ async function handleSongSearch(req, res) {
       debug: {}
     };
 
-    // YouTube search (independent of Gemini)
-    const youtube = await searchYoutube(title, artist);
-    results.youtubeId = youtube.youtubeId;
-    results.debug = { ...results.debug, ...youtube.debug };
+    // YouTube TIDAK lagi dicari otomatis: user memilih video sendiri lewat
+    // tombol "Cari video" (modal, query bisa diubah). Autofill hanya mengurus
+    // metadata lagu lewat Gemini.
+    results.youtubeId = null;
 
     // Chord links
     results.chordLinks = buildChordLinks(title, artist);
@@ -553,12 +467,11 @@ async function handleSongSearch(req, res) {
     // Always return artist (from input or AI)
     if (!results.artist) results.artist = artist || null;
 
-    // Cache hanya hasil yang lengkap. youtubeId null bisa berarti kunci belum
-    // diset / kuota YouTube habis / timeout — semuanya bisa pulih sendiri tanpa
-    // restart server, jadi jangan di-cache.
-    if (results.youtubeId) {
-      writeSongCache(cacheKey, results);
-    }
+    // Cache hanya hasil yang lengkap (Gemini sukses) — kegagalan tidak di-cache
+    // karena bisa pulih sendiri tanpa restart server.
+    // Salin objek: objek yang sama masih dipegang pemanggil, dan cache tidak
+    // boleh ikut berubah bila pemanggil memutasi respons.
+    writeSongCache(cacheKey, { ...results, debug: { ...results.debug } });
     return res.status(200).json(results);
   } catch (error) {
     console.error('Error in song search:', error);

@@ -45,6 +45,7 @@ import auditLogsHandler from '../server/handlers/audit-logs.js';
 // api/ai.js, jadi modul ini ikut di-bundle ke function dan tidak di-ignore.
 import aiHandler from './ai.js';
 import aiUsageHandler from '../server/handlers/ai-usage.js';
+import aiYoutubeSearchHandler from '../server/handlers/ai-youtube-search.js';
 import { verifyToken } from '../server/_auth.js';
 
 const ORIGINAL_URL_HEADER = 'x-original-url';
@@ -188,6 +189,7 @@ async function dispatch(req, res) {
   // chord (/api/ai/chord-transcribe). Tanpa cabang ini keduanya 404.
   if (resource === 'ai') {
     if (second === 'usage') return aiUsageHandler(req, res);
+    if (second === 'youtube-search') return aiYoutubeSearchHandler(req, res);
     // api/ai.js memilih handler dari req.url dengan prefix TANPA '/api/ai'
     // (Express memotongnya saat mount). Catch-all meneruskan URL utuh
     // ('/api/ai/song-search'), sehingga tanpa normalisasi ini semua request
