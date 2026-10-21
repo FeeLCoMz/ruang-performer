@@ -11,8 +11,8 @@ import {
   ACTION_CATEGORIES,
   SEVERITY_LEVELS,
   formatActionName,
-  getSeverityColor,
 } from '../../../utils/auditLogger.js';
+import './audit-log.css';
 
 const CATEGORY_OPTIONS = ['', ...Object.values(ACTION_CATEGORIES)];
 const SEVERITY_OPTIONS = ['', ...Object.values(SEVERITY_LEVELS)];
@@ -63,7 +63,7 @@ function AuditFilters({ filters, setFilter, resetFilters, activeFilterCount, fil
 
 function AuditTable({ logs, loading, error }) {
   return (
-    <div className="admin-user-table-wrap">
+    <div className="audit-log-table-wrap">
       {loading && logs.length === 0 && (
         <div className="admin-skeleton" aria-label="Memuat audit log" aria-busy="true">
           <span className="admin-skeleton-row" />
@@ -95,26 +95,25 @@ function AuditTable({ logs, loading, error }) {
           <tbody>
             {logs.map((log, index) => (
               <tr key={log.id || `${log.action}-${log.createdAt}-${index}`}>
-                <td>{formatTimestamp(log.createdAt)}</td>
-                <td>{log.username || log.userId || '-'}</td>
-                <td title={log.description || ''}>{formatActionName(log.action || '')}</td>
-                <td>{log.category || '-'}</td>
-                <td>
+                <td data-label="Waktu">{formatTimestamp(log.createdAt)}</td>
+                <td data-label="User">{log.username || log.userId || '-'}</td>
+                <td data-label="Aksi" title={log.description || ''}>
+                  {formatActionName(log.action || '')}
+                </td>
+                <td data-label="Kategori">{log.category || '-'}</td>
+                <td data-label="Severity">
                   {log.severity ? (
-                    <span
-                      className={`audit-log-badge severity-${log.severity}`}
-                      style={{ backgroundColor: getSeverityColor(log.severity) }}
-                    >
+                    <span className={`audit-log-badge severity-${log.severity}`}>
                       {log.severity}
                     </span>
                   ) : '-'}
                 </td>
-                <td>
+                <td data-label="Status">
                   {log.status ? (
                     <span className={`audit-log-status is-${log.status}`}>{log.status}</span>
                   ) : '-'}
                 </td>
-                <td>{log.ipAddress || '-'}</td>
+                <td data-label="IP">{log.ipAddress || '-'}</td>
               </tr>
             ))}
           </tbody>
@@ -170,9 +169,11 @@ export default function AuditLogPanel({ auditLogs, mode = 'compact', reloadLogs 
         <h2 className="admin-section-title" id="admin-audit">Audit Log</h2>
         <div className="card admin-panel">
           <div className="admin-panel-header">
-            <span className="admin-muted">
-              {filteredLogs.length} dari {logs.length} entri · hari ini {report.timeline.today} ·
-              mencurigakan {report.suspiciousActivity.length}
+            <span className="admin-muted admin-audit-summary">
+              <span className="audit-log-stat-line">Hari ini {report.timeline.today}</span>
+              <span className="audit-log-stat-line is-warn">
+                Mencurigakan {report.suspiciousActivity.length}
+              </span>
             </span>
             <button type="button" className="btn btn-secondary" onClick={refresh} disabled={loading}>
               {loading ? 'Memuat...' : 'Muat ulang'}
@@ -197,7 +198,7 @@ export default function AuditLogPanel({ auditLogs, mode = 'compact', reloadLogs 
 
   return (
     <>
-      <div className="card audit-log-filters">
+      <div className="audit-log-filter-bar">
         <AuditFilters
           filters={filters}
           setFilter={setFilter}
@@ -210,7 +211,7 @@ export default function AuditLogPanel({ auditLogs, mode = 'compact', reloadLogs 
 
       <AuditLogSummary report={report} />
 
-      <div className="card audit-log-table-wrap">
+      <div className="card audit-log-table-card">
         <AuditTable logs={filteredLogs} loading={loading} error={error} />
       </div>
     </>

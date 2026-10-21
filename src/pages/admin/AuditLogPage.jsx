@@ -13,8 +13,7 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { isAppAdmin } from '../../utils/adminAccess.js';
 import { useAuditLogs } from './audit-log/useAuditLogs.js';
-import AuditLogPanel from './audit-log/AuditLogPanel.jsx';
-import './audit-log/audit-log.css';
+// Gaya audit log diimpor oleh AuditLogPanel agar ikut aktif di tab /admin.
 
 export default function AuditLogPage() {
   const { user } = useAuth();

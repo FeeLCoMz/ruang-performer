@@ -1,28 +1,53 @@
-/* Audit Log — halaman modul khusus Owner */
+/* Audit Log — panel di halaman Administrator dan halaman /audit-logs.
+   Token warna mengikuti theme.css lewat --admin-* dari admin.css. */
+
+/* Bar filter: kini class tersendiri, tidak lagi dipakai sekaligus sebagai .card */
+.audit-log-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 20px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 10px);
+  background: var(--admin-surface, rgba(255, 255, 255, 0.04));
+}
 
 .audit-log-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 12px 20px;
-  margin-bottom: 16px;
+  width: 100%;
 }
 
 .audit-log-filters label {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted, inherit);
 }
 
 .audit-log-filters select {
   min-width: 140px;
-  padding: 6px 8px;
+  padding: 7px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
-  color: inherit;
+  border: 1px solid var(--admin-field-border, rgba(255, 255, 255, 0.15));
+  background: var(--admin-surface, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, inherit);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.audit-log-filters select:focus-visible {
+  outline: 2px solid var(--admin-accent, #8b5cf6);
+  outline-offset: 1px;
 }
 
 .audit-log-filters .btn {
@@ -31,9 +56,28 @@
 
 .audit-log-count {
   margin-left: auto;
-  font-size: 0.85rem;
-  opacity: 0.75;
   align-self: center;
+  font-size: 0.8rem;
+  color: var(--text-muted, inherit);
+  white-space: nowrap;
+}
+
+/* Ringkasan singkat di header panel (mode compact / tab Audit). */
+.admin-audit-summary {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.audit-log-stat-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.audit-log-stat-line.is-warn {
+  color: var(--admin-danger, #ef4444);
 }
 
 .audit-log-summary {
@@ -79,29 +123,75 @@
 .audit-log-table td {
   padding: 10px 12px;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--admin-divider, rgba(255, 255, 255, 0.08));
+  vertical-align: middle;
+}
+
+/* Hanya kolom yang isinya memang panjang yang dibiarkan satu baris. */
+.audit-log-table td:first-child,
+.audit-log-table td:nth-child(4),
+.audit-log-table td:nth-child(5),
+.audit-log-table td:nth-child(6),
+.audit-log-table td:nth-child(7) {
+  white-space: nowrap;
+}
+
+.audit-log-table td:nth-child(3) {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .audit-log-table th {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  opacity: 0.7;
+  color: var(--text-muted, inherit);
 }
 
 .audit-log-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--admin-surface, rgba(255, 255, 255, 0.04));
 }
 
+.audit-log-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Severity: warna dari class tema (bukan inline style dari JS). */
 .audit-log-badge {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px 9px;
   border-radius: 999px;
-  color: #fff;
-  font-size: 0.72rem;
+  border: 1px solid transparent;
+  font-size: 0.7rem;
   font-weight: 700;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
+}
+
+.audit-log-badge.severity-low {
+  color: var(--success, #10b981);
+  background: color-mix(in srgb, var(--success, #10b981) 14%, transparent);
+  border-color: color-mix(in srgb, var(--success, #10b981) 40%, transparent);
+}
+
+.audit-log-badge.severity-medium {
+  color: var(--warning, #f59e0b);
+  background: color-mix(in srgb, var(--warning, #f59e0b) 16%, transparent);
+  border-color: color-mix(in srgb, var(--warning, #f59e0b) 40%, transparent);
+}
+
+.audit-log-badge.severity-high {
+  color: var(--error, #ef4444);
+  background: color-mix(in srgb, var(--error, #ef4444) 16%, transparent);
+  border-color: color-mix(in srgb, var(--error, #ef4444) 40%, transparent);
+}
+
+.audit-log-badge.severity-critical {
+  color: #ffffff;
+  background: #991b1b;
+  border-color: #7f1d1d;
 }
 
 .audit-log-status {
@@ -114,13 +204,13 @@
 }
 
 .audit-log-status.is-success {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.12);
+  color: var(--admin-success, #22c55e);
+  background: var(--admin-success-surface, rgba(34, 197, 94, 0.12));
 }
 
 .audit-log-status.is-failed {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
+  color: var(--admin-danger, #ef4444);
+  background: var(--admin-danger-surface, rgba(239, 68, 68, 0.12));
 }
 
 .audit-log-empty {
@@ -129,8 +219,87 @@
   opacity: 0.75;
 }
 
-@media (max-width: 640px) {
+.audit-log-table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Di layar sempit tabel audit jadi kartu bertumpuk agar tidak scroll samping. */
+@media (max-width: 768px) {
+  .audit-log-filter-bar {
+    padding: 12px;
+  }
+
+  .audit-log-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .audit-log-filters select {
+    width: 100%;
+  }
+
+  .audit-log-filters .btn {
+    width: 100%;
+  }
+
   .audit-log-count {
     margin-left: 0;
+    text-align: right;
+  }
+
+  .audit-log-table thead {
+    display: none;
+  }
+
+  .audit-log-table,
+  .audit-log-table tbody,
+  .audit-log-table tr,
+  .audit-log-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .audit-log-table td:nth-child(3) {
+    max-width: none;
+  }
+
+  .audit-log-table tr {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--admin-divider, rgba(255, 255, 255, 0.08));
+  }
+
+  .audit-log-table td,
+  .audit-log-table td:first-child,
+  .audit-log-table td:nth-child(3),
+  .audit-log-table td:nth-child(4),
+  .audit-log-table td:nth-child(5),
+  .audit-log-table td:nth-child(6),
+  .audit-log-table td:nth-child(7) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 12px;
+    border-bottom: none;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .audit-log-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, inherit);
+  }
+}
+
+@media (max-width: 640px) {
+  .audit-log-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
