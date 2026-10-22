@@ -9,9 +9,10 @@ import React, { useEffect, useRef, useState } from 'react';
  *   - 🟡 Perlu Latihan (learning)
  *   - 🟢 Dikuasai (mastered)
  *
- * Pemakaian: dipasang di kartu lagu (SongListPage, SetlistSongsPage) dan
- * panel info lagu (SongChordsInfo). Perubahan status dikirim lewat
- * `onStatusChange(status)` — halaman pemakai yang memanggil API.
+ * Pemakaian: dipasang di kartu lagu lewat prop `actionStatus` SongCard
+ * (SongListPage, SetlistSongsPage) — menempel di awal baris aksi, bukan baris
+ * judul — dan di panel info lagu (SongChordsInfo). Perubahan status dikirim
+ * lewat `onStatusChange(status)` — halaman pemakai yang memanggil API.
  *
  * Props:
  *  - status            : 'none' | 'learning' | 'mastered'

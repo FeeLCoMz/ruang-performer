@@ -134,6 +134,24 @@ describe('SongListPage', () => {
     });
   });
 
+  test('mastery chip lives in the action row, not on the title line', async () => {
+    await act(async () => {
+      root.render(
+        <SongListPage
+          songs={[{ id: 'song-1', title: 'Anthem', artist: 'Band A', key: 'C', tempo: '132' }]}
+          loading={false}
+          error={null}
+          onSongClick={() => {}}
+        />
+      );
+      await flushPromises();
+    });
+
+    const actionRow = container.querySelector('.song-item .song-actions');
+    expect(actionRow?.querySelector('.mastery-chip-root')).toBeTruthy();
+    expect(container.querySelector('.song-heading .mastery-chip-root')).toBeFalsy();
+  });
+
   test('search and actions are labelled for screen readers', async () => {
     await act(async () => {
       root.render(

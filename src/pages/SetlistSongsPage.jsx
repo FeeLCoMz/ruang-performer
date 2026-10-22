@@ -1807,16 +1807,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                     </div>
                   )}
                   headingStatus={(
-                    /* Status lives on the right of the title line, where it reads
-                        as the state of THIS row instead of another inline word. */
+                    /* Flags stay on the title line: they describe the row's state
+                        without competing with the title. */
                     <div className="song-heading-status">
-                      {/* Status mastery: chip interaktif — klik untuk ubah status */}
-                      <MasteryChip
-                        status={masteryStatus}
-                        onStatusChange={(next) => handleMasteryChange(song, next)}
-                        updating={masteryUpdatingId === song.id}
-                        disabled={!viewerId}
-                      />
                       {isCompleted && (
                         <span className="song-flag song-flag-done" title="Selesai">
                           ✓ Selesai
@@ -1884,6 +1877,13 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                           <span className="song-action-btn-label">Video</span>
                         </button>
                       )}
+                      {/* Status mastery: chip interaktif — klik untuk ubah status. */}
+                      <MasteryChip
+                        status={masteryStatus}
+                        onStatusChange={(next) => handleMasteryChange(song, next)}
+                        updating={masteryUpdatingId === song.id}
+                        disabled={!viewerId}
+                      />
                       {canEdit && (
                         <>
                           <button

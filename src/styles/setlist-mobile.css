@@ -157,13 +157,10 @@
     line-height: 1.25;
   }
 
-/* Di layar sempit, chip mastery turun ke baris sendiri agar tidak menekan judul. */
-  .song-item .song-heading {
-    flex-wrap: wrap;
-  }
-
-  .song-item .song-mastery-chip {
-    margin-left: auto;
+/* Di layar sempit, chip mastery ikut baris aksi (sudah full-width di bawah)
+     sehingga tidak lagi menekan judul — cukup pastikan tidak melar. */
+  .song-item .song-actions > .mastery-chip-root {
+    flex: 0 0 auto;
   }
 
   .song-item .song-meta {

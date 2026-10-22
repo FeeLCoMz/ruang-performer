@@ -341,14 +341,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           title={song.title}
           isPlaying={isSongPlaying(song.id)}
           onClick={() => navigate(`/songs/view/${song.id}`)}
-          headingStatus={(
-            <MasteryChip
-              status={masteryStatus}
-              onStatusChange={(next) => handleMasteryChange(song, next)}
-              updating={masteryUpdatingId === song.id}
-              disabled={!currentUserId}
-            />
-          )}
           metaPrimary={(
             <div className="song-meta-line song-meta-line-primary">
               {/* Artis, key, tempo = fakta inti kartu: satu baris, selalu tampil
@@ -395,6 +387,13 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                   <span className="song-action-btn-label">Video</span>
                 </button>
               )}
+              {/* Chip mastery = aksi pada lagu, jadi ikut di baris aksi. */}
+              <MasteryChip
+                status={masteryStatus}
+                onStatusChange={(next) => handleMasteryChange(song, next)}
+                updating={masteryUpdatingId === song.id}
+                disabled={!currentUserId}
+              />
               {(() => {
                 const permission = permissionsBySongId[song.id] || {};
                 const canEdit = Boolean(permission.canEdit);

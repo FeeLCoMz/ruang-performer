@@ -1108,6 +1108,16 @@ button.song-mastery-chip:not(:disabled):hover {
   justify-content: flex-end;
 }
 
+/* Chip status di baris aksi (MasteryChip) menempel di kiri baris aksi, sementara
+   tombol aksi tetap rapat ke kanan. Bukan .btn, jadi tidak ikut geometri
+   `.song-action-btn` — hanya diselaraskan vertikal dengan tombol.
+   Selector per-container agar mengalahkan `justify-content: flex-end` mobile. */
+.song-item .song-actions > .mastery-chip-root,
+.song-list-container .song-actions > .mastery-chip-root {
+  margin-right: auto;
+  align-self: center;
+}
+
 .song-list-container .song-actions .btn {
   min-height: 34px;
   height: auto;

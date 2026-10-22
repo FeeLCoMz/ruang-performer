@@ -202,6 +202,16 @@ describe('SetlistSongsPage', () => {
     expect(container.querySelector('button[aria-label="Aktifkan loop playlist video"]')).toBeFalsy();
   });
 
+  test('mastery chip lives in the action row, not on the title line', async () => {
+    await renderPage(root, buildProps());
+
+    const actionRow = container.querySelector('.song-item .song-actions');
+    expect(actionRow?.querySelector('.mastery-chip-root')).toBeTruthy();
+    expect(container.querySelector('.song-heading .mastery-chip-root')).toBeFalsy();
+    // Flag status baris (Selesai) tetap di baris judul.
+    expect(container.querySelector('.song-heading .song-flag-done')).toBeTruthy();
+  });
+
   test('shows song key, tempo, and setlist usage metadata', async () => {
     await renderPage(root, buildProps());
 

@@ -14,6 +14,10 @@ import React from 'react';
  *  - `metaPrimary`   : baris utama metadata (artis/key/tempo/band/genre).
  *  - `metaDetail`    : baris pendukung metadata (mood/setlist).
  *  - `actions`       : tombol aksi halaman tersebut.
+ *  - `actionStatus`  : chip/status yang menempel di awal baris aksi (mis. chip
+ *                      mastery). Dipisah dari `actions` karena bukan tombol:
+ *                      tidak ikut aturan geometri `.song-action-btn`, tapi tetap
+ *                      berada di kolom kanan kartu dan tidak memicu klik kartu.
  *
  * Empat informasi yang harus langsung terbaca tanpa hover/scroll — judul,
  * artis, key, tempo — ditandai dengan class `song-fact-*` dan menempati
@@ -31,6 +35,7 @@ export default function SongCard({
   metaPrimary = null,
   metaDetail = null,
   actions = null,
+  actionStatus = null,
   className = '',
   style,
   onClick,
@@ -87,11 +92,12 @@ export default function SongCard({
         )}
       </div>
 
-      {actions && (
+      {(actionStatus || actions) && (
         <div
           className="song-actions"
           onClick={(e) => e.stopPropagation()}
         >
+          {actionStatus}
           {actions}
         </div>
       )}
