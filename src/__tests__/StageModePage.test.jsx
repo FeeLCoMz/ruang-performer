@@ -94,8 +94,14 @@ describe('StageModePage (redesign)', () => {
     expect(controlBtn).toBeTruthy();
     act(() => controlBtn.dispatchEvent(new MouseEvent('click', { bubbles: true })));
 
-    expect(document.body.querySelector('.stage-controls')).toBeTruthy();
+    const panel = document.body.querySelector('.stage-controls');
+    expect(panel).toBeTruthy();
     expect(controlBtn.getAttribute('aria-pressed')).toBe('true');
+    // Panel berada di bawah lirik: sesudah .stage-lyrics, sebelum footer.
+    const lyrics = document.body.querySelector('.stage-lyrics');
+    expect(lyrics.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const footer = document.body.querySelector('.stage-bottom');
+    expect(panel.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     unmount();
   });

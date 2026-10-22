@@ -15,8 +15,8 @@
      ├─ .stage-info        (overlay info lagu)
      ├─ .stage-main
      │    ├─ .stage-songhead   (judul lagu + posisi)
-     │    ├─ .stage-controls   (transpose + autoscroll, collapsible)
      │    ├─ .stage-lyrics     (area baca, scroll)
+     │    ├─ .stage-controls   (transpose + autoscroll, slide-up dari bawah)
      │    └─ .stage-player     (overlay player referensi)
      ├─ .stage-bottom
      │    ├─ .stage-progress   (progress baca, 2px)
@@ -347,19 +347,26 @@
   color: var(--stg-line-strong);
 }
 
-/* Kontrol (transpose + autoscroll) — slide-down, hanya saat dibuka. */
+/* Kontrol (transpose + autoscroll).
+   Posisi: di bawah lirik — elemen terakhir .stage-main, menempel ke bottom
+   bar. Tampil seperti bottom sheet yang naik dari bawah (bukan turun dari
+   atas), seolah keluar dari tombol "Kontrol". */
 .stage-controls {
   flex: 0 0 auto;
-  padding: 10px 14px 12px;
+  padding: 12px 14px 14px;
   background: var(--stg-panel);
   border-top: 1px solid var(--stg-line);
-  border-bottom: 1px solid var(--stg-line);
-  animation: stage-slide-down 0.16s ease-out;
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.45);
+  animation: stage-slide-up 0.16s ease-out;
 }
 
-@keyframes stage-slide-down {
-  from { opacity: 0; transform: translateY(-6px); }
+@keyframes stage-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-controls { animation: none; }
 }
 
 .stage-controls-inner {

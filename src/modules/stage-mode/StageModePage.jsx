@@ -1031,45 +1031,6 @@ export default function StageModePage({
           </p>
         </div>
 
-        {/* Kontrol panggung: transpose + autoscroll. Tersembunyi default agar
-            layar penuh untuk lirik; dibuka dari tombol "Kontrol" di bawah. */}
-        {controlsOpen && (
-          <div className="stage-controls" role="group" aria-label="Kontrol panggung">
-            <div className="stage-controls-inner">
-              {song && (
-                <TransposeKeyControl
-                  // originalKey harus key MASTER lagu (tanpa override setlist).
-                  // song.key sudah berisi override key setlist, sehingga kalau dipakai
-                  // sebagai acuan, tombol ± menampilkan "D → D" (override dianggap
-                  // key asli) dan reset mengembalikan ke key setlist, bukan key master.
-                  originalKey={masterKey || song?.key || ''}
-                  targetKey={song?.key || ''}
-                  transpose={transpose}
-                  onTransposeChange={(next) => {
-                    // User mengubah manual — hentikan auto-apply dari setlist
-                    // untuk lagu ini sampai pindah lagu berikutnya.
-                    userAdjustedTransposeRef.current = true;
-                    setTranspose(Number(next) || 0);
-                  }}
-                  variant="mini"
-                  disableAutoApply
-                />
-              )}
-              <AutoScrollControl
-                autoScrollActive={autoScrollActive}
-                setAutoScrollActive={setAutoScrollActive}
-                scrollSpeed={scrollSpeed}
-                setScrollSpeed={setScrollSpeed}
-                autoScrollMode={autoScrollMode}
-                setAutoScrollMode={setAutoScrollMode}
-                manualSpeedLevel={manualSpeedLevel}
-                setManualSpeedLevel={setManualSpeedLevel}
-                tempo={bpm}
-              />
-            </div>
-          </div>
-        )}
-
         {song ? (
           <div
             className="stage-lyrics song-lyrics-display"
@@ -1170,6 +1131,46 @@ export default function StageModePage({
               ) : (
                 <p className="stage-empty-text">Lagu ini belum punya video referensi YouTube.</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Kontrol panggung: transpose + autoscroll — di bawah lirik, tepat di
+            atas bottom bar. Tersembunyi default agar layar penuh untuk lirik;
+            dibuka dari tombol "Kontrol" di bottom bar. */}
+        {controlsOpen && (
+          <div className="stage-controls" role="group" aria-label="Kontrol panggung">
+            <div className="stage-controls-inner">
+              {song && (
+                <TransposeKeyControl
+                  // originalKey harus key MASTER lagu (tanpa override setlist).
+                  // song.key sudah berisi override key setlist, sehingga kalau dipakai
+                  // sebagai acuan, tombol ± menampilkan "D → D" (override dianggap
+                  // key asli) dan reset mengembalikan ke key setlist, bukan key master.
+                  originalKey={masterKey || song?.key || ''}
+                  targetKey={song?.key || ''}
+                  transpose={transpose}
+                  onTransposeChange={(next) => {
+                    // User mengubah manual — hentikan auto-apply dari setlist
+                    // untuk lagu ini sampai pindah lagu berikutnya.
+                    userAdjustedTransposeRef.current = true;
+                    setTranspose(Number(next) || 0);
+                  }}
+                  variant="mini"
+                  disableAutoApply
+                />
+              )}
+              <AutoScrollControl
+                autoScrollActive={autoScrollActive}
+                setAutoScrollActive={setAutoScrollActive}
+                scrollSpeed={scrollSpeed}
+                setScrollSpeed={setScrollSpeed}
+                autoScrollMode={autoScrollMode}
+                setAutoScrollMode={setAutoScrollMode}
+                manualSpeedLevel={manualSpeedLevel}
+                setManualSpeedLevel={setManualSpeedLevel}
+                tempo={bpm}
+              />
             </div>
           </div>
         )}
