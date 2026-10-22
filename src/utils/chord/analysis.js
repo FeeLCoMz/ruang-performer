@@ -7,12 +7,13 @@
  */
 import {
   CHORD_REGEX_GLOBAL,
-  isChordLine,
   normalizeChordToken,
   toCleanChord,
   getNoteIndex,
   transposeChord,
 } from './chordTokens.js';
+import { canonicalSection, parseSection } from './sections.js';
+import { classifyLine } from './parsing.js';
 
 // Fungsi untuk expand compact chord format (D..Gm..Bb) menjadi format spaced
 const expandCompactChords = (line) => {
@@ -28,27 +29,47 @@ const expandCompactChords = (line) => {
   return chords.join('   '); // Add spacing between chords
 };
 
+/** "Time Signature" -> "time", "Original Key" -> "original_key". */
+const METADATA_KEY_ALIASES = { 'original key': 'original_key', 'time signature': 'time' };
+
+/** Baris "Key: value" dengan key metadata yang dikenal, selain itu null. */
+const getMetadataEntry = (trimmedLine) => {
+  const match = trimmedLine.match(/^([^:|]+):\s*(.+)$/);
+  if (!match || trimmedLine.length >= 50) return null;
+
+  const keyRaw = match[1].trim().toLowerCase();
+  const key = METADATA_KEY_ALIASES[keyRaw] || keyRaw;
+  if (!['title', 'artist', 'key', 'tempo', 'time', 'original_key'].includes(key)) return null;
+
+  return { key, value: match[2].trim() };
+};
+
+/**
+ * Header seksi yang membawa chord di baris yang sama:
+ * "Int. C G Am", "Intro: C G Am", "Int : D..Gm..Bb" -> { label, trailing }.
+ *
+ * Label wajib dikenali parseSection; apakah `trailing` benar-benar chord dicek
+ * pemanggil lewat classifyLine.
+ */
+const splitSectionInlineChords = (trimmedLine) => {
+  const match = trimmedLine.match(/^([A-Za-z.]+)\s*:?\s+(.+)$/);
+  if (!match) return null;
+
+  const label = match[1].trim();
+  const section = parseSection(label);
+  if (!section || section.type !== 'structure') return null;
+
+  return { label, trailing: match[2].trim() };
+};
+
 // Fungsi untuk mengkonversi format standard (chord di atas lirik) ke ChordPro-like format
+//
+// Keputusan per baris diambil dari classifyLine (sumber yang sama dengan
+// parseLines) dan canonicalSection (turunan STRUCTURE_SECTION_KEYWORDS),
+// sehingga laporan statistik dan tampilan tidak lagi berbeda pendapat.
 const parseStandardFormat = (lines) => {
   const parsed = [];
   let currentSection = null;
-
-  const normalizeSection = (name) => {
-    const n = name.toLowerCase().replace(/[.:]+$/, ''); // Remove trailing dots/colons
-    if (n.includes('intro')) return 'intro';
-    if (n.includes('verse')) return 'verse';
-    if (n.includes('pre') && n.includes('chorus')) return 'pre-chorus';
-    if (n.includes('post') && n.includes('chorus')) return 'post-chorus';
-    if (n.includes('chorus')) return 'chorus';
-    if (n.includes('bridge')) return 'bridge';
-    if (n.includes('outro')) return 'outro';
-    if (n.includes('coda')) return 'coda';
-    if (n.includes('interlude') || n === 'int') return 'interlude';
-    if (n.includes('solo')) return 'solo';
-    if (n.includes('refrain') || n.includes('reff')) return 'refrain';
-    if (n.includes('musik')) return 'musik';
-    return null;
-  };
 
   /** Tutup seksi yang sedang berjalan lalu buka seksi baru. */
   const startSection = (structure) => {
@@ -59,9 +80,31 @@ const parseStandardFormat = (lines) => {
     currentSection = structure;
   };
 
-  for (let i = 0; i < lines.length; i++) {
+  /**
+   * Baris chord (plus lirik di bawahnya, bila ada) sebagai satu unit.
+   * `positionOffset` menyesuaikan posisi chord bila baris berasal dari bagian
+   * kanan sebuah header seksi ("Intro: C G Am").
+   */
+  const pushChordLine = (chordSource, lyricText = '', positionOffset = 0) => {
+    const expandedChords = expandCompactChords(chordSource);
+    const chords = [...expandedChords.matchAll(CHORD_REGEX_GLOBAL)].map((match) => ({
+      chord: match[0],
+      position: match.index + positionOffset,
+    }));
+
+    parsed.push({
+      type: 'line_with_chords',
+      chords,
+      text: lyricText,
+      barText: expandedChords, // Simpan bentuk ter-expand untuk deteksi bar
+      sourceLine: 0, // diisi oleh loop di bawah
+    });
+  };
+
+  for (let i = 0; i < lines.length; i += 1) {
     const currentLine = lines[i];
     const nextLine = lines[i + 1];
+    const sourceLine = i + 1;
 
     if (!currentLine.trim()) {
       parsed.push({ type: 'empty', line: '' });
@@ -70,118 +113,60 @@ const parseStandardFormat = (lines) => {
 
     const trimmedLine = currentLine.trim();
 
-    // Tambahan: Deteksi struktur dengan braket [Section]
-    const bracketSectionMatch = trimmedLine.match(/^\[([A-Za-z0-9 .:-_]+)\]$/);
-    if (bracketSectionMatch) {
-      const normalizedSectionName = normalizeSection(bracketSectionMatch[1].trim());
-      if (normalizedSectionName) {
-        startSection(normalizedSectionName);
-        continue;
-      }
-    }
+    // Header seksi: "[Verse]", "Intro", "Intro:", dan versi ber-chord
+    // "Int. C G Am" / "Chorus: C G Am".
+    const lineKind = classifyLine(trimmedLine);
 
-    // Check for standalone section header (e.g., "Int.", "Intro", "Intro:", "Intro :" on its own line)
-    const standaloneSectionMatch = trimmedLine.match(/^([A-Za-z.]+)\s*:?\s*$/);
-    if (standaloneSectionMatch) {
-      const normalizedSectionName = normalizeSection(standaloneSectionMatch[1].trim());
-      if (normalizedSectionName) {
-        startSection(normalizedSectionName);
-        continue;
-      }
-    }
+    if (lineKind.kind === 'structure') {
+      const sectionName = canonicalSection(lineKind.label);
 
-    // Check for section header with inline chords (e.g., "Int. C G Am", "Int: C G Am", "Int : D..Gm..Bb")
-    const sectionWithChordsMatch = trimmedLine.match(/^([A-Za-z.]+)\s*:?\s+(.+)$/);
-    if (sectionWithChordsMatch) {
-      const possibleSection = sectionWithChordsMatch[1].trim();
-      const possibleChords = sectionWithChordsMatch[2].trim();
-      const normalizedSectionName = normalizeSection(possibleSection);
-
-      // If section matches, always treat it as section (even if rest is not chords)
-      if (normalizedSectionName) {
-        startSection(normalizedSectionName);
-
-        // Expand compact format if present
-        const expandedChords = expandCompactChords(possibleChords);
-
-        // Parse the chord line using CHORD_REGEX_GLOBAL
-        const chords = [...expandedChords.matchAll(CHORD_REGEX_GLOBAL)].map((match) => ({
-          chord: match[0],
-          position: match.index + possibleSection.length + 1,
-        }));
-
-        // Lirik baris berikutnya (bukan chord, bukan kosong) ikut menempel.
-        let lyricText = '';
-        if (nextLine && nextLine.trim() && !isChordLine(nextLine)) {
-          lyricText = nextLine;
-          i++; // Skip next line since we consumed it
-        }
-
-        parsed.push({
-          type: 'line_with_chords',
-          chords,
-          text: lyricText,
-          barText: expandedChords, // Preserve bars and chord spacing source
-          sourceLine: i + 1,
-        });
-        continue;
-      }
-    }
-
-    // Deteksi metadata sederhana
-    if (currentLine.includes(':') && currentLine.length < 50) {
-      const colonIndex = currentLine.indexOf(':');
-      const keyRaw = currentLine.substring(0, colonIndex).trim().toLowerCase();
-      const value = currentLine.substring(colonIndex + 1).trim();
-
-      const normalizedKey = (() => {
-        if (['original key', 'original_key'].includes(keyRaw)) return 'original_key';
-        if (keyRaw === 'time signature') return 'time';
-        return keyRaw;
-      })();
-
-      if (['title', 'artist', 'key', 'tempo', 'time', 'original_key'].includes(normalizedKey)) {
-        parsed.push({ type: 'metadata', key: normalizedKey, value });
-        continue;
-      }
-
-      // Section header detection (e.g., "Verse:", "Chorus:")
-      const sectionName = normalizeSection(keyRaw);
       if (sectionName) {
-        startSection(sectionName);
-        continue;
+        const inlineSection = splitSectionInlineChords(trimmedLine);
+        // Sisa baris harus benar-benar chord: "Verse: ku menunggu" adalah
+        // lirik yang kebetulan memakai kata seksi, bukan baris chord.
+        const hasInlineChords = Boolean(inlineSection)
+          && classifyLine(inlineSection.trailing).kind === 'chord';
+
+        // Header murni tanpa chord tetap jadi seksi; baris seperti
+        // "Verse: ku menunggu" jatuh ke lirik di bawah.
+        if (!inlineSection || hasInlineChords) {
+          startSection(sectionName);
+
+          if (hasInlineChords) {
+            const { trailing } = inlineSection;
+            pushChordLine(trailing, '', trimmedLine.length - trailing.length);
+            parsed[parsed.length - 1].sourceLine = sourceLine;
+
+            // Lirik tepat di bawah chord ikut menempel pada baris ini.
+            if (nextLine && nextLine.trim() && classifyLine(nextLine).kind === 'lyrics') {
+              parsed[parsed.length - 1].text = nextLine;
+              i += 1;
+            }
+          }
+
+          continue;
+        }
       }
     }
 
-    // Cek apakah baris ini adalah baris chord
-    if (isChordLine(currentLine)) {
-      // Expand compact format if present (D..Gm..Bb -> D   Gm   Bb)
-      const expandedLine = expandCompactChords(currentLine);
-
-      // Extract chords using CHORD_REGEX_GLOBAL
-      const chords = [...expandedLine.matchAll(CHORD_REGEX_GLOBAL)].map((match) => ({
-        chord: match[0],
-        position: match.index,
-      }));
-
-      const hasLyricBelow = Boolean(nextLine && !isChordLine(nextLine) && nextLine.trim());
-      parsed.push({
-        type: 'line_with_chords',
-        chords,
-        text: hasLyricBelow ? nextLine : '',
-        barText: expandedLine, // Keep expanded chord line for bar detection
-        sourceLine: i + 1,
-      });
-
-      // Skip next line karena sudah diproses satu paket dengan chord di atasnya.
-      if (hasLyricBelow) i++;
-    } else {
-      // Baris teks biasa
-      parsed.push({
-        type: 'text',
-        line: currentLine,
-      });
+    // Metadata lagu: "Title:", "Artist:", "Tempo:", ...
+    const metadataEntry = getMetadataEntry(trimmedLine);
+    if (metadataEntry) {
+      parsed.push({ type: 'metadata', ...metadataEntry });
+      continue;
     }
+
+    if (lineKind.kind !== 'chord') {
+      parsed.push({ type: 'text', line: currentLine });
+      continue;
+    }
+
+    const hasLyricBelow = Boolean(nextLine && nextLine.trim() && classifyLine(nextLine).kind === 'lyrics');
+    pushChordLine(currentLine, hasLyricBelow ? nextLine : '');
+    parsed[parsed.length - 1].sourceLine = sourceLine;
+
+    // Skip next line karena sudah diproses satu paket dengan chord di atasnya.
+    if (hasLyricBelow) i += 1;
   }
 
   if (currentSection) {

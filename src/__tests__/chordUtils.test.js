@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, extractDetectedInstrumentsFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils';
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, extractDetectedInstrumentsFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers, parseChordPro, classifyLine, canonicalSection } from '../utils/chordUtils';
 
 describe('chordUtils', () => {
   test('splitSectionLabelWithChords separates section label and chord line', () => {
@@ -741,11 +741,65 @@ Repeat [00:12] then [1:02:03]
     ]);
   });
 
-  test('mergeDetectedTimestampsIntoMarkers does not reuse non-adjacent structure labels', () => {
-    const lyrics = '[Intro]\nC G Am F\n[1:20]';
-
-    expect(mergeDetectedTimestampsIntoMarkers(lyrics, [])).toEqual([
-      { time: 80, label: 'Timestamp 1:20' },
-    ]);
+    test('mergeDetectedTimestampsIntoMarkers does not reuse non-adjacent structure labels', () => {
+      const lyrics = '[Intro]\nC G Am F\n[1:20]';
+      expect(mergeDetectedTimestampsIntoMarkers(lyrics, [])).toEqual([
+        { time: 80, label: 'Timestamp 1:20' },
+      ]);
+    });
   });
-});
+
+  describe('classifyLine', () => {
+    test('agrees with the rows parseLines renders', () => {
+      const sourceLines = ['[Verse]', '[Gitar: Dist]', 'Original Key: C', 'C G Am', 'ku menunggu'];
+      const rows = parseLines(sourceLines, 0);
+
+      expect(rows.map((row) => row.type)).toEqual([
+        'structure', 'instrument', 'metadata', 'chord', 'lyrics',
+      ]);
+      expect(sourceLines.map((line) => classifyLine(line).kind)).toEqual(rows.map((row) => row.type));
+    });
+
+    test('reports kind for each row shape', () => {
+      expect(classifyLine('')).toEqual({ kind: 'empty' });
+      expect(classifyLine('[Intro]')).toMatchObject({ kind: 'structure', label: 'Intro' });
+      expect(classifyLine('Modulation: G')).toEqual({ kind: 'modulation', label: 'G' });
+      expect(classifyLine('[Gitar: Dist]')).toEqual({ kind: 'instrument', label: 'Gitar: Dist' });
+      expect(classifyLine('Original Key: C')).toEqual({ kind: 'metadata', text: 'Original Key: C' });
+      expect(classifyLine('C G Am F')).toEqual({ kind: 'chord' });
+      expect(classifyLine('7 5 3 4')).toEqual({ kind: 'number' });
+      expect(classifyLine('ku menunggu')).toEqual({ kind: 'lyrics' });
+    });
+  });
+
+  describe('canonicalSection', () => {
+    test('normalizes labels down to the config keywords', () => {
+      expect(canonicalSection('Pre-Chorus 2')).toBe('pre-chorus');
+      expect(canonicalSection('[Instrumental]')).toBe('instrumental');
+      expect(canonicalSection('Int.')).toBe('interlude');
+      expect(canonicalSection('Reff')).toBe('refrain');
+      expect(canonicalSection('Verse:')).toBe('verse');
+    });
+
+    test('returns null for non-section labels', () => {
+      expect(canonicalSection('Title')).toBeNull();
+      expect(canonicalSection('Soloist')).toBeNull();
+      expect(canonicalSection('')).toBeNull();
+    });
+
+    test('parseChordPro and parseLines agree on section keywords', () => {
+      // 'Instrumental' dulu dikenali parseSection tapi tidak oleh normalizeSection
+      // milik parseChordPro; keduanya sekarang memakai daftar config yang sama.
+      const lyrics = '[Instrumental]\nC G Am F';
+      expect(parseLines(lyrics.split('\n'), 0)[0]).toMatchObject({ type: 'structure', label: 'Instrumental' });
+      expect(Object.keys(parseChordPro(lyrics).structures)).toEqual(['instrumental']);
+    });
+
+    test('parseChordPro keeps "Verse: ku menunggu" out of the chord lines', () => {
+      // Dulu baris ini dibaca sebagai section + baris chord kosong, sehingga
+      // "Verse:" tanpa chord ikut terhitung di laporan statistik.
+      const parsed = parseChordPro('Verse: ku menunggu');
+      expect(parsed.lines.some((line) => line.type === 'line_with_chords')).toBe(false);
+      expect(parsed.lines).toContainEqual({ type: 'text', line: 'Verse: ku menunggu' });
+    });
+  });

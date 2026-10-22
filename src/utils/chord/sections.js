@@ -207,3 +207,51 @@ export const TIMESTAMP_BRACKET_REGEX = /^\[\d{1,2}:\d{2}(?::\d{2})?\]$/;
 export const REAL_INSTRUMENT_KEYWORDS = INSTRUMENT_KEYWORDS.filter(
   (keyword) => !CUE_MARK_KEYWORDS.includes(keyword),
 );
+
+/**
+ * Alias ejaan seksi -> bentuk kanonik. Hanya untuk varian yang TIDAK sudah ada
+ * di STRUCTURE_SECTION_KEYWORDS; daftar kata kunci sendiri tetap satu sumber di
+ * src/config/chordDisplayConfig.js.
+ */
+const SECTION_NAME_ALIASES = {
+  int: 'interlude',
+  reff: 'refrain',
+  musik: 'instrumental',
+};
+
+/** Huruf kecil, buang titik dua/titik di akhir, rapikan spasi. */
+const cleanSectionName = (label = '') => String(label || '')
+  .toLowerCase()
+  .replace(/[.:]+$/, '')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+/** Apakah tepat satu kata kunci seksi muncul sebagai kata utuh. */
+const findStructureKeyword = (nameLower) => STRUCTURE_KEYWORD_PATTERNS.find(
+  ({ pattern }) => pattern.test(nameLower),
+);
+
+/**
+ * Bentuk kanonik label seksi, mis. "Pre-Chorus 2" -> "pre-chorus",
+ * "[Instrumental]" -> "instrumental", "Int." -> "interlude".
+ *
+ * Dipakai parseStandardFormat (laporan statistik) supaya daftar seksi yang
+ * dikenali SAMA dengan parseSection — sebelumnya daftar `if (includes(...))`
+ * di sana menyimpang dari config.
+ *
+ * @returns {string|null} kanonik lowercase, atau null bila bukan seksi.
+ */
+export function canonicalSection(label) {
+  const nameLower = cleanSectionName(label);
+  if (!nameLower) return null;
+
+  if (SECTION_NAME_ALIASES[nameLower]) return SECTION_NAME_ALIASES[nameLower];
+
+  const aliasWord = nameLower.split(' ').find((word) => SECTION_NAME_ALIASES[word]);
+  if (aliasWord) return SECTION_NAME_ALIASES[aliasWord];
+
+  const match = findStructureKeyword(nameLower);
+  if (!match) return null;
+
+  return cleanSectionName(match.keyword);
+}

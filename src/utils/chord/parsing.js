@@ -264,6 +264,52 @@ function parseLine(line, transpose) {
   return { type: 'lyrics', tokens: tokenizeLyricLine(line, transpose) };
 }
 
+/**
+ * Klasifikasi SATU baris tanpa tokenisasi.
+ *
+ * Satu-satunya tempat yang memutuskan "baris ini apa", dipakai parseLine
+ * (render) maupun parseStandardFormat (statistik). Sebelumnya kedua jalur itu
+ * punya urutan dan aturan berbeda sehingga baris yang sama bisa dibaca berbeda.
+ *
+ * @returns {{ kind: 'empty' }
+ *   | { kind: 'metadata', text: string }
+ *   | { kind: 'instrument', label: string }
+ *   | { kind: 'structure', label: string }
+ *   | { kind: 'modulation', label: string }
+ *   | { kind: 'chord' }
+ *   | { kind: 'number' }
+ *   | { kind: 'lyrics' }}
+ */
+export function classifyLine(line) {
+  const trimmed = typeof line === 'string' ? line.trim() : '';
+  if (!trimmed) return { kind: 'empty' };
+
+  if (/^Cue\s*:/i.test(trimmed)) {
+    return { kind: 'metadata', text: trimmed };
+  }
+
+  const bracketedInstrument = parseBracketedInstrumentLabel(trimmed);
+  if (bracketedInstrument) {
+    return { kind: 'instrument', label: formatBracketedInstrumentLabel(bracketedInstrument) };
+  }
+
+  const section = parseSection(trimmed);
+  if (section) {
+    return { kind: section.type, label: section.label };
+  }
+
+  if (isInstrumentPatchLikeLine(trimmed) || isMetadataLine(trimmed)) {
+    return { kind: 'metadata', text: trimmed };
+  }
+
+  if (isChordLine(trimmed)) return { kind: 'chord' };
+  if (parseNumberLine(trimmed)) return { kind: 'number' };
+
+  return { kind: 'lyrics' };
+}
+
+export { parseLine };
+
 export function parseLines(lines, transpose) {
   const parsed = [];
   const sectionBodies = new Map();
