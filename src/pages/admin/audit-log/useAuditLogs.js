@@ -9,7 +9,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getAuditLogs } from '../../../apiClient.js';
 import { filterAuditLogs, generateAuditReport } from '../../../utils/auditLogger.js';
 
-export const AUDIT_FILTER_DEFAULTS = { category: '', severity: '', status: '' };
+export const AUDIT_FILTER_DEFAULTS = {
+  category: '',
+  severity: '',
+  status: '',
+  startDate: '',
+  endDate: '',
+};
 
 export function useAuditLogs({ limit = 50, enabled = true } = {}) {
   const [logs, setLogs] = useState([]);

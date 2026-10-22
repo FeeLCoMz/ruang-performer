@@ -400,6 +400,109 @@ describe('AdminPage', () => {
     expect(cells[1].textContent).toBe('Belum pernah');
   });
 
+  test('filter login menyaring user yang belum pernah login', async () => {
+    mockGetAllUsers.mockResolvedValue({
+      users: [
+        { id: 'u1', role: 'owner', isActive: 1, username: 'andi', email: 'andi@example.com' },
+        { id: 'u2', role: 'member', isActive: 1, username: 'budi', email: 'budi@example.com' },
+      ],
+    });
+    mockGetAuditLogs.mockResolvedValue({
+      logs: [{ id: 'l1', action: 'USER_LOGIN', userId: 'u1', username: 'andi', createdAt: new Date().toISOString(), status: 'success' }],
+    });
+
+    await act(async () => {
+      root.render(<AdminPage key="login-filter" />);
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+    await openTab('users');
+
+    // [search, role, status, login]
+    const loginSelect = container.querySelectorAll('.admin-user-filters select')[2];
+    await changeValue(loginSelect, 'never');
+
+    expect(container.querySelectorAll('#admin-users tbody tr')).toHaveLength(1);
+    expect(container.querySelector('#admin-users tbody').textContent).toContain('budi');
+
+    await changeValue(loginSelect, 'recent');
+    expect(container.querySelectorAll('#admin-users tbody tr')).toHaveLength(1);
+    expect(container.querySelector('#admin-users tbody').textContent).toContain('andi');
+  });
+
+  test('baris audit log membuka drawer detail dan bisa ditutup', async () => {
+    mockGetAuditLogs.mockResolvedValue({
+      logs: [{
+        id: 'l1',
+        action: 'USER_LOGIN',
+        username: 'andi',
+        userId: 'u1',
+        createdAt: '2026-01-01T00:00:00Z',
+        severity: 'low',
+        status: 'success',
+        ipAddress: '10.0.0.7',
+        description: 'Login berhasil dari browser',
+      }],
+    });
+
+    window.location.hash = 'audit';
+    await act(async () => {
+      root.render(<AdminPage key="audit-detail" />);
+    });
+    expect(await waitForCount(() => container.querySelectorAll('.audit-log-row'), 1)).toBe(true);
+
+    await act(async () => {
+      container.querySelector('.audit-log-row').click();
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+
+    const drawer = container.querySelector('.audit-log-detail');
+    expect(drawer).toBeTruthy();
+    expect(drawer.textContent).toContain('10.0.0.7');
+    expect(drawer.textContent).toContain('Login berhasil dari browser');
+
+    // Tombol tutup menutup drawer.
+    await act(async () => {
+      drawer.querySelector('.audit-log-detail-close').click();
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+    expect(container.querySelector('.audit-log-detail')).toBeNull();
+  });
+
+  test('filter tanggal audit log memakai preset rentang', async () => {
+    window.location.hash = 'audit';
+    await act(async () => {
+      root.render(<AdminPage key="audit-date" />);
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+
+    const dateInputs = container.querySelectorAll('.audit-log-filters input[type="date"]');
+    expect(dateInputs).toHaveLength(2);
+
+    const preset = Array.from(container.querySelectorAll('.audit-log-preset'))
+      .find((btn) => btn.textContent === '7 hari');
+    expect(preset).toBeTruthy();
+
+    await act(async () => {
+      preset.click();
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+
+    // Preset mengisi kedua kolom tanggal.
+    expect(dateInputs[0].value).not.toBe('');
+    expect(dateInputs[1].value).not.toBe('');
+    expect(container.textContent).toContain('Reset filter');
+  });
+
   test('pencarian dan filter status menyaring tabel user', async () => {
     // Data realistis: pencarian memakai username/email, bukan role.
     mockGetAllUsers.mockResolvedValue({

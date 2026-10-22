@@ -240,16 +240,46 @@ export function filterAuditLogs(logs, filters = {}) {
     result = result.filter(log => log.status === filters.status);
   }
 
-  if (filters.startDate && filters.endDate) {
-    const start = new Date(filters.startDate);
-    const end = new Date(filters.endDate);
+  // Rentang tanggal inklusif: `endDate` dari input type=date menunjuk 00:00,
+  // jadi batas atas digeser ke akhir hari itu agar entri hari terakhir ikut.
+  if (filters.startDate || filters.endDate) {
+    const start = filters.startDate ? new Date(filters.startDate) : null;
+    let end = null;
+    if (filters.endDate) {
+      const rawEnd = new Date(filters.endDate);
+      end = Number.isNaN(rawEnd.getTime()) ? null : new Date(rawEnd.getTime() + 24 * 60 * 60 * 1000 - 1);
+    }
+
     result = result.filter(log => {
       const logDate = new Date(log.createdAt);
-      return logDate >= start && logDate <= end;
+      if (Number.isNaN(logDate.getTime())) return false;
+      if (start && !Number.isNaN(start.getTime()) && logDate < start) return false;
+      if (end && logDate > end) return false;
+      return true;
     });
   }
 
   return result;
+}
+
+/**
+ * Rentang tanggal siap pakai untuk filter audit log (nilai input type=date).
+ * @param {string} preset - Hari ini / 7 / 30 / 90 hari terakhir
+ * @param {Date} [now] - referensi waktu (memudahkan test)
+ * @returns {{ startDate: string, endDate: string }}
+ */
+export function AUDIT_DATE_PRESETS(preset, now = new Date()) {
+  const toInput = (date) => {
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+  };
+
+  const endDate = toInput(now);
+  if (preset === 'today') return { startDate: endDate, endDate };
+
+  const days = preset === '7d' ? 7 : preset === '90d' ? 90 : 30;
+  const start = new Date(now.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+  return { startDate: toInput(start), endDate };
 }
 
 /**
@@ -337,5 +367,6 @@ export default {
   formatAuditLog,
   isSecurityAction,
   filterAuditLogs,
-  generateAuditReport
+  generateAuditReport,
+  AUDIT_DATE_PRESETS
 };

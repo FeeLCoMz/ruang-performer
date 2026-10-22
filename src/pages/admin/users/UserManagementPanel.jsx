@@ -15,7 +15,7 @@ import { formatLastLogin } from './userStats.js';
 
 // State filter selalu disalin dari konstanta ini: mengirim ulang objek yang
 // sama persis membuat React mengabaikan update (bailout referensi).
-const EMPTY_FILTERS = { search: '', role: '', status: '' };
+const EMPTY_FILTERS = { search: '', role: '', status: '', login: '' };
 
 const ROLE_FILTERS = [
   { value: '', label: 'Semua role' },
@@ -30,7 +30,23 @@ const STATUS_FILTERS = [
   { value: 'inactive', label: 'Nonaktif' },
 ];
 
-function matchesFilters(user, { search, role, status }) {
+const LOGIN_FILTERS = [
+  { value: '', label: 'Semua' },
+  { value: 'never', label: 'Belum pernah login' },
+  { value: 'recent', label: 'Login 7 hari terakhir' },
+];
+
+function matchesFilters(user, { search, role, status, login }, lastLoginMap) {
+  if (login) {
+    const lastLogin = lastLoginMap?.get?.(user.id);
+    if (login === 'never' && lastLogin) return false;
+    if (login === 'recent') {
+      if (!lastLogin) return false;
+      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      if (lastLogin.time < weekAgo) return false;
+    }
+  }
+
   const term = search.trim().toLowerCase();
   if (term) {
     const haystack = `${user.email || ''} ${user.username || ''}`.toLowerCase();
@@ -42,34 +58,39 @@ function matchesFilters(user, { search, role, status }) {
   return true;
 }
 
-/** Menu aksi per baris (⋯) — menutup sendiri saat klik di luar / tombol Escape. */
+/**
+ * Menu aksi per baris (⋯) memakai Popover API native: browser menangani klik
+ * di luar dan Escape tanpa listener dokumen manual. Bila popover tidak
+ * didukung (browser lama / jsdom), menu tetap bekerja dengan state lokal.
+ */
+const supportsPopover = typeof HTMLElement !== 'undefined'
+  && typeof HTMLElement.prototype.showPopover === 'function';
+
 function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction }) {
   const [open, setOpen] = useState(false);
-  const wrapRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onPointerDown = (event) => {
-      if (wrapRef.current && !wrapRef.current.contains(event.target)) setOpen(false);
-    };
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open]);
+  const popoverRef = useRef(null);
 
   const run = (action) => {
     setOpen(false);
+    if (supportsPopover && popoverRef.current?.open) {
+      popoverRef.current.hidePopover();
+    }
     onAction(action, user);
   };
 
+  const toggle = () => {
+    if (supportsPopover) {
+      const popover = popoverRef.current;
+      if (!popover) return;
+      if (popover.open) popover.hidePopover();
+      else popover.showPopover();
+    }
+    // Di browser tanpa Popover API, atribut `hidden` yang mengatur tampil.
+    setOpen((prev) => !prev);
+  };
+
   return (
-    <div className="admin-actions-menu" ref={wrapRef}>
+    <div className="admin-actions-menu">
       <button
         type="button"
         className="admin-actions-trigger"
@@ -77,18 +98,24 @@ function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction 
         aria-haspopup="menu"
         aria-expanded={open}
         disabled={disabled}
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={toggle}
       >
         ⋯
       </button>
-      {open && (
-        <div className="admin-actions-dropdown" role="menu">
-          <button
-            type="button"
-            role="menuitem"
-            disabled={!canToggleActive}
-            onClick={() => run('toggle')}
-          >
+      <div
+        ref={popoverRef}
+        className="admin-actions-dropdown"
+        role="menu"
+        {...(supportsPopover
+          ? { popover: 'auto', onToggle: (event) => setOpen(event.currentTarget.open) }
+          : { hidden: !open })}
+      >
+        <button
+          type="button"
+          role="menuitem"
+          disabled={!canToggleActive}
+          onClick={() => run('toggle')}
+        >
             {user.isActive ? 'Nonaktifkan' : 'Aktifkan'}
           </button>
           <button type="button" role="menuitem" onClick={() => run('reset')}>
@@ -103,8 +130,7 @@ function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction 
           >
             Hapus
           </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -130,6 +156,7 @@ export default function UserManagementPanel({ actor, adminUsers, lastLoginMap })
   } = adminUsers;
 
   const [filters, setFilters] = useState(EMPTY_FILTERS);
+
   const [resetTarget, setResetTarget] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmTarget, setConfirmTarget] = useState(null);
@@ -142,8 +169,8 @@ export default function UserManagementPanel({ actor, adminUsers, lastLoginMap })
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
   const visibleUsers = useMemo(
-    () => users.filter((user) => matchesFilters(user, filters)),
-    [users, filters],
+    () => users.filter((user) => matchesFilters(user, filters, lastLoginMap)),
+    [users, filters, lastLoginMap],
   );
 
   const handleRowAction = (action, target) => {
@@ -210,6 +237,14 @@ export default function UserManagementPanel({ actor, adminUsers, lastLoginMap })
           Status
           <select value={filters.status} onChange={(event) => setFilter('status', event.target.value)}>
             {STATUS_FILTERS.map((option) => (
+              <option key={option.value || 'all'} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Login
+          <select value={filters.login} onChange={(event) => setFilter('login', event.target.value)}>
+            {LOGIN_FILTERS.map((option) => (
               <option key={option.value || 'all'} value={option.value}>{option.label}</option>
             ))}
           </select>

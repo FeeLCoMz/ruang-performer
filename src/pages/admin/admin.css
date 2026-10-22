@@ -566,18 +566,33 @@
 }
 
 .admin-actions-dropdown {
+  /* Menutupi styling default popover (margin auto, latar putih, border). */
   position: absolute;
+  inset: auto;
   top: calc(100% + 4px);
   right: 0;
   z-index: 20;
   display: flex;
   flex-direction: column;
   min-width: 160px;
+  margin: 0;
   padding: 4px;
   border-radius: 10px;
   border: 1px solid var(--border-color);
   background: var(--secondary-bg, #1f2937);
+  color: var(--text-primary, inherit);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  overflow: visible;
+}
+
+/* Popover native berada di top layer; :popover-open memastikan display flex
+   (browser memberi `display: none` saat tertutup). */
+.admin-actions-dropdown:popover-open {
+  display: flex;
+}
+
+.admin-actions-dropdown[hidden] {
+  display: none;
 }
 
 .admin-actions-dropdown button {
@@ -653,6 +668,50 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
+}
+
+/* Riwayat backup terakhir (disimpan di perangkat admin) */
+.admin-last-backup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px dashed var(--border-color);
+  background: var(--admin-surface, rgba(255, 255, 255, 0.04));
+  font-size: 0.82rem;
+}
+
+.admin-last-backup-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, inherit);
+}
+
+.admin-last-backup-value {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-weight: 600;
+}
+
+.admin-last-backup-value.is-empty {
+  font-weight: 400;
+  color: var(--text-muted, inherit);
+}
+
+.admin-last-backup-file {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted, inherit);
+  overflow-wrap: anywhere;
+}
+
+.admin-last-backup-note {
+  font-size: 0.72rem;
+  color: var(--text-muted, inherit);
 }
 
 /* Zona berisiko: restore menimpa seluruh database */

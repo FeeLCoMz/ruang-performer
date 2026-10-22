@@ -10,8 +10,10 @@ import React from 'react';
 import {
   ACTION_CATEGORIES,
   SEVERITY_LEVELS,
+  AUDIT_DATE_PRESETS,
   formatActionName,
 } from '../../../utils/auditLogger.js';
+import AuditLogDetail from './AuditLogDetail.jsx';
 import './audit-log.css';
 
 const CATEGORY_OPTIONS = ['', ...Object.values(ACTION_CATEGORIES)];
@@ -24,7 +26,15 @@ function formatTimestamp(value) {
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 }
 
-function AuditFilters({ filters, setFilter, resetFilters, activeFilterCount, filteredCount, totalCount }) {
+function AuditFilters({
+  filters,
+  setFilter,
+  onApplyRange,
+  resetFilters,
+  activeFilterCount,
+  filteredCount,
+  totalCount,
+}) {
   return (
     <div className="audit-log-filters">
       <label>
@@ -56,12 +66,47 @@ function AuditFilters({ filters, setFilter, resetFilters, activeFilterCount, fil
           Reset filter ({activeFilterCount})
         </button>
       )}
+      <label>
+        Dari tanggal
+        <input
+          type="date"
+          value={filters.startDate || ''}
+          max={filters.endDate || undefined}
+          onChange={(event) => setFilter('startDate', event.target.value)}
+        />
+      </label>
+      <label>
+        Sampai tanggal
+        <input
+          type="date"
+          value={filters.endDate || ''}
+          min={filters.startDate || undefined}
+          onChange={(event) => setFilter('endDate', event.target.value)}
+        />
+      </label>
+      <div className="audit-log-presets" role="group" aria-label="Rentang tanggal cepat">
+        {[
+          { id: 'today', label: 'Hari ini' },
+          { id: '7d', label: '7 hari' },
+          { id: '30d', label: '30 hari' },
+          { id: '90d', label: '90 hari' },
+        ].map((preset) => (
+          <button
+            key={preset.id}
+            type="button"
+            className="audit-log-preset"
+            onClick={() => onApplyRange(AUDIT_DATE_PRESETS(preset.id))}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
       <span className="audit-log-count">{filteredCount} dari {totalCount} entri</span>
     </div>
   );
 }
 
-function AuditTable({ logs, loading, error }) {
+function AuditTable({ logs, loading, error, onSelect }) {
   return (
     <div className="audit-log-table-wrap">
       {loading && logs.length === 0 && (
@@ -94,7 +139,19 @@ function AuditTable({ logs, loading, error }) {
           </thead>
           <tbody>
             {logs.map((log, index) => (
-              <tr key={log.id || `${log.action}-${log.createdAt}-${index}`}>
+              <tr
+                key={log.id || `${log.action}-${log.createdAt}-${index}`}
+                className="audit-log-row"
+                tabIndex={0}
+                aria-label={`Lihat detail ${formatActionName(log.action || '')}`}
+                onClick={() => onSelect(log)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onSelect(log);
+                  }
+                }}
+              >
                 <td data-label="Waktu">{formatTimestamp(log.createdAt)}</td>
                 <td data-label="User">{log.username || log.userId || '-'}</td>
                 <td data-label="Aksi" title={log.description || ''}>
@@ -163,6 +220,18 @@ export default function AuditLogPanel({ auditLogs, mode = 'compact', reloadLogs 
   } = auditLogs;
   const refresh = reloadLogs || reload;
 
+  // Entri yang sedang dibuka di drawer detail (null = tertutup).
+  const [selectedLog, setSelectedLog] = React.useState(null);
+  const closeDetail = React.useCallback(() => setSelectedLog(null), []);
+  const detailDrawer = selectedLog ? (
+    <AuditLogDetail log={selectedLog} onClose={closeDetail} />
+  ) : null;
+
+  const applyDateRange = (range) => {
+    setFilter('startDate', range.startDate);
+    setFilter('endDate', range.endDate);
+  };
+
   if (mode === 'compact') {
     return (
       <>
@@ -182,16 +251,23 @@ export default function AuditLogPanel({ auditLogs, mode = 'compact', reloadLogs 
           <AuditFilters
             filters={filters}
             setFilter={setFilter}
+            onApplyRange={applyDateRange}
             resetFilters={resetFilters}
             activeFilterCount={activeFilterCount}
             filteredCount={filteredLogs.length}
             totalCount={logs.length}
           />
-          <AuditTable logs={filteredLogs} loading={loading} error={error} />
+          <AuditTable
+            logs={filteredLogs}
+            loading={loading}
+            error={error}
+            onSelect={setSelectedLog}
+          />
         </div>
 
         <h2 className="admin-section-title">Aktivitas Terbaru</h2>
         <RecentActivity logs={logs} loading={loading} error={error} />
+        {detailDrawer}
       </>
     );
   }
@@ -202,6 +278,7 @@ export default function AuditLogPanel({ auditLogs, mode = 'compact', reloadLogs 
         <AuditFilters
           filters={filters}
           setFilter={setFilter}
+          onApplyRange={applyDateRange}
           resetFilters={resetFilters}
           activeFilterCount={activeFilterCount}
           filteredCount={filteredLogs.length}
@@ -212,8 +289,14 @@ export default function AuditLogPanel({ auditLogs, mode = 'compact', reloadLogs 
       <AuditLogSummary report={report} />
 
       <div className="card audit-log-table-card">
-        <AuditTable logs={filteredLogs} loading={loading} error={error} />
+        <AuditTable
+          logs={filteredLogs}
+          loading={loading}
+          error={error}
+          onSelect={setSelectedLog}
+        />
       </div>
+      {detailDrawer}
     </>
   );
 }

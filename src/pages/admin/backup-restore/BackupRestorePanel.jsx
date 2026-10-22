@@ -15,8 +15,27 @@ import { useSqlRestore } from './useSqlRestore.js';
 
 const RESTORE_CONFIRMATION = 'RESTORE';
 
+function formatBackupTime(iso) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '-';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function BackupRestorePanel({ withHeading = false }) {
-  const { backingUp, backupError, backupSuccess, handleBackup } = useSqlBackup();
+  const { backingUp, backupError, backupSuccess, handleBackup, lastBackup } = useSqlBackup();
   const { restoring, restoreError, restoreSuccess, sqlInputRef, handleRestore } = useSqlRestore();
   const [confirmation, setConfirmation] = useState('');
 
@@ -46,6 +65,20 @@ export default function BackupRestorePanel({ withHeading = false }) {
           Mengunduh seluruh database ke file .sql. Tindakan ini aman dan tidak
           mengubah data.
         </p>
+        <div className="admin-last-backup">
+          <span className="admin-last-backup-label">Backup terakhir di perangkat ini</span>
+          {lastBackup ? (
+            <span className="admin-last-backup-value">
+              {formatBackupTime(lastBackup.at)} · {formatBytes(lastBackup.bytes)}
+              <span className="admin-last-backup-file">{lastBackup.filename}</span>
+            </span>
+          ) : (
+            <span className="admin-last-backup-value is-empty">Belum ada backup dari perangkat ini.</span>
+          )}
+          <span className="admin-last-backup-note">
+            Catatan disimpan di browser ini, bukan di server.
+          </span>
+        </div>
         {backupError && <div className="admin-panel-banner is-error">{backupError}</div>}
         {backupSuccess && <div className="admin-panel-banner is-success">{backupSuccess}</div>}
       </div>

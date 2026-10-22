@@ -53,6 +53,53 @@
   outline-offset: 1px;
 }
 
+.audit-log-filters input[type="date"] {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-field-border, rgba(255, 255, 255, 0.15));
+  background: var(--admin-surface, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, inherit);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.audit-log-filters input[type="date"]:focus-visible {
+  outline: 2px solid var(--admin-accent, #8b5cf6);
+  outline-offset: 1px;
+}
+
+.audit-log-presets {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-self: flex-end;
+}
+
+.audit-log-preset {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted, inherit);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.audit-log-preset:hover {
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary, inherit);
+}
+
+.audit-log-preset:focus-visible {
+  outline: 2px solid var(--admin-accent, #8b5cf6);
+  outline-offset: 1px;
+}
+
 .audit-log-filters .btn {
   align-self: flex-end;
 }
@@ -163,6 +210,20 @@
   background: var(--admin-surface, rgba(255, 255, 255, 0.04));
 }
 
+/* Baris bisa diklik untuk membuka drawer detail. */
+.audit-log-row {
+  cursor: pointer;
+}
+
+.audit-log-row:focus-visible {
+  outline: 2px solid var(--admin-accent, #8b5cf6);
+  outline-offset: -2px;
+}
+
+.audit-log-row:focus-visible td {
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.08));
+}
+
 .audit-log-table tbody tr:last-child td {
   border-bottom: none;
 }
@@ -231,6 +292,85 @@
 .audit-log-table-card {
   padding: 0;
   overflow: hidden;
+}
+
+/* ---------- Drawer detail entri ---------- */
+
+.audit-log-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.audit-log-detail {
+  width: min(420px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  border-left: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.4);
+}
+
+.audit-log-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.audit-log-detail-header h2 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.audit-log-detail-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.audit-log-detail-close:hover {
+  background: var(--admin-surface-hover, rgba(255, 255, 255, 0.08));
+}
+
+.audit-log-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.audit-log-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--admin-divider, rgba(255, 255, 255, 0.08));
+}
+
+.audit-log-detail-row dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.audit-log-detail-row dd {
+  margin: 0;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 /* Di layar sempit tabel audit jadi kartu bertumpuk agar tidak scroll samping. */
