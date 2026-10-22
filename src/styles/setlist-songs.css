@@ -1168,14 +1168,7 @@ button.song-mastery-chip:not(:disabled):hover {
   min-height: 36px;
 }
 
-/* Daftar opsi dropdown harus punya latar & warna sendiri: bila tidak,
-   popup mewarisi latar transparan sehingga teks tidak terbaca. */
-.song-sort-select option,
-.filter-select option {
-  background: var(--card-bg);
-  color: var(--text-primary);
-}
-
+/* Latar opsi dropdown kini diatur global di components.css (select option). */
 .song-sort-order-btn,
 .song-filter-reset-btn {
   min-height: 38px;

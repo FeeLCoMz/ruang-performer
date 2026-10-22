@@ -525,6 +525,28 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+/*
+ * Daftar opsi dropdown dirender browser sebagai popup dengan latar bawaan
+ * (putih), bukan mewarisi latar <select>. Tanpa aturan ini teks terang tema
+ * gelap jatuh di atas putih dan sulit dibaca — muncul pada select baru yang
+ * belum punya style option sendiri. Warna memakai token tema agar konsisten.
+ */
+select option,
+select optgroup {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+}
+
+select option:checked,
+select option:hover {
+  background-color: var(--secondary-bg);
+  color: var(--text-primary);
+}
+
+select option:disabled {
+  color: var(--text-muted);
+}
+
 input[type="text"]::placeholder,
 textarea::placeholder {
   color: var(--text-muted);

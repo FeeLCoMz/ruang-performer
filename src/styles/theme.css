@@ -7,6 +7,10 @@
    1. ROOT VARIABLES & THEMES
    ======================================== */
 :root {
+  /* Kontrol native (panah select, popup opsi, scrollbar, date picker) ikut
+     dirender gelap oleh browser, bukan putih bawaan. */
+  color-scheme: dark;
+
   /* Colors ï¿½ tema "Midnight Violet" (mode gelap permanen): aksen violet
       yang hangat dengan latar biru gelap lebih dalam, kontras lebih jelas. */
   --primary-accent: #8b5cf6;
