@@ -46,6 +46,21 @@
   margin-top: var(--spacing-sm);
 }
 
+/*
+ * Tombol aksi kartu: tinggi seragam untuk semua kartu dalam grid.
+ * Semua kartu diekspansi ke baris grid yang sama (align-items: stretch),
+ * lalu tombol didorong ke dasar kartu sehingga tepi atas tombol sejajar.
+ */
+.admin-actions-grid {
+  align-items: stretch;
+}
+
+.admin-actions-grid .admin-card-action {
+  align-self: stretch;
+  width: 100%;
+  margin-top: auto;
+}
+
 .tools-hidden-input {
   display: none;
 }

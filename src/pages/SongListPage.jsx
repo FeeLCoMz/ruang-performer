@@ -495,7 +495,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           <h1>🎵 Lagu</h1>
           <p>{filteredSongs.length} lagu</p>
         </div>
-        <div className="page-header-actions">
+        <div className="page-header-actions" style={{ '--btn-group': '40px' }}>
           {bulkEnabled && (
             <button
               className="btn btn-secondary song-bulk-btn"
@@ -549,7 +549,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           </div>
         </div>
         {/* Filter dan sort — satu baris ringkas */}
-        <div className="song-filter-toolbar">
+        <div className="song-filter-toolbar" style={{ '--btn-group': '38px' }}>
           <label className="song-sort-control">
             <span className="song-sort-icon" aria-hidden="true">⇅</span>
             <span className="sr-only">Urutkan berdasarkan</span>
@@ -627,7 +627,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           {hasActiveFilters && search.trim() && (
             <div className="song-empty-search-tools">
               <p>Tidak menemukan lagu? Cari di Google:</p>
-              <div className="song-empty-search-links">
+              <div className="song-empty-search-links" style={{ '--btn-group': '40px' }}>
                 <a
                   href={`https://www.google.com/search?q=chord+${encodeURIComponent(search)}`}
                   target="_blank"

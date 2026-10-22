@@ -78,8 +78,11 @@
   align-self: flex-end;
 }
 
+/* Tinggi 30px sendiri (border 1px + padding 4px + isi 20px) — bukan mengikuti
+   .btn. Label "Hari ini"/"30 hari" tidak boleh membuat satu chip lebih tinggi
+   dari yang lain. */
 .audit-log-preset {
-  padding: 6px 10px;
+  padding: 4px 10px;
   border: 1px solid var(--border-color);
   border-radius: 7px;
   background: transparent;
@@ -87,6 +90,10 @@
   font: inherit;
   font-size: 0.75rem;
   font-weight: 600;
+  line-height: 20px;
+  height: 30px;
+  box-sizing: border-box;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -100,8 +107,30 @@
   outline-offset: 1px;
 }
 
-.audit-log-filters .btn {
+/* Label punya teks + select bertumpuk, jadi tinggi baris ditentukan label.
+   Tombol Reset dipaksa setinggi pilihan cepat (30px) dan rata bawah, bukan
+   `flex-end` bawaan yang membuatnya 44px dan menonjol. */
+/* `height` (bukan `block-size`) — .btn memakai `height` di aturan global,
+   jadi kalau hanya block-size yang di-set tidak ada yang menimpanya. */
+.audit-log-filters > .btn {
   align-self: flex-end;
+  flex: 0 0 auto;
+  height: 36px;
+  min-height: 36px;
+  block-size: 36px;
+  padding: 0 12px;
+  font-size: 0.78rem;
+}
+
+/* Tiap label seragam tinggi: jarak atas sama walau teks labelnya berbeda. */
+.audit-log-filters > label {
+  align-self: flex-end;
+}
+
+.audit-log-filters > label > select,
+.audit-log-filters > label > input[type="date"] {
+  height: 34px;
+  box-sizing: border-box;
 }
 
 .audit-log-count {

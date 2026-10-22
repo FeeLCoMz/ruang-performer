@@ -124,7 +124,12 @@ function AdminOverview({ userSummary, cards, loading, error, onNavigate, period,
           <div key={item.id} className="tool-card admin-card">
             <h2>{item.title}</h2>
             <p>{item.description}</p>
-            <button className="btn btn-primary" onClick={() => onNavigate(item.id)}>
+            <button
+              type="button"
+              className="btn btn-primary admin-card-action"
+              style={{ '--btn-group': '44px' }}
+              onClick={() => onNavigate(item.id)}
+            >
               {item.action}
             </button>
           </div>

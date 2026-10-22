@@ -278,7 +278,7 @@ export default function UserManagementPanel({ actor, adminUsers, lastLoginMap })
         </div>
       )}
 
-      <div className="admin-user-filters">
+      <div className="admin-user-filters" style={{ '--btn-group': '36px' }}>
         <input
           type="search"
           className="admin-user-search"
@@ -441,7 +441,7 @@ export default function UserManagementPanel({ actor, adminUsers, lastLoginMap })
                 ? `Akun ${confirmTarget.user.email} akan dihapus. Tindakan ini tidak bisa dibatalkan.`
                 : `Akun ${confirmTarget.user.email} akan ${confirmTarget.user.isActive ? 'dinonaktifkan' : 'diaktifkan'}.`}
             </p>
-            <div className="admin-backup-form">
+            <div className="admin-backup-form" style={{ '--btn-group': '40px' }}>
               <button
                 type="button"
                 className={`btn ${confirmTarget.type === 'delete' ? 'btn-danger' : 'btn-primary'}`}
@@ -473,7 +473,7 @@ export default function UserManagementPanel({ actor, adminUsers, lastLoginMap })
               onChange={(event) => setNewPassword(event.target.value)}
               disabled={actionLoading}
             />
-            <div className="admin-backup-form">
+            <div className="admin-backup-form" style={{ '--btn-group': '40px' }}>
               <button
                 type="button"
                 className="btn btn-primary"

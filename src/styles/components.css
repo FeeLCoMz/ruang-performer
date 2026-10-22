@@ -457,6 +457,43 @@
   cursor: not-allowed;
 }
 
+/*
+ * Kunci geometri tombol: tinggi dan padding vertikal selalu sama untuk semua
+ * tombol, apa pun isinya (ikon saja, emoji, atau teks berbaris ganda).
+ * Sebelumnya tinggi ditentukan oleh padding vertikal var(--spacing-md) +
+ * line-height isi, sehingga tombol berisi emoji/teks dua baris (mis. label
+ * yang membungkus saat sempit) bisa lebih tinggi dari tetangganya.
+ */
+.btn {
+  height: var(--btn-height, 44px);
+  min-height: var(--btn-height, 44px);
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 1.15;
+  box-sizing: border-box;
+}
+
+/*
+ * Samakan tinggi semua tombol dalam satu baris/container.
+ * Tambahkan class `btn-group` pada container secara manual, ATAU set
+ * CSS variable `--btn-group` (custom property header/container otomatis
+ * diwariskan ke child) sehingga container tidak perlu tahu nama class tombolnya.
+ * Pakai `height` + `min-height` (bukan `block-size`): aturan `.btn` di atas juga
+ * memakai `height`, jadi hanya `block-size` tidak akan menimpanya.
+ */
+.btn-group,
+[style*="--btn-group"]:not(.btn) {
+  align-items: stretch;
+}
+
+.btn-group > .btn,
+[style*="--btn-group"]:not(.btn) > .btn {
+  flex: 0 0 auto;
+  height: var(--btn-group, var(--btn-height, 44px));
+  min-height: var(--btn-group, var(--btn-height, 44px));
+  block-size: var(--btn-group, auto);
+}
+
 /* Button variants */
 .btn-primary {
   background: var(--primary-accent);

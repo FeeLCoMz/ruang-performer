@@ -2343,3 +2343,48 @@ button.song-mastery-chip:not(:disabled):hover {
   margin-bottom: var(--spacing-2xl);
 }
 
+
+/* ===== Tinggi tombol seragam per container (lihat `--btn-group` di components.css) ===== */
+/* Header halaman (Bulk + Tambah): selalu sama tinggi, label tidak mengubahnya. */
+.page-header-actions .btn {
+  height: 40px;
+  min-height: 40px;
+}
+
+/*
+ * Toolbar sort: select, tombol panah, dan Reset berdiri sejajar. Pembungkus
+ * `.song-sort-control` ikut di-stretch agar tinggi select + border = tombol.
+ */
+.song-filter-toolbar .song-sort-control {
+  align-self: stretch;
+}
+
+.song-filter-toolbar .song-sort-select {
+  height: 100%;
+  min-height: 36px;
+}
+
+.song-sort-order-btn,
+.song-filter-reset-btn {
+  flex: 0 0 auto;
+  height: 38px;
+  min-height: 38px;
+}
+
+/* Tautan alternatif saat pencarian kosong (Chord / Lirik) selalu sebaris. */
+.song-empty-search-links .btn {
+  flex: 0 0 auto;
+  height: 40px;
+  min-height: 40px;
+}
+
+/*
+ * Baris aksi kartu lagu (dipakai SongCard di halaman Lagu & setlist): tombol
+ * ikon-saja vs ikon+label tidak boleh berbeda tinggi walau flex-wrap aktif.
+ */
+.song-actions > .btn {
+  flex: 0 0 auto;
+  align-self: center;
+  height: var(--btn-group, auto);
+  min-height: var(--btn-group, auto);
+}

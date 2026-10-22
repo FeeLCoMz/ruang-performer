@@ -402,11 +402,33 @@
 }
 
 /* Filter tabel user */
+/* align-items: stretch + tombol `--btn-group` = search/select/tombol setinggi
+   (border 1px + padding 6px + isi 22px = 36px). Nilai lama `center` membuat
+   tombol Reset tingginya jatuh ke tinggi bawaan .btn dan menonjol keluar baris. */
 .admin-user-filters {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   gap: 10px;
+}
+
+.admin-user-filters > label {
+  align-items: center;
+}
+
+.admin-user-filters .btn {
+  flex: 0 0 auto;
+}
+
+/* Input/select boleh mengisi tinggi baris, tombol tidak (lihat .btn-group). */
+.admin-user-filters .admin-user-search,
+.admin-user-filters select {
+  align-self: center;
+  height: 36px;
+  min-height: 36px;
+  box-sizing: border-box;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .admin-user-filters label {
@@ -674,11 +696,18 @@
   background: var(--admin-success-surface, rgba(34, 197, 94, 0.12));
 }
 
+/* align-items: stretch (bukan center) agar semua tombol dalam form — tombol
+   konfirmasi hapus/status, reset password, dan restore — memakai tinggi
+   `--btn-group` yang sama walau labelnya membungkus. */
 .admin-backup-form {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   gap: 10px;
+}
+
+.admin-backup-form > .btn {
+  flex: 0 0 auto;
 }
 
 .admin-panel-subtitle {

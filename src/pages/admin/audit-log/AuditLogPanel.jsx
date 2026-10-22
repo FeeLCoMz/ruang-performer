@@ -36,7 +36,7 @@ function AuditFilters({
   totalCount,
 }) {
   return (
-    <div className="audit-log-filters">
+    <div className="audit-log-filters" style={{ '--btn-group': '36px' }}>
       <label>
         Kategori
         <select value={filters.category} onChange={(event) => setFilter('category', event.target.value)}>
