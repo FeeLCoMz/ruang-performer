@@ -897,7 +897,8 @@
   }
 }
 
-/* Dua baris metadata: baris 1 (artis + status), baris 2 (key, BPM, mood, genre) */
+/* Dua baris metadata: baris utama (artis, key, tempo + genre/status), baris
+   detail (mood, jumlah setlist). Fakta inti selalu di baris utama. */
 .song-meta-line {
   display: flex;
   flex-wrap: wrap;
@@ -910,12 +911,19 @@
   color: var(--text-secondary);
 }
 
+/* Fakta inti di baris utama tidak boleh dipecah oleh metadata pendukung:
+   grup ini menahan diri untuk tetap utuh (turun ke baris baru sebagai grup). */
+.song-meta-line-primary {
+  row-gap: 4px;
+}
+
 /* ---- Fakta inti kartu lagu: Judul, Artis, Key, Tempo ----
    Empat informasi ini harus langsung terbaca tanpa hover, tanpa membuka
    kartu, dan tanpa bergantung pada ukuran layar. Karena itu:
    - tidak pernah disembunyikan / dipotong oleh aturan responsif,
    - memakai warna teks penuh (bukan muted),
-   - sedikit lebih besar & lebih tebal dari metadata pendukung. */
+   - sedikit lebih besar & lebih tebal dari metadata pendukung,
+   - berada di baris utama (`song-meta-line-primary`), bukan baris detail. */
 .song-fact-artist {
   color: var(--text-primary);
   font-weight: 600;

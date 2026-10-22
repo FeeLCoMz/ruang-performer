@@ -351,8 +351,11 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           )}
           metaPrimary={(
             <div className="song-meta-line song-meta-line-primary">
-              {/* Artis = fakta inti kartu: selalu tampil dan berkontras tinggi. */}
+              {/* Artis, key, tempo = fakta inti kartu: satu baris, selalu tampil
+                  dan berkontras tinggi, tidak boleh didahului metadata pendukung. */}
               {song.artist && <span className="song-meta-text song-fact-artist">👤 {song.artist}</span>}
+              {song.key && <span className="song-chip song-fact-key">🎹 {song.key}</span>}
+              {song.tempo && <span className="song-chip song-fact-tempo">⏱️ {song.tempo} BPM</span>}
               {song.bandId && <span className="song-meta-text">🎤 {song.bandName || '-'}</span>}
               {song.genre && <span className="song-chip">🎸 {song.genre}</span>}
               {/* Author (kontributor) tepat setelah genre */}
@@ -365,9 +368,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           )}
           metaDetail={(
             <div className="song-meta-line song-meta-line-detail">
-              {/* Key & tempo = fakta inti kartu: selalu tampil dan berkontras tinggi. */}
-              {song.key && <span className="song-chip song-fact-key">🎹 {song.key}</span>}
-              {song.tempo && <span className="song-chip song-fact-tempo">⏱️ {song.tempo} BPM</span>}
+              {/* Baris detail hanya metadata pendukung; fakta inti ada di baris utama. */}
               <span className={`song-mood-badge mood-${mood.tone}`} title={`Mood berdasarkan ${mood.sourceHint}`}>
                 {mood.label}
               </span>

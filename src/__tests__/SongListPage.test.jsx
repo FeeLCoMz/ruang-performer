@@ -122,6 +122,16 @@ describe('SongListPage', () => {
     expect(container.querySelector('.song-fact-artist')?.textContent).toContain('Band A');
     expect(container.querySelector('.song-fact-key')?.textContent).toContain('Am');
     expect(container.querySelector('.song-fact-tempo')?.textContent).toContain('132');
+
+    // Fakta inti (artis/key/tempo) harus berada di baris utama, bukan baris detail.
+    const primaryLine = container.querySelector('.song-meta-line-primary');
+    const detailLine = container.querySelector('.song-meta-line-detail');
+    expect(primaryLine).toBeTruthy();
+    expect(detailLine).toBeTruthy();
+    ['.song-fact-artist', '.song-fact-key', '.song-fact-tempo'].forEach((selector) => {
+      expect(primaryLine.querySelector(selector)).toBeTruthy();
+      expect(detailLine.querySelector(selector)).toBeFalsy();
+    });
   });
 
   test('search and actions are labelled for screen readers', async () => {

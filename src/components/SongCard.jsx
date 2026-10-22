@@ -11,14 +11,16 @@ import React from 'react';
  * Perbedaan antar-halaman dikirim lewat props, bukan lewat duplikasi markup:
  *  - `leadingSlot`   : kolom kiri opsional (mis. nomor urut di setlist).
  *  - `headingStatus` : flag status di baris judul (mis. Live/Selesai).
- *  - `metaPrimary`   : baris 1 metadata (artis/band/genre).
- *  - `metaDetail`    : baris 2 metadata (key/tempo/mood/setlist).
+ *  - `metaPrimary`   : baris utama metadata (artis/key/tempo/band/genre).
+ *  - `metaDetail`    : baris pendukung metadata (mood/setlist).
  *  - `actions`       : tombol aksi halaman tersebut.
  *
  * Empat informasi yang harus langsung terbaca tanpa hover/scroll — judul,
- * artis, key, tempo — ditandai dengan class `song-fact-*`. CSS memakai tanda
- * itu untuk menjaga keempatnya selalu tampil & berkontras tinggi, apa pun
- * lebar layar. Metadata lain cukup jadi informasi pendukung.
+ * artis, key, tempo — ditandai dengan class `song-fact-*` dan menempati
+ * baris utama kartu (judul di header, artis/key/tempo di `metaPrimary`),
+ * bukan baris detail. CSS memakai tanda itu untuk menjaga keempatnya selalu
+ * tampil & berkontras tinggi, apa pun lebar layar. Metadata lain cukup jadi
+ * informasi pendukung.
  */
 export default function SongCard({
   title,
