@@ -682,6 +682,13 @@
   max-width: 360px;
   font-size: 0.82rem;
   opacity: 0.9;
+  line-height: 1.5;
+}
+
+/* Label adalah flex column, jadi teks dibungkus elemen sendiri supaya tetap
+   mengalir sebagai paragraf dan <code> tidak dipaksa selebar container. */
+.admin-danger-confirm-text {
+  display: block;
 }
 
 .admin-danger-confirm code {
@@ -689,6 +696,10 @@
   border-radius: 4px;
   background: var(--admin-surface-hover, rgba(255, 255, 255, 0.1));
   font-weight: 700;
+  /* `code` defaultnya monospace dengan ukuran berbeda; samakan dengan label. */
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: 0.04em;
 }
 
 .admin-danger-confirm input {

@@ -59,7 +59,9 @@ export default function BackupRestorePanel({ withHeading = false }) {
         </div>
 
         <label className="admin-danger-confirm">
-          Ketik <code>{RESTORE_CONFIRMATION}</code> untuk mengaktifkan tombol restore
+          <span className="admin-danger-confirm-text">
+            Ketik <code>{RESTORE_CONFIRMATION}</code> untuk mengaktifkan tombol restore
+          </span>
           <input
             type="text"
             value={confirmation}
