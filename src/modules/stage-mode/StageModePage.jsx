@@ -274,10 +274,15 @@ export default function StageModePage({
     return match?.name || match?.bandName || '';
   }, [bands, bandId]);
 
-  const handleSelectBand = (nextBandId) => {
+  /**
+   * Pilih band — SATU-SATUNYA jalur ganti band di Stage Mode.
+   * Setlist aktif mungkin bukan milik band baru, jadi pindah ke setlist
+   * pertama milik band tersebut. Bila sheet daftar lagu sedang terbuka,
+   * buka urutan lagu setlist baru (bukan menutup sheet).
+   */
+  const handleSelectBand = (nextBandId, { openSongSheet = false } = {}) => {
     setBandId(nextBandId);
     writeStored(STORAGE_KEYS.STAGE_BAND, nextBandId);
-    // Setlist aktif mungkin bukan milik band ini — pindah ke setlist pertama band.
     const firstSetlist = setlists.find(
       (sl) => !nextBandId || String(sl.bandId || '') === String(nextBandId),
     );
@@ -286,6 +291,15 @@ export default function StageModePage({
     writeStored(STORAGE_KEYS.STAGE_SETLIST, nextSetlistId);
     setSelectedSongId('');
     writeStored(STORAGE_KEYS.STAGE_SONG, '');
+    if (!openSongSheet || !nextSetlistId) return;
+    // Detail lagu setlist baru harus tersedia dulu; bila belum, tunda
+    // pembukaan sheet sampai fetch selesai (sama seperti handleSelectSetlist).
+    if (firstSetlist && !Array.isArray(firstSetlist.songs)) {
+      pendingSongSheetRef.current = true;
+      setSetlistDetailLoading(true);
+      return;
+    }
+    setSheetOpen('song');
   };
 
   const handleSelectSetlist = (nextSetlistId) => {
@@ -1294,11 +1308,7 @@ export default function StageModePage({
                       id="stage-setlist-sheet-band"
                       className="stage-sheet-select"
                       value={String(bandId || '')}
-                      onChange={(e) => {
-                        // Pilih band, persist, dan arahkan ke setlist pertama
-                        // milik band tersebut.
-                        handleSelectBand(e.target.value);
-                      }}
+                      onChange={(e) => handleSelectBand(e.target.value)}
                     >
                       <option value="">Semua band</option>
                       {bands.map((b) => {
@@ -1339,70 +1349,29 @@ export default function StageModePage({
             {sheetOpen === 'song' && (
               <>
                 <StageSheetHeader
-                  eyebrow={activeSetlist?.name || 'Setlist'}
-                  title="Urutan lagu"
+                  eyebrow={`${activeBandName} · ${positionText}`}
+                  title={activeSetlist?.name || 'Urutan lagu'}
                   count={setlistSongs.length}
                   onClose={() => setSheetOpen(null)}
                 />
 
-                {/* Dropdown band/setlist: ganti setlist langsung dari daftar
-                    lagu, difilter sesuai band yang aktif. */}
-                <div className="stage-sheet-toolbar">
-                  <div className="stage-sheet-field">
-                    <label className="stage-sheet-field-label" htmlFor="stage-song-sheet-band">
-                      Band
-                    </label>
-                    <select
-                      id="stage-song-sheet-band"
-                      className="stage-sheet-select"
-                      value={String(bandId || '')}
-                      onChange={(e) => {
-                        const nextBandId = e.target.value;
-                        setBandId(nextBandId);
-                        writeStored(STORAGE_KEYS.STAGE_BAND, nextBandId);
-                        // Pindah ke setlist pertama milik band ini, sama seperti
-                        // alur pemilih band di sheet setlist. Dihitung langsung
-                        // dari setlists karena filteredSetlists masih memakai
-                        // bandId lama pada render ini.
-                        const firstSetlist = setlists.find(
-                          (sl) => !nextBandId || String(sl.bandId || '') === String(nextBandId) || !sl.bandId,
-                        );
-                        if (firstSetlist) handleSelectSetlist(String(firstSetlist.id));
-                      }}
-                    >
-                      <option value="">Semua band</option>
-                      {bands.map((b) => (
-                        <option key={String(b.bandId || b.id)} value={String(b.bandId || b.id)}>
-                          {b.name || b.bandName || 'Band'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="stage-sheet-field">
-                    <label className="stage-sheet-field-label" htmlFor="stage-song-sheet-setlist">
-                      Setlist
-                    </label>
-                    <select
-                      id="stage-song-sheet-setlist"
-                      className="stage-sheet-select"
-                      value={String(activeSetlist?.id || setlistId || '')}
-                      onChange={(e) => handleSelectSetlist(e.target.value)}
-                    >
-                      {(setlistId || activeSetlist?.id) && !setlists.some((sl) => String(sl.id) === String(activeSetlist?.id || setlistId)) && (
-                        <option value={String(activeSetlist?.id || setlistId)}>
-                          {activeSetlist?.name || 'Setlist aktif'}
-                        </option>
-                      )}
-                      {filteredSetlists.map((sl) => (
-                        <option key={sl.id} value={String(sl.id)}>
-                          {sl.name || 'Tanpa nama'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                {/* Ganti band/setlist tanpa menutup sheet ini. Tombol ganti
+                    setlist membuka sheet pemilih setlist (satu sumber daftar);
+                    dropdown di sini hanya untuk berpindah cepat antar setlist
+                    band yang sama. */}
+                <div className="stage-sheet-switch">
+                  <button
+                    type="button"
+                    className="stage-sheet-switch-btn"
+                    onClick={() => setSheetOpen('setlist')}
+                    aria-haspopup="dialog"
+                  >
+                    <StageIcon name="list" size={15} />
+                        Ganti setlist
+                      </button>
+                    </div>
 
-                <StageSongList
+                    <StageSongList
                   songs={setlistSongs}
                   activeIndex={currentIndex}
                   onSelect={goToSong}

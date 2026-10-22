@@ -125,8 +125,12 @@ describe('StageModePage (redesign)', () => {
 
     const sheet = document.body.querySelector('.stage-sheet');
     expect(sheet).toBeTruthy();
-    expect(sheet.querySelector('.stage-sheet-title').textContent).toContain('Urutan lagu');
+    expect(sheet.querySelector('.stage-sheet-title').textContent).toContain('Set Panggung');
+    expect(sheet.querySelector('.stage-sheet-count').textContent).toBe('1');
     expect(sheet.querySelector('.stage-sheet-item.is-active')).toBeTruthy();
+    // Tidak ada dropdown band/setlist duplikat — hanya satu tombol ganti setlist.
+    expect(sheet.querySelector('select')).toBeNull();
+    expect(sheet.querySelectorAll('.stage-sheet-switch-btn').length).toBe(1);
 
     unmount();
   });
@@ -160,6 +164,29 @@ describe('StageModePage (redesign)', () => {
         resolve();
       }, 32);
     });
+  });
+
+  test('tombol "Ganti setlist" di sheet urutan lagu membuka sheet pemilih setlist', () => {
+    const { unmount } = mount(
+      <StageModePage
+        stageMode
+        onExit={() => {}}
+        songs={[song]}
+        setlists={[setlist]}
+        activeSetlist={setlist}
+      />,
+    );
+
+    act(() => document.body.querySelector('.stage-nextbtn').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    act(() => document.body.querySelector('.stage-sheet-switch-btn').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+
+    const sheet = document.body.querySelector('.stage-sheet');
+    expect(sheet.querySelector('.stage-sheet-title').textContent).toContain('Pilih setlist');
+    // Sheet pemilih setlist punya filter band + pencarian setlist (satu sumber).
+    expect(sheet.querySelectorAll('select').length).toBe(1);
+    expect(sheet.querySelector('input[type="search"]')).toBeTruthy();
+
+    unmount();
   });
 
   test('menonaktifkan Stage Mode lewat topbar memanggil onExit', () => {

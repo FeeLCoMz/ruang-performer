@@ -847,6 +847,39 @@
   right: 14px;
 }
 
+/* Tombol "Ganti setlist" di sheet urutan lagu — membuka sheet pemilih
+   setlist (satu-satunya tempat daftar band & setlist). */
+.stage-sheet-switch {
+  flex: 0 0 auto;
+  padding: 0 18px 8px;
+}
+
+.stage-sheet-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  background: var(--stg-panel-2);
+  border: 1px solid var(--stg-line);
+  border-radius: 999px;
+  color: var(--stg-text);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.stage-sheet-switch-btn:hover {
+  background: #232134;
+  border-color: var(--stg-line-strong);
+}
+
+.stage-sheet-switch-btn .stage-icon {
+  color: var(--stg-muted);
+}
+
 .stage-sheet-toolbar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
