@@ -19,6 +19,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -33,6 +34,11 @@ const CHECKS = [
   { file: 'check-audit-writes.mjs', label: 'penulisan audit' },
   { file: 'check-audit-auth.mjs', label: 'audit auth & member' },
   { file: 'check-midi-cue.mjs', label: 'gate modul MIDI Cue' },
+  {
+    file: 'check-setlist-write-batch.mjs',
+    label: 'penulisan setlist (batch, tanpa tulis ulang)',
+    args: ['--import', pathToFileURL(join(HERE, 'check-setlist-write-batch-stub.mjs')).href],
+  },
 ];
 
 const results = [];
@@ -45,7 +51,7 @@ for (const check of CHECKS) {
   }
 
   // eslint-disable-next-line no-await-in-loop
-  const run = spawnSync(process.execPath, [filePath], {
+  const run = spawnSync(process.execPath, [...(check.args || []), filePath], {
     cwd: join(HERE, '..'),
     encoding: 'utf8',
     timeout: 120_000,

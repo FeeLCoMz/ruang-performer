@@ -84,10 +84,21 @@ const AUDIT_LOG_COLUMNS = {
   createdAt: "TEXT DEFAULT (datetime('now'))",
 };
 
-// Schema dicek sekali per client (via WeakSet), bukan per modul: serverless
-// instance memakai satu client, tapi test/multi-DB tetap bisa membuat tabel di
-// database lain dalam proses yang sama.
-const _auditSchemaReadyClients = new WeakSet();
+// Schema dicek sekali per DATABASE (bukan per client object). Di serverless,
+// getTursoClient() membuat client baru di tiap cold start, sehingga penanda
+// berbasis WeakSet tidak pernah bertahan dan CREATE/PRAGMA/ALTER berjalan ulang
+// di setiap request (4 query tambahan per simpan setlist).
+const _auditSchemaReadyDatabases = new Set();
+
+function resolveAuditSchemaKey(client) {
+  // @libsql/client menyimpan url koneksi di beberapa properti internal.
+  const url = client?.url
+    || client?._client?.url
+    || client?.client?.url
+    || client?.config?.url
+    || client?.options?.url;
+  return typeof url === 'string' && url ? url : null;
+}
 
 /**
  * Pastikan tabel audit_logs ada. Tabel ini tidak selalu ada di database lama
@@ -96,7 +107,8 @@ const _auditSchemaReadyClients = new WeakSet();
  */
 export async function ensureAuditLogTable(client) {
   if (!client) return false;
-  if (typeof client === 'object' && _auditSchemaReadyClients.has(client)) return true;
+  const schemaKey = resolveAuditSchemaKey(client);
+  if (schemaKey && _auditSchemaReadyDatabases.has(schemaKey)) return true;
   try {
     await client.execute(
       `CREATE TABLE IF NOT EXISTS audit_logs (
@@ -129,7 +141,7 @@ export async function ensureAuditLogTable(client) {
       'CREATE INDEX IF NOT EXISTS idx_audit_logs_userId_createdAt ON audit_logs(userId, createdAt)',
     ).catch(() => {});
 
-    if (typeof client === 'object') _auditSchemaReadyClients.add(client);
+    if (schemaKey) _auditSchemaReadyDatabases.add(schemaKey);
     return true;
   } catch (error) {
     // Jangan cache kegagalan supaya percobaan berikutnya masih mencoba.

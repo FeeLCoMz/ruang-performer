@@ -340,6 +340,68 @@ describe('SetlistSongsPage', () => {
     );
   });
 
+  test('adding a song closes the modal immediately and rolls back on server error', async () => {
+    const setSetlists = vi.fn();
+    const props = buildProps({
+      setSetlists,
+      songs: [
+        { id: 'song-1', title: 'Lagu Sudah', artist: 'Artist A', key: 'C', tempo: '120', genre: 'Pop' },
+        { id: 'song-2', title: 'Lagu Belum', artist: 'Artist B', key: 'G', tempo: '110', genre: 'Rock' },
+        { id: 'song-3', title: 'Lagu Baru', artist: 'Artist C', key: 'D', tempo: '100', genre: 'Jazz' },
+      ],
+    });
+
+    // Respons PUT tidak pernah selesai dalam test ini: UI tetap harus langsung
+    // menutup modal dan menampilkan lagu (optimistic), bukan menunggu server.
+    let resolvePut;
+    fetchSpy.mockImplementation((url, init) => {
+      if (init?.method === 'PUT') {
+        return new Promise((resolve) => {
+          resolvePut = (ok) => resolve({ ok, json: async () => ({}) });
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+
+    await renderPage(root, props);
+
+    const openAddButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Tambah Lagu'));
+    await act(async () => {
+      openAddButton.click();
+      await flushPromises();
+    });
+
+    const newSongItem = Array.from(container.querySelectorAll('.add-song-modal .song-list-item')).find((item) =>
+      item.textContent.includes('Lagu Baru')
+    );
+    expect(newSongItem).toBeTruthy();
+
+    await act(async () => {
+      newSongItem.click();
+      await flushPromises();
+    });
+
+    const addButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Tambah (1)'));
+    await act(async () => {
+      addButton.click();
+      await flushPromises();
+    });
+
+    // Modal sudah tertutup dan lagu sudah muncul sebelum server menjawab.
+    expect(container.querySelector('.add-song-modal')).toBeFalsy();
+    const titlesBeforeSave = Array.from(container.querySelectorAll('.song-item .song-title')).map((el) => el.textContent.trim());
+    expect(titlesBeforeSave.some((t) => t.startsWith('Lagu Baru'))).toBe(true);
+
+    // Server menolak: lagu baru harus hilang lagi dari daftar.
+    await act(async () => {
+      resolvePut(false);
+      await flushPromises();
+    });
+
+    const titlesAfterFailure = Array.from(container.querySelectorAll('.song-item .song-title')).map((el) => el.textContent.trim());
+    expect(titlesAfterFailure.some((t) => t.startsWith('Lagu Baru'))).toBe(false);
+  });
+
   test('quick add creates a missing song from add-to-setlist modal', async () => {
     const props = buildProps({
       setlists: [

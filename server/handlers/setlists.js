@@ -121,15 +121,100 @@ async function upsertBandPreferredKeys(client, bandId, setlistSongMeta, allowedS
     })
     .filter(({ songId, preferredKey }) => songId && preferredKey);
 
-  for (const row of rows) {
-    await client.execute(
-      `INSERT INTO band_song_preferences (id, bandId, songId, preferredKey, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(bandId, songId)
-       DO UPDATE SET preferredKey = excluded.preferredKey, updatedAt = excluded.updatedAt`,
-      [randomUUID(), bandId, row.songId, row.preferredKey, nowIso, nowIso]
-    );
+  if (rows.length === 0) return;
+
+  // Satu batch, bukan satu round-trip HTTP per baris.
+  const preferredKeyStatements = rows.map((row) => ({
+    sql: `INSERT INTO band_song_preferences (id, bandId, songId, preferredKey, createdAt, updatedAt)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(bandId, songId)
+          DO UPDATE SET preferredKey = excluded.preferredKey, updatedAt = excluded.updatedAt`,
+    args: [randomUUID(), bandId, row.songId, row.preferredKey, nowIso, nowIso]
+  }));
+  await executeBatch(client, preferredKeyStatements);
+}
+
+/**
+ * Jalankan beberapa statement tulis dalam SATU round-trip (Turso remote).
+ * Fallback ke eksekusi berurutan bila client tidak punya `batch` (mis. mock di test).
+ */
+async function executeBatch(client, statements) {
+  if (!Array.isArray(statements) || statements.length === 0) return;
+  if (typeof client.batch === 'function') {
+    await client.batch(statements, 'write');
+    return;
   }
+  for (const statement of statements) {
+    await client.execute(statement);
+  }
+}
+
+/**
+ * Sinkronkan isi setlist_songs ke urutan `songIds` tanpa menghapus lalu
+ * menulis ulang semuanya. Hanya lagu yang berubah yang disentuh:
+ * - lagu baru di posisi belakang -> 1 INSERT
+ * - lagu yang dibuang          -> DELETE
+ * - lagu yang bergeser         -> UPDATE position (hanya bila berubah)
+ * Semua statement dikirim lewat satu batch.
+ */
+async function syncSetlistSongs(client, setId, songIds, bodyMeta, preferredKeyMap, nowIso) {
+  const existingResult = await client.execute(
+    `SELECT song_id, position, meta FROM setlist_songs WHERE setlist_id = ?`,
+    [setId]
+  );
+  const existingRows = new Map();
+  // rows bisa berupa array atau array-like (Turso) — iterasi generik aman untuk keduanya.
+  for (const row of Array.from(existingResult?.rows || [])) {
+    existingRows.set(normalizeSongId(row.song_id), row);
+  }
+
+  const incoming = new Set(songIds);
+  const statements = [];
+  const touchedMetaSongIds = [];
+
+  for (const existingSongId of existingRows.keys()) {
+    if (!incoming.has(existingSongId)) {
+      statements.push({
+        sql: `DELETE FROM setlist_songs WHERE setlist_id = ? AND song_id = ?`,
+        args: [setId, existingSongId]
+      });
+    }
+  }
+
+  for (let i = 0; i < songIds.length; i++) {
+    const songId = songIds[i];
+    const rawMetaObj = (bodyMeta && bodyMeta[songId]) ? bodyMeta[songId] : {};
+    const metaObj = applyBandPreferredKey(rawMetaObj, preferredKeyMap.get(songId));
+    const nextMetaJson = JSON.stringify(metaObj);
+    const existingRow = existingRows.get(songId);
+
+    if (!existingRow) {
+      statements.push({
+        sql: `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
+              VALUES (?, ?, ?, ?, ?, ?)
+              ON CONFLICT(setlist_id, song_id)
+              DO UPDATE SET position = excluded.position, meta = excluded.meta, updatedAt = excluded.updatedAt`,
+        args: [setId, songId, i, nextMetaJson, nowIso, nowIso]
+      });
+      continue;
+    }
+
+    const positionChanged = Number(existingRow.position) !== i;
+    const metaChanged = (existingRow.meta || '{}') !== nextMetaJson;
+    if (positionChanged || metaChanged) {
+      statements.push({
+        sql: `UPDATE setlist_songs SET position = ?, meta = ?, updatedAt = ?
+              WHERE setlist_id = ? AND song_id = ?`,
+        args: [i, nextMetaJson, nowIso, setId, songId]
+      });
+    }
+    if (rawMetaObj && typeof rawMetaObj === 'object' && rawMetaObj.key) {
+      touchedMetaSongIds.push(songId);
+    }
+  }
+
+  await executeBatch(client, statements);
+  return touchedMetaSongIds;
 }
 
 export default async function handler(req, res) {
@@ -275,35 +360,39 @@ export default async function handler(req, res) {
               idStr,
             ]
           );
-        // Update setlist_songs: remove all then insert new
+        // Update setlist_songs: diff terhadap isi sekarang (bukan delete-all +
+        // insert-all), lalu kirim semuanya dalam satu batch.
         if (Array.isArray(body.songs)) {
-          await client.execute(`DELETE FROM setlist_songs WHERE setlist_id = ?`, [idStr]);
           const preferredKeyMap = await getBandPreferredKeyMap(client, effectiveBandId, dedupedSongs);
-          for (let i = 0; i < dedupedSongs.length; i++) {
-            const songId = dedupedSongs[i];
-            const rawMetaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
-            const metaObj = applyBandPreferredKey(rawMetaObj, preferredKeyMap.get(songId));
-            await client.execute(
-              `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
-               VALUES (?, ?, ?, ?, ?, ?)
-               ON CONFLICT(setlist_id, song_id)
-               DO UPDATE SET position = excluded.position, meta = excluded.meta, updatedAt = excluded.updatedAt`,
-              [idStr, songId, i, JSON.stringify(metaObj), now, now]
-            );
-          }
+          const touchedMetaSongIds = await syncSetlistSongs(
+            client, idStr, dedupedSongs, body.setlistSongMeta, preferredKeyMap, now
+          );
 
-          await upsertBandPreferredKeys(client, effectiveBandId, body.setlistSongMeta, dedupedSongs, now);
+          const metaForPreferences = {};
+          for (const songId of touchedMetaSongIds || []) {
+            metaForPreferences[songId] = body.setlistSongMeta[songId];
+          }
+          await upsertBandPreferredKeys(client, effectiveBandId, metaForPreferences, touchedMetaSongIds, now);
         } else if (normalizedMetaPatch) {
           const patchSongIds = dedupeSongIds(Object.keys(normalizedMetaPatch));
           const preferredKeyMap = await getBandPreferredKeyMap(client, effectiveBandId, patchSongIds);
 
+          const existingMetaRows = patchSongIds.length > 0
+            ? await client.execute(
+              `SELECT song_id, meta FROM setlist_songs
+               WHERE setlist_id = ? AND song_id IN (${patchSongIds.map(() => '?').join(', ')})`,
+              [idStr, ...patchSongIds]
+            )
+            : { rows: [] };
+          const existingMetaBySongId = new Map();
+          for (const row of existingMetaRows.rows || []) {
+            existingMetaBySongId.set(normalizeSongId(row.song_id), row.meta);
+          }
+
+          const updateStatements = [];
           for (const songId of patchSongIds) {
             const patchMetaObj = normalizeSongMeta(normalizedMetaPatch[songId]);
-            const existingSongRow = await client.execute(
-              `SELECT meta FROM setlist_songs WHERE setlist_id = ? AND song_id = ? LIMIT 1`,
-              [idStr, songId]
-            );
-            const existingMetaRaw = existingSongRow.rows?.[0]?.meta;
+            const existingMetaRaw = existingMetaBySongId.get(songId);
             let existingMetaObj = {};
             try {
               existingMetaObj = existingMetaRaw ? JSON.parse(existingMetaRaw) : {};
@@ -316,13 +405,14 @@ export default async function handler(req, res) {
               preferredKeyMap.get(songId)
             );
 
-            await client.execute(
-              `UPDATE setlist_songs
-               SET meta = ?, updatedAt = ?
-               WHERE setlist_id = ? AND song_id = ?`,
-              [JSON.stringify(mergedMeta), now, idStr, songId]
-            );
+            updateStatements.push({
+              sql: `UPDATE setlist_songs
+                    SET meta = ?, updatedAt = ?
+                    WHERE setlist_id = ? AND song_id = ?`,
+              args: [JSON.stringify(mergedMeta), now, idStr, songId]
+            });
           }
+          await executeBatch(client, updateStatements);
 
           await upsertBandPreferredKeys(client, effectiveBandId, normalizedMetaPatch, patchSongIds, now);
         } else {
@@ -590,20 +680,20 @@ export default async function handler(req, res) {
             userId,
           ]
         );
-        // Insert setlist_songs
+        // Insert setlist_songs dalam satu batch, bukan satu round-trip per lagu.
         if (Array.isArray(body.songs)) {
-          for (let i = 0; i < dedupedSongs.length; i++) {
-            const songId = dedupedSongs[i];
+          const insertStatements = dedupedSongs.map((songId, i) => {
             const rawMetaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
             const metaObj = applyBandPreferredKey(rawMetaObj, preferredKeyMap.get(songId));
-            await client.execute(
-              `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
-               VALUES (?, ?, ?, ?, ?, ?)
-               ON CONFLICT(setlist_id, song_id)
-               DO UPDATE SET position = excluded.position, meta = excluded.meta, updatedAt = excluded.updatedAt`,
-              [id, songId, i, JSON.stringify(metaObj), now, now]
-            );
-          }
+            return {
+              sql: `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(setlist_id, song_id)
+                    DO UPDATE SET position = excluded.position, meta = excluded.meta, updatedAt = excluded.updatedAt`,
+              args: [id, songId, i, JSON.stringify(metaObj), now, now]
+            };
+          });
+          await executeBatch(client, insertStatements);
         }
         await upsertBandPreferredKeys(client, bandId, body.setlistSongMeta, dedupedSongs, now);
 
@@ -626,8 +716,8 @@ export default async function handler(req, res) {
         if (insertErr.message && insertErr.message.includes('UNIQUE')) {
           // Setlist already exists, update instead
           await client.execute(
-            `UPDATE setlists SET  
-               name = ?, 
+            `UPDATE setlists SET
+               name = ?,
                description = ?,
                bandId = ?,
                updatedAt = ?,
@@ -642,21 +732,9 @@ export default async function handler(req, res) {
               id,
             ]
           );
-          // Remove all old setlist_songs before re-insert
-          await client.execute(`DELETE FROM setlist_songs WHERE setlist_id = ?`, [id]);
+          // Sinkronkan isi setlist_songs dengan payload (diff + satu batch).
           if (Array.isArray(body.songs)) {
-            for (let i = 0; i < dedupedSongs.length; i++) {
-              const songId = dedupedSongs[i];
-              const rawMetaObj = (body.setlistSongMeta && body.setlistSongMeta[songId]) ? body.setlistSongMeta[songId] : {};
-              const metaObj = applyBandPreferredKey(rawMetaObj, preferredKeyMap.get(songId));
-              await client.execute(
-                `INSERT INTO setlist_songs (setlist_id, song_id, position, meta, createdAt, updatedAt)
-                 VALUES (?, ?, ?, ?, ?, ?)
-                 ON CONFLICT(setlist_id, song_id)
-                 DO UPDATE SET position = excluded.position, meta = excluded.meta, updatedAt = excluded.updatedAt`,
-                [id, songId, i, JSON.stringify(metaObj), now, now]
-              );
-            }
+            await syncSetlistSongs(client, id, dedupedSongs, body.setlistSongMeta, preferredKeyMap, now);
           }
           await upsertBandPreferredKeys(client, bandId, body.setlistSongMeta, dedupedSongs, now);
           res.status(200).json({ id });

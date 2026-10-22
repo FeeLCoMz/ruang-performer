@@ -872,10 +872,16 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         deduped.push(id);
       }
     }
+    const previousOrder = localOrder;
+    // Optimistic: daftar + modal langsung berubah, tanpa menunggu server.
+    // Server hanya menyimpan diff (bukan menulis ulang seluruh setlist).
     setLocalOrder(deduped);
     if (setSetlists) {
       setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: deduped } : s));
     }
+    setAddSongSearch('');
+    setShowAddSong(false);
+    setAddingSongIds([]);
     try {
       const res = await fetch(`/api/setlists/${setlist.id}`, {
         method: 'PUT',
@@ -883,11 +889,15 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         body: JSON.stringify({ ...setlist, songs: deduped }),
       });
       if (!res.ok) throw new Error('Gagal menambah lagu ke setlist');
-      setAddSongSearch('');
-      setShowAddSong(false);
-      setAddingSongIds([]);
     } catch (e) {
+      // Rollback agar daftar tidak menampilkan lagu yang gagal tersimpan.
+      // Kembalikan lewat setSetlists (sumber kebenaran localOrder) agar sinkron.
+      if (setSetlists) {
+        setSetlists(prev => prev.map(s => s.id === setlist.id ? { ...s, songs: previousOrder } : s));
+      }
+      setLocalOrder(previousOrder);
       setAddSongError(e.message || 'Gagal menambah lagu');
+      setShowAddSong(true);
     } finally {
       setIsAddingSongs(false);
     }
