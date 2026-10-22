@@ -376,6 +376,48 @@
   gap: 10px 16px;
 }
 
+/* ------------------------------------------------------------------
+   Samakan tinggi kapsul kontrol panggung.
+   TransposeKeyControl & AutoScrollControl punya metrik sendiri
+   (transpose: padding 3px + isi 30px; autoscroll: tinggi kapsul langsung
+   dari --toolbar-capsule-h yang di luar toolbar tidak terdefinisi),
+   sehingga tingginya berbeda. Di panel panggung keduanya dikunci ke satu
+   ukuran: kapsul 40px (target sentuh nyaman), isi 32px.
+   ------------------------------------------------------------------ */
+.stage-controls {
+  --stage-capsule-h: 40px;
+  --stage-capsule-inner-h: 32px;
+  --toolbar-capsule-h: var(--stage-capsule-h);
+  --toolbar-inner-h: var(--stage-capsule-inner-h);
+}
+
+.stage-controls .transpose-key-capsule,
+.stage-controls .song-lyrics-autoscroll-capsule {
+  box-sizing: border-box;
+  height: var(--stage-capsule-h);
+  padding: 0 4px;
+  align-items: center;
+}
+
+.stage-controls .transpose-key-capsule {
+  /* Padding vertikal dari aturan global (3px) dihapus agar tidak menambah
+     tinggi di atas ukuran isi. */
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.stage-controls .transpose-key-step,
+.stage-controls .transpose-key-value,
+.stage-controls .transpose-key-capsule .transpose-key-easy-btn,
+.stage-controls .transpose-key-capsule .transpose-key-reset,
+.stage-controls .song-lyrics-autoscroll-toggle,
+.stage-controls .song-lyrics-autoscroll-mode,
+.stage-controls .song-lyrics-autoscroll-step,
+.stage-controls .song-lyrics-autoscroll-reset {
+  height: var(--stage-capsule-inner-h);
+  align-items: center;
+}
+
 /* Area baca lirik.
    Padding bawah kecil saja: lirik menempel ke bottom bar (tidak ada ruang
    kosong di bawah). Ruang bernapas saat autoscroll diberikan oleh
@@ -998,7 +1040,17 @@
 
 /* ---------- Responsif ---------- */
 
+/* Layar sempit: panel kontrol muat satu baris tanpa memecah kapsul. */
 @media (max-width: 520px) {
+  .stage-controls {
+    --stage-capsule-h: 38px;
+    --stage-capsule-inner-h: 30px;
+  }
+
+  .stage-controls-inner {
+    gap: 8px 10px;
+  }
+
   .stage-topbar {
     gap: 6px;
     padding-left: 8px;
