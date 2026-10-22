@@ -11,6 +11,7 @@ import {
   AUTOCOMPLETE_METADATA as CONFIG_METADATA,
   AUTOCOMPLETE_INSTRUMENTS as CONFIG_INSTRUMENTS,
   CUE_MARK_KEYWORDS as CONFIG_CUE_MARK_KEYWORDS,
+  titleCaseKeyword,
 } from '../config/chordDisplayConfig.js';
 
 /**
@@ -41,15 +42,6 @@ const METADATA_COMPLETIONS = CONFIG_METADATA.map(({ label, detail, info }) => ({
   // Klik "Original Key:" menulis "[Original Key: ]" — kursor di dalam braket.
   applyAfter: ']',
 }));
-
-/** Capitalise each word, matching autoTagSongSections()/config labels. */
-function titleCaseKeyword(keyword) {
-  return String(keyword)
-    .split(/[\s_-]+/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
 
 /** Instrument words highlighted by the editor — always as a bracketed tag. */
 const INSTRUMENT_COMPLETIONS = [...new Set(CONFIG_INSTRUMENTS)].map((name) => ({

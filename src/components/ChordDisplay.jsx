@@ -22,22 +22,11 @@ import React, { memo, useMemo, useEffect, useRef, useState } from 'react';
 import NumberToken from './NumberToken.jsx';
 import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
 import { useMidiCueVersion } from '../modules/midi-cue/useMidiCueVersion.js';
+import { SECTION_ICONS, sectionToneOf } from '../config/chordDisplayConfig.js';
 
-// Icon per seksi lagu, dicocokkan dari label seksi (mis. "[Chorus]").
-const SECTION_ICONS = [
-  { icon: '🎬', pattern: /intro|opening|\bint\b/i },
-  { icon: '🎤', pattern: /verse|bait/i },
-  { icon: '⭐', pattern: /pre[- ]?chorus/i },
-  { icon: '🔁', pattern: /chorus|reff|refrain/i },
-  { icon: '🌉', pattern: /bridge/i },
-  { icon: '🎸', pattern: /solo|instrumental|interlude|musik/i },
-  { icon: '🏁', pattern: /outro|ending|coda/i },
-];
-
-const getSectionIcon = (label = '') => {
-  const hit = SECTION_ICONS.find((entry) => entry.pattern.test(String(label)));
-  return hit ? hit.icon : '🎵';
-};
+// Ikon per seksi lagu. Tone dihitung oleh config (bersama parser & editor),
+// jadi menambah seksi baru di chordDisplayConfig tidak perlu menyentuh file ini.
+const getSectionIcon = (label = '') => SECTION_ICONS[sectionToneOf(label)] || '🎵';
 
 /**
  * Gaya chord yang bisa dipilih dari panel lirik.

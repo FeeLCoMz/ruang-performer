@@ -34,6 +34,32 @@
 import { formatWholeLyricsDocument } from '../../utils/lyricsEditorUtils.js';
 import { validateMusicalFields } from '../../utils/songFormUtils.js';
 import { extractYouTubeId } from '../../utils/youtubeUtils.js';
+import {
+  SECTION_KEYWORD_ALTERNATION,
+  STRUCTURE_SECTION_KEYWORDS,
+  titleCaseKeyword,
+} from '../../config/chordDisplayConfig.js';
+
+/**
+ * Kata seksi sebuah JUDUL lagu ("Judul: Chorus" bukan lagu berjudul Chorus).
+ * Diturunkan dari config, tetapi hanya keyword yang memang TIDAK lazim dipakai
+ * sebagai judul lagu: "Refrain" dan "Reff" justru sering menjadi judul.
+ */
+const SECTION_NAME_WORDS = new Set(
+  STRUCTURE_SECTION_KEYWORDS
+    .filter((word) => !['reff', 'refrain'].includes(word))
+    // Bentuk yang tampil di parser (label dinormalisasi lewat titleCaseKeyword),
+    // sehingga "Intro" dari config maupun tulisan user tetap cocok. Bandingkan
+    // lowercase agar "[Ending]" dan "Ending" sama-sama terbaca seksi.
+    .map((word) => titleCaseKeyword(word).toLowerCase()),
+);
+
+/**
+ * Kata seksi yang MASIH boleh menjadi judul lagu saat ditulis sebagai
+ * "Judul: Refrain". Semua keyword lain tetap diperlakukan sebagai label bagian
+ * dan dilempar ke lirik oleh splitBulkSongBlocks().
+ */
+const SECTION_TITLE_EXCEPTIONS = new Set(['reff', 'refrain']);
 
 /** Baris pemisah blok: "## Judul", "# Judul", "===", "---". */
 const SEPARATOR_REGEX = /^(#{1,6}|={3,}|-{3,})\s*(.*)$/;
@@ -65,9 +91,22 @@ const TITLE_STOPWORDS = new Set(['keyakinan', 'keyakinanku']);
 
 const KEY_SIGNATURE_REGEX = /^[A-G][#b]?(m|maj|min|minor|major|sus|dim|aug|add)?(\/[A-G][#b]?)?$/i;
 
-/** Label seksi ("[Chorus]", "[Intro]", "[Verse 1]"). */
-const SECTION_LABEL_REGEX = /^\[\s*(intro|outro|coda|verse|pre[- ]?chorus|chorus|post[- ]?chorus|reff|refrain|bridge|interlude|instrumental|musik|music|solo|int\.?)\b[^\]]*\]\s*[:-]?\s*$/i;
-const SECTION_HEADER_REGEX = /^\[?\s*(intro|outro|coda|verse|pre[- ]?chorus|chorus|post[- ]?chorus|reff|refrain|bridge|interlude|instrumental|musik|music|solo|int\.?)\b[^:\]]*[:\]]\s*$/i;
+/**
+ * Label seksi ("[Chorus]", "[Intro]", "[Verse 1]").
+ *
+ * Daftar kata TIDAK ditulis ulang di sini: sebelumnya array seksi disalin dari
+ * config, sehingga seksi baru di config tetap terbaca sebagai judul lagu oleh
+ * modul bulk. Sumbernya sekarang SECTION_KEYWORD_ALTERNATION.
+ */
+const SECTION_LABEL_REGEX = new RegExp(
+  `^\\[\\s*(?:${SECTION_KEYWORD_ALTERNATION})\\b[^\\]]*\\]\\s*[:-]?\\s*$`,
+  'i',
+);
+const SECTION_HEADER_REGEX = new RegExp(
+  `^\\[?\\s*(?:${SECTION_KEYWORD_ALTERNATION})\\b[^:\\]]*[:\\]]\\s*$`,
+  'i',
+);
+const BARE_SECTION_REGEX = new RegExp(`^(?:${SECTION_KEYWORD_ALTERNATION})\\s*\\d*$`, 'i');
 
 const BLOCK_FIELDS = [
   'artist',
@@ -117,8 +156,15 @@ function parseMetadataLine(line) {
 function isSongMetadata(metadata) {
   if (!metadata || !metadata.value) return false;
   switch (metadata.field) {
-    case 'title':
-      return !TITLE_STOPWORDS.has(metadata.label.replace(/\s+/g, ''));
+    case 'title': {
+      // Judul yang cuma kata struktur ("Judul: Refrain") tetap judul; judul
+      // seperti "Judul: Chorus" juga harus boleh, sedangkan "[Chorus]" tidak
+      // pernah sampai ke sini karena ditangkap isSectionLine(). "rythm"
+      // dicocokkan sebagai kata utuh menghindari stopword palsu.
+      const titleWords = metadata.value.toLowerCase().split(/[\s\-_.]+/).filter(Boolean);
+      const stopwordBait = titleWords.some((word) => TITLE_STOPWORDS.has(word));
+      return !stopwordBait;
+    }
     case 'key':
       return KEY_SIGNATURE_REGEX.test(metadata.value);
     case 'tempo':
@@ -131,11 +177,15 @@ function isSongMetadata(metadata) {
 }
 
 /** Baris label seksi ("Verse", "[Outro]"): milik lirik, bukan judul lagu. */
-function isSectionLine(line) {
+export function isSectionLine(line) {
   const trimmed = String(line || '').trim();
   if (!trimmed) return true;
   if (SECTION_LABEL_REGEX.test(trimmed) || SECTION_HEADER_REGEX.test(trimmed)) return true;
-  return /^(intro|outro|coda|verse\s*\d*|chorus|reff|bridge|interlude|solo)$/i.test(trimmed);
+  if (BARE_SECTION_REGEX.test(trimmed)) return true;
+  // "Judul: Refrain" tetap boleh menjadi judul lagu (dipakai di test regresi);
+  // alias lain ("Ending", "Int.", "Bait 2") tetap dianggap label seksi.
+  const word = trimmed.toLowerCase();
+  return SECTION_NAME_WORDS.has(word);
 }
 
 function createBlock(title) {
@@ -265,7 +315,11 @@ export function splitBulkSongBlocks(text) {
 
     if (metadata.field === 'title') {
       const nextTitle = normalizeTitle(metadata.value);
-      if (isSectionLine(nextTitle)) {
+      // Pengecualian: "Judul: Refrain" / "Judul: Reff" sengaja boleh menjadi
+      // judul lagu (dipakai di test regresi dan di data nyata). Kata struktur
+      // lain ("Judul: Verse 2", "Judul: Outro") tetap label bagian.
+      const allowedSectionTitles = SECTION_TITLE_EXCEPTIONS.has(nextTitle.toLowerCase());
+      if (!allowedSectionTitles && isSectionLine(nextTitle)) {
         // "Judul: Verse 2" / "Judul: Outro" adalah label bagian, bukan judul.
         current.lyricsLines.push(rawLine);
         continue;

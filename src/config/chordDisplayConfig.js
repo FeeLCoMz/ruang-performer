@@ -18,7 +18,13 @@
  *   kata pendek/teknis -> KAPITAL penuh ('fx' -> 'FX', 'pc' -> 'PC')
  *   kata lain          -> Title Case  ('pre-chorus' -> 'Pre-Chorus')
  */
-const titleCaseKeyword = (keyword) => keyword
+/**
+ * SATU-SATUNYA fungsi kapitalisasi keyword. Dipakai juga oleh
+ * src/utils/lyricsCompletion.js — jangan membuat salinan lokal: dulu cue mark
+ * tampil "Fx"/"Rit." di popup sementara metadata tampil "FX", karena file itu
+ * punya versi sendiri.
+ */
+export const titleCaseKeyword = (keyword) => String(keyword)
   .split(/([\s-]+)/)
   .map((part) => (/^[a-z]+$/.test(part) && part.length > 2
     ? part[0].toUpperCase() + part.slice(1)
@@ -27,6 +33,9 @@ const titleCaseKeyword = (keyword) => keyword
 
 /** Hapus duplikat dari sebuah daftar (urutan tetap terjaga). */
 const dedupe = (list) => [...new Set(list)];
+
+/** Escape karakter khusus regex pada sebuah string. */
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /* ==================================================================
  * GRUP A — STRUKTUR LAGU (menentukan tampilan & navigasi)
@@ -45,20 +54,104 @@ const dedupe = (list) => [...new Set(list)];
  */
 export const STRUCTURE_SECTION_KEYWORDS = [
   // pembuka & penutup
-  'intro', 'outro', 'coda',
+  'intro', 'opening', 'outro', 'ending', 'coda',
   // bagian vokal utama
-  'verse', 'pre-chorus', 'chorus', 'post-chorus', 'reff', 'refrain',
+  'verse', 'bait', 'pre-chorus', 'chorus', 'post-chorus', 'reff', 'refrain',
   // bagian pelengkap / instrumental
   'bridge', 'interlude', 'instrumental', 'musik', 'music', 'solo',
   // singkatan & varian ejaan
-  'int.',
+  'int.', 'int',
 ];
+
+/**
+ * Alias label seksi -> bentuk kanonik.
+ *
+ * Dulu alias ini tinggal di src/utils/chord/sections.js, sementara editor
+ * (lyricsEditorUtils, lyricsHighlightExtension) dan ChordDisplay punya regex
+ * sendiri dengan kosakata yang berbeda: "[Ending]" diwarnai editor tapi TIDAK
+ * dianggap seksi oleh parser. Semua kosakata sekarang ada di sini.
+ *
+ * Kanonik menentukan hitungan struktur (parseChordPro.structures), jadi sinonim
+ * harus menunjuk ke satu kunci yang sama.
+ */
+export const SECTION_NAME_ALIASES = {
+  opening: 'intro',
+  ending: 'outro',
+  bait: 'verse',
+  int: 'interlude',
+  'int.': 'interlude',
+  music: 'instrumental',
+  musik: 'instrumental',
+  // "Reff" adalah sebutan paling umum untuk bagian ulangan di lagu Indonesia;
+  // dihitung sebagai chorus, bukan refrain, agar statistik struktur tidak pecah.
+  reff: 'chorus',
+  refrain: 'chorus',
+};
+
+/** Bentuk kanonik dari sebuah keyword seksi (alias bila ada). */
+export const canonicalSectionKeyword = (keyword = '') => {
+  const lower = String(keyword).trim().toLowerCase();
+  return SECTION_NAME_ALIASES[lower] || lower;
+};
 
 /**
  * Label yang ditawarkan autocompletion — DITURUNKAN dari STRUCTURE_SECTION_KEYWORDS,
  * sehingga autocomplete dan parser SELALU memakai kata kunci yang sama.
+ * Alias tidak ditawarkan: satu label per seksi, memakai bentuk kanonik.
  */
-export const AUTOCOMPLETE_SECTION_LABELS = STRUCTURE_SECTION_KEYWORDS.map(titleCaseKeyword);
+export const AUTOCOMPLETE_SECTION_LABELS = dedupe(
+  STRUCTURE_SECTION_KEYWORDS.map((keyword) => titleCaseKeyword(canonicalSectionKeyword(keyword))),
+);
+
+/**
+ * Bentuk stabil untuk CSS/highlight/ikon. Kosakata `section-*` yang sudah ada
+ * di stylesheet hanya intro/chorus/verse; seksi lain dipetakan ke salah satunya.
+ * Urutan penting: "pre-chorus" harus dicek sebelum "chorus".
+ */
+const SECTION_TONE_RULES = [
+  { tone: 'intro', keywords: ['intro', 'outro', 'coda', 'interlude', 'instrumental'] },
+  { tone: 'chorus', keywords: ['chorus', 'refrain'] },
+  { tone: 'verse', keywords: ['verse', 'bridge', 'solo'] },
+];
+
+/** Tone editor/highlight untuk label seksi (default: section-verse). */
+export const sectionToneOf = (label = '') => {
+  const lower = String(label || '').toLowerCase().replace(/[_-]+/g, ' ').trim();
+  if (!lower) return 'verse';
+
+  const words = lower.split(/[\s:()[\]]+/).filter(Boolean);
+  const candidates = new Set([lower, ...words]);
+
+  for (const rule of SECTION_TONE_RULES) {
+    for (const candidate of candidates) {
+      const canonical = canonicalSectionKeyword(candidate);
+      if (rule.keywords.includes(canonical)) return rule.tone;
+    }
+  }
+
+  return 'verse';
+};
+
+/** Ikon per seksi di ChordDisplay, dicocokkan dari tone (bukan regex label). */
+export const SECTION_ICONS = {
+  intro: '🎬',
+  verse: '🎤',
+  chorus: '🔁',
+};
+
+/**
+ * Seri alternation regex label seksi, mis. `intro|outro|verse|...`.
+ * Dipakai parser bulk-lyrics supaya daftar seksi tidak lagi disalin manual.
+ */
+export const SECTION_KEYWORD_ALTERNATION = dedupe(
+  STRUCTURE_SECTION_KEYWORDS.map((keyword) => escapeRegex(keyword)
+    // Titik di akhir singkatan ('int.') bersifat opsional saat dicocokkan.
+    .replace(/\.$/, '\\.?')
+    .replace(/\s+/g, '[\\s_-]*')),
+).join('|');
+
+/** Label seksi lengkap `[Verse 1]` / `Verse 1:` dalam satu format. */
+export const SECTION_LABEL_REGEX_SOURCE = `^\\[?\\s*(?:${SECTION_KEYWORD_ALTERNATION})\\b`;
 
 /* ==================================================================
  * GRUP B — ARAH TRANSPOSE (mengubah nada chord)
@@ -114,6 +207,26 @@ export const METADATA_KEYS = dedupe([
   ...PERFORMANCE_HINT_KEYS,
   ...NOTE_KEYS,
 ]);
+
+/**
+ * Key routing MIDI (Patch:, PC:, CH:, Bank: ...). Modul MIDI yang membaca
+ * baris ini, BUKAN ChordDisplay — jadi sengaja tidak masuk METADATA_KEYS.
+ * Daftarnya disimpan di sini hanya supaya bentrok dengan INSTRUMENT_KEYWORDS
+ * terlihat di satu tempat dan bisa ditest.
+ */
+export const MIDI_ROUTING_KEYS = [
+  'patch', 'preset', 'sound', 'tone', 'program', 'instrument', 'instrumen',
+  'layer', 'split', 'zone', 'scene',
+  'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb',
+];
+
+/**
+ * Keyword yang ada di INSTRUMENT_KEYWORDS tapi juga diklaim MIDI. "[Keys: ...]"
+ * adalah baris MIDI (bukan label instrumen), jadi parser membuangnya dari
+ * instrumen. Kalau menambah instrumen bernama sama dengan key MIDI, daftarkan
+ * di sini agar perilakunya eksplisit.
+ */
+export const MIDI_KEYS_ALSO_INSTRUMENT = ['keys'];
 
 /* ==================================================================
  * GRUP H — SINTAKS CHORD (bukan keyword, tapi dipakai parser)

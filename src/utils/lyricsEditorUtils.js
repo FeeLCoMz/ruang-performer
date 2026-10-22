@@ -5,7 +5,14 @@ import {
   isMetadataLine,
   isCueMarkKeyword,
   isInstrumentKeywordWord,
+  canonicalSection,
 } from './chordUtils.js';
+import {
+  STRUCTURE_SECTION_KEYWORDS,
+  sectionToneOf,
+  titleCaseKeyword,
+} from '../config/chordDisplayConfig.js';
+import { formatSectionLabel } from './chord/sections.js';
 import { toNumberNotation } from './notationUtils.js';
 
 const LIKELY_CHORD_SYMBOL_REGEX = /^[A-Ga-g][#b♭♯]?(?:(?:maj|major|min|minor|m|dim|aug|sus|add|M|no|omit|\+|-)?[0-9#b♭♯+\-]*)*(?:\/[A-Ga-g][#b♭♯]?)?$/i;
@@ -219,35 +226,119 @@ function detectSectionInfo(line) {
   const trimmed = String(line || '').trim();
   if (!trimmed) return null;
 
-  const numericSuffixMatch = trimmed.match(/(\d+)/);
-  const suffix = numericSuffixMatch ? ` ${numericSuffixMatch[1]}` : '';
-  const normalized = trimmed
-    .replace(/^\[|\]$/g, '')
-    .replace(/:+$/, '')
+  // Baris gabungan "Chorus: na na" / "Chorus: na na - reff": kedua sisi
+  // pemisah diperiksa, supaya autoTag bisa mempertahankan sisa barisnya utuh.
+  const check = (candidate) => {
+    if (!candidate) return null;
+    const info = detectSectionKey(candidate);
+    if (!info) return null;
+    const text = String(candidate).trim();
+    const colonIndex = text.indexOf(':');
+    const dashIndex = text.search(/\s+[-–—]\s+/);
+    // "Chorus: na na" -> "na na"; "Pre Chorus - sampai" -> "sampai".
+    const suffixText = colonIndex >= 0
+      ? text.slice(colonIndex + 1).trim()
+      : (dashIndex >= 0 ? text.slice(dashIndex).replace(/^\s+[-–—]\s+/, '').trim() : '');
+    return { ...info, suffixText };
+  };
+
+  const direct = check(trimmed);
+  if (direct) {
+    // "Chorus: na na": teks kanan titik dua adalah lirik, bukan anotasi seksi.
+    const colonSplit = trimmed.split(':');
+    const leftSide = detectSectionKey(colonSplit[0].trim());
+    return leftSide
+      ? { ...leftSide, suffixText: colonSplit.slice(1).join(':').trim() }
+      : direct;
+  }
+
+  if (trimmed.includes(':')) {
+    const beforeColon = trimmed.split(':')[0].trim();
+    const leftInfo = check(beforeColon);
+    return leftInfo || null;
+  }
+
+  return null;
+}
+
+/** Deteksi seksi dari satu potongan teks (label polos). */
+function detectSectionKey(line) {
+  const trimmed = String(line || '').trim();
+  if (!trimmed) return null;
+
+  // "Chorus: na na" — lirik di kanan titik dua bukan anotasi.
+  const colonIdx = trimmed.indexOf(':');
+  const beforeColonText = colonIdx >= 0 ? trimmed.slice(0, colonIdx) : trimmed;
+  // "Pre-Chorus (2x)" — anotasi bukan bagian label. Chord dalam kurung
+  // ("(C G Am F)") bukan anotasi, jadi dibuang saja.
+  const annotationMatch = beforeColonText.match(/\(([^)]*)\)/);
+  const annotation = annotationMatch?.[1]?.trim() || '';
+  const annotationIsChord = Boolean(annotation) && isChordProgressionText(annotation);
+
+  // Nama seksi = teks sebelum titik dua tanpa "(...)". Tanda sambung hanya
+  // memotong judul bagian bila kata sesudahnya bukan bagian nama
+  // ("Pre-Chorus - sampai" tetap dua kata seksi, karena pemisahnya berada
+  // SETELAH nama seksi yang utuh).
+  const colonPart = trimmed.split(':')[0];
+  const cleanedColonPart = colonPart
+    .replace(/\[/g, ' ')
+    .replace(/\]/g, ' ')
+    .replace(/\([^)]*\)/g, ' ');
+  const normalizedColonPart = cleanedColonPart
+    .replace(/^\s+|\s+$/g, '')
     .replace(/[_-]+/g, ' ')
-    .trim()
+    .replace(/\s+/g, ' ')
     .toLowerCase();
+  // Bila sisi kiri sudah diawali nama seksi, tanda sambung mulai judul bagian
+  // ("Bridge - Koplo" -> Bridge, "Pre Chorus - sampai" -> Pre-Chorus).
+  // Nama seksi multi-kata dipertahankan utuh ("Pre Chorus").
+  const keywordList = STRUCTURE_SECTION_KEYWORDS
+    .filter((keyword) => !keyword.endsWith('.'))
+    .sort((a, b) => b.length - a.length)
+    .map((keyword) => keyword.replace(/[-_\s]+/g, '\\s+'));
+  const leadingKeyword = normalizedColonPart.match(new RegExp(`^((?:${keywordList.join('|')})(?:\\s+\\d+)?)(?:\\s|$)`));
+  const rawLabel = leadingKeyword
+    ? leadingKeyword[1].replace(/\s+\d+$/, '')
+    : normalizedColonPart.split(/\s+[-–—]\s+/)[0];
+  const normalized = rawLabel;
+  if (!normalized) return null;
 
-  const candidates = [
-    { key: 'intro', label: 'Intro', tone: 'intro', match: /(intro|opening)/ },
-    { key: 'verse', label: `Verse${suffix}`, tone: 'verse', match: /(^|\s)(verse|bait)(\s|$)/ },
-    { key: 'pre-chorus', label: 'Pre-Chorus', tone: 'pre-chorus', match: /pre\s*[- ]?chorus/ },
-    { key: 'post-chorus', label: 'Post-Chorus', tone: 'post-chorus', match: /post\s*[- ]?chorus/ },
-    { key: 'chorus', label: 'Chorus', tone: 'chorus', match: /(chorus|reff|refrain)/ },
-    { key: 'bridge', label: 'Bridge', tone: 'bridge', match: /bridge/ },
-    { key: 'interlude', label: 'Interlude', tone: 'interlude', match: /(interlude|\bint\b)/ },
-    { key: 'solo', label: 'Solo', tone: 'solo', match: /solo/ },
-    { key: 'outro', label: 'Outro', tone: 'outro', match: /(outro|ending)/ },
-    { key: 'coda', label: 'Coda', tone: 'coda', match: /coda/ },
-  ];
+  // Kosakata seksi tidak ditulis ulang di sini: kanonik dari config dulu
+  // (kata utuh), lalu pencocokan longgar untuk kata kunci multi-kata.
+  const key = canonicalSection(normalized);
+  const fallbackKey = !key && STRUCTURE_SECTION_KEYWORDS.find((keyword) => (
+    keyword.includes(' ') && normalized.includes(keyword.replace(/[-_]+/g, ' '))
+  ));
+  const resolvedKey = key || fallbackKey;
 
-  const hit = candidates.find((candidate) => candidate.match.test(normalized));
-  if (!hit) return null;
+  if (!resolvedKey) return null;
+
+  // "Verse" + nomor: nomor datang dari teks asli (bukan label tampilan).
+  const isVerse = resolvedKey === 'verse';
+  const verseNumber = isVerse ? (colonPart.match(/\d+/) || [])[0] : '';
+
+  // Anotasi "(2x)" hanya relevan bila kurung LANGSUNG mengikuti nama seksi
+  // ("Pre-Chorus (2x)"); pada "Chorus (na na)" kurung itu lirik.
+  const nameEnd = (beforeColonText.indexOf('(') > 0
+    ? beforeColonText.slice(0, beforeColonText.indexOf('('))
+    : '').trim().toLowerCase();
+  const annotationFollowsName = Boolean(annotation)
+    && !annotationIsChord
+    && !verseNumber
+    && nameEnd === normalized
+    // "Chorus (na na)" = lirik pertama di dalam kurung; "(2x)" = anotasi.
+    && /^(?:\d+\s*x|[xX]\s*\d+|\d+x\d*|repeat.*|ulang.*|[0-9]+)$/i.test(annotation);
+  const keepAnnotation = annotationFollowsName;
+  const baseLabel = titleCaseKeyword(formatSectionLabel(normalized));
+  const annotatedLabel = keepAnnotation ? `${baseLabel} (${annotation})` : baseLabel;
 
   return {
-    key: hit.key,
-    label: hit.label,
-    tone: hit.tone,
+    key: resolvedKey,
+    // "Post Chorus" -> "Post-Chorus", "Reff" -> "Chorus" (kanonik), dengan
+    // angka urutan tetap: "Verse 2"; anotasi "(2x)" dipertahankan sedangkan
+    // chord "(C G)" dibiarkan di baris aslinya.
+    label: isVerse ? `Verse${verseNumber ? ` ${verseNumber}` : ''}` : annotatedLabel,
+    tone: sectionToneOf(resolvedKey),
   };
 }
 
@@ -340,15 +431,18 @@ function normalizeBracketedSectionLabel(insideLabel, info) {
   const rawInside = String(insideLabel || '').trim();
   if (!rawInside) return info.label;
 
+  // Label dari detectSectionInfo sudah memuat anotasi "(2x)".
+  const labelHasAnnotation = info.label.includes('(');
+
   const colonIndex = rawInside.indexOf(':');
   if (colonIndex >= 0) {
-    // "Intro: C G Am F" — keep chords/annotation exactly as written.
+    // "Intro: C G Am F" — chord/anotasi tetap seperti aslinya.
     return `${info.label}:${rawInside.slice(colonIndex + 1)}`;
   }
 
   // "Chorus 2" -> "[Chorus 2]", "Reff (2x)" -> "[Chorus (2x)]".
   const numberedMatch = rawInside.match(/[\s_-]+(\d+)$/);
-  const annotation = rawInside.match(/\s*\([^)]*\)\s*$/)?.[0] || '';
+  const annotation = labelHasAnnotation ? '' : rawInside.match(/\s*\([^)]*\)\s*$/)?.[0] || '';
   const numberTail = numberedMatch && !info.label.match(/\s\d+$/) && !info.label.startsWith('Verse')
     ? ` ${numberedMatch[1]}`
     : '';
@@ -371,40 +465,31 @@ function normalizeSectionTagLine(line, info) {
   const trimmed = String(line || '').trim();
   if (!trimmed) return line;
 
-  // "[Intro: C G Am F]" / "[Intro (2x)]" — an existing tag whose brackets also
-  // wrap trailing detail. Rebuilding it from the detected label alone threw that
-  // detail (chords, annotation) away, so keep the inside of the original label
-  // tag untouched and only re-case the section word itself.
+  // "[Intro: C G Am F]" / "[Intro (2x)]": isi tag memuat detail (chord,
+  // anotasi). Ganti hanya KATA seksi-nya, biarkan sisa isi apa adanya.
+  // Label dari detectSectionInfo sudah memuat anotasi, jadi tidak digandakan.
   const bracketedContentMatch = trimmed.match(/^\[([^\]]+)\](.*)$/);
   if (bracketedContentMatch) {
     const [, insideLabel, trailing = ''] = bracketedContentMatch;
     const suffix = trailing.trim();
-    return suffix ? `[${normalizeBracketedSectionLabel(insideLabel, info)}] ${suffix}` : `[${normalizeBracketedSectionLabel(insideLabel, info)}]`;
+    const rebuilt = normalizeBracketedSectionLabel(insideLabel, info);
+    return suffix ? `[${rebuilt}] ${suffix}` : `[${rebuilt}]`;
   }
 
-  const escapedLabel = info.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const labelVariants = [
-    escapedLabel,
-    escapedLabel.replace(/\s+/g, '[-\\s_]+'),
-    escapedLabel.replace(/-/g, '[-\\s_]+'),
-    escapedLabel.replace(/\s+/g, '[- ]+'),
-    escapedLabel.replace(/-/g, '\\s*[-\\s_]*\\s*'),
-  ];
+  // Bandingkan terhadap bentuk asli label, bukan label tampilan: "Post Chorus"
+  // harus tetap cocok walau labelnya "Post-Chorus". Teks KANAN titik dua
+  // bukan bagian nama seksi ("Chorus: na na").
+  const originalLabel = String(trimmed.split(':')[0].split(/\s+[-–—]\s+/)[0].replace(/\([^)]*\)/g, '')).trim();
+  const restText = (() => {
+    // Sisa teks = apa pun setelah nama seksi (titik dua atau tanda sambung).
+    const rest = trimmed.slice(originalLabel.length).replace(/^\s*(?:[:]|[-–—])\s*/, '').trim();
+    // "Reff: C G" — chord yang hanya menempel di baris label bukan lirik;
+    // membungkus seluruh baris membuat chord hilang dari baris chord.
+    return rest && !isChordProgressionText(rest) ? rest : '';
+  })();
 
-  for (const variant of labelVariants) {
-    const match = trimmed.match(new RegExp(`^${variant}\\s*[:-]?\\s*(.*)$`, 'i'));
-    if (!match) continue;
-    const suffix = match[1].trim();
-    // "Reff: C G" — chords that only sit on the label line are not lyrics;
-    // bracketing the whole line would turn them into part of the section badge
-    // and they would vanish from the chord line.
-    if (suffix && isChordProgressionText(suffix)) return `[${info.label}]`;
-    return suffix ? `[${info.label}] ${suffix}` : `[${info.label}]`;
-  }
-
-  return `[${info.label}]`;
+  return restText ? `[${info.label}] ${restText}` : `[${info.label}]`;
 }
-
 /**
  * Tag bagian + baris perform (instrumen/cue/metadata) dengan kurung siku.
  *

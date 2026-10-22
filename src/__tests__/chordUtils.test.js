@@ -819,7 +819,7 @@ Repeat [00:12] then [1:02:03]
       expect(canonicalSection('Pre-Chorus 2')).toBe('pre-chorus');
       expect(canonicalSection('[Instrumental]')).toBe('instrumental');
       expect(canonicalSection('Int.')).toBe('interlude');
-      expect(canonicalSection('Reff')).toBe('refrain');
+      expect(canonicalSection('Reff')).toBe('chorus');
       expect(canonicalSection('Verse:')).toBe('verse');
     });
 

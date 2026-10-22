@@ -118,9 +118,11 @@ describe('lyricsEditorUtils', () => {
   });
 
   test('detectSectionBadges returns section labels with line numbers', () => {
+    // Label memakai bentuk kanonik dari config (satu bahasa untuk editor &
+    // parser) dan tone dipetakan ke kelas CSS yang sudah ada (intro/chorus/verse).
     expect(detectSectionBadges('[Intro]\nAm F\nPost Chorus:\nChorus:')).toEqual([
       { lineNumber: 1, label: 'Intro', tone: 'intro' },
-      { lineNumber: 3, label: 'Post-Chorus', tone: 'post-chorus' },
+      { lineNumber: 3, label: 'Post-Chorus', tone: 'chorus' },
       { lineNumber: 4, label: 'Chorus', tone: 'chorus' },
     ]);
   });

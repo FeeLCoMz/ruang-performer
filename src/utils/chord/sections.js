@@ -9,7 +9,10 @@
 import {
   CUE_MARK_KEYWORDS,
   INSTRUMENT_KEYWORDS,
+  MIDI_KEYS_ALSO_INSTRUMENT,
+  MIDI_ROUTING_KEYS,
   MODULATION_KEYWORDS,
+  SECTION_NAME_ALIASES,
   STRUCTURE_SECTION_KEYWORDS,
 } from '../../config/chordDisplayConfig.js';
 import {
@@ -37,15 +40,11 @@ const MODULATION_LINE_REGEX = new RegExp(
 );
 
 /**
- * Key yang dibaca modul MIDI. Ditulis ulang di sini (bukan diimpor dari
- * chordDisplayConfig) karena config itu khusus ChordDisplay — lihat catatan
- * di sana.
+ * Key yang dibaca modul MIDI. Daftarnya sekarang tinggal di
+ * src/config/chordDisplayConfig.js supaya bentrok dengan INSTRUMENT_KEYWORDS
+ * ('keys') terlihat di satu tempat, bukan tersembunyi di special-case.
  */
-const MIDI_KEY_WORDS = [
-  'patch', 'preset', 'sound', 'tone', 'program', 'instrument', 'instrumen',
-  'layer', 'split', 'zone', 'scene',
-  'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb',
-];
+const MIDI_KEY_WORDS = [...MIDI_ROUTING_KEYS, ...MIDI_KEYS_ALSO_INSTRUMENT];
 
 const MIDI_KEY_PATTERN = new RegExp(`^(?:${MIDI_KEY_WORDS.join('|')})$`, 'i');
 
@@ -68,8 +67,6 @@ const hasMidiKeywordSegment = (line = '') => {
       const idx = segment.indexOf(':');
       if (idx <= 0) return false;
       const key = segment.slice(0, idx).trim().replace(/[\s_]+/g, '');
-      // "Keys" pada "[Keys: EP Soft]" juga menandai baris MIDI.
-      if (key.toLowerCase() === 'keys') return true;
       return MIDI_KEY_PATTERN.test(key);
     });
 };
@@ -272,23 +269,34 @@ export const REAL_INSTRUMENT_KEYWORDS = INSTRUMENT_KEYWORDS.filter(
   (keyword) => !CUE_MARK_KEYWORDS.includes(keyword),
 );
 
-/**
- * Alias ejaan seksi -> bentuk kanonik. Hanya untuk varian yang TIDAK sudah ada
- * di STRUCTURE_SECTION_KEYWORDS; daftar kata kunci sendiri tetap satu sumber di
- * src/config/chordDisplayConfig.js.
- */
-const SECTION_NAME_ALIASES = {
-  int: 'interlude',
-  reff: 'refrain',
-  musik: 'instrumental',
-};
-
 /** Huruf kecil, buang titik dua/titik di akhir, rapikan spasi. */
 const cleanSectionName = (label = '') => String(label || '')
   .toLowerCase()
   .replace(/[.:]+$/, '')
   .replace(/\s+/g, ' ')
   .trim();
+
+/**
+ * Label seksi untuk badge editor: bentuk kanonik, dengan nomor dipertahankan.
+ * Dipakai autoTagSongSections & detectSectionBadges supaya keduanya memakai
+ * kosakata yang sama dengan parser ("Post Chorus" -> "Post-Chorus",
+ * "Reff (2x)" -> "Chorus (2x)").
+ */
+export const formatSectionLabel = (normalizedKey) => {
+  // Kata multi-kata dipertahankan lengkap: 'pre chorus' -> 'pre-chorus'.
+  const words = String(normalizedKey || '').split(' ').filter(Boolean);
+  const found = STRUCTURE_SECTION_KEYWORDS.find((keyword) => {
+    const keywordWords = keyword.split(/[\s-]+/).filter(Boolean);
+    return keywordWords.length === words.length
+      && keywordWords.every((word, index) => word.replace(/\.$/, '') === words[index]);
+  });
+  // Alias ber-kata tunggal ditampilkan sebagai bentuk kanoniknya.
+  if (words.length === 1) {
+    const canonical = SECTION_NAME_ALIASES[words[0]];
+    if (canonical) return canonical;
+  }
+  return found || String(normalizedKey || '');
+};
 
 /** Apakah tepat satu kata kunci seksi muncul sebagai kata utuh. */
 const findStructureKeyword = (nameLower) => STRUCTURE_KEYWORD_PATTERNS.find(

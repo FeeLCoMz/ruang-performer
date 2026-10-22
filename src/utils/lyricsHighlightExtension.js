@@ -1,6 +1,7 @@
 import { Decoration, EditorView, ViewPlugin } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import { parseSection, isChordLine, isMetadataLine } from './chordUtils.js';
+import { sectionToneOf } from '../config/chordDisplayConfig.js';
 
 /**
  * Lyric/chord syntax highlighting for the lyrics editor.
@@ -9,16 +10,10 @@ import { parseSection, isChordLine, isMetadataLine } from './chordUtils.js';
  * isMetadataLine) so the editor colours match ChordDisplay 1:1.
  */
 
-const SECTION_TONE_PATTERNS = [
-  { tone: 'section-intro', pattern: /(intro|opening|interlude|\bint\b|outro|ending|coda)/ },
-  { tone: 'section-chorus', pattern: /(chorus|reff|refrain)/ },
-  { tone: 'section-verse', pattern: /(verse|bait|pre\s*[- ]?chorus|post\s*[- ]?chorus|bridge|solo)/ },
-];
-
+// Kosakata seksi tidak disalin di sini: tone dihitung dari config, sehingga
+// "[Ending]" atau "[Int.]" diwarnai sama persis dengan cara parser membacanya.
 function detectSectionTone(label) {
-  const normalized = String(label || '').toLowerCase().replace(/[_-]+/g, ' ');
-  const hit = SECTION_TONE_PATTERNS.find((entry) => entry.pattern.test(normalized));
-  return hit ? hit.tone : 'section-verse';
+  return `section-${sectionToneOf(label)}`;
 }
 
 const token = (name) => Decoration.mark({ class: `cm-lyr-${name}` });
