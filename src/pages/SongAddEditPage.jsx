@@ -2,6 +2,7 @@
 // import { usePermission } from "../hooks/usePermission.js";
 // import { PERMISSIONS } from "../utils/permissionUtils.js";
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import TapTempo from '../modules/metronome/TapTempo';
 import VirtualPiano from '../modules/midi/VirtualPiano';
 import AIAutofillModal from '../modules/ai-autofill/AIAutofillModal';
@@ -68,10 +69,21 @@ function buildNewVersionTitle(sourceTitle) {
   return `${baseTitle} (Versi 2)`;
 }
 
-export default function SongAddEditPage({ onSongUpdated, newVersionMode = false }) {
+export default function SongAddEditPage({
+  onSongUpdated,
+  newVersionMode = false,
+  // Mode overlay: form dirender di atas halaman yang sedang tampil (mis. lagu di
+  // dalam setlist) tanpa berpindah rute, sehingga konteks setlist tidak hilang.
+  overlay = false,
+  songIdOverride = null,
+  onClose = null,
+  // Dipanggil setelah simpan; kalau tidak ada, perilaku navigasi bawaan dipakai.
+  onSaved = null,
+}) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { id } = useParams();
+  const routeId = useParams().id;
+  const id = songIdOverride || routeId;
   const isEditMode = !!id && !newVersionMode;
 
   // Form states
@@ -117,6 +129,17 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   const hasCustomSplit = splitRatio !== '';
   const [isResizingColumns, setIsResizingColumns] = useState(false);
   const columnsRef = useRef(null);
+
+  // Overlay menggulung di panelnya sendiri: kunci scroll halaman di belakang
+  // agar posisi lagu (dan setlist) tidak ikut bergeser selama mengedit.
+  useEffect(() => {
+    if (!overlay) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [overlay]);
 
   // Drag divider: hitung lebar kolom editor dari posisi pointer di dalam grid.
   const handleDividerPointerDown = useCallback((event) => {
@@ -425,11 +448,17 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
 
       // Navigate based on mode: list for new-version/new song, detail for edit
       if (isEditMode) {
-        // Navigate with fromEdit flag to force SongChordsPage to fetch fresh data
-        navigate(`/songs/view/${savedSong.id || id}`, {
-          replace: true,
-          state: { fromEdit: true },
-        });
+        if (onSaved) {
+          // Overlay / custom host menangani hasil simpan sendiri.
+          onSaved(savedSong.id || id);
+        } else if (location.state?.from) {
+          // Buka dari lagu di dalam setlist: kembali ke lagu itu (konteks setlist utuh).
+          navigate(location.state.from, { replace: true });
+        } else {
+          navigate(`/songs/view/${savedSong.id || id}`, { replace: true });
+        }
+      } else if (onSaved) {
+        onSaved(savedSong.id || id);
       } else {
         navigate(location.state?.from || '/songs');
       }
@@ -443,8 +472,10 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   // Cancel handler
   const handleCancel = () => {
     if (!confirmDiscardChanges()) return;
-    if (isEditMode) {
-      navigate(`/songs/view/${id}`);
+    if (overlay) {
+      onClose?.();
+    } else if (isEditMode) {
+      navigate(location.state?.from || `/songs/view/${id}`);
     } else {
       navigate(location.state?.from || '/songs');
     }
@@ -1146,8 +1177,8 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
   // the user's request: maintaining two arrangements of the same form split
   // every change across both, and the studio view already covers the phone
   // case (the columns simply stack).
-  return (
-    <div className="page-container">
+  const editor = (
+    <div className={overlay ? 'page-container song-editor-overlay-surface' : 'page-container'}>
       <form ref={formRef} onSubmit={handleSubmit} className="studio-form">
         {studioLayout}
       </form>
@@ -1198,5 +1229,16 @@ export default function SongAddEditPage({ onSongUpdated, newVersionMode = false 
         />
       )}
     </div>
+  );
+
+  // Mode overlay: form penuh tetap hidup di atas halaman lagu yang sedang tampil,
+  // jadi tidak ada navigasi dan posisi/scroll/state halaman di belakang terjaga.
+  if (!overlay) return editor;
+  if (typeof document === 'undefined') return null;
+  return createPortal(
+    <div className="song-editor-overlay" role="dialog" aria-modal="true" aria-label="Edit lagu">
+      {editor}
+    </div>,
+    document.body,
   );
 }

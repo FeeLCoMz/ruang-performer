@@ -983,3 +983,30 @@ body.dark-mode .studio-error {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* ---- Editor sebagai overlay (edit dari halaman lagu / setlist) ----
+   Form penuh dirender di atas halaman yang sedang tampil sehingga user tidak
+   berpindah halaman. Permukaan ini menggulir sendiri, jadi sticky topbar form
+   tetap menempel di atas overlay, bukan di belakangnya. */
+.song-editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  background: var(--primary-bg, #0b0f1e);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: fadeIn 0.15s ease;
+}
+
+.song-editor-overlay .song-editor-overlay-surface {
+  min-height: 100%;
+  /* Sisakan ruang untuk safe-area perangkat (notch / home indicator). */
+  padding-bottom: max(var(--spacing-xl), env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 640px) {
+  .song-editor-overlay .song-editor-overlay-surface {
+    padding: var(--spacing-sm);
+    padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
+  }
+}

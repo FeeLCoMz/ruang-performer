@@ -388,7 +388,9 @@ function AppContent() {
                 element={
                   <EditSongRoute
                     onSongUpdated={(id) => {
-                      navigate(`/songs/view/${id}`);
+                      // Bila dibuka dari lagu dalam setlist (state.from), biarkan
+                      // SongAddEditPage yang kembali ke halaman asal itu.
+                      if (!location.state?.from) navigate(`/songs/view/${id}`);
                       setLoadingSongs(true);
                       apiClient
                         .fetchSongs()

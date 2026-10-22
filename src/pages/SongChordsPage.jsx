@@ -5,6 +5,7 @@ import SetlistNavFooter from '../components/SetlistNavFooter.jsx';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import SongMediaPanel from '../components/SongMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
+import SongAddEditPage from './SongAddEditPage.jsx';
 import { getAuthHeader } from '../utils/auth.js';import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
@@ -28,6 +29,8 @@ import { extractSectionOverview } from '../utils/songFormUtils.js';
 export default function SongChordsPage({ song: songProp, activeSetlist = null, songs: songsProp = null }) {
   // State untuk toggle tampilan partitur
   const [showSheetMusic, setShowSheetMusic] = useState(false);
+  // Editor lagu ditampilkan sebagai overlay supaya tidak pindah halaman.
+  const [showEditOverlay, setShowEditOverlay] = useState(false);
   // =========================
   // 1. Routing & Context
   // =========================
@@ -530,7 +533,22 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
   }
 
   const handleEdit = () => {
-    navigate(`/songs/edit/${song.id}`);
+    // Edit dilakukan sebagai overlay di atas halaman ini: pengguna tetap melihat
+    // lagu (dan konteks setlist), tidak berpindah ke /songs/edit/:id.
+    setShowEditOverlay(true);
+  };
+
+  const closeEditOverlay = () => setShowEditOverlay(false);
+
+  const handleSongEdited = () => {
+    setShowEditOverlay(false);
+    // Muat ulang data lagu dari server supaya judul/chord/lirik langsung berubah.
+    const reloadId = song?.id || songId;
+    if (!reloadId) return;
+    fetch(`/api/songs/${reloadId}`, { headers: getAuthHeader() })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setFetchedSong(data); })
+      .catch(() => {});
   };
 
   // Hapus lagu: hanya owner (userId cocok) atau user dengan permission edit
@@ -780,6 +798,17 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
         allSongs={Array.isArray(songsProp) ? songsProp : []}
         variant="inline"
       />
+
+      {/* Editor lagu sebagai overlay: halaman ini (dan setlist di belakangnya)
+          tetap aktif, jadi klik Edit tidak berpindah ke halaman lain. */}
+      {showEditOverlay && song?.id && (
+        <SongAddEditPage
+          overlay
+          songIdOverride={song.id}
+          onClose={closeEditOverlay}
+          onSaved={handleSongEdited}
+        />
+      )}
     </div>
   );
 }
