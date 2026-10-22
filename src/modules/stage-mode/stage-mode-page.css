@@ -1,776 +1,1117 @@
-/* Stage Mode: tema kontras tinggi untuk pencahayaan panggung yang redup. */
-body.stage-mode {
-  --primary-bg: #000000;
-  --secondary-bg: #0a0a12;
-  --card-bg: #10101c;
-  --text-primary: #ffffff;
-  --text-secondary: #e5e9f5;
-  --border-color: #3a3a5a;
-  --primary-accent: #a78bfa;
-  --chord-bright: #ffe14d;
-}
+/* ========================================
+   STAGE MODE — tampilan panggung
+   ---------------------------------------------------------------
+   Prinsip desain:
+   - Lirik adalah RAJA: area baca selebar mungkin, kontras tinggi, tanpa
+     borda kartu atau bayangan yang memecah perhatian.
+   - Kontrol jarang dipakai disembunyikan; yang sering dipakai selalu
+     dalam jangkauan jempol (bottom bar).
+   - Satu aksen (amber) untuk status aktif; semua tombol besar, jelas,
+     dan mudah ditekan dalam gelap.
 
-body.stage-mode .btn-secondary {
-  background: #10101c;
-  color: #ffffff;
-  border-color: #4a4a6a;
-}
+   Struktur DOM (lihat StageModePage.jsx):
+   .stage-mode-page
+     ├─ .stage-topbar      (keluar · band/setlist · key · tempo · info)
+     ├─ .stage-info        (overlay info lagu)
+     ├─ .stage-main
+     │    ├─ .stage-songhead   (judul lagu + posisi)
+     │    ├─ .stage-controls   (transpose + autoscroll, collapsible)
+     │    ├─ .stage-lyrics     (area baca, scroll)
+     │    └─ .stage-player     (overlay player referensi)
+     ├─ .stage-bottom
+     │    ├─ .stage-progress   (progress baca, 2px)
+     │    └─ .stage-bottombar  (prev · navigasi · kontrol · player)
+     └─ .stage-sheet-*         (bottom sheet daftar lagu/setlist/cari)
+   ======================================== */
 
-/* ========== HALAMAN STAGE MODE (fullscreen di atas seluruh UI) ========== */
 .stage-mode-page {
+  --stg-bg: #08070d;
+  --stg-panel: #12111b;
+  --stg-panel-2: #191827;
+  --stg-line: rgba(255, 255, 255, 0.09);
+  --stg-line-strong: rgba(255, 255, 255, 0.16);
+  --stg-text: #f4f3fb;
+  --stg-muted: #9d9bb5;
+  --stg-accent: #f5b942;
+  --stg-accent-soft: rgba(245, 185, 66, 0.14);
+  --stg-live: #3ddc97;
+  --stg-danger: #ff6b6b;
+  --stg-radius: 14px;
+  --stg-tap: 46px;
+  --stg-topbar-h: 54px;
+  --stg-bottom-h: 74px;
+  --stg-safe-top: env(safe-area-inset-top, 0px);
+  --stg-safe-bottom: env(safe-area-inset-bottom, 0px);
+
   position: fixed;
   inset: 0;
-  z-index: 4000;
+  z-index: 3000;
   display: flex;
   flex-direction: column;
-  background: #000000;
-  color: #ffffff;
   overflow: hidden;
+  background: var(--stg-bg);
+  color: var(--stg-text);
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
-.stage-mode-header {
+.stage-mode-page *,
+.stage-mode-page *::before,
+.stage-mode-page *::after {
+  box-sizing: border-box;
+}
+
+.stage-mode-page :focus-visible {
+  outline: 2px solid var(--stg-accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Topbar ---------- */
+
+.stage-topbar {
+  position: relative;
+  z-index: 20;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm, 8px);
-  padding: 8px 12px;
-  border-bottom: 1px solid #2a2a40;
-  flex: 0 0 auto;
-  min-width: 0;
+  gap: 8px;
+  min-height: calc(var(--stg-topbar-h) + var(--stg-safe-top));
+  padding: var(--stg-safe-top) 10px 0;
+  background: var(--stg-bg);
+  border-bottom: 1px solid var(--stg-line);
 }
 
-.stage-mode-exit {
+.stage-dark-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   flex: 0 0 auto;
-  min-width: 40px;
-  min-height: 40px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: var(--stg-panel-2);
+  border: 1px solid var(--stg-line);
+  border-radius: 10px;
+  color: var(--stg-text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.stage-dark-btn:hover:not(:disabled) {
+  background: #232134;
+  border-color: var(--stg-line-strong);
+}
+
+.stage-dark-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.stage-dark-btn.is-active {
+  background: var(--stg-accent-soft);
+  border-color: rgba(245, 185, 66, 0.55);
+  color: var(--stg-accent);
+}
+
+.stage-dark-btn--wide {
+  width: auto;
   padding: 0 12px;
 }
 
-.stage-mode-header-info {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.stage-mode-artist {
-  color: #9aa3bd;
-  font-weight: 500;
-}
-
-.stage-mode-pill {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--primary-accent) 16%, transparent);
-  color: var(--primary-accent);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.stage-mode-instruments {
-  color: #cbd2e3;
-  background: rgba(255, 255, 255, 0.06);
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stage-mode-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  display: block;
-  padding: 12px 16px calc(24px + env(safe-area-inset-bottom, 0px));
-}
-
-.stage-mode-body.song-lyrics-display {
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  min-height: 0;
-  max-height: none;
-  height: auto;
-}
-
-.stage-mode-body .cd {
-  min-height: 100%;
-  padding-bottom: 48px;
-  color: #ffffff;
-  /* Ikuti --lyrics-font-scale (pinch/wheel) dengan basis lebih kecil dari 1.25rem. */
-  font-size: calc(clamp(0.8rem, 2.6vw, 1rem) * var(--lyrics-font-scale, 1));
-}
-
-.stage-mode-body .cd-token {
-  color: #ffd479;
-}
-
-.stage-mode-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-md, 16px);
-}
-
-.stage-mode-empty-text {
-  color: #9aa3bd;
-  font-size: 1rem;
-}
-
-.stage-mode-pick-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs, 4px);
-  width: min(480px, 100%);
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.stage-mode-pick-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm, 8px);
-  padding: 10px 12px;
-  background: #10101c;
-  border: 1px solid #3a3a5a;
-  border-radius: var(--radius-md, 10px);
-  color: #ffffff;
-  font-size: 1rem;
-  cursor: pointer;
-  text-align: left;
-}
-
-.stage-mode-pick-item:hover {
-  border-color: var(--primary-accent);
-}
-
-.stage-mode-pick-title {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.stage-mode-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid #2a2a40;
-  flex: 0 0 auto;
-  background: rgba(10, 10, 18, 0.92);
-}
-
-.stage-mode-footer .btn-secondary,
-.stage-mode-footer-btn {
-  background: #10101c;
-  color: #ffffff;
-  border-color: #4a4a6a;
-}
-
-.stage-mode-sheet-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 4100;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.stage-mode-sheet {
-  width: min(560px, 100%);
-  max-height: 70vh;
-  overflow-y: auto;
-  background: #0a0a12;
-  border: 1px solid #3a3a5a;
-  border-radius: 16px 16px 0 0;
-  padding: 12px 0 calc(16px + env(safe-area-inset-bottom, 0px));
-}
-
-.stage-mode-sheet-title {
-  padding: 8px 16px 12px;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.stage-mode-sheet-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 16px;
-  background: transparent;
-  border: none;
-  color: #ffffff;
-  font-size: 1rem;
-  cursor: pointer;
-  text-align: left;
-}
-
-.stage-mode-sheet-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.stage-mode-sheet-item.active {
-  background: color-mix(in srgb, var(--primary-accent) 18%, transparent);
-}
-
-.stage-mode-sheet-number {
-  flex: 0 0 auto;
-  width: 28px;
-  color: #9aa3bd;
-  font-weight: 700;
-}
-
-.stage-mode-sheet-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Konteks band/setlist di header — tombol dua baris yang bisa diklik. */
-.stage-mode-context {
-  flex: 0 1 auto;
-  min-width: 0;
+.stage-context {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid #2a2a40;
-  border-radius: var(--radius-md, 10px);
-  color: #ffffff;
-  cursor: pointer;
-  text-align: left;
-}
-
-.stage-mode-context:hover {
-  border-color: var(--primary-accent);
-}
-
-.stage-mode-context-band {
-  font-size: 0.72rem;
-  color: #9aa3bd;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.stage-mode-context-setlist {
-  font-size: 0.85rem;
-  font-weight: 700;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Panel info lagu (toggle dari tombol ??) */
-.stage-mode-info {
-  flex: 0 0 auto;
-  padding: 10px 16px;
-  border-bottom: 1px solid #2a2a40;
-  background: #0a0a12;
-  max-height: 30vh;
-  overflow-y: auto;
-}
-
-.stage-mode-info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 8px 16px;
-}
-
-.stage-mode-info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  flex: 1 1 auto;
   min-width: 0;
+  height: 38px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.stage-mode-info-label {
-  font-size: 0.7rem;
+.stage-context:hover {
+  background: var(--stg-panel-2);
+  border-color: var(--stg-line);
+}
+
+.stage-context-eyebrow {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--stg-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #9aa3bd;
+  white-space: nowrap;
 }
 
-.stage-mode-info-item > span:last-child {
+.stage-context-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
   font-size: 0.92rem;
-  color: #ffffff;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-context-title .stage-icon {
+  flex: 0 0 auto;
+  color: var(--stg-muted);
+}
+
+.stage-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.stage-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  height: 32px;
+  padding: 0 9px;
+  border: 1px solid var(--stg-line);
+  border-radius: 9px;
+  color: var(--stg-text);
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 32px;
+}
+
+.stage-stat small {
+  color: var(--stg-muted);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stage-stat--key {
+  border-color: rgba(245, 185, 66, 0.4);
+  background: var(--stg-accent-soft);
+  color: var(--stg-accent);
+}
+
+.stage-stat--tempo small {
+  margin-left: 1px;
+}
+
+.stage-tempo-dot {
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--stg-live);
+  box-shadow: 0 0 8px rgba(61, 220, 151, 0.7);
+  animation: stage-tempo-beat 1s ease-in-out infinite;
+}
+
+@keyframes stage-tempo-beat {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  20% { opacity: 1; transform: scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-tempo-dot { animation: none; opacity: 1; }
+}
+
+/* ---------- Info lagu (overlay) ---------- */
+
+.stage-info {
+  position: relative;
+  z-index: 18;
+  flex: 0 0 auto;
+  max-height: 45vh;
+  overflow: auto;
+  padding: 12px 14px 14px;
+  background: var(--stg-panel);
+  border-bottom: 1px solid var(--stg-line);
+}
+
+.stage-info-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.stage-info-eyebrow {
+  color: var(--stg-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stage-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.stage-info-item {
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--stg-panel-2);
+  border: 1px solid var(--stg-line);
+  border-radius: 10px;
+}
+
+.stage-info-item--wide {
+  grid-column: 1 / -1;
+}
+
+.stage-info-item dt {
+  margin: 0 0 2px;
+  color: var(--stg-muted);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.stage-info-item dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
-/* Player referensi: overlay melayang di atas body lirik */
-.stage-mode-player {
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 64px;
-  z-index: 4050;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 10px;
-  background: #0a0a12;
-  border: 1px solid #3a3a5a;
-  border-radius: var(--radius-md, 10px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
-}
+/* ---------- Main (panggung) ---------- */
 
-.stage-mode-player-close {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  min-width: 32px;
-  min-height: 32px;
-  padding: 0 8px;
-}
-
-/* Tombol next ditonjolkan: pindah lagu adalah aksi paling sering. */
-.stage-mode-next {
-  min-width: 44px;
-  min-height: 40px;
-  font-weight: 700;
-}
-
-.stage-mode-sheet--tall {
-  max-height: 80vh;
-}
-
-.stage-mode-sheet-artist {
-  color: #9aa3bd;
-  font-weight: 500;
-}
-
-.stage-mode-sheet-link {
-  display: flex;
-  text-decoration: none;
-}
-
-.stage-mode-sheet-link:hover .stage-mode-sheet-name {
-  color: var(--primary-accent);
-}
-
-.stage-mode-sheet-list {
+.stage-main {
+  position: relative;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  max-height: 50vh;
-  overflow-y: auto;
+  min-height: 0;
 }
 
-.stage-mode-sheet-group-label {
-  padding: 10px 16px 4px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #9aa3bd;
-}
-
-/* Daftar hasil pencarian: dua baris per item (judul di atas, artis di bawah). */
-.stage-mode-sheet-list--search {
-  max-height: 55vh;
-}
-
-/* Baris chip filter band di sheet pemilih setlist. */
-.stage-mode-sheet-filter {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-height: none;
-  overflow-x: auto;
-  padding: 4px 12px;
-}
-
-.stage-mode-filter-chip {
+.stage-songhead {
   flex: 0 0 auto;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  white-space: nowrap;
+  padding: 12px 16px 10px;
 }
 
-.stage-mode-sheet-item .stage-mode-sheet-name {
+.stage-songhead-title {
+  margin: 0;
+  color: var(--stg-text);
+  font-size: clamp(1.15rem, 3.4vw, 1.55rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.stage-songhead-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 5px 0 0;
+  color: var(--stg-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.stage-songhead-pos {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--stg-text);
+}
+
+.stage-songhead-meta > span + span::before {
+  content: '·';
+  margin-right: 10px;
+  color: var(--stg-line-strong);
+}
+
+/* Kontrol (transpose + autoscroll) — slide-down, hanya saat dibuka. */
+.stage-controls {
+  flex: 0 0 auto;
+  padding: 10px 14px 12px;
+  background: var(--stg-panel);
+  border-top: 1px solid var(--stg-line);
+  border-bottom: 1px solid var(--stg-line);
+  animation: stage-slide-down 0.16s ease-out;
+}
+
+@keyframes stage-slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.stage-controls-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+
+/* Area baca lirik. */
+.stage-lyrics {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 16px 40vh;
+  scroll-behavior: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.stage-lyrics.song-lyrics-display {
+  background: transparent;
+}
+
+.stage-empty {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px 24px;
+  text-align: center;
 }
 
-.stage-mode-sheet-item-title {
+.stage-empty-title {
+  margin: 0;
+  color: var(--stg-text);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.stage-empty-text {
+  margin: 0;
+  color: var(--stg-muted);
+  font-size: 0.9rem;
   font-weight: 600;
-  color: #ffffff;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.5;
 }
 
-.stage-mode-sheet-item-artist {
-  font-size: 0.78rem;
-  font-weight: 400;
-  color: #9aa3bd;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* ---------- Player referensi (overlay) ---------- */
+
+.stage-player {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 15;
+  width: min(560px, calc(100% - 24px));
+  max-height: 60%;
+  overflow: auto;
+  padding: 10px;
+  background: var(--stg-panel);
+  border: 1px solid var(--stg-line-strong);
+  border-radius: var(--stg-radius);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
+  transform: translateX(-50%);
+  animation: stage-pop 0.16s ease-out;
 }
 
-.stage-mode-sheet-item.active .stage-mode-sheet-item-artist {
-  color: rgba(255, 255, 255, 0.75);
+@keyframes stage-pop {
+  from { opacity: 0; transform: translateX(-50%) scale(0.97); }
+  to { opacity: 1; transform: translateX(-50%) scale(1); }
 }
 
-/* Pintasan pencarian eksternal (Google/YouTube): tombol berdampingan. */
-.stage-mode-sheet-external {
+.stage-player-head {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  padding: 10px 16px 4px;
+  margin-bottom: 8px;
 }
 
-.stage-mode-sheet-ext-btn {
-  flex: 1 1 0;
+.stage-player-head strong {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.stage-player-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---------- Bottom bar ---------- */
+
+.stage-bottom {
+  position: relative;
+  z-index: 20;
+  flex: 0 0 auto;
+  background: var(--stg-panel);
+  border-top: 1px solid var(--stg-line);
+  padding-bottom: var(--stg-safe-bottom);
+}
+
+.stage-progress {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stage-progress-fill {
+  height: 100%;
+  background: var(--stg-accent);
+  transition: width 0.12s linear;
+}
+
+.stage-bottombar {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--stg-bottom-h);
+  padding: 8px 10px;
+}
+
+.stage-nextbtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  height: var(--stg-tap);
+  padding: 0 12px;
+  background: var(--stg-panel-2);
+  border: 1px solid var(--stg-line);
+  border-radius: 12px;
+  color: var(--stg-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.stage-nextbtn:hover:not(:disabled) {
+  background: #232134;
+  border-color: var(--stg-line-strong);
+}
+
+.stage-nextbtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.stage-nextbtn-label {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--stg-muted);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stage-nextbtn-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-nextbtn-title .stage-icon {
+  flex: 0 0 auto;
+  color: var(--stg-accent);
+}
+
+.stage-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.stage-nav-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 12px 14px;
-  background: #10101c;
-  border: 1px solid #4a4a6a;
-  border-radius: var(--radius-md, 10px);
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 0.92rem;
-  text-decoration: none;
+  width: 38px;
+  height: var(--stg-tap);
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--stg-line);
+  border-radius: 12px;
+  color: var(--stg-text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.stage-mode-sheet-ext-btn:hover,
-.stage-mode-sheet-ext-btn:focus-visible {
-  border-color: var(--primary-accent);
-  color: var(--primary-accent);
+.stage-nav-btn:hover:not(:disabled) {
+  background: var(--stg-panel-2);
+  border-color: var(--stg-line-strong);
 }
 
-.stage-mode-sheet-hint {
-  margin: 6px 16px 10px;
-  font-size: 0.75rem;
-  color: #9aa3bd;
+.stage-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
-/* ======== Sheet: input pencarian ======== */
-/* Seluruh sheet (pemilih setlist & cari lagu) memakai pola yang sama:
-   field dibungkus .stage-mode-sheet-search / .stage-mode-sheet-field
-   dengan padding konsisten 16px. */
-.stage-mode-sheet-search {
-  padding: 0 16px 10px;
-}
-
-.stage-mode-sheet-search-input {
-  width: 100%;
-  padding: 12px 14px;
-  background: #10101c;
-  border: 1px solid #4a4a6a;
-  border-radius: var(--radius-md, 10px);
-  color: #ffffff;
-  font-size: 1rem;
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.stage-mode-sheet-search-input::placeholder {
-  color: #6b7285;
-}
-
-.stage-mode-sheet-search-input:focus {
-  border-color: var(--primary-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-accent) 25%, transparent);
-}
-
-/* ======== Sheet: toolbar dropdown (Band / Setlist) ======== */
-.stage-mode-sheet-toolbar {
+.stage-tool {
+  position: relative;
   display: flex;
-  gap: 10px;
-  padding: 0 16px 10px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 54px;
+  height: var(--stg-tap);
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--stg-muted);
+  font-family: inherit;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.stage-mode-sheet-field {
-  flex: 1 1 0;
-  min-width: 0;
+.stage-tool:hover:not(:disabled),
+.stage-tool.is-active {
+  background: var(--stg-accent-soft);
+  border-color: rgba(245, 185, 66, 0.35);
+  color: var(--stg-accent);
+}
+
+.stage-tool:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.stage-tool.is-active::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--stg-accent);
+}
+
+/* ---------- Bottom sheet ---------- */
+
+.stage-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  animation: stage-fade-in 0.14s ease-out;
+}
+
+@keyframes stage-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.stage-sheet {
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 100%);
+  max-height: 84vh;
+  padding-bottom: var(--stg-safe-bottom);
+  background: var(--stg-panel);
+  border: 1px solid var(--stg-line);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6);
+  animation: stage-sheet-up 0.18s ease-out;
+}
+
+@keyframes stage-sheet-up {
+  from { transform: translateY(24px); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
+}
+
+.stage-sheet-grip {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  margin: 8px 0 2px;
+  border-radius: 999px;
+  background: var(--stg-line-strong);
+}
+
+.stage-sheet-head {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 8px 56px 10px 18px;
+}
+
+.stage-sheet-eyebrow {
+  display: block;
+  color: var(--stg-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stage-sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.stage-sheet-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  background: var(--stg-panel-2);
+  border: 1px solid var(--stg-line);
+  border-radius: 999px;
+  color: var(--stg-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stage-sheet-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+}
+
+.stage-sheet-toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 0 18px 10px;
+}
+
+.stage-sheet-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
-.stage-mode-sheet-field-label {
-  font-size: 0.7rem;
+.stage-sheet-field-label {
+  color: var(--stg-muted);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #9aa3bd;
 }
 
-.stage-mode-sheet-select {
+.stage-sheet-select,
+.stage-sheet-search-input {
   width: 100%;
-  padding: 9px 12px;
-  background: #10101c;
-  border: 1px solid #4a4a6a;
-  border-radius: var(--radius-md, 10px);
-  color: #ffffff;
-  font-size: 0.92rem;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--stg-panel-2);
+  border: 1px solid var(--stg-line);
+  border-radius: 10px;
+  color: var(--stg-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.stage-sheet-select:focus,
+.stage-sheet-search-input:focus {
+  border-color: rgba(245, 185, 66, 0.6);
   outline: none;
+}
+
+.stage-sheet-search {
+  flex: 0 0 auto;
+  padding: 0 18px 10px;
+}
+
+.stage-sheet-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 12px 16px;
+  overscroll-behavior: contain;
+}
+
+.stage-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--stg-text);
+  font-family: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.stage-mode-sheet-select:focus {
-  border-color: var(--primary-accent);
+.stage-sheet-item + .stage-sheet-item {
+  margin-top: 2px;
 }
 
-/* ======== Sheet: empty-state / loading / error ======== */
-.stage-mode-sheet-empty {
-  padding: 18px 16px;
-  font-size: 0.9rem;
-  color: #9aa3bd;
-  text-align: center;
+.stage-sheet-item:hover {
+  background: var(--stg-panel-2);
+}
+
+.stage-sheet-item.is-active {
+  background: var(--stg-accent-soft);
+  border-color: rgba(245, 185, 66, 0.45);
+}
+
+.stage-sheet-number {
+  flex: 0 0 auto;
+  width: 26px;
+  color: var(--stg-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.stage-sheet-item.is-active .stage-sheet-number {
+  color: var(--stg-accent);
+}
+
+.stage-sheet-name {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.stage-sheet-item-title {
+  overflow: hidden;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-sheet-item-artist {
+  overflow: hidden;
+  color: var(--stg-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-sheet-group-label {
+  padding: 14px 12px 6px;
+  color: var(--stg-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stage-sheet-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-}
-
-/* Tombol "Coba lagi" di empty-state error: varian inline dari ext-btn
-   (tanpa flex:1 yang meregangkan tombol selebar sheet). */
-.stage-mode-sheet-empty .stage-mode-sheet-ext-btn {
-  flex: 0 0 auto;
-  padding: 8px 18px;
+  padding: 22px 18px;
+  color: var(--stg-muted);
   font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
 }
 
-/* ========== RESPONSIVE ========== */
-/* Prinsip: di layar kecil (HP, dipakai manggung tanpa meja), teks lirik dan
-   area sentuh jadi prioritas — header/footer dipadatkan, sheet hampir
-   setinggi layar. Di landscape HP (tinggi < 480px) biarkan lebih banyak
-   ruang untuk lirik dengan memperkecil chrome di atas/bawah. */
+.stage-sheet-external {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px 12px;
+}
 
-/* ===== Tablet ke bawah / HP (= 768px) ===== */
-@media (max-width: 768px) {
-  /* Header: judul lebih kecil, pill key/tempo boleh menyusut. */
-  .stage-mode-header {
-    padding: 6px 8px;
+.stage-sheet-ext-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  background: var(--stg-panel-2);
+  border: 1px solid var(--stg-line);
+  border-radius: 10px;
+  color: var(--stg-text);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.stage-sheet-ext-btn:hover {
+  border-color: var(--stg-line-strong);
+  background: #232134;
+}
+
+.stage-sheet-hint {
+  margin: 0;
+  padding: 8px 18px 0;
+  color: var(--stg-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.stage-chip {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--stg-line);
+  border-radius: 999px;
+  color: var(--stg-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stage-chip--now {
+  background: var(--stg-accent-soft);
+  border-color: rgba(245, 185, 66, 0.45);
+  color: var(--stg-accent);
+}
+
+/* Tombol pill generik di dalam Stage Mode (mis. "Coba lagi"). */
+.stage-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 16px;
+  background: var(--stg-panel-2);
+  border: 1px solid var(--stg-line-strong);
+  border-radius: 999px;
+  color: var(--stg-text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.stage-pill-btn:hover {
+  background: #232134;
+}
+
+.stage-pill-btn--primary {
+  background: var(--stg-accent);
+  border-color: var(--stg-accent);
+  color: #17120a;
+}
+
+.stage-pill-btn--primary:hover {
+  background: #ffc95c;
+}
+
+/* ---------- Responsif ---------- */
+
+@media (max-width: 520px) {
+  .stage-topbar {
     gap: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
   }
 
-  .stage-mode-header-info {
-    font-size: 0.92rem;
+  .stage-status {
+    gap: 4px;
   }
 
-  .stage-mode-pill {
-    font-size: 0.72rem;
-    padding: 2px 8px;
+  .stage-stat {
+    height: 30px;
+    padding: 0 7px;
+    font-size: 0.86rem;
+    line-height: 30px;
   }
 
-  .stage-mode-instruments {
-    max-width: 110px;
+  .stage-stat small {
+    display: none;
   }
 
-  /* Konteks band/setlist: label diperkecil agar tidak memakan header. */
-  .stage-mode-context-band {
-    max-width: 110px;
-    font-size: 0.66rem;
+  .stage-lyrics {
+    padding: 4px 14px 45vh;
   }
 
-  .stage-mode-context-setlist {
-    max-width: 140px;
-    font-size: 0.78rem;
+  .stage-songhead {
+    padding: 10px 14px 8px;
   }
 
-  /* Body lirik: padding sisi lebih ramping supaya baris lirik tak sering wrap. */
-  .stage-mode-body {
-    padding: 8px 10px calc(20px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .stage-mode-body .cd {
-    /* Basis font lirik sedikit lebih kecil di HP (tetap dikendalikan pinch). */
-    font-size: calc(clamp(0.78rem, 3.6vw, 0.95rem) * var(--lyrics-font-scale, 1));
-    padding-bottom: 32px;
-  }
-
-  /* Footer: baris tombol bisa turun ke dua baris — beri jarak sentuh. */
-  .stage-mode-footer {
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  .stage-bottombar {
     gap: 6px;
+    padding: 8px;
   }
 
-  .stage-mode-footer .btn,
-  .stage-mode-footer-btn {
-    min-height: 44px;
-    padding: 6px 10px;
-    font-size: 0.88rem;
+  .stage-tool {
+    width: 48px;
   }
 
-  /* Nav prev/next jauh lebih lebar di HP: sering dipakai sambil main. */
-  .stage-mode-footer-btn.stage-mode-nav-btn {
-    flex: 1 1 auto;
-    min-width: 72px;
-  }
-
-  /* Sheet: hampir fullscreen agar daftar lagu mudah digulir sambil berdiri. */
-  .stage-mode-sheet {
-    width: 100%;
-    max-height: 86vh;
-    border-radius: 16px 16px 0 0;
-  }
-
-  .stage-mode-sheet--tall {
-    max-height: 88vh;
-  }
-
-  .stage-mode-sheet-list {
-    max-height: 58vh;
-  }
-
-  .stage-mode-sheet-list--search {
-    max-height: 62vh;
-  }
-
-  /* Info lagu: grid satu kolom di HP agar nilai panjang tidak terpotong. */
-  .stage-mode-info-grid {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-
-  .stage-mode-info {
-    max-height: 35vh;
-  }
-
-  /* Player referensi: melebar penuh, lebih dekat ke footer. */
-  .stage-mode-player {
-    left: 8px;
-    right: 8px;
-    bottom: 96px;
-    max-width: none;
-  }
-
-  /* Daftar pilih lagu (empty-state): lebar penuh. */
-  .stage-mode-pick-list {
-    width: 100%;
-  }
-
-  /* Kontrol transpose & autoscroll di footer: biar wrap, tidak dipaksa menyusut. */
-  .stage-mode-footer .transpose-control,
-  .stage-mode-footer .autoscroll-control {
-    flex: 0 1 auto;
-    min-width: 0;
+  .stage-nav-btn {
+    width: 34px;
   }
 }
 
-/* ===== HP sangat kecil (= 400px) ===== */
-@media (max-width: 400px) {
-  .stage-mode-header-info {
-    font-size: 0.85rem;
+/* Layar landscape rendah (mis. ponsel diputar): rapatkan head & bottom. */
+@media (max-height: 460px) and (orientation: landscape) {
+  .stage-songhead {
+    padding: 6px 16px;
   }
 
-  .stage-mode-pill {
-    display: none; /* key & tempo tetap ada di panel info (tombol ??). */
+  .stage-songhead-title {
+    font-size: 1rem;
   }
 
-  /* Footer: tombol ikon jadi kotak simetris, nav tetap dominan. */
-  .stage-mode-footer {
-    gap: 5px;
+  .stage-songhead-meta {
+    display: none;
   }
 
-  .stage-mode-footer .btn,
-  .stage-mode-footer-btn {
-    flex: 0 0 auto;
-    padding: 6px 8px;
-  }
-
-  .stage-mode-footer-btn.stage-mode-nav-btn {
-    flex: 1 1 100%;
-    order: 9; /* nav turun ke baris sendiri di bawah ikon-ikon. */
+  .stage-bottombar {
+    min-height: 60px;
   }
 }
 
-/* ===== Landscape HP / layar pendek (max-height = 480px) ===== */
-@media (max-height: 480px) {
-  .stage-mode-header {
-    padding: 4px 8px;
-  }
-
-  .stage-mode-context-band {
-    display: none; /* di layar pendek cukup nama setlist. */
-  }
-
-  .stage-mode-body {
-    padding: 6px 10px calc(12px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .stage-mode-footer {
-    padding: 4px 8px calc(4px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .stage-mode-footer .btn,
-  .stage-mode-footer-btn {
-    min-height: 40px;
-    padding: 4px 10px;
-  }
-
-  .stage-mode-info {
-    max-height: 40vh;
-  }
-
-  .stage-mode-player {
-    bottom: 58px;
-  }
-
-  /* Sheet: batasi tinggi agar tidak menutup seluruh layar landscape. */
-  .stage-mode-sheet {
-    max-height: 88vh;
-  }
-
-  .stage-mode-sheet-list {
-    max-height: 60vh;
+/* Perangkat sentuh: target lebih besar. */
+@media (hover: none) {
+  .stage-dark-btn {
+    width: 42px;
+    height: 42px;
   }
 }
 
-/* ===== Tablet / layar lebar (= 1200px): lirik maksimal keterbacaan. */
-@media (min-width: 1200px) {
-  .stage-mode-body .cd {
-    font-size: calc(clamp(0.9rem, 1.4vw, 1.15rem) * var(--lyrics-font-scale, 1));
+/* ------------------------------------------------------------------
+   Layar sangat sempit (<= 380px, mis. iPhone SE):
+   - judul setlist di topbar dipotong, stat hanya menampilkan angka
+   - tombol tool hanya ikon (label tetap ada sebagai aria-label)
+   ------------------------------------------------------------------ */
+@media (max-width: 380px) {
+  .stage-context-eyebrow {
+    display: none;
   }
 
-  .stage-mode-body {
-    padding-left: 32px;
-    padding-right: 32px;
+  .stage-context {
+    justify-content: center;
   }
 
-  /* Batasi lebar kolom lirik di layar sangat lebar (kinerja baca). */
-  .stage-mode-body .cd {
-    max-width: 1100px;
-    margin: 0 auto;
+  .stage-context-title {
+    font-size: 0.84rem;
+  }
+
+  .stage-tool {
+    width: 40px;
+  }
+
+  .stage-tool > span {
+    display: none;
+  }
+
+  .stage-tool.is-active::after {
+    right: 6px;
+  }
+
+  .stage-nextbtn {
+    padding: 0 10px;
   }
 }
 
-/* ===== Layar sentuh: hilangkan hover-rely, garansi area sentuh = 40px ===== */
-@media (hover: none) and (pointer: coarse) {
-  .stage-mode-pick-item,
-  .stage-mode-sheet-item {
-    min-height: 44px;
+/* ------------------------------------------------------------------
+   Print (latihan / arsip): hanya teks lagu, tanpa kontrol panggung.
+   ------------------------------------------------------------------ */
+@media print {
+  .stage-mode-page {
+    position: static;
+    display: block;
+    height: auto;
+    overflow: visible;
+    background: #fff;
+    color: #000;
   }
 
-  .stage-mode-pick-item:hover,
-  .stage-mode-sheet-item:hover,
-  .stage-mode-sheet-link:hover .stage-mode-sheet-name {
-    /* Di sentuh, hover bisa "nyangkut" setelah tap — tampilkan efek netral. */
-    border-color: #3a3a5a;
-    color: inherit;
+  .stage-topbar,
+  .stage-bottom,
+  .stage-info,
+  .stage-player,
+  .stage-controls {
+    display: none !important;
   }
+
+  .stage-lyrics {
+    overflow: visible;
+    padding: 0;
+    max-height: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Body theme: Stage Mode menimpa variabel tema aplikasi agar komponen
+   yang dirender di dalamnya (ChordDisplay, TransposeKeyControl,
+   AutoScrollControl, SongMediaPanel) ikut kontras tinggi.
+   ------------------------------------------------------------------ */
+body.stage-mode {
+  --primary-bg: #08070d;
+  --secondary-bg: #12111b;
+  --card-bg: #191827;
+  --text-primary: #f4f3fb;
+  --text-secondary: #c9c7dd;
+  --border-color: #333149;
+  --primary-accent: #f5b942;
+  --chord-bright: #ffe08a;
+}
+
+body.stage-mode .btn-secondary {
+  background: #191827;
+  color: #f4f3fb;
+  border-color: #3f3d58;
+}
+
+/* Chord di dalam area baca: kuning terang mudah terbaca di panggung. */
+.stage-lyrics .cd-token {
+  color: #ffe08a;
+}
+
+.stage-lyrics .cd {
+  min-height: 100%;
 }

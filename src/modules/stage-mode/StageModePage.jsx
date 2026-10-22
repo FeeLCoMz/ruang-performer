@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import ChordDisplay, { normalizeChordStyle } from '../../components/ChordDisplay.jsx';
 import AutoScrollControl from '../../components/AutoScrollControl.jsx';
@@ -7,6 +7,13 @@ import TransposeKeyControl from '../../components/TransposeKeyControl.jsx';
 import SongMediaPanel from '../../components/SongMediaPanel.jsx';
 import { useSongFetch } from '../../hooks/useSongFetch.js';
 import { useStageModeEnabled } from './useStageModeEnabled.js';
+import {
+  StageIcon,
+  StageSongList,
+  StageSongRow,
+  StageSetlistList,
+  StageSheetHeader,
+} from './StageShell.jsx';
 import * as apiClient from '../../apiClient.js';
 import { STORAGE_KEYS } from '../../utils/storageKeys.js';
 import { getTransposeSteps, extractDetectedInstrumentsFromLyrics } from '../../utils/chordUtils.js';
@@ -61,17 +68,17 @@ const extractYouTubeId = (input) => {
  * Stage Mode aktif (toggle di app header). Dibuat untuk dipakai pemain saat
  * manggung:
  *
- *  - Memilih BAND dan SETLIST yang akan dibawakan (persist lintas sesi).
- *  - Memilih lagu dalam setlist — dengan navigasi cepat antar lagu.
- *  - Melihat lirik & chord kontras tinggi + info penting (key, BPM, genre,
- *    instrumen, struktur section).
+ *  - Topbar tipis: keluar, band/setlist (pemilih), key, tempo, info lagu.
+ *  - Lirik & chord kontras tinggi sebagai fokus utama; kontrol transpose &
+ *    autoscroll disembunyikan sampai dibuka (layar penuh untuk lirik).
+ *  - Bottom bar: lagu sebelumnya, antrian/berikutnya, dan tiga tool
+ *    (Kontrol, Player, Cari) — semuanya dalam jangkauan jempol.
  *  - Mendengarkan bagian tertentu pada lagu: player YouTube + time marker
  *    yang bisa diklik untuk loncat ke bagian itu.
- *  - Beralih ke lagu berikutnya/sebelumnya dengan cepat (tombol footer).
  *  - Mencari lagu dari setlist, seluruh aplikasi, maupun langsung ke
  *    Google/YouTube bila belum ada di aplikasi.
  *
- * Esc / tombol ✕ menonaktifkan Stage Mode (onExit).
+ * Esc / tombol âœ• menonaktifkan Stage Mode (onExit).
  */
 export default function StageModePage({
   stageMode,
@@ -256,6 +263,13 @@ export default function StageModePage({
     return setlists.filter((sl) => String(sl.bandId || '') === String(bandId) || !sl.bandId);
   }, [setlists, bandId]);
 
+  // Nama band aktif — header menampilkan konteks band di atas nama setlist.
+  const bandName = useMemo(() => {
+    if (!bandId) return '';
+    const match = bands.find((b) => String(b.bandId || b.id) === String(bandId));
+    return match?.name || match?.bandName || '';
+  }, [bands, bandId]);
+
   const handleSelectBand = (nextBandId) => {
     setBandId(nextBandId);
     writeStored(STORAGE_KEYS.STAGE_BAND, nextBandId);
@@ -322,7 +336,7 @@ export default function StageModePage({
   const effectiveSongId = selectedSongId || setlistSongs[0]?.id || null;
 
   // Index lagu aktif dihitung dari effectiveSongId (bukan selectedSongId)
-  // agar footer ✓ posisi & tombol ← / → akurat juga saat lagu pertama
+  // agar footer âœ“ posisi & tombol â† / â†’ akurat juga saat lagu pertama
   // dipilih otomatis (selectedSongId masih kosong).
   const currentIndex = setlistSongs.findIndex((s) => String(s.id) === String(effectiveSongId));
 
@@ -394,7 +408,7 @@ export default function StageModePage({
     writeStored(STORAGE_KEYS.STAGE_AUTOSCROLL_MODE, autoScrollMode);
   }, [autoScrollMode]);
   const [autoScrollActive, setAutoScrollActive] = useState(false);
-  // scrollSpeed = BPM efektif untuk autoscroll MUSICAL (tombol −/+ di
+  // scrollSpeed = BPM efektif untuk autoscroll MUSICAL (tombol âˆ’/+ di
   // AutoScrollControl mengubahnya, sama seperti mode normal) dan juga
   // display metronome/tempo. Mode MANUAL memakai manualSpeedLevel.
   const [scrollSpeed, setScrollSpeed] = useState(120);
@@ -412,6 +426,9 @@ export default function StageModePage({
   const [setlistSearchQuery, setSetlistSearchQuery] = useState('');
   const [infoOpen, setInfoOpen] = useState(false);
   const [playerVisible, setPlayerVisible] = useState(false);
+  // Panel kontrol panggung (transpose + autoscroll) di atas footer.
+  // Default tertutup: lirik dapat layar penuh, kontrol dibuka saat butuh.
+  const [controlsOpen, setControlsOpen] = useState(false);
 
   // Reset kontrol performance saat pindah lagu.
   useEffect(() => {
@@ -453,13 +470,13 @@ export default function StageModePage({
   // Normalisasi mode autoscroll (MUSICAL/MANUAL).
   const normalizedAutoScrollMode = normalizeAutoScrollMode(autoScrollMode);
 
-  // Autoscroll: digerakkan di sini (container .stage-mode-body). Kecepatan
+  // Autoscroll: digerakkan di sini (container .stage-lyrics). Kecepatan
   // dihitung dengan utilitas resmi aplikasi (autoscrollSpeedUtils) supaya
   // perilakunya identik dengan panel lirik biasa:
   // - MUSICAL: V = tinggi baris / durasi musik baris, diukur PER BARIS (baris
   //   pertama yang masuk viewport) dengan barCount/chordCount dari teks
   //   baris chord — sama seperti SongChordsLyricsDisplay.
-  // - MANUAL : multiplier × level^1.55 (level 1 = sangat lambat).
+  // - MANUAL : multiplier Ã— level^1.55 (level 1 = sangat lambat).
   // hasSong di dep: container body baru ada setelah lagu termuat — jangan
   // pasang loop autoscroll pada elemen empty-state.
   useEffect(() => {
@@ -515,7 +532,7 @@ export default function StageModePage({
       if (normalizedAutoScrollMode === AUTO_SCROLL_MODES.MANUAL) {
         return computeManualScrollSpeed({ userSpeedLevel: manualSpeedLevel });
       }
-      // MUSICAL: per baris, dari BPM efektif (scrollSpeed — tombol −/+
+      // MUSICAL: per baris, dari BPM efektif (scrollSpeed — tombol âˆ’/+
       // di AutoScrollControl mengubah nilai ini, sama seperti mode normal)
       // + time signature lagu.
       const metrics = measureLineMetrics();
@@ -643,6 +660,12 @@ export default function StageModePage({
         setSheetOpen(null);
         return;
       }
+      // Panel kontrol lebih dulu dari info: keduanya melayang di atas lirik.
+      if (controlsOpen) {
+        e.preventDefault();
+        setControlsOpen(false);
+        return;
+      }
       if (infoOpen) {
         e.preventDefault();
         setInfoOpen(false);
@@ -662,18 +685,54 @@ export default function StageModePage({
       window.removeEventListener('keydown', handleKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [stageMode, moduleEnabled, sheetOpen, infoOpen, playerVisible, onExit]);
+  }, [stageMode, moduleEnabled, sheetOpen, infoOpen, controlsOpen, playerVisible, onExit]);
 
   // ======== Gestur panggung ========
   // - Pinch (2 jari): perbesar/perkecil font lirik (fontScale).
   // - Wheel + Ctrl : perbesar/perkecil font lirik (desktop).
   // (Swipe antar lagu dihapus — sering terpicu tidak sengaja. Pindah lagu
-  // tetap lewat tombol footer ← / →.)
+  // tetap lewat tombol footer â† / â†’.)
   const gestureRef = useRef({ pinchActive: false, startDistance: 0, startFontScale: 1.2 });
   // Ref ke fontScale terbaru — effect gesture tidak perlu re-subscribe listener
   // setiap kali fontScale berubah (setiap tick pinch).
   const fontScaleRef = useRef(fontScale);
   useEffect(() => { fontScaleRef.current = fontScale; }, [fontScale]);
+
+  // Progress baca untuk garis di atas bottom bar. Dihitung dari posisi scroll
+  // container lirik — tidak memerlukan render ulang yang mahal karena hanya
+  // di-throttle ke satu nilai per frame (via rAF saat event scroll).
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const progressFrameRef = useRef(0);
+
+  const computeScrollProgress = (el) => {
+    if (!el) return 0;
+    const max = el.scrollHeight - el.clientHeight;
+    if (max <= 0) return 100;
+    return Math.min(100, Math.max(0, (el.scrollTop / max) * 100));
+  };
+
+  const handleLyricsScroll = (e) => {
+    const el = e.currentTarget;
+    if (progressFrameRef.current) return;
+    progressFrameRef.current = requestAnimationFrame(() => {
+      progressFrameRef.current = 0;
+      setScrollProgress(computeScrollProgress(el));
+    });
+  };
+
+  // Reset progress tiap ganti lagu (konten lirik baru selalu mulai dari atas).
+  useEffect(() => {
+    setScrollProgress(0);
+  }, [effectiveSongId]);
+
+  // Autoscroll mengubah scrollTop tanpa event scroll; sinkronkan progress ke
+  // elemen lirik tiap kali lagu atau status autoscroll berubah.
+  const syncScrollProgress = () => setScrollProgress(computeScrollProgress(stageBodyRef.current));
+  useEffect(syncScrollProgress, [effectiveSongId, autoScrollActive]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => () => {
+    if (progressFrameRef.current) cancelAnimationFrame(progressFrameRef.current);
+  }, []);
 
   useEffect(() => {
     const el = stageBodyRef.current;
@@ -728,7 +787,7 @@ export default function StageModePage({
 
   // ======== Sheet: focus trap + navigasi keyboard ========
   // Fokus dipindah ke elemen pertama sheet saat dibuka, Tab dikunci dalam
-  // sheet, Arrow ↑/↓ berpindah antar item daftar, dan fokus dikembalikan ke
+  // sheet, Arrow â†‘/â†“ berpindah antar item daftar, dan fokus dikembalikan ke
   // elemen pemicu saat sheet ditutup.
   const sheetRef = useRef(null);
   const lastFocusedRef = useRef(null);
@@ -742,7 +801,7 @@ export default function StageModePage({
     const handleKey = (e) => {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         const items = Array.from(
-          sheetRef.current?.querySelectorAll('.stage-mode-sheet-item') || [],
+          sheetRef.current?.querySelectorAll('[role^="menuitem"]') || [],
         ).filter((el) => !el.disabled);
         if (items.length === 0) return;
         e.preventDefault();
@@ -792,7 +851,7 @@ export default function StageModePage({
     return out;
   }, [song?.lyrics]);
 
-  // Hasil pencarian: setlist aktif → repertoire aplikasi → saran eksternal.
+  // Hasil pencarian: setlist aktif â†’ repertoire aplikasi â†’ saran eksternal.
   const q = searchQuery.trim().toLowerCase();
   const searchInSetlist = setlistSongs.filter((s) => !q
     || (s.title || '').toLowerCase().includes(q)
@@ -816,7 +875,7 @@ export default function StageModePage({
     return (
       <div className="page-container">
         <div className="page-header">
-          <h1>🎤 Stage Mode</h1>
+          <h1>ðŸŽ¤ Stage Mode</h1>
         </div>
         <div className="ct-banner ct-banner-warn" role="status">
           Modul Stage Mode sedang dinonaktifkan.
@@ -828,340 +887,460 @@ export default function StageModePage({
     );
   }
 
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex >= 0 && currentIndex < setlistSongs.length - 1;
+  const nextSong = setlistSongs[currentIndex + 1];
+  const prevSong = setlistSongs[currentIndex - 1];
+  const positionText = setlistSongs.length > 0
+    ? `${currentIndex >= 0 ? currentIndex + 1 : '—'}/${setlistSongs.length}`
+    : '—';
+
+  // Info singkat di sheet pemilih setlist: nama band aktif.
+  const activeBandName = bandName || 'Semua band';
+
   const content = (
     <div className="stage-mode-page" role="dialog" aria-modal="true" aria-label="Stage Mode">
-      {/* ======== Header: keluar + judul lagu + info ======== */}
-      <header className="stage-mode-header">
+      {/* ======== Topbar: keluar + konteks (band/setlist) + status lagu ======== */}
+      <header className="stage-topbar">
         <button
           type="button"
-          className="btn btn-secondary stage-mode-exit"
+          className="stage-dark-btn"
           onClick={() => onExit?.()}
           aria-label="Keluar Stage Mode"
           title="Keluar Stage Mode (Esc)"
         >
-          ✕
+          <StageIcon name="close" size={18} />
         </button>
-        <div className="stage-mode-header-info">
-          <span className="stage-mode-title">{song?.title || (dataLoading || songLoading ? 'Memuat…' : 'Belum ada lagu')}</span>
-          {song?.artist && <span className="stage-mode-artist"> — {song.artist}</span>}
-        </div>
-        {song?.key && <span className="stage-mode-pill">{song.key}</span>}
-        <span className="stage-mode-pill" title={`Tempo ${bpm} BPM`}>
-          <span
-            className="song-info-tempo-led"
-            style={{ animationDuration: `${Math.round(60000 / bpm)}ms` }}
-            aria-hidden="true"
-          />
-          {bpm}
-        </span>
+
         <button
           type="button"
-          className={`btn stage-mode-footer-btn${infoOpen ? ' btn-primary' : ' btn-secondary'}`}
+          className="stage-context"
+          onClick={() => setSheetOpen('setlist')}
+          aria-haspopup="dialog"
+          title="Ganti band / setlist panggung"
+        >
+          <span className="stage-context-eyebrow">{activeBandName}</span>
+          <span className="stage-context-title">
+            {activeSetlist?.name || 'Pilih setlist'}
+            <StageIcon name="down" size={13} />
+          </span>
+        </button>
+
+        <div className="stage-status">
+          {song?.key && (
+            <span className="stage-stat stage-stat--key" title="Key lagu (setelah transpose)">
+              {song.key}
+            </span>
+          )}
+          <span className="stage-stat stage-stat--tempo" title={`Tempo ${bpm} BPM`}>
+            <span
+              className="stage-tempo-dot"
+              style={{ animationDuration: `${Math.round(60000 / bpm)}ms` }}
+              aria-hidden="true"
+            />
+            {bpm}
+            <small>BPM</small>
+          </span>
+        </div>
+
+        <button
+          type="button"
+          className={`stage-dark-btn${infoOpen ? ' is-active' : ''}`}
           onClick={() => setInfoOpen((v) => !v)}
           aria-expanded={infoOpen}
           aria-label="Info lagu"
           title="Info lagu: key, tempo, genre, instrumen, struktur"
         >
-          ℹ️
+          <StageIcon name="info" size={18} />
         </button>
       </header>
 
-      {/* Panel info lagu (toggle) */}
+      {/* ======== Info lagu (panel di bawah topbar, bisa ditutup) ======== */}
       {infoOpen && song && (
-        <div className="stage-mode-info" role="region" aria-label="Info lagu">
-          <div className="stage-mode-info-grid">
-            <div className="stage-mode-info-item"><span className="stage-mode-info-label">Judul</span><span>{song.title}</span></div>
-            {song.artist && <div className="stage-mode-info-item"><span className="stage-mode-info-label">Artis</span><span>{song.artist}</span></div>}
-            {song.genre && <div className="stage-mode-info-item"><span className="stage-mode-info-label">Genre</span><span>{song.genre}</span></div>}
-            <div className="stage-mode-info-item"><span className="stage-mode-info-label">Key</span><span>{song.key || '—'}</span></div>
-            <div className="stage-mode-info-item"><span className="stage-mode-info-label">Tempo</span><span>{bpm} BPM</span></div>
+        <section className="stage-info" role="region" aria-label="Info lagu">
+          <div className="stage-info-head">
+            <span className="stage-info-eyebrow">Info lagu</span>
+            <button
+              type="button"
+              className="stage-dark-btn"
+              onClick={() => setInfoOpen(false)}
+              aria-label="Tutup info lagu"
+              title="Tutup info lagu"
+            >
+              <StageIcon name="close" size={16} />
+            </button>
+          </div>
+          <dl className="stage-info-grid">
+            <div className="stage-info-item">
+              <dt>Judul</dt>
+              <dd>{song.title}</dd>
+            </div>
+            {song.artist && (
+              <div className="stage-info-item">
+                <dt>Artis</dt>
+                <dd>{song.artist}</dd>
+              </div>
+            )}
+            {song.genre && (
+              <div className="stage-info-item">
+                <dt>Genre</dt>
+                <dd>{song.genre}</dd>
+              </div>
+            )}
+            <div className="stage-info-item">
+              <dt>Key</dt>
+              <dd>{masterKey || song.key || '—'}</dd>
+            </div>
+            <div className="stage-info-item">
+              <dt>Tempo</dt>
+              <dd>{bpm} BPM</dd>
+            </div>
             {detectedInstruments.length > 0 && (
-              <div className="stage-mode-info-item">
-                <span className="stage-mode-info-label">Instrumen</span>
-                <span>{detectedInstruments.join(', ')}</span>
+              <div className="stage-info-item">
+                <dt>Instrumen</dt>
+                <dd>{detectedInstruments.join(', ')}</dd>
               </div>
             )}
             {sections.length > 0 && (
-              <div className="stage-mode-info-item">
-                <span className="stage-mode-info-label">Struktur</span>
-                <span>{sections.join(' → ')}</span>
+              <div className="stage-info-item stage-info-item--wide">
+                <dt>Struktur</dt>
+                <dd>{sections.join(' → ')}</dd>
               </div>
             )}
-          </div>
-        </div>
+          </dl>
+        </section>
       )}
 
-      {/* ======== Body: lirik & chord fullscreen ======== */}
-      {song ? (
-        <div className="stage-mode-body song-lyrics-display" ref={stageBodyRef}>
-          <ChordDisplay
-            song={song}
-            transpose={transpose}
-            fontScale={fontScale}
-            currentBeat={0}
-            showChords
-            chordStyle={chordStyle}
-            keySignature={song?.key || 'C'}
-            isPlaying={isYoutubePlaying}
-            onTimestampClick={(seconds) => {
-              if (!playerVisible) setPlayerVisible(true);
-              // Beri kesempatan player mount sebelum seek.
-              setTimeout(() => youtubeRef.current?.handleSeek?.(seconds), playerVisible ? 0 : 600);
-            }}
-          />
+      {/* ======== Panggung: head lagu, kontrol, lirik, player ======== */}
+      <div className="stage-main">
+        <div className="stage-songhead">
+          <h1 className="stage-songhead-title">
+            {song?.title || (dataLoading || songLoading ? 'Memuat…' : 'Belum ada lagu')}
+          </h1>
+          <p className="stage-songhead-meta">
+            {song?.artist && <span>{song.artist}</span>}
+            <span className="stage-songhead-pos">
+              {activeSetlist?.name || 'Tanpa setlist'} · {positionText}
+            </span>
+          </p>
         </div>
-      ) : (
-        <div className="stage-mode-body stage-mode-empty">
-          {dataLoading || songLoading ? (
-            <p className="stage-mode-empty-text">Memuat…</p>
-          ) : (
-            <>
-              <p className="stage-mode-empty-text">
-                {setlistSongs.length > 0
-                  ? 'Pilih lagu dari setlist untuk mulai.'
-                  : 'Belum ada setlist dipilih.'}
-              </p>
+
+        {/* Kontrol panggung: transpose + autoscroll. Tersembunyi default agar
+            layar penuh untuk lirik; dibuka dari tombol "Kontrol" di bawah. */}
+        {controlsOpen && (
+          <div className="stage-controls" role="group" aria-label="Kontrol panggung">
+            <div className="stage-controls-inner">
+              {song && (
+                <TransposeKeyControl
+                  // originalKey harus key MASTER lagu (tanpa override setlist).
+                  // song.key sudah berisi override key setlist, sehingga kalau dipakai
+                  // sebagai acuan, tombol ± menampilkan "D → D" (override dianggap
+                  // key asli) dan reset mengembalikan ke key setlist, bukan key master.
+                  originalKey={masterKey || song?.key || ''}
+                  targetKey={song?.key || ''}
+                  transpose={transpose}
+                  onTransposeChange={(next) => {
+                    // User mengubah manual — hentikan auto-apply dari setlist
+                    // untuk lagu ini sampai pindah lagu berikutnya.
+                    userAdjustedTransposeRef.current = true;
+                    setTranspose(Number(next) || 0);
+                  }}
+                  variant="mini"
+                  disableAutoApply
+                />
+              )}
+              <AutoScrollControl
+                autoScrollActive={autoScrollActive}
+                setAutoScrollActive={setAutoScrollActive}
+                scrollSpeed={scrollSpeed}
+                setScrollSpeed={setScrollSpeed}
+                autoScrollMode={autoScrollMode}
+                setAutoScrollMode={setAutoScrollMode}
+                manualSpeedLevel={manualSpeedLevel}
+                setManualSpeedLevel={setManualSpeedLevel}
+                tempo={bpm}
+              />
+            </div>
+          </div>
+        )}
+
+        {song ? (
+          <div
+            className="stage-lyrics song-lyrics-display"
+            ref={(el) => {
+              stageBodyRef.current = el;
+            }}
+            onScroll={handleLyricsScroll}
+          >
+            <ChordDisplay
+              song={song}
+              transpose={transpose}
+              fontScale={fontScale}
+              currentBeat={0}
+              showChords
+              chordStyle={chordStyle}
+              keySignature={song?.key || 'C'}
+              isPlaying={isYoutubePlaying}
+              onTimestampClick={(seconds) => {
+                if (!playerVisible) setPlayerVisible(true);
+                // Beri kesempatan player mount sebelum seek.
+                setTimeout(() => youtubeRef.current?.handleSeek?.(seconds), playerVisible ? 0 : 600);
+              }}
+            />
+          </div>
+        ) : (
+          <div className="stage-empty">
+            {dataLoading || songLoading ? (
+              <p className="stage-empty-text">Memuat…</p>
+            ) : (
+              <>
+                <p className="stage-empty-title">
+                  {setlistSongs.length > 0 ? 'Siap main?' : 'Pilih setlist dulu'}
+                </p>
+                <p className="stage-empty-text">
+                  {setlistSongs.length > 0
+                    ? 'Pilih lagu dari setlist untuk mulai.'
+                    : 'Belum ada setlist dipilih untuk panggung.'}
+                </p>
+                <button
+                  type="button"
+                  className="stage-pill-btn stage-pill-btn--primary"
+                  onClick={() => setSheetOpen(setlistSongs.length > 0 ? 'song' : 'setlist')}
+                >
+                  {setlistSongs.length > 0 ? 'Pilih lagu' : 'Pilih setlist'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Player referensi (toggle) — overlay di atas lirik. */}
+        {playerVisible && (
+          <div className="stage-player" role="region" aria-label="Player referensi">
+            <div className="stage-player-head">
+              <strong>Referensi</strong>
               <button
                 type="button"
-                className="btn btn-primary"
-                onClick={() => setSheetOpen(setlistSongs.length > 0 ? 'song' : null)}
+                className="stage-dark-btn"
+                onClick={() => setPlayerVisible(false)}
+                aria-label="Tutup player"
+                title="Tutup player"
               >
-                Pilih lagu
+                <StageIcon name="close" size={16} />
               </button>
-            </>
-          )}
-        </div>
-      )}
+            </div>
+            <div className="stage-player-body">
+              {youtubeId ? (
+                <SongMediaPanel
+                  variant="card"
+                  youtubeId={youtubeId}
+                  youtubeRef={youtubeRef}
+                  timeMarkers={timeMarkers}
+                  secondsToLabel={formatDuration}
+                  isPlaying={isYoutubePlaying}
+                  onStateChange={handleYouTubeStateChange}
+                  onTogglePlay={() => youtubeRef.current?.handleTogglePlayPause?.()}
+                  onSeek={(time) => youtubeRef.current?.handleSeek?.(time)}
+                  onUpdateMarkers={undefined}
+                  currentTime={ytCurrentTime}
+                  duration={ytDuration}
+                  getCurrentYouTubeTime={() =>
+                    typeof youtubeRef.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0}
+                  onTimeUpdate={(t, d) => {
+                    if (typeof t === 'number' && Number.isFinite(t)) setYtCurrentTime(t);
+                    if (typeof d === 'number' && Number.isFinite(d)) setYtDuration(d);
+                  }}
+                  readonlyMarkers
+                  showMarkers
+                  showHeader={false}
+                />
+              ) : (
+                <p className="stage-empty-text">Lagu ini belum punya video referensi YouTube.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* Player referensi (toggle) — untuk mendengarkan bagian tertentu */}
-      {playerVisible && (
-        <div className="stage-mode-player" role="region" aria-label="Player referensi">
-          {youtubeId ? (
-            <SongMediaPanel
-              variant="card"
-              youtubeId={youtubeId}
-              youtubeRef={youtubeRef}
-              timeMarkers={timeMarkers}
-              secondsToLabel={formatDuration}
-              isPlaying={isYoutubePlaying}
-              onStateChange={handleYouTubeStateChange}
-              onTogglePlay={() => youtubeRef.current?.handleTogglePlayPause?.()}
-              onSeek={(time) => youtubeRef.current?.handleSeek?.(time)}
-              onUpdateMarkers={undefined}
-              currentTime={ytCurrentTime}
-              duration={ytDuration}
-              getCurrentYouTubeTime={() =>
-                typeof youtubeRef.current?.currentTime === 'number' ? youtubeRef.current.currentTime : 0}
-              onTimeUpdate={(t, d) => {
-                if (typeof t === 'number' && Number.isFinite(t)) setYtCurrentTime(t);
-                if (typeof d === 'number' && Number.isFinite(d)) setYtDuration(d);
-              }}
-              readonlyMarkers
-              showMarkers
-              showHeader={false}
-            />
-          ) : (
-            <p className="stage-mode-empty-text">Lagu ini belum punya video referensi YouTube.</p>
-          )}
+      {/* ======== Bottom bar: progress baca + navigasi + tools ======== */}
+      <footer className="stage-bottom">
+        <div className="stage-progress" aria-hidden="true">
+          <div className="stage-progress-fill" style={{ width: `${scrollProgress}%` }} />
+        </div>
+        <div className="stage-bottombar">
           <button
             type="button"
-            className="btn btn-secondary stage-mode-player-close"
-            onClick={() => setPlayerVisible(false)}
-            aria-label="Tutup player"
-            title="Tutup player"
+            className="stage-nav-btn"
+            onClick={() => hasPrev && goToSong(prevSong.id)}
+            disabled={!hasPrev}
+            aria-label="Lagu sebelumnya"
+            title={hasPrev ? (prevSong.title || 'Lagu sebelumnya') : 'Tidak ada lagu sebelumnya'}
           >
-            ✕
+            <StageIcon name="prev" size={20} />
           </button>
-        </div>
-      )}
 
-      {/* ======== Footer: transpose, autoscroll, player, cari, nav lagu ======== */}
-      <footer className="stage-mode-footer">
-        {song && (
-          <TransposeKeyControl
-            // originalKey harus key MASTER lagu (tanpa override setlist).
-            // song.key sudah berisi override key setlist, sehingga kalau dipakai
-            // sebagai acuan, tombol ± menampilkan "D → D" (override dianggap
-            // key asli) dan reset mengembalikan ke key setlist, bukan key master.
-            originalKey={masterKey || song?.key || ''}
-            targetKey={song?.key || ''}
-            transpose={transpose}
-            onTransposeChange={(next) => {
-              // User mengubah manual — hentikan auto-apply dari setlist
-              // untuk lagu ini sampai pindah lagu berikutnya.
-              userAdjustedTransposeRef.current = true;
-              setTranspose(Number(next) || 0);
-            }}
-            variant="mini"
-            disableAutoApply
-          />
-        )}
-        <AutoScrollControl
-          autoScrollActive={autoScrollActive}
-          setAutoScrollActive={setAutoScrollActive}
-          scrollSpeed={scrollSpeed}
-          setScrollSpeed={setScrollSpeed}
-          autoScrollMode={autoScrollMode}
-          setAutoScrollMode={setAutoScrollMode}
-          manualSpeedLevel={manualSpeedLevel}
-          setManualSpeedLevel={setManualSpeedLevel}
-          tempo={bpm}
-        />
-        {youtubeId && (
           <button
             type="button"
-            className={`btn stage-mode-footer-btn${playerVisible ? ' btn-primary' : ' btn-secondary'}`}
-            onClick={() => setPlayerVisible((v) => !v)}
-            aria-pressed={playerVisible}
-            aria-label="Player referensi"
-            title="Dengarkan lagu & loncat ke bagian tertentu (time marker)"
+            className="stage-nextbtn"
+            onClick={() => setSheetOpen('song')}
+            aria-label="Daftar lagu setlist"
+            title={activeSetlist ? `${activeSetlist.name} — ${positionText}` : 'Daftar lagu'}
           >
-            🎧
+            <span className="stage-nextbtn-label">
+              {positionText} · {hasNext ? 'Berikutnya' : 'Lagu terakhir'}
+            </span>
+            <span className="stage-nextbtn-title">
+              {hasNext ? (nextSong.title || 'Tanpa judul') : (song?.title || 'Daftar lagu')}
+              <StageIcon name="list" size={14} />
+            </span>
           </button>
-        )}
-        <button
-          type="button"
-          className="btn btn-secondary stage-mode-footer-btn"
-          onClick={() => setSheetOpen('search')}
-          aria-label="Cari lagu"
-          title="Cari lagu di setlist / aplikasi / Google"
-        >
-          🔍
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary stage-mode-footer-btn"
-          onClick={() => setSheetOpen('song')}
-          aria-label="Daftar lagu setlist"
-          title={activeSetlist ? `${activeSetlist.name} — ${currentIndex >= 0 ? currentIndex + 1 : 'luar setlist'}/${setlistSongs.length}` : 'Daftar lagu'}
-        >
-          ☰ {setlistSongs.length > 0 ? `${currentIndex >= 0 ? currentIndex + 1 : '—'}/${setlistSongs.length}` : '—'}
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary stage-mode-footer-btn stage-mode-nav-btn"
-          onClick={() => currentIndex >= 0 && goToSong(setlistSongs[currentIndex - 1].id)}
-          disabled={currentIndex <= 0}
-          aria-label="Lagu sebelumnya"
-          title={currentIndex > 0 ? (setlistSongs[currentIndex - 1].title || 'Lagu sebelumnya') : (currentIndex < 0 ? 'Lagu di luar setlist — navigasi tidak tersedia' : 'Tidak ada lagu sebelumnya')}
-        >
-          ←
-        </button>
-        <button
-          type="button"
-          className="btn btn-primary stage-mode-footer-btn stage-mode-nav-btn stage-mode-next"
-          onClick={() => currentIndex >= 0 && currentIndex < setlistSongs.length - 1 && goToSong(setlistSongs[currentIndex + 1].id)}
-          disabled={currentIndex < 0 || currentIndex >= setlistSongs.length - 1}
-          aria-label="Lagu berikutnya"
-          title={currentIndex < 0 ? 'Lagu di luar setlist — pilih lagu dari setlist untuk navigasi' : (currentIndex < setlistSongs.length - 1 ? (setlistSongs[currentIndex + 1].title || 'Lagu berikutnya') : 'Lagu terakhir')}
-        >
-          →
-        </button>
+
+          <div className="stage-nav">
+            <button
+              type="button"
+              className="stage-nav-btn"
+              onClick={() => hasNext && goToSong(nextSong.id)}
+              disabled={!hasNext}
+              aria-label="Lagu berikutnya"
+              title={hasNext ? (nextSong.title || 'Lagu berikutnya') : 'Lagu terakhir'}
+            >
+              <StageIcon name="next" size={20} />
+            </button>
+          </div>
+
+          <div className="stage-nav">
+            <button
+              type="button"
+              className={`stage-tool${controlsOpen ? ' is-active' : ''}`}
+              onClick={() => setControlsOpen((v) => !v)}
+              aria-pressed={controlsOpen}
+              aria-label="Kontrol panggung"
+              title="Transpose & autoscroll"
+            >
+              <StageIcon name="sliders" size={19} />
+              <span>Kontrol</span>
+            </button>
+            <button
+              type="button"
+              className={`stage-tool${playerVisible ? ' is-active' : ''}`}
+              onClick={() => youtubeId && setPlayerVisible((v) => !v)}
+              disabled={!youtubeId}
+              aria-pressed={playerVisible}
+              aria-label="Player referensi"
+              title={youtubeId ? 'Dengarkan lagu & loncat ke bagian tertentu' : 'Lagu ini belum punya video referensi'}
+            >
+              <StageIcon name="headphone" size={19} />
+              <span>Player</span>
+            </button>
+            <button
+              type="button"
+              className="stage-tool"
+              onClick={() => setSheetOpen('search')}
+              aria-label="Cari lagu"
+              title="Cari lagu di setlist, aplikasi, atau Google"
+            >
+              <StageIcon name="search" size={19} />
+              <span>Cari</span>
+            </button>
+          </div>
+        </div>
       </footer>
 
       {/* ======== Sheets ======== */}
       {sheetOpen && (
         <div
-          className="stage-mode-sheet-overlay"
+          className="stage-sheet-overlay"
           onClick={() => setSheetOpen(null)}
           role="presentation"
         >
           <div
             ref={sheetRef}
-            className="stage-mode-sheet"
+            className="stage-sheet"
             role="menu"
             aria-label="Pilih"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Pilih setlist */}
+            <div className="stage-sheet-grip" aria-hidden="true" />
+
+            {/* Pilih setlist + band */}
             {sheetOpen === 'setlist' && (
               <>
-                <div className="stage-mode-sheet-title">Pilih setlist panggung</div>
-                <div className="stage-mode-sheet-search">
-                  <input
-                    type="search"
-                    className="stage-mode-sheet-search-input"
-                    placeholder="Cari setlist…"
-                    value={setlistSearchQuery}
-                    onChange={(e) => setSetlistSearchQuery(e.target.value)}
-                    aria-label="Cari setlist"
-                  />
+                <StageSheetHeader
+                  eyebrow={`Panggung · ${activeBandName}`}
+                  title="Pilih setlist"
+                  onClose={() => setSheetOpen(null)}
+                />
+
+                <div className="stage-sheet-toolbar">
+                  <div className="stage-sheet-field">
+                    <label className="stage-sheet-field-label" htmlFor="stage-setlist-sheet-band">
+                      Band
+                    </label>
+                    <select
+                      id="stage-setlist-sheet-band"
+                      className="stage-sheet-select"
+                      value={String(bandId || '')}
+                      onChange={(e) => {
+                        // Pilih band, persist, dan arahkan ke setlist pertama
+                        // milik band tersebut.
+                        handleSelectBand(e.target.value);
+                      }}
+                    >
+                      <option value="">Semua band</option>
+                      {bands.map((b) => {
+                        const id = String(b.bandId || b.id);
+                        return (
+                          <option key={id} value={id}>
+                            {b.name || b.bandName || 'Band'}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div className="stage-sheet-field">
+                    <label className="stage-sheet-field-label" htmlFor="stage-setlist-sheet-search">
+                      Cari
+                    </label>
+                    <input
+                      id="stage-setlist-sheet-search"
+                      type="search"
+                      className="stage-sheet-search-input"
+                      placeholder="Nama setlist…"
+                      value={setlistSearchQuery}
+                      onChange={(e) => setSetlistSearchQuery(e.target.value)}
+                    />
+                  </div>
                 </div>
-                {/* Filter band: dropdown pemilih band (termasuk "Semua band"). */}
-                <div
-                  className="stage-mode-sheet-filter"
-                  role="group"
-                  aria-label="Filter band"
-                >
-                  <select
-                    className="stage-mode-sheet-select"
-                    value={String(bandId || '')}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      // Pilih band, persist, dan arahkan ke setlist pertama
-                      // milik band tersebut.
-                      handleSelectBand(next);
-                    }}
-                    aria-label="Filter band"
-                  >
-                    <option value="">Semua band</option>
-                    {bands.map((b) => {
-                      const id = String(b.bandId || b.id);
-                      return (
-                        <option key={id} value={id}>
-                          {b.name || b.bandName || 'Band'}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-                <div className="stage-mode-sheet-list" role="menu">
-                  {filteredSetlists
-                    .filter((sl) => {
-                      const sq = setlistSearchQuery.trim().toLowerCase();
-                      return !sq || String(sl.name || '').toLowerCase().includes(sq);
-                    })
-                    .map((sl) => (
-                      <button
-                        key={sl.id}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={String(sl.id) === String(activeSetlist?.id || setlistId)}
-                        className={`stage-mode-sheet-item${String(sl.id) === String(activeSetlist?.id || setlistId) ? ' active' : ''}`}
-                        onClick={() => handleSelectSetlist(String(sl.id))}
-                      >
-                        <span className="stage-mode-sheet-name">{sl.name || 'Tanpa nama'}</span>
-                        {Array.isArray(sl.songs) && sl.songs.length > 0 && (
-                          <span className="stage-mode-pill">{sl.songs.length} lagu</span>
-                        )}
-                      </button>
-                    ))}
-                  {filteredSetlists.length === 0 && (
-                    <div className="stage-mode-sheet-empty">Tidak ada setlist.</div>
-                  )}
-                </div>
+
+                <StageSetlistList
+                  setlists={filteredSetlists}
+                  activeId={activeSetlist?.id || setlistId}
+                  query={setlistSearchQuery}
+                  onSelect={handleSelectSetlist}
+                />
               </>
             )}
 
             {/* Daftar lagu setlist */}
             {sheetOpen === 'song' && (
               <>
-                <div className="stage-mode-sheet-title">
-                  Daftar lagu — {setlistSongs.length} lagu
-                </div>
-                {/* Dropdown setlist: ganti setlist langsung dari daftar lagu,
-                    difilter sesuai band yang aktif. */}
-                <div className="stage-mode-sheet-toolbar">
-                  <div className="stage-mode-sheet-field">
-                    <label
-                      className="stage-mode-sheet-field-label"
-                      htmlFor="stage-song-sheet-band"
-                    >
+                <StageSheetHeader
+                  eyebrow={activeSetlist?.name || 'Setlist'}
+                  title="Urutan lagu"
+                  count={setlistSongs.length}
+                  onClose={() => setSheetOpen(null)}
+                />
+
+                {/* Dropdown band/setlist: ganti setlist langsung dari daftar
+                    lagu, difilter sesuai band yang aktif. */}
+                <div className="stage-sheet-toolbar">
+                  <div className="stage-sheet-field">
+                    <label className="stage-sheet-field-label" htmlFor="stage-song-sheet-band">
                       Band
                     </label>
                     <select
                       id="stage-song-sheet-band"
-                      className="stage-mode-sheet-select"
+                      className="stage-sheet-select"
                       value={String(bandId || '')}
                       onChange={(e) => {
                         const nextBandId = e.target.value;
@@ -1185,16 +1364,13 @@ export default function StageModePage({
                       ))}
                     </select>
                   </div>
-                  <div className="stage-mode-sheet-field">
-                    <label
-                      className="stage-mode-sheet-field-label"
-                      htmlFor="stage-song-sheet-setlist"
-                    >
+                  <div className="stage-sheet-field">
+                    <label className="stage-sheet-field-label" htmlFor="stage-song-sheet-setlist">
                       Setlist
                     </label>
                     <select
                       id="stage-song-sheet-setlist"
-                      className="stage-mode-sheet-select"
+                      className="stage-sheet-select"
                       value={String(activeSetlist?.id || setlistId || '')}
                       onChange={(e) => handleSelectSetlist(e.target.value)}
                     >
@@ -1211,55 +1387,44 @@ export default function StageModePage({
                     </select>
                   </div>
                 </div>
-                <div className="stage-mode-sheet-list" role="menu">
-                  {setlistDetailLoading && (
-                    <div className="stage-mode-sheet-empty">Memuat lagu setlist…</div>
-                  )}
-                  {!setlistDetailLoading && setlistSongs.map((s, i) => (
+
+                <StageSongList
+                  songs={setlistSongs}
+                  activeIndex={currentIndex}
+                  onSelect={goToSong}
+                  loading={setlistDetailLoading}
+                />
+                {!setlistDetailLoading && setlistDetailError && (
+                  <div className="stage-sheet-empty">
+                    <div>{setlistDetailError}</div>
                     <button
-                      key={s.id}
                       type="button"
-                      role="menuitemradio"
-                      aria-checked={i === currentIndex}
-                      onClick={() => goToSong(s.id)}
-                      className={`stage-mode-sheet-item${i === currentIndex ? ' active' : ''}`}
+                      className="stage-pill-btn"
+                      onClick={() => setSetlistDetailRetry((v) => v + 1)}
                     >
-                      <span className="stage-mode-sheet-number">{i + 1}</span>
-                      <span className="stage-mode-sheet-name">
-                        {s.title || 'Tanpa judul'}
-                        {s.artist && <span className="stage-mode-sheet-artist"> — {s.artist}</span>}
-                      </span>
-                      {s.key && <span className="stage-mode-pill">{s.key}</span>}
+                      Coba lagi
                     </button>
-                  ))}
-                  {!setlistDetailLoading && setlistDetailError && (
-                    <div className="stage-mode-sheet-empty">
-                      <div>{setlistDetailError}</div>
-                      <button
-                        type="button"
-                        className="btn btn-secondary stage-mode-footer-btn"
-                        style={{ marginTop: 8 }}
-                        onClick={() => setSetlistDetailRetry((v) => v + 1)}
-                      >
-                        Coba lagi
-                      </button>
-                    </div>
-                  )}
-                  {!setlistDetailLoading && !setlistDetailError && setlistSongs.length === 0 && (
-                    <div className="stage-mode-sheet-empty">Setlist ini masih kosong.</div>
-                  )}
-                </div>
+                  </div>
+                )}
+                {!setlistDetailLoading && !setlistDetailError && setlistSongs.length === 0 && (
+                  <div className="stage-sheet-empty">Setlist ini masih kosong.</div>
+                )}
               </>
             )}
 
             {/* Pencarian: setlist → aplikasi → Google/YouTube */}
             {sheetOpen === 'search' && (
               <>
-                <div className="stage-mode-sheet-title">Cari lagu</div>
-                <div className="stage-mode-sheet-search">
+                <StageSheetHeader
+                  eyebrow="Cari cepat"
+                  title="Lagu"
+                  onClose={() => setSheetOpen(null)}
+                />
+
+                <div className="stage-sheet-search">
                   <input
                     type="search"
-                    className="stage-mode-sheet-search-input"
+                    className="stage-sheet-search-input"
                     placeholder="Judul, artis, atau key…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -1267,16 +1432,15 @@ export default function StageModePage({
                     autoFocus
                   />
                 </div>
-                <div className="stage-mode-sheet-list stage-mode-sheet-list--search" role="menu">
-                  {dataLoading && (
-                    <div className="stage-mode-sheet-empty">Memuat data lagu…</div>
-                  )}
+
+                <div className="stage-sheet-list stage-sheet-list--search" role="menu">
+                  {dataLoading && <div className="stage-sheet-empty">Memuat data lagu…</div>}
                   {!dataLoading && dataError && (
-                    <div className="stage-mode-sheet-empty">
+                    <div className="stage-sheet-empty">
                       {dataError}
                       <button
                         type="button"
-                        className="stage-mode-sheet-ext-btn"
+                        className="stage-pill-btn"
                         onClick={() => setDataReloadNonce((n) => n + 1)}
                       >
                         Coba lagi
@@ -1284,80 +1448,50 @@ export default function StageModePage({
                     </div>
                   )}
                   {!dataLoading && !dataError && searchInSetlist.length > 0 && (
-                    <div className="stage-mode-sheet-group-label">Dalam setlist ({searchInSetlist.length})</div>
+                    <div className="stage-sheet-group-label">Dalam setlist ({searchInSetlist.length})</div>
                   )}
-                  {searchInSetlist.map((s) => (
-                    <button
+                  {!dataLoading && !dataError && searchInSetlist.map((s) => (
+                    <StageSongRow
                       key={s.id}
-                      type="button"
-                      role="menuitemradio"
-                      aria-checked={String(s.id) === String(effectiveSongId)}
-                      onClick={() => goToSong(s.id)}
-                      className={`stage-mode-sheet-item${String(s.id) === String(effectiveSongId) ? ' active' : ''}`}
-                    >
-                      <span className="stage-mode-sheet-name">
-                        <span className="stage-mode-sheet-item-title">{s.title || 'Tanpa judul'}</span>
-                        {s.artist && <span className="stage-mode-sheet-item-artist">{s.artist}</span>}
-                      </span>
-                      {s.key && <span className="stage-mode-pill">{s.key}</span>}
-                    </button>
+                      song={s}
+                      active={String(s.id) === String(effectiveSongId)}
+                      onSelect={() => goToSong(s.id)}
+                    />
                   ))}
                   {!dataLoading && !dataError && searchAllSongs.length > 0 && (
-                    <div className="stage-mode-sheet-group-label">Repertoire aplikasi ({searchAllSongs.length})</div>
+                    <div className="stage-sheet-group-label">Repertoire aplikasi ({searchAllSongs.length})</div>
                   )}
                   {!dataLoading && !dataError && searchAllSongs.map((s) => (
-                    <button
+                    <StageSongRow
                       key={s.id}
-                      type="button"
-                      role="menuitemradio"
-                      aria-checked={String(s.id) === String(effectiveSongId)}
-                      onClick={() => goToSong(s.id)}
-                      className={`stage-mode-sheet-item${String(s.id) === String(effectiveSongId) ? ' active' : ''}`}
-                    >
-                      <span className="stage-mode-sheet-name">
-                        <span className="stage-mode-sheet-item-title">{s.title || 'Tanpa judul'}</span>
-                        {s.artist && <span className="stage-mode-sheet-item-artist">{s.artist}</span>}
-                      </span>
-                      {s.key && <span className="stage-mode-pill">{s.key}</span>}
-                    </button>
+                      song={s}
+                      active={String(s.id) === String(effectiveSongId)}
+                      onSelect={() => goToSong(s.id)}
+                    />
                   ))}
                   {!dataLoading && !dataError && q && (
                     <>
-                      <div className="stage-mode-sheet-group-label">Di luar aplikasi</div>
-                      <div className="stage-mode-sheet-external">
-                        <a
-                          className="stage-mode-sheet-ext-btn"
-                          href={googleUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          role="menuitem"
-                        >
-                          🌐 Google
+                      <div className="stage-sheet-group-label">Di luar aplikasi</div>
+                      <div className="stage-sheet-external">
+                        <a className="stage-sheet-ext-btn" href={googleUrl} target="_blank" rel="noreferrer" role="menuitem">
+                          Google
                         </a>
-                        <a
-                          className="stage-mode-sheet-ext-btn"
-                          href={youtubeSearchUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          role="menuitem"
-                        >
-                          ▶ YouTube
+                        <a className="stage-sheet-ext-btn" href={youtubeSearchUrl} target="_blank" rel="noreferrer" role="menuitem">
+                          YouTube
                         </a>
                       </div>
-                      <p className="stage-mode-sheet-hint">
-                        Buka hasil di tab baru, lalu kembali ke Stage Mode.
-                      </p>
+                      <p className="stage-sheet-hint">Buka hasil di tab baru, lalu kembali ke Stage Mode.</p>
                     </>
                   )}
                   {!hasLocalResults && !q && !dataLoading && !dataError && (
-                    <div className="stage-mode-sheet-empty">
+                    <div className="stage-sheet-empty">
                       {setlistSongs.length === 0 && allSongs.length === 0
                         ? 'Belum ada lagu di aplikasi — tambahkan lewat menu Lagu.'
                         : 'Ketik untuk mencari lagu…'}
                     </div>
                   )}
                   {!hasLocalResults && q && !dataLoading && !dataError && (
-                    <div className="stage-mode-sheet-empty">Tidak ada di aplikasi — cari di Google/YouTube.</div>
+                    <div className="stage-sheet-empty">Tidak ada di aplikasi — cari di Google/YouTube.</div>
                   )}
                 </div>
               </>
@@ -1370,3 +1504,4 @@ export default function StageModePage({
 
   return createPortal(content, document.body);
 }
+
