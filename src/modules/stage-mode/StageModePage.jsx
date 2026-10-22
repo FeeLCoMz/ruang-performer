@@ -30,6 +30,10 @@ import {
 
 /* ======== Helpers ======== */
 
+// Batas skala font lirik di panggung (pinch / Ctrl+wheel).
+const STAGE_FONT_MIN = 0.7;
+const STAGE_FONT_MAX = 1.6;
+
 const readStored = (key) => {
   try {
     return localStorage.getItem(key) || '';
@@ -383,9 +387,11 @@ export default function StageModePage({
     window.addEventListener(CHORD_STYLE_EVENT, sync);
     return () => window.removeEventListener(CHORD_STYLE_EVENT, sync);
   }, []);
+  // Skala font lirik panggung. Default 1 = ukuran dasar .cd; bisa diperbesar
+  // lewat pinch / Ctrl+wheel. Batas atas 1.6 supaya tetap muat di layar HP.
   const [fontScale, setFontScale] = useState(() => {
     const stored = Number(readStored(STORAGE_KEYS.STAGE_FONT_SCALE));
-    return Number.isFinite(stored) && stored >= 0.85 && stored <= 3 ? stored : 1.2;
+    return Number.isFinite(stored) && stored >= STAGE_FONT_MIN && stored <= STAGE_FONT_MAX ? stored : 1;
   });
   const [autoScrollMode, setAutoScrollMode] = useState(() => {
     const stored = readStored(STORAGE_KEYS.STAGE_AUTOSCROLL_MODE);
@@ -757,7 +763,7 @@ export default function StageModePage({
       if (g.pinchActive && e.touches.length === 2) {
         e.preventDefault();
         const ratio = getDistance(e.touches) / (g.startDistance || 1);
-        const next = Math.min(3, Math.max(0.85, g.startFontScale * ratio));
+        const next = Math.min(STAGE_FONT_MAX, Math.max(STAGE_FONT_MIN, g.startFontScale * ratio));
         setFontScale(next);
       }
     };
@@ -770,7 +776,7 @@ export default function StageModePage({
       if (!e.ctrlKey) return;
       e.preventDefault();
       const delta = e.deltaY < 0 ? 0.1 : -0.1;
-      setFontScale((prev) => Math.min(3, Math.max(0.85, Number(prev) + delta)));
+      setFontScale((prev) => Math.min(STAGE_FONT_MAX, Math.max(STAGE_FONT_MIN, Number(prev) + delta)));
     };
 
     el.addEventListener('touchstart', handleTouchStart, { passive: true });
@@ -1086,6 +1092,13 @@ export default function StageModePage({
                 // Beri kesempatan player mount sebelum seek.
                 setTimeout(() => youtubeRef.current?.handleSeek?.(seconds), playerVisible ? 0 : 600);
               }}
+            />
+            {/* Ruang baca di akhir lirik: hanya ada saat autoscroll, supaya
+                baris terakhir bisa naik ke tengah layar. Scroll manual tidak
+                menyisakan halaman kosong di bawah lirik. */}
+            <div
+              className={`stage-lyrics-pad${autoScrollActive ? ' is-autoscroll' : ''}`}
+              aria-hidden="true"
             />
           </div>
         ) : (

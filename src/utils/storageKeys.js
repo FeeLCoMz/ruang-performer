@@ -30,7 +30,9 @@ export const STORAGE_KEYS = {
   STAGE_SETLIST: 'ruangperformer_stage_setlist_v1',
   STAGE_SONG: 'ruangperformer_stage_song_v1',
   // Stage Mode: preferensi lirik (font zoom & mode autoscroll).
-  STAGE_FONT_SCALE: 'ruangperformer_stage_font_scale_v1',
+  // v2: skala font lama (default 1.2) terlalu besar di panggung; key diganti
+  // supaya nilai lama tidak ikut terbaca dan user mulai dari default baru.
+  STAGE_FONT_SCALE: 'ruangperformer_stage_font_scale_v2',
   STAGE_AUTOSCROLL_MODE: 'ruangperformer_stage_autoscroll_mode_v1',
 };
 
