@@ -123,16 +123,6 @@
   letter-spacing: 0.2px;
 }
 
-.cd-section-inst {
-  display: inline-block;
-  margin: 0 0.15em;
-  padding: 0.08em 0.5em;
-  color: var(--text-primary);
-  font-weight: 700;
-  font-size: 0.9rem;
-  font-style: normal;
-}
-
 .cd-modulation {
   margin: 16px 0 8px 0;
   padding: 8px 12px;
@@ -225,12 +215,6 @@
   background: rgba(148, 163, 184, 0.1);
   border-color: rgba(148, 163, 184, 0.28);
   color: var(--text-primary);
-}
-
-.cd-instrument-patch {
-  white-space: pre;
-  display: inline-block;
-  margin: 0 0.15em;
 }
 
 .cd-preset-cue {

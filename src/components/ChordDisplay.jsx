@@ -111,8 +111,6 @@ const ChordDisplayBase = memo(function ChordDisplay({
     fontScale = 1,
   }) {
 
-  const formatInstrumentPatchText = (lineObj) => lineObj?.label || '';
-
   const resolvedChordStyle = chordStyle
     ? normalizeChordStyle(chordStyle)
     : (showChordNumbers
@@ -268,7 +266,16 @@ const ChordDisplayBase = memo(function ChordDisplay({
       return;
     }
     if (lineObj.type === 'instrument') {
-      renderedRows.push(<span key={i} className={`cd-instrument-token cd-section-inst${syncClass(lineObj)}`}>{lineObj.label}</span>);
+      // Satu jalur render dengan tag instrumen inline di baris lirik: baris
+      // instrumen selalu punya <div> sendiri (tidak menempel ke seksi di
+      // atasnya) dan memakai warna keluarga instrumen yang sama.
+      renderedRows.push(
+        <div key={i} className={`cd-lyrics${syncClass(lineObj)}${focusRowClass()}`}>
+          <span className={`cd-instrument-token ${getInstrumentTokenClass(lineObj.label)}`}>
+            {lineObj.label}
+          </span>
+        </div>
+      );
       return;
     }
     if (lineObj.type === 'cue') {
@@ -282,10 +289,6 @@ const ChordDisplayBase = memo(function ChordDisplay({
     }
     if (lineObj.type === 'modulation') {
       renderedRows.push(<div key={i} className={`cd-modulation${syncClass(lineObj)}`}>🔄 Modulasi ke {lineObj.label}</div>);
-      return;
-    }
-    if (lineObj.type === 'instrument_patch') {
-      renderedRows.push(<span key={i} className={`cd-instrument-token cd-instrument-patch${syncClass(lineObj)}`}>{formatInstrumentPatchText(lineObj)}</span>);
       return;
     }
     if (lineObj.type === 'metadata') {

@@ -80,6 +80,38 @@ describe('ChordDisplay lyrics mode', () => {
     expect(renderChords({ chordStyle: 'NUMBER', keySignature: 'C' })).toContain('1maj7');
   });
 
+  test('renders instrument rows as their own block row with family colors', () => {
+    // "[Gitar: ]" (detail kosong) dan "[Flute: Solo]" harus tampil sama seperti
+    // tag instrumen di baris lirik: baris sendiri + warna keluarga. Sebelumnya
+    // row instrument dirender <span class="cd-section-inst"> (inline-block),
+    // sehingga menempel ke seksi di atasnya.
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <ChordDisplay
+          song={{ lyrics: '[Intro]\n[Gitar: ]\n[Flute: Solo]' }}
+          showChords={true}
+        />
+      );
+    });
+
+    const instrumentRows = container.querySelectorAll('.cd-lyrics > .cd-instrument-token');
+    expect(instrumentRows).toHaveLength(2);
+    expect(instrumentRows[0].textContent).toBe('Gitar');
+    expect(instrumentRows[1].textContent).toBe('Flute: Solo');
+    expect(container.querySelector('.cd-instrument-token--guitar')).toBeTruthy();
+    expect(container.querySelector('.cd-instrument-token--wind')).toBeTruthy();
+    expect(container.querySelector('.cd-section-inst')).toBeFalsy();
+
+    act(() => {
+      root.unmount();
+    });
+    document.body.removeChild(container);
+  });
+
   test('renders a MIDI keyword line as plain text', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
