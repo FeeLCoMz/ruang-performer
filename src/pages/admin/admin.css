@@ -565,25 +565,34 @@
   outline-offset: 1px;
 }
 
+/*
+ * Menu aksi per baris (⋯).
+ *
+ * Menu memakai Popover API sehingga dirender di TOP LAYER: koordinatnya
+ * relatif ke viewport, bukan ke tombol. Posisi top/left diisi inline oleh
+ * UserActionsMenu dari kotak tombol ⋯ — CSS anchor (anchor()/position-area)
+ * belum didukung merata di peramban yang dipakai.
+ *
+ * JANGAN set `display` di aturan dasar: aturan itu juga berlaku saat popover
+ * tertutup dan mengalahkan `display: none` bawaan browser, sehingga semua
+ * menu ikut tampil menempel di setiap baris. Display hanya di :popover-open.
+ */
 .admin-actions-dropdown {
-  /* Menutupi styling default popover (margin auto, latar putih, border). */
-  position: absolute;
-  inset: auto;
-  top: calc(100% + 4px);
-  right: 0;
+  position: fixed;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  margin: 0;
   z-index: 20;
-  /* JANGAN set display: flex di sini. Aturan ini juga berlaku saat popover
-     tertutup, sehingga `display` mengalahkan `display: none` bawaan browser
-     dan menu tampil menempel pada setiap baris. Display diatur khusus di
-     :popover-open / [hidden] di bawah. */
   flex-direction: column;
   min-width: 160px;
-  margin: 0;
   padding: 4px;
   border-radius: 10px;
+  /* Gaya default popover (border, latar kanvas, margin) ditimpa di sini. */
   border: 1px solid var(--border-color);
   background: var(--secondary-bg, #1f2937);
-  color: var(--text-primary, inherit);
+  color: var(--text-primary, #f3f4f8);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   overflow: visible;
 }
@@ -592,12 +601,17 @@
    (browser memberi `display: none` saat tertutup). */
 .admin-actions-dropdown:popover-open {
   display: flex;
+  /* Latar eksplisit: bila `background` dengan var gagal resolve, popover
+     jatuh ke latar kanvas terang dan teks putih tak terbaca. */
+  background-color: var(--secondary-bg, #1f2937);
+  color: var(--text-primary, #f3f4f8);
 }
 
 .admin-actions-dropdown[hidden] {
   display: none;
 }
 
+/* Item menu mewarisi warna agar kontras pada latar gelap. */
 .admin-actions-dropdown button {
   padding: 8px 12px;
   border: none;

@@ -71,6 +71,7 @@ const supportsPopover = typeof HTMLElement !== 'undefined'
 function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction }) {
   const [open, setOpen] = useState(false);
   const popoverRef = useRef(null);
+  const anchorRef = useRef(null);
 
   const run = (action) => {
     // Tutup menu lebih dulu, baru jalankan aksi (mis. membuka modal konfirmasi).
@@ -82,15 +83,45 @@ function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction 
   };
 
   /**
-   * Popover baru di-mount setelah `open` bernilai true, jadi showPopover()
-   * harus menunggu commit — kalau dipanggil pada render yang sama, elemennya
-   * belum ada dan menu tidak pernah terbuka.
+   * Popover di-mount setelah `open` bernilai true, jadi showPopover() dipanggil
+   * dari ref callback (setelah commit).
+   *
+   * Popover berada di TOP LAYER, sehingga koordinatnya relatif ke viewport —
+   * bukan ke tombol. CSS anchor (anchor()/position-area) belum didukung merata,
+   * jadi posisi dihitung dari kotak tombol lalu dipasang sebagai inline style:
+   * menu muncul tepat di bawah tombol, rata kanan dengannya.
    */
-  const openPopover = useCallback(() => {
-    popoverRef.current?.showPopover?.();
+  const positionPopover = (triggerButton) => {
+    const popover = popoverRef.current;
+    if (!popover || !triggerButton) return;
+
+    const rect = triggerButton.getBoundingClientRect();
+    const menuWidth = popover.offsetWidth || 160;
+    const menuHeight = popover.offsetHeight || 0;
+    const gap = 4;
+
+    // Rata kanan dengan tombol, tetapi jangan sampai keluar layar.
+    const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
+    // Jika tidak cukup ruang di bawah, tampilkan di atas tombol.
+    const openUpward = rect.bottom + gap + menuHeight > window.innerHeight - 8;
+    const top = openUpward
+      ? Math.max(8, rect.top - gap - menuHeight)
+      : rect.bottom + gap;
+
+    popover.style.left = `${Math.round(left)}px`;
+    popover.style.top = `${Math.round(top)}px`;
+    popover.style.right = 'auto';
+    popover.style.bottom = 'auto';
+  };
+
+  const openPopover = useCallback((triggerButton) => {
+    const popover = popoverRef.current;
+    if (!popover) return;
+    popover.showPopover?.();
+    positionPopover(triggerButton);
   }, []);
 
-  const toggle = () => {
+  const toggle = (event) => {
     if (open) {
       setOpen(false);
       if (supportsPopover && popoverRef.current?.matches(':popover-open')) {
@@ -99,6 +130,8 @@ function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction 
       return;
     }
     setOpen(true);
+    // Simpan tombol pemicu; dipakai ref callback setelah menu di-mount.
+    anchorRef.current = event.currentTarget;
   };
 
   // Popover hanya di-render setelah dibuka. Elemen ber-atribut `popover` yang
@@ -107,6 +140,10 @@ function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction 
   // `onToggle` sengaja tidak dipakai: popover "auto" menutup diri lebih dulu
   // saat klik di luar/Escape, dan event toggle-nya akan menimpa state `open`
   // yang baru diset false saat salah satu aksi dipilih.
+  //
+  // Elemen popover dirender di TOP LAYER, sehingga position:absolute tidak
+  // lagi relatif ke tombol (ia jatuh ke sudut kanan bawah viewport). Karena
+  // itu menu ditambatkan ke tombolnya lewat anchor + position-area CSS.
   const menuProps = supportsPopover ? { popover: 'auto' } : {};
 
   return (
@@ -128,7 +165,7 @@ function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction 
             // Ref callback dipanggil setiap render; buka hanya sekali per node.
             const isNew = Boolean(node) && popoverRef.current !== node;
             popoverRef.current = node;
-            if (isNew && supportsPopover) openPopover();
+            if (isNew && supportsPopover) openPopover(anchorRef.current);
           }}
           className="admin-actions-dropdown"
           role="menu"
