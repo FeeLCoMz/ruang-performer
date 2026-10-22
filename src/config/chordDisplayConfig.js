@@ -80,9 +80,11 @@ export const MODULATION_KEYWORDS = ['modulation', 'key change'];
  * Format baris:  Key: Value | Key2: Value2   (segment dipisah "|")
  *
  * Catatan: parsing patch / preset cue / routing MIDI (Patch:, PC:, CH:,
- * Bank:, [Keys: ... | PC: 1]) DIHAPUS dari ChordDisplay. Itulah mengapa
- * key-key tersebut (masih ada di METADATA_KEYS agar barisnya diredupkan
- * sebagai metadata) TIDAK punya parser sendiri di sini.
+ * Bank:, [Keys: ... | PC: 1]) DIHAPUS dari ChordDisplay. Keyword yang dibaca
+ * modul MIDI (patch, preset, sound, program, tone, layer, split, zone, scene,
+ * pc, ch, bank, msb, lsb, ...) TIDAK didaftarkan di sini: daftar keyword MIDI
+ * dikelola modulnya sendiri, bukan konfigurasi ChordDisplay. Baris ber-key MIDI
+ * tidak lagi jadi metadata — slot MIDI akan mem-parse-nya sendiri.
  */
 
 /** Grup C — info lagu (informasional, tidak mempengaruhi transpose). */
@@ -104,19 +106,10 @@ export const NOTE_KEYS = [
 
 /**
  * Semua key metadata yang dikenali (isMetadataLine) dan tidak punya parser
- * sendiri. Dulu termasuk key patch/MIDI; sekarang key-key itu HANYA diredupkan
- * sebagai metadata — artinya tidak lagi menghasilkan instrument_patch/midi,
- * dan modul MIDI nanti yang akan mem-parse-nya sendiri dari teks lirik.
+ * sendiri. Hanya keyword milik ChordDisplay: keyword patch/MIDI sengaja tidak
+ * ada di sini karena modul MIDI membaca teks lirik dengan daftarnya sendiri.
  */
 export const METADATA_KEYS = dedupe([
-  // nama suara & instrumen (dibaca modul MIDI nanti, bukan ChordDisplay)
-  'patch', 'preset', 'sound', 'tone', 'program',
-  'instrument', 'instrumen',
-  // layering & split keyboard
-  'layer', 'split', 'zone', 'scene',
-  // routing MIDI
-  'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb',
-  // info lagu, petunjuk, catatan & efek
   ...SONG_INFO_KEYS,
   ...PERFORMANCE_HINT_KEYS,
   ...NOTE_KEYS,
@@ -223,13 +216,11 @@ export const INSTRUMENT_KEYWORDS = [
  * parser SELALU memakai daftar key yang sama.
  * Tabel di bawah hanya menyimpan deskripsi popup per key (boleh dikosongkan);
  * key tanpa entri tetap ditawarkan tanpa deskripsi.
+ * Keyword patch/MIDI (Patch:, Layer:, CH:, ...) sengaja TIDAK ada di sini:
+ * itu dibaca modul MIDI, bukan ChordDisplay.
  */
 
 /** Deskripsi yang dipakai beberapa key sekaligus (sinonim). */
-const DETAIL_PATCH = {
-  detail: 'Patch keyboard',
-  info: 'Contoh: Patch: Stage Piano | Layer: Warm Pad',
-};
 const DETAIL_INSTRUMENT = {
   detail: 'Label instrumen',
   info: 'Menandai instrumen yang bermain di bagian ini.',
@@ -257,14 +248,6 @@ const DETAIL_TIME_SIGNATURE = {
   detail: 'Birama lagu',
   info: 'Contoh: Time Signature: 4/4',
 };
-const DETAIL_LAYER = {
-  detail: 'Layering / split keyboard',
-  info: 'Tidak mengubah suara; hanya susunan layer. Contoh: Layer: Warm Pad',
-};
-const DETAIL_ROUTING = {
-  detail: 'Routing MIDI',
-  info: 'Contoh: CH: 1 | Bank MSB: 0 | Bank LSB: 0',
-};
 const DETAIL_GROOVE = {
   detail: 'Groove/karakter permainan',
   info: 'Contoh: Groove: Shuffle',
@@ -283,11 +266,6 @@ const DETAIL_DYNAMICS = {
 };
 
 const AUTOCOMPLETE_METADATA_DETAILS = {
-  patch: DETAIL_PATCH,
-  preset: DETAIL_PATCH,
-  sound: DETAIL_PATCH,
-  program: DETAIL_PATCH,
-  tone: DETAIL_PATCH,
   instrument: DETAIL_INSTRUMENT,
   instrumen: DETAIL_INSTRUMENT,
   modulation: DETAIL_MODULATION,
@@ -307,18 +285,6 @@ const AUTOCOMPLETE_METADATA_DETAILS = {
   texture: DETAIL_TEXTURE,
   voicing: DETAIL_TEXTURE,
   fx: DETAIL_FX,
-  layer: DETAIL_LAYER,
-  split: DETAIL_LAYER,
-  zone: DETAIL_LAYER,
-  scene: DETAIL_LAYER,
-  pc: DETAIL_ROUTING,
-  ch: DETAIL_ROUTING,
-  channel: DETAIL_ROUTING,
-  bank: DETAIL_ROUTING,
-  bankmsb: DETAIL_ROUTING,
-  banklsb: DETAIL_ROUTING,
-  msb: DETAIL_ROUTING,
-  lsb: DETAIL_ROUTING,
   'original key': DETAIL_ORIGINAL_KEY,
   'time signature': DETAIL_TIME_SIGNATURE,
 };

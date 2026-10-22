@@ -80,7 +80,7 @@ describe('ChordDisplay lyrics mode', () => {
     expect(renderChords({ chordStyle: 'NUMBER', keySignature: 'C' })).toContain('1maj7');
   });
 
-  test('renders instrument label instead of a preset cue badge', () => {
+  test('renders a MIDI keyword line as plain text', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root = createRoot(container);
@@ -94,13 +94,12 @@ describe('ChordDisplay lyrics mode', () => {
       );
     });
 
-    // Parsing patch/MIDI sudah dihapus: baris cue tampil sebagai label
-    // instrumen biasa, tanpa badge cue dan tanpa data MIDI.
+    // Keyword patch/MIDI dibaca modul MIDI, bukan ChordDisplay: baris itu
+    // bukan label instrumen, bukan metadata, bukan badge cue.
     expect(container.querySelector('.cd-preset-cue')).toBeFalsy();
-    const instrumentRow = container.querySelector('.cd-instrument-token');
-    expect(instrumentRow).toBeTruthy();
-    expect(instrumentRow.textContent).toContain('Keys: Acoustic Piano');
+    expect(container.querySelector('.cd-instrument-token')).toBeFalsy();
     expect(container.querySelector('.cd-metadata')).toBeFalsy();
+    expect(container.textContent).toContain('Keys: Acoustic Piano');
 
     act(() => {
       root.unmount();

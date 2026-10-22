@@ -15,17 +15,23 @@ describe('chordUtils', () => {
     expect(parsed[1].type).toBe('chord');
   });
 
-  test('parseLines preserves section, instrument and lyrics rows', () => {
-    // Baris instrumen ("[Keys: ...]") sekarang label instrumen — tanpa MIDI.
-    const separateLines = parseLines(['[Intro]', '[Keys: Acoustic Grand Piano]', 'Hello'], 0);
+  test('parseLines keeps ChordDisplay rows and leaves MIDI key lines alone', () => {
+    // Baris instrumen ChordDisplay: "[Gitar: Dist]". Tag ber-key MIDI
+    // ("[Keys: ...]") bukan keyword ChordDisplay — milik modul MIDI.
+    const separateLines = parseLines(['[Intro]', '[Gitar: Dist]', 'Hello'], 0);
     expect(separateLines[0]).toMatchObject({ type: 'structure', label: 'Intro', sourceLine: 1 });
-    expect(separateLines[1]).toMatchObject({ type: 'instrument', label: 'Keys: Acoustic Grand Piano' });
+    expect(separateLines[1]).toMatchObject({ type: 'instrument', label: 'Gitar: Dist' });
     expect(separateLines[2]).toMatchObject({ type: 'lyrics' });
 
-    const sameLine = parseLines(['[Intro] [Keys: Acoustic Grand Piano]', 'Hello'], 0);
+    // "[Intro] [Gitar: Dist]": seksi + tag dalam satu baris dibiarkan utuh; yang
+    // penting header seksinya tetap terbaca.
+    const sameLine = parseLines(['[Intro] [Gitar: Dist]', 'Hello'], 0);
     expect(sameLine[0]).toMatchObject({ type: 'structure', label: 'Intro', sourceLine: 1 });
-    expect(sameLine[1]).toMatchObject({ type: 'instrument' });
-    expect(sameLine[2]).toMatchObject({ type: 'lyrics' });
+    expect(sameLine[1]).toMatchObject({ type: 'lyrics' });
+
+    // "[Keys: ...]" dibiarkan untuk slot MIDI, bukan jadi row instrumen.
+    const [keysRow] = parseLines(['[Keys: Acoustic Grand Piano]', 'Hello'], 0);
+    expect(keysRow.type).not.toBe('instrument');
   });
 
   test('parseLines expands standalone repeated section labels using previous section content', () => {
@@ -269,11 +275,23 @@ describe('chordUtils', () => {
     expect(parseSection('Suling')).toBe(null);
   });
 
-  test('parseLines keeps bracket metadata tags renderable in mixed section lines', () => {
-    const parsed = parseLines(['[Verse 2] [Style: Pop] [Cue: Fill Bell]'], 0);
+  test('parseLines keeps bracket metadata tags in one row', () => {
+    // Baris gabungan dibiarkan utuh; header seksinya tetap terbaca dan tag
+    // metadata tidak dirender sebagai row terpisah.
+    const parsed = parseLines(['[Verse 2] [Cue: Fill Bell]'], 0);
     expect(parsed[0]).toMatchObject({ type: 'structure', label: 'Verse 2' });
-    expect(parsed[1]).toMatchObject({ type: 'metadata', text: '[Style: Pop]' });
-    expect(parsed[2]).toMatchObject({ type: 'metadata', text: '[Cue: Fill Bell]' });
+    expect(parsed).toHaveLength(1);
+  });
+
+  test('MIDI-only bracket tags are left untouched for the MIDI module', () => {
+    // [Style: Pop] bukan keyword ChordDisplay (Style bukan MIDI key) dan bukan
+    // instrumen: baris gabungan dibiarkan utuh dan dibaca sebagai header seksi.
+    const parsed = parseLines(['[Verse 2] [Style: Pop]'], 0);
+    expect(parsed[0]).toMatchObject({ type: 'structure', label: 'Verse 2' });
+
+    // [Keys: ...] adalah baris perintah MIDI: satu row, bukan label instrumen.
+    const [keysRow] = parseLines(['[Keys: EP Soft]'], 0);
+    expect(keysRow.type).not.toBe('instrument');
   });
 
   test('parseSection still accepts bracketed structure labels with instrumentation annotations', () => {
@@ -637,17 +655,23 @@ describe('chordUtils', () => {
     expect(parseLines(lines, 0)[0].type).toBe('chord');
   });
 
-  test('isMetadataLine detects patch/layer metadata segments', () => {
-    expect(isMetadataLine('Patch: Stage Piano | Layer: Warm Pad (Volume 30%)')).toBe(true);
+  test('isMetadataLine accepts ChordDisplay keys and rejects MIDI-only keys', () => {
+    expect(isMetadataLine('[Original Key: C]')).toBe(true);
+    expect(isMetadataLine('Cue: Drum masuk di bar 9')).toBe(true);
     expect(isMetadataLine('Aku bilang: kamu hebat')).toBe(false);
+    // Keyword MIDI dikelola modul MIDI, bukan ChordDisplay.
+    expect(isMetadataLine('Patch: Stage Piano | Layer: Warm Pad (Volume 30%)')).toBe(false);
+    expect(isMetadataLine('[Layer: Warm Pad]')).toBe(false);
+    expect(isMetadataLine('CH: 3')).toBe(false);
   });
 
-  test('patch / MIDI lines are metadata only, with no parsed midi data', () => {
-    // Parsing patch + MIDI sudah dihapus dari ChordDisplay; modul MIDI sendiri
-    // yang akan membaca baris ini. Di sini cukup tidak jatuh ke chord/lirik.
-    // "[Keys: ... | PC: 4 | CH: 1]" adalah label instrumen; opsinya diabaikan.
+  test('MIDI keyword lines are not ChordDisplay metadata', () => {
+    // Keyword patch/MIDI sudah dihapus dari chordDisplayConfig: baris itu bukan
+    // metadata ChordDisplay lagi (slot MIDI yang mem-parse-nya sendiri).
+    // "[Keys: EP Soft | PC: 4 | CH: 1]" adalah baris perintah MIDI: bukan label
+    // instrumen ChordDisplay, dan tidak menghasilkan data MIDI di sini.
     const [keysRow] = parseLines(['[Keys: EP Soft | PC: 4 | CH: 1]'], 0);
-    expect(keysRow).toMatchObject({ type: 'instrument', label: 'Keys: EP Soft' });
+    expect(keysRow.type).not.toBe('instrument');
     expect(keysRow.midi).toBeUndefined();
     for (const line of [
       'Preset: Ballad Keys',
@@ -657,7 +681,7 @@ describe('chordUtils', () => {
       'CH: 3',
     ]) {
       const [row] = parseLines([line], 0);
-      expect(row, line).toMatchObject({ type: 'metadata', text: line });
+      expect(row, line).not.toMatchObject({ type: 'metadata' });
       expect(row.midi, line).toBeUndefined();
     }
     // "Gitar: Dist" tanpa bracket bukan metadata: tetap lirik.
@@ -709,8 +733,7 @@ describe('chordUtils', () => {
       sourceLine: 1,
     });
     expect(parsed[1]).toMatchObject({
-      type: 'metadata',
-      text: 'Patch: Stage Piano | Layer: Warm Pad (Volume 30%)',
+      type: 'lyrics',
       sourceLine: 2,
     });
     expect(parsed[1].midi).toBeUndefined();

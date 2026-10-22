@@ -64,42 +64,34 @@
 
 ## 3. METADATA / PATCH KEYBOARD
 ## -----------------------------
-# Format umum:  Key: Value | Key2: Value2  (segment dipisah "|")
-# Diparse oleh isMetadataLine / parseInstrumentPatchLine / parsePresetCueLine.
+# Format umum:  [Key: Value]  (beberapa tag boleh digabung: [A: x] [B: y])
+# Diparse oleh isMetadataLine.
 
-# 3a. Metadata keys yang dikenali (METADATA_KEYS):
-#     patch, layer, intensitas, intensity, dynamics, dinamik, cue, notes, catatan,
-#     sound, tone, fx, effect, effects, voicing, texture,
-#     split, zone, program, preset, scene, part, fill, groove, feel,
-#     pc, ch, channel, bank, bankmsb, banklsb, msb, lsb
-#     (plus: style)
+# Keyword patch / MIDI (patch, preset, sound, tone, program, instrument,
+# layer, split, zone, scene, pc, ch, channel, bank, bankmsb, banklsb, msb,
+# lsb) TIDAK lagi dikenali ChordDisplay — daftar itu dibaca modul MIDI.
+# Baris seperti [Keys: EP Soft | CH: 2] dibiarkan utuh untuk modul MIDI.
 
-# 3b. Untuk menjadi instrument_patch (cue dengan MIDI), baris HARUS punya
-#     salah satu "patch defining keys":
-#     patch, preset, sound, tone, instrument, instrumen, program, pc
-#     Baris "Layer: Warm Pad" saja TIDAK jadi patch (tanpa MIDI program).
+# 3a. Metadata keys ChordDisplay (METADATA_KEYS):
+#     cue, notes, catatan, fx, effect, effects,
+#     intensitas, intensity, dynamics, dinamik,
+#     groove, feel, style, texture, voicing,
+#     original key, time signature
 
-# 3c. MIDI options yang bisa dipakai di cue:
-#     PC: 0-127        (program change)
-#     CH: 1-16         (channel; 0-15 juga diterima, jadi 0 -> ch 1)
-#     BankMSB: 0-127
-#     BankLSB: 0-127
-#     (alias: bank = BankMSB, msb, lsb)
+# 3b. Keyword MIDI (patch, preset, sound, tone, program, instrument, instrumen,
+#     layer, split, zone, scene, pc, ch, channel, bank, bankmsb, banklsb, msb,
+#     lsb) DIKELOLA MODUL MIDI — tidak ada di config ChordDisplay.
+
+# 3c. Opsi MIDI (PC, CH, BankMSB, ...) bukan keyword ChordDisplay: baris yang
+#     memuatnya dibiarkan utuh untuk modul MIDI.
 
 # Contoh:
-#   Patch: Stage Piano | Layer: Warm Pad (Volume 30%)
-#   Preset: Ballad Keys
-#   Instrument: Guitar
-#   Sound: Strings
-#   Patch: EP Soft | Layer: Warm Pad | Volume: 30%
-#   [Chorus: Lead Synth + Strings | PC: 81 | CH: 2 | BankMSB: 1 | BankLSB: 32]
-#   [Keys: Acoustic Grand Piano | PC: 0 | CH: 1]
-#   [Keys: EP Soft]
-#   [Guitar: Crunch Lead | PC: 30 | CH: 3]
-#   [Intro] [Keys: Acoustic Grand Piano | PC: 0 | CH: 1]     <- bisa digabung di 1 baris
+#   [Instrument: Guitar]
+#   [Cue: Drum masuk di bar 9]
+#   [Keys: EP Soft | PC: 30 | CH: 3]     <- dibaca modul MIDI, bukan ChordDisplay
 
-# 3d. Preset cue HANYA dikenali jika ada opsi MIDI eksplisit (PC/CH/Bank/MSB/LSB).
-#     Baris "[Label: Patch]" tanpa opsi MIDI TIDAK lagi dianggap preset cue.
+# 3d. Tag patch/MIDI tidak lagi jadi preset cue; hanya modul MIDI yang
+#     mem-parse-nya.
 
 # 3e. Metadata lain (format bracket: [Key: Value]):
 #   [Cue: Drum masuk di bar 9]

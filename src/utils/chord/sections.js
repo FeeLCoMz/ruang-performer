@@ -37,16 +37,56 @@ const MODULATION_LINE_REGEX = new RegExp(
 );
 
 /**
- * "[Gitar: Dist]" / "[Epiano: ]" / "[Keys: EP Soft | CH: 2]"
- * -> { instrument: 'Gitar', detail: 'Dist' }. Return false bila bukan instrumen.
- *
- * Hanya untuk TAMPILAN: tidak ada data MIDI yang dihasilkan di sini. Modul MIDI
- * membaca teks lirik sendiri saat ia aktif.
+ * Key yang dibaca modul MIDI. Ditulis ulang di sini (bukan diimpor dari
+ * chordDisplayConfig) karena config itu khusus ChordDisplay — lihat catatan
+ * di sana.
+ */
+const MIDI_KEY_WORDS = [
+  'patch', 'preset', 'sound', 'tone', 'program', 'instrument', 'instrumen',
+  'layer', 'split', 'zone', 'scene',
+  'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb',
+];
+
+const MIDI_KEY_PATTERN = new RegExp(`^(?:${MIDI_KEY_WORDS.join('|')})$`, 'i');
+
+/**
+ * "[Keys: EP Soft | PC: 0 | CH: 1]" -> true. Segmen yang kuncinya keyword MIDI
+ * (di posisi mana pun, termasuk kunci utamanya sendiri: "Keys", "Patch") atau
+ * opsi MIDI ("PC", "CH") berarti baris ini milik modul MIDI, bukan label
+ * instrumen ChordDisplay.
+ */
+const hasMidiKeywordSegment = (line = '') => {
+  const trimmed = String(line || '').trim();
+  if (!/^\[[^[\]]*\]$/.test(trimmed)) return false;
+
+  return trimmed
+    .slice(1, -1)
+    .split('|')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .some((segment) => {
+      const idx = segment.indexOf(':');
+      if (idx <= 0) return false;
+      const key = segment.slice(0, idx).trim().replace(/[\s_]+/g, '');
+      // "Keys" pada "[Keys: EP Soft]" juga menandai baris MIDI.
+      if (key.toLowerCase() === 'keys') return true;
+      return MIDI_KEY_PATTERN.test(key);
+    });
+};
+
+/**
+ * "[Gitar: Dist]" / "[Epiano: ]" -> { instrument, detail }. Bukan instrumen
+ * berarti false. Hanya untuk TAMPILAN: tidak ada data MIDI yang dihasilkan di
+ * sini; modul MIDI membaca teks lirik sendiri saat aktif.
  */
 export const parseBracketedInstrumentLabel = (line) => {
   if (typeof line !== 'string') return false;
   const trimmed = line.trim();
-  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return false;
+  // Satu bracket utuh saja: "[Intro] [Gitar: Dist]" adalah baris gabungan.
+  if (!/^\[[^[\]]*\]$/.test(trimmed)) return false;
+
+  // Segmen ber-key MIDI membuat baris ini milik modul MIDI, bukan instrumen.
+  if (hasMidiKeywordSegment(trimmed)) return false;
 
   const inside = trimmed.slice(1, -1).trim();
   if (!inside) return false;
@@ -57,9 +97,11 @@ export const parseBracketedInstrumentLabel = (line) => {
   const rawLabel = inside.slice(0, idx).trim();
   if (!rawLabel || /\|/.test(rawLabel)) return false;
 
-  // Label harus nama instrumen yang dikenal. Ini sekaligus menolak
-  // "[Chorus: ...]", "[Intro: ...]", "[Verse: ...]".
-  if (!matchInlineInstrumentLabel(rawLabel)) return false;
+  // Nama di kiri titik dua harus BERUPA nama instrumen itu sendiri, bukan
+  // sekadar frasa yang memuat kata instrumen. "[Keys: EP Soft]" lolos jika
+  // memakai matchInlineInstrumentLabel karena detail "EP Soft" mengandung
+  // "EP"/piano — padahal "Keys" adalah key MIDI.
+  if (!normalizeInstrumentDisplayLabel(rawLabel)) return false;
 
   const firstOption = inside.slice(idx + 1).split('|')[0].trim();
   const instrument = normalizeInstrumentDisplayLabel(rawLabel);
@@ -92,19 +134,20 @@ export const isKnownCueMarkLabel = (line = '') => {
   return CUE_MARK_KEYWORDS.includes(inside);
 };
 
-/** Label instrumen di kiri titik dua sebuah baris bracket ("[Gitar: Dist]"). */
-const getBracketLineLabel = (line) => {
-  if (typeof line !== 'string') return '';
-  const trimmed = line.trim();
-  if (!trimmed.startsWith('[')) return '';
-  const idx = trimmed.indexOf(':');
-  if (idx <= 0) return '';
-  return trimmed.slice(1, idx).trim();
-};
-
 const isInstrumentBracketLine = (line) => {
-  const label = getBracketLineLabel(line);
-  return Boolean(label) && matchInlineInstrumentLabel(label);
+  const trimmed = String(line || '').trim();
+  // Hanya satu bracket utuh, atau bracket pertama saat baris gabungan
+  // ("[Intro] [Gitar: Dist]"): keduanya bukan seksi "Intro"/"Gitar".
+  const firstBracket = trimmed.match(/^\[([^[\]]*)\]/);
+  if (!firstBracket) return false;
+  const inside = firstBracket[1];
+  const idx = inside.indexOf(':');
+  if (idx <= 0) return false;
+
+  // Key MIDI ("[Keys: EP Soft]") milik modul MIDI, bukan seksi "Keys".
+  if (hasMidiKeywordSegment(`[${inside}]`)) return true;
+
+  return Boolean(matchInlineInstrumentLabel(inside.slice(0, idx).trim()));
 };
 
 // Fungsi untuk mendeteksi section/struktur lagu atau instrumen

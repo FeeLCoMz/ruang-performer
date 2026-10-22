@@ -21,10 +21,9 @@ describe('lyricsCompletionOptions', () => {
     // These were the entries in the old "Panduan Metadata Lirik" modal.
     // Autocomplete diturunkan 1:1 dari METADATA_KEYS + MODULATION_KEYWORDS,
     // dan sekarang hanya ditawarkan dalam bentuk braket.
+    // "Instrument:" bukan lagi keyword metadata (baris instrumen memakai
+    // bentuk "[Gitar: ...]"), jadi tidak diharapkan di daftar ini.
     for (const key of [
-      '[Patch: ]',
-      '[Preset: ]',
-      '[Instrument: ]',
       '[Modulation: ]',
       '[Cue: ]',
       '[Intensitas: ]',
@@ -35,6 +34,10 @@ describe('lyricsCompletionOptions', () => {
       '[Time Signature: ]',
     ]) {
       expect(labels, key).toContain(key);
+    }
+    // Keyword patch/MIDI dibaca modul MIDI, bukan ChordDisplay.
+    for (const midiKey of ['[Patch: ]', '[Preset: ]', '[Layer: ]', '[CH: ]', '[Bank MSB: ]']) {
+      expect(labels, midiKey).not.toContain(midiKey);
     }
   });
 
@@ -51,8 +54,8 @@ describe('lyricsCompletionOptions', () => {
   });
 
   test('Given metadata keys, Then only the bracketed form is offered', () => {
-    expect(labels).toContain('[Patch: ]');
-    expect(labels).not.toContain('Patch:');
+    expect(labels).toContain('[Original Key: ]');
+    expect(labels).not.toContain('Original Key:');
   });
 
   test('Given every option, Then each carries enough context to be useful in the popup', () => {

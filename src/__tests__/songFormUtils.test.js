@@ -31,7 +31,7 @@ describe('songFormUtils', () => {
         '[Chorus]',
         'G C',
         'Na na na',
-        '[Keys: Stage Piano | PC: 0 | CH: 1]',
+        '[Gitar: Stage Lead]',
       ].join('\n');
 
       const result = analyseLyrics(lyrics);

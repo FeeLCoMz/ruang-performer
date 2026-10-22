@@ -173,9 +173,13 @@ function splitBracketCompoundLine(line) {
     .trim();
   if (remainingText) return null;
 
+  // Tag berisi key MIDI ("[Keys: EP Soft]") bukan keyword ChordDisplay: jangan
+  // dipecah, biarkan utuh untuk slot MIDI.
+  if (bracketChunks.some((chunk) => isMidiOnlyBracketTag(chunk))) return null;
+
   // Tag instrumen berurutan ("[Gitar] [Suling]") TIDAK dipecah: braketnya sudah
   // dipisah tokenizer, sehingga dipecah per baris hasilnya dua row "instrument"
-  // yang dirender ganda. Tag seksi/metadata tetap dipecah (satu baris per tag).
+  // yang dirender ganda.
   if (bracketChunks.every((chunk) => isInlineInstrumentToken(chunk))) return null;
 
   return bracketChunks
@@ -186,8 +190,15 @@ function splitBracketCompoundLine(line) {
 const CANONICAL_BRACKET_KEYWORD_REGEX = /^\[([A-Za-z0-9 '.\-&_]+)\]$/;
 
 /**
- * Tulis ulang keyword yang dikenali menjadi bentuk baku "[Keyword]" — satu
- * bentuk untuk semua tag, baik di baris lirik maupun baris chord.
+ * Shape braket "Nama: nilai" yang bukan milik ChordDisplay — bentuk yang
+ * dipakai modul MIDI ("Keys: EP Soft", "CH: 2", "Patch: Stage Piano").
+ */
+const MIDI_ONLY_BRACKET_REGEX = /^\[[^[\]:]+:\s*[^[\]]*\]$/;
+
+const isMidiOnlyBracketTag = (tag = '') => MIDI_ONLY_BRACKET_REGEX.test(String(tag).trim());
+
+/**
+ * Tulis ulang keyword cue mark yang dikenali menjadi bentuk baku "[Keyword]".
  */
 const toCanonicalBracketKeyword = (token) => {
   const match = String(token || '').trim().match(CANONICAL_BRACKET_KEYWORD_REGEX);
@@ -293,6 +304,10 @@ function tokenizeChordLine(line, transpose) {
 }
 
 function tokenizeLyricLine(line, transpose) {
+  // Tag ber-key MIDI ("[Keys: ...]") bukan keyword ChordDisplay: jangan
+  // tokenisasi sebagai tag instrumen/cue — biarkan utuh untuk slot MIDI.
+  if (MIDI_ONLY_BRACKET_REGEX.test(line.trim())) return [{ token: line }];
+
   return mergeInstrumentPhraseTokens(splitKeywordAwareTokens(line)).flatMap((token) => {
     if (/^\s+$/.test(token)) return [{ token, isSpace: true }];
     const inlineCueMark = isInlineCueMarkToken(token);
@@ -336,6 +351,16 @@ function parseLine(line, transpose) {
       return { type: section.type, label: transposeChord(section.label, transpose) };
     }
     return { type: section.type, label: section.label };
+  }
+  // "[Verse 2] [Cue: Fill Bell]": baris gabungan yang sengaja tidak dipecah
+  // (lihat splitBracketCompoundLine). Header seksi dibaca dari bracket pertama
+  // supaya baris itu tetap muncul sebagai seksi, bukan lirik.
+  const leadingSection = trimmed.match(/^\[([^[\]]+)\](?=\s*\[)/);
+  if (leadingSection) {
+    const headSection = parseSection(`[${leadingSection[1]}]`);
+    if (headSection?.type === 'structure') {
+      return { type: 'structure', label: headSection.label };
+    }
   }
   if (isInstrumentPatchLikeLine(line)) {
     return { type: 'metadata', text: line.trim() };
