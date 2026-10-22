@@ -28,7 +28,6 @@ vi.mock('../utils/permissionUtils.js', () => ({
 vi.mock('../components/SongMediaPanel.jsx', () => ({ default: () => null }));
 vi.mock('../modules/voice-search/VoiceSearchButton.jsx', () => ({ default: () => null }));
 vi.mock('../components/LoadingSkeleton.jsx', () => ({ SongListSkeleton: () => <div /> }));
-vi.mock('../modules/metronome/useMetronome.js', () => ({ default: () => [false, vi.fn()] }));
 vi.mock('../utils/metaTagsUtil.js', () => ({
   updatePageMeta: vi.fn(),
   pageMetadata: { songs: {} },
@@ -94,5 +93,31 @@ describe('SongListPage', () => {
       await flushPromises();
     });
     expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);
+  });
+
+  test('search and actions are labelled for screen readers', async () => {
+    await act(async () => {
+      root.render(
+        <SongListPage
+          songs={[{ id: 'song-1', title: 'Anthem', artist: 'Band A', key: 'C', tempo: '132' }]}
+          loading={false}
+          error={null}
+          onSongClick={() => {}}
+        />
+      );
+      await flushPromises();
+    });
+
+    expect(container.querySelector('input.search-input-main')?.getAttribute('aria-label')).toBeTruthy();
+
+    // Baris lagu bisa dibuka dengan keyboard, bukan hanya klik mouse.
+    const card = container.querySelector('.song-item');
+    expect(card.getAttribute('role')).toBe('button');
+    expect(card.getAttribute('tabindex')).toBe('0');
+    await act(async () => {
+      card.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      await flushPromises();
+    });
+    expect(mockNavigate).toHaveBeenCalledWith('/songs/view/song-1');
   });
 });

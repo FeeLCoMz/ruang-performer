@@ -5,16 +5,21 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { canPerformAction, PERMISSIONS } from '../utils/permissionUtils.js';
 import SongCard from '../components/SongCard.jsx';
 import SongMediaPanel from '../components/SongMediaPanel.jsx';
-import { SongListSkeleton } from '../components/LoadingSkeleton.jsx';
 import { fetchSetLists, updateSongMastery } from '../apiClient.js';
 import VoiceSearchButton from '../modules/voice-search/VoiceSearchButton.jsx';
 import MasteryChip from '../components/MasteryChip.jsx';
 import { updatePageMeta, pageMetadata } from '../utils/metaTagsUtil.js';
-import useMetronome from '../modules/metronome/useMetronome.js';
 import { inferSongMood } from '../utils/songMoodUtils.js';
 import { STORAGE_KEYS } from '../utils/storageKeys.js';
 import { useBulkLyricsEnabled } from '../modules/bulk-lyrics/useBulkLyricsEnabled.js';
 
+// Konstan di level modul: bukan state, jadi tidak perlu jadi dependency effect.
+const PAGE_SIZE = 60;
+
+// Props `loading`/`error` tetap diterima demi kompatibilitas; status skeleton & error
+// sudah ditangani App sebelum halaman ini di-mount. `loading` masih dipakai untuk
+// menonaktifkan voice search, `error` tidak lagi dipakai.
+// eslint-disable-next-line no-unused-vars
 export default function SongListPage({ songs, loading, error, onSongClick }) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -25,7 +30,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   // read-only dari parent). Menyimpan { songId: { status, masteredBy } }.
   const [masteryOverrides, setMasteryOverrides] = useState({});
   const currentUserId = user?.userId || user?.id;
-  const pageSize = 60;
   // Restore state from localStorage
   const getPersistedState = () => {
     try {
@@ -42,11 +46,8 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   const [setlistsLoading, setSetlistsLoading] = useState(true);
   const [sortBy, setSortBy] = useState(persisted.sortBy || 'updated');
   const [sortOrder, setSortOrder] = useState(persisted.sortOrder || 'desc');
-  const [metronomeTempo, setMetronomeTempo] = useState(120);
-  const [metronomeSongId, setMetronomeSongId] = useState(null);
-  const [isMetronomeActive, setIsMetronomeActive] = useMetronome(false, metronomeTempo);
   const [activeVideoSong, setActiveVideoSong] = useState(null);
-  const [visibleCount, setVisibleCount] = useState(pageSize);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const videoRef = useRef(null);
   const activeInlinePlayerRef = useRef(null);
   // Playback state untuk komponen media shared (sama dengan song view)
@@ -61,9 +62,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    setVisibleCount(pageSize);
-  }, [pageSize]);
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -150,8 +148,8 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   }, [songs, debouncedSearch, sortBy, sortOrder]);
 
   useEffect(() => {
-    setVisibleCount(pageSize);
-  }, [debouncedSearch, sortBy, sortOrder, pageSize]);
+    setVisibleCount(PAGE_SIZE);
+  }, [debouncedSearch, sortBy, sortOrder]);
 
   const handleClearFilters = () => {
     setSearch('');
@@ -252,34 +250,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     return filteredSongs.slice(0, visibleCount);
   }, [filteredSongs, visibleCount]);
 
-  const displayedSongRows = useMemo(
-    () => visibleSongs.map((song) => ({ type: 'song', song })),
-    [visibleSongs]
-  );
-
   const hiddenSongsCount = Math.max(filteredSongs.length - visibleSongs.length, 0);
-
-  if (loading) {
-    return (
-      <div className="page-container">
-        <div className="page-header">
-          <h1>🎵 Lagu</h1>
-        </div>
-        <SongListSkeleton count={8} />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="page-container">
-        <div className="page-header">
-          <h1>🎵 Lagu</h1>
-        </div>
-        <div className="error-text">{error}</div>
-      </div>
-    );
-  }
 
   function hasYouTubeVideo(song) {
     return Boolean(song?.youtubeId || song?.youtube_url);
@@ -292,9 +263,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
   }
 
   function isSongPlaying(songId) {
-    if (isMetronomeActive && metronomeSongId === songId) return true;
-    if (activeVideoSong?.id === songId) return true;
-    return false;
+    return activeVideoSong?.id === songId;
   }
 
   function handleCloseVideoPlayer() {
@@ -360,23 +329,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     });
     return () => window.cancelAnimationFrame(rafId);
   }, [activeVideoSong]);
-
-  useEffect(() => {
-    if (activeVideoSong && !isMetronomeActive && metronomeSongId === activeVideoSong.id) {
-      setMetronomeSongId(null);
-    }
-  }, [activeVideoSong, isMetronomeActive, metronomeSongId]);
-
-  useEffect(() => {
-    return () => {
-      setIsMetronomeActive(false);
-    };
-  }, [setIsMetronomeActive]);
-
-  const currentMetronomeSong = useMemo(() => {
-    if (!metronomeSongId) return null;
-    return songs.find((song) => song.id === metronomeSongId) || null;
-  }, [metronomeSongId, songs]);
 
   function renderSongItem(song) {
     const isInlineVideoSong = activeVideoSong?.id === song.id;
@@ -493,7 +445,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
       <div className="page-header">
         <div>
           <h1>🎵 Lagu</h1>
-          <p>{filteredSongs.length} lagu</p>
+          <p aria-live="polite">{filteredSongs.length} lagu</p>
         </div>
         <div className="page-header-actions" style={{ '--btn-group': '40px' }}>
           {bulkEnabled && (
@@ -501,6 +453,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
               className="btn btn-secondary song-bulk-btn"
               onClick={() => onSongClick('bulk')}
               title="Tambah banyak lagu sekaligus (lirik & chord)"
+              aria-label="Tambah banyak lagu sekaligus"
             >
               <span aria-hidden="true">📚</span>
               <span className="song-bulk-btn-label">Bulk</span>
@@ -536,6 +489,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           <input
             type="text"
             placeholder="🔍 Cari judul, artis, atau genre..."
+            aria-label="Cari judul, artis, atau genre"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="search-input-main"
@@ -582,6 +536,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
               onClick={handleClearFilters}
               className="btn btn-secondary song-filter-reset-btn"
               title="Hapus semua filter"
+              aria-label="Reset pencarian"
             >
               ✕ Reset
             </button>
@@ -590,35 +545,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
       </div>
 
       {/* Song List */}
-      {isMetronomeActive && !activeVideoSong && (
-        <div className="song-inline-player card">
-          <div className="song-inline-player-header">
-            <div>
-              <h3>Now Playing</h3>
-              <p>
-                Metronom aktif{currentMetronomeSong?.title ? `: ${currentMetronomeSong.title}` : ''}
-              </p>
-            </div>
-            <div className="song-inline-player-actions">
-              <button
-                className={`btn ${isMetronomeActive ? '' : 'btn-secondary'}`}
-                aria-label={isMetronomeActive ? 'Stop metronom' : 'Start metronom'}
-                onClick={() => {
-                  if (isMetronomeActive) {
-                    setIsMetronomeActive(false);
-                    setMetronomeSongId(null);
-                    return;
-                  }
-                  setIsMetronomeActive(true);
-                }}
-              >
-                {isMetronomeActive ? '⏹' : '⏱'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {filteredSongs.length === 0 ? (
         <div className="empty-state">
           <p>
@@ -656,13 +582,13 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
       ) : (
         <>
           <div className="song-list-container">
-            {displayedSongRows.map((row) => renderSongItem(row.song))}
+            {visibleSongs.map(renderSongItem)}
           </div>
           {hiddenSongsCount > 0 && (
             <div className="song-list-load-more">
               <button
                 className="btn btn-secondary"
-                onClick={() => setVisibleCount(prev => prev + pageSize)}
+                onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
               >
                 Muat lebih banyak ({hiddenSongsCount} lagu lagi)
               </button>

@@ -36,12 +36,29 @@ export default function SongCard({
     className,
   ].filter(Boolean).join(' ');
 
+  // Kartu yang bisa diklik juga harus bisa dibuka dengan keyboard (Enter/Space).
+  // Tanpa ini baris lagu hanya bisa diakses lewat pointer.
+  const interactiveProps = onClick
+    ? {
+        role: 'button',
+        tabIndex: 0,
+        onKeyDown: (event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClick(event);
+          }
+        },
+      }
+    : {};
+
   return (
     <div
       ref={rowRef}
       className={cardClassName}
       onClick={onClick}
       style={style}
+      {...interactiveProps}
       {...(dragProps || {})}
     >
       {leadingSlot}

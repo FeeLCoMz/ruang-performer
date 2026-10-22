@@ -842,11 +842,6 @@
 
 /* Layar lebar: jarak judul ke metadata lebih rapat, kartu terasa satu blok */
 @media (min-width: 901px) {
-  .song-item .song-title {
-    margin-bottom: 6px;
-    display: block;
-  }
-
   .song-item .song-heading {
     align-items: center;
     flex-wrap: nowrap;
@@ -1098,14 +1093,15 @@ button.song-mastery-chip:not(:disabled):hover {
   justify-content: center;
 }
 
-/* Tombol aksi dengan label teks: ikon + label, target tetap mudah ditekan.
-   Gaya sama di desktop dan mobile — satu bahasa visual untuk semua lebar layar. */
+/* Tombol aksi dengan label teks: ikon + label.
+   Ukuran akhirnya SATU nilai untuk semua kartu lagu lewat
+   `.song-actions .btn.song-action-btn` di bawah; aturan ini hanya memberi
+   layout & tipografi, bukan tinggi — sebelumnya 44px di sini bertabrakan
+   dengan 34px di aturan container. */
 .song-action-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
-  height: 44px;
   padding: 0 12px;
   border-radius: var(--radius-md);
   font-size: 0.82rem;
@@ -2379,19 +2375,9 @@ button.song-mastery-chip:not(:disabled):hover {
 }
 
 /*
- * Baris aksi kartu lagu (dipakai SongCard di halaman Lagu & setlist): tombol
- * ikon-saja vs ikon+label tidak boleh berbeda tinggi walau flex-wrap aktif.
- */
-.song-actions > .btn {
-  flex: 0 0 auto;
-  align-self: center;
-  height: var(--btn-group, auto);
-  min-height: var(--btn-group, auto);
-}
-
-/*
  * Aksi kartu lagu — satu geometri untuk semua tombol:
- * tinggi 34px, padding horizontal 12px, radius pill, font & ikon sejenis.
+ * tinggi 36px (44px di perangkat sentuh), padding horizontal 12px, radius pill,
+ * font & ikon sejenis.
  * Tanpa ini, tombol ber-class .btn-primary / btn-red / btn-danger mewarisi
  * padding dan ukuran font global .btn (16px) sehingga terlihat lebih besar
  * dan padding-nya beda dari tombol sebelahnya.
@@ -2402,9 +2388,10 @@ button.song-mastery-chip:not(:disabled):hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   gap: 6px;
-  height: 34px;
-  min-height: 34px;
+  height: 36px;
+  min-height: 36px;
   padding: 0 12px;
   border-radius: 999px;
   font-size: 0.8rem;
@@ -2412,6 +2399,14 @@ button.song-mastery-chip:not(:disabled):hover {
   line-height: 1;
   box-sizing: border-box;
   white-space: nowrap;
+}
+
+/* Target sentuh tetap memenuhi 44px di layar sentuh tanpa memperbesar tampilan. */
+@media (pointer: coarse) {
+  .song-actions .btn.song-action-btn {
+    height: 44px;
+    min-height: 44px;
+  }
 }
 
 /* Ikon emoji punya tinggi optis berbeda dari teks; samakan ukurannya. */

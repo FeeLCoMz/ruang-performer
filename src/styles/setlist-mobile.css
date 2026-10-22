@@ -192,11 +192,9 @@
     display: none;
   }
 
-  /* Padding tombol aksi sudah dipatok seragam di setlist-songs.css
-     (`.song-actions .btn.song-action-btn`), termasuk tinggi 34px. */
+  /* Geometri tombol aksi (padding & tinggi) dipatok seragam di
+     setlist-songs.css (`.song-actions .btn.song-action-btn`). */
   .song-item .song-actions .btn.song-action-btn {
-    height: 34px;
-    min-height: 34px;
     padding: 0 12px;
   }
 
