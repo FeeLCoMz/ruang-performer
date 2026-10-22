@@ -226,16 +226,22 @@ describe('SetlistSongsPage', () => {
     expect(completedStrip?.textContent).toContain('Selesai');
     expect(card.querySelector('.song-heading .song-flag-done')).toBeFalsy();
 
-    // Satu header kartu: nomor/status (kiri) dan aksi (kanan) berbagi baris.
+    // Header kartu hanya berisi nomor/status; aksi berada di baris sendiri.
     const headRow = card.querySelector(':scope > .song-head-row');
     expect(headRow).toBeTruthy();
     expect(headRow.querySelector('.song-lead-above')).toBeTruthy();
-    expect(headRow.querySelector('.song-actions')).toBeTruthy();
+    expect(headRow.querySelector('.song-actions')).toBeFalsy();
 
     // Body hanya berisi info (judul + metadata), selebar kartu.
     const body = card.querySelector(':scope > .song-body');
     expect(body.querySelector('.song-info')).toBeTruthy();
     expect(body.querySelector('.song-actions')).toBeFalsy();
+
+    // Aksi tetap DI BAWAH info (anak langsung kartu, setelah .song-body).
+    const actions = card.querySelector(':scope > .song-actions');
+    expect(actions).toBeTruthy();
+    expect(actions.previousElementSibling).toBe(body);
+    expect(actions.querySelector('.mastery-chip-root')).toBeTruthy();
   });
 
   test('shows song key, tempo, and setlist usage metadata', async () => {

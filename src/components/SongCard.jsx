@@ -115,20 +115,18 @@ export default function SongCard({
     ...(dragProps || {}),
   };
 
-  // Slot di atas: header selebar kartu berisi nomor/status (kiri) dan aksi
-  // (kanan), lalu baris info (judul + metadata). Slot samping (default): kolom
+  // Slot di atas: baris HEADER (nomor urut + status) selebar kartu, lalu baris
+  // INFO (judul + metadata), lalu baris AKSI di bawah. Aksi sengaja tetap di
+  // bawah — di kolom kanan kartu paling kanan; Slot samping (default): kolom
   // kiri (rail), info, lalu aksi di kolom kanan.
   if (useAboveLayout) {
     return (
       <div {...cardProps}>
-        {/* Satu blok header: nomor urut + status di kiri dan aksi di kanan.
-            Dulu pita nomor dan baris aksi terpisah sehingga muncul dua garis
-            pemisah bertumpuk dan sisa ruang kosong di kanan pita. */}
         <div className="song-head-row">
           <div className="song-lead-above">{leadingSlot}</div>
-          {(actionStatus || actions) && renderActions(actionStatus)}
         </div>
         <div className="song-body">{info}</div>
+        {(actionStatus || actions) && renderActions(actionStatus)}
       </div>
     );
   }

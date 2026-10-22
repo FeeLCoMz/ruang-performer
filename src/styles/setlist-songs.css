@@ -920,7 +920,7 @@
   overflow: visible;
 }
 
-/* Header kartu: nomor + status di kiri, aksi di kanan, satu garis bawah. */
+/* Header kartu: nomor + status, satu garis bawah. */
 .song-item-with-lead-above .song-head-row {
   display: flex;
   align-items: center;
@@ -953,32 +953,25 @@
   border-right: none;
 }
 
-/* Aksi di header: tetap sebaris (tidak wrap ke baris baru), dan chip mastery
-   menempel setelah tombol supaya sisa ruang tidak terlihat sebagai celah.
-   `width: auto` wajib di sini: responsive-anim.css memasang `.song-actions {
-   width: 100% }` untuk mobile, yang membuat baris aksi turun ke baris kedua
-   dan menyisakan ruang kosong di header. */
-.song-item-with-lead-above .song-head-row > .song-actions {
-  width: auto;
+/* Aksi kartu ber-header: baris sendiri di BAWAH info, selebar kartu, rata kanan.
+   `width: 100%` wajib (responsive-anim.css sudah memasangnya untuk mobile) dan
+   flex-wrap nowrap supaya chip mastery + tombol tetap sebaris. Batas kiri-rata
+   dipakai padding kartu (lihat aturan di bawah), bukan margin header. */
+.song-item-with-lead-above > .song-actions {
+  width: 100%;
   flex: 0 0 auto;
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding: 0;
+  padding: 0 var(--spacing-md) 10px;
   border-top: none;
 }
 
-/* Tombol aksi di header sedikit lebih ringkas daripada tombol aksi biasa agar
-   header tidak mendorong judul ke bawah pada layar sempit. */
-.song-item-with-lead-above .song-head-row .btn.song-action-btn {
+.song-item-with-lead-above .btn.song-action-btn {
   height: 32px;
   min-height: 32px;
   padding: 0 10px;
-}
-
-.song-item-with-lead-above .song-head-row .song-mastery-chip {
-  padding: 2px 2px;
 }
 
 /* Baris info kartu: judul + metadata, selebar kartu. */
