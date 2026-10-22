@@ -190,7 +190,7 @@ export const INSTRUMENT_KEYWORDS = [
   'brass', 'horn section', 'horns', 'trombone', 'tuba', 'euphonium', 'cornet',
   // woodwind
   'saxophone', 'saksofon', 'sax', 'saxo', 'saxofon', 'trumpet', 'terompet',
-  'flute', 'suling', 'seruling', 'clarinet', 'klarinet', 'bansi',
+  'flute', 'suling', 'seruling', 'clarinet', 'klarinet', 'bansi','saluang', 'oboe', 'fagot', 'bassoon', 'piccolo',
   // strings orkestra
   'violin', 'biola', 'cello', 'kontrabas', 'kontrabass', 'strings', 'harp',
   // vokal
