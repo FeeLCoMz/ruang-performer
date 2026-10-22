@@ -910,6 +910,39 @@
   color: var(--text-secondary);
 }
 
+/* ---- Fakta inti kartu lagu: Judul, Artis, Key, Tempo ----
+   Empat informasi ini harus langsung terbaca tanpa hover, tanpa membuka
+   kartu, dan tanpa bergantung pada ukuran layar. Karena itu:
+   - tidak pernah disembunyikan / dipotong oleh aturan responsif,
+   - memakai warna teks penuh (bukan muted),
+   - sedikit lebih besar & lebih tebal dari metadata pendukung. */
+.song-fact-artist {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.song-fact-key,
+.song-fact-tempo {
+  color: var(--text-primary);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--secondary-bg) 92%, transparent);
+  border-color: color-mix(in srgb, var(--border-color) 85%, transparent);
+}
+
+/* Layar sempit: fakta inti sedikit dinaikkan ukurannya, sementara metadata
+   pendukung tetap kecil. Chip key/tempo tidak boleh turun di bawah ini. */
+@media (max-width: 768px) {
+  .song-item .song-fact-artist {
+    font-size: 0.8rem;
+  }
+
+  .song-item .song-chip.song-fact-key,
+  .song-item .song-chip.song-fact-tempo {
+    font-size: 0.78rem;
+    padding: 2px 8px;
+  }
+}
+
 /* Indikator status penguasaan: merah = belum, kuning = latihan, hijau = dikuasai.
    Gaya low-key: tanpa latar — hanya ikon + teks berwarna. Warna status lewat
    variabel --mastery-color yang berlaku untuk chip dan item menu dropdown.

@@ -95,6 +95,35 @@ describe('SongListPage', () => {
     expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);
   });
 
+  test('title, artist, key, and tempo are always rendered as core facts', async () => {
+    await act(async () => {
+      root.render(
+        <SongListPage
+          songs={[
+            {
+              id: 'song-1',
+              title: 'Anthem Malam',
+              artist: 'Band A',
+              key: 'Am',
+              tempo: '132',
+              genre: 'Rock',
+              contributor: 'Rina',
+            },
+          ]}
+          loading={false}
+          error={null}
+          onSongClick={() => {}}
+        />
+      );
+      await flushPromises();
+    });
+
+    expect(container.querySelector('.song-fact-title')?.textContent).toContain('Anthem Malam');
+    expect(container.querySelector('.song-fact-artist')?.textContent).toContain('Band A');
+    expect(container.querySelector('.song-fact-key')?.textContent).toContain('Am');
+    expect(container.querySelector('.song-fact-tempo')?.textContent).toContain('132');
+  });
+
   test('search and actions are labelled for screen readers', async () => {
     await act(async () => {
       root.render(

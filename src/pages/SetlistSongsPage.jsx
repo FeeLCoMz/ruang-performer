@@ -1831,7 +1831,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   )}
                   metaPrimary={(
                     <div className="song-meta-line song-meta-line-primary">
-                      {song.artist && <span className="song-meta-text">👤 {song.artist}</span>}
+                      {/* Artis = fakta inti kartu: selalu tampil dan berkontras tinggi. */}
+                      {song.artist && <span className="song-meta-text song-fact-artist">👤 {song.artist}</span>}
                       {song.genre && (
                         <span className="song-chip">
                           🎸 {song.genre}
@@ -1849,13 +1850,13 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                   metaDetail={(
                     <div className="song-meta-line song-meta-line-detail">
                       {song.key && (
-                        <span className="song-chip">
+                        <span className="song-chip song-fact-key">
                           🎹 {song.key}
                           {keyChanged && baseSong?.key ? ` (${baseSong.key})` : ''}
                         </span>
                       )}
                       {song.tempo && (
-                        <span className="song-chip">
+                        <span className="song-chip song-fact-tempo">
                           ⏱️ {song.tempo} BPM
                           {tempoChanged && baseSong?.tempo ? ` (${baseSong.tempo} BPM)` : ''}
                         </span>

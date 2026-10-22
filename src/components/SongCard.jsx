@@ -14,6 +14,11 @@ import React from 'react';
  *  - `metaPrimary`   : baris 1 metadata (artis/band/genre).
  *  - `metaDetail`    : baris 2 metadata (key/tempo/mood/setlist).
  *  - `actions`       : tombol aksi halaman tersebut.
+ *
+ * Empat informasi yang harus langsung terbaca tanpa hover/scroll — judul,
+ * artis, key, tempo — ditandai dengan class `song-fact-*`. CSS memakai tanda
+ * itu untuk menjaga keempatnya selalu tampil & berkontras tinggi, apa pun
+ * lebar layar. Metadata lain cukup jadi informasi pendukung.
  */
 export default function SongCard({
   title,
@@ -65,7 +70,7 @@ export default function SongCard({
 
       <div className="song-info">
         <div className="song-heading">
-          <h3 className="song-title">
+          <h3 className="song-title song-fact-title">
             {title}
             {isPlaying && <span className="song-playing-badge" title="Sedang berjalan">▶</span>}
           </h3>

@@ -178,6 +178,13 @@
     font-size: 0.72rem;
   }
 
+  /* Fakta inti kartu (artis, key, tempo) sengaja tidak ikut mengecil:
+     nilainya dijaga tetap terbaca di layar sempit. */
+  .song-item .song-chip.song-fact-key,
+  .song-item .song-chip.song-fact-tempo {
+    font-size: 0.78rem;
+  }
+
   .song-item .song-actions {
     width: 100%;
     justify-content: flex-end;
