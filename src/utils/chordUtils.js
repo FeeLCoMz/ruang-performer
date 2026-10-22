@@ -1,12 +1,31 @@
+/**
+ * chordUtils.js
+ *
+ * Utilitas utama manipulasi & analisis chord untuk Ruang Performer.
+ *
+ * Bagian-bagian file (urut dari atas):
+ *   1. Parsing baris & seksi  — parseLine, parseLines, parseSection, metadata
+ *   2. Deteksi instrumen/cue  — extractDetectedInstrumentsFromLyrics
+ *   3. Timestamp & marker     — parseTimestampToken, mergeDetectedTimestampsIntoMarkers
+ *   4. Notasi chord           — isChordLine, transposeChord, chordToNumber, format jazz/simple
+ *   5. Analisis lagu          — parseChordPro, getAllChords, estimateKeyFromChordUsage, dll.
+ *
+ * Semua daftar kata kunci (seksi, metadata, cue mark, instrumen, regex chord)
+ * berasal dari src/config/chordDisplayConfig.js — jangan menyalinnya di sini.
+ * Semua deteksi chord mengabaikan barline (|, ||, |:, :|) dan mendukung
+ * compact chord (D..Gm..Bb).
+ */
 import {
+  CUE_MARK_KEYWORDS,
+  INSTRUMENT_KEYWORDS,
   STRUCTURE_SECTION_KEYWORDS,
   MODULATION_KEYWORDS,
-  METADATA_KEYS as CONFIG_METADATA_KEYS,
+  METADATA_KEYS,
   CHORD_REGEX_SOURCE,
   NO_CHORD_TOKENS,
-  CUE_MARK_KEYWORDS as CONFIG_CUE_MARK_KEYWORDS,
-  INSTRUMENT_KEYWORDS as CONFIG_INSTRUMENT_KEYWORDS,
 } from '../config/chordDisplayConfig.js';
+
+const metadataKeys = new Set(METADATA_KEYS.map((key) => key.toLowerCase()));
 
 /**
  * Pecah baris "Label: chords" menjadi label seksi + baris chord.
@@ -125,34 +144,36 @@ function splitBracketCompoundLine(line) {
   const trimmed = line.trim();
   if (!trimmed) return null;
 
-  const chunks = trimmed
-    .replace(/\[\d{1,2}:\d{2}(?::\d{2})?\]/g, '')
-    .match(/\[[^\]]+\]/g);
-  if (!chunks || chunks.length <= 1) return null;
+  const bracketChunks = trimmed.match(/\[[^\]]+\]/g);
+  if (!bracketChunks || bracketChunks.length <= 1) return null;
 
+  // Selain isi bracket tidak boleh tersisa teks: baris seperti
+  // "[Intro] mainkan lambat" bukan baris compound.
   const remainingText = trimmed
     .replace(/\[[^\]]+\]/g, '')
     .trim();
   if (remainingText) return null;
 
-  return trimmed.match(/\[[^\]]+\]/g)
+  return bracketChunks
     .map((chunk) => chunk.trim())
     .filter((chunk) => !TIMESTAMP_BRACKET_REGEX.test(chunk));
 }
 
-export const CUE_MARK_KEYWORDS = CONFIG_CUE_MARK_KEYWORDS;
-
-const instrumentKeywords = CONFIG_INSTRUMENT_KEYWORDS;
-
 /** True when the whole value is exactly one known instrument keyword. */
 export const isInstrumentKeywordWord = (value = '') => (
-  typeof value === 'string' && instrumentKeywords.includes(value.trim().toLowerCase())
+  typeof value === 'string' && INSTRUMENT_KEYWORDS.includes(value.trim().toLowerCase())
 );
 
-const matchKeywordPattern = (keyword = '') => {
-  const escaped = String(keyword || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
-  return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i');
-};
+const instrumentKeywords = INSTRUMENT_KEYWORDS;
+
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Kata kunci -> regex batas kata (spasi/underscore/hyphen dianggap pemisah kata). */
+const createKeywordPattern = (keyword, separator = '[\\s_-]+') => (
+  new RegExp(`(^|[^a-z0-9])${escapeRegex(keyword).replace(/\s+/g, separator)}($|[^a-z0-9])`, 'i')
+);
+
+const matchKeywordPattern = (keyword = '') => createKeywordPattern(keyword);
 
 const matchInlineInstrumentLabel = (candidate = '') => {
   if (typeof candidate !== 'string') return false;
@@ -168,10 +189,7 @@ const matchInlineInstrumentLabel = (candidate = '') => {
   // dua huruf selalu jatuh ke false.
   if (instrumentKeywords.includes(lower)) return true;
 
-  const fullPhraseMatch = instrumentKeywords.some((keyword) => {
-    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
-    return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i').test(lower);
-  });
+  const fullPhraseMatch = instrumentKeywords.some((keyword) => matchKeywordPattern(keyword).test(lower));
   if (fullPhraseMatch) return true;
 
   const phraseWords = normalized.split(/\s+/).filter(Boolean);
@@ -241,7 +259,7 @@ const findInlineInstrumentMatch = (candidate = '') => {
     const regex = matchKeywordPattern(keyword);
     if (!regex.test(lower)) continue;
 
-    const directMatch = normalized.match(new RegExp(String(keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+'), 'i'));
+    const directMatch = normalized.match(new RegExp(escapeRegex(keyword).replace(/\s+/g, '[\\s_-]+'), 'i'));
     if (directMatch) return directMatch[0];
   }
 
@@ -318,8 +336,7 @@ const splitInlineTokens = (text = '') => {
 const isGenericInstrumentSuffix = (value = '') => {
   if (typeof value !== 'string') return false;
   const trimmed = value.trim();
-  if (!trimmed || /[,&]/.test(trimmed)) return false;
-  return !/^\s*$/.test(trimmed);
+  return Boolean(trimmed) && !/[,&]/.test(trimmed);
 };
 
 const mergeInstrumentPhraseTokens = (tokens = []) => {
@@ -403,7 +420,6 @@ const mergeInstrumentPhraseTokens = (tokens = []) => {
   return merged;
 };
 
-
 const splitParenthesizedMultiChordToken = (token = '', transpose = 0) => {
   if (typeof token !== 'string') return [];
 
@@ -445,11 +461,7 @@ const isInlineCueMarkToken = (token) => {
   const raw = trimmed.replace(/^[\[(](.*)[\])}]$/, '$1').trim();
   if (!raw) return false;
 
-  if (isCueMarkKeyword(raw)) {
-    return normalizeCueMarkToken(raw);
-  }
-
-  return false;
+  return normalizeCueMarkToken(raw);
 };
 
 const isInlineInstrumentToken = (token) => {
@@ -539,11 +551,11 @@ function parseLine(line, transpose) {
   if (parseNumberLine(line)) {
     return {
       type: 'number',
-      tokens: line.split(/(\s+)/).map(token => {
-        if (/^\s+$/.test(token)) return { token, isSpace: true };
-        if (isNumberNotationToken(token) || /^\.{2,}$/.test(token)) return { token, isNumber: true };
-        return { token, isNumber: true };
-      })
+      tokens: line.split(/(\s+)/).map((token) => (
+        /^\s+$/.test(token)
+          ? { token, isSpace: true }
+          : { token, isNumber: true }
+      )),
     };
   }
   return {
@@ -669,7 +681,7 @@ export function parseLines(lines, transpose) {
  * bukan alat, jadi tidak boleh terbaca sebagai instrumen.
  */
 const REAL_INSTRUMENT_KEYWORDS = instrumentKeywords.filter(
-  (keyword) => !CONFIG_CUE_MARK_KEYWORDS.includes(keyword),
+  (keyword) => !CUE_MARK_KEYWORDS.includes(keyword),
 );
 
 function normalizeDetectedInstrumentName(candidate = '') {
@@ -679,7 +691,6 @@ function normalizeDetectedInstrumentName(candidate = '') {
   if (!raw) return '';
 
   const cleaned = raw
-    .replace(/^[\(\[\{]+|[\)\]\}]+$/g, '')
     .replace(/^[\(\[\{]+|[\)\]\}]+$/g, '')
     .trim();
 
@@ -701,13 +712,10 @@ function normalizeDetectedInstrumentName(candidate = '') {
       if (directMatch) return directMatch;
 
       const lower = segment.toLowerCase();
-      const keywordMatch = REAL_INSTRUMENT_KEYWORDS.find((keyword) => {
-        const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
-        return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i').test(lower);
-      });
+      const keywordMatch = REAL_INSTRUMENT_KEYWORDS.find((keyword) => matchKeywordPattern(keyword).test(lower));
       if (!keywordMatch) return '';
 
-      const directKeywordMatch = segment.match(new RegExp(keywordMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+'), 'i'));
+      const directKeywordMatch = segment.match(new RegExp(escapeRegex(keywordMatch).replace(/\s+/g, '[\\s_-]+'), 'i'));
       return directKeywordMatch ? directKeywordMatch[0] : keywordMatch;
     })
     .map((value) => value.trim())
@@ -717,10 +725,7 @@ function normalizeDetectedInstrumentName(candidate = '') {
     return matches[0];
   }
 
-  const fallback = REAL_INSTRUMENT_KEYWORDS.find((keyword) => {
-    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
-    return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i').test(cleaned.toLowerCase());
-  });
+  const fallback = REAL_INSTRUMENT_KEYWORDS.find((keyword) => matchKeywordPattern(keyword).test(cleaned.toLowerCase()));
 
   return fallback || '';
 }
@@ -746,7 +751,7 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
   const scanTextCandidates = (text = '') => {
     if (typeof text !== 'string' || !text.trim()) return;
 
-      const segments = text
+    const segments = text
       .split(/\s*(?:,|;|\/)\s*/)
       .map((segment) => segment.trim())
       .filter(Boolean);
@@ -792,7 +797,7 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
         if (!nextToken || typeof nextToken.token !== 'string') continue;
 
         const nextValue = nextToken.token.trim();
-        if (!nextValue || /^\s+$/.test(nextToken.token) || /^\s*$/.test(nextValue)) continue;
+        if (!nextValue || /^\s+$/.test(nextToken.token)) continue;
         if (/^[\(\)]$/.test(nextValue)) continue;
 
         const candidate = nextValue.replace(/[.,;:]+$/g, '').trim();
@@ -842,80 +847,13 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
 }
 
 /**
- * Peta instrumen per seksi lagu: baris lirik dipindai dari atas, setiap kali
- * label seksi struktur ditemui seksi baru dimulai, dan semua instrumen yang
- * terdeteksi sampai seksi berikutnya dikaitkan dengan seksi tersebut.
- * Return: [{ key, label, lineIndex, instruments: [...] }]
- */
-export function extractInstrumentsBySection(lyricsText) {
-  if (typeof lyricsText !== 'string' || !lyricsText.trim()) return [];
-
-  const lines = lyricsText.split(/\r?\n/);
-  const sections = [];
-  let current = null;
-
-  const scanInstrumentsInLine = (lineText) => {
-    const parsedRow = parseLine(lineText, 0);
-    if (!parsedRow) return [];
-
-    const found = [];
-    const add = (candidate) => {
-      const normalized = normalizeDetectedInstrumentName(candidate);
-      if (normalized && !found.some((item) => item.toLowerCase() === normalized.toLowerCase())) {
-        found.push(normalized);
-      }
-    };
-
-    if (Array.isArray(parsedRow.tokens)) {
-      parsedRow.tokens.forEach((token) => {
-        if (!token || token.isInstrument !== true || typeof token.token !== 'string') return;
-        const direct = findInlineInstrumentMatch(token.token.trim());
-        if (direct) add(direct);
-      });
-    }
-    if (typeof parsedRow.label === 'string' && parsedRow.type !== 'structure') {
-      const labelMatch = findInlineInstrumentMatch(parsedRow.label);
-      if (labelMatch) add(labelMatch);
-    }
-    if (parsedRow.type === 'instrument' && typeof parsedRow?.label === 'string') {
-      const labelMatch = findInlineInstrumentMatch(parsedRow.label);
-      if (labelMatch) add(labelMatch);
-    }
-    if (typeof lineText === 'string') {
-      const match = findInlineInstrumentMatch(lineText);
-      if (match) add(match);
-    }
-    return found;
-  };
-
-  lines.forEach((line, index) => {
-    const parsed = parseSection(line);
-    if (parsed?.type === 'structure') {
-      current = {
-        key: `${index}-${parsed.label || 'section'}`,
-        label: parsed.label || 'Section',
-        lineIndex: index,
-        instruments: [],
-      };
-      sections.push(current);
-      return;
-    }
-    if (!current) return;
-    scanInstrumentsInLine(line).forEach((instrument) => {
-      if (!current.instruments.some((item) => item.toLowerCase() === instrument.toLowerCase())) {
-        current.instruments.push(instrument);
-      }
-    });
-  });
-
-  return sections;
-}
-/**
  * Helper: parse [mm:ss] or [hh:mm:ss] timestamp to seconds
  * @param {string} token - Token timestamp (misal: [01:23] atau [1:02:03])
  * @returns {number|null} detik, atau null jika tidak cocok
  */
 export function parseTimestampToken(token) {
+  if (typeof token !== 'string') return null;
+
   const m = token.match(/^\[(\d{1,2}):(\d{2})\]$/); // [mm:ss]
   if (m) {
     return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
@@ -1060,7 +998,7 @@ const TIMESTAMP_BRACKET_REGEX = /^\[\d{1,2}:\d{2}(?::\d{2})?\]$/;
 // Sumber regex: src/config/chordDisplayConfig.js (CHORD_REGEX_SOURCE)
 const CHORD_REGEX = new RegExp(CHORD_REGEX_SOURCE, 'i');
 const NO_CHORD_REGEX = new RegExp(
-  `^(${NO_CHORD_TOKENS.map((token) => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*')).join('|')})$`,
+  `^(${NO_CHORD_TOKENS.map((token) => escapeRegex(token).replace(/\s+/g, '\\s*')).join('|')})$`,
   'i',
 );
 
@@ -1321,33 +1259,6 @@ export function wrapBarsPerLine(text, barsPerLine = 4) {
 
   return wrapped.join('\n');
 }
-/**
- * chordUtils.js
- *
- * Utilitas utama untuk manipulasi dan analisis chord pada aplikasi Ruang Performer.
- *
- * Fitur utama:
- * - Transposisi chord (transposeChord)
- * - Deteksi dan parsing baris chord (isChordLine)
- * - Parsing struktur lagu/section (parseSection)
- * - Analisis dan ekstraksi chord dari lirik (parseChordPro, getAllChords, getChordsByBar)
- * - Mendukung format barline (|, ||, |:, :|) dan compact chord (D..Gm..Bb)
- *
- * Catatan:
- * - Semua deteksi chord mengabaikan barline di awal/akhir/token.
- * - Fungsi-fungsi ini digunakan baik di frontend (ChordDisplay) maupun backend (parsing API).
- *
- * Ekspor utama:
- *   - transposeChord(chord, steps): string
- *   - getNoteIndex(root): number|null
- *   - getTransposeSteps(fromKey, toKey): number
- *   - isChordLine(line): boolean
- *   - parseSection(line): {type, label}|null
- *   - parseChordPro(text): {metadata, lines, structures}
- *   - getAllChords(parsedSong): string[]
- *   - getChordsByBar(parsedSong): string[][]
- */
-// parseChordLine dihapus, gunakan isChordLine sebagai pengganti.
 
 /**
  * Kata kunci struktur -> regex batas kata. Di-cache: parseSection dipanggil
@@ -1355,15 +1266,13 @@ export function wrapBarsPerLine(text, barsPerLine = 4) {
  */
 const STRUCTURE_KEYWORD_PATTERNS = STRUCTURE_SECTION_KEYWORDS.map((keyword) => ({
   keyword,
-  pattern: new RegExp(`(^|[^a-z0-9])${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+')}($|[^a-z0-9])`, 'i'),
+  pattern: createKeywordPattern(keyword),
 }));
 
 const MODULATION_LINE_REGEX = new RegExp(
-  `^(?:${MODULATION_KEYWORDS.map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')).join('|')})\\s*:\\s*(.+)$`,
+  `^(?:${MODULATION_KEYWORDS.map((keyword) => escapeRegex(keyword).replace(/\s+/g, '\\s+')).join('|')})\\s*:\\s*(.+)$`,
   'i',
 );
-
-const METADATA_KEYS = new Set(CONFIG_METADATA_KEYS.map((key) => key.toLowerCase()));
 
 /**
  * "[Gitar: Dist]" / "[Epiano: ]" / "[Keys: EP Soft | CH: 2]"
@@ -1426,8 +1335,7 @@ export function parseSection(line) {
   if (!trimmedLine) return null;
 
   // Instrumen hanya diperlakukan sebagai gaya render inline; tidak dianggap sebagai section/metadata struktur.
-  const inlineInstrumentCandidates = Array.from(trimmedLine.matchAll(/\([^)]*\)/g));
-  if (inlineInstrumentCandidates.length > 1 && !trimmedLine.includes(':')) {
+  if (trimmedLine.match(/\([^)]*\)/g)?.length > 1 && !trimmedLine.includes(':')) {
     return null;
   }
 
@@ -1457,12 +1365,6 @@ export function parseSection(line) {
       !keyword.includes(' ') && pattern.test(labelLower)
     ))) {
       return { type: 'structure', label: displayLabel };
-    }
-
-    // Instrument labels are rendered only as inline highlight tokens; they are not treated
-    // as song sections or metadata tags by the parser.
-    if (labelLower === 'instrument' || labelLower === 'instrumen') {
-      return null;
     }
   }
 
@@ -1504,14 +1406,14 @@ const isInstrumentPatchLikeLine = (line) => {
       const key = segment.slice(0, idx).trim().toLowerCase()
         .replace(/^[\[(]+|[\])]+$/g, '')
         .replace(/[\s_]+/g, '');
-      return METADATA_KEYS.has(key) || METADATA_KEYS.has(key.replace(/\s+/g, ''));
+      return metadataKeys.has(key) || metadataKeys.has(key.replace(/\s+/g, ''));
     });
 };
 
 const isKnownMetadataKey = (rawKey = '') => {
   const normalized = String(rawKey).trim().toLowerCase().replace(/[\s_]+/g, ' ');
   const key = normalized.replace(/^[\[(]+|[\])]+$/g, '').trim();
-  return METADATA_KEYS.has(key) || METADATA_KEYS.has(key.replace(/\s+/g, ''));
+  return metadataKeys.has(key) || metadataKeys.has(key.replace(/\s+/g, ''));
 };
 
 export const isMetadataLine = (line) => {
@@ -1544,6 +1446,9 @@ export const isMetadataLine = (line) => {
 const NOTES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
+/** Token chord yang dibungkus bracket/parentheses dan boleh berakhiran titik durasi. */
+const WRAPPED_TOKEN_REGEX = /^([\(\[\{]?)(.+?)([\)\]\}]?)(\.{2,})?$/;
+
 // Regex untuk mendeteksi chord (termasuk leading dash untuk passing chord dan trailing dots untuk durasi)
 // Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F.., Am...., (Am), [C], Amadd9
 const CHORD_REGEX_GLOBAL = /[\(\[\{]?-?([A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\d+)?(?:[#b]\d+)*(?:\/[A-G][#b]?)?)(((\.{2,}|-)([A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\d+)?(?:[#b]\d+)*(?:\/[A-G][#b]?)?))*)(\.{2,})?[\)\]\}]?/g;
@@ -1572,7 +1477,7 @@ const isLeadingDashChordToken = (token) => {
 const transposeChordToken = (token, steps) => {
   if (!token || steps === 0) return token;
   if (isNoChordToken(token)) return token;
-  const match = token.match(/^([\(\[\{]?)(.+?)([\)\]\}]?)(\.{2,})?$/);
+  const match = token.match(WRAPPED_TOKEN_REGEX);
   if (!match) return token;
 
   const [, prefix = '', inner, suffix = '', dots = ''] = match;
@@ -1637,32 +1542,30 @@ export const transposeChord = (chord, steps) => {
   const bass = slashIndex === -1 ? '' : qualityAndBass.slice(slashIndex + 1);
 
   const transposedRoot = transposeNote(root, steps);
-  let transposedBass = '';
-
-  if (bass) {
-    const bassMatch = bass.match(/^([A-G][#b]?)(.*)$/);
-    if (bassMatch) {
-      transposedBass = '/' + transposeNote(bassMatch[1], steps) + bassMatch[2];
-    } else {
-      transposedBass = '/' + bass;
-    }
+  if (!bass) {
+    return `${transposedRoot}${quality}`;
   }
+
+  const bassMatch = bass.match(/^([A-G][#b]?)(.*)$/);
+  const transposedBass = bassMatch
+    ? `/${transposeNote(bassMatch[1], steps)}${bassMatch[2]}`
+    : `/${bass}`;
 
   return `${transposedRoot}${quality}${transposedBass}`;
 };
 
 // Get semitone index for a root note using sharp scale, accepting flats
+const FLAT_TO_SHARP = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#' };
+
 export const getNoteIndex = (root) => {
   if (!root) return null;
   const r = root.trim();
-  let idx = NOTES_SHARP.indexOf(r);
-  if (idx === -1) {
-    // Map flats to sharps
-    const flatToSharp = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#' };
-    const alt = flatToSharp[r] || r;
-    idx = NOTES_SHARP.indexOf(alt);
-  }
-  return idx === -1 ? null : idx;
+  const idx = NOTES_SHARP.indexOf(r);
+  if (idx !== -1) return idx;
+
+  // Map flats to sharps
+  const sharpIdx = NOTES_SHARP.indexOf(FLAT_TO_SHARP[r] || r);
+  return sharpIdx === -1 ? null : sharpIdx;
 };
 
 // Helper to extract root note from key string (e.g., 'Am' -> 'A', 'G#m' -> 'G#')
@@ -1725,32 +1628,18 @@ const getScaleDegreeFromRoot = (rootNote, key = 'C', scaleType = 'major') => {
   if (rootIdx == null || baseIdx == null) return null;
 
   const interval = (rootIdx - baseIdx + 12) % 12;
-  if (scaleType === 'minor') {
-    if (MINOR_SCALE_DEGREES[interval] !== undefined) return MINOR_SCALE_DEGREES[interval];
-    if (MINOR_SCALE_ALTERNATE[interval] !== undefined) return MINOR_SCALE_ALTERNATE[interval];
-  } else {
-    if (MAJOR_SCALE_DEGREES[interval] !== undefined) return MAJOR_SCALE_DEGREES[interval];
-    if (MAJOR_SCALE_ALTERNATE[interval] !== undefined) return MAJOR_SCALE_ALTERNATE[interval];
-  }
-  return null;
+  const degrees = scaleType === 'minor' ? MINOR_SCALE_DEGREES : MAJOR_SCALE_DEGREES;
+  const alternate = scaleType === 'minor' ? MINOR_SCALE_ALTERNATE : MAJOR_SCALE_ALTERNATE;
+  return degrees[interval] ?? alternate[interval] ?? null;
 };
 
 const normalizeChordQuality = (quality = '') => {
-  if (!quality) return '';
+  const norm = quality.trim();
+  if (!norm) return '';
 
-  let norm = quality.trim();
-
-  // Change common synonyms
-  if (/^maj7?/i.test(norm)) {
-    // keep maj7, maj9, maj
-    return norm.replace(/^maj/i, 'maj');
-  }
-  if (/^min/i.test(norm)) {
-    return norm.replace(/^min/i, 'm');
-  }
-  if (/^m(?!aj)/i.test(norm)) {
-    return norm.replace(/^m/i, 'm');
-  }
+  // Samakan sinonim kualitas: "min7" -> "m7", "maj" tetap "maj".
+  if (/^maj/i.test(norm)) return norm.replace(/^maj/i, 'maj');
+  if (/^min/i.test(norm) || /^m(?!aj)/i.test(norm)) return norm.replace(/^m(in)?/i, 'm');
   return norm;
 };
 
@@ -1946,7 +1835,7 @@ export const chordTextToSimpleText = (text) => {
 
 // Fungsi untuk mendeteksi apakah sebuah baris adalah baris chord
 export const isChordLine = (line) => {
-  if (!line.trim()) return false;
+  if (typeof line !== 'string' || !line.trim()) return false;
 
   // Remove section label at start (e.g. [Coda])
   let cleanedLine = line.replace(/^\[.+?\]\s*/, '');
@@ -1965,20 +1854,16 @@ export const isChordLine = (line) => {
   if (!tokens.length) return false;
 
   // Hitung jumlah token chord (termasuk N.C.) dan token pengisi (hanya . atau -)
-  let chordOrFiller = 0;
-  for (const t of tokens) {
-    if (isChordToken(t) || /^\.*$/.test(t) || /^-+$/.test(t) || isNoChordToken(t)) chordOrFiller++;
-  }
+  const chordOrFiller = tokens.filter((token) => (
+    isChordToken(token) || /^\.*$/.test(token) || /^-+$/.test(token)
+  )).length;
   // Jika mayoritas token adalah chord atau filler, anggap baris chord
   if (chordOrFiller > 0 && chordOrFiller >= tokens.length * 0.7) return true;
 
   // Fallback: coverage karakter chord (lama)
   const matches = [...cleanedLine.matchAll(CHORD_REGEX_GLOBAL)];
   if (matches.length === 0) return false;
-  let totalChordLength = 0;
-  for (const match of matches) {
-    totalChordLength += match[0].length;
-  }
+  const totalChordLength = matches.reduce((sum, match) => sum + match[0].length, 0);
   const lineWithoutSpaces = cleanedLine.replace(/\s+/g, '');
   return totalChordLength > 0 && (totalChordLength / lineWithoutSpaces.length) >= 0.5;
 };
@@ -2019,6 +1904,14 @@ const parseStandardFormat = (lines) => {
     return null;
   };
 
+  /** Tutup seksi yang sedang berjalan lalu buka seksi baru. */
+  const startSection = (structure) => {
+    if (currentSection) {
+      parsed.push({ type: 'structure_end', structure: currentSection });
+    }
+    parsed.push({ type: 'structure_start', structure });
+    currentSection = structure;
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const currentLine = lines[i];
@@ -2029,39 +1922,30 @@ const parseStandardFormat = (lines) => {
       continue;
     }
 
+    const trimmedLine = currentLine.trim();
+
     // Tambahan: Deteksi struktur dengan braket [Section]
-    const bracketSectionMatch = currentLine.trim().match(/^\[([A-Za-z0-9 .:-_]+)\]$/);
+    const bracketSectionMatch = trimmedLine.match(/^\[([A-Za-z0-9 .:-_]+)\]$/);
     if (bracketSectionMatch) {
-      const possibleSection = bracketSectionMatch[1].trim();
-      const normalizedSectionName = normalizeSection(possibleSection);
+      const normalizedSectionName = normalizeSection(bracketSectionMatch[1].trim());
       if (normalizedSectionName) {
-        if (currentSection) {
-          parsed.push({ type: 'structure_end', structure: currentSection });
-        }
-        parsed.push({ type: 'structure_start', structure: normalizedSectionName });
-        currentSection = normalizedSectionName;
+        startSection(normalizedSectionName);
         continue;
       }
     }
 
     // Check for standalone section header (e.g., "Int.", "Intro", "Intro:", "Intro :" on its own line)
-    const standaloneSectionMatch = currentLine.trim().match(/^([A-Za-z.]+)\s*:?\s*$/);
+    const standaloneSectionMatch = trimmedLine.match(/^([A-Za-z.]+)\s*:?\s*$/);
     if (standaloneSectionMatch) {
-      const possibleSection = standaloneSectionMatch[1].trim();
-      const normalizedSectionName = normalizeSection(possibleSection);
-
+      const normalizedSectionName = normalizeSection(standaloneSectionMatch[1].trim());
       if (normalizedSectionName) {
-        if (currentSection) {
-          parsed.push({ type: 'structure_end', structure: currentSection });
-        }
-        parsed.push({ type: 'structure_start', structure: normalizedSectionName });
-        currentSection = normalizedSectionName;
+        startSection(normalizedSectionName);
         continue;
       }
     }
 
     // Check for section header with inline chords (e.g., "Int. C G Am", "Int: C G Am", "Int : D..Gm..Bb")
-    const sectionWithChordsMatch = currentLine.trim().match(/^([A-Za-z.]+)\s*:?\s+(.+)$/);
+    const sectionWithChordsMatch = trimmedLine.match(/^([A-Za-z.]+)\s*:?\s+(.+)$/);
     if (sectionWithChordsMatch) {
       const possibleSection = sectionWithChordsMatch[1].trim();
       const possibleChords = sectionWithChordsMatch[2].trim();
@@ -2069,24 +1953,18 @@ const parseStandardFormat = (lines) => {
 
       // If section matches, always treat it as section (even if rest is not chords)
       if (normalizedSectionName) {
-        if (currentSection) {
-          parsed.push({ type: 'structure_end', structure: currentSection });
-        }
-        parsed.push({ type: 'structure_start', structure: normalizedSectionName });
-        currentSection = normalizedSectionName;
+        startSection(normalizedSectionName);
 
         // Expand compact format if present
         const expandedChords = expandCompactChords(possibleChords);
 
         // Parse the chord line using CHORD_REGEX_GLOBAL
-        const matches = [...expandedChords.matchAll(CHORD_REGEX_GLOBAL)];
-        const chords = matches.map(match => ({
+        const chords = [...expandedChords.matchAll(CHORD_REGEX_GLOBAL)].map((match) => ({
           chord: match[0],
-          position: match.index + possibleSection.length + 1
+          position: match.index + possibleSection.length + 1,
         }));
 
-        // Add chord line to parsed
-        // Check if next line exists and is lyrics (not chord line, not empty)
+        // Lirik baris berikutnya (bukan chord, bukan kosong) ikut menempel.
         let lyricText = '';
         if (nextLine && nextLine.trim() && !isChordLine(nextLine)) {
           lyricText = nextLine;
@@ -2124,11 +2002,7 @@ const parseStandardFormat = (lines) => {
       // Section header detection (e.g., "Verse:", "Chorus:")
       const sectionName = normalizeSection(keyRaw);
       if (sectionName) {
-        if (currentSection) {
-          parsed.push({ type: 'structure_end', structure: currentSection });
-        }
-        parsed.push({ type: 'structure_start', structure: sectionName });
-        currentSection = sectionName;
+        startSection(sectionName);
         continue;
       }
     }
@@ -2144,32 +2018,22 @@ const parseStandardFormat = (lines) => {
         position: match.index,
       }));
 
-      // Jika ada baris berikutnya dan bukan chord line, gabungkan
-      if (nextLine && !isChordLine(nextLine) && nextLine.trim()) {
-        parsed.push({
-          type: 'line_with_chords',
-          chords,
-          text: nextLine,
-          barText: expandedLine, // Keep expanded chord line for bar detection
-          sourceLine: i + 1,
-        });
+      const hasLyricBelow = Boolean(nextLine && !isChordLine(nextLine) && nextLine.trim());
+      parsed.push({
+        type: 'line_with_chords',
+        chords,
+        text: hasLyricBelow ? nextLine : '',
+        barText: expandedLine, // Keep expanded chord line for bar detection
+        sourceLine: i + 1,
+      });
 
-        i++; // Skip next line karena sudah diproses
-      } else {
-        // Chord line tanpa lirik di bawahnya
-        parsed.push({
-          type: 'line_with_chords',
-          chords,
-          text: '',
-          barText: expandedLine, // Use bar markers from expanded chord line
-          sourceLine: i + 1,
-        });
-      }
+      // Skip next line karena sudah diproses satu paket dengan chord di atasnya.
+      if (hasLyricBelow) i++;
     } else {
       // Baris teks biasa
       parsed.push({
         type: 'text',
-        line: currentLine
+        line: currentLine,
       });
     }
   }
@@ -2226,21 +2090,35 @@ export const parseChordPro = (text) => {
   return { metadata, lines: contentLines, structures };
 };
 
+/** Ambil root chord (tanpa passing dash, bracket, atau titik durasi). */
+const extractChordRoot = (chord) => {
+  if (!chord || typeof chord !== 'string') return null;
+  const cleanChord = normalizeChordToken(chord.replace(/^-/, ''));
+  const match = cleanChord.match(/^([A-G][#b]?)/);
+  return match ? match[1] : null;
+};
+
+const toCleanChord = (chord) => normalizeChordToken(String(chord || '').replace(/^-/, ''));
+
+/** Susun [{ chord, count }] urut dari paling sering lalu alfabetis. */
+const sortUsageCounts = (usageMap) => Array.from(usageMap.entries())
+  .map(([chord, count]) => ({ chord, count }))
+  .sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    return a.chord.localeCompare(b.chord);
+  });
+
 export const getAllChords = (parsedSong) => {
   if (!parsedSong || !parsedSong.lines) return [];
 
   const chordSet = new Set();
 
-  parsedSong.lines.forEach(line => {
-    if (line.type === 'line_with_chords' && line.chords) {
-      line.chords.forEach(({ chord }) => {
-        // Clean chord: remove passing dash, wrapping parentheses/brackets, and suffix dots.
-        const cleanChord = normalizeChordToken(chord.replace(/^-/, ''));
-        if (cleanChord) {
-          chordSet.add(cleanChord);
-        }
-      });
-    }
+  parsedSong.lines.forEach((line) => {
+    if (line.type !== 'line_with_chords' || !line.chords) return;
+    line.chords.forEach(({ chord }) => {
+      const cleanChord = toCleanChord(chord);
+      if (cleanChord) chordSet.add(cleanChord);
+    });
   });
 
   return Array.from(chordSet).sort();
@@ -2259,19 +2137,14 @@ export const getChordUsageCounts = (parsedSong) => {
     if (line.type !== 'line_with_chords' || !line.chords) return;
 
     line.chords.forEach(({ chord }) => {
-      const cleanChord = normalizeChordToken((chord || '').replace(/^-/, ''));
+      const cleanChord = toCleanChord(chord);
       if (!cleanChord) return;
 
       usageMap.set(cleanChord, (usageMap.get(cleanChord) || 0) + 1);
     });
   });
 
-  return Array.from(usageMap.entries())
-    .map(([chord, count]) => ({ chord, count }))
-    .sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.chord.localeCompare(b.chord);
-    });
+  return sortUsageCounts(usageMap);
 };
 
 const buildUsageCountsFromChordList = (chords = []) => {
@@ -2279,17 +2152,12 @@ const buildUsageCountsFromChordList = (chords = []) => {
 
   const usageMap = new Map();
   chords.forEach((chord) => {
-    const cleanChord = normalizeChordToken(String(chord || '').replace(/^-/, ''));
+    const cleanChord = toCleanChord(chord);
     if (!cleanChord) return;
     usageMap.set(cleanChord, (usageMap.get(cleanChord) || 0) + 1);
   });
 
-  return Array.from(usageMap.entries())
-    .map(([chord, count]) => ({ chord, count }))
-    .sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.chord.localeCompare(b.chord);
-    });
+  return sortUsageCounts(usageMap);
 };
 
 const MAJOR_SCALE_PROFILE = {
@@ -2307,8 +2175,7 @@ const KEY_ROOT_BY_PITCH_CLASS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab'
 
 const getChordQualityFamily = (chord) => {
   if (!chord || typeof chord !== 'string') return 'major';
-  const cleanChord = normalizeChordToken(chord.replace(/^-/, ''));
-  const match = cleanChord.match(/^([A-G][#b]?)(.*)$/);
+  const match = toCleanChord(chord).match(/^([A-G][#b]?)(.*)$/);
   if (!match) return 'major';
 
   const suffix = (match[2] || '').toLowerCase();
@@ -2392,14 +2259,14 @@ export const estimateKeyFromChordUsage = (usageCounts = []) => {
 
   candidates.sort((a, b) => b.score - a.score);
   const best = candidates[0];
+  if (!best) return null;
+
   const alternatives = candidates
     .slice(1)
     .map((candidate) => candidate.key)
     .filter((value, idx, arr) => arr.indexOf(value) === idx)
     .slice(0, 2);
   const second = candidates[1] || null;
-
-  if (!best) return null;
 
   const matchRatio = best.totalWeight > 0 ? best.matchedWeight / best.totalWeight : 0;
   const confidenceRaw = Math.min(1, Math.max(0, matchRatio * 0.75 + ((best.score - (second?.score || 0)) / 10) * 0.25));
@@ -2434,20 +2301,18 @@ export const detectChordModulations = (parsedSong, options = {}) => {
     minSegmentLines = 2,
   } = options;
 
-  const chordLines = parsedSong.lines
-    .map((line, index) => ({ ...line, _analysisIndex: index }))
-    .filter((line) => line.type === 'line_with_chords' && Array.isArray(line.chords) && line.chords.length > 0)
-    .map((line) => {
-      const lineChords = line.chords
-        .map(({ chord }) => normalizeChordToken(String(chord || '').replace(/^-/, '')))
-        .filter(Boolean);
-      return {
-        analysisIndex: line._analysisIndex,
-        sourceLine: Number(line.sourceLine) > 0 ? Number(line.sourceLine) : line._analysisIndex + 1,
-        chords: lineChords,
-      };
-    })
-    .filter((line) => line.chords.length > 0);
+  const chordLines = [];
+  parsedSong.lines.forEach((line, index) => {
+    if (line.type !== 'line_with_chords' || !Array.isArray(line.chords)) return;
+
+    const chords = line.chords.map(({ chord }) => toCleanChord(chord)).filter(Boolean);
+    if (!chords.length) return;
+
+    chordLines.push({
+      sourceLine: Number(line.sourceLine) > 0 ? Number(line.sourceLine) : index + 1,
+      chords,
+    });
+  });
 
   if (chordLines.length < lineWindow + 1) {
     return { hasModulation: false, modulationCount: 0, transitions: [], timeline: [] };
@@ -2571,13 +2436,6 @@ const KEY_SIGNATURE_ACCIDENTALS = {
   Db: 5,
   Gb: 6,
   Cb: 7,
-};
-
-const extractChordRoot = (chord) => {
-  if (!chord || typeof chord !== 'string') return null;
-  const cleanChord = normalizeChordToken(chord.replace(/^-/, ''));
-  const match = cleanChord.match(/^([A-G][#b]?)/);
-  return match ? match[1] : null;
 };
 
 const getPianoPlayabilityBreakdown = (chords = [], steps = 0) => {
