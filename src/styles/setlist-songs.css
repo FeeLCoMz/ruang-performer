@@ -2388,3 +2388,37 @@ button.song-mastery-chip:not(:disabled):hover {
   height: var(--btn-group, auto);
   min-height: var(--btn-group, auto);
 }
+
+/*
+ * Aksi kartu lagu — satu geometri untuk semua tombol:
+ * tinggi 34px, padding horizontal 12px, radius pill, font & ikon sejenis.
+ * Tanpa ini, tombol ber-class .btn-primary / btn-red / btn-danger mewarisi
+ * padding dan ukuran font global .btn (16px) sehingga terlihat lebih besar
+ * dan padding-nya beda dari tombol sebelahnya.
+ * Selector ditulis per-container agar mengalahkan aturan mobile
+ * (`.song-item .song-actions .btn`) dan `.song-list-container .song-actions .btn`.
+ */
+.song-actions .btn.song-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+/* Ikon emoji punya tinggi optis berbeda dari teks; samakan ukurannya. */
+.song-actions .btn.song-action-btn > span[aria-hidden="true"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  line-height: 1;
+}
