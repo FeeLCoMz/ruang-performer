@@ -27,6 +27,7 @@
     {
       "files": [
         "src/utils/chordUtils.js",
+        "src/utils/chord/**/*.js",
         "src/utils/lyricsEditorUtils.js",
         "src/utils/musicNotationUtils.js"
       ],
