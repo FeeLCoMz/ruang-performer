@@ -19,28 +19,40 @@ describe('lyricsCompletionOptions', () => {
 
   test('Given metadata keys, Then the syntaxes from the removed help modal are all present', () => {
     // These were the entries in the old "Panduan Metadata Lirik" modal.
-    // Autocomplete diturunkan 1:1 dari METADATA_KEYS + MODULATION_KEYWORDS.
+    // Autocomplete diturunkan 1:1 dari METADATA_KEYS + MODULATION_KEYWORDS,
+    // dan sekarang hanya ditawarkan dalam bentuk braket.
     for (const key of [
-      'Patch:',
-      'Preset:',
-      'Instrument:',
-      'Modulation:',
-      'Cue:',
-      'Intensitas:',
-      'Feel:',
-      'FX:',
-      'Notes:',
-      'Original Key:',
-      'Time Signature:',
+      '[Patch: ]',
+      '[Preset: ]',
+      '[Instrument: ]',
+      '[Modulation: ]',
+      '[Cue: ]',
+      '[Intensitas: ]',
+      '[Feel: ]',
+      '[FX: ]',
+      '[Notes: ]',
+      '[Original Key: ]',
+      '[Time Signature: ]',
     ]) {
       expect(labels, key).toContain(key);
     }
   });
 
-  test('Given instrument names, Then applying one adds the colon separator', () => {
-    const guitar = lyricsCompletionOptions.find((option) => option.label === 'Guitar');
+  test('Given instrument names, Then applying one inserts a bracketed tag', () => {
+    const guitar = lyricsCompletionOptions.find((option) => option.label === '[Guitar: ]');
     expect(guitar).toBeTruthy();
-    expect(guitar.apply).toBe('Guitar: ');
+    expect(guitar.apply).toBe('[Guitar: ]');
+    expect(lyricsCompletionOptions.some((option) => option.label === 'Guitar')).toBe(false);
+  });
+
+  test('Given cue marks, Then only the bracketed form is offered', () => {
+    expect(labels).toContain('[Stop]');
+    expect(labels).not.toContain('(Stop)');
+  });
+
+  test('Given metadata keys, Then only the bracketed form is offered', () => {
+    expect(labels).toContain('[Patch: ]');
+    expect(labels).not.toContain('Patch:');
   });
 
   test('Given every option, Then each carries enough context to be useful in the popup', () => {

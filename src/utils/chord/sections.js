@@ -76,6 +76,22 @@ export const formatBracketedInstrumentLabel = (bracketed) => (
   bracketed.detail ? `${bracketed.instrument}: ${bracketed.detail}` : bracketed.instrument
 );
 
+/**
+ * Satu braket berisi kata kunci cue mark ("[Stop]", "[Fill in]") dan bukan
+ * instrumen. Dipakai agar baris itu jadi label cue, bukan lirik satu kata.
+ */
+export const isKnownCueMarkLabel = (line = '') => {
+  if (typeof line !== 'string') return false;
+  const trimmed = line.trim();
+  if (!/^\[[^[\]]+\]$/.test(trimmed)) return false;
+
+  const inside = trimmed.slice(1, -1).trim().toLowerCase();
+  if (!inside) return false;
+  if (INSTRUMENT_KEYWORDS.includes(inside)) return false;
+
+  return CUE_MARK_KEYWORDS.includes(inside);
+};
+
 /** Label instrumen di kiri titik dua sebuah baris bracket ("[Gitar: Dist]"). */
 const getBracketLineLabel = (line) => {
   if (typeof line !== 'string') return '';

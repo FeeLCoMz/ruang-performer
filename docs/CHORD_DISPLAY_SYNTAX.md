@@ -11,9 +11,19 @@
 # ==========================================
 
 
+## 0. ATURAN BRACKET (BERLAKU UNTUK SEMUA KEYWORD)
+## -------------------------------------------------
+# Semua keyword — seksi, metadata, instrumen, cue mark, modulation, timestamp —
+# ditulis dalam BRACKET SIKU: [Keyword].
+#   BENAR: [Intro]  [Cue: ...]  [Gitar]  [Stop]  [Keys: EP Soft]
+#   SALAH: Intro:  Cue: ...  Gitar:  (Stop)  (Gitar)
+# Teks tanpa bracket ("Gitar:", "(Stop)") dirender sebagai lirik biasa.
+# Chord tetap ditulis apa adanya (C, Am7, | C | G |) dan tidak perlu bracket.
+
+
 ## 1. SECTION / STRUKTUR LAGU
 ## ---------------------------
-# Ditulis sebagai [Nama] atau Nama: (di akhir baris boleh ada chord atau teks).
+# Ditulis sebagai [Nama].
 # Diparse oleh parseSection() — cocok jika label mengandung kata kunci ini
 # sebagai kata utuh (besar/kecil huruf bebas):
 
@@ -35,10 +45,10 @@
 # Contoh bentuk yang valid:
 #   [Intro]
 #   [Verse 1]
-#   Chorus:
+#   [Chorus]
 #   [Bridge - Koplo]              <- label dengan anotasi
-#   Intro: Am..Em..F..C..         <- label + chord inline di baris yang sama
-#   [Verse 1] Aku kembali         <- label + teks lirik inline
+#   [Intro - Am..Em..F..C..]      <- label + chord inline di baris yang sama
+#   [Verse 1 - Aku kembali]       <- label + teks lirik inline
 
 # Referensi ulang section: tulis ulang labelnya, body akan di-copy otomatis.
 #   [Chorus]   (setelah [Verse] yang sudah punya body -> di-expand + isRepeatedReference)
@@ -48,8 +58,8 @@
 ## ----------------------------
 # Chord setelah baris ini ditranspose. Label chord ikut ditranspose saat display.
 
-#   Modulation: G
-#   Key change: A
+#   [Modulation: G]
+#   [Key change: A]
 
 
 ## 3. METADATA / PATCH KEYBOARD
@@ -91,14 +101,15 @@
 # 3d. Preset cue HANYA dikenali jika ada opsi MIDI eksplisit (PC/CH/Bank/MSB/LSB).
 #     Baris "[Label: Patch]" tanpa opsi MIDI TIDAK lagi dianggap preset cue.
 
-# 3e. Metadata lain (baris "Key: Value" tanpa patch key -> type 'metadata'):
-#   Cue: Drum masuk di bar 9
-#   Intensitas: 1
-#   Feel: Half-time
-#   FX: Reverb Hall
-#   Notes: ...
-#   Catatan: ...
-#   Original Key: C     <- TIDAK ikut ditranspose, ditampilkan apa adanya
+# 3e. Metadata lain (format bracket: [Key: Value]):
+#   [Cue: Drum masuk di bar 9]
+#   [Intensitas: 1]
+#   [Feel: Half-time]
+#   [FX: Reverb Hall]
+#   [Notes: ...]
+#   [Catatan: ...]
+#   [Original Key: C]   <- TIDAK ikut ditranspose, ditampilkan apa adanya
+# Beberapa tag boleh digabung di satu baris: [Verse 2] [Style: Pop] [Cue: Fill Bell]
 
 
 ## 4. CHORD
@@ -128,19 +139,26 @@
 
 ## 5. CUE MARKS (INLINE)
 ## ----------------------
-# CUE_MARK_KEYWORDS — ditandai sebagai cue saat inline dalam baris chord/lirik
-# dalam kurung biasa atau kurung siku:  (Stop), [Stop], (Aksen), [Hit], [Tutti]
+# CUE_MARK_KEYWORDS — ditandai sebagai cue saat inline dalam baris chord/lirik,
+# WAJIB dalam bracket siku:  [Stop], [Aksen], [Hit], [Tutti]
+# Baris yang isinya hanya satu cue mark tampil sebagai chip cue.
 #   tutti, hit, aksen, stop, break, bbreak, fill-in, fill in,
 #   fade in, fade out, fade in/out, ritardando, rit.
+# Kurung biasa (Stop) bukan cue mark.
 
 
 ## 6. INSTRUMEN
 ## -------------
-# 6a. Dari autocomplete (INSTRUMENT_COMPLETIONS, format "Nama: "):
+# 6a. Satu bentuk saja: [Nama] atau [Nama: Detail].
+#     [Gitar]   [Gitar: Dist]   [Keys: EP Soft | CH: 2]   [Epiano: ]
+#     [Gitar, Organ]  -> daftar instrumen dalam satu bracket (tiap nama dicek)
+#     Kurung biasa (Gitar) dan bentuk tanpa bracket "Gitar:" TIDAK dikenali.
+
+# 6b. Dari autocomplete (INSTRUMENT_COMPLETIONS, format "[Nama: ]"):
 #     Piano, Keys, Guitar, Bass, Drums, Strings, Brass, Vokal, Sax, Suling, Violin
 
 # 6b. Kata kunci instrumen yang dikenali parser (instrumentKeywords) —
-#     dipakai untuk highlight inline "Gitar: teks", "(Sax)", dll:
+#     dipakai untuk highlight inline "[Gitar: Dist]", "[Sax]", dll:
 #     gitar, guitar, bass, ukulele, mandolin, sape
 #     piano, keyboard, organ, synth, keys, synthesizer, pianika, melodika, epiano
 #     brass, horn section, horns, trombone, tuba, euphonium, cornet
@@ -153,11 +171,11 @@
 #     bell, bell pads, pads
 
 # 6c. Format inline di dalam baris chord/lirik:
-#   Gitar: teks apapun
-#   (teks apapun Gitar)
-#   Cue: (Sax)
-#   Dm (Sax) Em | G |
-#   (Sax)(Stop) Am | Dm G |
+#   [Gitar: Dist]
+#   [Gitar Dist]
+#   Dm [Sax] Em | G |
+#   [Sax] [Stop] Am | Dm G |
+#   Cue: (lihat 3e) tetap metadata; keyword di dalamnya tidak diproses.
 
 # 6d. Tidak ada daftar deskriptor instrumen.
 #     INSTRUMENT_DESCRIPTOR_SUFFIXES sudah dihapus: label instrumen hanya
@@ -199,8 +217,12 @@
 #   FX:        — Efek
 #   Notes:     — Catatan aransemen
 
-# Instrumen (type: variable, di-apply sebagai "Nama: "):
+# Instrumen (type: variable, di-apply sebagai "[Nama: ]"):
 #   Piano, Keys, Guitar, Bass, Drums, Strings, Brass, Vokal, Sax, Suling, Violin
 
-# Trigger autocomplete: mengetik "[" atau kata berawalan huruf kapital.
+# Cue mark (type: keyword, ditawarkan sebagai "[Stop]"):
+#   [Tutti] [Hit] [Aksen] [Stop] [Break] [Fill In] [Fade In] ...
+
+# Trigger autocomplete: mengetik "[".
+# Semua entri yang ditawarkan berbentuk bracket: [Intro], [Patch: ], [Gitar: ], [Stop].
 # Autocomplete TIDAK menawarkan nama chord.

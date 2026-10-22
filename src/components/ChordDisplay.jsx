@@ -271,6 +271,15 @@ const ChordDisplayBase = memo(function ChordDisplay({
       renderedRows.push(<span key={i} className={`cd-instrument-token cd-section-inst${syncClass(lineObj)}`}>{lineObj.label}</span>);
       return;
     }
+    if (lineObj.type === 'cue') {
+      // "[Stop]" di baris sendiri: chip cue, bukan lirik satu kata.
+      renderedRows.push(
+        <div key={i} className={`cd-lyrics${syncClass(lineObj)}${focusRowClass()}`}>
+          <span className="cd-cue-mark-token">{lineObj.label}</span>
+        </div>
+      );
+      return;
+    }
     if (lineObj.type === 'modulation') {
       renderedRows.push(<div key={i} className={`cd-modulation${syncClass(lineObj)}`}>🔄 Modulasi ke {lineObj.label}</div>);
       return;

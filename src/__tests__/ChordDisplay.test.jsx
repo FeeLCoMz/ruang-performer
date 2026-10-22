@@ -39,7 +39,7 @@ describe('ChordDisplay lyrics mode', () => {
     act(() => {
       root.render(
         <ChordDisplay
-          song={{ lyrics: '(Gitar) (Suling) lirik' }}
+          song={{ lyrics: '[Gitar] [Suling] lirik' }}
           showChords={false}
         />
       );

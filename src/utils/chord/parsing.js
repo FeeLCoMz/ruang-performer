@@ -37,10 +37,12 @@ import {
   parseBracketedInstrumentLabel,
   formatBracketedInstrumentLabel,
   isInstrumentPatchLikeLine,
+  isKnownCueMarkLabel,
   isMetadataLine,
   TIMESTAMP_BRACKET_REGEX,
   REAL_INSTRUMENT_KEYWORDS,
 } from './sections.js';
+import { CUE_MARK_KEYWORDS } from '../../config/chordDisplayConfig.js';
 
 const BARLINE_TOKEN_REGEX = /^(\|:|:\||\[\:|\:\]|\|\||\|)$/;
 
@@ -171,13 +173,102 @@ function splitBracketCompoundLine(line) {
     .trim();
   if (remainingText) return null;
 
+  // Tag instrumen berurutan ("[Gitar] [Suling]") TIDAK dipecah: braketnya sudah
+  // dipisah tokenizer, sehingga dipecah per baris hasilnya dua row "instrument"
+  // yang dirender ganda. Tag seksi/metadata tetap dipecah (satu baris per tag).
+  if (bracketChunks.every((chunk) => isInlineInstrumentToken(chunk))) return null;
+
   return bracketChunks
     .map((chunk) => chunk.trim())
     .filter((chunk) => !TIMESTAMP_BRACKET_REGEX.test(chunk));
 }
 
+const CANONICAL_BRACKET_KEYWORD_REGEX = /^\[([A-Za-z0-9 '.\-&_]+)\]$/;
+
+/**
+ * Tulis ulang keyword yang dikenali menjadi bentuk baku "[Keyword]" — satu
+ * bentuk untuk semua tag, baik di baris lirik maupun baris chord.
+ */
+const toCanonicalBracketKeyword = (token) => {
+  const match = String(token || '').trim().match(CANONICAL_BRACKET_KEYWORD_REGEX);
+  if (!match) return null;
+  const keyword = match[1].trim();
+  return CUE_MARK_KEYWORDS.includes(keyword.toLowerCase()) ? `[${keyword}]` : null;
+};
+
+/**
+ * Pecah baris menjadi token, dengan keyword ber-braket dikeluarkan utuh.
+ * Selain itu memakai splitInlineTokens biasa. Dipakai tokenizeChordLine dan
+ * tokenizeLyricLine supaya aturan tokenisasi sama untuk kedua jalur.
+ */
+export const splitKeywordAwareTokens = (line = '') => {
+  if (typeof line !== 'string') return [];
+
+  const tokens = [];
+  let rest = line;
+
+  const pushTokens = (chunk = '') => {
+    tokens.push(...splitInlineTokens(chunk));
+  };
+
+  /** "[Sax Sheffield]" -> ["[Sax ", "Sheffield]"]. */
+  const pushBracketPieces = (bracket = '') => {
+    const open = bracket.indexOf(' ');
+    if (open === -1) {
+      tokens.push(bracket);
+    } else {
+      tokens.push(bracket.slice(0, open + 1), ' ', bracket.slice(open + 1));
+    }
+  };
+
+  while (rest) {
+    const start = rest.indexOf('[');
+    if (start === -1) {
+      pushTokens(rest);
+      break;
+    }
+
+    if (start > 0) {
+      pushTokens(rest.slice(0, start));
+      rest = rest.slice(start);
+      continue;
+    }
+
+    const end = rest.indexOf(']');
+    if (end === -1) {
+      pushTokens(rest);
+      break;
+    }
+
+    const bracket = rest.slice(0, end + 1);
+    const after = rest.slice(end + 1);
+    const nextTokenStart = after.trimStart().charAt(0);
+    const nextIsSpaceOrEnd = !nextTokenStart || /^\s|\|/.test(after);
+    // Cue mark dan label instrumen berdiri sendiri sebagai tag (lalu dimerge
+    // kembali oleh mergeInstrumentPhraseTokens):
+    // - braket lengkap tanpa spasi selalu utuh ("[Sax]");
+    // - braket berisi spasi hanya utuh bila tidak menempel chord
+    //   ("[Gitar Dist], [Organ]"); pada baris chord ia ikut dipecah per kata
+    //   agar kontrak spasi tidak berubah.
+    const containsSpace = /\s/.test(bracket);
+    if (
+      toCanonicalBracketKeyword(bracket)
+      || !containsSpace
+      || nextIsSpaceOrEnd
+    ) {
+      tokens.push(bracket);
+      rest = after;
+    } else {
+      pushBracketPieces(bracket);
+      rest = after;
+    }
+  }
+
+  return tokens;
+};
+
 function tokenizeChordLine(line, transpose) {
-  return mergeInstrumentPhraseTokens(splitInlineTokens(line)).flatMap((token) => {
+  return mergeInstrumentPhraseTokens(splitKeywordAwareTokens(line)).flatMap((token) => {
     if (/^\s+$/.test(token)) return [{ token, isSpace: true }];
     if (BARLINE_TOKEN_REGEX.test(token)) return [{ token, isBarline: true }];
     const inlineCueMark = isInlineCueMarkToken(token);
@@ -202,7 +293,7 @@ function tokenizeChordLine(line, transpose) {
 }
 
 function tokenizeLyricLine(line, transpose) {
-  return mergeInstrumentPhraseTokens(splitInlineTokens(line)).flatMap((token) => {
+  return mergeInstrumentPhraseTokens(splitKeywordAwareTokens(line)).flatMap((token) => {
     if (/^\s+$/.test(token)) return [{ token, isSpace: true }];
     const inlineCueMark = isInlineCueMarkToken(token);
     if (inlineCueMark) return [{ token: inlineCueMark, isCueMark: true }];
@@ -230,6 +321,10 @@ function parseLine(line, transpose) {
   const bracketedInstrument = parseBracketedInstrumentLabel(line);
   if (bracketedInstrument) {
     return { type: 'instrument', label: formatBracketedInstrumentLabel(bracketedInstrument) };
+  }
+  // "[Stop]" sendiri di satu baris adalah label cue, bukan lirik satu kata.
+  if (isKnownCueMarkLabel(line)) {
+    return { type: 'cue', label: line.trim().replace(/^\[|\]$/g, '').trim() };
   }
   // Metadata info lagu ("Original Key:", "Time Signature:") sekarang resmi
   // metadata: dirender sebagai chip dan tidak pernah ikut ditranspose, sehingga
@@ -291,6 +386,9 @@ export function classifyLine(line) {
   const bracketedInstrument = parseBracketedInstrumentLabel(trimmed);
   if (bracketedInstrument) {
     return { kind: 'instrument', label: formatBracketedInstrumentLabel(bracketedInstrument) };
+  }
+  if (isKnownCueMarkLabel(trimmed)) {
+    return { kind: 'cue', label: trimmed.replace(/^\[|\]$/g, '').trim() };
   }
 
   const section = parseSection(trimmed);
@@ -426,7 +524,7 @@ function normalizeDetectedInstrumentName(candidate = '') {
 
   const segments = cleaned
     .split(/[,&]/)
-    .map((segment) => segment.replace(/:.*$/, '').trim())
+    .map((segment) => segment.replace(/(?<![A-Za-z0-9]):\s.*$/, '').trim())
     .filter(Boolean);
 
   const matches = segments
@@ -459,7 +557,6 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
   const parsedLines = parseLines(lyricsText.split(/\r?\n/), 0);
   const detected = [];
   const seen = new Set();
-
   const addCandidate = (candidate = '') => {
     const normalized = normalizeDetectedInstrumentName(candidate);
     if (!normalized) return;

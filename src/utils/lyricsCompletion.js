@@ -16,10 +16,8 @@ import {
 /**
  * Section tags, matching what autoTagSongSections() produces.
  *
- * Also offered in a bracketed variant (e.g. `[Patch: ]`) for metadata and
- * instrument names so they can be completed from an open `[` tag: the parser
- * only treats a bracketed line as a section header, so inline chips render the
- * same way, and the cursor lands right after the `: ` separator.
+ * Every keyword is offered in one shape only — `[Keyword]` — so metadata and
+ * instrument entries also complete into a bracketed tag from an open `[`.
  */
 const SECTION_COMPLETIONS = [...new Set(CONFIG_SECTION_LABELS)].map((label) => ({
   label: `[${label}]`,
@@ -28,23 +26,21 @@ const SECTION_COMPLETIONS = [...new Set(CONFIG_SECTION_LABELS)].map((label) => (
   info: 'Ditampilkan sebagai section dan bisa dilompati dari sidebar struktur.',
 }));
 
-/** Key:value metadata understood by the chord parser. */
-const METADATA_COMPLETIONS = CONFIG_METADATA.flatMap(({ label, detail, info }) => [
-  {
-    label,
-    type: 'property',
-    detail,
-    info: info || undefined,
-    apply: `${label} `,
-  },
-  {
-    label: `[${label} ]`,
-    type: 'property',
-    detail,
-    info: info || undefined,
-    apply: `[${label} ]`,
-  },
-]);
+/**
+ * Key:value metadata understood by the chord parser.
+ *
+ * Satu bentuk saja: `[Patch: Stage Piano]`. Baris "Patch: ..." tanpa braket
+ * sengaja tidak ditawarkan — semua keyword ditulis dalam braket siku.
+ */
+const METADATA_COMPLETIONS = CONFIG_METADATA.map(({ label, detail, info }) => ({
+  label: `[${label} ]`,
+  type: 'property',
+  detail,
+  info: info || undefined,
+  apply: `[${label} ]`,
+  // Klik "Original Key:" menulis "[Original Key: ]" — kursor di dalam braket.
+  applyAfter: ']',
+}));
 
 /** Capitalise each word, matching autoTagSongSections()/config labels. */
 function titleCaseKeyword(keyword) {
@@ -55,41 +51,35 @@ function titleCaseKeyword(keyword) {
     .join(' ');
 }
 
-/** Instrument words highlighted by the editor. */
-const INSTRUMENT_COMPLETIONS = [...new Set(CONFIG_INSTRUMENTS)].flatMap((name) => [
-  {
-    label: name,
-    type: 'variable',
-    detail: 'Instrumen',
-    apply: `${name}: `,
-  },
-  {
-    label: `[${name}: ]`,
-    type: 'variable',
-    detail: 'Instrumen',
-    apply: `[${name}: ]`,
-  },
-]);
+/** Instrument words highlighted by the editor — always as a bracketed tag. */
+const INSTRUMENT_COMPLETIONS = [...new Set(CONFIG_INSTRUMENTS)].map((name) => ({
+  label: `[${name}: ]`,
+  type: 'variable',
+  detail: 'Instrumen',
+  apply: `[${name}: ]`,
+}));
 
 /**
  * Inline cue marks (Stop, Hit, Aksen, ...) recognised by isCueMarkKeyword().
- * Offered in both bracket styles the parser accepts: `(Hit)` and `[Hit]`.
+ * Hanya bentuk braket: `[Hit]`. Kurung biasa tidak lagi dibaca sebagai keyword.
  */
 const CUE_LABELS = [
   ...new Set(CONFIG_CUE_MARK_KEYWORDS.map(titleCaseKeyword)),
 ];
 
-const CUE_COMPLETIONS = CUE_LABELS.flatMap((name) => [
-  { label: `[${name}]`, type: 'keyword', detail: 'Cue mark', apply: `[${name}]` },
-  { label: `(${name})`, type: 'keyword', detail: 'Cue mark', apply: `(${name})` },
-]);
+const CUE_COMPLETIONS = CUE_LABELS.map((name) => (
+  { label: `[${name}]`, type: 'keyword', detail: 'Cue mark', apply: `[${name}]` }
+));
 
 const ALL_COMPLETIONS = [
   ...SECTION_COMPLETIONS,
   ...METADATA_COMPLETIONS,
 ];
 
-const options = [...ALL_COMPLETIONS, ...INSTRUMENT_COMPLETIONS, ...CUE_COMPLETIONS];
+const options = [...ALL_COMPLETIONS, ...INSTRUMENT_COMPLETIONS, ...CUE_COMPLETIONS].map((option) => (
+  // '' = kursor tepat di dalam braket (setelah "[Nama: ").
+  { ...option, applyAfter: option.applyAfter ?? '' }
+));
 
 /** Match the unfinished `[` tag immediately before the cursor. */
 function tokenBefore(state, pos) {
@@ -103,8 +93,8 @@ function tokenBefore(state, pos) {
 
 /**
  * Completion source. Deliberately simple: it only offers the known syntaxes
- * once the user opens a `[` tag (sections, bracketed metadata/instrument
- * variants and cue marks). It never triggers on plain words, so chord names and
+ * once the user opens a `[` tag (sections, metadata and instrument tags and
+ * cue marks). It never triggers on plain words, so chord names and
  * lyrics — which are typed far too often for a popup to be helpful — stay
  * undisturbed.
  *
@@ -114,16 +104,20 @@ function tokenBefore(state, pos) {
  * the caret while typing mid-word — applying a completion then replaced from
  * that wrong offset and yanked the cursor to the start of the line.
  */
-export function lyricsCompletionSource(context) {
+export const lyricsCompletionSource = (context) => {
   // Only trigger on an opened '[' tag; plain words never open the popup.
   const token = tokenBefore(context.state, context.pos);
   if (!token) return null;
 
+  // "[Patch:" — braketnya SUDAH ditutup oleh "[" pembuka tag ini, jadi sisa
+  // pengetikan adalah isi tag; "[" pembuka tidak boleh diganti ("[[Patch: ]").
+  const tagAlreadyOpen = /\]:?\s*$/.test(token.text);
+
   return {
-    from: token.from,
+    from: tagAlreadyOpen ? context.pos : token.from,
     options,
     validFor: /^\[?[A-Za-z0-9-]*$/,
   };
-}
+};
 
 export { options as lyricsCompletionOptions };

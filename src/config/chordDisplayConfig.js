@@ -160,7 +160,7 @@ export const NO_CHORD_TOKENS = ['n.c.', 'nc', 'no chord', 'no chords'];
  * 5. CUE MARKS (INLINE)
  * ------------------------------------------------------------------
  * Kata yang ditandai sebagai cue saat muncul inline dalam baris
- * chord/lirik, biasanya dalam kurung: (Stop), (Aksen), (Hit), (Tutti).
+ * chord/lirik, WAJIB dalam braket siku: [Stop], [Aksen], [Hit], [Tutti].
  */
 /**
  * Satu sumber kebenaran untuk cue mark, sama bentuknya dengan daftar keyword
@@ -184,7 +184,8 @@ export const CUE_MARK_KEYWORDS = [
  * 6. INSTRUMEN
  * ------------------------------------------------------------------
  * Kata kunci instrumen yang dikenali parser (highlight inline
- * "Gitar: teks", "(Sax)", "Cue: (Sax)", dst), dikelompokkan per keluarga.
+ * "[Gitar: Dist]", "[Sax]", dll), dikelompokkan per keluarga.
+ * Instrumen hanya dikenali di dalam braket siku.
  */
 export const INSTRUMENT_KEYWORDS = [
   // senar (strings)

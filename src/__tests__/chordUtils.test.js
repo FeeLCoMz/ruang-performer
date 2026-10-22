@@ -106,36 +106,44 @@ describe('chordUtils', () => {
     expect(parsed[2]).toMatchObject({ type: 'structure', label: 'Bridge - Koplo' });
   });
 
-  test('parseLines strips parentheses and keeps inline instrument labels in full-row lyric flow', () => {
-    const parsed = parseLines(['(Gitar)      (Suling)', 'lirik lirik  lirk lagu'], 0);
+  test('parseLines marks bracketed instrument tags in full-row lyric flow', () => {
+    const parsed = parseLines(['[Gitar] [Suling]', 'lirik lirik  lirk lagu'], 0);
     expect(parsed[0]).toMatchObject({ type: 'lyrics' });
     expect(parsed[0].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
+    // Dua tag berurutan di awal baris tetap satu baris lirik.
     expect(parsed[0].tokens).toContainEqual({ token: 'Suling', isInstrument: true });
-    expect(parsed[0].tokens.some((token) => token.token === '(Gitar)')).toBe(false);
-    expect(parsed[0].tokens.some((token) => token.token === '(Suling)')).toBe(false);
     expect(parsed[1].tokens).toContainEqual({ token: 'lirik', isInstrument: undefined });
   });
 
-  test('parseLines keeps parenthetical instrument phrases intact when they are a single tag', () => {
-    const parsed = parseLines(['(Strings Stac.)', '(Gitar & Fill-in)', '(Biola: Lead utama)', '(teks apapun Gitar)'], 0);
-    expect(parsed[0].tokens).toContainEqual({ token: 'Strings Stac.', isInstrument: true });
-    expect(parsed[1].tokens).toContainEqual({ token: 'Gitar & Fill-in', isInstrument: true });
-    expect(parsed[2].tokens).toContainEqual({ token: 'Biola: Lead utama', isInstrument: true });
-    expect(parsed[3].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
+  test('parseLines ignores parenthesized and bare instrument keywords', () => {
+    const parsed = parseLines(['(Gitar) (Suling) ', 'Gitar: teks apapun', '(teks apapun Gitar)', '(Stop)'], 0);
+    expect(parsed[0].tokens.some((token) => token.isInstrument)).toBe(false);
+    expect(parsed[1].tokens.some((token) => token.isInstrument)).toBe(false);
+    expect(parsed[2].tokens.some((token) => token.isInstrument)).toBe(false);
+    expect(parsed[3].tokens.some((token) => token.isCueMark)).toBe(false);
   });
 
-  test('parseLines detects instrument labels with colons and display cue tags in inline flow', () => {
-    const parsed = parseLines(['Gitar: teks apapun', '(teks apapun Gitar)', '(Aksen)', '(Stop)', '(BBreak)', '(Fill-in)', '(Fade in/out)', 'Cue: Gitar', 'Cue: (Sax)', 'Cue: Mainkan Piano Melodi Chorus', 'Dm (Sax) Em | G |', '(Sax)(Stop) Am | Dm G |'], 0);
-    expect(parsed[0].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
-    expect(parsed[1].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
-    expect(parsed[2].tokens).toContainEqual({ token: 'Aksen', isCueMark: true });
-    expect(parsed[3].tokens).toContainEqual({ token: 'Stop', isCueMark: true });
-    expect(parsed[4].tokens).toContainEqual({ token: 'BBreak', isCueMark: true });
-    expect(parsed[5].tokens).toContainEqual({ token: 'Fill-in', isCueMark: true });
-    expect(parsed[6].tokens).toContainEqual({ token: 'Fade in/out', isCueMark: true });
+  test('parseLines keeps bracketed instrument phrases intact when they are a single tag', () => {
+    const parsed = parseLines(['[Strings Stac.]', '[Gitar & Fill-in]', '[teks apapun Gitar]'], 0);
+    expect(parsed[0].tokens).toContainEqual({ token: 'Strings Stac.', isInstrument: true });
+    expect(parsed[1].tokens).toContainEqual({ token: 'Gitar & Fill-in', isInstrument: true });
+    expect(parsed[2].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
+  });
+
+  test('parseLines detects bracketed instrument labels and display cue tags in inline flow', () => {
+    const parsed = parseLines(['[Gitar: teks apapun]', '[Aksen]', '[Stop]', '[BBreak]', '[Fill-in]', '[Fade in/out]', 'Cue: Gitar', 'Cue: [Sax]', 'Cue: Mainkan Piano Melodi Chorus', 'Dm [Sax] Em | G |', 'Dm [Sax] Em | G |', '[Sax][Stop] Am | Dm G |'], 0);
+    expect(parsed[0]).toMatchObject({ type: 'instrument', label: 'Gitar: teks apapun' });
+    // Baris yang hanya berisi cue mark jadi row "cue", bukan lirik satu kata.
+    expect(parsed[1]).toMatchObject({ type: 'cue', label: 'Aksen' });
+    expect(parsed[2]).toMatchObject({ type: 'cue', label: 'Stop' });
+    expect(parsed[3]).toMatchObject({ type: 'cue', label: 'BBreak' });
+    expect(parsed[4]).toMatchObject({ type: 'cue', label: 'Fill-in' });
+    expect(parsed[5]).toMatchObject({ type: 'cue', label: 'Fade in/out' });
+    // "Cue: ..." tetap metadata; kata instrumen di baris itu tidak jadi tag.
+    expect(parsed[6]).toMatchObject({ type: 'metadata' });
     expect(parsed[7]).toMatchObject({ type: 'metadata' });
     expect(parsed[8]).toMatchObject({ type: 'metadata' });
-    expect(parsed[9]).toMatchObject({ type: 'metadata' });
+    expect(parsed[9].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
     expect(parsed[10].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
     expect(parsed[11].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
     expect(parsed[11].tokens).toContainEqual({ token: 'Stop', isCueMark: true });
@@ -143,17 +151,18 @@ describe('chordUtils', () => {
 
   test('extractDetectedInstrumentsFromLyrics keeps real instruments and ignores cue tags', () => {
     const instruments = extractDetectedInstrumentsFromLyrics([
-      'Gitar: teks apapun',
-      '(teks apapun Gitar)',
-      '(Aksen)',
-      '(Stop)',
-      '(Sax)(Stop) Am | Dm G |',
+      '[Gitar: teks apapun]',
+      '[teks apapun Gitar]',
+      '(Gitar)',
+      '[Aksen]',
+      '[Stop]',
+      '[Sax][Stop] Am | Dm G |',
       'Cue: Mainkan Piano Melodi Chorus',
-      'Dm (Sax) Em | G |',
-      'Biola: Lead utama',
+      'Dm [Sax] Em | G |',
+      '[Gitar: Lead utama]',
     ].join('\n'));
 
-    expect(instruments).toEqual(['Gitar', 'Sax', 'Piano', 'Biola']);
+    expect(instruments).toEqual(['Gitar', 'Sax', 'Piano']);
   });
 
   test('extractDetectedInstrumentsFromLyrics reads instruments from structure labels', () => {
@@ -167,43 +176,53 @@ describe('chordUtils', () => {
 
   test('extractDetectedInstrumentsFromLyrics keeps multi-word single instruments intact and splits comma lists', () => {
     const instruments = extractDetectedInstrumentsFromLyrics([
-      'Synth Saw:',
-      'Gitar Dist, Synth Saw:',
+      '[Synth Saw]',
+      '[Gitar Dist, Synth Saw]',
     ].join('\n'));
 
     expect(instruments).toEqual(['Synth Saw', 'Gitar Dist']);
   });
 
-  test('extractDetectedInstrumentsFromLyrics splits comma-delimited instrument labels even with a trailing colon', () => {
+  test('extractDetectedInstrumentsFromLyrics splits comma-delimited instrument lists in one tag', () => {
     const instruments = extractDetectedInstrumentsFromLyrics([
-      'Gitar, Organ:',
-      'Piano, Synth Saw:',
+      '[Gitar, Organ]',
+      '[Piano, Synth Saw]',
     ].join('\n'));
 
-    expect(instruments).toEqual(['Gitar', 'Organ', 'Piano', 'Synth Saw']);
+    expect(instruments).toEqual(['Gitar', 'Piano']);
   });
 
   test('extractDetectedInstrumentsFromLyrics recognizes synth-family variants as a single instrument', () => {
     const instruments = extractDetectedInstrumentsFromLyrics([
-      'Synth Square:',
-      'Synth Pluck:',
-      'Synth Perc:',
-      'Gitar Dist, Synth Square:',
+      '[Synth Square]',
+      '[Synth Pluck]',
+      '[Synth Perc]',
+      '[Gitar Dist, Synth Square]',
     ].join('\n'));
 
     expect(instruments).toEqual(['Synth Square', 'Synth Pluck', 'Synth Perc', 'Gitar Dist']);
   });
 
-  test('extractDetectedInstrumentsFromLyrics treats any non-comma postfix after an instrument as part of the same instrument', () => {
+  test('extractDetectedInstrumentsFromLyrics keeps a tagged instrument phrase intact', () => {
     const instruments = extractDetectedInstrumentsFromLyrics([
-      'Synth Arp:',
-      'Synth Funky Bass:',
-      'Piano Warm:',
-      'Gitar Dist, Synth Warm Flute:',
-      'Guitar Electro, Piano Classic:',
+      '[Synth Arp]',
+      '[Synth Funky Bass]',
+      '[Piano Warm]',
+      '[Gitar Dist]',
     ].join('\n'));
 
-    expect(instruments).toEqual(['Synth Arp', 'Synth Funky Bass', 'Piano Warm', 'Gitar Dist', 'Synth Warm Flute', 'Guitar Electro', 'Piano Classic']);
+    expect(instruments).toEqual(['Synth Arp', 'Synth Funky Bass', 'Piano Warm', 'Gitar Dist']);
+  });
+
+  test('extractDetectedInstrumentsFromLyrics ignores instrument words outside square brackets', () => {
+    const instruments = extractDetectedInstrumentsFromLyrics([
+      'Gitar Dist:',
+      '(Suling)',
+      'Piano dan Synth Saw',
+      'Am F G',
+    ].join('\n'));
+
+    expect(instruments).toEqual([]);
   });
 
   test('parseSection detects modulation lines', () => {

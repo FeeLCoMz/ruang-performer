@@ -3,7 +3,10 @@
  *
  * Deteksi label instrumen inline dan cue mark pada teks lirik/chord.
  *
- * Contoh yang dikenali: "(Gitar)", "Keys:", "[Pad: Soft]", "(Stop)".
+ * Semua keyword WAJIB ditulis dalam braket siku: "[Gitar]", "[Stop]",
+ * "[Pad: Soft]", "[Cue: Fill]". Kurung biasa "(Gitar)"/"(Stop)" dan keyword
+ * polos tanpa braket TIDAK lagi dikenali sebagai instrumen/cue — teks seperti
+ * itu dirender sebagai lirik biasa.
  * Cue mark sengaja dipisah dari instrumen: aksi permainan seperti "Stop" atau
  * "Aksen" bukan alat, jadi tidak boleh terbaca sebagai instrumen.
  */
@@ -181,6 +184,14 @@ export const normalizeInstrumentDisplayLabel = (label = '') => {
   return false;
 };
 
+/**
+ * Grouping punctuation for a keyword tag. Hanya braket siku yang diterima;
+ * kurung biasa sengaja TIDAK ada di sini — lihat catatan di atas.
+ */
+const BRACKET_GROUP_REGEX = /^\[([^[\]]+)\]$/;
+
+const isBracketGroup = (trimmed = '') => BRACKET_GROUP_REGEX.test(trimmed);
+
 export const splitInlineTokens = (text = '') => {
   if (typeof text !== 'string') return [];
 
@@ -311,9 +322,10 @@ export const isInlineCueMarkToken = (token) => {
   const trimmed = token.trim();
   if (!trimmed) return false;
 
-  // Strip kurung biasa dan kurung siku: keyword cue mark boleh ditulis
-  // "(Stop)" maupun "[Stop]" — keduanya harus terdeteksi.
-  const raw = trimmed.replace(/^[\[(](.*)[\])}]$/, '$1').trim();
+  // Cue mark hanya dikenali di dalam braket siku: "[Stop]". "(Stop)" adalah
+  // teks biasa, bukan keyword.
+  if (!isBracketGroup(trimmed)) return false;
+  const raw = trimmed.slice(1, -1).trim();
   if (!raw) return false;
 
   return normalizeCueMarkToken(raw);
@@ -324,24 +336,28 @@ export const isInlineInstrumentToken = (token) => {
   const trimmed = token.trim();
   if (!trimmed) return false;
 
-  if (/^\(([^)]+)\)$/.test(trimmed)) {
-    const inside = trimmed.slice(1, -1).trim();
-    if (!inside) return false;
-    return matchInlineInstrumentLabel(inside) ? normalizeInstrumentDisplayLabel(inside) : false;
-  }
+  // Hanya braket siku yang menandai keyword: "[Gitar]", "[Gitar: Dist]".
+  // Tanpa braket ("Gitar:", "(Gitar)") kata itu bukan tag instrumen lagi.
+  if (!isBracketGroup(trimmed)) return false;
 
-  const colonMatch = trimmed.match(/^([A-Za-z0-9\s/\-_]+):$/);
+  const inside = trimmed.slice(1, -1).trim();
+  if (!inside) return false;
+
+  const colonMatch = inside.match(/^([^:]+):\s*(.*)$/);
   if (colonMatch && matchInlineInstrumentLabel(colonMatch[1])) {
-    return normalizeInstrumentDisplayLabel(colonMatch[1]);
+    return normalizeInstrumentDisplayLabel(inside);
   }
 
-  const textMatch = trimmed.match(/^([A-Za-z0-9\s/\-_]+):\s*(.*)$/);
-  if (textMatch && matchInlineInstrumentLabel(textMatch[1])) {
-    return normalizeInstrumentDisplayLabel(textMatch[1]);
+  // Isi braket berisi daftar instrumen ("[Gitar, Organ]") hanya perlu lolos
+  // bila SETIAP bagiannya adalah instrumen.
+  const parts = inside.split(/\s*[,;]\s*/).filter(Boolean);
+  if (parts.length > 1) {
+    if (!parts.every((part) => matchInlineInstrumentLabel(part))) return false;
+    return parts.map((part) => normalizeInstrumentDisplayLabel(part)).filter(Boolean).join(', ');
   }
 
-  if (matchInlineInstrumentLabel(trimmed)) {
-    return normalizeInstrumentDisplayLabel(trimmed);
+  if (matchInlineInstrumentLabel(inside)) {
+    return normalizeInstrumentDisplayLabel(inside);
   }
 
   return false;
