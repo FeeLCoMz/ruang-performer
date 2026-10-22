@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, extractDetectedInstrumentsFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers, parseChordPro, classifyLine, canonicalSection } from '../utils/chordUtils';
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, extractDetectedInstrumentsFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers, parseChordPro, classifyLine, canonicalSection, parseBarStructure, buildKeywordAlternation } from '../utils/chordUtils';
 
 describe('chordUtils', () => {
   test('splitSectionLabelWithChords separates section label and chord line', () => {
@@ -803,3 +803,47 @@ Repeat [00:12] then [1:02:03]
       expect(parsed.lines).toContainEqual({ type: 'text', line: 'Verse: ku menunggu' });
     });
   });
+
+describe('parseBarStructure', () => {
+  test('splits prefix, boundaries and measures', () => {
+    expect(parseBarStructure('Intro |: C G | Am F :|')).toEqual({
+      prefix: 'Intro',
+      suffix: '',
+      boundaries: ['|:', '|', ':|'],
+      measures: ['C G', 'Am F'],
+    });
+  });
+
+  test('keeps text after the last barline as suffix', () => {
+    const structure = parseBarStructure('| C G | Am | (2x)');
+    expect(structure.prefix).toBe('');
+    expect(structure.suffix).toBe('(2x)');
+    expect(structure.measures).toEqual(['C G', 'Am']);
+  });
+
+  test('returns null when there are fewer than two barlines', () => {
+    expect(parseBarStructure('C G Am F')).toBeNull();
+    expect(parseBarStructure('C G | Am F')).toBeNull();
+  });
+
+  test('alignSelectedBarlines and wrapBarsPerLine read the same bar layout', () => {
+    const input = '| C G | Am F | Dm G | C |';
+    const aligned = alignSelectedBarlines(`${input}\n${input}`).split('\n');
+    expect(aligned[0]).toBe(input);
+    expect(aligned[1]).toBe(input);
+
+    const wrapped = wrapBarsPerLine(input, 2);
+    expect(wrapped.split('\n')).toHaveLength(2);
+    expect(wrapped.startsWith('| C G | Am F')).toBe(true);
+  });
+});
+
+describe('buildKeywordAlternation', () => {
+  test('escapes keywords and applies the separator', () => {
+    expect(buildKeywordAlternation(['n.c.', 'no chord'], '\\s*')).toBe('n\\.c\\.|no\\s*chord');
+  });
+
+  test('joins escaped keywords with the requested separator', () => {
+    expect(buildKeywordAlternation(['n.c.', 'no chord'], '\\s*')).toBe('n\\.c\\.|no\\s*chord');
+    expect(new RegExp(`^(?:${buildKeywordAlternation(['no chord', 'nc'])})$`, 'i').test('no chord')).toBe(true);
+  });});

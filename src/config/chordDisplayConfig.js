@@ -136,6 +136,19 @@ export const METADATA_KEYS = dedupe([
 export const CHORD_REGEX_SOURCE =
   '^[A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\\d+)?(?:[#b]\\d+)*(?:\\/[A-G][#b]?)?$';
 
+/* ------------------------------------------------------------------
+ * 4b. CHORD SHAPE (baris chart)
+ * ------------------------------------------------------------------
+ * Versi LOOSE dari regex di atas, dipakai saat memindai seluruh baris chart:
+ * boleh berisi leading dash (passing chord: "-Am") dan compact separator
+ * ("D..Gm..Bb", "C-Am"). Untuk memvalidasi satu chord secara ketat tetap
+ * gunakan CHORD_REGEX_SOURCE.
+ *
+ * Bila menambah kualitas chord baru (mis. m11, 7sus4, add11), ubah KEDUANYA.
+ */
+export const CHORD_TOKEN_REGEX_SOURCE =
+  '[\\(\\[\\{]?-?([A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\\d+)?(?:[#b]\\d+)*(?:\\/[A-G][#b]?)?)(((\\.{2,}|-)([A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\\d+)?(?:[#b]\\d+)*(?:\\/[A-G][#b]?)?))*)(\\.{2,})?[\\)\\]\\}]?';
+
 /** Token yang dianggap "No Chord". */
 export const NO_CHORD_TOKENS = ['n.c.', 'nc', 'no chord', 'no chords'];
 

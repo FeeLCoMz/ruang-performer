@@ -6,10 +6,15 @@
  * Kata kunci seksi & modulasi berasal dari src/config/chordDisplayConfig.js
  * dan dicocokkan sebagai kata utuh (lihat textKeywords.js).
  */
-import { STRUCTURE_SECTION_KEYWORDS, MODULATION_KEYWORDS, CUE_MARK_KEYWORDS, INSTRUMENT_KEYWORDS } from '../../config/chordDisplayConfig.js';
 import {
+  CUE_MARK_KEYWORDS,
+  INSTRUMENT_KEYWORDS,
+  MODULATION_KEYWORDS,
+  STRUCTURE_SECTION_KEYWORDS,
+} from '../../config/chordDisplayConfig.js';
+import {
+  buildKeywordAlternation,
   createKeywordPattern,
-  escapeRegex,
   metadataKeys,
 } from './textKeywords.js';
 import {
@@ -27,7 +32,7 @@ const STRUCTURE_KEYWORD_PATTERNS = STRUCTURE_SECTION_KEYWORDS.map((keyword) => (
 }));
 
 const MODULATION_LINE_REGEX = new RegExp(
-  `^(?:${MODULATION_KEYWORDS.map((keyword) => escapeRegex(keyword).replace(/\s+/g, '\\s+')).join('|')})\\s*:\\s*(.+)$`,
+  `^(?:${buildKeywordAlternation(MODULATION_KEYWORDS, '\\s+')})\\s*:\\s*(.+)$`,
   'i',
 );
 

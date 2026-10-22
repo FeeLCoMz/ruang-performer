@@ -7,18 +7,23 @@
  * Deteksi chord mengabaikan barline (|, ||, |:, :|) dan mendukung compact chord
  * (D..Gm..Bb). Regex chord bersumber dari src/config/chordDisplayConfig.js.
  */
-import { CHORD_REGEX_SOURCE, NO_CHORD_TOKENS } from '../../config/chordDisplayConfig.js';
-import { escapeRegex } from './textKeywords.js';
+import { CHORD_REGEX_SOURCE, CHORD_TOKEN_REGEX_SOURCE, NO_CHORD_TOKENS } from '../../config/chordDisplayConfig.js';
+import { buildKeywordAlternation } from './textKeywords.js';
 
 const NOTES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
+/** Pola barline (|, ||, |:, :|) — satu sumber untuk isChordLine & parseNumberLine. */
+const BARLINE_TOKEN_GLOBAL_REGEX = /\|:|:\||\[\:|\:\]|\|\||\|/g;
+
 /** Token chord yang dibungkus bracket/parentheses dan boleh berakhiran titik durasi. */
 const WRAPPED_TOKEN_REGEX = /^([\(\[\{]?)(.+?)([\)\]\}]?)(\.{2,})?$/;
 
-// Regex untuk mendeteksi chord (termasuk leading dash untuk passing chord dan trailing dots untuk durasi)
-// Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F.., Am...., (Am), [C], Amadd9
-const CHORD_REGEX_GLOBAL = /[\(\[\{]?-?([A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\d+)?(?:[#b]\d+)*(?:\/[A-G][#b]?)?)(((\.{2,}|-)([A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\d+)?(?:[#b]\d+)*(?:\/[A-G][#b]?)?))*)(\.{2,})?[\)\]\}]?/g;
+/**
+ * Token chord pada baris chart — mendukung passing dash dan compact separator.
+ * Sumber: src/config/chordDisplayConfig.js (CHORD_TOKEN_REGEX_SOURCE).
+ */
+const CHORD_REGEX_GLOBAL = new RegExp(CHORD_TOKEN_REGEX_SOURCE, 'g');
 
 /** Token chord dibungkus bracket, titik durasi dibuang. */
 export const normalizeChordToken = (token) => {
@@ -37,7 +42,7 @@ export const toCleanChord = (chord) => normalizeChordToken(String(chord || '').r
 // Sumber regex: src/config/chordDisplayConfig.js (CHORD_REGEX_SOURCE)
 const CHORD_REGEX = new RegExp(CHORD_REGEX_SOURCE, 'i');
 const NO_CHORD_REGEX = new RegExp(
-  `^(${NO_CHORD_TOKENS.map((token) => escapeRegex(token).replace(/\s+/g, '\\s*')).join('|')})$`,
+  `^(${buildKeywordAlternation(NO_CHORD_TOKENS, '\\s*')})$`,
   'i',
 );
 
@@ -71,7 +76,7 @@ export function isValidChord(chord) {
  *
  * Return: true jika mayoritas token adalah not angka (1-7, boleh ada titik/garis/aksen)
  */
-export function isNumberNotationToken(token) {
+export const isNumberNotationToken = (token) => {
   if (typeof token !== 'string') return false;
   const cleaned = token.trim();
   if (!cleaned) return false;
@@ -86,12 +91,12 @@ export function isNumberNotationToken(token) {
   const numRegex = /^[1-7](?:[.']+)?$/;
   const dotRegex = /^\.{1,}$/;
   return numRegex.test(normalized) || dotRegex.test(normalized);
-}
+};
 
 export function parseNumberLine(line) {
   // Hilangkan barline di awal/akhir/token
   const cleaned = line
-    .replace(/\|:|:\||\[\:|\:\]|\|\||\|/g, ' ')
+    .replace(BARLINE_TOKEN_GLOBAL_REGEX, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   if (!cleaned) return false;
@@ -492,7 +497,7 @@ export const isChordLine = (line) => {
 
   // Tokenisasi: pisahkan berdasarkan spasi, abaikan barline (|, ||, |:, :|)
   const tokens = cleanedLine
-    .replace(/\|:|:\||\[\:|\:\]|\|\||\|/g, ' ') // hilangkan barline
+    .replace(BARLINE_TOKEN_GLOBAL_REGEX, ' ')
     .split(/\s+/)
     .filter(Boolean);
   if (!tokens.length) return false;

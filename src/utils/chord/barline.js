@@ -4,20 +4,62 @@
  * Utilitas format teks chord berbasis barline (|, ||, |:, :|):
  * merapikan spasi di sekitar barline, menyejajarkan kolom bar, dan memecah
  * baris menjadi N bar per baris.
+ *
+ * `parseBarStructure()` adalah satu-satunya parser struktur bar; dipakai
+ * `alignSelectedBarlines` dan `wrapBarsPerLine` supaya keduanya tidak
+ * menyimpang saat menangani prefix/suffix atau barline ganda.
  */
 
-const BARLINE_SOURCE = '\\|:|:\\||\\|\\||\\|';
-const BARLINE_REGEX_GLOBAL = new RegExp(`(${BARLINE_SOURCE})`, 'g');
-const BARLINE_TEST_REGEX = new RegExp(BARLINE_SOURCE);
-const BARLINE_TOKEN_REGEX = new RegExp(`^(${BARLINE_SOURCE})$`);
-
-const hasBarline = (line) => BARLINE_TEST_REGEX.test(line);
-const isBarToken = (token) => BARLINE_TOKEN_REGEX.test(token);
+/**
+ * Prefix/suffix barline yang menempel pada bar, mis. "|: C | G :|".
+ * Gunakan regex baru per pemanggilan (literal /g menyimpan lastIndex).
+ */
+const createBarlineRegex = () => /(\|:|:\||\|\||\|)/g;
+const hasBarline = (line) => /(\|:|:\||\|\||\|)/.test(line);
 
 /** Pastikan ada satu spasi di kiri-kanan barline. */
 const padBarlineSpacing = (line) => line
   .replace(/([^\s|])(\|:|:\||\|\||\|)/g, '$1 $2')
   .replace(/(\|:|:\||\|\||\|)([^\s|])/g, '$1 $2');
+
+/**
+ * Pecah satu baris chart menjadi prefix, boundaries, dan measures.
+ *
+ * Contoh: "Intro |: C G | Am F :|"
+ *   -> { prefix: 'Intro', boundaries: ['|:', '|', ':|'], measures: ['C G', 'Am F'] }
+ *
+ * Return null bila baris tidak punya minimal dua barline (tidak cukup untuk
+ * membentuk satu bar).
+ */
+export function parseBarStructure(line) {
+  if (typeof line !== 'string' || !hasBarline(line)) return null;
+
+  const barlineRegex = createBarlineRegex();
+  const matches = [];
+  let match;
+  while ((match = barlineRegex.exec(line)) !== null) {
+    matches.push({
+      token: match[0],
+      start: match.index,
+      end: match.index + match[0].length,
+    });
+  }
+
+  if (matches.length < 2) return null;
+
+  const measures = [];
+  for (let i = 0; i < matches.length - 1; i += 1) {
+    const rawMeasure = line.slice(matches[i].end, matches[i + 1].start);
+    measures.push(rawMeasure.replace(/\s+/g, ' ').trim());
+  }
+
+  return {
+    prefix: line.slice(0, matches[0].start).replace(/[ \t]+$/, ''),
+    suffix: line.slice(matches[matches.length - 1].end).replace(/^[ \t]+/, ''),
+    boundaries: matches.map((item) => item.token),
+    measures,
+  };
+}
 
 /**
  * Sejajarkan posisi barline pada teks multiline.
@@ -44,36 +86,6 @@ export function alignSelectedBarlines(text) {
 
   if (linesWithBars.length < 2) return text;
 
-  const parseBarStructure = (line) => {
-    if (!hasBarline(line)) return null;
-
-    const matches = [];
-    BARLINE_REGEX_GLOBAL.lastIndex = 0;
-    let match;
-    while ((match = BARLINE_REGEX_GLOBAL.exec(line)) !== null) {
-      matches.push({
-        token: match[0],
-        start: match.index,
-        end: match.index + match[0].length,
-      });
-    }
-
-    if (matches.length < 2) return null;
-
-    const measures = [];
-    for (let i = 0; i < matches.length - 1; i += 1) {
-      const rawMeasure = line.slice(matches[i].end, matches[i + 1].start);
-      measures.push(rawMeasure.replace(/\s+/g, ' ').trim());
-    }
-
-    return {
-      prefix: line.slice(0, matches[0].start).replace(/[ \t]+$/, ''),
-      suffix: line.slice(matches[matches.length - 1].end).replace(/^[ \t]+/, ''),
-      boundaries: matches.map((item) => item.token),
-      measures,
-    };
-  };
-
   const structuredLines = lines.map(parseBarStructure);
   const validStructuredLines = structuredLines.filter(Boolean);
   if (validStructuredLines.length < 2) return text;
@@ -92,10 +104,9 @@ export function alignSelectedBarlines(text) {
   });
 
   const alignedLines = structuredLines.map((structure, idx) => {
-    if (!structure) return lines[idx];
+    if (!structure || !structure.measures.length) return lines[idx];
 
     const { prefix, suffix, boundaries, measures } = structure;
-    if (!measures.length) return lines[idx];
 
     let rebuilt = '';
     if (prefix) {
@@ -135,40 +146,15 @@ export function wrapBarsPerLine(text, barsPerLine = 4) {
 
   const normalizedBarsPerLine = Math.max(1, Number(barsPerLine) || 4);
 
-  const normalizeBarSpacing = (line) => {
-    if (!hasBarline(line)) return line;
-    return padBarlineSpacing(line)
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
-
   const wrapped = text.split(/\r?\n/).flatMap((line) => {
-    const normalized = normalizeBarSpacing(line);
-    if (!hasBarline(normalized)) return [line];
+    if (!hasBarline(line)) return [line];
 
-    const tokens = normalized.split(/\s+/).filter(Boolean);
-    const barIndexes = [];
-    tokens.forEach((token, idx) => {
-      if (isBarToken(token)) barIndexes.push(idx);
-    });
+    // Rapikan spasi dulu supaya prefix/message bisa dipisah per token.
+    const normalized = padBarlineSpacing(line).replace(/\s+/g, ' ').trim();
+    const structure = parseBarStructure(normalized);
+    if (!structure || !structure.measures.length) return [normalized];
 
-    if (barIndexes.length < 2) return [normalized];
-
-    const firstBar = barIndexes[0];
-    const lastBar = barIndexes[barIndexes.length - 1];
-    const prefix = tokens.slice(0, firstBar).join(' ');
-    const suffix = tokens.slice(lastBar + 1).join(' ');
-
-    const boundaries = barIndexes.map((idx) => tokens[idx]);
-    const measures = [];
-    for (let i = 0; i < barIndexes.length - 1; i += 1) {
-      const start = barIndexes[i];
-      const end = barIndexes[i + 1];
-      const contentTokens = tokens.slice(start + 1, end);
-      measures.push(contentTokens.join(' ').trim());
-    }
-
-    if (!measures.length) return [normalized];
+    const { prefix, suffix, boundaries, measures } = structure;
 
     const chunks = [];
     for (let i = 0; i < measures.length; i += normalizedBarsPerLine) {
@@ -185,6 +171,7 @@ export function wrapBarsPerLine(text, barsPerLine = 4) {
       chunks.push(lineParts.join(' ').replace(/\s+/g, ' ').trim());
     }
 
+    // Prefix hanya di chunk pertama, suffix hanya di chunk terakhir.
     if (prefix) {
       chunks[0] = `${prefix} ${chunks[0]}`.trim();
     }

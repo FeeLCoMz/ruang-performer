@@ -26,3 +26,19 @@ export const createKeywordPattern = (keyword, separator = '[\\s_-]+') => (
 
 /** Alias ringkas untuk pola kata utuh dengan pemisah default. */
 export const matchKeywordPattern = (keyword = '') => createKeywordPattern(keyword);
+
+/**
+ * Ganti spasi di dalam kata kunci dengan pola pemisah (mis. '\\s+' atau '[\\s_-]+').
+ * Dipakai saat menyusun regex alternative dari daftar kata kunci.
+ */
+export const escapeKeywordAlternation = (keyword, separator = '[\\s_-]+') => (
+  escapeRegex(keyword).replace(/\s+/g, separator)
+);
+
+/**
+ * Gabungkan daftar kata kunci menjadi satu alternation regex.
+ * Contoh: buildKeywordAlternation(['no chord', 'nc']) -> 'no\\s*chord|nc'.
+ */
+export const buildKeywordAlternation = (keywords = [], separator = '[\\s_-]+') => (
+  keywords.map((keyword) => escapeKeywordAlternation(keyword, separator)).join('|')
+);

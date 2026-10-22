@@ -21,6 +21,10 @@ import {
 
 const instrumentKeywords = INSTRUMENT_KEYWORDS;
 
+/** Regex nama instrumen / cue mark (dibuat sekali, bukan tiap pemanggilan). */
+const INSTRUMENT_KEYWORD_PATTERNS = instrumentKeywords.map(matchKeywordPattern);
+const CUE_MARK_KEYWORD_PATTERNS = CUE_MARK_KEYWORDS.map(matchKeywordPattern);
+
 /** True when the whole value is exactly one known instrument keyword. */
 export const isInstrumentKeywordWord = (value = '') => (
   typeof value === 'string' && instrumentKeywords.includes(value.trim().toLowerCase())
@@ -40,7 +44,7 @@ export const matchInlineInstrumentLabel = (candidate = '') => {
   // dua huruf selalu jatuh ke false.
   if (instrumentKeywords.includes(lower)) return true;
 
-  const fullPhraseMatch = instrumentKeywords.some((keyword) => matchKeywordPattern(keyword).test(lower));
+  const fullPhraseMatch = INSTRUMENT_KEYWORD_PATTERNS.some((pattern) => pattern.test(lower));
   if (fullPhraseMatch) return true;
 
   const phraseWords = normalized.split(/\s+/).filter(Boolean);
@@ -132,10 +136,10 @@ export const isCueMarkKeyword = (candidate = '') => {
   if (!normalized) return false;
 
   const lower = normalized.toLowerCase();
-  const hasInstrumentInPhrase = instrumentKeywords.some((keyword) => matchKeywordPattern(keyword).test(lower));
+  const hasInstrumentInPhrase = INSTRUMENT_KEYWORD_PATTERNS.some((pattern) => pattern.test(lower));
   if (hasInstrumentInPhrase) return false;
 
-  return CUE_MARK_KEYWORDS.some((keyword) => matchKeywordPattern(keyword).test(lower));
+  return CUE_MARK_KEYWORD_PATTERNS.some((pattern) => pattern.test(lower));
 };
 
 export const normalizeCueMarkToken = (candidate = '') => {

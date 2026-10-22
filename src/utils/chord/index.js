@@ -16,6 +16,8 @@ export {
   escapeRegex,
   createKeywordPattern,
   matchKeywordPattern,
+  escapeKeywordAlternation,
+  buildKeywordAlternation,
 } from './textKeywords.js';
 
 export * from './chordTokens.js';
