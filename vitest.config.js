@@ -26,5 +26,9 @@ export default defineConfig({
     teardownTimeout: 120000,
     hookTimeout: 60000,
     testTimeout: 30000,
+    // Pool "forks" (default) gagal start worker di mesin ini sehingga
+    // `npm run test:unit` berhenti sebelum menjalankan satu test pun.
+    // "threads" memakai thread dalam satu proses dan berjalan normal.
+    pool: 'threads',
   },
 });

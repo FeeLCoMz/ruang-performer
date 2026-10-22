@@ -1,41 +1,41 @@
-import ModulesPage from "./pages/ModulesPage.jsx";
-import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
-import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from "react-router-dom";
+import ModulesPage from './pages/ModulesPage.jsx';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 
 // Eager load critical pages
-import LandingPage from "./pages/LandingPage.jsx";
-import LoginPage from "./pages/LoginPage.jsx";
-import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
-import DashboardPage from "./pages/DashboardPage.jsx";
-import NotFound from "./components/NotFound.jsx";
-import ErrorBoundary from "./components/ErrorBoundary.jsx";
-import Sidebar from "./components/Sidebar.jsx";
-import MobileBottomNav from "./components/MobileBottomNav.jsx";
-import Toast from "./components/Toast.jsx";
-import { AuthProvider, useAuth } from "./contexts/AuthContext.jsx";
-import * as apiClient from "./apiClient.js";
-import { STORAGE_KEYS } from "./utils/storageKeys.js";
-import { isAppAdmin } from "./utils/adminAccess.js";
-import StageModeButton from "./modules/stage-mode/StageModeButton.jsx";
+import LandingPage from './pages/LandingPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
+import NotFound from './components/NotFound.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
+import Sidebar from './components/Sidebar.jsx';
+import MobileBottomNav from './components/MobileBottomNav.jsx';
+import Toast from './components/Toast.jsx';
+import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
+import * as apiClient from './apiClient.js';
+import { STORAGE_KEYS } from './utils/storageKeys.js';
+import { isAppAdmin } from './utils/adminAccess.js';
+import StageModeButton from './modules/stage-mode/StageModeButton.jsx';
 // Stage Mode dimuat terpisah (chunk sendiri, termasuk CSS-nya) dan hanya
 // di-mount saat dipakai — pengguna HP/latihan tidak menanggung bundelnya.
-const StageModePage = lazy(() => import("./modules/stage-mode/StageModePage.jsx"));
+const StageModePage = lazy(() => import('./modules/stage-mode/StageModePage.jsx'));
 
 // Lazy load non-critical pages for code splitting
-const SongListPage = lazy(() => import("./pages/SongListPage.jsx"));
-const SongChordsPage = lazy(() => import("./pages/SongChordsPage.jsx"));
-const SongAddEditPage = lazy(() => import("./pages/SongAddEditPage.jsx"));
-const SetlistPage = lazy(() => import("./pages/SetlistPage.jsx"));
-const SetlistSongsPage = lazy(() => import("./pages/SetlistSongsPage.jsx"));
-const BandDetailPage = lazy(() => import("./pages/BandDetailPage.jsx"));
-const BandManagementPage = lazy(() => import("./pages/BandManagementPage.jsx"));
-const GigPage = lazy(() => import("./pages/GigPage.jsx"));
-const YouTubeTrendingPage = lazy(() => import("./pages/YouTubeTrendingPage.jsx"));
+const SongListPage = lazy(() => import('./pages/SongListPage.jsx'));
+const SongChordsPage = lazy(() => import('./pages/SongChordsPage.jsx'));
+const SongAddEditPage = lazy(() => import('./pages/SongAddEditPage.jsx'));
+const SetlistPage = lazy(() => import('./pages/SetlistPage.jsx'));
+const SetlistSongsPage = lazy(() => import('./pages/SetlistSongsPage.jsx'));
+const BandDetailPage = lazy(() => import('./pages/BandDetailPage.jsx'));
+const BandManagementPage = lazy(() => import('./pages/BandManagementPage.jsx'));
+const GigPage = lazy(() => import('./pages/GigPage.jsx'));
+const YouTubeTrendingPage = lazy(() => import('./pages/YouTubeTrendingPage.jsx'));
 
-const AdminPage = lazy(() => import("./pages/admin/AdminPage.jsx"));
-const ChordTranscriberPage = lazy(() => import("./modules/chord-transcriber/ChordTranscriberPage.jsx"));
-const BulkLyricsPage = lazy(() => import("./modules/bulk-lyrics/BulkLyricsPage.jsx"));
-const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage.jsx"));
+const AdminPage = lazy(() => import('./pages/admin/AdminPage.jsx'));
+const ChordTranscriberPage = lazy(() => import('./modules/chord-transcriber/ChordTranscriberPage.jsx'));
+const BulkLyricsPage = lazy(() => import('./modules/bulk-lyrics/BulkLyricsPage.jsx'));
+const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage.jsx'));
 
 // Loading fallback component
 import { SongListSkeleton } from './components/LoadingSkeleton.jsx';
@@ -91,7 +91,7 @@ function AppContent() {
   const location = useLocation();
   // State for userBandInfo (array of user's bands with role)
   const [userBandInfo, setUserBandInfo] = useState([]);
-  const [addSongSearch, setAddSongSearch] = useState("");
+  const [addSongSearch, setAddSongSearch] = useState('');
   // Only call useAuth ONCE and destructure all needed values
   const { user, isAuthenticated, isLoading } = useAuth();
   // Fetch user bands on mount (or when authenticated)
@@ -116,7 +116,7 @@ function AppContent() {
         .catch(() => setUserBandInfo([]));
     }
   }, [isLoading, isAuthenticated]);
-  const [toastMessage, setToastMessage] = useState("");
+  const [toastMessage, setToastMessage] = useState('');
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCreateSetlist, setShowCreateSetlist] = useState(false);
@@ -139,8 +139,8 @@ function AppContent() {
     document.body.classList.toggle('stage-mode', stageMode);
     return () => document.body.classList.remove('stage-mode');
   }, [stageMode]);
-  const [createSetlistName, setCreateSetlistName] = useState("");
-  const [createSetlistError, setCreateSetlistError] = useState("");
+  const [createSetlistName, setCreateSetlistName] = useState('');
+  const [createSetlistError, setCreateSetlistError] = useState('');
   const [songs, setSongs] = useState([]);
   const [setlists, setSetlists] = useState([]);
   const [loadingSongs, setLoadingSongs] = useState(true);
@@ -152,8 +152,8 @@ function AppContent() {
   // ALL HOOKS MUST BE HERE - BEFORE ANY CONDITIONAL LOGIC
   useEffect(() => {
     // Aplikasi selalu memakai mode gelap.
-    document.body.classList.remove("light-mode");
-    document.body.classList.add("dark-mode");
+    document.body.classList.remove('light-mode');
+    document.body.classList.add('dark-mode');
   }, []);
 
   useEffect(() => {
@@ -167,16 +167,16 @@ function AppContent() {
         setLoadingSongs(false);
       })
       .catch((err) => {
-        setErrorSongs(err.message || "Gagal mengambil data");
+        setErrorSongs(err.message || 'Gagal mengambil data');
         setLoadingSongs(false);
       });
   }, [isLoading, isAuthenticated]);
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
-    if (location.pathname.startsWith("/setlists")) {
+    if (location.pathname.startsWith('/setlists')) {
       setLoadingSetlists(true);
-      const isSetlistListPage = location.pathname === "/setlists";
+      const isSetlistListPage = location.pathname === '/setlists';
       apiClient
         .fetchSetLists({ summary: isSetlistListPage })
         .then((data) => {
@@ -184,7 +184,7 @@ function AppContent() {
           setLoadingSetlists(false);
         })
         .catch((err) => {
-          setErrorSetlists(err.message || "Gagal mengambil data setlist");
+          setErrorSetlists(err.message || 'Gagal mengambil data setlist');
           setLoadingSetlists(false);
         });
     }
@@ -196,7 +196,7 @@ function AppContent() {
   const activeSetlistRef = useRef(null);
   activeSetlistRef.current = activeSetlist;
   useEffect(() => {
-    if (!location.pathname.startsWith("/setlists") && activeSetlistRef.current) {
+    if (!location.pathname.startsWith('/setlists') && activeSetlistRef.current) {
       setActiveSetlist(null);
     }
   }, [location.pathname]);
@@ -209,11 +209,11 @@ function AppContent() {
   }
 
   // Allow public pages even without auth
-  const publicPages = ["/landing", "/login", "/reset-password"];
+  const publicPages = ['/landing', '/login', '/reset-password'];
   const isPublicPage = publicPages.some((page) => location.pathname.startsWith(page));
 
   // Jika belum login dan mengakses root "/", tampilkan Landing Page publik untuk pengunjung & Googlebot
-  if (!isAuthenticated && location.pathname === "/") {
+  if (!isAuthenticated && location.pathname === '/') {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
@@ -248,8 +248,8 @@ function AppContent() {
     : [];
   const filteredAvailableSongs = availableSongsForSetlist.filter(
     (song) =>
-      (song.title || "").toLowerCase().includes(addSongSearch.toLowerCase()) ||
-      (song.artist || "").toLowerCase().includes(addSongSearch.toLowerCase()),
+      (song.title || '').toLowerCase().includes(addSongSearch.toLowerCase()) ||
+      (song.artist || '').toLowerCase().includes(addSongSearch.toLowerCase()),
   );
 
   return (
@@ -262,7 +262,7 @@ function AppContent() {
           onToggleStageMode={setStageMode}
         />
         <MobileBottomNav />
-        <Toast message={toastMessage} onClose={() => setToastMessage("")} />
+        <Toast message={toastMessage} onClose={() => setToastMessage('')} />
 
         <div className="app-container">
           {/* Header mobile/tablet. Di smartphone drawer sidebar tidak dipakai,
@@ -320,20 +320,20 @@ function AppContent() {
                       error={errorSongs}
                       onSongClick={(action, id) => {
                         const from = location.pathname;
-                        if (action === "add") navigate("/songs/add", { state: { from } });
-                        else if (action === "edit" && id)
+                        if (action === 'add') navigate('/songs/add', { state: { from } });
+                        else if (action === 'edit' && id)
                           navigate(`/songs/edit/${id}`, { state: { from } });
-                        else if (action === "newVersion" && id)
+                        else if (action === 'newVersion' && id)
                           navigate(`/songs/new-version/${id}`, { state: { from } });
-                        else if (action === "bulk") navigate("/bulk-lyrics", { state: { from } });
-                        else if (action === "delete" && id) {
-                          if (confirm("Yakin ingin menghapus lagu ini?")) {
+                        else if (action === 'bulk') navigate('/bulk-lyrics', { state: { from } });
+                        else if (action === 'delete' && id) {
+                          if (confirm('Yakin ingin menghapus lagu ini?')) {
                             apiClient
                               .deleteSong(id)
                               .then(() => {
                                 setSongs(songs.filter((s) => s.id !== id));
                               })
-                              .catch((err) => setToastMessage("Gagal menghapus lagu: " + err.message));
+                              .catch((err) => setToastMessage('Gagal menghapus lagu: ' + err.message));
                           }
                         }
                       }}
@@ -346,7 +346,7 @@ function AppContent() {
                 element={
                   <AddSongRoute
                     onSongUpdated={() => {
-                      navigate("/songs");
+                      navigate('/songs');
                       setLoadingSongs(true);
                       apiClient
                         .fetchSongs()
@@ -355,7 +355,7 @@ function AppContent() {
                           setLoadingSongs(false);
                         })
                         .catch((err) => {
-                          setErrorSongs(err.message || "Gagal mengambil data");
+                          setErrorSongs(err.message || 'Gagal mengambil data');
                           setLoadingSongs(false);
                         });
                     }}
@@ -367,7 +367,7 @@ function AppContent() {
                 element={
                   <NewVersionSongRoute
                     onSongUpdated={() => {
-                      navigate("/songs");
+                      navigate('/songs');
                       setLoadingSongs(true);
                       apiClient
                         .fetchSongs()
@@ -376,7 +376,7 @@ function AppContent() {
                           setLoadingSongs(false);
                         })
                         .catch((err) => {
-                          setErrorSongs(err.message || "Gagal mengambil data");
+                          setErrorSongs(err.message || 'Gagal mengambil data');
                           setLoadingSongs(false);
                         });
                     }}
@@ -397,7 +397,7 @@ function AppContent() {
                           setLoadingSongs(false);
                         })
                         .catch((err) => {
-                          setErrorSongs(err.message || "Gagal mengambil data");
+                          setErrorSongs(err.message || 'Gagal mengambil data');
                           setLoadingSongs(false);
                         });
                     }}
@@ -470,7 +470,7 @@ function AppContent() {
                           setLoadingSetlists(false);
                         })
                         .catch((err) => {
-                          setErrorSetlists(err.message || "Gagal mengambil data");
+                          setErrorSetlists(err.message || 'Gagal mengambil data');
                           setLoadingSetlists(false);
                         });
                     }}
@@ -519,6 +519,10 @@ function AdminRoute() {
   return <AdminPage />;
 }
 
+// Komponen route menerima props dari konfigurasi <Route element> di file ini
+// sendiri; proyek tidak memakai prop-types (lihat catatan di AdminPage).
+/* eslint-disable react/prop-types */
+
 // AddSongRoute component
 function AddSongRoute({ onSongUpdated }) {
   return <SongAddEditPage onSongUpdated={onSongUpdated} />;
@@ -540,5 +544,7 @@ function SongLyricsRoute({ songs, activeSetlist }) {
   const song = Array.isArray(songs) ? songs.find((s) => String(s.id) === String(id)) : null;
   return <SongChordsPage song={song} activeSetlist={activeSetlist} songs={songs} />;
 }
+
+/* eslint-enable react/prop-types */
 
 export default App;
