@@ -9,7 +9,7 @@
  * Aksi per baris ada di menu (⋯) supaya tidak rawan salah klik; aksi yang
  * mengubah/menghapus akun lebih dulu meminta konfirmasi lewat modal.
  */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { getAppRoleLabel, getAssignableRoles } from '../../../utils/adminAccess.js';
 import { formatLastLogin } from './userStats.js';
 
@@ -66,28 +66,48 @@ function matchesFilters(user, { search, role, status, login }, lastLoginMap) {
 const supportsPopover = typeof HTMLElement !== 'undefined'
   && typeof HTMLElement.prototype.showPopover === 'function';
 
+// Props internal panel; proyek tidak memakai prop-types.
+/* eslint-disable react/prop-types */
 function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction }) {
   const [open, setOpen] = useState(false);
   const popoverRef = useRef(null);
 
   const run = (action) => {
-    setOpen(false);
-    if (supportsPopover && popoverRef.current?.open) {
+    // Tutup menu lebih dulu, baru jalankan aksi (mis. membuka modal konfirmasi).
+    if (supportsPopover && popoverRef.current?.matches(':popover-open')) {
       popoverRef.current.hidePopover();
     }
+    setOpen(false);
     onAction(action, user);
   };
 
+  /**
+   * Popover baru di-mount setelah `open` bernilai true, jadi showPopover()
+   * harus menunggu commit — kalau dipanggil pada render yang sama, elemennya
+   * belum ada dan menu tidak pernah terbuka.
+   */
+  const openPopover = useCallback(() => {
+    popoverRef.current?.showPopover?.();
+  }, []);
+
   const toggle = () => {
-    if (supportsPopover) {
-      const popover = popoverRef.current;
-      if (!popover) return;
-      if (popover.open) popover.hidePopover();
-      else popover.showPopover();
+    if (open) {
+      setOpen(false);
+      if (supportsPopover && popoverRef.current?.matches(':popover-open')) {
+        popoverRef.current.hidePopover();
+      }
+      return;
     }
-    // Di browser tanpa Popover API, atribut `hidden` yang mengatur tampil.
-    setOpen((prev) => !prev);
+    setOpen(true);
   };
+
+  // Popover hanya di-render setelah dibuka. Elemen ber-atribut `popover` yang
+  // di-mount dalam keadaan tertutup tetap bisa tampil di beberapa browser
+  // (dirender di top layer), sehingga menu muncul menempel di setiap baris.
+  // `onToggle` sengaja tidak dipakai: popover "auto" menutup diri lebih dulu
+  // saat klik di luar/Escape, dan event toggle-nya akan menimpa state `open`
+  // yang baru diset false saat salah satu aksi dipilih.
+  const menuProps = supportsPopover ? { popover: 'auto' } : {};
 
   return (
     <div className="admin-actions-menu">
@@ -102,20 +122,24 @@ function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction 
       >
         ⋯
       </button>
-      <div
-        ref={popoverRef}
-        className="admin-actions-dropdown"
-        role="menu"
-        {...(supportsPopover
-          ? { popover: 'auto', onToggle: (event) => setOpen(event.currentTarget.open) }
-          : { hidden: !open })}
-      >
-        <button
-          type="button"
-          role="menuitem"
-          disabled={!canToggleActive}
-          onClick={() => run('toggle')}
+      {open && (
+        <div
+          ref={(node) => {
+            // Ref callback dipanggil setiap render; buka hanya sekali per node.
+            const isNew = Boolean(node) && popoverRef.current !== node;
+            popoverRef.current = node;
+            if (isNew && supportsPopover) openPopover();
+          }}
+          className="admin-actions-dropdown"
+          role="menu"
+          {...menuProps}
         >
+          <button
+            type="button"
+            role="menuitem"
+            disabled={!canToggleActive}
+            onClick={() => run('toggle')}
+          >
             {user.isActive ? 'Nonaktifkan' : 'Aktifkan'}
           </button>
           <button type="button" role="menuitem" onClick={() => run('reset')}>
@@ -130,7 +154,8 @@ function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction 
           >
             Hapus
           </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

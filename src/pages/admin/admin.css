@@ -572,7 +572,10 @@
   top: calc(100% + 4px);
   right: 0;
   z-index: 20;
-  display: flex;
+  /* JANGAN set display: flex di sini. Aturan ini juga berlaku saat popover
+     tertutup, sehingga `display` mengalahkan `display: none` bawaan browser
+     dan menu tampil menempel pada setiap baris. Display diatur khusus di
+     :popover-open / [hidden] di bawah. */
   flex-direction: column;
   min-width: 160px;
   margin: 0;
