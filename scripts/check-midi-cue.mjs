@@ -1,9 +1,16 @@
 /**
- * Uji gate modul MIDI Cue: saat nonaktif, parsePresetCueLine tetap mengenali
- * baris cue (label tampil), tetapi `midi` harus null sehingga tidak ada
- * badge/data sound. Saat aktif, data MIDI kembali terbentuk.
+ * Uji gate modul MIDI Cue lewat API modul yang masih dipakai aplikasi.
+ *
+ * Yang diperiksa:
+ *   - saat modul NONAKTIF, semua inferensi MIDI mengembalikan null
+ *     (baris cue tetap tampil sebagai label, tanpa data sound)
+ *   - saat modul AKTIF, cue/patch menghasilkan data MIDI yang benar
  *
  * Jalankan: node scripts/check-midi-cue.mjs
+ *
+ * Catatan: script ini dulu memanggil parsePresetCueLine/parseInstrumentPatchLine
+ * dari chordUtils.js. Fungsi tersebut sudah lama dihapus (parser cue pindah ke
+ * src/modules/midi-cue/cueParser.js), jadi pengecekan diarahkan ke modul itu.
  */
 class MemoryStorage {
   constructor() { this.map = new Map(); }
@@ -15,8 +22,13 @@ class MemoryStorage {
 globalThis.window = { localStorage: new MemoryStorage(), addEventListener() {}, removeEventListener() {} };
 
 const { isMidiCueEnabled, setMidiCueEnabled } = await import('../src/modules/midi-cue/midiCueSettings.js');
-const { parsePresetCueLine, parseInstrumentPatchLine } = await import('../src/utils/chordUtils.js');
-const { inferMidiFromPatchContext } = await import('../src/modules/midi-cue/cueParser.js');
+const {
+  parseCueOptionFields,
+  parseMidiFromFields,
+  hasMidiHintOptions,
+  inferMidiFromPatchContext,
+  mergeMidiWithInference,
+} = await import('../src/modules/midi-cue/cueParser.js');
 
 const assert = (condition, message) => {
   if (!condition) {
@@ -27,36 +39,46 @@ const assert = (condition, message) => {
   }
 };
 
-const CUE = '[Chorus: Lead Synth + Strings | PC: 81 | CH: 2 | BankMSB: 1 | BankLSB: 32]';
+const CUE_OPTIONS = 'PC: 81 | CH: 2 | BankMSB: 1 | BankLSB: 32';
 
 // --- Aktif (default) ------------------------------------------------------
 assert(isMidiCueEnabled() === true, 'default modul aktif');
-const activeCue = parsePresetCueLine(CUE);
-assert(activeCue?.type === 'preset_cue', 'baris cue dikenali saat aktif');
-assert(activeCue.midi?.program === 81, 'program terbaca');
-assert(activeCue.midi?.channel === 2, 'channel terbaca');
-assert(activeCue.midi?.bankMsb === 1 && activeCue.midi?.bankLsb === 32, 'bank MSB/LSB terbaca');
-assert(parseInstrumentPatchLine('[Patch: Acoustic Grand Piano | CH: 2]')?.midi?.program === 0, 'patch line tanpa PC tetap diinferensi');
+
+const fields = parseCueOptionFields(CUE_OPTIONS);
+assert(fields.program === '81', 'program (PC) terbaca');
+assert(fields.channel === '2', 'channel (CH) terbaca');
+assert(fields.bankmsb === '1' && fields.banklsb === '32', 'bank MSB/LSB terbaca');
+assert(hasMidiHintOptions(CUE_OPTIONS) === true, 'opsi MIDI terdeteksi sebagai hint');
+
+const explicitMidi = parseMidiFromFields(fields);
+assert(explicitMidi?.program === 81, 'program dinormalisasi ke angka');
+assert(explicitMidi?.channel === 2, 'channel dinormalisasi ke 1..16');
+assert(explicitMidi?.bankMsb === 1 && explicitMidi?.bankLsb === 32, 'bank MSB/LSB masuk ke data MIDI');
+
+const patchMidi = inferMidiFromPatchContext({ section: 'Keys', patch: 'Acoustic Grand Piano' });
+assert(patchMidi?.program === 0, 'patch line tanpa PC tetap diinferensi (Acoustic Grand Piano -> 0)');
+
+const merged = mergeMidiWithInference({
+  explicitMidi,
+  section: 'Keys',
+  patch: 'Acoustic Grand Piano',
+});
+assert(merged?.program === 81 && merged?.channel === 2, 'nilai eksplisit menang atas inferensi');
 
 // --- Nonaktif -------------------------------------------------------------
 setMidiCueEnabled(false);
 assert(isMidiCueEnabled() === false, 'modul bisa dimatikan');
-
-const disabledCue = parsePresetCueLine(CUE);
-assert(disabledCue?.type === 'preset_cue', 'baris cue masih dikenali sebagai label');
-assert(disabledCue?.label === 'Chorus: Lead Synth + Strings', 'label cue tetap tampil');
-assert(disabledCue?.midi === null, 'midi null saat modul nonaktif');
 assert(inferMidiFromPatchContext({ section: 'Keys', patch: 'Piano' }) === null, 'inferensi berhenti saat nonaktif');
-
-// Baris tanpa key patch (hanya routing) memang bukan cue — perilaku lama.
-assert(parseInstrumentPatchLine('[Keys: Piano | CH: 2]') === null, 'routing tanpa key patch bukan cue');
-
-const disabledPatch = parseInstrumentPatchLine('[Patch: Acoustic Grand Piano | CH: 2]');
-assert(disabledPatch === null || disabledPatch.midi === null, 'patch line tidak menghasilkan midi');
+assert(
+  mergeMidiWithInference({ explicitMidi, section: 'Keys', patch: 'Piano' }) === null,
+  'merge berhenti saat nonaktif',
+);
+// Opsi cue tetap terbaca: label cue harus tetap tampil tanpa data MIDI.
+assert(parseCueOptionFields(CUE_OPTIONS).program === '81', 'opsi cue tetap terbaca saat nonaktif');
 
 // --- Aktif kembali --------------------------------------------------------
 setMidiCueEnabled(true);
-const reEnabled = parsePresetCueLine(CUE);
-assert(reEnabled?.midi?.program === 81, 'data MIDI kembali setelah diaktifkan');
+const reEnabled = inferMidiFromPatchContext({ section: 'Keys', patch: 'Acoustic Grand Piano' });
+assert(reEnabled?.program === 0, 'data MIDI kembali setelah diaktifkan');
 
 if (!process.exitCode) console.log('\nMIDI CUE CHECK OK');

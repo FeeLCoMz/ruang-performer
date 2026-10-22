@@ -7,7 +7,6 @@
  */
 import {
   CHORD_REGEX_GLOBAL,
-  normalizeChordToken,
   toCleanChord,
   getNoteIndex,
   transposeChord,
@@ -539,29 +538,6 @@ export const detectChordModulations = (parsedSong, options = {}) => {
     transitions,
     timeline: normalizedTimeline,
   };
-};
-
-// Mengelompokkan chord berdasarkan bar (|) pada setiap baris chord
-export const getChordsByBar = (parsedSong) => {
-  if (!parsedSong || !parsedSong.lines) return [];
-
-  const bars = [];
-  parsedSong.lines.forEach(line => {
-    if (line.type === 'line_with_chords' && line.barText) {
-      // Split berdasarkan bar line
-      const barParts = line.barText.split('|').map(part => part.trim()).filter(Boolean);
-      barParts.forEach(bar => {
-        // Ambil semua chord dalam bar ini
-        const chords = [...bar.matchAll(CHORD_REGEX_GLOBAL)].map(match =>
-          normalizeChordToken(match[0].replace(/^-/, ''))
-        ).filter(Boolean);
-        if (chords.length > 0) {
-          bars.push(chords);
-        }
-      });
-    }
-  });
-  return bars;
 };
 
 const KEY_SIGNATURE_ACCIDENTALS = {
