@@ -382,11 +382,11 @@
    (transpose: padding 3px + isi 30px; autoscroll: tinggi kapsul langsung
    dari --toolbar-capsule-h yang di luar toolbar tidak terdefinisi),
    sehingga tingginya berbeda. Di panel panggung keduanya dikunci ke satu
-   ukuran: kapsul 40px (target sentuh nyaman), isi 32px.
+   ukuran: kapsul 46px (target sentuh nyaman), isi 40px.
    ------------------------------------------------------------------ */
 .stage-controls {
-  --stage-capsule-h: 40px;
-  --stage-capsule-inner-h: 32px;
+  --stage-capsule-h: 46px;
+  --stage-capsule-inner-h: 40px;
   --toolbar-capsule-h: var(--stage-capsule-h);
   --toolbar-inner-h: var(--stage-capsule-inner-h);
 }
@@ -416,6 +416,46 @@
 .stage-controls .song-lyrics-autoscroll-reset {
   height: var(--stage-capsule-inner-h);
   align-items: center;
+}
+
+/* Tombol auto scroll lebih mudah disentuh:
+   - target minimal 40x40px (di atas rekomendasi 44px tinggi kapsul),
+   - huruf/ikon lebih besar (↕, ♪, −, + sulit kena saat berdiri & redup),
+   - jarak antar tombol tidak lagi 2px agar tidak salah tekan. */
+.stage-controls .song-lyrics-autoscroll-capsule {
+  gap: 4px;
+  padding: 0 6px;
+}
+
+.stage-controls .song-lyrics-autoscroll-step {
+  min-width: 40px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.stage-controls .song-lyrics-autoscroll-toggle,
+.stage-controls .song-lyrics-autoscroll-mode {
+  min-width: 44px;
+  padding: 0 10px;
+  gap: 5px;
+  font-size: 0.8rem;
+}
+
+.stage-controls .song-lyrics-autoscroll-toggle > [aria-hidden='true'],
+.stage-controls .song-lyrics-autoscroll-mode > [aria-hidden='true'] {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.stage-controls .song-lyrics-autoscroll-reset {
+  min-width: 40px;
+  font-size: 1.05rem;
+}
+
+/* Angka kecepatan tetap ringkas tapi tidak menggeser tombol −/+. */
+.stage-controls .song-lyrics-autoscroll-value {
+  min-width: 52px;
+  font-size: 0.95rem;
 }
 
 /* Area baca lirik.
@@ -1043,8 +1083,18 @@
 /* Layar sempit: panel kontrol muat satu baris tanpa memecah kapsul. */
 @media (max-width: 520px) {
   .stage-controls {
-    --stage-capsule-h: 38px;
-    --stage-capsule-inner-h: 30px;
+    --stage-capsule-h: 44px;
+    --stage-capsule-inner-h: 38px;
+  }
+
+  /* Label teks tombol autoscroll disembunyikan di layar sempit supaya
+     tombol −/+ tetap besar (target sentuh diutamakan). */
+  .stage-controls .song-lyrics-autoscroll-btn-label {
+    display: none;
+  }
+
+  .stage-controls .song-lyrics-autoscroll-step {
+    min-width: 38px;
   }
 
   .stage-controls-inner {
