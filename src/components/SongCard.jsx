@@ -8,6 +8,11 @@ import React from 'react';
  * sudut kanan atas, metadata dua baris, baris aksi berlabel) supaya kedua
  * halaman terasa seperti satu aplikasi.
  *
+ * Bentuk chip di baris aksi (label penuh vs ikon saja) diatur CSS, bukan
+ * props: `.song-actions > .mastery-chip-root` di halaman setlist menyusut
+ * menjadi ikon di layar sempit. Elemen yang dioper sebagai children sudah
+ * final, jadi menambahkan prop lewat cloneElement tidak bisa diandalkan.
+ *
  * Perbedaan antar-halaman dikirim lewat props, bukan lewat duplikasi markup:
  *  - `leadingSlot`   : kolom samping opsional (mis. nomor urut di setlist).
  *  - `leadingLayout` : 'side' (kolom kiri, default — judul & aksi di kanan
@@ -91,12 +96,12 @@ export default function SongCard({
     </div>
   );
 
-  const actionRow = (actionStatus || actions) && (
+  const renderActions = (status) => (
     <div
       className="song-actions"
       onClick={(e) => e.stopPropagation()}
     >
-      {actionStatus}
+      {status}
       {actions}
     </div>
   );
@@ -110,17 +115,20 @@ export default function SongCard({
     ...(dragProps || {}),
   };
 
-  // Slot di atas: pita penuh selebar kartu (mis. nomor urut + centang selesai),
-  // lalu judul/metadata dan aksi berbagi baris berikutnya dengan lebar penuh.
-  // Slot samping (default): kolom kiri, judul & aksi sejajar di kanannya.
+  // Slot di atas: header selebar kartu berisi nomor/status (kiri) dan aksi
+  // (kanan), lalu baris info (judul + metadata). Slot samping (default): kolom
+  // kiri (rail), info, lalu aksi di kolom kanan.
   if (useAboveLayout) {
     return (
       <div {...cardProps}>
-        <div className="song-lead-above">{leadingSlot}</div>
-        <div className="song-body">
-          {info}
-          {actionRow}
+        {/* Satu blok header: nomor urut + status di kiri dan aksi di kanan.
+            Dulu pita nomor dan baris aksi terpisah sehingga muncul dua garis
+            pemisah bertumpuk dan sisa ruang kosong di kanan pita. */}
+        <div className="song-head-row">
+          <div className="song-lead-above">{leadingSlot}</div>
+          {(actionStatus || actions) && renderActions(actionStatus)}
         </div>
+        <div className="song-body">{info}</div>
       </div>
     );
   }
@@ -129,7 +137,7 @@ export default function SongCard({
     <div {...cardProps}>
       {leadingSlot}
       {info}
-      {actionRow}
+      {(actionStatus || actions) && renderActions(actionStatus)}
     </div>
   );
 }

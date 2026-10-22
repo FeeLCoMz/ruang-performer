@@ -104,8 +104,13 @@
   }
 
   /* The rail becomes a horizontal strip on top: reorder control and number on
-     one line, reading as the row's label. */
-  .song-item .song-rail {
+     one line, reading as the row's label.
+     Pengecualian: di kartu ber-header (song-item-with-lead-above) rail tinggal
+     DI DALAM header, jadi bukan pita tersendiri — tanpa pengecualian ini
+     `width: 100%` + `padding-bottom` + `border-bottom` memaksa rail setinggi
+     dua tingkat dan mendorong aksi turun ke baris kedua (ruang kosong di
+     samping nomor). */
+  .song-item:not(.song-item-with-lead-above) .song-rail {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
@@ -118,12 +123,87 @@
     border-bottom: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
   }
 
-  /* Kartu dengan pita atas (SetlistSongsPage): nomor + centang di baris sendiri,
-     judul/metadata & aksi berbagi lebar penuh di bawahnya. */
-  .song-item-with-lead-above .song-body {
-    flex-direction: column;
-    align-items: stretch;
+  /* Kartu dengan header (SetlistSongsPage) di layar sempit:
+     satu baris header [nomor][centang][chip mastery ikon] ...... [aksi]. */
+  .song-item-with-lead-above .song-head-row {
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+
+  .song-item-with-lead-above .song-head-row .song-rail {
+    width: auto;
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .song-item-with-lead-above .song-head-row > .song-actions {
+    width: auto;
+    flex: 0 0 auto;
+    margin-left: auto;
+    gap: 4px;
+  }
+
+  /* Chip mastery ikon-saja di header.
+     Label "Belum Diulik" (~85px) terlalu lebar untuk header 320px dan
+     mendorong tombol aksi keluar. Ukuran elemennya dipatok di sini — font-size 0
+     membuat teks tidak menyumbang lebar sama sekali, lalu ikon dikembalikan ke
+     ukuran normal. Warna ikon = status, dan aria-label tetap utuh.
+     Pengaturan ini sengaja hanya CSS (bukan props): elemen anak yang dioper ke
+     SongCard sudah final sehingga menambah prop lewat cloneElement tidak bisa
+     diandalkan. */
+  .song-item-with-lead-above .song-head-row .mastery-chip-root {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    justify-content: center;
+  }
+
+  .song-item-with-lead-above .song-head-row .song-mastery-chip {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    padding: 0;
     gap: 0;
+    justify-content: center;
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .song-item-with-lead-above .song-head-row .song-mastery-chip > span[aria-hidden="true"] {
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+
+  .song-item-with-lead-above .song-head-row .mastery-chip-caret {
+    display: none;
+  }
+
+  .song-item-with-lead-above .song-head-row .song-actions .song-action-btn {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .song-item-with-lead-above .song-body {
+    padding: 8px 10px 10px;
+  }
+
+  /* Nomor & toggle centang di header sedikit lebih kecil dari 44px agar semua
+     kontrol muat sebaris; tetap >= 36px supaya nyaman disentuh. */
+  .song-item-with-lead-above .song-head-row .song-played-toggle,
+  .song-item-with-lead-above .song-head-row .song-number-button {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .song-item-with-lead-above .song-head-row .song-number-button {
+    min-width: 36px;
   }
 
   .song-item .song-rail .song-number {
@@ -171,23 +251,48 @@
     flex: 0 0 auto;
   }
 
+  /* Metadata kartu lagu = SATU baris.
+     Semua chip (artis, key, tempo, genre, kontributor, mood, setlist) mengalir
+     dalam satu baris flex. Bila totalnya melebihi lebar kartu, chip-nya
+     MENYUSUT dan teksnya dipotong dengan elipsis — bukan turun ke baris kedua.
+     Informasi lengkap tetap tersedia lewat title/aria pada tiap chip dan di
+     halaman detail lagu; yang penting di sini semua fakta terlihat sebaris. */
   .song-item .song-meta {
-    gap: 6px;
-    row-gap: 6px;
-    margin-top: 10px;
-    font-size: 0.75rem;
+    flex-wrap: nowrap;
+    gap: 4px;
+    margin-top: 8px;
+    font-size: 0.72rem;
+    overflow: hidden;
+  }
+
+  .song-item .song-meta > * {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Artis boleh memakan sisa ruang lebih dulu — dialah identitas utama kartu. */
+  .song-item .song-meta > .song-fact-artist {
+    flex: 1 1 auto;
   }
 
   .song-item .song-chip,
   .song-item .song-mood-badge {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
+    padding: 1px 6px;
   }
 
-  /* Fakta inti kartu (artis, key, tempo) sengaja tidak ikut mengecil:
-     nilainya dijaga tetap terbaca di layar sempit. */
+  .song-item .song-meta-text-muted {
+    font-size: 0.68rem;
+  }
+
+  /* Fakta inti (key, tempo) tidak ikut menyusut: nilainya harus utuh terbaca. */
   .song-item .song-chip.song-fact-key,
   .song-item .song-chip.song-fact-tempo {
-    font-size: 0.78rem;
+    flex: 0 0 auto;
+    font-size: 0.74rem;
   }
 
   .song-item .song-actions {

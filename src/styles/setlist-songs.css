@@ -848,17 +848,38 @@
   }
 }
 
+/* Metadata kartu lagu: baris utama dan baris detail digabung menjadi SATU
+   baris chip pada semua lebar layar (wrap bila kepanjangan). Dulu penggabungan
+   hanya terjadi di >=901px, sehingga di ponsel metadata memakan dua baris. */
 .song-meta {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
+  row-gap: 4px;
   font-size: 0.85em;
   color: var(--text-muted);
-  flex-wrap: wrap;
+}
+
+/* Pembungkus baris hilang dari layout — lihat aturan ber-spesifisitas tinggi
+   setelah `.song-meta-line` di bawah. */
+
+/* Pemisah tipis HANYA di layar lebar, saat kedua kelompok muat sebaris.
+   Di layar sempit baris bisa wrap, sehingga pemisah akan menggantung di awal
+   baris baru dan terlihat seperti artefak. */
+@media (min-width: 901px) {
+  .song-item .song-meta-line-detail::before {
+    content: '';
+    align-self: stretch;
+    width: 1px;
+    background: color-mix(in srgb, var(--border-color) 60%, transparent);
+    margin: 2px 4px;
+  }
 }
 
 /* ---- Song card di layar lebar: layout rapikan ----
-   - Kedua baris metadata mengalir jadi SATU baris chip (wrap bila panjang).
+   - Metadata (baris utama + detail) mengalir SATU baris chip.
    - Konten info dibatasi lebarnya agar tidak menciptakan ruang kosong besar
      di tengah kartu; kolom kanan (status + aksi) tetap rapat ke kanan.
    - Tinggi kartu lebih ringkas. */
@@ -869,21 +890,8 @@
   }
 
   .song-item .song-meta {
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: wrap;
     gap: 8px;
     margin-top: 2px;
-  }
-
-  /* Baris detail setelah baris primary: pemisah tipis agar tetap terbaca
-     sebagai kelompok berbeda meski satu baris. */
-  .song-item .song-meta-line-detail::before {
-    content: '';
-    align-self: stretch;
-    width: 1px;
-    background: color-mix(in srgb, var(--border-color) 60%, transparent);
-    margin: 2px 4px;
   }
 
   /* Batas lebar hanya berlaku untuk layout samping (rail kiri). Slot "above"
@@ -901,23 +909,35 @@
 
 /* ---- Kartu dengan slot di ATAS (leadingLayout="above") ----
    Kasus nyata: SetlistSongsPage menaruh nomor urut + centang selesai di sini.
-   Rail kiri membuat baris konten setinggi rail (stretch) sehingga menyisakan
-   ruang kosong di kanan kartu. Dengan pita di atas, judul/metadata (kiri) dan
-   aksi (kanan) berbagi satu baris penuh: tidak ada sisa kolom kosong. */
+   Struktur: satu baris HEADER (nomor & status kiri, aksi kanan) lalu baris
+   INFO (judul & metadata) selebar kartu. Satu garis pemisah saja di bawah
+   header, dan tidak ada kolom kanan yang tersisa kosong. */
 .song-item-with-lead-above {
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: 0;
+  padding: 0;
+  overflow: visible;
 }
 
-/* Pita: nomor di kiri, centang & label status rapat ke kanan. */
+/* Header kartu: nomor + status di kiri, aksi di kanan, satu garis bawah. */
+.song-item-with-lead-above .song-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: 8px var(--spacing-md);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+}
+
+/* Isi header di kiri: nomor, centang, dan label status berdampingan. */
 .song-item-with-lead-above .song-lead-above {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
-  padding-bottom: 8px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .song-item-with-lead-above .song-lead-above .song-rail {
@@ -929,17 +949,43 @@
   flex: 1 1 auto;
   width: 100%;
   align-self: auto;
-  padding-right: 0;
+  padding: 0;
   border-right: none;
 }
 
-/* Baris isi: info mengisi sisa lebar, aksi menempel di kanan tanpa memotong. */
+/* Aksi di header: tetap sebaris (tidak wrap ke baris baru), dan chip mastery
+   menempel setelah tombol supaya sisa ruang tidak terlihat sebagai celah.
+   `width: auto` wajib di sini: responsive-anim.css memasang `.song-actions {
+   width: 100% }` untuk mobile, yang membuat baris aksi turun ke baris kedua
+   dan menyisakan ruang kosong di header. */
+.song-item-with-lead-above .song-head-row > .song-actions {
+  width: auto;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0;
+  border-top: none;
+}
+
+/* Tombol aksi di header sedikit lebih ringkas daripada tombol aksi biasa agar
+   header tidak mendorong judul ke bawah pada layar sempit. */
+.song-item-with-lead-above .song-head-row .btn.song-action-btn {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.song-item-with-lead-above .song-head-row .song-mastery-chip {
+  padding: 2px 2px;
+}
+
+/* Baris info kartu: judul + metadata, selebar kartu. */
 .song-item-with-lead-above .song-body {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--spacing-md);
+  display: block;
   width: 100%;
+  padding: 10px var(--spacing-md) var(--spacing-md);
 }
 
 .song-item-with-lead-above .song-info {
@@ -973,6 +1019,16 @@ body.dark-mode .song-rail-status {
   color: #86efac;
 }
 
+/* Pembungkus baris metadata TIDAK membuat baris sendiri.
+   `.song-meta-line { display: flex }` di bawah punya spesifisitas sama, jadi
+   aturan ini harus ditulis dengan selector yang lebih kuat dan diletakkan
+   sesudahnya — kalau kalah, kedua wrapper kembali menjadi flex box dan isinya
+   turun baris di dalam wrapper (metadata jadi 2–3 baris di ponsel). */
+.song-item .song-meta .song-meta-line-primary,
+.song-item .song-meta .song-meta-line-detail {
+  display: contents;
+}
+
 /* Dua baris metadata: baris utama (artis, key, tempo + genre/status), baris
    detail (mood, jumlah setlist). Fakta inti selalu di baris utama. */
 .song-meta-line {
@@ -987,8 +1043,7 @@ body.dark-mode .song-rail-status {
   color: var(--text-secondary);
 }
 
-/* Fakta inti di baris utama tidak boleh dipecah oleh metadata pendukung:
-   grup ini menahan diri untuk tetap utuh (turun ke baris baru sebagai grup). */
+/* Fakta inti di baris utama tidak boleh dipecah oleh metadata pendukung. */
 .song-meta-line-primary {
   row-gap: 4px;
 }

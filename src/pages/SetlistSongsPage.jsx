@@ -1876,7 +1876,9 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                           <span className="song-action-btn-label">Video</span>
                         </button>
                       )}
-                      {/* Status mastery: chip interaktif — klik untuk ubah status. */}
+                      {/* Status mastery: chip interaktif — klik untuk ubah status.
+                          Di header sempit label chip menyusut jadi ikon lewat
+                          CSS (setlist-mobile.css), bukan lewat props. */}
                       <MasteryChip
                         status={masteryStatus}
                         onStatusChange={(next) => handleMasteryChange(song, next)}

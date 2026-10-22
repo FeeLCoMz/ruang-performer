@@ -217,7 +217,7 @@ describe('SetlistSongsPage', () => {
     // Layout pita-atas aktif: tidak ada rail samping yang menyisakan kolom kosong.
     expect(card.classList.contains('song-item-with-lead-above')).toBe(true);
 
-    const strip = card.querySelector(':scope > .song-lead-above');
+    const strip = card.querySelector(':scope > .song-head-row > .song-lead-above');
     expect(strip).toBeTruthy();
     expect(strip.querySelector('.song-number-button')).toBeTruthy();
     expect(strip.querySelector('.song-played-toggle')).toBeTruthy();
@@ -226,10 +226,16 @@ describe('SetlistSongsPage', () => {
     expect(completedStrip?.textContent).toContain('Selesai');
     expect(card.querySelector('.song-heading .song-flag-done')).toBeFalsy();
 
-    // Body memuat info & aksi sejajar; judul tidak lagi berada di samping rail.
+    // Satu header kartu: nomor/status (kiri) dan aksi (kanan) berbagi baris.
+    const headRow = card.querySelector(':scope > .song-head-row');
+    expect(headRow).toBeTruthy();
+    expect(headRow.querySelector('.song-lead-above')).toBeTruthy();
+    expect(headRow.querySelector('.song-actions')).toBeTruthy();
+
+    // Body hanya berisi info (judul + metadata), selebar kartu.
     const body = card.querySelector(':scope > .song-body');
     expect(body.querySelector('.song-info')).toBeTruthy();
-    expect(body.querySelector('.song-actions')).toBeTruthy();
+    expect(body.querySelector('.song-actions')).toBeFalsy();
   });
 
   test('shows song key, tempo, and setlist usage metadata', async () => {
