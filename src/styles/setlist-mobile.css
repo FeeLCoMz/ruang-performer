@@ -118,6 +118,14 @@
     border-bottom: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
   }
 
+  /* Kartu dengan pita atas (SetlistSongsPage): nomor + centang di baris sendiri,
+     judul/metadata & aksi berbagi lebar penuh di bawahnya. */
+  .song-item-with-lead-above .song-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
   .song-item .song-rail .song-number {
     font-size: 0.95rem;
   }

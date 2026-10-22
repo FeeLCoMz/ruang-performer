@@ -208,8 +208,28 @@ describe('SetlistSongsPage', () => {
     const actionRow = container.querySelector('.song-item .song-actions');
     expect(actionRow?.querySelector('.mastery-chip-root')).toBeTruthy();
     expect(container.querySelector('.song-heading .mastery-chip-root')).toBeFalsy();
-    // Flag status baris (Selesai) tetap di baris judul.
-    expect(container.querySelector('.song-heading .song-flag-done')).toBeTruthy();
+  });
+
+  test('number and completion toggle sit on a full-width strip above the card body', async () => {
+    await renderPage(root, buildProps());
+
+    const card = container.querySelector('.song-item');
+    // Layout pita-atas aktif: tidak ada rail samping yang menyisakan kolom kosong.
+    expect(card.classList.contains('song-item-with-lead-above')).toBe(true);
+
+    const strip = card.querySelector(':scope > .song-lead-above');
+    expect(strip).toBeTruthy();
+    expect(strip.querySelector('.song-number-button')).toBeTruthy();
+    expect(strip.querySelector('.song-played-toggle')).toBeTruthy();
+    // Label selesai ikut pita, bukan lagi di baris judul.
+    const completedStrip = card.querySelector('.song-lead-above .song-rail-status');
+    expect(completedStrip?.textContent).toContain('Selesai');
+    expect(card.querySelector('.song-heading .song-flag-done')).toBeFalsy();
+
+    // Body memuat info & aksi sejajar; judul tidak lagi berada di samping rail.
+    const body = card.querySelector(':scope > .song-body');
+    expect(body.querySelector('.song-info')).toBeTruthy();
+    expect(body.querySelector('.song-actions')).toBeTruthy();
   });
 
   test('shows song key, tempo, and setlist usage metadata', async () => {

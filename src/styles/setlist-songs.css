@@ -886,7 +886,9 @@
     margin: 2px 4px;
   }
 
-  .song-item .song-info {
+  /* Batas lebar hanya berlaku untuk layout samping (rail kiri). Slot "above"
+     memakai lebar penuh karena judul & aksi berbagi satu baris di dalam body. */
+  .song-item:not(.song-item-with-lead-above) .song-info {
     flex: 1 1 auto;
     max-width: calc(100% - 260px);
   }
@@ -895,6 +897,80 @@
     flex: 0 0 auto;
     flex-wrap: nowrap;
   }
+}
+
+/* ---- Kartu dengan slot di ATAS (leadingLayout="above") ----
+   Kasus nyata: SetlistSongsPage menaruh nomor urut + centang selesai di sini.
+   Rail kiri membuat baris konten setinggi rail (stretch) sehingga menyisakan
+   ruang kosong di kanan kartu. Dengan pita di atas, judul/metadata (kiri) dan
+   aksi (kanan) berbagi satu baris penuh: tidak ada sisa kolom kosong. */
+.song-item-with-lead-above {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+/* Pita: nomor di kiri, centang & label status rapat ke kanan. */
+.song-item-with-lead-above .song-lead-above {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding-bottom: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
+}
+
+.song-item-with-lead-above .song-lead-above .song-rail {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  flex: 1 1 auto;
+  width: 100%;
+  align-self: auto;
+  padding-right: 0;
+  border-right: none;
+}
+
+/* Baris isi: info mengisi sisa lebar, aksi menempel di kanan tanpa memotong. */
+.song-item-with-lead-above .song-body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.song-item-with-lead-above .song-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+}
+
+.song-item-with-lead-above .song-actions {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* Label status di pita (mis. "✓ Selesai") — tenang, sejajar dengan nomor. */
+.song-rail-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #16a34a 38%, transparent);
+  background: color-mix(in srgb, #16a34a 16%, transparent);
+  color: #166534;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+body.dark-mode .song-rail-status {
+  color: #86efac;
 }
 
 /* Dua baris metadata: baris utama (artis, key, tempo + genre/status), baris

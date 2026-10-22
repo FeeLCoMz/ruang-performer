@@ -1766,10 +1766,11 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                       setlistSong: song
                     }
                   })}
+                  leadingLayout="above"
                   leadingSlot={(
-                    /* Left rail: the number IS the reorder control. One tap opens the
-                        reorder prompt, so there is no separate handle to aim at — and
-                        no drag, which never fires on touch devices. */
+                    /* Pita atas: nomor urut (sekaligus kontrol ubah urutan) dan
+                        centang selesai berdampingan. Sebelumnya keduanya di rail
+                        kiri yang membuat sisa baris kosong di kanan kartu. */
                     <div className="song-rail">
                       {canEdit ? (
                         <button
@@ -1804,17 +1805,15 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
                           <span aria-hidden="true">{isCompleted ? '✓' : '○'}</span>
                         </button>
                       )}
+                      {isCompleted && (
+                        <span className="song-rail-status" title="Selesai">✓ Selesai</span>
+                      )}
                     </div>
                   )}
                   headingStatus={(
                     /* Flags stay on the title line: they describe the row's state
                         without competing with the title. */
                     <div className="song-heading-status">
-                      {isCompleted && (
-                        <span className="song-flag song-flag-done" title="Selesai">
-                          ✓ Selesai
-                        </span>
-                      )}
                       {isSmartFeatured && (
                         <span className="song-flag song-flag-smart" title="Blok show utama Smart Assistant">
                           ✨ Smart Pick

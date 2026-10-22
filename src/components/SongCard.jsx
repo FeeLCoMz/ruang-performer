@@ -9,7 +9,11 @@ import React from 'react';
  * halaman terasa seperti satu aplikasi.
  *
  * Perbedaan antar-halaman dikirim lewat props, bukan lewat duplikasi markup:
- *  - `leadingSlot`   : kolom kiri opsional (mis. nomor urut di setlist).
+ *  - `leadingSlot`   : kolom samping opsional (mis. nomor urut di setlist).
+ *  - `leadingLayout` : 'side' (kolom kiri, default — judul & aksi di kanan
+ *                      sejajar) atau 'above' (pita penuh di atas judul, sehingga
+ *                      judul & aksi memakai lebar kartu penuh). Halaman memilih
+ *                      'above' saat isi slot butuh ruang horizontal.
  *  - `headingStatus` : flag status di baris judul (mis. Live/Selesai).
  *  - `metaPrimary`   : baris utama metadata (artis/key/tempo/band/genre).
  *  - `metaDetail`    : baris pendukung metadata (mood/setlist).
@@ -31,6 +35,7 @@ export default function SongCard({
   isPlaying = false,
   playingBadge = 'LIVE',
   leadingSlot = null,
+  leadingLayout = 'side',
   headingStatus = null,
   metaPrimary = null,
   metaDetail = null,
@@ -42,9 +47,12 @@ export default function SongCard({
   dragProps = null,
   rowRef = null,
 }) {
+  const useAboveLayout = Boolean(leadingSlot) && leadingLayout === 'above';
+
   const cardClassName = [
     'song-item',
     isPlaying ? 'song-item-playing' : '',
+    useAboveLayout ? 'song-item-with-lead-above' : '',
     className,
   ].filter(Boolean).join(' ');
 
@@ -64,43 +72,64 @@ export default function SongCard({
       }
     : {};
 
-  return (
-    <div
-      ref={rowRef}
-      className={cardClassName}
-      onClick={onClick}
-      style={style}
-      {...interactiveProps}
-      {...(dragProps || {})}
-    >
-      {leadingSlot}
-
-      <div className="song-info">
-        <div className="song-heading">
-          <h3 className="song-title song-fact-title">
-            {title}
-            {isPlaying && <span className="song-playing-badge" title="Sedang berjalan">▶</span>}
-          </h3>
-          {headingStatus}
-        </div>
-
-        {(metaPrimary || metaDetail) && (
-          <div className="song-meta">
-            {metaPrimary}
-            {metaDetail}
-          </div>
-        )}
+  const info = (
+    <div className="song-info">
+      <div className="song-heading">
+        <h3 className="song-title song-fact-title">
+          {title}
+          {isPlaying && <span className="song-playing-badge" title="Sedang berjalan">▶</span>}
+        </h3>
+        {headingStatus}
       </div>
 
-      {(actionStatus || actions) && (
-        <div
-          className="song-actions"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {actionStatus}
-          {actions}
+      {(metaPrimary || metaDetail) && (
+        <div className="song-meta">
+          {metaPrimary}
+          {metaDetail}
         </div>
       )}
+    </div>
+  );
+
+  const actionRow = (actionStatus || actions) && (
+    <div
+      className="song-actions"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {actionStatus}
+      {actions}
+    </div>
+  );
+
+  const cardProps = {
+    ref: rowRef,
+    className: cardClassName,
+    onClick,
+    style,
+    ...interactiveProps,
+    ...(dragProps || {}),
+  };
+
+  // Slot di atas: pita penuh selebar kartu (mis. nomor urut + centang selesai),
+  // lalu judul/metadata dan aksi berbagi baris berikutnya dengan lebar penuh.
+  // Slot samping (default): kolom kiri, judul & aksi sejajar di kanannya.
+  if (useAboveLayout) {
+    return (
+      <div {...cardProps}>
+        <div className="song-lead-above">{leadingSlot}</div>
+        <div className="song-body">
+          {info}
+          {actionRow}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div {...cardProps}>
+      {leadingSlot}
+      {info}
+      {actionRow}
     </div>
   );
 }
