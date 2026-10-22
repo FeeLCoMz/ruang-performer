@@ -1,12 +1,12 @@
 import { Decoration, EditorView, ViewPlugin } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
-import { parseSection, parsePresetCueLine, isChordLine, isMetadataLine } from './chordUtils.js';
+import { parseSection, isChordLine, isMetadataLine } from './chordUtils.js';
 
 /**
  * Lyric/chord syntax highlighting for the lyrics editor.
  *
- * Uses the exact same parsers as the read view (parseSection / parsePresetCueLine /
- * isChordLine / isMetadataLine) so the editor colours match ChordDisplay 1:1.
+ * Uses the exact same parsers as the read view (parseSection / isChordLine /
+ * isMetadataLine) so the editor colours match ChordDisplay 1:1.
  */
 
 const SECTION_TONE_PATTERNS = [
@@ -53,14 +53,7 @@ function decorateLine(builder, line, lineFrom) {
     builder.add(lineFrom + from, lineFrom + to, decoration);
   };
 
-  // 1. Preset cue line: [Keys: Stage Piano | PC: 0 | CH: 1]
-  const presetCue = parsePresetCueLine(line);
-  if (presetCue) {
-    push(0, line.length, CUE_DECORATION);
-    return;
-  }
-
-  // 2. Section / structure / instrument / modulation label
+  // 1. Section / structure / instrument / modulation label
   const section = parseSection(line);
   if (section) {
     const label = String(section.label || '');
@@ -75,19 +68,19 @@ function decorateLine(builder, line, lineFrom) {
     return;
   }
 
-  // 3. Metadata line: "Cue: ...", "Intensitas: 1", ...
+  // 2. Metadata line: "Cue: ...", "Intensitas: 1", ...
   if (isMetadataLine(line)) {
     push(0, line.length, METADATA_DECORATION);
     return;
   }
 
-  // 4. Pure chord line: highlight every non-space token + barlines
+  // 3. Pure chord line: highlight every non-space token + barlines
   if (isChordLine(line)) {
     decorateChordTokens(builder, line, lineFrom);
     return;
   }
 
-  // 5. Lyrics line: highlight inline [Chord] tokens, [mm:ss] timestamps, instrument labels
+  // 4. Lyrics line: highlight inline [Chord] tokens, [mm:ss] timestamps, instrument labels
   decorateInlineLyrics(builder, line, lineFrom);
 }
 
@@ -95,8 +88,7 @@ function labelledStructure(section) {
   return (
     section.type === 'structure' ||
     section.type === 'instrument' ||
-    section.type === 'modulation' ||
-    section.type === 'instrument_patch'
+    section.type === 'modulation'
   );
 }
 

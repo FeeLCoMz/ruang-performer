@@ -111,13 +111,7 @@ const ChordDisplayBase = memo(function ChordDisplay({
     fontScale = 1,
   }) {
 
-  const formatInstrumentPatchText = (lineObj) => {
-    const entries = Object.entries(lineObj?.fields || {});
-    if (!entries.length) return lineObj?.text || '';
-    return entries
-      .map(([key, value]) => `${key.charAt(0).toUpperCase()}${key.slice(1)}: ${value}`)
-      .join(' | ');
-  };
+  const formatInstrumentPatchText = (lineObj) => lineObj?.label || '';
 
   const resolvedChordStyle = chordStyle
     ? normalizeChordStyle(chordStyle)
@@ -222,12 +216,6 @@ const ChordDisplayBase = memo(function ChordDisplay({
     return lineObj.isExpandedFromSection ? ' cd-sync-row is-expanded' : ' cd-sync-row';
   };
 
-  const renderPresetCueBadge = (lineObj, key) => (
-    <div key={key} className={`cd-preset-cue${syncClass(lineObj)}`}>
-      <span className="cd-preset-cue-label">[{lineObj.label}]</span>
-    </div>
-  );
-
   const renderedRows = [];
 
   // Mode fokus: baris dikelompokkan per bagian (section). Baris setelah
@@ -240,12 +228,12 @@ const ChordDisplayBase = memo(function ChordDisplay({
   };
 
   parsedLines.forEach((lineObj, i) => {
-    if (lineObj?.type === 'preset_cue') {
-      renderedRows.push(renderPresetCueBadge(lineObj, `preset-cue-${i}`));
-      return;
-    }
-
     if (lineObj.type === 'empty') {
+      // Baris kosong ganda (atau baris kosong di awal dokumen) tidak dirender:
+      // satu baris kosong sudah cukup sebagai pemisah antar blok.
+      const previousRow = renderedRows[renderedRows.length - 1];
+      const isDuplicateEmpty = !previousRow || previousRow.props?.className?.includes('cd-empty-line');
+      if (isDuplicateEmpty) return;
       renderedRows.push(<div key={i} className={`cd-empty-line${syncClass(lineObj)}${focusRowClass()}`}>&nbsp;</div>);
       return;
     }

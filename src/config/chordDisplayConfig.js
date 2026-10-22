@@ -74,15 +74,15 @@ export const AUTOCOMPLETE_SECTION_LABELS = STRUCTURE_SECTION_KEYWORDS.map(titleC
 export const MODULATION_KEYWORDS = ['modulation', 'key change'];
 
 /* ==================================================================
- * GRUP C — METADATA INFORMASI (tidak mempengaruhi transpose / MIDI)
- * GRUP D — ROUTING & PATCH MIDI (bisa mengirim Program Change)
+ * GRUP C — METADATA INFORMASI (tidak mempengaruhi transpose)
  * ==================================================================
  *
  * Format baris:  Key: Value | Key2: Value2   (segment dipisah "|")
  *
- * Dikelompokkan per FUNGSI, bukan per jenis baris: Grup C tidak pernah
- * mengirim MIDI, Grup D bisa. Bedanya penting di panggung — itulah sebabnya
- * Tidak ada key Grup C yang masuk PATCH_DEFINING_KEYS.
+ * Catatan: parsing patch / preset cue / routing MIDI (Patch:, PC:, CH:,
+ * Bank:, [Keys: ... | PC: 1]) DIHAPUS dari ChordDisplay. Itulah mengapa
+ * key-key tersebut (masih ada di METADATA_KEYS agar barisnya diredupkan
+ * sebagai metadata) TIDAK punya parser sendiri di sini.
  */
 
 /** Grup C — info lagu (informasional, tidak mempengaruhi transpose). */
@@ -103,41 +103,23 @@ export const NOTE_KEYS = [
 ];
 
 /**
- * Semua key metadata yang dikenali (isMetadataLine).
- * Termasuk Grup D supaya baris patch tetap dikenali sebagai metadata.
+ * Semua key metadata yang dikenali (isMetadataLine) dan tidak punya parser
+ * sendiri. Dulu termasuk key patch/MIDI; sekarang key-key itu HANYA diredupkan
+ * sebagai metadata — artinya tidak lagi menghasilkan instrument_patch/midi,
+ * dan modul MIDI nanti yang akan mem-parse-nya sendiri dari teks lirik.
  */
 export const METADATA_KEYS = dedupe([
-  // Grup D — nama suara
+  // nama suara & instrumen (dibaca modul MIDI nanti, bukan ChordDisplay)
   'patch', 'preset', 'sound', 'tone', 'program',
   'instrument', 'instrumen',
-  // Grup D — layering & split keyboard
+  // layering & split keyboard
   'layer', 'split', 'zone', 'scene',
-  // Grup D — MIDI routing
+  // routing MIDI
   'pc', 'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb',
-  // Grup C — info lagu, petunjuk, catatan & efek
+  // info lagu, petunjuk, catatan & efek
   ...SONG_INFO_KEYS,
   ...PERFORMANCE_HINT_KEYS,
   ...NOTE_KEYS,
-]);
-
-/** Key yang WAJIB ada agar baris dianggap instrument_patch (punya MIDI).
- *  Baris "Layer: Warm Pad" saja TIDAK jadi patch tanpa key dari daftar ini.
- *
- *  'tone' sengaja TIDAK di sini: "Tone: Bright" menyebut karakter suara, bukan
- *  suara. Memperlakukannya sebagai patch membuat inferensi jatuh ke program
- *  hasil tebakan (Program 1) yang terkirim salah saat tampil. 'sound' tetap
- *  diizinkan karena memang dipakai untuk nama suara ("Sound: Strings"). */
-export const PATCH_DEFINING_KEYS = [
-  'patch', 'preset', 'program', 'pc', 'instrument', 'instrumen', 'sound',
-];
-
-/** Key yang boleh muncul di baris instrument patch (parseInstrumentPatchLine) —
- *  PATCH_DEFINING_KEYS + layering & MIDI routing + konteks instrumen. */
-export const INSTRUMENT_PATCH_KEYS = dedupe([
-  ...PATCH_DEFINING_KEYS,
-  'tone',
-  'layer', 'split', 'zone', 'scene',
-  'ch', 'channel', 'bank', 'bankmsb', 'banklsb', 'msb', 'lsb',
 ]);
 
 /* ==================================================================
@@ -168,42 +150,21 @@ export const NO_CHORD_TOKENS = ['n.c.', 'nc', 'no chord', 'no chords'];
  * chord/lirik, biasanya dalam kurung: (Stop), (Aksen), (Hit), (Tutti).
  */
 /**
- * Satu sumber kebenaran untuk cue mark.
+ * Satu sumber kebenaran untuk cue mark, sama bentuknya dengan daftar keyword
+ * lain di file ini: array string, tanpa metadata per item.
  *
- * `displayAsInstrument`: ikut tampil di panel instrumen. Aksen/stop/fill/fade
- * adalah aksi permainan, bukan alat — jadi tidak ditampilkan sebagai instrumen.
- * Dua daftar lama (keyword + non-display) bisa tidak sinkron; satu daftar objek
- * menghilangkan kemungkinan itu.
+ * Cue mark adalah aksi permainan (aksen, stop, fill, fade), bukan instrumen.
+ * Karena itu ia TIDAK ikut menentukan instrumen yang terdeteksi maupun yang
+ * muncul di panel instrumen — lihat isInstrumentKeywordWord().
  */
-export const CUE_MARKS = [
-  // aksi yang masih relevan sebagai label instrumen/kategori
-  { keyword: 'tutti', displayAsInstrument: true },
-  { keyword: 'hit', displayAsInstrument: true },
-  { keyword: 'ritardando', displayAsInstrument: true },
-  { keyword: 'rit.', displayAsInstrument: true },
-  // aksi permainan, bukan instrumen
-  { keyword: 'aksen', displayAsInstrument: false },
-  { keyword: 'stop', displayAsInstrument: false },
-  { keyword: 'break', displayAsInstrument: false },
-  { keyword: 'bbreak', displayAsInstrument: false },
-  { keyword: 'fill-in', displayAsInstrument: false },
-  { keyword: 'fill in', displayAsInstrument: false },
-  { keyword: 'fade in', displayAsInstrument: false },
-  { keyword: 'fade out', displayAsInstrument: false },
-  { keyword: 'fade in/out', displayAsInstrument: false },
+export const CUE_MARK_KEYWORDS = [
+  'tutti', 'hit', 'ritardando', 'rit.',
+  'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in',
+  'fade in', 'fade out', 'fade in/out',
 ];
-
-/** Kata kunci cue (diturunkan dari CUE_MARKS). */
-export const CUE_MARK_KEYWORDS = CUE_MARKS.map((cue) => cue.keyword);
-
-/** Cue marks yang TIDAK ditampilkan sebagai instrumen di panel. */
-export const NON_DISPLAY_INSTRUMENT_CUES = CUE_MARKS
-  .filter((cue) => !cue.displayAsInstrument)
-  .map((cue) => cue.keyword);
 
 /* ==================================================================
  * GRUP F — INSTRUMEN (identitas alat)
- * GRUP G — DESKRIPTOR INSTRUMEN (menjelaskan alat, bukan alat)
  * ================================================================== */
 
 /* ------------------------------------------------------------------
@@ -234,21 +195,6 @@ export const INSTRUMENT_KEYWORDS = [
   'kenong', 'gamelan', 'kendang', 'gong', 'angklung', 'rebab', 'sitar',
   // efek/lain-lain
   'bell', 'bell pads', 'pads',
-];
-
-/**
- * Grup G — qualifier/deskriptor yang MENJELASKAN instrumen (mis. "Piano Warm").
- * Bukan instrumen itu sendiri. Jangan masukkan kata yang juga ada di
- * INSTRUMENT_KEYWORDS (dulu 'perc'/'percussion' ada di dua tempat).
- */
-export const INSTRUMENT_DESCRIPTOR_SUFFIXES = [
-  // distorsi & waveforms
-  'dist', 'distortion', 'saw', 'sawtooth', 'square', 'triangle', 'pulse',
-  'sine', 'wave',
-  // karakter suara
-  'pad', 'warm', 'bright', 'dark', 'clean', 'ambient', 'pluck', 'sub', 'noise',
-  // stereo & teknik
-  'mono', 'stereo', 'stac', 'staccato',
 ];
 
 /* ==================================================================

@@ -80,7 +80,7 @@ describe('ChordDisplay lyrics mode', () => {
     expect(renderChords({ chordStyle: 'NUMBER', keySignature: 'C' })).toContain('1maj7');
   });
 
-  test('renders preset cue badge inline above the following chord line', () => {
+  test('renders instrument label instead of a preset cue badge', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root = createRoot(container);
@@ -94,10 +94,13 @@ describe('ChordDisplay lyrics mode', () => {
       );
     });
 
-    const cueBadge = container.querySelector('.cd-preset-cue');
-    expect(cueBadge).toBeTruthy();
-    expect(cueBadge.textContent).toContain('[Keys: Acoustic Piano]');
-    expect(container.querySelector('.cd-preset-cue-inline')).toBeFalsy();
+    // Parsing patch/MIDI sudah dihapus: baris cue tampil sebagai label
+    // instrumen biasa, tanpa badge cue dan tanpa data MIDI.
+    expect(container.querySelector('.cd-preset-cue')).toBeFalsy();
+    const instrumentRow = container.querySelector('.cd-instrument-token');
+    expect(instrumentRow).toBeTruthy();
+    expect(instrumentRow.textContent).toContain('Keys: Acoustic Piano');
+    expect(container.querySelector('.cd-metadata')).toBeFalsy();
 
     act(() => {
       root.unmount();

@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, parseInstrumentPatchLine, parsePresetCueLine, extractDetectedInstrumentsFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils';
+import { isValidChord, chordToNumber, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText, parseLines, splitSectionLabelWithChords, parseSection, transposeChord, recommendPianoFriendlyKey, alignSelectedBarlines, wrapBarsPerLine, getAllChords, getChordUsageCounts, estimateKeyFromChordUsage, detectChordModulations, isMetadataLine, extractDetectedInstrumentsFromLyrics, extractTimestampSeconds, mergeDetectedTimestampsIntoMarkers } from '../utils/chordUtils';
 
 describe('chordUtils', () => {
   test('splitSectionLabelWithChords separates section label and chord line', () => {
@@ -15,15 +15,16 @@ describe('chordUtils', () => {
     expect(parsed[1].type).toBe('chord');
   });
 
-  test('parseLines preserves section and cue separation for single-line and multi-line input', () => {
-    const separateLines = parseLines(['[Intro]', '[Keys: Acoustic Grand Piano | PC: 0 | CH: 1]', 'Hello'], 0);
+  test('parseLines preserves section, instrument and lyrics rows', () => {
+    // Baris instrumen ("[Keys: ...]") sekarang label instrumen — tanpa MIDI.
+    const separateLines = parseLines(['[Intro]', '[Keys: Acoustic Grand Piano]', 'Hello'], 0);
     expect(separateLines[0]).toMatchObject({ type: 'structure', label: 'Intro', sourceLine: 1 });
-    expect(separateLines[1]).toMatchObject({ type: 'preset_cue', section: 'Keys', patch: 'Acoustic Grand Piano' });
+    expect(separateLines[1]).toMatchObject({ type: 'instrument', label: 'Keys: Acoustic Grand Piano' });
     expect(separateLines[2]).toMatchObject({ type: 'lyrics' });
 
-    const sameLine = parseLines(['[Intro] [Keys: Acoustic Grand Piano | PC: 0 | CH: 1]', 'Hello'], 0);
+    const sameLine = parseLines(['[Intro] [Keys: Acoustic Grand Piano]', 'Hello'], 0);
     expect(sameLine[0]).toMatchObject({ type: 'structure', label: 'Intro', sourceLine: 1 });
-    expect(sameLine[1]).toMatchObject({ type: 'preset_cue', section: 'Keys', patch: 'Acoustic Grand Piano' });
+    expect(sameLine[1]).toMatchObject({ type: 'instrument' });
     expect(sameLine[2]).toMatchObject({ type: 'lyrics' });
   });
 
@@ -622,93 +623,58 @@ describe('chordUtils', () => {
     expect(isMetadataLine('Aku bilang: kamu hebat')).toBe(false);
   });
 
-  test('parseInstrumentPatchLine extracts patch instrument fields', () => {
-    const parsedPatch = parseInstrumentPatchLine('Patch: Stage Piano | Layer: Warm Pad (Volume 30%)');
-    expect(parsedPatch).toMatchObject({
-      type: 'instrument_patch',
-      text: 'Patch: Stage Piano | Layer: Warm Pad (Volume 30%)',
-      fields: {
-        patch: 'Stage Piano',
-        layer: 'Warm Pad (Volume 30%)',
-      },
-    });
-    expect(parsedPatch.midi).toBeTruthy();
-    expect(parsedPatch.midi.channel).toBe(1);
-    expect(Number.isFinite(parsedPatch.midi.program)).toBe(true);
-  });
-
-  test('parsePresetCueLine parses cue label and optional MIDI options', () => {
-    expect(parsePresetCueLine('[Chorus: Lead Synth + Strings | PC: 81 | CH: 2 | BankMSB: 1 | BankLSB: 32]')).toEqual({
-      type: 'preset_cue',
-      section: 'Chorus',
-      patch: 'Lead Synth + Strings',
-      label: 'Chorus: Lead Synth + Strings',
-      text: '[Chorus: Lead Synth + Strings | PC: 81 | CH: 2 | BankMSB: 1 | BankLSB: 32]',
-      midi: {
-        program: 81,
-        channel: 2,
-        bankMsb: 1,
-        bankLsb: 32,
-      },
-    });
-  });
-
-  test('parsePresetCueLine requires explicit MIDI hints; [Keys: ...] without MIDI is no longer a cue', () => {
-    // Tanpa opsi MIDI: tidak lagi dianggap preset cue (deteksi
-    // PRESET_CUE_SECTION_KEYWORDS sudah dihapus).
-    expect(parsePresetCueLine('[Keys: EP Soft]')).toBe(null);
-
-    // Dengan opsi MIDI tetap dikenali.
-    expect(parsePresetCueLine('[Keys: EP Soft | PC: 4 | CH: 1]')).toMatchObject({
-      type: 'preset_cue',
-      section: 'Keys',
-      patch: 'EP Soft',
-      midi: { program: 4, channel: 1 },
-    });
-
-    expect(parsePresetCueLine('[Guitar: Crunch Lead | PC: 30 | CH: 3]')).toMatchObject({
-      type: 'preset_cue',
-      section: 'Guitar',
-      patch: 'Crunch Lead',
-      midi: { program: 30, channel: 3 },
-    });
-  });
-
-  test('parseInstrumentPatchLine does not classify plain sentence metadata', () => {
-    expect(parseInstrumentPatchLine('Catatan: intro masuk pelan')).toBe(null);
-  });
-
-  test('parseInstrumentPatchLine rejects descriptor-only lines that name no sound', () => {
-    // These used to become instrument_patch with a guessed MIDI program 0
-    // (Acoustic Grand Piano), which could send a wrong Program Change on stage.
-    const descriptorOnly = [
+  test('patch / MIDI lines are metadata only, with no parsed midi data', () => {
+    // Parsing patch + MIDI sudah dihapus dari ChordDisplay; modul MIDI sendiri
+    // yang akan membaca baris ini. Di sini cukup tidak jatuh ke chord/lirik.
+    // "[Keys: ... | PC: 4 | CH: 1]" adalah label instrumen; opsinya diabaikan.
+    const [keysRow] = parseLines(['[Keys: EP Soft | PC: 4 | CH: 1]'], 0);
+    expect(keysRow).toMatchObject({ type: 'instrument', label: 'Keys: EP Soft' });
+    expect(keysRow.midi).toBeUndefined();
+    for (const line of [
+      'Preset: Ballad Keys',
+      'Instrument: Guitar',
+      'Sound: Strings',
       'Layer: Warm Pad',
-      'Volume: 30%',
-      'Split: Bass',
-      'Scene: Verse',
-      'Zone: Lower',
       'CH: 3',
-      'Bank: 0',
-    ];
-
-    for (const line of descriptorOnly) {
-      expect(parseInstrumentPatchLine(line), line).toBe(null);
+    ]) {
+      const [row] = parseLines([line], 0);
+      expect(row, line).toMatchObject({ type: 'metadata', text: line });
+      expect(row.midi, line).toBeUndefined();
     }
+    // "Gitar: Dist" tanpa bracket bukan metadata: tetap lirik.
+    const [gitarLine] = parseLines(['Gitar: Dist'], 0);
+    expect(gitarLine.type).toBe('lyrics');
   });
 
-  test('parseInstrumentPatchLine still accepts a line that does name a sound', () => {
-    expect(parseInstrumentPatchLine('Patch: EP Soft')).toMatchObject({ type: 'instrument_patch' });
-    expect(parseInstrumentPatchLine('Preset: Ballad Keys')).toMatchObject({ type: 'instrument_patch' });
-    expect(parseInstrumentPatchLine('Instrument: Guitar')).toMatchObject({ type: 'instrument_patch' });
-    expect(parseInstrumentPatchLine('Sound: Strings')).toMatchObject({ type: 'instrument_patch' });
-    // Descriptor keys are still allowed as long as a patch key is also present.
-    expect(parseInstrumentPatchLine('Patch: EP Soft | Layer: Warm Pad | Volume: 30%')).toMatchObject({
-      type: 'instrument_patch',
-    });
+  test('bracketed instrument label shows as an instrument row, not a section', () => {
+    // Bentuk paling ringkas di panggung: nama alat di kiri titik dua, nama
+    // suara di kanan. Tanpa parser patch, baris ini tetap label instrumen.
+    const [row] = parseLines(['[Gitar: Dist]'], 0);
+    expect(row).toMatchObject({ type: 'instrument', label: 'Gitar: Dist' });
+    expect(row.midi).toBeUndefined();
+
+    expect(parseLines(['[Guitar: Chorus Lead]'], 0)[0]).toMatchObject({ type: 'instrument' });
+
+    // Seksi tetap seksi: "[Chorus: ...]" bukan instrumen.
+    expect(parseSection('[Chorus: kita bersama]')).toMatchObject({ type: 'structure' });
   });
 
-  test('parseInstrumentPatchLine does not infer a MIDI program from a bare Layer line', () => {
-    expect(parseInstrumentPatchLine('Layer: Warm Pad')).toBe(null);
+  test('bracketed instrument label allows an empty patch', () => {
+    expect(parseLines(['[Epiano: ]'], 0)[0]).toMatchObject({ type: 'instrument', label: 'Epiano' });
+  });
+
+  test('unknown bracket labels are not instrument rows', () => {
+    // Daftar singkatan ("gt", "kb") sudah dihapus: hanya nama instrumen yang
+    // dikenal INSTRUMENT_KEYWORDS yang diakui.
+    expect(parseLines(['[gt: dist]'], 0)[0]).not.toMatchObject({ type: 'instrument' });
+    expect(parseLines(['[kb: warm pad]'], 0)[0]).not.toMatchObject({ type: 'instrument' });
+  });
+
+  test('instrument rows are not read as song sections', () => {
+    expect(parseSection('[Epiano: ]')).toBe(null);
+
+    // Tanpa bracket dan tanpa nama instrumen, ini tetap lirik.
+    expect(parseLines(['Gitar: Dist'], 0)[0]).toMatchObject({ type: 'lyrics' });
   });
 
   test('parseLines classifies metadata line separately from chord line', () => {
@@ -724,18 +690,11 @@ describe('chordUtils', () => {
       sourceLine: 1,
     });
     expect(parsed[1]).toMatchObject({
-      type: 'instrument_patch',
+      type: 'metadata',
       text: 'Patch: Stage Piano | Layer: Warm Pad (Volume 30%)',
       sourceLine: 2,
-      fields: {
-        patch: 'Stage Piano',
-        layer: 'Warm Pad (Volume 30%)',
-      },
-      midi: {
-        program: 0,
-        channel: 1,
-      },
     });
+    expect(parsed[1].midi).toBeUndefined();
     expect(parsed[2].type).toBe('chord');
   });
 

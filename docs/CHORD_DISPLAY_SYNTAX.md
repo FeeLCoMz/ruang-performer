@@ -159,15 +159,16 @@
 #   Dm (Sax) Em | G |
 #   (Sax)(Stop) Am | Dm G |
 
-# 6d. Suffix deskriptor yang digabung ke label instrumen
-#     (INSTRUMENT_DESCRIPTOR_SUFFIXES):
-#     dist, distortion, saw, sawtooth, square, triangle, pulse, sine, wave, pad,
-#     warm, bright, dark, clean, mono, stereo, ambient, pluck, sub, noise, perc,
-#     percussion, stac, staccato
+# 6d. Tidak ada daftar deskriptor instrumen.
+#     INSTRUMENT_DESCRIPTOR_SUFFIXES sudah dihapus: label instrumen hanya
+#     memakai INSTRUMENT_KEYWORDS, digabung dengan kata berikutnya apa adanya
+#     bila perlu ("Gitar Dist", "Strings Stac.").
 
-# 6e. Cue marks yang TIDAK ditampilkan sebagai instrumen
-#     (NON_DISPLAY_INSTRUMENT_CUES):
+# 6e. Cue marks inline (CUE_MARK_KEYWORDS) — keyword biasa, tanpa mapping:
+#     tutti, hit, ritardando, rit.
 #     aksen, stop, break, bbreak, fill-in, fill in, fade in, fade out, fade in/out
+#     Cue mark adalah aksi permainan, bukan instrumen: tidak ikut terdeteksi
+#     sebagai instrumen maupun muncul di panel instrumen.
 
 
 ## 7. TIMESTAMP / MARKER

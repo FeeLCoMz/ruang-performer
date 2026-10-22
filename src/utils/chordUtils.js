@@ -1,24 +1,11 @@
 import {
-  parseMidiFromFields,
-  parseCueOptionFields,
-  mergeMidiWithInference,
-  hasMidiHintOptions,
-} from '../modules/midi-cue/cueParser.js';
-import {
   STRUCTURE_SECTION_KEYWORDS,
   MODULATION_KEYWORDS,
   METADATA_KEYS as CONFIG_METADATA_KEYS,
-  SONG_INFO_KEYS as CONFIG_SONG_INFO_KEYS,
-  PERFORMANCE_HINT_KEYS as CONFIG_PERFORMANCE_HINT_KEYS,
-  NOTE_KEYS as CONFIG_NOTE_KEYS,
-  PATCH_DEFINING_KEYS as PATCH_DEFINING_KEYS_CONFIG,
-  INSTRUMENT_PATCH_KEYS as CONFIG_INSTRUMENT_PATCH_KEYS,
   CHORD_REGEX_SOURCE,
   NO_CHORD_TOKENS,
   CUE_MARK_KEYWORDS as CONFIG_CUE_MARK_KEYWORDS,
-  NON_DISPLAY_INSTRUMENT_CUES as CONFIG_NON_DISPLAY_INSTRUMENT_CUES,
   INSTRUMENT_KEYWORDS as CONFIG_INSTRUMENT_KEYWORDS,
-  INSTRUMENT_DESCRIPTOR_SUFFIXES as CONFIG_INSTRUMENT_DESCRIPTOR_SUFFIXES,
 } from '../config/chordDisplayConfig.js';
 
 /**
@@ -175,6 +162,12 @@ const matchInlineInstrumentLabel = (candidate = '') => {
 
   const lower = normalized.toLowerCase();
 
+  // Singkatan instrumen ("gt", "kb", "elp") hanya cocok sebagai kata utuh.
+  // Tanpa jalur ini, regex batas kata di bawah tetap cocok tapi LOLOS: ia
+  // mengembalikan true hanya untuk keyword multi-kata, sehingga singkatan
+  // dua huruf selalu jatuh ke false.
+  if (instrumentKeywords.includes(lower)) return true;
+
   const fullPhraseMatch = instrumentKeywords.some((keyword) => {
     const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
     return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`, 'i').test(lower);
@@ -322,8 +315,6 @@ const splitInlineTokens = (text = '') => {
   return text.match(regex) || [];
 };
 
-const INSTRUMENT_DESCRIPTOR_SUFFIXES = new Set(CONFIG_INSTRUMENT_DESCRIPTOR_SUFFIXES);
-
 const isGenericInstrumentSuffix = (value = '') => {
   if (typeof value !== 'string') return false;
   const trimmed = value.trim();
@@ -388,17 +379,10 @@ const mergeInstrumentPhraseTokens = (tokens = []) => {
         continue;
       }
 
-      const normalizedSuffix = cleanedNext.toLowerCase().replace(/[^a-z0-9]/g, '');
+      // Gabungkan kata berikutnya ke label instrumen ("Gitar Dist" tetap satu
+      // token). Tanpa daftar deskriptor: cukup satu kata tambahan, dan berhenti
+      // di akhir frasa/kata sambung.
       if (instrumentKeywords.includes(value.toLowerCase()) && isGenericInstrumentSuffix(cleanedNext)) {
-        mergedPhrase = `${mergedPhrase} ${cleanedNext}`;
-        didMerge = true;
-        index = nextIndex;
-        if (/[,&;:]$/.test(nextValue)) break;
-        nextIndex += 1;
-        continue;
-      }
-
-      if (INSTRUMENT_DESCRIPTOR_SUFFIXES.has(normalizedSuffix)) {
         mergedPhrase = `${mergedPhrase} ${cleanedNext}`;
         didMerge = true;
         index = nextIndex;
@@ -502,13 +486,15 @@ function parseLine(line, transpose) {
   if (/^Cue\s*:/i.test(trimmed)) {
     return { type: 'metadata', text: line.trim() };
   }
+  // "[Gitar: Dist]" / "[Epiano: ]": label instrumen, bukan seksi. Tanpa data
+  // MIDI — modul MIDI yang akan mem-parse baris ini nanti.
+  const bracketedInstrument = parseBracketedInstrumentLabel(line);
+  if (bracketedInstrument) {
+    return { type: 'instrument', label: formatBracketedInstrumentLabel(bracketedInstrument) };
+  }
   // Metadata info lagu ("Original Key:", "Time Signature:") sekarang resmi
   // metadata: dirender sebagai chip dan tidak pernah ikut ditranspose, sehingga
   // cabang lirik khusus "Original Key:" tidak diperlukan lagi.
-  const presetCue = parsePresetCueLine(line);
-  if (presetCue) {
-    return presetCue;
-  }
   const section = parseSection(line);
   if (section) {
     // Transpose modulation key label
@@ -517,9 +503,8 @@ function parseLine(line, transpose) {
     }
     return { type: section.type, label: section.label };
   }
-  const patchLine = parseInstrumentPatchLine(line);
-  if (patchLine) {
-    return patchLine;
+  if (isInstrumentPatchLikeLine(line)) {
+    return { type: 'metadata', text: line.trim() };
   }
   if (isMetadataLine(line)) {
     return { type: 'metadata', text: line.trim() };
@@ -678,9 +663,14 @@ export function parseLines(lines, transpose) {
   return parsed;
 }
 
-const NON_DISPLAY_INSTRUMENT_CUES = new Set(CONFIG_NON_DISPLAY_INSTRUMENT_CUES);
-
-const REAL_INSTRUMENT_KEYWORDS = instrumentKeywords.filter((keyword) => !NON_DISPLAY_INSTRUMENT_CUES.has(keyword));
+/**
+ * Keyword instrumen untuk deteksi instrumen (panel instrumen, "instrumen per
+ * seksi"). Cue mark sengaja dibuang: aksi permainan seperti "Stop" atau "Aksen"
+ * bukan alat, jadi tidak boleh terbaca sebagai instrumen.
+ */
+const REAL_INSTRUMENT_KEYWORDS = instrumentKeywords.filter(
+  (keyword) => !CONFIG_CUE_MARK_KEYWORDS.includes(keyword),
+);
 
 function normalizeDetectedInstrumentName(candidate = '') {
   if (typeof candidate !== 'string') return '';
@@ -829,10 +819,6 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
   };
 
   parsedLines.forEach((lineObj) => {
-    if (lineObj?.type === 'instrument_patch' && typeof lineObj?.fields?.instrument === 'string') {
-      addCandidate(lineObj.fields.instrument);
-    }
-
     if (lineObj?.type === 'structure' && typeof lineObj?.label === 'string') {
       scanTextCandidates(lineObj.label);
     }
@@ -891,8 +877,9 @@ export function extractInstrumentsBySection(lyricsText) {
       const labelMatch = findInlineInstrumentMatch(parsedRow.label);
       if (labelMatch) add(labelMatch);
     }
-    if (parsedRow.type === 'instrument_patch' && typeof parsedRow?.fields?.instrument === 'string') {
-      add(parsedRow.fields.instrument);
+    if (parsedRow.type === 'instrument' && typeof parsedRow?.label === 'string') {
+      const labelMatch = findInlineInstrumentMatch(parsedRow.label);
+      if (labelMatch) add(labelMatch);
     }
     if (typeof lineText === 'string') {
       const match = findInlineInstrumentMatch(lineText);
@@ -1376,6 +1363,63 @@ const MODULATION_LINE_REGEX = new RegExp(
   'i',
 );
 
+const METADATA_KEYS = new Set(CONFIG_METADATA_KEYS.map((key) => key.toLowerCase()));
+
+/**
+ * "[Gitar: Dist]" / "[Epiano: ]" / "[Keys: EP Soft | CH: 2]"
+ * -> { instrument: 'Gitar', detail: 'Dist' }. Return false bila bukan instrumen.
+ *
+ * Hanya untuk TAMPILAN: tidak ada data MIDI yang dihasilkan di sini. Modul MIDI
+ * membaca teks lirik sendiri saat ia aktif.
+ */
+const parseBracketedInstrumentLabel = (line) => {
+  if (typeof line !== 'string') return false;
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return false;
+
+  const inside = trimmed.slice(1, -1).trim();
+  if (!inside) return false;
+
+  const idx = inside.indexOf(':');
+  if (idx <= 0) return false;
+
+  const rawLabel = inside.slice(0, idx).trim();
+  if (!rawLabel || /\|/.test(rawLabel)) return false;
+
+  // Label harus nama instrumen yang dikenal. Ini sekaligus menolak
+  // "[Chorus: ...]", "[Intro: ...]", "[Verse: ...]".
+  if (!matchInlineInstrumentLabel(rawLabel)) return false;
+
+  const firstOption = inside.slice(idx + 1).split('|')[0].trim();
+  const instrument = normalizeInstrumentDisplayLabel(rawLabel);
+  if (!instrument) return false;
+
+  return {
+    instrument,
+    detail: firstOption,
+  };
+};
+
+/** Label untuk baris ber-instrumen: "Gitar: Dist" / "Epiano". */
+const formatBracketedInstrumentLabel = (bracketed) => (
+  bracketed.detail ? `${bracketed.instrument}: ${bracketed.detail}` : bracketed.instrument
+);
+
+/** Label instrumen di kiri titik dua sebuah baris bracket ("[Gitar: Dist]"). */
+const getBracketLineLabel = (line) => {
+  if (typeof line !== 'string') return '';
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('[')) return '';
+  const idx = trimmed.indexOf(':');
+  if (idx <= 0) return '';
+  return trimmed.slice(1, idx).trim();
+};
+
+const isInstrumentBracketLine = (line) => {
+  const label = getBracketLineLabel(line);
+  return Boolean(label) && matchInlineInstrumentLabel(label);
+};
+
 // Fungsi untuk mendeteksi section/struktur lagu atau instrumen
 export function parseSection(line) {
   const trimmedLine = typeof line === 'string' ? line.trim() : '';
@@ -1384,6 +1428,13 @@ export function parseSection(line) {
   // Instrumen hanya diperlakukan sebagai gaya render inline; tidak dianggap sebagai section/metadata struktur.
   const inlineInstrumentCandidates = Array.from(trimmedLine.matchAll(/\([^)]*\)/g));
   if (inlineInstrumentCandidates.length > 1 && !trimmedLine.includes(':')) {
+    return null;
+  }
+
+  // "[Gitar: Dist]" bukan seksi "Gitar": label instrumen di kiri titik dua
+  // tidak boleh berubah jadi struktur lagu hanya karena memakai bracket.
+  // Baris itu diredupkan sebagai metadata.
+  if (isInstrumentBracketLine(trimmedLine)) {
     return null;
   }
 
@@ -1431,149 +1482,32 @@ export function parseSection(line) {
   return null;
 }
 
-const METADATA_KEYS = new Set(CONFIG_METADATA_KEYS.map((key) => key.toLowerCase()));
-
-const INSTRUMENT_PATCH_KEYS = new Set(CONFIG_INSTRUMENT_PATCH_KEYS);
-
 /**
- * Key milik grup C (info lagu, petunjuk permainan, catatan & efek). Baris yang
- * berisi salah satu key ini bukan patch: "Style: Koplo | Patch: X" harus tetap
- * metadata, dan "Feel: Half-time | CH: 1" tidak boleh menghasilkan Program
- * Change hasil tebakan.
+ * Baris "Patch:", "Preset:", "Sound:", "Layer:", "PC:", "CH:", ... — dulu
+ * diparse menjadi `instrument_patch` + data MIDI. Sekarang parser patch/MIDI
+ * sudah DIHAPUS dari ChordDisplay (akan ditangani modul MIDI sendiri), jadi
+ * baris seperti ini hanya perlu dirapikan sebagai chip metadata agar tidak
+ * tercecer ke baris chord/lirik.
  */
-const NON_PATCH_METADATA_KEYS = new Set([
-  ...CONFIG_SONG_INFO_KEYS,
-  ...CONFIG_PERFORMANCE_HINT_KEYS,
-  ...CONFIG_NOTE_KEYS,
-]);
-
-/** Alias key patch -> nama field kanonik yang dipakai parseMidiFromFields. */
-const PATCH_FIELD_ALIASES = {
-  instrumen: 'instrument',
-  ch: 'channel',
-  msb: 'bankmsb',
-  bank: 'bankmsb',
-  lsb: 'banklsb',
-  pc: 'program',
-};
-
-/**
- * Keys that genuinely name a sound. Without one of these, a line like
- * "Layer: Warm Pad" or "Volume: 30%" is a descriptive note, NOT a patch.
- * Treating those as patches made the MIDI inference fall back to program 0
- * (Acoustic Grand Piano), which could send a wrong Program Change on stage.
- */
-const PATCH_DEFINING_KEYS = new Set(PATCH_DEFINING_KEYS_CONFIG);
-
-export const parsePresetCueLine = (line) => {
-  if (typeof line !== 'string') return null;
+const isInstrumentPatchLikeLine = (line) => {
+  if (typeof line !== 'string') return false;
   const trimmed = line.trim();
-  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return null;
+  if (!trimmed || !trimmed.includes(':')) return false;
 
-  const insideBracket = trimmed.slice(1, -1).trim();
-  const match = insideBracket.match(/^([^:|\]]+):\s*([^|\]]+?)(?:\s*\|\s*(.+))?$/);
-  if (!match) return null;
-
-  const section = match[1].trim();
-  const patch = match[2].trim();
-  const optionsRaw = match[3]?.trim() || '';
-
-  if (!section || !patch) return null;
-
-  if (!hasMidiHintOptions(optionsRaw)) return null;
-
-  const midi = mergeMidiWithInference({
-    explicitMidi: parseMidiFromFields(parseCueOptionFields(optionsRaw)),
-    section,
-    patch,
-    instrument: section,
-  });
-
-  return {
-    type: 'preset_cue',
-    section,
-    patch,
-    label: `${section}: ${patch}`,
-    text: trimmed,
-    midi,
-  };
+  return trimmed
+    .split('|')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .some((segment) => {
+      const idx = segment.indexOf(':');
+      if (idx <= 0) return false;
+      const key = segment.slice(0, idx).trim().toLowerCase()
+        .replace(/^[\[(]+|[\])]+$/g, '')
+        .replace(/[\s_]+/g, '');
+      return METADATA_KEYS.has(key) || METADATA_KEYS.has(key.replace(/\s+/g, ''));
+    });
 };
 
-export const parseInstrumentPatchLine = (line) => {
-  if (typeof line !== 'string') return null;
-  const trimmed = line.trim();
-  if (!trimmed || !trimmed.includes(':')) return null;
-  if (Array.from(trimmed.matchAll(/\[[^\]]+\]/g)).length > 1) return null;
-
-  const segments = trimmed.split('|').map((segment) => segment.trim()).filter(Boolean);
-  if (!segments.length) return null;
-
-  const openingBracket = trimmed.startsWith('[') ? '[' : null;
-  const closeBracket = openingBracket && trimmed.endsWith(']') ? ']' : null;
-
-  const fields = {};
-  const rawFieldKeys = new Set();
-  let hasGroupCKey = false;
-  for (const segment of segments) {
-    const idx = segment.indexOf(':');
-    if (idx <= 0 || idx >= segment.length - 1) continue;
-
-    const rawKey = segment.slice(0, idx).trim().toLowerCase();
-    const normalizedKey = rawKey.replace(/[\s_]+/g, ' ').trim();
-    if (NON_PATCH_METADATA_KEYS.has(normalizedKey)) {
-      hasGroupCKey = true;
-      continue;
-    }
-
-    const key = rawKey.replace(/^[\[(]+|[\])]+$/g, '').replace(/\s+/g, '');
-    if (!INSTRUMENT_PATCH_KEYS.has(key)) continue;
-
-    const fieldKey = PATCH_FIELD_ALIASES[key] || key;
-    // Baris patch berkurung berakhir dengan "]": "[Keys: Piano | CH: 2]" membuat
-    // nilai channel jadi "2]", yang lalu dibuang normalisasi MIDI. Buang kurung
-    // penutup hanya bila ia menutup bracket pembuka di baris yang sama.
-    let value = segment.slice(idx + 1).trim();
-    if (closeBracket && value.endsWith(closeBracket)) {
-      value = value.slice(0, -closeBracket.length).trim();
-    }
-    if (value) {
-      fields[fieldKey] = value;
-      rawFieldKeys.add(key);
-    }
-  }
-
-  // Baris yang membawa key grup C bukan patch, walau juga berisi key patch.
-  if (hasGroupCKey) return null;
-  if (!Object.keys(fields).length) return null;
-
-  // Require an explicit patch-ish key. A bare "Layer:", "Volume:", "Split:" or
-  // "Scene:" line carries no sound of its own, so it must not become a cue with
-  // a guessed MIDI program.
-  // Dicek terhadap key asli (sebelum alias), sama seperti sebelumnya.
-  const hasPatchDefiningKey = [...rawFieldKeys].some((key) => PATCH_DEFINING_KEYS.has(key));
-  if (!hasPatchDefiningKey) return null;
-
-  const patch = String(fields.patch || fields.preset || fields.sound || fields.tone || '').trim();
-  const instrument = String(fields.instrument || '').trim();
-
-  return {
-    type: 'instrument_patch',
-    text: trimmed,
-    fields,
-    midi: mergeMidiWithInference({
-      explicitMidi: parseMidiFromFields(fields),
-      section: instrument,
-      patch,
-      instrument,
-    }),
-  };
-};
-
-/**
- * Key metadata dikenal? Multi-kata ("original key", "time signature") dicocokkan
- * apa adanya, bukan dirapatkan jadi "originalkey" — alias lama seperti
- * "bank msb" tetap dirapatkan agar tetap cocok.
- */
 const isKnownMetadataKey = (rawKey = '') => {
   const normalized = String(rawKey).trim().toLowerCase().replace(/[\s_]+/g, ' ');
   const key = normalized.replace(/^[\[(]+|[\])]+$/g, '').trim();
@@ -1581,7 +1515,6 @@ const isKnownMetadataKey = (rawKey = '') => {
 };
 
 export const isMetadataLine = (line) => {
-  if (parseInstrumentPatchLine(line)) return true;
   if (typeof line !== 'string') return false;
   const trimmed = line.trim();
   if (!trimmed) return false;
@@ -2055,7 +1988,7 @@ const expandCompactChords = (line) => {
   // Check if line contains compact format (chord..chord..chord or chord-chord).
   // Non-global on purpose: a /g regex keeps lastIndex between calls, and the
   // old test matched against the line before split() consumed it.
-  const compactPattern = /-?[A-G][#b]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/[A-G][#b]?)?(?:\.\.|-)/;
+  const compactPattern = /(?<![A-Za-z0-9\/])[A-G][#b]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/[A-G][#b]?)?(?:\.\.|-)/;
 
   if (!compactPattern.test(line)) return line;
 

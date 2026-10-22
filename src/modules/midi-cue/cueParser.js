@@ -132,7 +132,8 @@ export const inferProgramByCommonInstrumentName = (contextText = '') => {
 
   if (/\bpiano\b|\bacoustic\s+grand\b/.test(normalized)) return 0;
   if (/\bbright\s+piano\b/.test(normalized)) return 1;
-  if (/\belectric\s+piano\b|\bep\b/.test(normalized)) return 4;
+  // "epiano" ditulis tanpa spasi, jadi \bep\b (+) tidak pernah cocok.
+  if (/\belectric\s+piano\b|\bep\b|\bepiano\b|\be\.p\./.test(normalized)) return 4;
   if (/\borgan\b/.test(normalized)) return 16;
   if (/\bnylon\b/.test(normalized)) return 24;
   if (/\bsteel\b/.test(normalized)) return 25;

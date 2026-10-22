@@ -1,4 +1,7 @@
-import { parseSection, parsePresetCueLine, isChordLine } from './chordUtils.js';
+import { parseSection, parseLines, isChordLine } from './chordUtils.js';
+
+/** Satu baris -> row hasil parseLines (dipakai untuk deteksi label instrumen). */
+const parseLineForInstrument = (line) => parseLines([line], 0)[0] || null;
 
 /**
  * Helpers that power the "professional" song editor: a completeness score that
@@ -46,7 +49,10 @@ export function analyseLyrics(lyrics = '') {
 
   lines.forEach((line) => {
     if (!line.trim()) return;
-    if (parsePresetCueLine(line)) {
+    // Pakai parser yang sama dengan ChordDisplay agar hitungan instrumen di
+    // sini tidak menyimpang dari yang tampil di layar.
+    const row = parseLineForInstrument(line);
+    if (row?.type === 'instrument') {
       instrumentCueCount += 1;
       return;
     }
@@ -55,7 +61,7 @@ export function analyseLyrics(lyrics = '') {
       sectionCount += 1;
       return;
     }
-    if (section?.type === 'instrument' || section?.type === 'instrument_patch') {
+    if (section?.type === 'instrument') {
       instrumentCueCount += 1;
       return;
     }
