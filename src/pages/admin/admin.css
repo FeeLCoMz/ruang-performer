@@ -443,6 +443,12 @@
   outline-offset: 1px;
 }
 
+.admin-user-lastlogin {
+  font-size: 0.8rem;
+  color: var(--text-muted, inherit);
+  white-space: nowrap;
+}
+
 .admin-user-count {
   margin-left: auto;
   font-size: 0.8rem;

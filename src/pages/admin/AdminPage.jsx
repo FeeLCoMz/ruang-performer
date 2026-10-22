@@ -265,7 +265,11 @@ export default function AdminPage() {
         )}
 
         {activeTab === 'users' && (
-          <UserManagementPanel actor={user} adminUsers={adminUsers} />
+          <UserManagementPanel
+            actor={user}
+            adminUsers={adminUsers}
+            lastLoginMap={lastLoginMap}
+          />
         )}
 
         {activeTab === 'backup' && <BackupRestorePanel />}

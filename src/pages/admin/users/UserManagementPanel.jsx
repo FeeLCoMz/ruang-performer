@@ -11,6 +11,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { getAppRoleLabel, getAssignableRoles } from '../../../utils/adminAccess.js';
+import { formatLastLogin } from './userStats.js';
 
 // State filter selalu disalin dari konstanta ini: mengirim ulang objek yang
 // sama persis membuat React mengabaikan update (bailout referensi).
@@ -108,7 +109,7 @@ function UserActionsMenu({ user, disabled, canToggleActive, canDelete, onAction 
   );
 }
 
-export default function UserManagementPanel({ actor, adminUsers }) {
+export default function UserManagementPanel({ actor, adminUsers, lastLoginMap }) {
   const {
     users,
     loading,
@@ -268,6 +269,7 @@ export default function UserManagementPanel({ actor, adminUsers }) {
                 <th>Email</th>
                 <th>Role</th>
                 <th>Status</th>
+                <th>Login terakhir</th>
                 <th>Aksi</th>
               </tr>
             </thead>
@@ -305,6 +307,9 @@ export default function UserManagementPanel({ actor, adminUsers }) {
                       <span className={`admin-status-pill${u.isActive ? ' is-active' : ''}`}>
                         {u.isActive ? 'Aktif' : 'Nonaktif'}
                       </span>
+                    </td>
+                    <td data-label="Login terakhir" className="admin-user-lastlogin">
+                      {formatLastLogin(lastLoginMap?.get(u.id)?.iso)}
                     </td>
                     <td data-label="Aksi">
                       <UserActionsMenu

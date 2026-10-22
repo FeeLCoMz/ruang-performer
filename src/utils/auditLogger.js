@@ -189,21 +189,6 @@ export function formatAuditLog(log) {
 }
 
 /**
- * Get severity color for UI
- * @param {string} severity - Severity level
- * @returns {string} Color code
- */
-export function getSeverityColor(severity) {
-  const colors = {
-    [SEVERITY_LEVELS.LOW]: '#10b981',      // Green
-    [SEVERITY_LEVELS.MEDIUM]: '#f59e0b',   // Amber
-    [SEVERITY_LEVELS.HIGH]: '#ef4444',     // Red
-    [SEVERITY_LEVELS.CRITICAL]: '#991b1b'  // Dark red
-  };
-  return colors[severity] || '#6b7280';
-}
-
-/**
  * Check if action requires additional validation
  * @param {string} action - Audit action
  * @returns {boolean}
@@ -350,7 +335,6 @@ export default {
   formatActionName,
   createAuditEntry,
   formatAuditLog,
-  getSeverityColor,
   isSecurityAction,
   filterAuditLogs,
   generateAuditReport

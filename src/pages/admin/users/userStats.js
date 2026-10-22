@@ -35,6 +35,37 @@ export function getLastLoginFor(userId, lastLoginMap) {
   return entry ? entry.iso : null;
 }
 
+/**
+ * Label ringkas waktu login untuk tabel user, mis. "5 menit lalu", "3 hari
+ * lalu", atau tanggal lengkap bila lebih dari 30 hari / tanggal tidak valid.
+ */
+export function formatLastLogin(iso, now = Date.now()) {
+  if (!iso) return 'Belum pernah';
+
+  const time = Date.parse(iso);
+  if (Number.isNaN(time)) return 'Belum pernah';
+
+  const diff = now - time;
+  if (diff < 0) return 'Baru saja';
+
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'Baru saja';
+  if (minutes < 60) return `${minutes} menit lalu`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Kemarin';
+  if (days < 30) return `${days} hari lalu`;
+
+  return new Date(time).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 /** Rentang waktu populer untuk perbandingan periode. */
 export const STAT_PERIODS = [
   { id: 'all', label: 'Semua waktu', days: null },

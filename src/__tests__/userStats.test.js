@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import {
   buildUserStatCards,
+  formatLastLogin,
   getLastLoginFor,
   getLastLoginMap,
   getUserGrowth,
@@ -37,6 +38,20 @@ describe('admin user stats', () => {
       { action: 'USER_LOGIN', createdAt: isoDaysAgo(1) },
     ]);
     expect(map.size).toBe(0);
+  });
+
+  test('formatLastLogin menampilkan label ringkas yang bisa dibaca', () => {
+    const minutesAgo = (m) => new Date(NOW - m * 60000).toISOString();
+
+    expect(formatLastLogin(null, NOW)).toBe('Belum pernah');
+    expect(formatLastLogin('bukan-tanggal', NOW)).toBe('Belum pernah');
+    expect(formatLastLogin(minutesAgo(0.5), NOW)).toBe('Baru saja');
+    expect(formatLastLogin(minutesAgo(5), NOW)).toBe('5 menit lalu');
+    expect(formatLastLogin(minutesAgo(180), NOW)).toBe('3 jam lalu');
+    expect(formatLastLogin(minutesAgo(24 * 60), NOW)).toBe('Kemarin');
+    expect(formatLastLogin(isoDaysAgo(5), NOW)).toBe('5 hari lalu');
+    // Lebih dari 30 hari memakai tanggal lengkap, bukan hitungan hari.
+    expect(formatLastLogin(isoDaysAgo(90), NOW)).not.toContain('hari lalu');
   });
 
   test('getUserGrowth membandingkan periode berjalan dengan periode sebelumnya', () => {

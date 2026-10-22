@@ -371,6 +371,35 @@ describe('AdminPage', () => {
     expect(container.querySelectorAll('.audit-log-table tbody tr')).toHaveLength(2);
   });
 
+  test('tabel user menampilkan kolom login terakhir dari audit log', async () => {
+    mockGetAllUsers.mockResolvedValue({
+      users: [
+        { id: 'u1', role: 'owner', isActive: 1, username: 'andi', email: 'andi@example.com' },
+        { id: 'u2', role: 'member', isActive: 1, username: 'budi', email: 'budi@example.com' },
+      ],
+    });
+    // Hanya u1 yang punya catatan USER_LOGIN; u2 tidak pernah login.
+    mockGetAuditLogs.mockResolvedValue({
+      logs: [
+        { id: 'l1', action: 'USER_LOGIN', userId: 'u1', username: 'andi', createdAt: new Date().toISOString(), status: 'success' },
+      ],
+    });
+
+    await act(async () => {
+      root.render(<AdminPage key="lastlogin" />);
+    });
+    await act(async () => {
+      await flushPromises();
+    });
+    await openTab('users');
+
+    expect(container.textContent).toContain('Login terakhir');
+    const cells = container.querySelectorAll('#admin-users tbody .admin-user-lastlogin');
+    expect(cells).toHaveLength(2);
+    expect(cells[0].textContent).toBe('Baru saja');
+    expect(cells[1].textContent).toBe('Belum pernah');
+  });
+
   test('pencarian dan filter status menyaring tabel user', async () => {
     // Data realistis: pencarian memakai username/email, bukan role.
     mockGetAllUsers.mockResolvedValue({
