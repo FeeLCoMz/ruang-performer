@@ -1,6 +1,7 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { writeAuditLog, getRequestMeta } from '../_audit.js';
+import { normalizeLyricsForStorage } from '../_lyrics.js';
 import { PERMISSIONS, hasPermission } from '../../src/utils/permissionUtils.js';
 
 // Module-level flags: schema checks run only once per server instance
@@ -226,7 +227,9 @@ async function handleUpdateSong(req, res, client, idStr) {
     body.title ?? null,
     body.artist ?? null,
     body.youtubeId ?? null,
-    body.lyrics ?? null,
+    // undefined = jangan sentuh kolom (COALESCE), string = disimpan dalam bentuk
+    // yang sudah dirapikan (tanpa trailing space & baris kosong ganda).
+    typeof body.lyrics === 'string' ? normalizeLyricsForStorage(body.lyrics) : (body.lyrics ?? null),
     body.key ?? null,
     tempoStr,
     body.genre ?? null,

@@ -20,6 +20,7 @@ import {
   alignSelectedBarlines,
   wrapBarsPerLine,
   mergeDetectedTimestampsIntoMarkers,
+  trimLyricsTrailingWhitespace,
 } from '../utils/chordUtils.js';
 import { getNumericNotationKey } from '../utils/notationUtils.js';
 import {
@@ -404,6 +405,10 @@ export default function SongAddEditPage({
 
     const mergedMarkers = mergeDetectedTimestampsIntoMarkers(lyrics.trim(), timeMarkers);
 
+    // Simpan lirik tanpa spasi di ujung baris dan tanpa baris kosong ganda:
+    // keduanya tidak bermakna, hanya membuat chart bergeser saat dirender.
+    const lyricsToSave = trimLyricsTrailingWhitespace(lyrics);
+
     const payload = {
       title: title.trim(),
       artist: artist.trim(),
@@ -411,7 +416,7 @@ export default function SongAddEditPage({
       tempo: tempo ? parseInt(tempo) : null,
       time_signature: timeSignature || '4/4',
       genre: genre.trim(),
-      lyrics: lyrics.trim(),
+      lyrics: lyricsToSave,
       youtubeId: extractYouTubeId(youtubeId),
       keyboardPatch: keyboardPatch.trim(),
       time_markers: mergedMarkers,

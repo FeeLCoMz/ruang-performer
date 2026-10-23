@@ -8,6 +8,7 @@
  *   chordTokens.js   — notasi chord: isChordLine, transposeChord, chordToNumber, dll.
  *   instruments.js   — deteksi label instrumen & cue mark
  *   annotations.js   — anotasi tag ([Intro: anotasi]) yang dibekukan dari transpose
+ *   lyricsWhitespace.js — perapian trailing space & baris kosong ganda lirik
  *   sections.js      — deteksi seksi, modulasi, metadata
  *   timestamps.js    — parsing marker waktu ([mm:ss])
  *   parsing.js       — parseLines & deteksi instrumen per lagu
@@ -40,6 +41,7 @@ export {
 
 export * from './chordTokens.js';
 export * from './annotations.js';
+export * from './lyricsWhitespace.js';
 export * from './instruments.js';
 export * from './sections.js';
 export * from './timestamps.js';

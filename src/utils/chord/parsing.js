@@ -12,6 +12,7 @@
 import { getInstrumentSet } from './chordDisplayTags.js';
 import { matchKeywordPattern, escapeRegex } from './textKeywords.js';
 import { isAnnotationBracketToken } from './annotations.js';
+import { compactLyricsBlankLines } from './lyricsWhitespace.js';
 import {
   isChordToken,
   isChordLine,
@@ -460,6 +461,14 @@ export function parseLines(lines, transpose) {
   const sectionBodies = new Map();
   const sectionLabels = new Map();
 
+  // Spasi di ujung baris tidak bermakna di chart (parser membandingkan teks
+  // setelah trim), tapi ikut mempengaruhi deteksi baris gabungan
+  // ("[Intro]   ") dan offset token saat render. Dibuang SEKALI di awal, bukan
+  // per baris, supaya indeks `sourceLine` tetap sama dengan teks asli editor.
+  // Indentasi awal dibiarkan: kolom chord di atas lirik bergantung padanya.
+  const sourceLines = Array.isArray(lines) ? lines : [];
+  const trimmedLines = compactLyricsBlankLines(sourceLines.join('\n')).split('\n');
+
   /**
    * Attach the 1-based source line a row came from.
    *
@@ -475,8 +484,8 @@ export function parseLines(lines, transpose) {
     parsed.push({ ...row, sourceLine, isExpandedFromSection });
   };
 
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
+  for (let index = 0; index < sourceLines.length; index += 1) {
+    const line = trimmedLines[index] ?? '';
     const sourceLine = index + 1;
     const bracketChunks = splitBracketCompoundLine(line);
     if (bracketChunks && bracketChunks.length > 1) {

@@ -757,3 +757,10 @@ export function applyTransformToSelection({ text, selectionStart, selectionEnd, 
     selectionEmpty,
   };
 }
+
+/**
+ * Re-export: aturan perapian whitespace lirik tinggal di satu modul netral
+ * (chord/lyricsWhitespace.js) agar parser & penyimpanan memakai aturan yang
+ * sama tanpa siklus impor.
+ */
+export { trimLyricsTrailingWhitespace } from './chord/lyricsWhitespace.js';

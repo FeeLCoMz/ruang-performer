@@ -12,6 +12,7 @@ import { verifyToken } from '../_auth.js';
 import { randomUUID } from 'crypto';
 import songIdHandler from './song-id.js';
 import { writeAuditLog, getRequestMeta } from '../_audit.js';
+import { normalizeLyricsForStorage } from '../_lyrics.js';
 
 // Module-level flags: schema checks run only once per server instance
 let _schemaEnsured = false;
@@ -585,7 +586,7 @@ export default async function handler(req, res) {
             title,
             artist || null,
             youtubeId || null,
-            item.lyrics || null,
+            typeof item.lyrics === 'string' ? normalizeLyricsForStorage(item.lyrics) : (item.lyrics || null),
             key || null,
             tempoStr,
             genre || null,
