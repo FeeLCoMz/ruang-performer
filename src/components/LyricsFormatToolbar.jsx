@@ -50,6 +50,9 @@ export default function LyricsFormatToolbar({
   previewMode = null,
   onPreviewModeChange,
   previewModes = null,
+  /** Judul & artis lagu — dipakai tombol "Cari di Google". */
+  songTitle = '',
+  songArtist = '',
 }) {
   const hasSelection =
     Number.isInteger(selectionRange?.start) &&
@@ -107,6 +110,23 @@ export default function LyricsFormatToolbar({
       el.setSelectionRange(nextSelectionStart, nextSelectionEnd);
     }, 0);
   };
+
+  /** Query Google dari isian judul/artis, atau kata yang sedang diblok. */
+  const googleQuery = useMemo(() => {
+    const title = String(songTitle || '').trim();
+    const artist = String(songArtist || '').trim();
+    if (title) return [title, artist].filter(Boolean).join(' ');
+    // Judul belum diisi: pakai kata yang diblok supaya tetap berguna saat
+    // menempel lirik lama ke judul yang baru setengah diketik.
+    if (hasSelection) return String(lyricsValue).slice(selectionRange.start, selectionRange.end).trim().slice(0, 80);
+    return '';
+  }, [songTitle, songArtist, hasSelection, lyricsValue, selectionRange]);
+
+  const googleSearchUrl = googleQuery
+    ? `https://www.google.com/search?q=${encodeURIComponent(`${googleQuery} lirik chord`)}`
+    : '';
+
+  const showGoogleSearch = Boolean(googleSearchUrl);
 
   /** Preview the whole-document tidy-up before rewriting anything. */
   const openFormatPreview = () => {
@@ -328,8 +348,22 @@ export default function LyricsFormatToolbar({
       <div className="lyric-format-row">
         <EditorMenuBar menus={menus} ariaLabel="Menu editor lirik" />
 
-        {(showPianoControls || typeof onTranspose === 'function') && (
+        {(showPianoControls || typeof onTranspose === 'function' || showGoogleSearch) && (
           <div className="lyric-format-quick">
+            {showGoogleSearch && (
+              <a
+                className="lyric-quick-btn lyric-quick-search"
+                href={googleSearchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Cari lirik & chord "${googleQuery}" di Google`}
+                aria-label={`Cari lirik dan chord ${googleQuery} di Google`}
+              >
+                <span aria-hidden="true">🔍</span>
+                <span className="lyric-quick-label">Cari di Google</span>
+              </a>
+            )}
+
             {typeof onTranspose === 'function' && (
               <>
                 <button

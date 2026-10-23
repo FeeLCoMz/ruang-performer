@@ -258,6 +258,17 @@
   cursor: not-allowed;
 }
 
+/* Link Google memakai bahasa tombol yang sama dengan transpose/piano. */
+.lyric-quick-search {
+  text-decoration: none;
+  color: var(--primary-accent);
+  border-color: color-mix(in srgb, var(--primary-accent) 35%, var(--border-color));
+}
+
+.lyric-quick-search:hover {
+  text-decoration: none;
+}
+
 .lyric-quick-insert .lyric-quick-label {
   text-transform: none;
 }

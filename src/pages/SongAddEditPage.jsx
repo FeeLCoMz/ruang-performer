@@ -1101,6 +1101,8 @@ export default function SongAddEditPage({
               copyFeedback,
             })}
             autoFocus={false}
+            songTitle={title}
+            songArtist={artist}
             previewSong={{ key: songKey, tempo, lyrics }}
             previewProps={{
               showChords: true,

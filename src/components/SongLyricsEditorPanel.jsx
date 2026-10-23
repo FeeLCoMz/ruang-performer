@@ -34,6 +34,9 @@ export default function SongLyricsEditorPanel({
   previewSong = null,
   previewProps = {},
   baselineLyrics = null,
+  /** Judul/artis lagu untuk tombol "Cari di Google". */
+  songTitle = '',
+  songArtist = '',
 }) {
   const [selectionRange, setSelectionRange] = React.useState({ start: null, end: null });
   // Tracked separately from the character offsets: the preview syncs by line,
@@ -128,6 +131,8 @@ export default function SongLyricsEditorPanel({
             previewMode={previewMode}
             previewModes={PREVIEW_MODES}
             onPreviewModeChange={setPreviewMode}
+            songTitle={songTitle}
+            songArtist={songArtist}
           />
         </div>
       )}
