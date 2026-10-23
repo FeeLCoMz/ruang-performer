@@ -1010,3 +1010,237 @@ body.dark-mode .studio-error {
     padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ---- Animasi membuka editor ----
+   Saat lagu masih diambil dari server, editor tampil sebagai overlay dengan
+   kerangka form (kartu + baris form) yang berdenyut, jadi tombol Edit langsung
+   memberi umpan balik dan user tidak melihat layar diam beberapa detik. */
+.song-editor-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  padding-bottom: max(var(--spacing-lg), env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Latar berbingkai: dua panel yang "membuka" dari tengah, menandakan editor
+   sedang dibuka di atas halaman lagu. */
+.song-editor-loading-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.song-editor-loading-pane {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: var(--primary-bg, #0b0f1e);
+  animation: songEditorPaneIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.song-editor-loading-pane--left {
+  left: 0;
+  transform-origin: left center;
+}
+
+.song-editor-loading-pane--right {
+  right: 0;
+  transform-origin: right center;
+  animation-delay: 0.04s;
+}
+
+.song-editor-loading-card {
+  position: relative;
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  box-shadow: 0 24px 48px rgba(2, 6, 23, 0.45);
+  animation: songEditorOpen 0.24s ease-out both;
+}
+
+.song-editor-loading-head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.song-editor-loading-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.song-editor-loading-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.song-editor-loading-status {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.song-editor-loading-cancel {
+  flex: 0 0 auto;
+}
+
+/* Cincin berputar: satu-satunya elemen yang bergerak terus, jadi jelas bahwa
+   aplikasi masih bekerja walaupun skeleton tidak berdenyut. */
+.song-editor-loading-spinner {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2.5px solid color-mix(in srgb, var(--primary-accent) 25%, transparent);
+  border-top-color: var(--primary-accent);
+  animation: songEditorSpin 0.8s linear infinite;
+}
+
+.song-editor-loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.song-editor-loading-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  animation: songEditorRowIn 0.3s ease-out both;
+  animation-delay: var(--row-delay, 0ms);
+}
+
+.song-editor-loading-chip,
+.song-editor-loading-line {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-secondary) 22%, transparent);
+  animation: songEditorShimmer 1.3s ease-in-out infinite;
+}
+
+.song-editor-loading-chip {
+  width: 74px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.song-editor-loading-bar {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--primary-accent) 18%, transparent);
+}
+
+.song-editor-loading-bar-fill {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: inherit;
+  background: var(--primary-accent);
+  animation: songEditorLoadingSweep 1.15s ease-in-out infinite;
+}
+
+@keyframes songEditorOpen {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes songEditorPaneIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes songEditorRowIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes songEditorSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes songEditorLoadingSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+@keyframes songEditorShimmer {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .song-editor-loading {
+    padding: var(--spacing-sm);
+    padding-bottom: max(var(--spacing-sm), env(safe-area-inset-bottom, 0px));
+  }
+
+  .song-editor-loading-card {
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+  }
+}
+
+/* Hormati preferensi sistem: tanpa animasi berdenyut. */
+@media (prefers-reduced-motion: reduce) {
+  .song-editor-loading-pane,
+  .song-editor-loading-card,
+  .song-editor-loading-row,
+  .song-editor-loading-bar-fill,
+  .song-editor-loading-chip,
+  .song-editor-loading-line,
+  .song-editor-loading-spinner {
+    animation: none;
+  }
+
+  .song-editor-loading-bar-fill {
+    width: 100%;
+    opacity: 0.5;
+  }
+}

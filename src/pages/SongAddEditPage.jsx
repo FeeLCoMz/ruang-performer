@@ -80,6 +80,10 @@ export default function SongAddEditPage({
   onClose = null,
   // Dipanggil setelah simpan; kalau tidak ada, perilaku navigasi bawaan dipakai.
   onSaved = null,
+  // Dipanggil setiap status muat data berubah. Halaman lagu memakainya untuk
+  // menampilkan animasi pembuka: overlay editor baru di-mount setelah data
+  // siap, jadi tanpa callback ini layar diam selama request berjalan.
+  onLoadingChange = null,
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -141,6 +145,22 @@ export default function SongAddEditPage({
       document.body.style.overflow = previousOverflow;
     };
   }, [overlay]);
+
+  // Beri tahu induk bahwa editor sedang mengambil data. Callback-nya disimpan
+  // di ref supaya parent yang mengirim fungsi inline baru setiap render tidak
+  // memicu efek ini berulang.
+  const onLoadingChangeRef = useRef(onLoadingChange);
+  useEffect(() => {
+    onLoadingChangeRef.current = onLoadingChange;
+  }, [onLoadingChange]);
+  useEffect(() => {
+    onLoadingChangeRef.current?.(loadingData);
+  }, [loadingData]);
+  // Pastikan induk tahu editor sudah selesai saat komponen ini dilepas (mis.
+  // ditutup saat masih memuat), kalau tidak animasi pembuka bisa tertinggal.
+  useEffect(() => () => {
+    onLoadingChangeRef.current?.(false);
+  }, []);
 
   // Drag divider: hitung lebar kolom editor dari posisi pointer di dalam grid.
   const handleDividerPointerDown = useCallback((event) => {
@@ -1162,7 +1182,7 @@ export default function SongAddEditPage({
   );
 
   if (loadingData) {
-    return (
+    const loadingSurface = (
       <div className="page-container">
         <div className="song-editor-hero" data-mode={newVersionMode ? 'version' : 'loading'}>
           <div className="song-editor-hero-main">
@@ -1175,6 +1195,18 @@ export default function SongAddEditPage({
           </div>
         </div>
       </div>
+    );
+
+    // Mode overlay: halaman lagu sudah menampilkan animasi pembuka di atas
+    // editor, jadi cukup render permukaan kosong — jangan tambah hero
+    // "Memuat Lagu…" yang akan terlihat berkedip di belakang animasi.
+    if (!overlay) return loadingSurface;
+    if (typeof document === 'undefined') return null;
+    return createPortal(
+      <div className="song-editor-overlay" role="dialog" aria-modal="true" aria-label="Edit lagu">
+        <div className="page-container song-editor-overlay-surface" />
+      </div>,
+      document.body,
     );
   }
 

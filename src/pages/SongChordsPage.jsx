@@ -6,6 +6,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import SongMediaPanel from '../components/SongMediaPanel.jsx';
 import SongChordsInfo from '../components/SongChordsInfo.jsx';
 import SongAddEditPage from './SongAddEditPage.jsx';
+import SongEditorLoadingOverlay from '../components/SongEditorLoadingOverlay.jsx';
 import { getAuthHeader } from '../utils/auth.js';import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
 import { PERMISSIONS } from '../utils/permissionUtils.js';
@@ -31,6 +32,10 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
   const [showSheetMusic, setShowSheetMusic] = useState(false);
   // Editor lagu ditampilkan sebagai overlay supaya tidak pindah halaman.
   const [showEditOverlay, setShowEditOverlay] = useState(false);
+  // True selama editor mengambil data lagu dari server. Saat ini overlay
+  // editor BELUM ada (ia baru di-mount setelah data siap), jadi umpan baliknya
+  // ditampilkan oleh SongEditorLoadingOverlay.
+  const [isEditLoading, setIsEditLoading] = useState(false);
   // =========================
   // 1. Routing & Context
   // =========================
@@ -535,13 +540,18 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
   const handleEdit = () => {
     // Edit dilakukan sebagai overlay di atas halaman ini: pengguna tetap melihat
     // lagu (dan konteks setlist), tidak berpindah ke /songs/edit/:id.
+    setIsEditLoading(true);
     setShowEditOverlay(true);
   };
 
-  const closeEditOverlay = () => setShowEditOverlay(false);
+  const closeEditOverlay = () => {
+    setShowEditOverlay(false);
+    setIsEditLoading(false);
+  };
 
   const handleSongEdited = () => {
     setShowEditOverlay(false);
+    setIsEditLoading(false);
     // Muat ulang data lagu dari server supaya judul/chord/lirik langsung berubah.
     const reloadId = song?.id || songId;
     if (!reloadId) return;
@@ -807,7 +817,14 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
           songIdOverride={song.id}
           onClose={closeEditOverlay}
           onSaved={handleSongEdited}
+          onLoadingChange={setIsEditLoading}
         />
+      )}
+
+      {/* Umpan balik segera: muncul begitu Edit diklik, sebelum editor sempat
+          mengambil data lagu. Batal menutup overlay editor yang masih memuat. */}
+      {showEditOverlay && isEditLoading && (
+        <SongEditorLoadingOverlay onCancel={closeEditOverlay} />
       )}
     </div>
   );
