@@ -11,12 +11,19 @@
  * src/utils/chord/chordDisplayTags.js) sehingga berlaku untuk semua pengguna
  * di semua perangkat, dan dicatat di audit log oleh server
  * (server/handlers/settings.js).
+ *
+ * Selain mengatur kata kunci, panel bisa memindai lagu NYATA di database
+ * (SongTagScan) untuk menemukan tag yang belum dikenali, lalu memasukkannya ke
+ * draft grup yang sesuai.
  */
 import React, { useState } from 'react';
 import useChordDisplayTags, { GROUP_TAG_KEYS } from './useChordDisplayTags.js';
 import TagGroupEditor from './TagGroupEditor.jsx';
 import DetectionPreview from './DetectionPreview.jsx';
+import SongTagScan from './SongTagScan.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
+import { scanSongs, filterNewFindings } from './songTagScan.js';
+import { fetchSongs } from '../../../apiClient.js';
 import { titleCaseKeyword } from '../../../config/chordDisplayConfig.js';
 
 /* eslint-disable react/prop-types */
@@ -27,6 +34,42 @@ export default function TagDetectionPanel() {
   // Reset semua mengubah pengaturan untuk SEMUA pengguna dan tidak bisa
   // dibatalkan, jadi tombolnya membuka konfirmasi lebih dulu.
   const [confirmingResetAll, setConfirmingResetAll] = useState(false);
+
+  // Hasil pindai lagu nyata. Disimpan di panel (bukan di SongTagScan) supaya
+  // "tambahkan ke grup" bisa memakai addKeyword milik hook yang sama.
+  const [scan, setScan] = useState({ loading: false, error: '', result: null });
+
+  const runScan = async () => {
+    setScan({ loading: true, error: '', result: null });
+    try {
+      const songs = await fetchSongs();
+      setScan({ loading: false, error: '', result: scanSongs(songs) });
+    } catch (error) {
+      setScan({
+        loading: false,
+        result: null,
+        error: error?.message || 'Gagal memindai lagu. Pastikan Anda terhubung ke server.',
+      });
+    }
+  };
+
+  // Sembunyikan tag yang namanya sudah terdaftar di grup mana pun.
+  const unknownFindings = scan.result
+    ? filterNewFindings(
+      scan.result.findings,
+      tags.groups().flatMap((group) => tags.active[GROUP_TAG_KEYS[group.id] || group.id] || []),
+    )
+    : [];
+
+  const jumpToGroup = (groupId) => {
+    const target = document.getElementById(`tag-group-${groupId}`);
+    // scrollIntoView tidak ada di sebagian environment test: pakai opsional.
+    target?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    // Fokuskan textarea draft agar admin bisa langsung meninjau perubahan;
+    // heading id di kartu bukan elemen yang bisa difokus.
+    const card = target?.closest?.('.admin-tag-group');
+    card?.querySelector?.('textarea')?.focus?.();
+  };
 
   // Nama grup untuk peringatan konflik ("juga di Instrumen") — tanpa ini
   // admin hanya melihat id internal seperti "midiKeys".
@@ -106,6 +149,17 @@ export default function TagDetectionPanel() {
         detection={tags.detection}
         onChange={tags.setPreviewText}
         onReset={tags.resetPreview}
+      />
+
+      <SongTagScan
+        groups={tags.groups()}
+        findings={unknownFindings}
+        loading={scan.loading}
+        error={scan.error}
+        result={scan.result}
+        onScan={runScan}
+        onAddKeyword={tags.addKeyword}
+        onJumpToGroup={jumpToGroup}
       />
 
       {tags.groups().map((group) => {

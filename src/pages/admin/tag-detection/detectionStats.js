@@ -18,7 +18,7 @@ export const DETECTION_KINDS = [
   { id: 'metadata', label: 'Metadata', icon: '🏷️' },
   { id: 'instrument', label: 'Instrumen', icon: '🎸' },
   { id: 'chord', label: 'Baris chord', icon: '🎵' },
-  { id: 'number', label: 'Not angka', icon: '�' },
+  { id: 'number', label: 'Not angka', icon: '🎼' },
   { id: 'lyrics', label: 'Lirik', icon: '📝' },
 ];
 
