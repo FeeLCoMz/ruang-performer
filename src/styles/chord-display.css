@@ -37,7 +37,16 @@
   border-radius: 4px;
   font-weight: 700;
   font-size: 0.95rem;
-  display: inline-flex;
+  /* Satu tag seksi = satu baris sendiri.
+   *
+   * Dulu `inline-flex`, sehingga dua div seksi yang bersebelahan
+   * ("[Intro]" lalu "[Verse]") mengalir horizontal dan terlihat jadi satu
+   * baris. `flex` + `width: fit-content` membuat chip tetap selebar isinya
+   * (bukan melebar penuh) tapi tidak lagi berbagi baris dengan tag berikutnya.
+   */
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
   align-items: center;
   gap: 8px;
   scroll-margin-top: 80px;
