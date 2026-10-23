@@ -27,6 +27,23 @@ async function ensureTable(client) {
       updatedBy TEXT
     )
   `);
+
+  // Instalasi lama punya app_settings tanpa kolom updatedBy ("table
+  // app_settings has no column named updatedBy"). CREATE TABLE IF NOT EXISTS
+  // tidak menambah kolom ke tabel yang sudah ada, jadi periksa & tambahkan.
+  const columnsResult = await client.execute(`PRAGMA table_info(${TABLE})`);
+  const existing = new Set((columnsResult.rows || []).map((row) => String(row.name)));
+  const requiredColumns = {
+    value: 'TEXT',
+    updatedAt: 'TEXT',
+    updatedBy: 'TEXT',
+  };
+  for (const [name, type] of Object.entries(requiredColumns)) {
+    if (existing.has(name)) continue;
+    // eslint-disable-next-line no-await-in-loop
+    await client.execute(`ALTER TABLE ${TABLE} ADD COLUMN ${name} ${type}`).catch(() => {});
+  }
+
   if (typeof client === 'object') schemaReadyClients.add(client);
 }
 

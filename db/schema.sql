@@ -230,6 +230,16 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 
+-- Pengaturan aplikasi GLOBAL (mis. tag ChordDisplay, key: chordDisplayTags).
+-- Ditulis/dibaca server/_appSettings.js lewat /api/settings.
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updatedAt TEXT DEFAULT (datetime('now')),
+  updatedBy TEXT
+);
+
+
 -- Kuota AI Autofill per user per bulan (YYYY-MM).
 -- Ditulis oleh server/_aiUsage.js dan dibaca GET /api/ai/usage.
 CREATE TABLE IF NOT EXISTS ai_usage (
