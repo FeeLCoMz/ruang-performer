@@ -191,6 +191,19 @@ const MIDI_ONLY_BRACKET_REGEX = /^\[[^[\]:]+:\s*[^[\]]*\]$/;
 const isMidiOnlyBracketTag = (tag = '') => MIDI_ONLY_BRACKET_REGEX.test(String(tag).trim());
 
 /**
+ * Baris yang isinya HANYA tag instrumen ("[Gitar] [Suling]", "[Gitar] [Organ: Dist]").
+ * Baris seperti ini harus tampil sebagai satu baris, jadi tidak dipecah oleh
+ * splitBracketCompoundLine dan tidak dibaca sebagai metadata.
+ */
+function isInstrumentOnlyTagLine(line) {
+  if (typeof line !== 'string') return false;
+  const trimmed = line.trim();
+  if (!/^(\[[^[\]]+\]\s*)+$/.test(trimmed)) return false;
+  const tags = trimmed.match(/\[[^\]]+\]/g) || [];
+  return tags.length > 0 && tags.every((tag) => isInlineInstrumentToken(tag));
+}
+
+/**
  * Pecah baris menjadi token, dengan keyword ber-braket dikeluarkan utuh.
  * Selain itu memakai splitInlineTokens biasa. Dipakai tokenizeChordLine dan
  * tokenizeLyricLine supaya aturan tokenisasi sama untuk kedua jalur.
@@ -327,6 +340,12 @@ function parseLine(line, transpose) {
   if (isMetadataLine(line)) {
     return { type: 'metadata', text: line.trim() };
   }
+  // Satu baris berisi HANYA beberapa tag instrumen ("[Gitar] [Suling]") tetap
+  // satu baris: seluruh braketnya menjadi token isInstrument di baris yang sama,
+  // bukan dipecah jadi beberapa baris terpisah.
+  if (isInstrumentOnlyTagLine(line)) {
+    return { type: 'lyrics', tokens: tokenizeLyricLine(line, transpose) };
+  }
   // "[Verse 2] [Cue: Fill Bell]": baris gabungan yang sengaja tidak dipecah
   // (lihat splitBracketCompoundLine). Header seksi dibaca dari bracket pertama
   // supaya baris itu tetap muncul sebagai seksi, bukan lirik.
@@ -395,6 +414,10 @@ export function classifyLine(line) {
   // Cue mark: baris ber-braket itu kini metadata biasa.
   if (isMetadataLine(trimmed)) {
     return { kind: 'metadata', text: trimmed };
+  }
+
+  if (isInstrumentOnlyTagLine(trimmed)) {
+    return { kind: 'lyrics' };
   }
 
   if (isInstrumentPatchLikeLine(trimmed) || isMetadataLine(trimmed)) {
