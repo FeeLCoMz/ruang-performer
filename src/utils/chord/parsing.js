@@ -11,6 +11,7 @@
  */
 import { getInstrumentSet } from './chordDisplayTags.js';
 import { matchKeywordPattern, escapeRegex } from './textKeywords.js';
+import { isAnnotationBracketToken } from './annotations.js';
 import {
   isChordToken,
   isChordLine,
@@ -50,6 +51,12 @@ const BARLINE_TOKEN_REGEX = /^(\|:|:\||\[\:|\:\]|\|\||\|)$/;
 export function splitSectionLabelWithChords(line) {
   if (typeof line !== 'string') return null;
   const trimmedLine = line.trim();
+
+  // "[Intro: Am F C G]" — chord di dalam braket adalah ANOTASI seksi, bukan
+  // baris chord: chord di anotasi dibekukan dari transpose, jadi baris ini
+  // dibiarkan utuh (seksi dengan label ber-anotasi).
+  if (isAnnotationBracketToken(trimmedLine)) return null;
+
   const match = trimmedLine.match(/^(\[?[A-Za-z0-9 ._-]+\]?)\s*:\s*(.+)$/);
   if (!match) return null;
 
@@ -249,6 +256,14 @@ export const splitKeywordAwareTokens = (line = '') => {
 
     const bracket = rest.slice(0, end + 1);
     const after = rest.slice(end + 1);
+    // Anotasi ([Intro: Am F C G]) selalu utuh: dipecah per kata, chord di dalam
+    // anotasi akan ikut ditranspose sebagai chord nyata.
+    const bracketIsAnnotation = isAnnotationBracketToken(bracket);
+    if (bracketIsAnnotation) {
+      tokens.push(bracket);
+      rest = after;
+      continue;
+    }
     const nextTokenStart = after.trimStart().charAt(0);
     const nextIsSpaceOrEnd = !nextTokenStart || /^\s|\|/.test(after);
     // Label instrumen berdiri sendiri sebagai tag (lalu dimerge
@@ -280,6 +295,11 @@ function tokenizeChordLine(line, transpose) {
     const inlineInstrumentLabel = isInlineInstrumentToken(token);
     if (inlineInstrumentLabel) return [{ token: inlineInstrumentLabel, isInstrument: true }];
 
+    // Anotasi ([Intro: anotasi], [Gitar: anotasi], [Original Key: C]) dibekukan
+    // dari transpose: chord di dalam anotasi adalah keterangan, bukan chord
+    // yang dimainkan. Token tetap dirender sebagai bagian baris chord.
+    if (isAnnotationBracketToken(token)) return [{ token, isChord: true, isAnnotation: true }];
+
     const expandedParenthesizedGroup = splitParenthesizedMultiChordToken(token, transpose);
     if (expandedParenthesizedGroup.length) return expandedParenthesizedGroup;
 
@@ -305,6 +325,9 @@ function tokenizeLyricLine(line, transpose) {
     if (/^\s+$/.test(token)) return [{ token, isSpace: true }];
     const inlineInstrumentLabel = isInlineInstrumentToken(token);
     if (inlineInstrumentLabel) return [{ token: inlineInstrumentLabel, isInstrument: true }];
+
+    // Sama seperti baris chord: anotasi pada baris lirik tidak ikut transpose.
+    if (isAnnotationBracketToken(token)) return [{ token, isChord: true, isAnnotation: true }];
 
     const expandedParenthesizedGroup = splitParenthesizedMultiChordToken(token, transpose);
     if (expandedParenthesizedGroup.length) return expandedParenthesizedGroup;

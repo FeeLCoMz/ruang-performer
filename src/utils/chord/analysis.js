@@ -120,7 +120,10 @@ const parseStandardFormat = (lines) => {
         continue;
       }
 
-      const sectionName = canonicalSection(row.label);
+      // Anotasi seksi ("[Intro: anotasi]") hanya keterangan, bukan nama seksi.
+      const sectionName = canonicalSection(
+        String(row.label || '').replace(/\s*\([^)]*\)\s*$/, ''),
+      );
       if (sectionName) startSection(sectionName);
       continue;
     }

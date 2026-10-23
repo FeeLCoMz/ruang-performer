@@ -24,6 +24,7 @@ import {
   transposeChordToken,
   transposeLeadingDashChordToken,
 } from './chordTokens.js';
+import { isAnnotationBracketToken, isInstrumentAnnotationLabel } from './annotations.js';
 
 /** Regex nama instrumen, dibangun ulang hanya saat daftarnya berubah. */
 const buildPatterns = (keywords) => keywords.map(matchKeywordPattern);
@@ -321,6 +322,15 @@ export const isInlineInstrumentToken = (token) => {
 
   const inside = trimmed.slice(1, -1).trim();
   if (!inside) return false;
+
+  // Anotasi ("[Intro: Am F C G]", "[Original Key: G]") bukan label instrumen:
+  // isi braket setelah titik dua adalah keterangan bebas, dan braket itu harus
+  // dirender utuh (token asli) supaya tidak dipecah/ditranspose per kata.
+  // Pengecualian: label instrumen ("[Organ: Dist]") tetap label instrumen.
+  if (isAnnotationBracketToken(trimmed)) {
+    const label = inside.split(':')[0].trim();
+    if (!isInstrumentAnnotationLabel(label)) return false;
+  }
 
   const colonMatch = inside.match(/^([^:]+):\s*(.*)$/);
   if (colonMatch && matchInlineInstrumentLabel(colonMatch[1])) {

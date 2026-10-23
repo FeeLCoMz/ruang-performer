@@ -9,6 +9,7 @@ import {
 import { sectionToneOf, titleCaseKeyword } from '../config/chordDisplayConfig.js';
 import { getChordDisplayTags } from './chord/chordDisplayTags.js';
 import { formatSectionLabel } from './chord/sections.js';
+import { isAnnotationBracketToken } from './chord/annotations.js';
 import { toNumberNotation } from './notationUtils.js';
 
 const LIKELY_CHORD_SYMBOL_REGEX = /^[A-Ga-g][#b♭♯]?(?:(?:maj|major|min|minor|m|dim|aug|sus|add|M|no|omit|\+|-)?[0-9#b♭♯+\-]*)*(?:\/[A-Ga-g][#b♭♯]?)?$/i;
@@ -189,23 +190,37 @@ function normalizeChordGridCandidate(line) {
   return `${leadingWhitespace}${buildChordGridLine(measures)}`;
 }
 
+/**
+ * Ganti token non-spasi, kecuali braket anotasi ([Intro: Am F C G]), yang
+ * harus verbatim: chord di dalam anotasi bukan chord yang dimainkan.
+ */
+const replaceChordTokens = (line, transformChord) => line.replace(/\[[^\]\n]+\]|\S+/g, (token) => (
+  isAnnotationBracketToken(token) ? token : transformDelimitedChordToken(token, transformChord)
+));
+
 function transformChordContent(text, transformChord) {
   const normalizedText = normalizeLineEndings(text);
 
   return normalizedText
     .split('\n')
     .map((line) => {
+      // Baris yang HANYA berisi anotasi ([Intro: anotasi], [Gitar: anotasi],
+      // [Original Key: C]) tidak disentuh sama sekali: chord di dalam anotasi
+      // adalah keterangan, bukan chord yang dimainkan.
+      if (isAnnotationBracketToken(line.trim())) return line;
+
       if (isChordLine(line)) {
-        return line.replace(/\S+/g, (token) => transformDelimitedChordToken(token, transformChord));
+        return replaceChordTokens(line, transformChord);
       }
 
-      const tokens = line.match(/\S+/g) || [];
+      const tokens = line.match(/[[^]\n]+]|\S+/g) || [];
       const chordLikeCount = tokens.filter((token) => hasLikelyChordContent(token)).length;
       if (tokens.length > 0 && chordLikeCount === tokens.length) {
-        return line.replace(/\S+/g, (token) => transformDelimitedChordToken(token, transformChord));
+        return replaceChordTokens(line, transformChord);
       }
 
       return line.replace(BRACKETED_CHORD_REGEX, (match, open, inner, close) => {
+        if (isAnnotationBracketToken(match)) return match;
         if (!isLikelyChordSymbol(inner.trim())) return match;
         return `${open}${transformChord(inner.trim())}${close}`;
       });
@@ -228,7 +243,7 @@ function detectSectionInfo(line) {
     const dashIndex = text.search(/\s+[-–—]\s+/);
     // "Chorus: na na" -> "na na"; "Pre Chorus - sampai" -> "sampai".
     const suffixText = colonIndex >= 0
-      ? text.slice(colonIndex + 1).trim()
+    ? text.slice(colonIndex + 1).replace(/^\s*\[/, '').trim()
       : (dashIndex >= 0 ? text.slice(dashIndex).replace(/^\s+[-–—]\s+/, '').trim() : '');
     return { ...info, suffixText };
   };
@@ -260,6 +275,7 @@ function detectSectionKey(line) {
   // "Chorus: na na" — lirik di kanan titik dua bukan anotasi.
   const colonIdx = trimmed.indexOf(':');
   const beforeColonText = colonIdx >= 0 ? trimmed.slice(0, colonIdx) : trimmed;
+  // Braket penutup dari label ("[Intro: anotasi]") bukan bagian teks sisa.
   // "Pre-Chorus (2x)" — anotasi bukan bagian label. Chord dalam kurung
   // ("(C G Am F)") bukan anotasi, jadi dibuang saja.
   const annotationMatch = beforeColonText.match(/\(([^)]*)\)/);
@@ -420,6 +436,7 @@ export function detectSectionBadges(text) {
  *   "Chorus 2"        -> "[Chorus 2]"
  *   "Intro: C G Am F" -> "[Intro: C G Am F]"   (chords stay)
  *   "Reff (2x)"       -> "[Chorus (2x)]"
+ *   "Intro: anotasi" -> "[Intro: anotasi]"   (anotasi stays verbatim)
  */
 function normalizeBracketedSectionLabel(insideLabel, info) {
   const rawInside = String(insideLabel || '').trim();
@@ -430,8 +447,10 @@ function normalizeBracketedSectionLabel(insideLabel, info) {
 
   const colonIndex = rawInside.indexOf(':');
   if (colonIndex >= 0) {
-    // "Intro: C G Am F" — chord/anotasi tetap seperti aslinya.
-    return `${info.label}:${rawInside.slice(colonIndex + 1)}`;
+    // "Intro: C G Am F" / "[Intro: anotasi]" — chord & anotasi tetap seperti
+    // aslinya. Braket penutup TIDAK ikut disalin (label hanya isi tag).
+    const rest = rawInside.slice(colonIndex + 1).replace(/\]\s*$/, '');
+    return `${info.label}:${rest}`;
   }
 
   // "Chorus 2" -> "[Chorus 2]", "Reff (2x)" -> "[Chorus (2x)]".
@@ -473,10 +492,16 @@ function normalizeSectionTagLine(line, info) {
   // Bandingkan terhadap bentuk asli label, bukan label tampilan: "Post Chorus"
   // harus tetap cocok walau labelnya "Post-Chorus". Teks KANAN titik dua
   // bukan bagian nama seksi ("Chorus: na na").
-  const originalLabel = String(trimmed.split(':')[0].split(/\s+[-–—]\s+/)[0].replace(/\([^)]*\)/g, '')).trim();
+  const originalLabel = String(trimmed.split(':')[0].split(/\s+[-–—]\s+/)[0].replace(/\([^)]*\)/g, '')).replace(/[\[\]]+$/, '').trim();
   const restText = (() => {
     // Sisa teks = apa pun setelah nama seksi (titik dua atau tanda sambung).
-    const rest = trimmed.slice(originalLabel.length).replace(/^\s*(?:[:]|[-–—])\s*/, '').trim();
+    const rest = trimmed
+      .slice(originalLabel.length)
+      .replace(/^\s*(?:[:]|[-–—])\s*/, '')
+      // Anotasi dalam satu braket ("[Intro: anotasi]") bukan baris perform
+      // terpisah: braket penutup tag dibuang.
+      .replace(/\]\s*$/, '')
+      .trim();
     // "Reff: C G" — chord yang hanya menempel di baris label bukan lirik;
     // membungkus seluruh baris membuat chord hilang dari baris chord.
     return rest && !isChordProgressionText(rest) ? rest : '';

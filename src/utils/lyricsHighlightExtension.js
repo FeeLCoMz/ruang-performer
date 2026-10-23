@@ -48,14 +48,19 @@ function decorateLine(builder, line, lineFrom) {
   };
 
   // 1. Section / structure / instrument label
+  // Anotasi yang hanya berisi teks tetap seksi, tapi bagian setelah titik dua
+  // tidak boleh ikut diwarnai sebagai label — chord di dalamnya chord nyata.
   const section = parseSection(line);
   if (section) {
     const label = String(section.label || '');
     const labelIndex = line.indexOf(label);
+    const annotationStart = labelIndex >= 0 ? line.indexOf(':', labelIndex + label.length) : -1;
     if (labelledStructure(section)) {
       push(0, line.length, toneDecoration(detectSectionTone(label)));
     } else if (labelIndex >= 0) {
-      push(labelIndex, labelIndex + label.length, SECTION_DECORATION);
+      // Label + anotasi ("Intro: anotasi"): label saja yang diwarnai penuh.
+      const labelEnd = annotationStart >= 0 ? annotationStart : labelIndex + label.length;
+      push(labelIndex, labelEnd, SECTION_DECORATION);
     } else {
       push(0, line.length, SECTION_DECORATION);
     }
