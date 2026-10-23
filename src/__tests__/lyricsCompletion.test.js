@@ -4,11 +4,11 @@ import { lyricsCompletionOptions } from '../utils/lyricsCompletion.js';
 describe('lyricsCompletionOptions', () => {
   const labels = lyricsCompletionOptions.map((option) => option.label);
 
-  test('Given a section tag, Then the closing bracket is included in the label but not duplicated on insert', () => {
+  test('Given a section tag, Then the closing bracket is included in the label and inserted as-is', () => {
     const intro = lyricsCompletionOptions.find((option) => option.label === '[Intro]');
     expect(intro).toBeTruthy();
     // The label shows the finished tag; applying it must not leave "[[Intro]]".
-    expect(intro.apply).toBeUndefined();
+    expect(intro.apply).toBe('[Intro]');
   });
 
   test('Given the documented section set, Then every section is offered', () => {
@@ -41,10 +41,13 @@ describe('lyricsCompletionOptions', () => {
     }
   });
 
-  test('Given instrument names, Then applying one inserts a bracketed tag', () => {
-    const guitar = lyricsCompletionOptions.find((option) => option.label === '[Guitar: ]');
+  test('Given instrument names, Then applying one inserts a closed tag without an empty detail slot', () => {
+    const guitar = lyricsCompletionOptions.find((option) => option.label === '[Guitar]');
     expect(guitar).toBeTruthy();
-    expect(guitar.apply).toBe('[Guitar: ]');
+    expect(guitar.apply).toBe('[Guitar]');
+    // "[Guitar: ]" leaves a dangling colon + space when the user only wanted
+    // to mark the instrument; detail is typed manually inside the bracket.
+    expect(labels.some((label) => /^\[Guitar: \]$/.test(label))).toBe(false);
     expect(lyricsCompletionOptions.some((option) => option.label === 'Guitar')).toBe(false);
   });
 
@@ -58,6 +61,15 @@ describe('lyricsCompletionOptions', () => {
   test('Given metadata keys, Then only the bracketed form is offered', () => {
     expect(labels).toContain('[Original Key: ]');
     expect(labels).not.toContain('Original Key:');
+  });
+
+  test('Given a metadata option, Then applying it leaves the bracket open for the value', () => {
+    const originalKey = lyricsCompletionOptions.find(
+      (option) => option.label === '[Original Key: ]',
+    );
+    // Braket penutup tidak disisipkan: user mengisi nilai lebih dulu, dan
+    // autocomplete nilai tidak terhalang "]".
+    expect(originalKey.apply).toBe('[Original Key: ');
   });
 
   test('Given every option, Then each carries enough context to be useful in the popup', () => {

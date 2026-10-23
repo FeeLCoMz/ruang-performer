@@ -33,25 +33,36 @@ const sectionCompletions = () => getAutocompleteSectionLabels(titleCaseKeyword).
  * sengaja tidak ditawarkan — semua keyword ditulis dalam braket siku.
  */
 const metadataCompletions = () => getActiveMetadataKeys().map((keyword) => {
-  const label = `${titleCaseKeyword(keyword)}:`;
+  const name = titleCaseKeyword(keyword);
   const details = AUTOCOMPLETE_METADATA_DETAILS[keyword] || {};
   return {
-    label: `[${label} ]`,
+    // Label popup memakai spasi sebagai penanda nilai: "[Original Key: ]".
+    label: `[${name}: ]`,
     type: 'property',
     detail: details.detail || '',
     info: details.info || undefined,
-    apply: `[${label} ]`,
-    // Klik "Original Key:" menulis "[Original Key: ]" — kursor di dalam braket.
-    applyAfter: ']',
+    // Yang disisipkan TIDAK memuat `]`: user mengisi nilainya dulu, lalu
+    // menutup sendiri. Hasil kosong yang tersisa ("[Original Key: ") tetap
+    // dibaca parser sebagai metadata, dan autocomplete nilai tidak terhalang
+    // braket penutup.
+    apply: `[${name}: `,
   };
 });
 
-/** Instrument words highlighted by the editor — always as a bracketed tag. */
+/**
+ * Instrumen — satu bentuk saja: `[Gitar]`.
+ *
+ * Bentuk `[Gitar: ]` sengaja TIDAK ditawarkan: kalau user hanya ingin menandai
+ * alatnya, hasilnya berakhir dengan titik dua dan spasi menggantung yang tidak
+ * bermakna. Detail tetap didukung parser — cukup ketik titik dua di dalam
+ * braket setelah memilih entri ini, mis. `[Gitar: Dist]`.
+ */
 const instrumentCompletions = () => getAutocompleteInstruments(titleCaseKeyword).map((name) => ({
-  label: `[${name}: ]`,
+  label: `[${name}]`,
   type: 'variable',
   detail: 'Instrumen',
-  apply: `[${name}: ]`,
+  info: 'Tambahkan detail bila perlu: [Gitar: Dist].',
+  apply: `[${name}]`,
 }));
 
 /**
@@ -62,10 +73,12 @@ const buildOptions = () => [
   ...sectionCompletions(),
   ...metadataCompletions(),
   ...instrumentCompletions(),
-].map((option) => (
-  // '' = kursor tepat di dalam braket (setelah "[Nama: ").
-  { ...option, applyAfter: option.applyAfter ?? '' }
-));
+].map((option) => ({
+  ...option,
+  // Setiap opsi menyebut `apply` sendiri, jadi tidak ada nilai bawaan yang
+  // bisa diam-diam menambah `]` atau membiarkan braket terbuka.
+  apply: option.apply ?? option.label,
+}));
 
 const options = buildOptions();
 

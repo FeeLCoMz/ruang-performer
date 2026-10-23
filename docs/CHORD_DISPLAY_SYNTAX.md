@@ -151,7 +151,8 @@
 #     [Gitar, Organ]  -> daftar instrumen dalam satu bracket (tiap nama dicek)
 #     Kurung biasa (Gitar) dan bentuk tanpa bracket "Gitar:" TIDAK dikenali.
 
-# 6b. Dari autocomplete (INSTRUMENT_COMPLETIONS, format "[Nama: ]"):
+# 6b. Dari autocomplete: ditawarkan sebagai tag tertutup "[Nama]".
+#     Detail diketik manual di dalam braket, mis. "[Gitar: Dist]".
 #     Piano, Keys, Guitar, Bass, Drums, Strings, Brass, Vokal, Sax, Suling, Violin
 
 # 6b. Kata kunci instrumen yang dikenali parser (instrumentKeywords) —
@@ -214,12 +215,13 @@
 #   FX:        — Efek
 #   Notes:     — Catatan aransemen
 
-# Instrumen (type: variable, di-apply sebagai "[Nama: ]"):
+# Instrumen (type: variable, di-apply sebagai "[Nama]"):
 #   Piano, Keys, Guitar, Bass, Drums, Strings, Brass, Vokal, Sax, Suling, Violin
 
 # Cue mark (type: keyword, ditawarkan sebagai "[Stop]"):
 #   [Tutti] [Hit] [Aksen] [Stop] [Break] [Fill In] [Fade In] ...
 
 # Trigger autocomplete: mengetik "[".
-# Semua entri yang ditawarkan berbentuk bracket: [Intro], [Patch: ], [Gitar: ], [Stop].
+# Semua entri yang ditawarkan berbentuk bracket: [Intro], [Patch: ], [Gitar], [Stop].
+# Metadata di-apply tanpa "]]" ("[Patch: ") agar nilai bisa langsung diketik.
 # Autocomplete TIDAK menawarkan nama chord.
