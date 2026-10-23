@@ -52,7 +52,7 @@ describe('StageModePage (redesign)', () => {
   });
 
   test('menampilkan topbar konteks band/setlist, key, tempo, dan judul lagu', () => {
-    const { container, unmount } = mount(
+    const { unmount } = mount(
       <StageModePage
         stageMode
         onExit={() => {}}
@@ -77,7 +77,7 @@ describe('StageModePage (redesign)', () => {
   });
 
   test('kontrol transpose/autoscroll tersembunyi sampai tombol Kontrol dibuka', () => {
-    const { container, unmount } = mount(
+    const { unmount } = mount(
       <StageModePage
         stageMode
         onExit={() => {}}
@@ -107,7 +107,7 @@ describe('StageModePage (redesign)', () => {
   });
 
   test('bottom bar menampilkan lagu berikutnya dan membuka sheet urutan lagu', () => {
-    const { container, unmount } = mount(
+    const { unmount } = mount(
       <StageModePage
         stageMode
         onExit={() => {}}
@@ -136,7 +136,7 @@ describe('StageModePage (redesign)', () => {
   });
 
   test('scroll lirik memperbarui progress bar baca', () => {
-    const { container, unmount } = mount(
+    const { unmount } = mount(
       <StageModePage
         stageMode
         onExit={() => {}}
@@ -191,7 +191,7 @@ describe('StageModePage (redesign)', () => {
 
   test('menonaktifkan Stage Mode lewat topbar memanggil onExit', () => {
     const onExit = vi.fn();
-    const { container, unmount } = mount(
+    const { unmount } = mount(
       <StageModePage stageMode onExit={onExit} songs={[song]} setlists={[setlist]} activeSetlist={setlist} />,
     );
 
