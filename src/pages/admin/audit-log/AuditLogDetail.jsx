@@ -25,6 +25,21 @@ function formatFullTimestamp(value) {
   });
 }
 
+/**
+ * `changes` bisa berupa string JSON (dari API) atau objek terurai (dari
+ * formatAuditLog). Objek non-tag (mis. `groups`) tetap aman: pemanggil hanya
+ * membaca kunci yang diharapkan.
+ */
+function parseChanges(value) {
+  if (!value) return null;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
 export default function AuditLogDetail({ log, onClose }) {
   const closeRef = useRef(null);
 
@@ -53,6 +68,11 @@ export default function AuditLogDetail({ log, onClose }) {
     { label: 'Band', value: log.bandId || '-' },
     { label: 'Deskripsi', value: log.description || '-' },
   ];
+
+  // `changes` datang sebagai JSON string atau objek (lihat formatAuditLog).
+  const changes = parseChanges(log.changes);
+  const tagGroups = Array.isArray(changes?.tagGroups) ? changes.tagGroups : [];
+  const conflicts = Array.isArray(changes?.conflicts) ? changes.conflicts : [];
 
   return (
     <div className="audit-log-detail-overlay" onClick={onClose}>
@@ -87,6 +107,45 @@ export default function AuditLogDetail({ log, onClose }) {
             </div>
           ))}
         </dl>
+
+        {tagGroups.length > 0 && (
+          <section className="audit-log-detail-changes" aria-label="Perubahan kata kunci tag">
+            <h3>Perubahan kata kunci</h3>
+            {tagGroups.map(({ groupId, diff }) => (
+              <div key={groupId} className="audit-log-detail-change">
+                <strong>{groupId}</strong>{' '}
+                <span className="admin-muted">
+                  {diff?.before ?? '?'} → {diff?.after ?? '?'} kata kunci
+                </span>
+                {Array.isArray(diff?.added) && diff.added.length > 0 && (
+                  <p className="admin-tag-diff-line is-added">
+                    <span aria-hidden="true">+</span> {diff.added.join(', ')}
+                    {diff.truncated ? ' …' : ''}
+                  </p>
+                )}
+                {Array.isArray(diff?.removed) && diff.removed.length > 0 && (
+                  <p className="admin-tag-diff-line is-removed">
+                    <span aria-hidden="true">−</span> {diff.removed.join(', ')}
+                    {diff.truncated ? ' …' : ''}
+                  </p>
+                )}
+              </div>
+            ))}
+          </section>
+        )}
+
+        {conflicts.length > 0 && (
+          <section className="audit-log-detail-changes" aria-label="Konflik kata kunci">
+            <h3>Konflik antar grup</h3>
+            <ul className="admin-tag-error-list">
+              {conflicts.map((conflict) => (
+                <li key={conflict.keyword}>
+                  <code>{conflict.keyword}</code> — {(conflict.groups || []).join(' + ')}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </aside>
     </div>
   );

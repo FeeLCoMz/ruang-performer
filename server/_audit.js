@@ -32,6 +32,10 @@ const HIGH_ACTIONS = new Set([
   'MEMBER_JOINED',
   'PERMISSION_GRANTED',
   'USER_PASSWORD_RESET',
+  // Menghapus kata kunci dari satu grup tag mengubah cara SEMUA lagu dibaca
+  // parser, sehingga setara aksi berisiko tinggi.
+  'TAG_DETECTION_GROUP_RESET',
+  'TAG_DETECTION_RESET',
 ]);
 
 /** Kategori dari prefix action — sama dengan getActionCategory(). */
@@ -44,6 +48,7 @@ export function resolveActionCategory(action) {
   if (action.startsWith('PERMISSION_') || action.startsWith('ROLE_')) return 'PERMISSION';
   if (action.startsWith('SONG_')) return 'SONG';
   if (action.startsWith('SETLIST_')) return 'SETLIST';
+  if (action.startsWith('TAG_')) return 'TAG';
   return 'SECURITY';
 }
 
@@ -57,8 +62,20 @@ export function resolveActionSeverity(action) {
   return 'low';
 }
 
+/**
+ * Nama tampilan ramah untuk aksi yang formatnya tidak memadai.
+ * 'TAG_DETECTION_UPDATED' → 'Tag Detection Updated' sudah terbaca, tetapi
+ * riwayat tag lebih jelas bila menyebut objeknya langsung.
+ */
+const DISPLAY_NAME_OVERRIDES = {
+  TAG_DETECTION_UPDATED: 'Tag Deteksi Diubah',
+  TAG_DETECTION_GROUP_RESET: 'Tag Deteksi: Grup Direset',
+  TAG_DETECTION_RESET: 'Tag Deteksi: Semua Direset',
+};
+
 /** 'SONG_UPDATED' → 'Song Updated' — sama dengan formatActionName(). */
 export function resolveActionDisplayName(action) {
+  if (DISPLAY_NAME_OVERRIDES[action]) return DISPLAY_NAME_OVERRIDES[action];
   return action
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())

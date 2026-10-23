@@ -14,6 +14,18 @@ vi.mock('../apiClient.js', () => ({
     );
     return { saved: true, setting: { key, value: serverSettings.value } };
   }),
+  // Reset SATU grup: hanya kunci itu yang dibuang (meniru PATCH handler).
+  resetAppSettingGroup: vi.fn(async (key, groupId) => {
+    const next = { ...(serverSettings.value || {}) };
+    const removed = next[groupId] || [];
+    delete next[groupId];
+    serverSettings.value = Object.keys(next).length ? next : null;
+    return {
+      resetGroup: groupId,
+      removed,
+      setting: { key, value: serverSettings.value },
+    };
+  }),
   deleteAppSetting: vi.fn(async () => {
     serverSettings.value = null;
     return { deleted: true };
@@ -186,6 +198,20 @@ describe('pengaturan tag ChordDisplay oleh admin', () => {
 
     expect(getOverriddenGroupIds()).not.toContain('instruments');
     expect(isInstrumentKeywordWord('suling')).toBe(true);
+  });
+
+  test('reset satu grup tidak mengubah grup lain', async () => {
+    await setTagGroupKeywords('instruments', ['gitar']);
+    await setTagGroupKeywords('noChord', ['tanpa chord']);
+    expect(getOverriddenGroupIds().sort()).toEqual(['instruments', 'noChord']);
+
+    const result = await resetTagGroup('instruments');
+
+    expect(result.ok).toBe(true);
+    expect(result.removed).toEqual(['gitar']);
+    // noChord tetap memakai pengaturan admin — inilah bug yang diperbaiki.
+    expect(getOverriddenGroupIds()).toEqual(['noChord']);
+    expect(isNoChordToken('Tanpa Chord')).toBe(true);
   });
 
   test('ringkasan menghitung daftar aktif', async () => {

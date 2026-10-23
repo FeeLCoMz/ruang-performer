@@ -25,6 +25,23 @@ export const SETTINGS_KEYS = [CHORD_DISPLAY_TAGS_KEY];
 
 const ADMIN_ROLES = ['owner', 'admin'];
 
+/**
+ * Id grup tag yang dikenal server. Daftar ini SENGAJA diduplikasi dari
+ * src/config/chordDisplayTagGroups.js (bukan diimpor) dengan alasan yang sama
+ * seperti server/_audit.js: bundle serverless tidak boleh bergantung pada src/.
+ * `getGroupKeywordConflicts` memakai daftar ini untuk membedakan "grup ini baru
+ * untuk server lama" dari "grup ini baru untuk admin yang masih pakai bundle
+ * lama" — keduanya tidak boleh menolak penyimpanan.
+ */
+export const KNOWN_TAG_GROUP_IDS = ['sections', 'metadata', 'instruments', 'noChord', 'midiKeys'];
+
+/** Aksi audit khusus perubahan tag (lihat server/_audit.js & auditLogger.js). */
+export const TAG_AUDIT_ACTIONS = {
+  save: 'TAG_DETECTION_UPDATED',
+  resetOne: 'TAG_DETECTION_GROUP_RESET',
+  resetAll: 'TAG_DETECTION_RESET',
+};
+
 /** Key pengaturan dari URL: /api/settings/:key (catch-all tak mengisi req.params). */
 const settingKeyFromRequest = (req = {}) => {
   if (req.query?.key) return String(req.query.key).trim();
@@ -35,6 +52,80 @@ const settingKeyFromRequest = (req = {}) => {
 };
 
 const isAdmin = (user) => Boolean(user && ADMIN_ROLES.includes(user.role));
+
+/**
+ * Keyword yang terdaftar di lebih dari satu grup.
+ *
+ * Urutan grup menentukan hasil deteksi (grup yang dicek lebih dulu menang),
+ * jadi keyword ganda adalah sumber bug yang sulit terlihat: admin menambah
+ * `keys` ke instrumen padahal MIDI juga memakainya. Server memberi peringatan
+ * (tidak menolak) karena konflik hanya bisa diputuskan oleh admin.
+ *
+ * @returns {{keyword: string, groups: string[]}[]}
+ */
+export function getKeywordConflicts(groups) {
+  const owners = new Map();
+  for (const [groupId, list] of Object.entries(groups || {})) {
+    if (!Array.isArray(list)) continue;
+    for (const keyword of list) {
+      const key = String(keyword || '').trim().toLowerCase();
+      if (!key) continue;
+      if (!owners.has(key)) owners.set(key, []);
+      const list_ = owners.get(key);
+      if (!list_.includes(groupId)) list_.push(groupId);
+    }
+  }
+  return [...owners.entries()]
+    .filter(([, ids]) => ids.length > 1)
+    .map(([keyword, ids]) => ({ keyword, groups: ids }));
+}
+
+/**
+ * Selisih antara daftar lama dan baru satu grup, untuk audit log.
+ * Disimpan per-aksi (bukan seluruh daftar) karena audit log adalah riwayat —
+ * menyimpan 100 keyword penuh membuat drawer detail sulit dibaca.
+ * Dibatasi 40 entri agar satu baris audit tidak membengkak.
+ */
+export function diffKeywordLists(previous, next) {
+  const before = Array.isArray(previous) ? previous : [];
+  const after = Array.isArray(next) ? next : [];
+  const beforeSet = new Set(before);
+  const afterSet = new Set(after);
+  const added = after.filter((keyword) => !beforeSet.has(keyword));
+  const removed = before.filter((keyword) => !afterSet.has(keyword));
+  const LIMIT = 40;
+  return {
+    before: before.length,
+    after: after.length,
+    added: added.slice(0, LIMIT),
+    removed: removed.slice(0, LIMIT),
+    addedCount: added.length,
+    removedCount: removed.length,
+    truncated: added.length > LIMIT || removed.length > LIMIT,
+  };
+}
+
+/**
+ * Ringkasan perubahan seluruh grup untuk deskripsi audit log.
+ * @returns {{groupId: string, diff: object}[]}
+ */
+export function diffTagGroups(previous, next) {
+  const keys = new Set([...Object.keys(previous || {}), ...Object.keys(next || {})]);
+  const changes = [];
+  for (const groupId of keys) {
+    const diff = diffKeywordLists(previous?.[groupId], next?.[groupId]);
+    if (diff.addedCount || diff.removedCount) changes.push({ groupId, diff });
+  }
+  return changes;
+}
+
+/** "3 grup: sections (+2/-1), instruments (+0/-4)" — ringkas untuk tabel audit. */
+export function describeTagChanges(changes) {
+  if (!Array.isArray(changes) || !changes.length) return 'tanpa perubahan kata kunci';
+  return changes
+    .map(({ groupId, diff }) => `${groupId} (+${diff.addedCount}/-${diff.removedCount})`)
+    .join(', ');
+}
 
 /** Validasi isi pengaturan. Daftar keyword dibatasi bentuk aman untuk regex. */
 function validateChordDisplayTags(value) {
@@ -107,8 +198,79 @@ export default async function handler(req, res) {
   const meta = getRequestMeta(req);
 
   if (req.method === 'PUT' || req.method === 'PATCH') {
+    // PATCH dengan body { resetGroup } = kembalikan SATU grup ke bawaan tanpa
+    // menyentuh grup lain. Tanpa cabang ini, "Reset ke bawaan" di satu kartu
+    // akan menghapus pengaturan seluruh grup (semua grup kembali ke bawaan).
+    const resetGroupId = req.body && typeof req.body === 'object' ? req.body.resetGroup : undefined;
+    if (resetGroupId !== undefined) {
+      if (key !== CHORD_DISPLAY_TAGS_KEY) {
+        return res.status(400).json({ error: 'Reset per grup hanya tersedia untuk pengaturan tag' });
+      }
+      const groupId = String(resetGroupId || '').trim();
+      if (!groupId) return res.status(400).json({ error: 'Grup yang akan direset wajib diisi' });
+      if (!KNOWN_TAG_GROUP_IDS.includes(groupId)) {
+        return res.status(400).json({ error: `Grup tag "${groupId}" tidak dikenal` });
+      }
+
+      const stored = (await readSetting(client, key, { fallback: null })) || {};
+      if (!stored[groupId]) {
+        // Grup itu memang memakai bawaan: tidak ada yang perlu diubah, dan
+        // riwayat tidak perlu dipenuhi entri "reset" kosong.
+        return res.status(200).json({
+          setting: { key, value: stored },
+          resetGroup: groupId,
+          unchanged: true,
+        });
+      }
+
+      const removedList = stored[groupId];
+      const next = { ...stored };
+      delete next[groupId];
+
+      try {
+        // Tidak ada grup yang diatur lagi → baris pengaturan dihapus, sama
+        // seperti perilaku klien (resetAllTagGroups).
+        if (!Object.keys(next).length) {
+          await deleteSetting(client, key);
+        } else {
+          await writeSetting(client, key, next, { updatedBy: actorId });
+        }
+      } catch (error) {
+        console.error(`Reset grup tag "${groupId}" gagal:`, error);
+        return res.status(500).json({ error: 'Gagal mereset grup tag', message: error?.message });
+      }
+
+      // Yang dicatat adalah daftar yang DIHAPUS (nilai yang sebelumnya diatur
+      // admin). Daftar bawaan tidak disimpan server, jadi tidak bisa dibandingkan
+      // di sini — klien sudah tahu bawaannya dan hanya butuh jejak perubahan.
+      await writeAuditLog(client, {
+        action: TAG_AUDIT_ACTIONS.resetOne,
+        userId: actorId,
+        resourceType: 'app_settings',
+        resourceId: key,
+        description: `Tag deteksi ChordDisplay: grup "${groupId}" dikembalikan ke bawaan (${removedList.length} kata kunci dihapus)`,
+        changes: {
+          groupId,
+          tagGroups: [{
+            groupId,
+            diff: { removed: removedList.slice(0, 40), removedCount: removedList.length },
+          }],
+        },
+        ...meta,
+      });
+
+      return res.status(200).json({
+        setting: { key, value: next },
+        resetGroup: groupId,
+        removed: removedList,
+      });
+    }
+
     const result = validator(req.body);
     if (!result.ok) return res.status(400).json({ error: result.error });
+
+    // Dibaca SEBELUM menyimpan: audit log butuh daftar lama untuk membuat diff.
+    const previous = (await readSetting(client, key, { fallback: null })) || {};
 
     try {
       await writeSetting(client, key, result.value, { updatedBy: actorId });
@@ -117,21 +279,46 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Gagal menyimpan pengaturan global', message: error?.message });
     }
 
+    const conflicts = getKeywordConflicts(result.value);
+    const changesForAudit = key === CHORD_DISPLAY_TAGS_KEY
+      ? diffTagGroups(previous, result.value)
+      : [];
+
+    // Aksi khusus tag membuat riwayat tag bisa difilter di modul Audit Log;
+    // key lain tetap memakai aksi umum SETTINGS_UPDATED.
+    const isTags = key === CHORD_DISPLAY_TAGS_KEY;
     await writeAuditLog(client, {
-      action: 'SETTINGS_UPDATED',
+      action: isTags ? TAG_AUDIT_ACTIONS.save : 'SETTINGS_UPDATED',
       userId: actorId,
       resourceType: 'app_settings',
       resourceId: key,
-      description: `Pengaturan global "${key}" diperbarui`,
+      description: isTags
+        ? `Tag deteksi ChordDisplay diubah: ${describeTagChanges(changesForAudit)}`
+        : `Pengaturan global "${key}" diperbarui`,
       changes: {
         groups: Object.fromEntries(
           Object.entries(result.value).map(([groupId, list]) => [groupId, list.length]),
         ),
+        // Diff per grup: ingin, dihapus, serta konflik antar grup.
+        tagGroups: changesForAudit,
+        conflicts,
       },
       ...meta,
     });
 
-    return res.status(200).json({ setting: { key, value: result.value }, saved: true });
+    return res.status(200).json({
+      setting: { key, value: result.value },
+      saved: true,
+      // Peringatan (bukan penolakan): admin tetap boleh menyimpan daftar yang
+      // konflik, lalu memutuskan sendiri grup mana yang benar.
+      warnings: conflicts.length
+        ? [{
+          type: 'keyword-conflict',
+          message: `${conflicts.length} kata kunci terdaftar di lebih dari satu grup`,
+          conflicts,
+        }]
+        : [],
+    });
   }
 
   if (req.method === 'DELETE') {
@@ -143,7 +330,7 @@ export default async function handler(req, res) {
     }
 
     await writeAuditLog(client, {
-      action: 'SETTINGS_RESET',
+      action: key === CHORD_DISPLAY_TAGS_KEY ? TAG_AUDIT_ACTIONS.resetAll : 'SETTINGS_RESET',
       userId: actorId,
       resourceType: 'app_settings',
       resourceId: key,

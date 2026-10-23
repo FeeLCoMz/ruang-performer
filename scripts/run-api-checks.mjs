@@ -33,6 +33,7 @@ const CHECKS = [
   { file: 'check-audit-sqlite.mjs', label: 'audit log (SQLite)' },
   { file: 'check-audit-writes.mjs', label: 'penulisan audit' },
   { file: 'check-audit-auth.mjs', label: 'audit auth & member' },
+  { file: 'check-settings-tag-reset.mjs', label: 'reset tag per grup' },
   { file: 'check-midi-cue.mjs', label: 'gate modul MIDI Cue' },
   {
     file: 'check-setlist-write-batch.mjs',

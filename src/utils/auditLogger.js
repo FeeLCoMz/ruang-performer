@@ -43,6 +43,11 @@ export const AUDIT_ACTIONS = {
   SETLIST_CREATED: 'SETLIST_CREATED',
   SETLIST_UPDATED: 'SETLIST_UPDATED',
   SETLIST_DELETED: 'SETLIST_DELETED',
+
+  // Tag deteksi ChordDisplay (global, ditulis server/handlers/settings.js)
+  TAG_DETECTION_UPDATED: 'TAG_DETECTION_UPDATED',
+  TAG_DETECTION_GROUP_RESET: 'TAG_DETECTION_GROUP_RESET',
+  TAG_DETECTION_RESET: 'TAG_DETECTION_RESET',
 };
 
 export const ACTION_CATEGORIES = {
@@ -52,6 +57,7 @@ export const ACTION_CATEGORIES = {
   PERMISSION: 'PERMISSION',
   SONG: 'SONG',
   SETLIST: 'SETLIST',
+  TAG: 'TAG',
   SECURITY: 'SECURITY'
 };
 
@@ -85,6 +91,9 @@ export function getActionSeverity(action) {
     AUDIT_ACTIONS.USER_PASSWORD_RESET,
     AUDIT_ACTIONS.USER_LOGIN_FAILED,
     AUDIT_ACTIONS.USER_LOGIN_BLOCKED,
+    // Reset tag mengubah deteksi semua lagu → setara aksi berisiko tinggi.
+    AUDIT_ACTIONS.TAG_DETECTION_GROUP_RESET,
+    AUDIT_ACTIONS.TAG_DETECTION_RESET,
   ];
 
   if (criticalActions.includes(action)) return SEVERITY_LEVELS.CRITICAL;
@@ -108,8 +117,20 @@ export function getActionCategory(action) {
     return ACTION_CATEGORIES.PERMISSION;
   if (action.startsWith('SONG_')) return ACTION_CATEGORIES.SONG;
   if (action.startsWith('SETLIST_')) return ACTION_CATEGORIES.SETLIST;
+  if (action.startsWith('TAG_')) return ACTION_CATEGORIES.TAG;
   return ACTION_CATEGORIES.SECURITY;
 }
+
+/**
+ * Nama tampilan ramah untuk aksi yang formatnya tidak memadai.
+ * 'TAG_DETECTION_UPDATED' → 'Tag Deteksi Diubah' lebih jelas di tabel audit
+ * daripada hasil generic split-underscore.
+ */
+const ACTION_DISPLAY_OVERRIDES = {
+  [AUDIT_ACTIONS.TAG_DETECTION_UPDATED]: 'Tag Deteksi Diubah',
+  [AUDIT_ACTIONS.TAG_DETECTION_GROUP_RESET]: 'Tag Deteksi: Grup Direset',
+  [AUDIT_ACTIONS.TAG_DETECTION_RESET]: 'Tag Deteksi: Semua Direset',
+};
 
 /**
  * Format action name for display
@@ -117,6 +138,7 @@ export function getActionCategory(action) {
  * @returns {string} Formatted action name
  */
 export function formatActionName(action) {
+  if (ACTION_DISPLAY_OVERRIDES[action]) return ACTION_DISPLAY_OVERRIDES[action];
   return action
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())

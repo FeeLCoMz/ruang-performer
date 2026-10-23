@@ -7,14 +7,16 @@
  * ChordDisplay — struktur lagu, metadata, instrumen,
  * tanda tanpa chord, dan kunci MIDI — beserta pratinjau hasil deteksinya.
  *
- * Perubahan disimpan di localStorage browser ini (lihat
- * src/utils/chord/chordDisplayTags.js) sehingga tidak memerlukan backend, dan
- * langsung dipakai parser/editor tanpa reload.
+ * Perubahan disimpan GLOBAL di tabel app_settings (lihat
+ * src/utils/chord/chordDisplayTags.js) sehingga berlaku untuk semua pengguna
+ * di semua perangkat, dan dicatat di audit log oleh server
+ * (server/handlers/settings.js).
  */
-import React from 'react';
-import useChordDisplayTags from './useChordDisplayTags.js';
+import React, { useState } from 'react';
+import useChordDisplayTags, { GROUP_TAG_KEYS } from './useChordDisplayTags.js';
 import TagGroupEditor from './TagGroupEditor.jsx';
 import DetectionPreview from './DetectionPreview.jsx';
+import ConfirmDialog from './ConfirmDialog.jsx';
 import { titleCaseKeyword } from '../../../config/chordDisplayConfig.js';
 
 /* eslint-disable react/prop-types */
@@ -22,6 +24,19 @@ import { titleCaseKeyword } from '../../../config/chordDisplayConfig.js';
 export default function TagDetectionPanel() {
   const tags = useChordDisplayTags();
   const { summary } = tags.active;
+  // Reset semua mengubah pengaturan untuk SEMUA pengguna dan tidak bisa
+  // dibatalkan, jadi tombolnya membuka konfirmasi lebih dulu.
+  const [confirmingResetAll, setConfirmingResetAll] = useState(false);
+
+  // Nama grup untuk peringatan konflik ("juga di Instrumen") — tanpa ini
+  // admin hanya melihat id internal seperti "midiKeys".
+  const groupLabels = Object.fromEntries(tags.groups().map((group) => [group.id, group.label]));
+  const overriddenLabels = tags.overriddenIds.map((id) => groupLabels[id] || id);
+
+  const resetAll = async () => {
+    await tags.resetAll();
+    setConfirmingResetAll(false);
+  };
 
   const summaryItems = [
     { label: 'Section', value: summary.sections, icon: '🎬' },
@@ -39,7 +54,7 @@ export default function TagDetectionPanel() {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={tags.resetAll}
+            onClick={() => setConfirmingResetAll(true)}
             disabled={tags.overriddenIds.length === 0 || Boolean(tags.savingGroup)}
           >
             ↺ Reset semua ke bawaan
@@ -71,6 +86,19 @@ export default function TagDetectionPanel() {
         {tags.saveError && (
           <div className="admin-panel-banner is-error" role="alert">{tags.saveError}</div>
         )}
+        {tags.conflictWarning && (
+          <div className="admin-panel-banner is-warning" role="status">
+            ⚠️ {tags.conflictWarning}
+            <ul className="admin-tag-error-list">
+              {tags.conflicts.slice(0, 6).map((conflict) => (
+                <li key={conflict.keyword}>
+                  <code>{conflict.keyword}</code> —{' '}
+                  {conflict.groups.map((id) => groupLabels[id] || id).join(' + ')}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <DetectionPreview
@@ -81,7 +109,7 @@ export default function TagDetectionPanel() {
       />
 
       {tags.groups().map((group) => {
-        const activeKeywords = tags.active[groupIdToTagKey(group.id)] || [];
+        const activeKeywords = tags.active[GROUP_TAG_KEYS[group.id] || group.id] || [];
         return (
           <TagGroupEditor
             key={group.id}
@@ -92,7 +120,12 @@ export default function TagDetectionPanel() {
             isOverridden={tags.overriddenIds.includes(group.id)}
             fallbackCount={tags.getFallback(group.id).length}
             saving={tags.savingGroup === group.id}
+            diff={tags.pendingDiffs[group.id]}
+            conflicts={tags.draftConflicts[group.id] || []}
+            groupLabels={groupLabels}
             onChange={(value) => tags.setDraft(group.id, value)}
+            onAddKeyword={(keyword) => tags.addKeyword(group.id, keyword)}
+            onRemoveKeyword={(keyword) => tags.removeKeyword(group.id, keyword)}
             onSave={() => tags.saveGroup(group.id)}
             onReset={() => tags.revertGroup(group.id)}
           />
@@ -106,19 +139,19 @@ export default function TagDetectionPanel() {
         <code>{titleCaseKeyword('pre-chorus')}</code>, <code>{titleCaseKeyword('fx')}</code>.
         Regex chord (C, Am7, G/B, …) tidak diubah dari sini.
       </p>
+
+      {confirmingResetAll && (
+        <ConfirmDialog
+          title="Kembalikan SEMUA tag ke bawaan?"
+          description={`${tags.overriddenIds.length} grup yang diatur admin akan dikembalikan ke daftar bawaan. Pengaturan ini berlaku global, jadi semua pengguna langsung memakai daftar bawaan.`}
+          details={overriddenLabels.map((label) => `${label} — kembali ke bawaan`)}
+          confirmLabel="Ya, reset semua"
+          danger
+          busy={Boolean(tags.savingGroup)}
+          onConfirm={resetAll}
+          onCancel={() => setConfirmingResetAll(false)}
+        />
+      )}
     </>
   );
-}
-
-/** Nama properti daftar aktif (getChordDisplayTags) untuk tiap id grup. */
-const GROUP_TAG_KEYS = {
-  sections: 'STRUCTURE_SECTION_KEYWORDS',
-  metadata: 'METADATA_KEYS',
-  instruments: 'INSTRUMENT_KEYWORDS',
-  noChord: 'NO_CHORD_TOKENS',
-  midiKeys: 'MIDI_ROUTING_KEYS',
-};
-
-function groupIdToTagKey(groupId) {
-  return GROUP_TAG_KEYS[groupId] || groupId;
 }

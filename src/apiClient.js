@@ -183,6 +183,21 @@ export async function saveAppSetting(key, value) {
   });
 }
 
+/**
+ * Kembalikan SATU grup pengaturan ke bawaan, tanpa menyentuh grup lain.
+ *
+ * Berbeda dari deleteAppSetting yang menghapus seluruh baris pengaturan:
+ * dulu "Reset ke bawaan" di satu kartu tag memakai DELETE sehingga grup lain
+ * ikut kembali ke bawaan dan audit log mencatat "semua direset".
+ */
+export async function resetAppSettingGroup(key, groupId) {
+  return request(`/settings/${encodeURIComponent(key)}`, {
+    method: 'PATCH',
+    body: { resetGroup: groupId },
+    fallbackError: 'Gagal mereset pengaturan aplikasi',
+  });
+}
+
 export async function deleteAppSetting(key) {
   return request(`/settings/${encodeURIComponent(key)}`, {
     method: 'DELETE',

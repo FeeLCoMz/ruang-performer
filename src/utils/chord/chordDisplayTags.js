@@ -13,7 +13,7 @@
  *
  * Penyimpanan (khusus admin, diperiksa server):
  *   - setTagGroupKeywords() → PUT /api/settings/chordDisplayTags
- *   - resetTagGroup()       → PUT tanpa grup itu (DELETE bila tak ada lagi)
+ *   - resetTagGroup()       → PATCH { resetGroup } (hanya grup itu)
  *   - resetAllTagGroups()   → DELETE /api/settings/chordDisplayTags
  *
  * Modul ini tidak mengimpor chordDisplayConfig.js: config sendiri membaca
@@ -36,7 +36,12 @@
  *   - subscribeChordDisplayTags(fn)    -> unsubscribe (perubahan & antar tab)
  */
 import * as tagGroupConfig from '../../config/chordDisplayTagGroups.js';
-import { deleteAppSetting, getAppSetting, saveAppSetting } from '../../apiClient.js';
+import {
+  deleteAppSetting,
+  getAppSetting,
+  resetAppSettingGroup,
+  saveAppSetting,
+} from '../../apiClient.js';
 
 /** Key baris di tabel app_settings (lihat server/handlers/settings.js). */
 export const SETTINGS_KEY = 'chordDisplayTags';
@@ -407,7 +412,14 @@ const saveGroups = async (groups) => {
     writeCache(saved);
     buildMemo(saved);
     notify();
-    return { ok: true, groups: saved };
+    // Peringatan server (mis. keyword terdaftar di >1 grup) diteruskan ke
+    // panel admin supaya bisa ditampilkan tanpa request tambahan.
+    return {
+      ok: true,
+      groups: saved,
+      warnings: Array.isArray(data?.warnings) ? data.warnings : [],
+      conflicts: data?.warnings?.find((item) => item.type === 'keyword-conflict')?.conflicts || [],
+    };
   } catch (error) {
     return { ok: false, reason: error?.message || 'Tidak dapat menghubungi server' };
   }
@@ -427,15 +439,22 @@ export const setTagGroupKeywords = async (groupId, keywords = []) => {
   return saveGroups({ ...currentGroups(), [groupId]: cleaned });
 };
 
-/** Kembalikan satu grup ke bawaan untuk semua user. */
+/** Kembalikan satu grup ke bawaan untuk semua user (grup lain tidak diubah). */
 export const resetTagGroup = async (groupId) => {
   if (!getTagGroup(groupId)) return { ok: false, reason: 'Grup tidak dikenal' };
 
-  const next = { ...currentGroups() };
-  delete next[groupId];
-  // Tidak ada lagi grup yang diatur admin → hapus baris pengaturan global.
-  if (!overriddenIdsFrom(next).length) return resetAllTagGroups();
-  return saveGroups(next);
+  try {
+    const data = await resetAppSettingGroup(SETTINGS_KEY, groupId);
+    // Server mengembalikan nilai pengaturan terbaru; cache lokal mengikuti agar
+    // tab lain langsung melihat daftar bawaan tanpa memuat ulang.
+    const saved = sanitizeGroups(data?.setting?.value);
+    writeCache(saved);
+    buildMemo(saved);
+    notify();
+    return { ok: true, unchanged: Boolean(data?.unchanged), removed: data?.removed || [] };
+  } catch (error) {
+    return { ok: false, reason: error?.message || 'Tidak dapat menghubungi server' };
+  }
 };
 
 /** Kembalikan SEMUA grup ke bawaan (hapus pengaturan global). */

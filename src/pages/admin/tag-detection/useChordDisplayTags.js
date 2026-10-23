@@ -7,8 +7,13 @@
  * Simpan manual (bukan per ketikan) supaya admin bisa melihat pratinjau dan
  * memperbaiki typo. Penyimpanan bersifat GLOBAL: daftar dikirim ke
  * /api/settings/chordDisplayTags sehingga berlaku untuk semua pengguna.
+ *
+ * Audit log TIDAK ditulis di sini: server mencatat TAG_DETECTION_* berikut diff
+ * lama→baru (server/handlers/settings.js) karena hanya server yang tahu daftar
+ * lama yang benar. Yang ditampilkan hook ini adalah akibatnya bagi admin:
+ * ringkasan perubahan (banner) dan konflik antar grup (peringatan).
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   formatKeywordList,
   getTagGroups,
@@ -28,6 +33,14 @@ import {
   summarizeActiveTags,
 } from '../../../utils/chord/chordDisplayTags.js';
 import { summarizeDetection } from './detectionStats.js';
+import {
+  addKeywordToDraft,
+  diffGroupDraft,
+  describeDiff,
+  findKeywordConflicts,
+  keywordsFromDraft,
+  removeKeywordFromDraft,
+} from './tagAudit.js';
 
 /**
  * Draft awal editor per grup. Memakai getTagGroups() (bukan konstanta) karena
@@ -37,6 +50,18 @@ import { summarizeDetection } from './detectionStats.js';
 const buildDrafts = () => Object.fromEntries(
   getTagGroups().map((group) => [group.id, formatKeywordList(readTagGroupKeywords(group.id))]),
 );
+
+/**
+ * Nama properti daftar aktif (getChordDisplayTags) untuk tiap id grup.
+ * Dipakai untuk membandingkan draft dengan daftar aktif saat menghitung diff.
+ */
+export const GROUP_TAG_KEYS = {
+  sections: 'STRUCTURE_SECTION_KEYWORDS',
+  metadata: 'METADATA_KEYS',
+  instruments: 'INSTRUMENT_KEYWORDS',
+  noChord: 'NO_CHORD_TOKENS',
+  midiKeys: 'MIDI_ROUTING_KEYS',
+};
 
 const listFromDraft = (draft = '') => String(draft)
   .split(/\r?\n/)
@@ -65,6 +90,13 @@ export function useChordDisplayTags() {
   const [saveError, setSaveError] = useState('');
   const [savingGroup, setSavingGroup] = useState(null);
   const [previewText, setPreviewText] = useState(() => buildTagPreviewSample());
+  // Peringatan konflik terakhir dari server (keyword di >1 grup). Tetap
+  // ditampilkan setelah simpan sukses: admin perlu tahu dampaknya.
+  const [conflicts, setConflicts] = useState([]);
+  const [conflictWarning, setConflictWarning] = useState('');
+  // Keyword yang SUDAH konflik sebelum admin menyimpan (umnya dari daftar
+  // bawaan). Disimpan di ref agar setiap simpan bisa membedakan problem baru.
+  const baselineConflicts = useRef(new Set());
 
   /** Muat pengaturan global terbaru lalu segarkan draft editor. */
   const refreshFromServer = useCallback(async () => {
@@ -84,6 +116,10 @@ export function useChordDisplayTags() {
 
   const errors = useMemo(() => validateDrafts(drafts), [drafts]);
 
+  // Rekam konflik awal hanya sekali (saat panel dibuka): "konflik bawaan"
+  // harus dinilai dari daftar sebelum admin mengubah apa pun.
+  const baselineCaptured = useRef(false);
+
   // `version` bertambah setiap ada perubahan (simpan/reset/storage event);
   // daftar tag sendiri disimpan di luar React, jadi version-lah dependensinya.
   const active = useMemo(
@@ -95,11 +131,74 @@ export function useChordDisplayTags() {
 
   const detection = useMemo(() => summarizeDetection(previewText), [previewText, version]);
 
+  // Konflik dihitung dari semua daftar AKTIF, bukan hanya yang sedang diedit,
+  // karena keyword bisa pindah grup: peringatan harus muncul di kedua kartu.
+  // Daftar bawaan sendiri sudah bisa mengandung keyword ganda, jadi
+  // activeConflicts dipakai apa adanya untuk peringatan DRAFT, dan
+  // baselineConflicts dipakai untuk menyaring pesan SETELAH simpan.
+  const activeConflicts = useMemo(() => findKeywordConflicts(active), [active]);
+
+  useEffect(() => {
+    if (baselineCaptured.current) return;
+    baselineCaptured.current = true;
+    baselineConflicts.current = new Set(activeConflicts.map((item) => item.keyword));
+  }, [activeConflicts]);
+
+  /**
+   * Konflik pada DRAFT tiap grup (belum disimpan) — peringatan di kartu grup.
+   * Konflik yang sudah ada sejak panel dibuka disaring agar admin tidak
+   * diperingatkan soal daftar bawaan yang bukan ia ubah.
+   */
+  const draftConflicts = useMemo(() => Object.fromEntries(
+    getTagGroups().map((group) => {
+      const tagKey = GROUP_TAG_KEYS[group.id] || group.id;
+      const others = { ...active };
+      others[tagKey] = keywordsFromDraft(drafts[group.id], parseKeywordList);
+      const conflicts = findKeywordConflicts(others)
+        .filter((item) => !baselineConflicts.current.has(item.keyword))
+        .filter((item) => item.groups.includes(group.id));
+      return [group.id, conflicts];
+    }),
+  ), [drafts, active]);
+
+  /**
+   * Selisih draft vs daftar aktif per grup — dipakai tombol simpan untuk
+   * menampilkan "+2 −1" sehingga admin tahu persis apa yang akan dikirim
+   * sebelum menekan simpan. Baris tidak valid diabaikan (tombol sudah mati).
+   */
+  const pendingDiffs = useMemo(() => Object.fromEntries(
+    Object.entries(drafts).map(([groupId, text]) => {
+      const activeKeywords = active[GROUP_TAG_KEYS[groupId]] || [];
+      return [groupId, diffGroupDraft(text, activeKeywords, parseKeywordList)];
+    }),
+  ), [drafts, active]);
+
   const setDraft = useCallback((groupId, text) => {
     setDrafts((prev) => ({ ...prev, [groupId]: text }));
     setSaveMessage('');
     setSaveError('');
+    // Peringatan konflik hasil simpan sebelumnya tidak berlaku lagi untuk
+    // draft yang baru diubah — hindari admin mengira konflik itu masih sama.
+    setConflictWarning('');
   }, []);
+
+  /**
+   * Tambah satu keyword lewat input chip (bukan textarea).
+   * Hanya mengubah DRAFT: admin tetap melihat ringkasan perubahan dan harus
+   * menekan simpan, sama seperti suntingan manual.
+   * @returns {{ok: boolean, reason?: string}}
+   */
+  const addKeyword = useCallback((groupId, keyword) => {
+    const result = addKeywordToDraft(drafts[groupId] || '', keyword, parseKeywordList);
+    if (!result.ok) return result;
+    setDraft(groupId, result.draft);
+    return { ok: true };
+  }, [drafts, setDraft]);
+
+  /** Hapus satu keyword dari draft (chip ber-×). */
+  const removeKeyword = useCallback((groupId, keyword) => {
+    setDraft(groupId, removeKeywordFromDraft(drafts[groupId] || '', keyword, parseKeywordList));
+  }, [drafts, setDraft]);
 
   /** Simpan satu grup ke server (berlaku untuk semua pengguna). */
   const saveGroup = useCallback(async (groupId) => {
@@ -111,6 +210,9 @@ export function useChordDisplayTags() {
     }
 
     const group = getTagGroups().find((item) => item.id === groupId);
+    // Diff dihitung dari daftar SEBELUM simpan agar ringkasan mencerminkan
+    // perubahan request ini, bukan seluruh isi daftar.
+    const diff = pendingDiffs[groupId];
     setSavingGroup(groupId);
     setSaveError('');
     setSaveMessage('');
@@ -121,10 +223,25 @@ export function useChordDisplayTags() {
       setSaveError(`Gagal menyimpan "${group?.label || groupId}": ${result.reason}`);
       return;
     }
+
+    const newConflicts = (Array.isArray(result.conflicts) ? result.conflicts : [])
+      .filter((item) => !baselineConflicts.current.has(item.keyword));
+    setConflicts(newConflicts);
+    // Konflik yang sudah ada sejak bawaan bukan masalah baru bagi admin.
+    setConflictWarning(newConflicts.length
+      ? `${newConflicts.length} kata kunci terdaftar di lebih dari satu grup — urutan grup menentukan hasil deteksi.`
+      : '');
+
     setDrafts(buildDrafts());
-    setSaveMessage(`Daftar "${group?.label || groupId}" disimpan untuk semua pengguna.`);
+    const diffText = describeDiff(diff);
+    const changedGroups = newConflicts.length
+      ? ` Ditemukan konflik di: ${[...new Set(newConflicts.map((item) => item.groups.join(' + ')))].join('; ')}.`
+      : '';
+    setSaveMessage(
+      `Daftar "${group?.label || groupId}" disimpan untuk semua pengguna${diffText ? ` (${diffText})` : ''}.${changedGroups}`,
+    );
     setVersion((value) => value + 1);
-  }, [drafts, errors]);
+  }, [drafts, errors, pendingDiffs]);
 
   /** Kembalikan satu grup ke bawaan untuk semua pengguna. */
   const revertGroup = useCallback(async (groupId) => {
@@ -139,6 +256,8 @@ export function useChordDisplayTags() {
       setSaveError(`Gagal mereset "${group?.label || groupId}": ${result.reason}`);
       return;
     }
+    setConflicts([]);
+    setConflictWarning('');
     setDrafts(buildDrafts());
     setSaveMessage(`Daftar "${group?.label || groupId}" dikembalikan ke bawaan.`);
     setVersion((value) => value + 1);
@@ -153,6 +272,8 @@ export function useChordDisplayTags() {
       setSaveError(`Gagal mereset pengaturan: ${result.reason}`);
       return;
     }
+    setConflicts([]);
+    setConflictWarning('');
     setDrafts(buildDrafts());
     setSaveMessage('Semua daftar kata kunci dikembalikan ke bawaan untuk semua pengguna.');
     setVersion((value) => value + 1);
@@ -167,6 +288,9 @@ export function useChordDisplayTags() {
     /** Daftar grup: fungsi, karena config baru siap setelah siklus impor selesai. */
     groups: getTagGroups,
     active,
+    activeConflicts,
+    draftConflicts,
+    pendingDiffs,
     drafts,
     errors,
     overriddenIds,
@@ -175,6 +299,8 @@ export function useChordDisplayTags() {
     setPreviewText,
     resetPreview,
     setDraft,
+    addKeyword,
+    removeKeyword,
     saveGroup,
     revertGroup,
     resetAll,
@@ -182,6 +308,8 @@ export function useChordDisplayTags() {
     savingGroup,
     saveMessage,
     saveError,
+    conflicts,
+    conflictWarning,
     getFallback: getTagGroupFallback,
   };
 }
