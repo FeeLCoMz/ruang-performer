@@ -41,6 +41,7 @@ import toolsHandler from '../server/handlers/tools.js';
 import toolsBackupHandler from '../server/handlers/tools-backup.js';
 import toolsRestoreHandler from '../server/handlers/tools-restore.js';
 import auditLogsHandler from '../server/handlers/audit-logs.js';
+import settingsHandler from '../server/handlers/settings.js';
 // AI (AI Autofill + AI Chord & Sheet Music Transcriber). File-nya tetap di
 // api/ai.js, jadi modul ini ikut di-bundle ke function dan tidak di-ignore.
 import aiHandler from './ai.js';
@@ -208,6 +209,14 @@ async function dispatch(req, res) {
 
   // ---- Audit logs (owner only; handler memeriksa role) --------------------
   if (resource === 'audit-logs') return auditLogsHandler(req, res);
+
+  // ---- Pengaturan aplikasi global (/api/settings, /api/settings/:key) ------
+  // GET: semua user login (daftar tag dipakai parser lirik).
+  // PUT/DELETE: hanya owner/admin (diperiksa handler).
+  if (resource === 'settings') {
+    req.params = { ...(req.params || {}), key: second };
+    return settingsHandler(req, res);
+  }
 
   res.status(404).json({ error: 'Endpoint tidak ditemukan' });
 }

@@ -201,11 +201,24 @@ describe('AdminPage', () => {
 
   test('semua tab tersedia untuk owner', () => {
     const tabs = Array.from(container.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent);
-    expect(tabs).toHaveLength(4);
+    expect(tabs).toHaveLength(5);
     expect(tabs.join(' ')).toContain('Ringkasan');
     expect(tabs.join(' ')).toContain('User');
+    expect(tabs.join(' ')).toContain('Tag & Deteksi');
     expect(tabs.join(' ')).toContain('Backup');
     expect(tabs.join(' ')).toContain('Audit Log');
+  });
+
+  test('tab Tag & Deteksi menampilkan kelompok tag ChordDisplay dan pratinjaunya', async () => {
+    await openTab('tags');
+
+    const text = container.textContent;
+    expect(text).toContain('Tag & Deteksi ChordDisplay');
+    expect(text).toContain('Struktur Lagu');
+    expect(text).toContain('Cue Mark Inline');
+    expect(text).toContain('Instrumen');
+    expect(text).toContain('Pratinjau Deteksi');
+    expect(container.querySelectorAll('.admin-tag-group').length).toBeGreaterThan(3);
   });
 
   test('URL hash membuka tab yang dituju langsung', async () => {

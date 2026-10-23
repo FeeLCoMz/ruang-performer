@@ -1,15 +1,20 @@
 /**
  * chordDisplayConfig.js — KONFIGURASI MANUAL ChordDisplay
  * =========================================================
- * File ini DIBACA OLEH APLIKASI. Semua daftar di bawah dipakai langsung oleh:
- *   - src/utils/chordUtils.js        (parser chord/lirik)
- *   - src/utils/lyricsCompletion.js  (autocompletion editor)
+ * File ini menyimpan daftar BAWAAN. Parser, editor, dan autocomplete membaca
+ * daftar aktif lewat src/utils/chord/chordDisplayTags.js, yang mengambil nilai
+ * di sini lalu menimpanya dengan kata kunci yang diatur Administrator di
+ * halaman /admin (tab "Tag & Deteksi").
  *
- * Edit daftar di sini — tidak perlu menyentuh file lain.
+ * Edit daftar di sini hanya mengubah BAWAAN: pengaturan admin yang sudah
+ * tersimpan di browser tetap menang. Untuk mengembalikan ke bawaan, pakai
+ * tombol "Reset" di tab tersebut.
+ *
  * Urutan item mempengaruhi prioritas pencocokan (item lebih awal = dipilih dulu).
  * Semua pencocokan kata kunci tidak peka huruf besar/kecil.
  * =========================================================
  */
+import { getChordDisplayTags } from '../utils/chord/chordDisplayTags.js';
 
 /* ------------------------------------------------------------------
  * UTILITAS
@@ -94,6 +99,12 @@ export const canonicalSectionKeyword = (keyword = '') => {
   return SECTION_NAME_ALIASES[lower] || lower;
 };
 
+/** Sama seperti canonicalSectionKeyword, tetapi memakai alias yang AKTIF. */
+export const getCanonicalSectionKeyword = (keyword = '') => {
+  const lower = String(keyword).trim().toLowerCase();
+  return getChordDisplayTags().SECTION_NAME_ALIASES[lower] || lower;
+};
+
 /**
  * Label yang ditawarkan autocompletion — DITURUNKAN dari STRUCTURE_SECTION_KEYWORDS,
  * sehingga autocomplete dan parser SELALU memakai kata kunci yang sama.
@@ -121,10 +132,11 @@ export const sectionToneOf = (label = '') => {
 
   const words = lower.split(/[\s:()[\]]+/).filter(Boolean);
   const candidates = new Set([lower, ...words]);
+  const aliases = getChordDisplayTags().SECTION_NAME_ALIASES;
 
   for (const rule of SECTION_TONE_RULES) {
     for (const candidate of candidates) {
-      const canonical = canonicalSectionKeyword(candidate);
+      const canonical = aliases[candidate] || canonicalSectionKeyword(candidate);
       if (rule.keywords.includes(canonical)) return rule.tone;
     }
   }
@@ -378,7 +390,12 @@ const DETAIL_DYNAMICS = {
   info: 'Contoh: Dynamics: mf',
 };
 
-const AUTOCOMPLETE_METADATA_DETAILS = {
+/**
+ * Deskripsi per keyword metadata, juga dibaca autocomplete editor
+ * (lyricsCompletion.js) untuk keyword yang ditambahkan admin.
+ * @type {Record<string, {detail: string, info: string}>}
+ */
+export const AUTOCOMPLETE_METADATA_DETAILS = {
   instrument: DETAIL_INSTRUMENT,
   instrumen: DETAIL_INSTRUMENT,
   modulation: DETAIL_MODULATION,

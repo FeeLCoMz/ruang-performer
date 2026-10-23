@@ -22,6 +22,7 @@ import React, { memo, useMemo, useEffect, useRef, useState } from 'react';
 import NumberToken from './NumberToken.jsx';
 import { parseTimestampToken, parseLines, chordTextToNumberText, chordTextToJazzText, chordTextToSimpleText } from '../utils/chordUtils.js';
 import { useMidiCueVersion } from '../modules/midi-cue/useMidiCueVersion.js';
+import { useChordDisplayTagsVersion } from './useChordDisplayTagsVersion.js';
 import { SECTION_ICONS, sectionToneOf } from '../config/chordDisplayConfig.js';
 
 // Ikon per seksi lagu. Tone dihitung oleh config (bersama parser & editor),
@@ -179,9 +180,12 @@ const ChordDisplayBase = memo(function ChordDisplay({
   // midiCueVersion ikut jadi dependency: saat modul MIDI Cue dimatikan, hasil
   // parse berubah (cue tidak lagi menghasilkan data MIDI) tanpa teks berubah.
   const midiCueVersion = useMidiCueVersion();
+  // Daftar tag dapat diubah admin secara global: parse ulang saat berubah agar
+  // keyword baru/hapus langsung tercermin tanpa reload.
+  const tagsVersion = useChordDisplayTagsVersion();
   const parsedLines = useMemo(
     () => parseLines(lines, effectiveTranspose),
-    [lines, effectiveTranspose, midiCueVersion]
+    [lines, effectiveTranspose, midiCueVersion, tagsVersion]
   );
 
   // Auto-fit horizontal dihapus: lirik tidak lagi otomatis diubah ukurannya —

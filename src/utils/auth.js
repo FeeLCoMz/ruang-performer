@@ -5,6 +5,14 @@ const USER_KEY = 'authUser';
 
 export function saveToken(token) {
   localStorage.setItem(TOKEN_KEY, token);
+  // Pengaturan global (kelompok tag ChordDisplay) hanya bisa dibaca dengan
+  // token. Muat ulang setiap kali sesi baru dibuat — tanpa menunggu reload —
+  // supaya admin & member melihat daftar yang sama di seluruh aplikasi.
+  import('./chord/chordDisplayTags.js')
+    .then(({ loadChordDisplayTags }) => loadChordDisplayTags({ force: true }))
+    .catch(() => {
+      // Bukan masalah fatal: daftar bawaan/cache tetap dipakai.
+    });
 }
 
 export function getToken() {

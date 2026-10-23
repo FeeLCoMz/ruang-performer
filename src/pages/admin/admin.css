@@ -888,3 +888,210 @@
     left: 0;
   }
 }
+
+/* ---------- Tab "Tag & Deteksi" (kelompok tag ChordDisplay) ---------- */
+
+.admin-tag-summary {
+  gap: 14px;
+}
+
+.admin-tag-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 10px;
+}
+
+.admin-tag-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px;
+  border: 1px solid var(--admin-divider, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-md, 10px);
+  background: var(--admin-surface, rgba(255, 255, 255, 0.04));
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.admin-tag-stat strong {
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.admin-tag-stat span:last-child {
+  opacity: 0.75;
+}
+
+.admin-tag-badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border: 1px solid var(--admin-field-border, rgba(255, 255, 255, 0.15));
+  opacity: 0.8;
+}
+
+.admin-tag-badge.is-custom {
+  color: var(--admin-accent, #8b5cf6);
+  border-color: var(--admin-accent-border, rgba(139, 92, 246, 0.4));
+  background: var(--admin-accent-surface, rgba(139, 92, 246, 0.14));
+  opacity: 1;
+}
+
+.admin-tag-count {
+  font-size: 0.82rem;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.admin-tag-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-tag-editor-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.admin-tag-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--admin-field-border, rgba(255, 255, 255, 0.15));
+  background: color-mix(in srgb, var(--text-primary, #fff) 4%, transparent);
+  color: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.admin-tag-textarea:focus-visible {
+  outline: 2px solid var(--admin-accent, #8b5cf6);
+  outline-offset: 1px;
+}
+
+.admin-tag-textarea[aria-invalid='true'] {
+  border-color: var(--admin-danger-border, rgba(239, 68, 68, 0.45));
+}
+
+.admin-tag-preview-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.admin-tag-error-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 0.84rem;
+}
+
+.admin-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-tag-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  border: 1px solid var(--admin-divider, rgba(255, 255, 255, 0.1));
+  background: var(--admin-surface, rgba(255, 255, 255, 0.05));
+  opacity: 0.9;
+}
+
+.admin-tag-chip.is-more {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.admin-tag-aliases ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+.admin-tag-alias-off {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.admin-tag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-tag-detections {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--admin-divider, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-md, 10px);
+  overflow: hidden;
+}
+
+.admin-tag-detection {
+  display: grid;
+  grid-template-columns: 40px 120px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 0.84rem;
+  border-bottom: 1px solid var(--admin-divider, rgba(255, 255, 255, 0.06));
+}
+
+.admin-tag-detection:last-child {
+  border-bottom: none;
+}
+
+.admin-tag-detection-line {
+  opacity: 0.55;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-tag-detection-kind {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-tag-detection-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  opacity: 0.85;
+}
+
+.admin-tag-detection.is-structure .admin-tag-detection-kind { color: var(--admin-accent, #8b5cf6); }
+.admin-tag-detection.is-modulation .admin-tag-detection-kind { color: var(--warning, #f59e0b); }
+.admin-tag-detection.is-instrument .admin-tag-detection-kind { color: var(--admin-success, #34d399); }
+.admin-tag-detection.is-cue .admin-tag-detection-kind { color: var(--admin-danger, #ef4444); }
+.admin-tag-detection.is-lyrics .admin-tag-detection-kind { opacity: 0.6; }
+
+.admin-tag-footnote {
+  max-width: 70ch;
+}
+
+@media (max-width: 640px) {
+  .admin-tag-detection {
+    grid-template-columns: 32px 1fr;
+  }
+
+  .admin-tag-detection-label {
+    grid-column: 2;
+    white-space: normal;
+  }
+}

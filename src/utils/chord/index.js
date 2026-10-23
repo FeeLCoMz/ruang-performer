@@ -2,7 +2,9 @@
  * index.js — pintu masuk publik folder src/utils/chord/
  *
  * Modul dipecah berdasarkan tanggung jawab:
- *   textKeywords.js  — helper pencocokan kata kunci (escapeRegex, metadataKeys)
+ *   textKeywords.js  — helper pencocokan kata kunci (escapeRegex, buildKeywordAlternation)
+ *   chordDisplayTags.js — daftar kata kunci AKTIF (bawaan + editan admin),
+ *                      termasuk getMetadataKeySet() pengganti metadataKeys
  *   chordTokens.js   — notasi chord: isChordLine, transposeChord, chordToNumber, dll.
  *   instruments.js   — deteksi label instrumen & cue mark
  *   sections.js      — deteksi seksi, modulasi, metadata
@@ -12,13 +14,29 @@
  *   analysis.js      — parseChordPro, statistik chord, estimasi key, modulasi
  */
 export {
-  metadataKeys,
   escapeRegex,
   createKeywordPattern,
   matchKeywordPattern,
   escapeKeywordAlternation,
   buildKeywordAlternation,
 } from './textKeywords.js';
+
+// Daftar keyword kini dapat diubah admin (bukan lagi konstanta statis), jadi
+// yang diekspor adalah fungsi pembaca, bukan `metadataKeys`.
+export {
+  getActiveMetadataKeys,
+  getChordDisplayTags,
+  getCueMarkSet,
+  getInstrumentSet,
+  getMetadataKeySet,
+  getSectionKeywordPatterns,
+  getTagGroupFallback,
+  resetAllTagGroups,
+  resetTagGroup,
+  setTagGroupKeywords,
+  subscribeChordDisplayTags,
+  summarizeActiveTags,
+} from './chordDisplayTags.js';
 
 export * from './chordTokens.js';
 export * from './instruments.js';

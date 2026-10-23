@@ -3,50 +3,60 @@
  *
  * Deteksi label seksi lagu, modulasi, dan metadata dari sebuah baris teks.
  *
- * Kata kunci seksi & modulasi berasal dari src/config/chordDisplayConfig.js
- * dan dicocokkan sebagai kata utuh (lihat textKeywords.js).
+ * Kata kunci seksi & modulasi berasal dari chordDisplayTags.js (bawaan config
+ * + editan admin di /admin -> Tag & Deteksi) dan dicocokkan sebagai kata utuh
+ * (lihat textKeywords.js).
  */
 import {
-  CUE_MARK_KEYWORDS,
-  INSTRUMENT_KEYWORDS,
-  MIDI_KEYS_ALSO_INSTRUMENT,
-  MIDI_ROUTING_KEYS,
-  MODULATION_KEYWORDS,
-  SECTION_NAME_ALIASES,
-  STRUCTURE_SECTION_KEYWORDS,
-} from '../../config/chordDisplayConfig.js';
+  getChordDisplayTags,
+  getCueMarkSet,
+  getInstrumentSet,
+  getMetadataKeySet,
+  getMidiKeyWords,
+  getSectionKeywordPatterns,
+} from './chordDisplayTags.js';
 import {
   buildKeywordAlternation,
   createKeywordPattern,
-  metadataKeys,
 } from './textKeywords.js';
 import {
   matchInlineInstrumentLabel,
   normalizeInstrumentDisplayLabel,
 } from './instruments.js';
 
+let modulationCache = { key: null, regex: null };
+
+/** Regex baris "Modulation: G" — mengikuti daftar keyword yang aktif. */
+const modulationLineRegex = () => {
+  const keywords = getChordDisplayTags().MODULATION_KEYWORDS;
+  const key = keywords.join('|');
+  if (modulationCache.key !== key) {
+    modulationCache = {
+      key,
+      regex: new RegExp(
+        `^(?:${buildKeywordAlternation(keywords, '\\s+')})\\s*:\\s*(.+)$`,
+        'i',
+      ),
+    };
+  }
+  return modulationCache.regex;
+};
+
+let midiKeyCache = { key: null, pattern: null };
+
 /**
- * Kata kunci struktur -> regex batas kata. Di-cache: parseSection dipanggil
- * beberapa kali per baris dan regex ini sebelumnya dibangun ulang tiap kali.
+ * Key yang dibaca modul MIDI — dari chordDisplayTags.js, sehingga bentrok
+ * dengan keyword instrumen ('keys') terlihat di satu tempat, bukan
+ * tersembunyi di special-case.
  */
-const STRUCTURE_KEYWORD_PATTERNS = STRUCTURE_SECTION_KEYWORDS.map((keyword) => ({
-  keyword,
-  pattern: createKeywordPattern(keyword),
-}));
-
-const MODULATION_LINE_REGEX = new RegExp(
-  `^(?:${buildKeywordAlternation(MODULATION_KEYWORDS, '\\s+')})\\s*:\\s*(.+)$`,
-  'i',
-);
-
-/**
- * Key yang dibaca modul MIDI. Daftarnya sekarang tinggal di
- * src/config/chordDisplayConfig.js supaya bentrok dengan INSTRUMENT_KEYWORDS
- * ('keys') terlihat di satu tempat, bukan tersembunyi di special-case.
- */
-const MIDI_KEY_WORDS = [...MIDI_ROUTING_KEYS, ...MIDI_KEYS_ALSO_INSTRUMENT];
-
-const MIDI_KEY_PATTERN = new RegExp(`^(?:${MIDI_KEY_WORDS.join('|')})$`, 'i');
+const midiKeyPattern = () => {
+  const words = getMidiKeyWords();
+  const key = words.join('|');
+  if (midiKeyCache.key !== key) {
+    midiKeyCache = { key, pattern: new RegExp(`^(?:${words.join('|')})$`, 'i') };
+  }
+  return midiKeyCache.pattern;
+};
 
 /**
  * "[Keys: EP Soft | PC: 0 | CH: 1]" -> true. Segmen yang kuncinya keyword MIDI
@@ -67,7 +77,7 @@ const hasMidiKeywordSegment = (line = '') => {
       const idx = segment.indexOf(':');
       if (idx <= 0) return false;
       const key = segment.slice(0, idx).trim().replace(/[\s_]+/g, '');
-      return MIDI_KEY_PATTERN.test(key);
+      return midiKeyPattern().test(key);
     });
 };
 
@@ -126,9 +136,9 @@ export const isKnownCueMarkLabel = (line = '') => {
 
   const inside = trimmed.slice(1, -1).trim().toLowerCase();
   if (!inside) return false;
-  if (INSTRUMENT_KEYWORDS.includes(inside)) return false;
+  if (getInstrumentSet().has(inside)) return false;
 
-  return CUE_MARK_KEYWORDS.includes(inside);
+  return getCueMarkSet().has(inside);
 };
 
 const isInstrumentBracketLine = (line) => {
@@ -179,9 +189,12 @@ export function parseSection(line) {
     // "Interlude" cocok, "Soloist" tidak. "Time Signature:" TIDAK, karena
     // "signature" hanyalah satu kata dari kata kunci multi-kata — tanpa
     // pengecekan ini label parsial itu lolos sebagai section.
-    if (STRUCTURE_KEYWORD_PATTERNS.some(({ keyword, pattern }) => (
-      !keyword.includes(' ') && pattern.test(labelLower)
-    ))) {
+    // Pola & regex di-cache per daftar aktif (lihat chordDisplayTags.js).
+    // Keyword satu kata maupun frasa multi-kata (dari admin) dicocokkan sebagai
+    // kata utuh, sehingga "Verse 1" tetap butuh kata "verse" utuh.
+    if (getSectionKeywordPatterns(createKeywordPattern).some(
+      ({ pattern }) => pattern.test(labelLower),
+    )) {
       return { type: 'structure', label: displayLabel };
     }
   }
@@ -193,7 +206,7 @@ export function parseSection(line) {
     .replace(/^\[/, '')
     .replace(/\]$/, '')
     .trim()
-    .match(MODULATION_LINE_REGEX);
+    .match(modulationLineRegex());
   if (modulationMatch) {
     const targetKey = modulationMatch[1].trim();
     return { type: 'modulation', label: targetKey };
@@ -224,14 +237,17 @@ export const isInstrumentPatchLikeLine = (line) => {
       const key = segment.slice(0, idx).trim().toLowerCase()
         .replace(/^[\[(]+|[\])]+$/g, '')
         .replace(/[\s_]+/g, '');
-      return metadataKeys.has(key) || metadataKeys.has(key.replace(/\s+/g, ''));
+      return metadataKeySet().has(key) || metadataKeySet().has(key.replace(/\s+/g, ''));
     });
 };
+
+const metadataKeySet = () => getMetadataKeySet();
 
 const isKnownMetadataKey = (rawKey = '') => {
   const normalized = String(rawKey).trim().toLowerCase().replace(/[\s_]+/g, ' ');
   const key = normalized.replace(/^[\[(]+|[\])]+$/g, '').trim();
-  return metadataKeys.has(key) || metadataKeys.has(key.replace(/\s+/g, ''));
+  const keys = metadataKeySet();
+  return keys.has(key) || keys.has(key.replace(/\s+/g, ''));
 };
 
 export const isMetadataLine = (line) => {
@@ -265,9 +281,19 @@ export const TIMESTAMP_BRACKET_REGEX = /^\[\d{1,2}:\d{2}(?::\d{2})?\]$/;
  * seksi"). Cue mark sengaja dibuang: aksi permainan seperti "Stop" atau "Aksen"
  * bukan alat, jadi tidak boleh terbaca sebagai instrumen.
  */
-export const REAL_INSTRUMENT_KEYWORDS = INSTRUMENT_KEYWORDS.filter(
-  (keyword) => !CUE_MARK_KEYWORDS.includes(keyword),
+export const getRealInstrumentKeywords = () => (
+  getChordDisplayTags().INSTRUMENT_KEYWORDS.filter(
+    (keyword) => !getCueMarkSet().has(keyword),
+  )
 );
+
+/**
+ * Daftar instrumen tanpa cue mark.
+ * Fungsi (bukan array) agar tidak dihitung saat modul dimuat — modul ini ikut
+ * dalam siklus impor dengan chordDisplayConfig.js, dan daftar bisa berubah
+ * kapan saja dari halaman admin. Parser memanggil getRealInstrumentKeywords().
+ */
+export const REAL_INSTRUMENT_KEYWORDS = getRealInstrumentKeywords;
 
 /** Huruf kecil, buang titik dua/titik di akhir, rapikan spasi. */
 const cleanSectionName = (label = '') => String(label || '')
@@ -285,21 +311,21 @@ const cleanSectionName = (label = '') => String(label || '')
 export const formatSectionLabel = (normalizedKey) => {
   // Kata multi-kata dipertahankan lengkap: 'pre chorus' -> 'pre-chorus'.
   const words = String(normalizedKey || '').split(' ').filter(Boolean);
-  const found = STRUCTURE_SECTION_KEYWORDS.find((keyword) => {
+  const found = getChordDisplayTags().STRUCTURE_SECTION_KEYWORDS.find((keyword) => {
     const keywordWords = keyword.split(/[\s-]+/).filter(Boolean);
     return keywordWords.length === words.length
       && keywordWords.every((word, index) => word.replace(/\.$/, '') === words[index]);
   });
   // Alias ber-kata tunggal ditampilkan sebagai bentuk kanoniknya.
   if (words.length === 1) {
-    const canonical = SECTION_NAME_ALIASES[words[0]];
+    const canonical = getChordDisplayTags().SECTION_NAME_ALIASES[words[0]];
     if (canonical) return canonical;
   }
   return found || String(normalizedKey || '');
 };
 
 /** Apakah tepat satu kata kunci seksi muncul sebagai kata utuh. */
-const findStructureKeyword = (nameLower) => STRUCTURE_KEYWORD_PATTERNS.find(
+const findStructureKeyword = (nameLower) => getSectionKeywordPatterns(createKeywordPattern).find(
   ({ pattern }) => pattern.test(nameLower),
 );
 
@@ -317,10 +343,11 @@ export function canonicalSection(label) {
   const nameLower = cleanSectionName(label);
   if (!nameLower) return null;
 
-  if (SECTION_NAME_ALIASES[nameLower]) return SECTION_NAME_ALIASES[nameLower];
+  const aliases = getChordDisplayTags().SECTION_NAME_ALIASES;
+  if (aliases[nameLower]) return aliases[nameLower];
 
-  const aliasWord = nameLower.split(' ').find((word) => SECTION_NAME_ALIASES[word]);
-  if (aliasWord) return SECTION_NAME_ALIASES[aliasWord];
+  const aliasWord = nameLower.split(' ').find((word) => aliases[word]);
+  if (aliasWord) return aliases[aliasWord];
 
   const match = findStructureKeyword(nameLower);
   if (!match) return null;

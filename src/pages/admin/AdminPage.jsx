@@ -10,6 +10,8 @@
  * - users/UserManagementPanel.jsx                 → kelola user
  * - backup-restore/BackupRestorePanel.jsx         → backup & restore database
  * - audit-log/AuditLogPanel.jsx + useAuditLogs.js → audit log & aktivitas
+ * - tag-detection/TagDetectionPanel.jsx           → kelompok tag yang dideteksi
+ *   ChordDisplay (section, metadata, cue mark, instrumen, …) + pratinjau
  *
  * Data user dimiliki satu hook (`useAdminUsers`) dan dibagikan ke ringkasan
  * statistik maupun tabel user, sehingga endpoint /users hanya dipanggil sekali.
@@ -23,6 +25,7 @@ import AuditLogPanel from './audit-log/AuditLogPanel.jsx';
 import UserManagementPanel from './users/UserManagementPanel.jsx';
 import { STAT_PERIODS, buildUserStatCards, getLastLoginMap, getUserGrowth } from './users/userStats.js';
 import BackupRestorePanel from './backup-restore/BackupRestorePanel.jsx';
+import TagDetectionPanel from './tag-detection/TagDetectionPanel.jsx';
 import './admin.css';
 
 // Sub-komponen halaman ini menerima objek dari context/props internal.
@@ -35,6 +38,7 @@ const TAB_OVERVIEW = 'ringkasan';
 const ADMIN_TABS = [
   { id: TAB_OVERVIEW, label: 'Ringkasan', icon: '📊' },
   { id: 'users', label: 'User', icon: '👥' },
+  { id: 'tags', label: 'Tag & Deteksi', icon: '🏷️' },
   { id: 'backup', label: 'Backup', icon: '💾' },
   { id: 'audit', label: 'Audit Log', icon: '🔍' },
 ];
@@ -77,6 +81,12 @@ function AdminOverview({ userSummary, cards, loading, error, onNavigate, period,
       title: '👥 Manajemen User',
       description: 'Ubah role, aktif/nonaktifkan, reset password, atau hapus akun user.',
       action: 'Kelola User',
+    },
+    {
+      id: 'tags',
+      title: '🏷️ Tag & Deteksi',
+      description: 'Atur kelompok tag yang dideteksi ChordDisplay: section, metadata, cue mark, instrumen, dan lainnya.',
+      action: 'Atur Tag',
     },
     {
       id: 'backup',
@@ -242,7 +252,7 @@ export default function AdminPage() {
       <div className="page-header">
         <div>
           <h1>🛡️ Administrator</h1>
-          <p>Semua fitur administrasi: kelola user, backup, dan audit log.</p>
+          <p>Semua fitur administrasi: kelola user, atur tag deteksi, backup, dan audit log.</p>
         </div>
         <span className={`admin-role-badge admin-role-${user.role}`}>
           {getAppRoleLabel(user.role)}
@@ -276,6 +286,8 @@ export default function AdminPage() {
             lastLoginMap={lastLoginMap}
           />
         )}
+
+        {activeTab === 'tags' && <TagDetectionPanel />}
 
         {activeTab === 'backup' && <BackupRestorePanel />}
 

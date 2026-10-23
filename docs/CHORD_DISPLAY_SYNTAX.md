@@ -2,11 +2,16 @@
 # ==========================================
 # Referensi lengkap semua sintaks yang dibaca ChordDisplay (ChordDisplay.chordUtils.js)
 # dan semua item yang ditawarkan autocompletion (lyricsCompletion.js).
-# FILE KONFIGURASI YANG DIBACA APLIKASI:
-#   src/config/chordDisplayConfig.js
-# Ubah semua daftar (section, metadata keys, chord regex, cue marks,
-# instrumen, autocompletion) di file itu — chordUtils.js dan
-# lyricsCompletion.js meng-import darinya.
+# FILE KONFIGURASI BAWAAN:
+#   src/config/chordDisplayConfig.js   (daftar default = kode)
+#   src/config/chordDisplayTagGroups.js (kelompok tag yang boleh diatur)
+#
+# PENGATURAN GLOBAL (berlaku untuk semua user & semua perangkat):
+#   Halaman Administrator → /admin → tab "Tag & Deteksi".
+#   Nilai disimpan di tabel database app_settings (key: chordDisplayTags)
+#   lewat /api/settings dan dibaca aplikasi saat start (plus cache lokal untuk
+#   mode offline). Regex chord TIDAK diatur dari sana — hanya kata kunci tag.
+#
 # File ini hanya penjelasan manusiawi dari konfigurasi tersebut.
 # ==========================================
 

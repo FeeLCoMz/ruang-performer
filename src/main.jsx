@@ -33,6 +33,7 @@ import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 import { initializeWebVitals, reportNavigationMetrics } from './utils/webVitalsUtil.js';
 import * as authUtils from './utils/auth.js';
+import { loadChordDisplayTags } from './utils/chord/chordDisplayTags.js';
 
 const originalFetch = typeof window !== 'undefined' ? window.fetch.bind(window) : null;
 
@@ -54,6 +55,16 @@ async function fetchWithAuth(input, init) {
 
 if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
   window.fetch = fetchWithAuth;
+}
+
+// Pengaturan global (kelompok tag ChordDisplay) dimuat sekali saat start, dan
+// disegarkan saat jendela kembali fokus. Parser tetap sinkron: sebelum respons
+// datang, cache lokal/bawaan yang dipakai.
+if (typeof window !== 'undefined' && authUtils.isAuthenticated()) {
+  loadChordDisplayTags().catch(() => {});
+  window.addEventListener('focus', () => {
+    if (authUtils.isAuthenticated()) loadChordDisplayTags({ force: true }).catch(() => {});
+  });
 }
 
 // Initialize Web Vitals monitoring

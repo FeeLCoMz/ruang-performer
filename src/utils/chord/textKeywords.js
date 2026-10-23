@@ -5,13 +5,10 @@
  * modul di folder src/utils/chord/.
  *
  * Semua kata kunci (seksi, metadata, cue mark, instrumen, modulasi, N.C.)
- * berasal dari src/config/chordDisplayConfig.js dan dicocokkan sebagai KATA
- * UTUH, bukan substring: "Interlude" cocok, "Soloist" tidak.
+ * berasal dari chordDisplayTags.js (bawaan config + editan admin, lihat
+ * halaman /admin -> Tag & Deteksi) dan dicocokkan sebagai KATA UTUH, bukan
+ * substring: "Interlude" cocok, "Soloist" tidak.
  */
-import { METADATA_KEYS } from '../../config/chordDisplayConfig.js';
-
-/** Set kata kunci metadata, semuanya lowercase. */
-export const metadataKeys = new Set(METADATA_KEYS.map((key) => key.toLowerCase()));
 
 /** Escape karakter khusus regex pada sebuah string. */
 export const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

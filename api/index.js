@@ -45,6 +45,8 @@ import toolsRestoreHandler from '../server/handlers/tools-restore.js';
 import userAuditLogsHandler from '../server/handlers/auth-audit-logs.js';
 import authLogoutHandler from '../server/handlers/auth-logout.js';
 import auditLogsHandler from '../server/handlers/audit-logs.js';
+import settingsHandler from '../server/handlers/settings.js';
+
 // Users management handler
 import usersHandler from '../server/handlers/users.js';
 import userByIdHandler from '../server/handlers/user-id.js';
@@ -173,6 +175,14 @@ app.use('/api/bands', verifyTokenMiddleware, (req, res, next) => {
 // Practice and gigs endpoints now handled by their own handlers
 app.use('/api/events/:type/:id?', verifyTokenMiddleware, (req, res, next) => {
   Promise.resolve(eventsHandler(req, res)).catch(next);
+});
+
+// Pengaturan aplikasi global (tag ChordDisplay, dll). Didaftarkan SEBELUM
+// catch-all: GET dibaca semua user login, PUT/DELETE hanya owner/admin —
+// pembatasan role ada di handler.
+app.use('/api/settings', (req, res, next) => {
+  req.__segments = ['settings', ...String(req.path || '').split('/').filter(Boolean)];
+  Promise.resolve(settingsHandler(req, res)).catch(next);
 });
 
 // Fallback utama (dev): satu handler untuk seluruh /api/*, sama seperti di

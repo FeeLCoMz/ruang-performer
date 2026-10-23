@@ -9,8 +9,12 @@
  * itu dirender sebagai lirik biasa.
  * Cue mark sengaja dipisah dari instrumen: aksi permainan seperti "Stop" atau
  * "Aksen" bukan alat, jadi tidak boleh terbaca sebagai instrumen.
+ *
+ * Daftar instrumen & cue mark berasal dari chordDisplayTags.js sehingga
+ * perubahan di halaman Administrator (Tag & Deteksi) langsung berlaku, juga
+ * untuk file lirik yang sudah dibuka.
  */
-import { CUE_MARK_KEYWORDS, INSTRUMENT_KEYWORDS } from '../../config/chordDisplayConfig.js';
+import { getChordDisplayTags, getInstrumentSet } from './chordDisplayTags.js';
 import {
   escapeRegex,
   matchKeywordPattern,
@@ -22,15 +26,32 @@ import {
   transposeLeadingDashChordToken,
 } from './chordTokens.js';
 
-const instrumentKeywords = INSTRUMENT_KEYWORDS;
+/** Regex nama instrumen / cue mark, dibangun ulang hanya saat daftarnya berubah. */
+const buildPatterns = (keywords) => keywords.map(matchKeywordPattern);
 
-/** Regex nama instrumen / cue mark (dibuat sekali, bukan tiap pemanggilan). */
-const INSTRUMENT_KEYWORD_PATTERNS = instrumentKeywords.map(matchKeywordPattern);
-const CUE_MARK_KEYWORD_PATTERNS = CUE_MARK_KEYWORDS.map(matchKeywordPattern);
+const patternCache = { instruments: { key: null, patterns: [] }, cues: { key: null, patterns: [] } };
+
+const instrumentPatterns = () => {
+  const keywords = getChordDisplayTags().INSTRUMENT_KEYWORDS;
+  const key = keywords.join('|');
+  if (patternCache.instruments.key !== key) {
+    patternCache.instruments = { key, patterns: buildPatterns(keywords) };
+  }
+  return patternCache.instruments.patterns;
+};
+
+const cueMarkPatterns = () => {
+  const keywords = getChordDisplayTags().CUE_MARK_KEYWORDS;
+  const key = keywords.join('|');
+  if (patternCache.cues.key !== key) {
+    patternCache.cues = { key, patterns: buildPatterns(keywords) };
+  }
+  return patternCache.cues.patterns;
+};
 
 /** True when the whole value is exactly one known instrument keyword. */
 export const isInstrumentKeywordWord = (value = '') => (
-  typeof value === 'string' && instrumentKeywords.includes(value.trim().toLowerCase())
+  typeof value === 'string' && getInstrumentSet().has(value.trim().toLowerCase())
 );
 
 export const matchInlineInstrumentLabel = (candidate = '') => {
@@ -45,9 +66,10 @@ export const matchInlineInstrumentLabel = (candidate = '') => {
   // Tanpa jalur ini, regex batas kata di bawah tetap cocok tapi LOLOS: ia
   // mengembalikan true hanya untuk keyword multi-kata, sehingga singkatan
   // dua huruf selalu jatuh ke false.
-  if (instrumentKeywords.includes(lower)) return true;
+  const instrumentSet = getInstrumentSet();
+  if (instrumentSet.has(lower)) return true;
 
-  const fullPhraseMatch = INSTRUMENT_KEYWORD_PATTERNS.some((pattern) => pattern.test(lower));
+  const fullPhraseMatch = instrumentPatterns().some((pattern) => pattern.test(lower));
   if (fullPhraseMatch) return true;
 
   const phraseWords = normalized.split(/\s+/).filter(Boolean);
@@ -55,7 +77,7 @@ export const matchInlineInstrumentLabel = (candidate = '') => {
 
   return phraseWords.some((word) => {
     const cleanWord = word.replace(/[.,]/g, '').trim();
-    return instrumentKeywords.includes(cleanWord.toLowerCase());
+    return instrumentSet.has(cleanWord.toLowerCase());
   });
 };
 
@@ -96,7 +118,7 @@ export const findInlineInstrumentMatch = (candidate = '') => {
   const words = normalized.split(/\s+/).filter(Boolean);
   if (words.length > 1) {
     const firstWord = words[0].replace(/[.,]/g, '').toLowerCase();
-    const firstWordMatch = instrumentKeywords.includes(firstWord);
+    const firstWordMatch = getInstrumentSet().has(firstWord);
     if (firstWordMatch) {
       const trailingWords = words.slice(1).map((word) => word.replace(/[.,;:]/g, '').trim()).filter(Boolean);
       if (trailingWords.length) {
@@ -105,15 +127,16 @@ export const findInlineInstrumentMatch = (candidate = '') => {
     }
 
     const containsAmpersand = normalized.includes('&');
+    const instrumentSet = getInstrumentSet();
     const hasKeywordInPhrase = words.some((word) => {
       const cleaned = word.replace(/[.,]/g, '').toLowerCase();
-      return instrumentKeywords.includes(cleaned);
+      return instrumentSet.has(cleaned);
     });
     if (containsAmpersand && hasKeywordInPhrase) return normalized;
   }
 
   const lower = normalized.toLowerCase();
-  for (const keyword of [...instrumentKeywords].reverse()) {
+  for (const keyword of [...getChordDisplayTags().INSTRUMENT_KEYWORDS].reverse()) {
     const regex = matchKeywordPattern(keyword);
     if (!regex.test(lower)) continue;
 
@@ -123,9 +146,10 @@ export const findInlineInstrumentMatch = (candidate = '') => {
 
   const phraseWords = normalized.split(/\s+/).filter(Boolean);
   if (phraseWords.length > 1) {
+    const instrumentSet = getInstrumentSet();
     const matchedWord = phraseWords
       .map((word) => word.replace(/[.,]/g, '').trim())
-      .find((word) => instrumentKeywords.includes(word.toLowerCase()));
+      .find((word) => instrumentSet.has(word.toLowerCase()));
     if (matchedWord) return matchedWord;
   }
 
@@ -139,10 +163,10 @@ export const isCueMarkKeyword = (candidate = '') => {
   if (!normalized) return false;
 
   const lower = normalized.toLowerCase();
-  const hasInstrumentInPhrase = INSTRUMENT_KEYWORD_PATTERNS.some((pattern) => pattern.test(lower));
+  const hasInstrumentInPhrase = instrumentPatterns().some((pattern) => pattern.test(lower));
   if (hasInstrumentInPhrase) return false;
 
-  return CUE_MARK_KEYWORD_PATTERNS.some((pattern) => pattern.test(lower));
+  return cueMarkPatterns().some((pattern) => pattern.test(lower));
 };
 
 export const normalizeCueMarkToken = (candidate = '') => {
@@ -223,7 +247,7 @@ export const mergeInstrumentPhraseTokens = (tokens = []) => {
     }
 
     const value = trimmed.replace(/[.,:;]+$/g, '').trim();
-    if (!value || !instrumentKeywords.includes(value.toLowerCase())) {
+    if (!value || !getInstrumentSet().has(value.toLowerCase())) {
       merged.push(token);
       continue;
     }
@@ -265,7 +289,7 @@ export const mergeInstrumentPhraseTokens = (tokens = []) => {
       // Gabungkan kata berikutnya ke label instrumen ("Gitar Dist" tetap satu
       // token). Tanpa daftar deskriptor: cukup satu kata tambahan, dan berhenti
       // di akhir frasa/kata sambung.
-      if (instrumentKeywords.includes(value.toLowerCase()) && isGenericInstrumentSuffix(cleanedNext)) {
+      if (getInstrumentSet().has(value.toLowerCase()) && isGenericInstrumentSuffix(cleanedNext)) {
         mergedPhrase = `${mergedPhrase} ${cleanedNext}`;
         didMerge = true;
         index = nextIndex;

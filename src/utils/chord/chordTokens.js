@@ -7,7 +7,8 @@
  * Deteksi chord mengabaikan barline (|, ||, |:, :|) dan mendukung compact chord
  * (D..Gm..Bb). Regex chord bersumber dari src/config/chordDisplayConfig.js.
  */
-import { CHORD_REGEX_SOURCE, CHORD_TOKEN_REGEX_SOURCE, NO_CHORD_TOKENS } from '../../config/chordDisplayConfig.js';
+import { CHORD_REGEX_SOURCE, CHORD_TOKEN_REGEX_SOURCE } from '../../config/chordDisplayConfig.js';
+import { getChordDisplayTags } from './chordDisplayTags.js';
 import { buildKeywordAlternation } from './textKeywords.js';
 
 const NOTES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -41,10 +42,21 @@ export const toCleanChord = (chord) => normalizeChordToken(String(chord || '').r
 // Global regex untuk deteksi chord (standar, konsisten di semua fungsi)
 // Sumber regex: src/config/chordDisplayConfig.js (CHORD_REGEX_SOURCE)
 const CHORD_REGEX = new RegExp(CHORD_REGEX_SOURCE, 'i');
-const NO_CHORD_REGEX = new RegExp(
-  `^(${buildKeywordAlternation(NO_CHORD_TOKENS, '\\s*')})$`,
-  'i',
-);
+
+// Token N.C. diatur admin: regex dibangun ulang hanya saat daftarnya berubah
+// (N.C. dicek untuk setiap token chord, jadi jangan bangun regex tiap panggilan).
+let noChordCache = { key: null, regex: null };
+const noChordRegex = () => {
+  const tokens = getChordDisplayTags().NO_CHORD_TOKENS;
+  const key = tokens.join('|');
+  if (noChordCache.key !== key) {
+    noChordCache = {
+      key,
+      regex: new RegExp(`^(${buildKeywordAlternation(tokens, '\\s*')})$`, 'i'),
+    };
+  }
+  return noChordCache.regex;
+};
 
 /**
  * Validasi apakah sebuah token adalah No Chord (N.C.).
@@ -53,7 +65,7 @@ const NO_CHORD_REGEX = new RegExp(
  */
 export const isNoChordToken = (token) => {
   if (typeof token !== 'string') return false;
-  return NO_CHORD_REGEX.test(token.trim());
+  return noChordRegex().test(token.trim());
 };
 
 /**

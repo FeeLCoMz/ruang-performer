@@ -9,7 +9,7 @@
  *   2. Tokenisasi baris chord/lirik
  *   3. parseLines — peta baris -> baris sumber untuk sinkronisasi editor
  */
-import { INSTRUMENT_KEYWORDS } from '../../config/chordDisplayConfig.js';
+import { getCueMarkSet, getInstrumentSet } from './chordDisplayTags.js';
 import { matchKeywordPattern, escapeRegex } from './textKeywords.js';
 import {
   isChordToken,
@@ -40,9 +40,8 @@ import {
   isKnownCueMarkLabel,
   isMetadataLine,
   TIMESTAMP_BRACKET_REGEX,
-  REAL_INSTRUMENT_KEYWORDS,
+  getRealInstrumentKeywords,
 } from './sections.js';
-import { CUE_MARK_KEYWORDS } from '../../config/chordDisplayConfig.js';
 
 const BARLINE_TOKEN_REGEX = /^(\|:|:\||\[\:|\:\]|\|\||\|)$/;
 
@@ -204,7 +203,7 @@ const toCanonicalBracketKeyword = (token) => {
   const match = String(token || '').trim().match(CANONICAL_BRACKET_KEYWORD_REGEX);
   if (!match) return null;
   const keyword = match[1].trim();
-  return CUE_MARK_KEYWORDS.includes(keyword.toLowerCase()) ? `[${keyword}]` : null;
+  return getCueMarkSet().has(keyword.toLowerCase()) ? `[${keyword}]` : null;
 };
 
 /**
@@ -552,13 +551,15 @@ function normalizeDetectedInstrumentName(candidate = '') {
     .map((segment) => segment.replace(/(?<![A-Za-z0-9]):\s.*$/, '').trim())
     .filter(Boolean);
 
+  const realInstrumentKeywords = getRealInstrumentKeywords();
+
   const matches = segments
     .map((segment) => {
       const directMatch = findInlineInstrumentMatch(segment);
       if (directMatch) return directMatch;
 
       const lower = segment.toLowerCase();
-      const keywordMatch = REAL_INSTRUMENT_KEYWORDS.find((keyword) => matchKeywordPattern(keyword).test(lower));
+      const keywordMatch = realInstrumentKeywords.find((keyword) => matchKeywordPattern(keyword).test(lower));
       if (!keywordMatch) return '';
 
       const directKeywordMatch = segment.match(new RegExp(escapeRegex(keywordMatch).replace(/\s+/g, '[\\s_-]+'), 'i'));
@@ -571,7 +572,7 @@ function normalizeDetectedInstrumentName(candidate = '') {
     return matches[0];
   }
 
-  const fallback = REAL_INSTRUMENT_KEYWORDS.find((keyword) => matchKeywordPattern(keyword).test(cleaned.toLowerCase()));
+  const fallback = realInstrumentKeywords.find((keyword) => matchKeywordPattern(keyword).test(cleaned.toLowerCase()));
 
   return fallback || '';
 }
@@ -632,7 +633,7 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
         continue;
       }
 
-      if (!keyword || !INSTRUMENT_KEYWORDS.includes(keyword.toLowerCase())) {
+      if (!keyword || !getInstrumentSet().has(keyword.toLowerCase())) {
         continue;
       }
 

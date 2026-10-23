@@ -168,6 +168,28 @@ export async function getAuditLogs({ limit } = {}) {
   return request(`/audit-logs${query}`, { fallbackError: 'Gagal mengambil audit log' });
 }
 
+// --- Pengaturan aplikasi global (tag ChordDisplay, dll) ---
+// Dipakai parser lirik lewat src/utils/chord/chordDisplayTags.js agar daftar
+// kata kunci sama untuk semua user. Menulis hanya diizinkan owner/admin.
+export async function getAppSetting(key) {
+  return request(`/settings/${encodeURIComponent(key)}`, { fallbackError: 'Gagal mengambil pengaturan aplikasi' });
+}
+
+export async function saveAppSetting(key, value) {
+  return request(`/settings/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    body: value,
+    fallbackError: 'Gagal menyimpan pengaturan aplikasi',
+  });
+}
+
+export async function deleteAppSetting(key) {
+  return request(`/settings/${encodeURIComponent(key)}`, {
+    method: 'DELETE',
+    fallbackError: 'Gagal menghapus pengaturan aplikasi',
+  });
+}
+
 // Password Reset endpoints
 export async function requestPasswordReset(email) {
   return request('/auth/forgot-password', {

@@ -6,13 +6,13 @@
  * at the moment they are typing.
  */
 
+import { AUTOCOMPLETE_METADATA_DETAILS, titleCaseKeyword } from '../config/chordDisplayConfig.js';
 import {
-  AUTOCOMPLETE_SECTION_LABELS as CONFIG_SECTION_LABELS,
-  AUTOCOMPLETE_METADATA as CONFIG_METADATA,
-  AUTOCOMPLETE_INSTRUMENTS as CONFIG_INSTRUMENTS,
-  CUE_MARK_KEYWORDS as CONFIG_CUE_MARK_KEYWORDS,
-  titleCaseKeyword,
-} from '../config/chordDisplayConfig.js';
+  getActiveMetadataKeys,
+  getAutocompleteInstruments,
+  getAutocompleteSectionLabels,
+  getChordDisplayTags,
+} from './chord/chordDisplayTags.js';
 
 /**
  * Section tags, matching what autoTagSongSections() produces.
@@ -20,7 +20,7 @@ import {
  * Every keyword is offered in one shape only — `[Keyword]` — so metadata and
  * instrument entries also complete into a bracketed tag from an open `[`.
  */
-const SECTION_COMPLETIONS = [...new Set(CONFIG_SECTION_LABELS)].map((label) => ({
+const sectionCompletions = () => getAutocompleteSectionLabels(titleCaseKeyword).map((label) => ({
   label: `[${label}]`,
   type: 'keyword',
   detail: 'Bagian lagu',
@@ -33,18 +33,25 @@ const SECTION_COMPLETIONS = [...new Set(CONFIG_SECTION_LABELS)].map((label) => (
  * Satu bentuk saja: `[Patch: Stage Piano]`. Baris "Patch: ..." tanpa braket
  * sengaja tidak ditawarkan — semua keyword ditulis dalam braket siku.
  */
-const METADATA_COMPLETIONS = CONFIG_METADATA.map(({ label, detail, info }) => ({
-  label: `[${label} ]`,
-  type: 'property',
-  detail,
-  info: info || undefined,
-  apply: `[${label} ]`,
-  // Klik "Original Key:" menulis "[Original Key: ]" — kursor di dalam braket.
-  applyAfter: ']',
-}));
+const metadataCompletions = () => {
+  const tags = getChordDisplayTags();
+  return [...getActiveMetadataKeys(), ...tags.MODULATION_KEYWORDS].map((keyword) => {
+    const label = `${titleCaseKeyword(keyword)}:`;
+    const details = AUTOCOMPLETE_METADATA_DETAILS[keyword] || {};
+    return {
+      label: `[${label} ]`,
+      type: 'property',
+      detail: details.detail || '',
+      info: details.info || undefined,
+      apply: `[${label} ]`,
+      // Klik "Original Key:" menulis "[Original Key: ]" — kursor di dalam braket.
+      applyAfter: ']',
+    };
+  });
+};
 
 /** Instrument words highlighted by the editor — always as a bracketed tag. */
-const INSTRUMENT_COMPLETIONS = [...new Set(CONFIG_INSTRUMENTS)].map((name) => ({
+const instrumentCompletions = () => getAutocompleteInstruments(titleCaseKeyword).map((name) => ({
   label: `[${name}: ]`,
   type: 'variable',
   detail: 'Instrumen',
@@ -55,23 +62,26 @@ const INSTRUMENT_COMPLETIONS = [...new Set(CONFIG_INSTRUMENTS)].map((name) => ({
  * Inline cue marks (Stop, Hit, Aksen, ...) recognised by isCueMarkKeyword().
  * Hanya bentuk braket: `[Hit]`. Kurung biasa tidak lagi dibaca sebagai keyword.
  */
-const CUE_LABELS = [
-  ...new Set(CONFIG_CUE_MARK_KEYWORDS.map(titleCaseKeyword)),
-];
+const cueCompletions = () => [...new Set(getChordDisplayTags().CUE_MARK_KEYWORDS.map(titleCaseKeyword))]
+  .map((name) => (
+    { label: `[${name}]`, type: 'keyword', detail: 'Cue mark', apply: `[${name}]` }
+  ));
 
-const CUE_COMPLETIONS = CUE_LABELS.map((name) => (
-  { label: `[${name}]`, type: 'keyword', detail: 'Cue mark', apply: `[${name}]` }
-));
-
-const ALL_COMPLETIONS = [
-  ...SECTION_COMPLETIONS,
-  ...METADATA_COMPLETIONS,
-];
-
-const options = [...ALL_COMPLETIONS, ...INSTRUMENT_COMPLETIONS, ...CUE_COMPLETIONS].map((option) => (
+/**
+ * Daftar opsi dibuat ulang setiap pembacaan (getter) karena Administrator
+ * dapat mengubah daftar kata kunci saat aplikasi berjalan.
+ */
+const buildOptions = () => [
+  ...sectionCompletions(),
+  ...metadataCompletions(),
+  ...instrumentCompletions(),
+  ...cueCompletions(),
+].map((option) => (
   // '' = kursor tepat di dalam braket (setelah "[Nama: ").
   { ...option, applyAfter: option.applyAfter ?? '' }
 ));
+
+const options = buildOptions();
 
 /** Match the unfinished `[` tag immediately before the cursor. */
 function tokenBefore(state, pos) {
@@ -107,9 +117,18 @@ export const lyricsCompletionSource = (context) => {
 
   return {
     from: tagAlreadyOpen ? context.pos : token.from,
-    options,
+    // Dibangun per pemanggilan: daftar tag bisa diubah admin saat aplikasi
+    // berjalan, dan popup harus langsung menawarkan kata kunci terbaru.
+    options: getLyricsCompletionOptions(),
     validFor: /^\[?[A-Za-z0-9-]*$/,
   };
 };
 
-export { options as lyricsCompletionOptions };
+/** Daftar opsi terbaru (baca ulang daftar tag aktif). */
+export const getLyricsCompletionOptions = () => buildOptions();
+
+/**
+ * Opsi saat modul dimuat. Dipertahankan untuk kompatibilitas; kode runtime
+ * memakai getLyricsCompletionOptions() agar editan admin ikut terbaca.
+ */
+export const lyricsCompletionOptions = options;

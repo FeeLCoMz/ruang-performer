@@ -7,11 +7,8 @@ import {
   isInstrumentKeywordWord,
   canonicalSection,
 } from './chordUtils.js';
-import {
-  STRUCTURE_SECTION_KEYWORDS,
-  sectionToneOf,
-  titleCaseKeyword,
-} from '../config/chordDisplayConfig.js';
+import { sectionToneOf, titleCaseKeyword } from '../config/chordDisplayConfig.js';
+import { getChordDisplayTags } from './chord/chordDisplayTags.js';
 import { formatSectionLabel } from './chord/sections.js';
 import { toNumberNotation } from './notationUtils.js';
 
@@ -292,7 +289,10 @@ function detectSectionKey(line) {
   // Bila sisi kiri sudah diawali nama seksi, tanda sambung mulai judul bagian
   // ("Bridge - Koplo" -> Bridge, "Pre Chorus - sampai" -> Pre-Chorus).
   // Nama seksi multi-kata dipertahankan utuh ("Pre Chorus").
-  const keywordList = STRUCTURE_SECTION_KEYWORDS
+  // Daftar seksi dibaca dari chordDisplayTags.js agar keyword yang ditambah
+  // admin langsung ikut dikenali editor.
+  const sectionKeywords = getChordDisplayTags().STRUCTURE_SECTION_KEYWORDS;
+  const keywordList = sectionKeywords
     .filter((keyword) => !keyword.endsWith('.'))
     .sort((a, b) => b.length - a.length)
     .map((keyword) => keyword.replace(/[-_\s]+/g, '\\s+'));
@@ -306,7 +306,7 @@ function detectSectionKey(line) {
   // Kosakata seksi tidak ditulis ulang di sini: kanonik dari config dulu
   // (kata utuh), lalu pencocokan longgar untuk kata kunci multi-kata.
   const key = canonicalSection(normalized);
-  const fallbackKey = !key && STRUCTURE_SECTION_KEYWORDS.find((keyword) => (
+  const fallbackKey = !key && sectionKeywords.find((keyword) => (
     keyword.includes(' ') && normalized.includes(keyword.replace(/[-_]+/g, ' '))
   ));
   const resolvedKey = key || fallbackKey;

@@ -34,19 +34,18 @@
 import { formatWholeLyricsDocument } from '../../utils/lyricsEditorUtils.js';
 import { validateMusicalFields } from '../../utils/songFormUtils.js';
 import { extractYouTubeId } from '../../utils/youtubeUtils.js';
-import {
-  SECTION_KEYWORD_ALTERNATION,
-  STRUCTURE_SECTION_KEYWORDS,
-  titleCaseKeyword,
-} from '../../config/chordDisplayConfig.js';
+import { titleCaseKeyword } from '../../config/chordDisplayConfig.js';
+import { getChordDisplayTags } from '../../utils/chord/chordDisplayTags.js';
+import { buildKeywordAlternation } from '../../utils/chord/textKeywords.js';
 
 /**
  * Kata seksi sebuah JUDUL lagu ("Judul: Chorus" bukan lagu berjudul Chorus).
- * Diturunkan dari config, tetapi hanya keyword yang memang TIDAK lazim dipakai
- * sebagai judul lagu: "Refrain" dan "Reff" justru sering menjadi judul.
+ * Diturunkan dari daftar keyword aktif (termasuk keyword tambahan admin),
+ * tetapi hanya keyword yang memang TIDAK lazim dipakai sebagai judul lagu:
+ * "Refrain" dan "Reff" justru sering menjadi judul.
  */
-const SECTION_NAME_WORDS = new Set(
-  STRUCTURE_SECTION_KEYWORDS
+const sectionNameWords = () => new Set(
+  getChordDisplayTags().STRUCTURE_SECTION_KEYWORDS
     .filter((word) => !['reff', 'refrain'].includes(word))
     // Bentuk yang tampil di parser (label dinormalisasi lewat titleCaseKeyword),
     // sehingga "Intro" dari config maupun tulisan user tetap cocok. Bandingkan
@@ -96,17 +95,23 @@ const KEY_SIGNATURE_REGEX = /^[A-G][#b]?(m|maj|min|minor|major|sus|dim|aug|add)?
  *
  * Daftar kata TIDAK ditulis ulang di sini: sebelumnya array seksi disalin dari
  * config, sehingga seksi baru di config tetap terbaca sebagai judul lagu oleh
- * modul bulk. Sumbernya sekarang SECTION_KEYWORD_ALTERNATION.
+ * modul bulk. Sumbernya sekarang daftar keyword aktif (chordDisplayTags.js),
+ * yang juga mengikuti pengaturan admin di /admin -> Tag & Deteksi.
  */
-const SECTION_LABEL_REGEX = new RegExp(
-  `^\\[\\s*(?:${SECTION_KEYWORD_ALTERNATION})\\b[^\\]]*\\]\\s*[:-]?\\s*$`,
-  'i',
-);
-const SECTION_HEADER_REGEX = new RegExp(
-  `^\\[?\\s*(?:${SECTION_KEYWORD_ALTERNATION})\\b[^:\\]]*[:\\]]\\s*$`,
-  'i',
-);
-const BARE_SECTION_REGEX = new RegExp(`^(?:${SECTION_KEYWORD_ALTERNATION})\\s*\\d*$`, 'i');
+const buildSectionRegexes = () => {
+  // Spasi boleh ditulis dengan underscore/hyphen ('pre_chorus'), dan titik di
+  // akhir singkatan ('int.') opsional saat dicocokkan.
+  // Regex dibangun ulang tiap pemanggilan isSectionLine agar perubahan dari
+  // admin langsung berlaku; hanya dipakai saat impor, jadi biayanya kecil.
+  const alternation = buildKeywordAlternation(getChordDisplayTags().STRUCTURE_SECTION_KEYWORDS)
+    .replace(/\.($|\|)/g, '\\.?$1');
+
+  return {
+    label: new RegExp(`^\\[\\s*(?:${alternation})\\b[^\\]]*\\]\\s*[:-]?\\s*$`, 'i'),
+    header: new RegExp(`^\\[?\\s*(?:${alternation})\\b[^:\\]]*[:\\]]\\s*$`, 'i'),
+    bare: new RegExp(`^(?:${alternation})\\s*\\d*$`, 'i'),
+  };
+};
 
 const BLOCK_FIELDS = [
   'artist',
@@ -180,12 +185,13 @@ function isSongMetadata(metadata) {
 export function isSectionLine(line) {
   const trimmed = String(line || '').trim();
   if (!trimmed) return true;
-  if (SECTION_LABEL_REGEX.test(trimmed) || SECTION_HEADER_REGEX.test(trimmed)) return true;
-  if (BARE_SECTION_REGEX.test(trimmed)) return true;
+  const regexes = buildSectionRegexes();
+  if (regexes.label.test(trimmed) || regexes.header.test(trimmed)) return true;
+  if (regexes.bare.test(trimmed)) return true;
   // "Judul: Refrain" tetap boleh menjadi judul lagu (dipakai di test regresi);
   // alias lain ("Ending", "Int.", "Bait 2") tetap dianggap label seksi.
   const word = trimmed.toLowerCase();
-  return SECTION_NAME_WORDS.has(word);
+  return sectionNameWords().has(word);
 }
 
 function createBlock(title) {
