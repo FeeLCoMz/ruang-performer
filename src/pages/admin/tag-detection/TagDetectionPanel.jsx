@@ -4,7 +4,7 @@
  * Panel tab "Tag & Deteksi" di halaman Administrator (/admin#tags).
  *
  * Administrator dapat mengatur kelompok kata kunci yang dideteksi
- * ChordDisplay — struktur lagu, modulasi, metadata, cue mark, instrumen,
+ * ChordDisplay — struktur lagu, metadata, instrumen,
  * tanda tanpa chord, dan kunci MIDI — beserta pratinjau hasil deteksinya.
  *
  * Perubahan disimpan di localStorage browser ini (lihat
@@ -25,9 +25,7 @@ export default function TagDetectionPanel() {
 
   const summaryItems = [
     { label: 'Section', value: summary.sections, icon: '🎬' },
-    { label: 'Modulasi', value: summary.modulation, icon: '🎚️' },
     { label: 'Metadata', value: summary.metadata, icon: '🏷️' },
-    { label: 'Cue mark', value: summary.cueMarks, icon: '🔔' },
     { label: 'Instrumen', value: summary.instruments, icon: '🎸' },
     { label: 'No chord', value: summary.noChord, icon: '🚫' },
     { label: 'Key MIDI', value: summary.midiKeys, icon: '🎹' },
@@ -115,10 +113,7 @@ export default function TagDetectionPanel() {
 /** Nama properti daftar aktif (getChordDisplayTags) untuk tiap id grup. */
 const GROUP_TAG_KEYS = {
   sections: 'STRUCTURE_SECTION_KEYWORDS',
-  modulation: 'MODULATION_KEYWORDS',
   metadata: 'METADATA_KEYS',
-  performance: 'PERFORMANCE_HINT_KEYS',
-  cueMarks: 'CUE_MARK_KEYWORDS',
   instruments: 'INSTRUMENT_KEYWORDS',
   noChord: 'NO_CHORD_TOKENS',
   midiKeys: 'MIDI_ROUTING_KEYS',

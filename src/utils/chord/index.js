@@ -26,7 +26,6 @@ export {
 export {
   getActiveMetadataKeys,
   getChordDisplayTags,
-  getCueMarkSet,
   getInstrumentSet,
   getMetadataKeySet,
   getSectionKeywordPatterns,

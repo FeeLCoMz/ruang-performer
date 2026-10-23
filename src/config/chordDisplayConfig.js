@@ -166,19 +166,6 @@ export const SECTION_KEYWORD_ALTERNATION = dedupe(
 export const SECTION_LABEL_REGEX_SOURCE = `^\\[?\\s*(?:${SECTION_KEYWORD_ALTERNATION})\\b`;
 
 /* ==================================================================
- * GRUP B — ARAH TRANSPOSE (mengubah nada chord)
- * ================================================================== */
-
-/* ------------------------------------------------------------------
- * 2. MODULATION / KEY CHANGE
- * ------------------------------------------------------------------
- * Kata kunci pengganti key di tengah lagu. Chord setelah baris ini
- * ditranspose mengikuti label yang ditulis (contoh: Modulation: G).
- * Bentuk ber-bracket ("[Modulation: G]") juga dikenali.
- */
-export const MODULATION_KEYWORDS = ['modulation', 'key change'];
-
-/* ==================================================================
  * GRUP C — METADATA INFORMASI (tidak mempengaruhi transpose)
  * ==================================================================
  *
@@ -195,29 +182,33 @@ export const MODULATION_KEYWORDS = ['modulation', 'key change'];
 /** Grup C — info lagu (informasional, tidak mempengaruhi transpose). */
 export const SONG_INFO_KEYS = [
   'original key', 'time signature',
-];
-
-/** Grup C — petunjuk permainan (cara memainkan, bukan alat/bank). */
-export const PERFORMANCE_HINT_KEYS = [
-  'intensitas', 'intensity', 'dynamics', 'dinamik',
-  'groove', 'feel', 'style', 'texture', 'voicing',
-];
-
-/** Grup C — catatan & efek. Tidak memicu Program Change. */
-export const NOTE_KEYS = [
-  'cue', 'notes', 'catatan',
-  'fx', 'effect', 'effects',
+  // Ganti key di tengah lagu. Dulu grup/parser modulasi terpisah; sekarang
+  // baris "Modulation: G" / "Key Change: G" hanya info metadata seperti
+  // "Original Key" — chord TIDAK ikut ditranspose.
+  'modulation', 'key change',
 ];
 
 /**
  * Semua key metadata yang dikenali (isMetadataLine) dan tidak punya parser
  * sendiri. Hanya keyword milik ChordDisplay: keyword patch/MIDI sengaja tidak
  * ada di sini karena modul MIDI membaca teks lirik dengan daftarnya sendiri.
+ *
+ * Petunjuk permainan (Intensitas, Feel, Groove, ...) dan cue mark
+ * ([Stop], [Hit], [Tutti], ...) kini juga metadata biasa — parser cue mark
+ * sudah dihapus, jadi baris ber-braket itu tampil sebagai chip metadata.
  */
 export const METADATA_KEYS = dedupe([
   ...SONG_INFO_KEYS,
-  ...PERFORMANCE_HINT_KEYS,
-  ...NOTE_KEYS,
+  // petunjuk permainan (cara memainkan, bukan alat/bank)
+  'intensitas', 'intensity', 'dynamics', 'dinamik',
+  'groove', 'feel', 'style', 'texture', 'voicing',
+  // catatan & efek (tidak memicu Program Change)
+  'cue', 'notes', 'catatan',
+  'fx', 'effect', 'effects',
+  // cue mark inline (aksi permainan)
+  'tutti', 'hit', 'ritardando', 'rit.',
+  'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in',
+  'fade in', 'fade out', 'fade in/out',
 ]);
 
 /**
@@ -271,30 +262,6 @@ export const CHORD_TOKEN_REGEX_SOURCE =
 export const NO_CHORD_TOKENS = ['n.c.', 'nc', 'no chord', 'no chords'];
 
 /* ==================================================================
- * GRUP E — CUE MARK INLINE (aksi permainan di baris chord/lirik)
- * ================================================================== */
-
-/* ------------------------------------------------------------------
- * 5. CUE MARKS (INLINE)
- * ------------------------------------------------------------------
- * Kata yang ditandai sebagai cue saat muncul inline dalam baris
- * chord/lirik, WAJIB dalam braket siku: [Stop], [Aksen], [Hit], [Tutti].
- */
-/**
- * Satu sumber kebenaran untuk cue mark, sama bentuknya dengan daftar keyword
- * lain di file ini: array string, tanpa metadata per item.
- *
- * Cue mark adalah aksi permainan (aksen, stop, fill, fade), bukan instrumen.
- * Karena itu ia TIDAK ikut menentukan instrumen yang terdeteksi maupun yang
- * muncul di panel instrumen — lihat isInstrumentKeywordWord().
- */
-export const CUE_MARK_KEYWORDS = [
-  'tutti', 'hit', 'ritardando', 'rit.',
-  'aksen', 'stop', 'break', 'bbreak', 'fill-in', 'fill in',
-  'fade in', 'fade out', 'fade in/out',
-];
-
-/* ==================================================================
  * GRUP F — INSTRUMEN (identitas alat)
  * ================================================================== */
 
@@ -337,7 +304,7 @@ export const INSTRUMENT_KEYWORDS = [
  * 7. AUTOCOMPLETION DI EDITOR
  * ------------------------------------------------------------------
  * Entri metadata yang ditawarkan autocompletion — DITURUNKAN dari
- * METADATA_KEYS + MODULATION_KEYWORDS di atas, sehingga autocomplete dan
+ * METADATA_KEYS di atas, sehingga autocomplete dan
  * parser SELALU memakai daftar key yang sama.
  * Tabel di bawah hanya menyimpan deskripsi popup per key (boleh dikosongkan);
  * key tanpa entri tetap ditawarkan tanpa deskripsi.
@@ -352,7 +319,7 @@ const DETAIL_INSTRUMENT = {
 };
 const DETAIL_MODULATION = {
   detail: 'Ganti key di tengah lagu',
-  info: 'Chord ikut ditranspose. Contoh: Modulation: G',
+  info: 'Hanya informasi; chord tidak ditranspose otomatis. Contoh: Modulation: G',
 };
 const DETAIL_CUE = {
   detail: 'Catatan perform',
@@ -417,11 +384,24 @@ export const AUTOCOMPLETE_METADATA_DETAILS = {
   fx: DETAIL_FX,
   'original key': DETAIL_ORIGINAL_KEY,
   'time signature': DETAIL_TIME_SIGNATURE,
+  // Cue mark inline kini metadata biasa (mis. [Stop], [Hit]).
+  tutti: DETAIL_CUE,
+  hit: DETAIL_CUE,
+  ritardando: DETAIL_CUE,
+  'rit.': DETAIL_CUE,
+  aksen: DETAIL_CUE,
+  stop: DETAIL_CUE,
+  break: DETAIL_CUE,
+  bbreak: DETAIL_CUE,
+  'fill-in': DETAIL_CUE,
+  'fill in': DETAIL_CUE,
+  'fade in': DETAIL_CUE,
+  'fade out': DETAIL_CUE,
+  'fade in/out': DETAIL_CUE,
 };
 
 export const AUTOCOMPLETE_METADATA = [
   ...METADATA_KEYS,
-  ...MODULATION_KEYWORDS,
 ].map((keyword) => ({
   label: `${titleCaseKeyword(keyword)}:`,
   detail: AUTOCOMPLETE_METADATA_DETAILS[keyword]?.detail || '',

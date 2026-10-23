@@ -127,6 +127,7 @@ describe('chordUtils', () => {
     expect(parsed[1].tokens.some((token) => token.isInstrument)).toBe(false);
     expect(parsed[2].tokens.some((token) => token.isInstrument)).toBe(false);
     expect(parsed[3].tokens.some((token) => token.isCueMark)).toBe(false);
+    expect(parsed[3].tokens.some((token) => token.isInstrument)).toBe(false);
   });
 
   test('parseLines keeps bracketed instrument phrases intact when they are a single tag', () => {
@@ -136,15 +137,15 @@ describe('chordUtils', () => {
     expect(parsed[2].tokens).toContainEqual({ token: 'Gitar', isInstrument: true });
   });
 
-  test('parseLines detects bracketed instrument labels and display cue tags in inline flow', () => {
+  test('parseLines detects bracketed instrument labels and reads cue tags as metadata in inline flow', () => {
     const parsed = parseLines(['[Gitar: teks apapun]', '[Aksen]', '[Stop]', '[BBreak]', '[Fill-in]', '[Fade in/out]', 'Cue: Gitar', 'Cue: [Sax]', 'Cue: Mainkan Piano Melodi Chorus', 'Dm [Sax] Em | G |', 'Dm [Sax] Em | G |', '[Sax][Stop] Am | Dm G |'], 0);
     expect(parsed[0]).toMatchObject({ type: 'instrument', label: 'Gitar: teks apapun' });
-    // Baris yang hanya berisi cue mark jadi row "cue", bukan lirik satu kata.
-    expect(parsed[1]).toMatchObject({ type: 'cue', label: 'Aksen' });
-    expect(parsed[2]).toMatchObject({ type: 'cue', label: 'Stop' });
-    expect(parsed[3]).toMatchObject({ type: 'cue', label: 'BBreak' });
-    expect(parsed[4]).toMatchObject({ type: 'cue', label: 'Fill-in' });
-    expect(parsed[5]).toMatchObject({ type: 'cue', label: 'Fade in/out' });
+    // Cue mark tidak lagi punya parser: baris ber-braket itu jadi metadata.
+    expect(parsed[1]).toMatchObject({ type: 'metadata', text: '[Aksen]' });
+    expect(parsed[2]).toMatchObject({ type: 'metadata', text: '[Stop]' });
+    expect(parsed[3]).toMatchObject({ type: 'metadata', text: '[BBreak]' });
+    expect(parsed[4]).toMatchObject({ type: 'metadata', text: '[Fill-in]' });
+    expect(parsed[5]).toMatchObject({ type: 'metadata', text: '[Fade in/out]' });
     // "Cue: ..." tetap metadata; kata instrumen di baris itu tidak jadi tag.
     expect(parsed[6]).toMatchObject({ type: 'metadata' });
     expect(parsed[7]).toMatchObject({ type: 'metadata' });
@@ -152,7 +153,7 @@ describe('chordUtils', () => {
     expect(parsed[9].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
     expect(parsed[10].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
     expect(parsed[11].tokens).toContainEqual({ token: 'Sax', isInstrument: true });
-    expect(parsed[11].tokens).toContainEqual({ token: 'Stop', isCueMark: true });
+    expect(parsed[11].tokens.some((token) => token.isCueMark)).toBe(false);
   });
 
   test('extractDetectedInstrumentsFromLyrics keeps real instruments and ignores cue tags', () => {
@@ -231,9 +232,11 @@ describe('chordUtils', () => {
     expect(instruments).toEqual([]);
   });
 
-  test('parseSection detects modulation lines', () => {
-    expect(parseSection('Modulation: G')).toEqual({ type: 'modulation', label: 'G' });
-    expect(parseSection('Key change: A')).toEqual({ type: 'modulation', label: 'A' });
+  test('parseSection no longer returns a modulation type (Modulation: is metadata)', () => {
+    expect(parseSection('Modulation: G')).toBeNull();
+    expect(parseSection('Key change: A')).toBeNull();
+    expect(isMetadataLine('Modulation: G')).toBe(true);
+    expect(isMetadataLine('Key Change: A')).toBe(true);
   });
 
   test('parseSection detects pre and post chorus labels', () => {
@@ -805,7 +808,7 @@ Repeat [00:12] then [1:02:03]
     test('reports kind for each row shape', () => {
       expect(classifyLine('')).toEqual({ kind: 'empty' });
       expect(classifyLine('[Intro]')).toMatchObject({ kind: 'structure', label: 'Intro' });
-      expect(classifyLine('Modulation: G')).toEqual({ kind: 'modulation', label: 'G' });
+      expect(classifyLine('Modulation: G')).toEqual({ kind: 'metadata', text: 'Modulation: G' });
       expect(classifyLine('[Gitar: Dist]')).toEqual({ kind: 'instrument', label: 'Gitar: Dist' });
       expect(classifyLine('Original Key: C')).toEqual({ kind: 'metadata', text: 'Original Key: C' });
       expect(classifyLine('C G Am F')).toEqual({ kind: 'chord' });

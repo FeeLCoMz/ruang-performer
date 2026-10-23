@@ -1066,7 +1066,6 @@
 .admin-tag-detection.is-structure .admin-tag-detection-kind { color: var(--admin-accent, #8b5cf6); }
 .admin-tag-detection.is-modulation .admin-tag-detection-kind { color: var(--warning, #f59e0b); }
 .admin-tag-detection.is-instrument .admin-tag-detection-kind { color: var(--admin-success, #34d399); }
-.admin-tag-detection.is-cue .admin-tag-detection-kind { color: var(--admin-danger, #ef4444); }
 .admin-tag-detection.is-lyrics .admin-tag-detection-kind { opacity: 0.6; }
 
 .admin-tag-footnote {

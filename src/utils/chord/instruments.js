@@ -1,18 +1,17 @@
 /**
  * instruments.js
  *
- * Deteksi label instrumen inline dan cue mark pada teks lirik/chord.
+ * Deteksi label instrumen inline pada teks lirik/chord.
  *
- * Semua keyword WAJIB ditulis dalam braket siku: "[Gitar]", "[Stop]",
- * "[Pad: Soft]", "[Cue: Fill]". Kurung biasa "(Gitar)"/"(Stop)" dan keyword
- * polos tanpa braket TIDAK lagi dikenali sebagai instrumen/cue — teks seperti
- * itu dirender sebagai lirik biasa.
- * Cue mark sengaja dipisah dari instrumen: aksi permainan seperti "Stop" atau
- * "Aksen" bukan alat, jadi tidak boleh terbaca sebagai instrumen.
+ * Semua keyword WAJIB ditulis dalam braket siku: "[Gitar]", "[Pad: Soft]".
+ * Kurung biasa "(Gitar)" dan keyword polos tanpa braket TIDAK dikenali sebagai
+ * instrumen — teks seperti itu dirender sebagai lirik biasa.
+ * Cue mark ([Stop], [Hit], ...) kini dibaca parser sebagai metadata, bukan di
+ * modul ini.
  *
- * Daftar instrumen & cue mark berasal dari chordDisplayTags.js sehingga
- * perubahan di halaman Administrator (Tag & Deteksi) langsung berlaku, juga
- * untuk file lirik yang sudah dibuka.
+ * Daftar instrumen berasal dari chordDisplayTags.js sehingga perubahan di
+ * halaman Administrator (Tag & Deteksi) langsung berlaku, juga untuk file
+ * lirik yang sudah dibuka.
  */
 import { getChordDisplayTags, getInstrumentSet } from './chordDisplayTags.js';
 import {
@@ -26,10 +25,10 @@ import {
   transposeLeadingDashChordToken,
 } from './chordTokens.js';
 
-/** Regex nama instrumen / cue mark, dibangun ulang hanya saat daftarnya berubah. */
+/** Regex nama instrumen, dibangun ulang hanya saat daftarnya berubah. */
 const buildPatterns = (keywords) => keywords.map(matchKeywordPattern);
 
-const patternCache = { instruments: { key: null, patterns: [] }, cues: { key: null, patterns: [] } };
+const patternCache = { instruments: { key: null, patterns: [] } };
 
 const instrumentPatterns = () => {
   const keywords = getChordDisplayTags().INSTRUMENT_KEYWORDS;
@@ -38,15 +37,6 @@ const instrumentPatterns = () => {
     patternCache.instruments = { key, patterns: buildPatterns(keywords) };
   }
   return patternCache.instruments.patterns;
-};
-
-const cueMarkPatterns = () => {
-  const keywords = getChordDisplayTags().CUE_MARK_KEYWORDS;
-  const key = keywords.join('|');
-  if (patternCache.cues.key !== key) {
-    patternCache.cues = { key, patterns: buildPatterns(keywords) };
-  }
-  return patternCache.cues.patterns;
 };
 
 /** True when the whole value is exactly one known instrument keyword. */
@@ -154,26 +144,6 @@ export const findInlineInstrumentMatch = (candidate = '') => {
   }
 
   return false;
-};
-
-export const isCueMarkKeyword = (candidate = '') => {
-  if (typeof candidate !== 'string') return false;
-
-  const normalized = String(candidate || '').trim();
-  if (!normalized) return false;
-
-  const lower = normalized.toLowerCase();
-  const hasInstrumentInPhrase = instrumentPatterns().some((pattern) => pattern.test(lower));
-  if (hasInstrumentInPhrase) return false;
-
-  return cueMarkPatterns().some((pattern) => pattern.test(lower));
-};
-
-export const normalizeCueMarkToken = (candidate = '') => {
-  if (!isCueMarkKeyword(candidate)) return false;
-
-  const normalized = String(candidate || '').trim();
-  return normalized.replace(/[()\[\]{}]+/g, '').trim();
 };
 
 export const normalizeInstrumentDisplayLabel = (label = '') => {
@@ -338,21 +308,6 @@ export const splitParenthesizedMultiChordToken = (token = '', transpose = 0) => 
   return transposedParts.flatMap((part, index, arr) => (
     index === arr.length - 1 ? [part] : [part, { token: ' ', isSpace: true }]
   ));
-};
-
-export const isInlineCueMarkToken = (token) => {
-  if (typeof token !== 'string') return false;
-
-  const trimmed = token.trim();
-  if (!trimmed) return false;
-
-  // Cue mark hanya dikenali di dalam braket siku: "[Stop]". "(Stop)" adalah
-  // teks biasa, bukan keyword.
-  if (!isBracketGroup(trimmed)) return false;
-  const raw = trimmed.slice(1, -1).trim();
-  if (!raw) return false;
-
-  return normalizeCueMarkToken(raw);
 };
 
 export const isInlineInstrumentToken = (token) => {

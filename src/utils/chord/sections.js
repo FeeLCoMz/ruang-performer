@@ -1,46 +1,24 @@
 /**
  * sections.js
  *
- * Deteksi label seksi lagu, modulasi, dan metadata dari sebuah baris teks.
+ * Deteksi label seksi lagu dan metadata dari sebuah baris teks.
  *
- * Kata kunci seksi & modulasi berasal dari chordDisplayTags.js (bawaan config
+ * Kata kunci seksi berasal dari chordDisplayTags.js (bawaan config
  * + editan admin di /admin -> Tag & Deteksi) dan dicocokkan sebagai kata utuh
- * (lihat textKeywords.js).
+ * (lihat textKeywords.js). "Modulation:" / "Key Change:" dibaca sebagai
+ * metadata biasa (lihat METADATA_KEYS), bukan tipe baris tersendiri.
  */
 import {
   getChordDisplayTags,
-  getCueMarkSet,
   getInstrumentSet,
   getMetadataKeySet,
   getMidiKeyWords,
   getSectionKeywordPatterns,
 } from './chordDisplayTags.js';
-import {
-  buildKeywordAlternation,
-  createKeywordPattern,
-} from './textKeywords.js';
-import {
+import { createKeywordPattern } from './textKeywords.js';import {
   matchInlineInstrumentLabel,
   normalizeInstrumentDisplayLabel,
 } from './instruments.js';
-
-let modulationCache = { key: null, regex: null };
-
-/** Regex baris "Modulation: G" — mengikuti daftar keyword yang aktif. */
-const modulationLineRegex = () => {
-  const keywords = getChordDisplayTags().MODULATION_KEYWORDS;
-  const key = keywords.join('|');
-  if (modulationCache.key !== key) {
-    modulationCache = {
-      key,
-      regex: new RegExp(
-        `^(?:${buildKeywordAlternation(keywords, '\\s+')})\\s*:\\s*(.+)$`,
-        'i',
-      ),
-    };
-  }
-  return modulationCache.regex;
-};
 
 let midiKeyCache = { key: null, pattern: null };
 
@@ -126,8 +104,9 @@ export const formatBracketedInstrumentLabel = (bracketed) => (
 );
 
 /**
- * Satu braket berisi kata kunci cue mark ("[Stop]", "[Fill in]") dan bukan
- * instrumen. Dipakai agar baris itu jadi label cue, bukan lirik satu kata.
+ * Satu braket berisi keyword metadata ("[Stop]", "[Intensitas: 2]") dan
+ * bukan instrumen. Dipakai agar baris itu jadi chip metadata, bukan lirik
+ * satu kata.
  */
 export const isKnownCueMarkLabel = (line = '') => {
   if (typeof line !== 'string') return false;
@@ -138,7 +117,7 @@ export const isKnownCueMarkLabel = (line = '') => {
   if (!inside) return false;
   if (getInstrumentSet().has(inside)) return false;
 
-  return getCueMarkSet().has(inside);
+  return metadataKeySet().has(inside);
 };
 
 const isInstrumentBracketLine = (line) => {
@@ -199,18 +178,8 @@ export function parseSection(line) {
     }
   }
 
-  // Deteksi modulasi/key change. Bentuk ber-bracket ("[Modulation: G]",
-  // "[Key Change: G]") juga dikenali supaya penulisan bracket konsisten dengan
-  // metadata lain, tidak jatuh ke lirik.
-  const modulationMatch = trimmedLine
-    .replace(/^\[/, '')
-    .replace(/\]$/, '')
-    .trim()
-    .match(modulationLineRegex());
-  if (modulationMatch) {
-    const targetKey = modulationMatch[1].trim();
-    return { type: 'modulation', label: targetKey };
-  }
+  // Deteksi modulasi/key change sudah dihapus: "Modulation: G" dibaca
+  // isMetadataLine() sebagai chip metadata biasa.
 
   return null;
 }
@@ -261,6 +230,11 @@ export const isMetadataLine = (line) => {
     return isKnownMetadataKey(singleBracketMatch[1]);
   }
 
+  // Braket berisi satu kata kunci metadata tanpa nilai: "[Stop]", "[Aksen]",
+  // "[Tutti]". Dulu ini tipe baris "cue"; kini metadata biasa.
+  const keywordBracketMatch = trimmed.match(/^\[([^\]]+)\]$/);
+  if (keywordBracketMatch && isKnownMetadataKey(keywordBracketMatch[1])) return true;
+
   if (!trimmed.includes(':')) return false;
 
   const segments = trimmed.split('|').map((segment) => segment.trim()).filter(Boolean);
@@ -278,17 +252,14 @@ export const TIMESTAMP_BRACKET_REGEX = /^\[\d{1,2}:\d{2}(?::\d{2})?\]$/;
 
 /**
  * Keyword instrumen untuk deteksi instrumen (panel instrumen, "instrumen per
- * seksi"). Cue mark sengaja dibuang: aksi permainan seperti "Stop" atau "Aksen"
- * bukan alat, jadi tidak boleh terbaca sebagai instrumen.
+ * seksi"). Cue mark kini metadata, jadi daftar ini murni nama alat.
  */
-export const getRealInstrumentKeywords = () => (
-  getChordDisplayTags().INSTRUMENT_KEYWORDS.filter(
-    (keyword) => !getCueMarkSet().has(keyword),
-  )
-);
+export const getRealInstrumentKeywords = () => [
+  ...getChordDisplayTags().INSTRUMENT_KEYWORDS,
+];
 
 /**
- * Daftar instrumen tanpa cue mark.
+ * Daftar instrumen.
  * Fungsi (bukan array) agar tidak dihitung saat modul dimuat — modul ini ikut
  * dalam siklus impor dengan chordDisplayConfig.js, dan daftar bisa berubah
  * kapan saja dari halaman admin. Parser memanggil getRealInstrumentKeywords().

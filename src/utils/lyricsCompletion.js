@@ -11,7 +11,6 @@ import {
   getActiveMetadataKeys,
   getAutocompleteInstruments,
   getAutocompleteSectionLabels,
-  getChordDisplayTags,
 } from './chord/chordDisplayTags.js';
 
 /**
@@ -33,22 +32,19 @@ const sectionCompletions = () => getAutocompleteSectionLabels(titleCaseKeyword).
  * Satu bentuk saja: `[Patch: Stage Piano]`. Baris "Patch: ..." tanpa braket
  * sengaja tidak ditawarkan — semua keyword ditulis dalam braket siku.
  */
-const metadataCompletions = () => {
-  const tags = getChordDisplayTags();
-  return [...getActiveMetadataKeys(), ...tags.MODULATION_KEYWORDS].map((keyword) => {
-    const label = `${titleCaseKeyword(keyword)}:`;
-    const details = AUTOCOMPLETE_METADATA_DETAILS[keyword] || {};
-    return {
-      label: `[${label} ]`,
-      type: 'property',
-      detail: details.detail || '',
-      info: details.info || undefined,
-      apply: `[${label} ]`,
-      // Klik "Original Key:" menulis "[Original Key: ]" — kursor di dalam braket.
-      applyAfter: ']',
-    };
-  });
-};
+const metadataCompletions = () => getActiveMetadataKeys().map((keyword) => {
+  const label = `${titleCaseKeyword(keyword)}:`;
+  const details = AUTOCOMPLETE_METADATA_DETAILS[keyword] || {};
+  return {
+    label: `[${label} ]`,
+    type: 'property',
+    detail: details.detail || '',
+    info: details.info || undefined,
+    apply: `[${label} ]`,
+    // Klik "Original Key:" menulis "[Original Key: ]" — kursor di dalam braket.
+    applyAfter: ']',
+  };
+});
 
 /** Instrument words highlighted by the editor — always as a bracketed tag. */
 const instrumentCompletions = () => getAutocompleteInstruments(titleCaseKeyword).map((name) => ({
@@ -59,15 +55,6 @@ const instrumentCompletions = () => getAutocompleteInstruments(titleCaseKeyword)
 }));
 
 /**
- * Inline cue marks (Stop, Hit, Aksen, ...) recognised by isCueMarkKeyword().
- * Hanya bentuk braket: `[Hit]`. Kurung biasa tidak lagi dibaca sebagai keyword.
- */
-const cueCompletions = () => [...new Set(getChordDisplayTags().CUE_MARK_KEYWORDS.map(titleCaseKeyword))]
-  .map((name) => (
-    { label: `[${name}]`, type: 'keyword', detail: 'Cue mark', apply: `[${name}]` }
-  ));
-
-/**
  * Daftar opsi dibuat ulang setiap pembacaan (getter) karena Administrator
  * dapat mengubah daftar kata kunci saat aplikasi berjalan.
  */
@@ -75,7 +62,6 @@ const buildOptions = () => [
   ...sectionCompletions(),
   ...metadataCompletions(),
   ...instrumentCompletions(),
-  ...cueCompletions(),
 ].map((option) => (
   // '' = kursor tepat di dalam braket (setelah "[Nama: ").
   { ...option, applyAfter: option.applyAfter ?? '' }

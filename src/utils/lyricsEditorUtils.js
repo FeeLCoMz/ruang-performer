@@ -3,7 +3,6 @@ import {
   parseSection,
   transposeChord,
   isMetadataLine,
-  isCueMarkKeyword,
   isInstrumentKeywordWord,
   canonicalSection,
 } from './chordUtils.js';
@@ -196,11 +195,6 @@ function transformChordContent(text, transformChord) {
   return normalizedText
     .split('\n')
     .map((line) => {
-      const section = parseSection(line);
-      if (section?.type === 'modulation') {
-        return line.replace(/^(\s*(?:modulation|key\s+change)\s*:\s*)(.+)$/i, (_, start, chord) => `${start}${transformChord(chord.trim())}`);
-      }
-
       if (isChordLine(line)) {
         return line.replace(/\S+/g, (token) => transformDelimitedChordToken(token, transformChord));
       }
@@ -541,7 +535,7 @@ function tagPerformLine(line) {
   }
 
   // Cue marks: "Stop", "Fill in", "Tutti"
-  if (isCueMarkKeyword(trimmed)) {
+  if (isMetadataLine(trimmed)) {
     return `[${trimmed.replace(/[.,;:]+$/, '').trim()}]`;
   }
 

@@ -42,7 +42,6 @@ import {
   parseSection,
   parseLines,
   isNoChordToken,
-  isCueMarkKeyword,
   isInstrumentKeywordWord,
   canonicalSection,
 } from '../utils/chordUtils.js';
@@ -133,29 +132,36 @@ describe('pengaturan tag ChordDisplay oleh admin', () => {
     expect(canonicalSection('Bait 2')).toBeNull();
   });
 
-  test('instrumen dan cue mark tambahan dibaca parser', async () => {
+  test('instrumen tambahan dibaca parser, cue mark kini metadata', async () => {
     expect(isInstrumentKeywordWord('angklung')).toBe(true);
     expect(isInstrumentKeywordWord('kolintang')).toBe(false);
 
     await setTagGroupKeywords('instruments', [...getChordDisplayTags().INSTRUMENT_KEYWORDS, 'kolintang']);
-    await setTagGroupKeywords('cueMarks', [...getChordDisplayTags().CUE_MARK_KEYWORDS, 'breakdown']);
 
     expect(isInstrumentKeywordWord('Kolintang')).toBe(true);
-    expect(isCueMarkKeyword('[Breakdown]')).toBe(true);
+
+    // Cue mark tidak lagi punya parser: baris ber-braket dibaca metadata.
+    expect(isMetadataLine('[Breakdown]')).toBe(false);
+    expect(isMetadataLine('[Stop]')).toBe(true);
+
+    // Menambahkan keyword cue ke grup metadata membuatnya ikut dikenali.
+    await setTagGroupKeywords('metadata', [...getChordDisplayTags().METADATA_KEYS, 'breakdown']);
+    expect(isMetadataLine('[Breakdown]')).toBe(true);
+    expect(parseLines(['[Breakdown]'], 0)[0]).toMatchObject({ type: 'metadata' });
 
     // Label instrumen dikenali bila diikuti keterangan ("[Nama: Detail]").
     const token = parseLines(['[Kolintang: Akustik]'], 0)[0];
     expect(token).toMatchObject({ type: 'instrument' });
   });
 
-  test('metadata dan modulasi tambahan dikenali', async () => {
+  test('metadata tambahan dikenali dan modulasi kini metadata biasa', async () => {
     expect(isMetadataLine('[Capo: 2]')).toBe(false);
+    expect(isMetadataLine('[Modulation: D]')).toBe(true);
 
     await setTagGroupKeywords('metadata', [...getChordDisplayTags().METADATA_KEYS, 'capo']);
-    await setTagGroupKeywords('modulation', [...getChordDisplayTags().MODULATION_KEYWORDS, 'naik nada']);
 
     expect(isMetadataLine('[Capo: 2]')).toBe(true);
-    expect(parseSection('[Naik Nada: D]')).toMatchObject({ type: 'modulation', label: 'D' });
+    expect(parseSection('[Naik Nada: D]')).toBeNull();
   });
 
   test('token No Chord dapat diubah admin', async () => {
@@ -168,7 +174,6 @@ describe('pengaturan tag ChordDisplay oleh admin', () => {
 
   test('menghapus semua keyword seksi membuat baris seksi tidak lagi terdeteksi', async () => {
     await setTagGroupKeywords('sections', ['lagu']);
-    await setTagGroupKeywords('modulation', ['modulasi']);
     expect(parseSection('[Intro]')).toBeNull();
     expect(parseSection('[Lagu]')).toMatchObject({ type: 'structure' });
   });
@@ -203,7 +208,7 @@ describe('pengaturan tag ChordDisplay oleh admin', () => {
   });
 
   test('format daftar untuk editor memakai satu kata kunci per baris', () => {
-    const group = getTagGroup('cueMarks');
+    const group = getTagGroup('metadata');
     expect(formatKeywordList(group.fallback)).toBe(group.fallback.join('\n'));
   });
 

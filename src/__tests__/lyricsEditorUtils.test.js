@@ -69,13 +69,10 @@ describe('lyricsEditorUtils', () => {
     expect(autoTagSongSections(input)).toBe('[Verse 1] Aku kembali\n[Pre-Chorus] sampai\n[Chorus] na na');
   });
 
-  test('autoTagSongSections tags instrument labels, cues, and metadata keys', () => {
+  test('autoTagSongSections tags instrument labels and metadata keys', () => {
     const input = [
       'Gitar',
       'Keys: Stage Piano | PC: 0 | CH: 1',
-      'Stop',
-      'Fill in',
-      'Cue: Drum masuk di bar 9',
       'Intensitas: 2',
       'Aku kembali ke rumah',
     ].join('\n');
@@ -83,9 +80,6 @@ describe('lyricsEditorUtils', () => {
     expect(autoTagSongSections(input)).toBe([
       '[Gitar]',
       '[Keys: Stage Piano | PC: 0 | CH: 1]',
-      '[Stop]',
-      '[Fill in]',
-      '[Cue: Drum masuk di bar 9]',
       '[Intensitas: 2]',
       'Aku kembali ke rumah',
     ].join('\n'));
@@ -128,8 +122,8 @@ describe('lyricsEditorUtils', () => {
   });
 
   test('standardizeChordNotation normalizes chord quality spellings', () => {
-    const input = '[cmajor7] line\nAminor DMajor7/F#\nModulation: bbminor';
-    expect(standardizeChordNotation(input)).toBe('[Cmaj7] line\n| Am | Dmaj7/F# |\nModulation: Bbm');
+    const input = '[cmajor7] line\nAminor DMajor7/F#';
+    expect(standardizeChordNotation(input)).toBe('[Cmaj7] line\n| Am | Dmaj7/F# |');
   });
 
   test('standardizeChordNotation converts compact section chords into bar grid', () => {
@@ -147,9 +141,9 @@ describe('lyricsEditorUtils', () => {
     expect(standardizeChordNotation(input)).toBe('| Cm | D# |\nMendung idak guruh jugo idak tibo\n| A# | Cm |');
   });
 
-  test('transposeLyricsText transposes inline, chord-line, and modulation chords', () => {
+  test('transposeLyricsText transposes inline and chord-line chords but leaves modulation metadata alone', () => {
     const input = '[C]Hello\nAm F G\nModulation: Bb';
-    expect(transposeLyricsText(input, 2)).toBe('[D]Hello\nBm G A\nModulation: C');
+    expect(transposeLyricsText(input, 2)).toBe('[D]Hello\nBm G A\nModulation: Bb');
   });
 
   test('formatWholeLyricsDocument cleans, tags sections, and standardises chords at once', () => {

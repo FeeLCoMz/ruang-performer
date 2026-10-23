@@ -2,7 +2,6 @@ import { describe, test, expect } from 'vitest';
 import {
   AUTOCOMPLETE_INSTRUMENTS,
   AUTOCOMPLETE_SECTION_LABELS,
-  CUE_MARK_KEYWORDS,
   INSTRUMENT_KEYWORDS,
   METADATA_KEYS,
   MIDI_KEYS_ALSO_INSTRUMENT,
@@ -94,12 +93,11 @@ describe('chordDisplayConfig contract', () => {
     }
   });
 
-  test('cue mark tidak pernah muncul sebagai instrumen di autocomplete', () => {
+  test('cue mark kini metadata biasa, bukan keyword instrumen', () => {
     const instrumentLabels = new Set(AUTOCOMPLETE_INSTRUMENTS.map((name) => titleCaseKeyword(name)));
-    for (const cue of CUE_MARK_KEYWORDS) {
-      // "Hit" dan "Stop" boleh jadi instrumen hanya bila memang didaftarkan;
-      // saat ini tidak, jadi keduanya cukup muncul sebagai cue mark.
-      if (INSTRUMENT_KEYWORDS.includes(cue)) continue;
+    for (const cue of ['stop', 'hit', 'tutti', 'fill in']) {
+      expect(METADATA_KEYS, cue).toContain(cue);
+      expect(INSTRUMENT_KEYWORDS, cue).not.toContain(cue);
       expect(instrumentLabels.has(titleCaseKeyword(cue)), cue).toBe(false);
     }
   });

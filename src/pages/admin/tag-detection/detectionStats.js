@@ -2,7 +2,7 @@
  * detectionStats.js
  *
  * Ringkasan hasil deteksi ChordDisplay untuk preview di tab "Tag & Deteksi":
- * berapa baris yang terbaca sebagai seksi, modulasi, metadata, cue mark,
+ * berapa baris yang terbaca sebagai seksi, metadata,
  * instrumen, chord, dan lirik — beserta tag yang TIDAK dikenali.
  *
  * Memakai classifyLine() dari parser yang sama dengan tampilan lagu
@@ -15,9 +15,7 @@ import { classifyLine } from '../../../utils/chordUtils.js';
 
 export const DETECTION_KINDS = [
   { id: 'structure', label: 'Struktur', icon: '🎬' },
-  { id: 'modulation', label: 'Modulasi', icon: '🎚️' },
   { id: 'metadata', label: 'Metadata', icon: '🏷️' },
-  { id: 'cue', label: 'Cue mark', icon: '🔔' },
   { id: 'instrument', label: 'Instrumen', icon: '🎸' },
   { id: 'chord', label: 'Baris chord', icon: '🎵' },
   { id: 'number', label: 'Not angka', icon: '�' },

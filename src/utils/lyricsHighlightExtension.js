@@ -20,7 +20,6 @@ const token = (name) => Decoration.mark({ class: `cm-lyr-${name}` });
 
 const CHORD_DECORATION = token('chord');
 const SECTION_DECORATION = token('section');
-const CUE_DECORATION = token('cue');
 const METADATA_DECORATION = token('metadata');
 const BARLINE_DECORATION = token('barline');
 const INSTRUMENT_DECORATION = token('instrument');
@@ -48,7 +47,7 @@ function decorateLine(builder, line, lineFrom) {
     builder.add(lineFrom + from, lineFrom + to, decoration);
   };
 
-  // 1. Section / structure / instrument / modulation label
+  // 1. Section / structure / instrument label
   const section = parseSection(line);
   if (section) {
     const label = String(section.label || '');
@@ -82,8 +81,7 @@ function decorateLine(builder, line, lineFrom) {
 function labelledStructure(section) {
   return (
     section.type === 'structure' ||
-    section.type === 'instrument' ||
-    section.type === 'modulation'
+    section.type === 'instrument'
   );
 }
 
@@ -130,7 +128,7 @@ function decorateInlineLyrics(builder, line, lineFrom) {
     if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(inner)) {
       builder.add(lineFrom + start, lineFrom + end, TIMESTAMP_DECORATION);
     } else if (/^(keys|piano|guitar|bass|drum|brass|strings|vocal|vokal)\s*:/i.test(inner) || /PC\s*:|CH\s*:/i.test(inner)) {
-      builder.add(lineFrom + start, lineFrom + end, CUE_DECORATION);
+      builder.add(lineFrom + start, lineFrom + end, METADATA_DECORATION);
     } else if (/^[A-Ga-g][#b♭♯]?/.test(inner)) {
       builder.add(lineFrom + start, lineFrom + end, CHORD_DECORATION);
     } else {

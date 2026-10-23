@@ -215,7 +215,7 @@ describe('AdminPage', () => {
     const text = container.textContent;
     expect(text).toContain('Tag & Deteksi ChordDisplay');
     expect(text).toContain('Struktur Lagu');
-    expect(text).toContain('Cue Mark Inline');
+    expect(text).toContain('Metadata');
     expect(text).toContain('Instrumen');
     expect(text).toContain('Pratinjau Deteksi');
     expect(container.querySelectorAll('.admin-tag-group').length).toBeGreaterThan(3);

@@ -498,8 +498,7 @@
 }
 
 /* Jarak antar-section dipadatkan agar lebih banyak lirik terlihat sekaligus. */
-.stage-lyrics .cd-section-struct,
-.stage-lyrics .cd-modulation {
+.stage-lyrics .cd-section-struct {
   margin: 8px 0 4px;
 }
 

@@ -239,10 +239,7 @@ export const getChordDisplayTags = () => {
   return {
     STRUCTURE_SECTION_KEYWORDS: groups.sections,
     SECTION_NAME_ALIASES: aliases,
-    MODULATION_KEYWORDS: groups.modulation,
-    PERFORMANCE_HINT_KEYS: groups.performance,
     METADATA_KEYS: groups.metadata,
-    CUE_MARK_KEYWORDS: groups.cueMarks,
     INSTRUMENT_KEYWORDS: groups.instruments,
     NO_CHORD_TOKENS: groups.noChord,
     MIDI_ROUTING_KEYS: groups.midiKeys,
@@ -250,14 +247,13 @@ export const getChordDisplayTags = () => {
 };
 
 /**
- * Daftar metadata yang dipakai parser: grup metadata + petunjuk permainan.
- * Dulu METADATA_KEYS di config menggabungkan keduanya; sekarang dipisah agar
- * admin bisa mengatur masing-masing kelompok.
+ * Daftar metadata yang dipakai parser.
+ *
+ * Dulu isinya digabung dengan grup "petunjuk permainan" terpisah; sekarang
+ * keduanya (dan cue mark) sudah satu grup metadata, jadi ini tinggal
+ * mengembalikan daftar aktif apa adanya.
  */
-export const getActiveMetadataKeys = () => {
-  const tags = getChordDisplayTags();
-  return [...new Set([...tags.METADATA_KEYS, ...tags.PERFORMANCE_HINT_KEYS])];
-};
+export const getActiveMetadataKeys = () => [...new Set(getChordDisplayTags().METADATA_KEYS)];
 
 /* ------------------------------------------------------------------ */
 /* Turunan (set + regex) dengan cache                                   */
@@ -281,24 +277,14 @@ export const getInstrumentSet = () => {
   return derivedCache.instrumentSet.set;
 };
 
-export const getCueMarkSet = () => {
-  const list = getChordDisplayTags().CUE_MARK_KEYWORDS;
-  const key = fingerprint(list);
-  if (derivedCache.cueMarkSet?.key !== key) {
-    derivedCache.cueMarkSet = { key, set: new Set(list.map(normalizeKeyword)) };
-  }
-  return derivedCache.cueMarkSet.set;
-};
-
-/** Set metadata aktif (metadata + petunjuk permainan). */
+/** Set metadata aktif (semua key metadata, termasuk petunjuk & cue mark). */
 export const getMetadataKeySet = () => {
   const metadata = getChordDisplayTags().METADATA_KEYS;
-  const performance = getChordDisplayTags().PERFORMANCE_HINT_KEYS;
-  const key = `${fingerprint(metadata)}~${fingerprint(performance)}`;
+  const key = fingerprint(metadata);
   if (derivedCache.metadataKeys?.key !== key) {
     derivedCache.metadataKeys = {
       key,
-      set: new Set([...metadata, ...performance].map(normalizeKeyword)),
+      set: new Set(metadata.map(normalizeKeyword)),
     };
   }
   return derivedCache.metadataKeys.set;
@@ -372,12 +358,8 @@ export const buildTagPreviewSample = () => {
   const lines = [];
   const section = first(tags.STRUCTURE_SECTION_KEYWORDS);
   if (section) lines.push(`[${section}]`);
-  const modulation = first(tags.MODULATION_KEYWORDS);
-  if (modulation) lines.push(`[${modulation}: G]`);
   const metadata = first(getActiveMetadataKeys());
   if (metadata) lines.push(`[${metadata}: contoh]`);
-  const cue = first(tags.CUE_MARK_KEYWORDS);
-  if (cue) lines.push(`[${cue}]`);
   const instrument = first(tags.INSTRUMENT_KEYWORDS);
   if (instrument) lines.push(`[${instrument}: Dist]`);
   if (tags.NO_CHORD_TOKENS.length) lines.push('| N.C. |');
@@ -512,9 +494,7 @@ export const summarizeActiveTags = () => {
     sections: tags.STRUCTURE_SECTION_KEYWORDS.length,
     aliases: Object.keys(tags.SECTION_NAME_ALIASES).length,
     metadata: getActiveMetadataKeys().length,
-    cueMarks: tags.CUE_MARK_KEYWORDS.length,
     instruments: tags.INSTRUMENT_KEYWORDS.length,
-    modulation: tags.MODULATION_KEYWORDS.length,
     noChord: tags.NO_CHORD_TOKENS.length,
     midiKeys: getMidiKeyWords().length,
   };

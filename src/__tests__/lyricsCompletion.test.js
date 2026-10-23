@@ -19,7 +19,7 @@ describe('lyricsCompletionOptions', () => {
 
   test('Given metadata keys, Then the syntaxes from the removed help modal are all present', () => {
     // These were the entries in the old "Panduan Metadata Lirik" modal.
-    // Autocomplete diturunkan 1:1 dari METADATA_KEYS + MODULATION_KEYWORDS,
+    // Autocomplete diturunkan 1:1 dari METADATA_KEYS,
     // dan sekarang hanya ditawarkan dalam bentuk braket.
     // "Instrument:" bukan lagi keyword metadata (baris instrumen memakai
     // bentuk "[Gitar: ...]"), jadi tidak diharapkan di daftar ini.
@@ -48,9 +48,11 @@ describe('lyricsCompletionOptions', () => {
     expect(lyricsCompletionOptions.some((option) => option.label === 'Guitar')).toBe(false);
   });
 
-  test('Given cue marks, Then only the bracketed form is offered', () => {
-    expect(labels).toContain('[Stop]');
-    expect(labels).not.toContain('(Stop)');
+  test('Given cue marks, Then they complete as metadata chips, not their own type', () => {
+    // Cue mark kini metadata: tidak ada lagi entri "[Stop]" ber-type keyword.
+    expect(labels).not.toContain('[Stop]');
+    expect(labels).toContain('[Stop: ]');
+    expect(lyricsCompletionOptions.find((option) => option.label === '[Stop: ]')).toBeTruthy();
   });
 
   test('Given metadata keys, Then only the bracketed form is offered', () => {

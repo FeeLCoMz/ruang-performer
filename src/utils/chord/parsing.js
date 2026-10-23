@@ -9,13 +9,12 @@
  *   2. Tokenisasi baris chord/lirik
  *   3. parseLines — peta baris -> baris sumber untuk sinkronisasi editor
  */
-import { getCueMarkSet, getInstrumentSet } from './chordDisplayTags.js';
+import { getInstrumentSet } from './chordDisplayTags.js';
 import { matchKeywordPattern, escapeRegex } from './textKeywords.js';
 import {
   isChordToken,
   isChordLine,
   isLeadingDashChordToken,
-  transposeChord,
   transposeChordToken,
   transposeLeadingDashChordToken,
   transposeCompactChordToken,
@@ -23,8 +22,6 @@ import {
   isNumberNotationToken,
 } from './chordTokens.js';
 import {
-  isCueMarkKeyword,
-  isInlineCueMarkToken,
   isInlineInstrumentToken,
   mergeInstrumentPhraseTokens,
   matchInlineInstrumentLabel,
@@ -37,7 +34,6 @@ import {
   parseBracketedInstrumentLabel,
   formatBracketedInstrumentLabel,
   isInstrumentPatchLikeLine,
-  isKnownCueMarkLabel,
   isMetadataLine,
   TIMESTAMP_BRACKET_REGEX,
   getRealInstrumentKeywords,
@@ -186,8 +182,6 @@ function splitBracketCompoundLine(line) {
     .filter((chunk) => !TIMESTAMP_BRACKET_REGEX.test(chunk));
 }
 
-const CANONICAL_BRACKET_KEYWORD_REGEX = /^\[([A-Za-z0-9 '.\-&_]+)\]$/;
-
 /**
  * Shape braket "Nama: nilai" yang bukan milik ChordDisplay — bentuk yang
  * dipakai modul MIDI ("Keys: EP Soft", "CH: 2", "Patch: Stage Piano").
@@ -195,16 +189,6 @@ const CANONICAL_BRACKET_KEYWORD_REGEX = /^\[([A-Za-z0-9 '.\-&_]+)\]$/;
 const MIDI_ONLY_BRACKET_REGEX = /^\[[^[\]:]+:\s*[^[\]]*\]$/;
 
 const isMidiOnlyBracketTag = (tag = '') => MIDI_ONLY_BRACKET_REGEX.test(String(tag).trim());
-
-/**
- * Tulis ulang keyword cue mark yang dikenali menjadi bentuk baku "[Keyword]".
- */
-const toCanonicalBracketKeyword = (token) => {
-  const match = String(token || '').trim().match(CANONICAL_BRACKET_KEYWORD_REGEX);
-  if (!match) return null;
-  const keyword = match[1].trim();
-  return getCueMarkSet().has(keyword.toLowerCase()) ? `[${keyword}]` : null;
-};
 
 /**
  * Pecah baris menjadi token, dengan keyword ber-braket dikeluarkan utuh.
@@ -254,7 +238,7 @@ export const splitKeywordAwareTokens = (line = '') => {
     const after = rest.slice(end + 1);
     const nextTokenStart = after.trimStart().charAt(0);
     const nextIsSpaceOrEnd = !nextTokenStart || /^\s|\|/.test(after);
-    // Cue mark dan label instrumen berdiri sendiri sebagai tag (lalu dimerge
+    // Label instrumen berdiri sendiri sebagai tag (lalu dimerge
     // kembali oleh mergeInstrumentPhraseTokens):
     // - braket lengkap tanpa spasi selalu utuh ("[Sax]");
     // - braket berisi spasi hanya utuh bila tidak menempel chord
@@ -262,8 +246,7 @@ export const splitKeywordAwareTokens = (line = '') => {
     //   agar kontrak spasi tidak berubah.
     const containsSpace = /\s/.test(bracket);
     if (
-      toCanonicalBracketKeyword(bracket)
-      || !containsSpace
+      !containsSpace
       || nextIsSpaceOrEnd
     ) {
       tokens.push(bracket);
@@ -281,8 +264,6 @@ function tokenizeChordLine(line, transpose) {
   return mergeInstrumentPhraseTokens(splitKeywordAwareTokens(line)).flatMap((token) => {
     if (/^\s+$/.test(token)) return [{ token, isSpace: true }];
     if (BARLINE_TOKEN_REGEX.test(token)) return [{ token, isBarline: true }];
-    const inlineCueMark = isInlineCueMarkToken(token);
-    if (inlineCueMark) return [{ token: inlineCueMark, isCueMark: true }];
     const inlineInstrumentLabel = isInlineInstrumentToken(token);
     if (inlineInstrumentLabel) return [{ token: inlineInstrumentLabel, isInstrument: true }];
 
@@ -304,13 +285,11 @@ function tokenizeChordLine(line, transpose) {
 
 function tokenizeLyricLine(line, transpose) {
   // Tag ber-key MIDI ("[Keys: ...]") bukan keyword ChordDisplay: jangan
-  // tokenisasi sebagai tag instrumen/cue — biarkan utuh untuk slot MIDI.
+  // tokenisasi sebagai tag instrumen — biarkan utuh untuk slot MIDI.
   if (MIDI_ONLY_BRACKET_REGEX.test(line.trim())) return [{ token: line }];
 
   return mergeInstrumentPhraseTokens(splitKeywordAwareTokens(line)).flatMap((token) => {
     if (/^\s+$/.test(token)) return [{ token, isSpace: true }];
-    const inlineCueMark = isInlineCueMarkToken(token);
-    if (inlineCueMark) return [{ token: inlineCueMark, isCueMark: true }];
     const inlineInstrumentLabel = isInlineInstrumentToken(token);
     if (inlineInstrumentLabel) return [{ token: inlineInstrumentLabel, isInstrument: true }];
 
@@ -336,20 +315,17 @@ function parseLine(line, transpose) {
   if (bracketedInstrument) {
     return { type: 'instrument', label: formatBracketedInstrumentLabel(bracketedInstrument) };
   }
-  // "[Stop]" sendiri di satu baris adalah label cue, bukan lirik satu kata.
-  if (isKnownCueMarkLabel(line)) {
-    return { type: 'cue', label: line.trim().replace(/^\[|\]$/g, '').trim() };
-  }
-  // Metadata info lagu ("Original Key:", "Time Signature:") sekarang resmi
+  // Metadata info lagu ("Original Key:", "Time Signature:») sekarang resmi
   // metadata: dirender sebagai chip dan tidak pernah ikut ditranspose, sehingga
   // cabang lirik khusus "Original Key:" tidak diperlukan lagi.
   const section = parseSection(line);
   if (section) {
-    // Transpose modulation key label
-    if (section.type === 'modulation' && transpose) {
-      return { type: section.type, label: transposeChord(section.label, transpose) };
-    }
     return { type: section.type, label: section.label };
+  }
+  // Cue mark tidak lagi punya tipe sendiri: baris "[Stop]" / "[Aksen]" dibaca
+  // sebagai chip metadata, sama seperti baris metadata lain.
+  if (isMetadataLine(line)) {
+    return { type: 'metadata', text: line.trim() };
   }
   // "[Verse 2] [Cue: Fill Bell]": baris gabungan yang sengaja tidak dipecah
   // (lihat splitBracketCompoundLine). Header seksi dibaca dari bracket pertama
@@ -394,7 +370,6 @@ function parseLine(line, transpose) {
  *   | { kind: 'metadata', text: string }
  *   | { kind: 'instrument', label: string }
  *   | { kind: 'structure', label: string }
- *   | { kind: 'modulation', label: string }
  *   | { kind: 'chord' }
  *   | { kind: 'number' }
  *   | { kind: 'lyrics' }}
@@ -411,13 +386,15 @@ export function classifyLine(line) {
   if (bracketedInstrument) {
     return { kind: 'instrument', label: formatBracketedInstrumentLabel(bracketedInstrument) };
   }
-  if (isKnownCueMarkLabel(trimmed)) {
-    return { kind: 'cue', label: trimmed.replace(/^\[|\]$/g, '').trim() };
-  }
 
   const section = parseSection(trimmed);
   if (section) {
     return { kind: section.type, label: section.label };
+  }
+
+  // Cue mark: baris ber-braket itu kini metadata biasa.
+  if (isMetadataLine(trimmed)) {
+    return { kind: 'metadata', text: trimmed };
   }
 
   if (isInstrumentPatchLikeLine(trimmed) || isMetadataLine(trimmed)) {
@@ -651,7 +628,6 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
           if (/[,&;:]$/.test(nextValue)) break;
           continue;
         }
-        if (isCueMarkKeyword(candidate)) break;
         if (matchInlineInstrumentLabel(candidate)) break;
 
         suffixParts.push(candidate);

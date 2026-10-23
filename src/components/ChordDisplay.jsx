@@ -271,19 +271,6 @@ const ChordDisplayBase = memo(function ChordDisplay({
       );
       return;
     }
-    if (lineObj.type === 'cue') {
-      // "[Stop]" di baris sendiri: chip cue, bukan lirik satu kata.
-      renderedRows.push(
-        <div key={i} className={`cd-lyrics${syncClass(lineObj)}${focusRowClass()}`}>
-          <span className="cd-cue-mark-token">{lineObj.label}</span>
-        </div>
-      );
-      return;
-    }
-    if (lineObj.type === 'modulation') {
-      renderedRows.push(<div key={i} className={`cd-modulation${syncClass(lineObj)}`}>🔄 Modulasi ke {lineObj.label}</div>);
-      return;
-    }
     if (lineObj.type === 'metadata') {
       renderedRows.push(<div key={i} className={`cd-metadata${syncClass(lineObj)}`}>{lineObj.text}</div>);
       return;
@@ -337,9 +324,6 @@ const ChordDisplayBase = memo(function ChordDisplay({
           const seconds = typeof tokenText === 'string' ? parseTimestampToken(tokenText) : null;
           if (seconds !== null) {
             return renderTimestampToken(t.token, seconds, j);
-          }
-          if (t.isCueMark) {
-            return <span key={j} className="cd-cue-mark-token">{tokenText}</span>;
           }
           if (t.isInstrument) {
             return <span key={j} className={`cd-instrument-token ${getInstrumentTokenClass(tokenText)}`}>{tokenText}</span>;
