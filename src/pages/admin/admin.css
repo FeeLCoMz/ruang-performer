@@ -1013,18 +1013,6 @@
   font-style: italic;
 }
 
-.admin-tag-aliases ul {
-  margin: 0;
-  padding-left: 18px;
-  font-size: 0.84rem;
-  line-height: 1.7;
-}
-
-.admin-tag-alias-off {
-  opacity: 0.6;
-  font-style: italic;
-}
-
 .admin-tag-actions {
   display: flex;
   flex-wrap: wrap;

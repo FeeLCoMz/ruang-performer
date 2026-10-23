@@ -43,6 +43,12 @@ export const getMidiRoutingKeywords = () => [
   ...configValue('MIDI_KEYS_ALSO_INSTRUMENT', FALLBACK_MIDI_ALSO_INSTRUMENT),
 ];
 
+/**
+ * Alias seksi bawaan ("opening" → "intro"). Tidak diatur lewat panel admin;
+ * dibaca lazily oleh chordDisplayTags.js agar bebas siklus impor ESM.
+ */
+export const getDefaultSectionAliases = () => configValue('SECTION_NAME_ALIASES', {});
+
 /** Huruf kecil dan rapikan spasi ("Pre  Chorus" -> "pre chorus"). */
 export const normalizeKeyword = (value = '') => String(value)
   .trim()
@@ -128,13 +134,10 @@ export const getTagGroups = () => {
       'sections',
       'Struktur Lagu (Section)',
       '🎬',
-      'Label seksi lagu yang dikenali ChordDisplay dan editor lirik. Alias (mis. "Bait" → "Verse") tidak ditawarkan di autocomplete dan tidak dihitung sebagai seksi terpisah.',
+      'Label seksi lagu yang dikenali ChordDisplay dan editor lirik. Satu label per seksi; label yang ditambahkan di sini ikut dikenali parser dan autocomplete.',
       'ruang-performer:chorddisplay:sections',
       configValue('STRUCTURE_SECTION_KEYWORDS', []),
     ),
-    // Alias tampil sebagai keterangan "alias → bentuk baku" dan tidak
-    // ditawarkan autocomplete, sama seperti perilaku parser.
-    aliases: configValue('SECTION_NAME_ALIASES', {}),
   },
   identityGroup(
     'modulation',

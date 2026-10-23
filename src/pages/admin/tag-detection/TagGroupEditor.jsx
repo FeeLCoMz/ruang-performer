@@ -2,8 +2,7 @@
  * TagGroupEditor.jsx
  *
  * Satu kartu grup kata kunci di tab "Tag & Deteksi": daftar keyword (satu per
- * baris), validasi per baris, tombol simpan/reset, dan tabel alias untuk grup
- * seksi ("alias → bentuk baku").
+ * baris), validasi per baris, tombol simpan/reset.
  *
  * Kartu menerima draft teks dari hook induk agar error validasi bisa
  * dihitung sekali untuk seluruh grup (mis. saat menyimpan).
@@ -25,7 +24,6 @@ export default function TagGroupEditor({
   draft,
   errors,
   activeKeywords,
-  aliases,
   isOverridden,
   fallbackCount,
   saving = false,
@@ -107,23 +105,6 @@ export default function TagGroupEditor({
         ))}
         {hiddenCount > 0 && <span className="admin-tag-chip is-more">+{hiddenCount} lainnya</span>}
       </div>
-
-      {group.aliases && (
-        <div className="admin-tag-aliases">
-          <h3 className="admin-panel-subtitle">Alias (dianggap sama, tidak ditawarkan autocomplete)</h3>
-          <ul>
-            {Object.entries(aliases).map(([alias, canonical]) => (
-              <li key={alias}>
-                <code>{alias}</code> <span aria-hidden="true">→</span> <code>{canonical}</code>
-                {!activeKeywords.includes(alias) && <span className="admin-tag-alias-off"> (nonaktif)</span>}
-              </li>
-            ))}
-          </ul>
-          <p className="admin-muted">
-            Hapus kata alias dari daftar untuk mematikan alias tersebut.
-          </p>
-        </div>
-      )}
 
       <div className="admin-tag-actions">
         <button

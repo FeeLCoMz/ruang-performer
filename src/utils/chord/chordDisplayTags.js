@@ -65,6 +65,13 @@ const normalizeKeyword = (value = '') => (
     : String(value).trim().toLowerCase().replace(/\s+/g, ' ')
 );
 
+/** Alias seksi bawaan (dibaca lazy untuk menghindari siklus impor ESM). */
+const defaultSectionAliases = () => (
+  typeof tagGroupConfig.getDefaultSectionAliases === 'function'
+    ? tagGroupConfig.getDefaultSectionAliases()
+    : {}
+);
+
 /**
  * Nilai bawaan per grup. Dihitung malas (saat pertama dipakai) — bukan saat
  * modul dimuat — karena chordDisplayConfig.js mengimpor modul ini untuk alias
@@ -155,9 +162,10 @@ const buildMemo = (storedGroups) => {
   // menghapus alias itu juga; alias yang bentuk bakunya dihapus tidak berguna
   // lagi sehingga ikut dibuang.
   const aliases = {};
-  // Alias bawaan diambil dari grup sections supaya modul ini juga bebas
-  // siklus impor terhadap config.
-  const defaultAliases = getTagGroup('sections')?.aliases || {};
+  // Alias bawaan diambil langsung dari config (bukan dari grup admin) supaya
+  // panel admin hanya mengatur daftar kata kunci dan modul ini bebas siklus
+  // impor terhadap config.
+  const defaultAliases = defaultSectionAliases();
   Object.entries(defaultAliases).forEach(([alias, canonical]) => {
     if (groups.sections.includes(alias) && groups.sections.includes(canonical)) {
       aliases[alias] = canonical;

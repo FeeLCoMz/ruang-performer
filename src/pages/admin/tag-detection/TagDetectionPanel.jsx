@@ -25,7 +25,6 @@ export default function TagDetectionPanel() {
 
   const summaryItems = [
     { label: 'Section', value: summary.sections, icon: '🎬' },
-    { label: 'Alias', value: summary.aliases, icon: '🔀' },
     { label: 'Modulasi', value: summary.modulation, icon: '🎚️' },
     { label: 'Metadata', value: summary.metadata, icon: '🏷️' },
     { label: 'Cue mark', value: summary.cueMarks, icon: '🔔' },
@@ -92,7 +91,6 @@ export default function TagDetectionPanel() {
             draft={tags.drafts[group.id] || ''}
             errors={tags.errors[group.id]}
             activeKeywords={activeKeywords}
-            aliases={group.aliases}
             isOverridden={tags.overriddenIds.includes(group.id)}
             fallbackCount={tags.getFallback(group.id).length}
             saving={tags.savingGroup === group.id}
