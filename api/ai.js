@@ -292,19 +292,6 @@ function buildSongInfoPrompt(title, artist) {
 }
 
 /**
- * Build the chord-site deep links shown to the user.
- */
-function buildChordLinks(title, artist) {
-  const q = encodeURIComponent(`${title} ${artist || ''}`);
-  return [
-    { title: 'Chordtela', site: 'chordtela.com', url: `https://www.chordtela.com/chord-kunci-gitar-dasar-hasil-pencarian?q=${q}` },
-    { title: 'Ultimate Guitar', site: 'ultimate-guitar.com', url: `https://www.ultimate-guitar.com/search.php?search_type=title&value=${q}` },
-    { title: 'Chordify', site: 'chordify.net', url: `https://www.chordify.net/search?q=${q}` },
-    { title: 'Google Search', site: 'google.com', url: `https://www.google.com/search?q=${encodeURIComponent(`${title} ${artist || ''} chord`)}` }
-  ];
-}
-
-/**
  * Ask Gemini for structured song metadata, walking the supported model list
  * until one answers. Never throws.
  *
@@ -428,7 +415,6 @@ async function handleSongSearch(req, res) {
       keyboardPatch: null,    // new field
       youtubeId: null,
       lyrics: null,
-      chordLinks: [],
       debug: {}
     };
 
@@ -436,9 +422,6 @@ async function handleSongSearch(req, res) {
     // tombol "Cari video" (modal, query bisa diubah). Autofill hanya mengurus
     // metadata lagu lewat Gemini.
     results.youtubeId = null;
-
-    // Chord links
-    results.chordLinks = buildChordLinks(title, artist);
 
     // Gemini song info
     if (process.env.GEMINI_API_KEY) {
@@ -454,7 +437,7 @@ async function handleSongSearch(req, res) {
       if (gemini.success) {
         results.debug.geminiModel = gemini.modelName;
       } else {
-        // Tetap return hasil YouTube, chordLinks, dan field lain yang tidak bergantung Gemini.
+        // Tetap return hasil field lain yang tidak bergantung Gemini.
         // Jangan return error status, biarkan frontend handle error dari debug.geminiError
         //
         // JANGAN di-cache: entri yang gagal (mis. kuota Gemini habis) akan

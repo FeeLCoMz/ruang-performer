@@ -1624,34 +1624,6 @@ body.dark-mode .song-mood-badge.mood-peak {
   margin-bottom: 12px;
 }
 
-.ai-autofill-chordlinks {
-  margin-bottom: 18px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-}
-.ai-autofill-chordlinks-label {
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--text-primary);
-  font-size: 0.95em;
-}
-.ai-autofill-chordlinks-list {
-  padding-left: 18px;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.ai-autofill-chordlinks-item {
-  font-size: 0.9em;
-}
-.ai-autofill-chordlinks-link {
-  color: var(--primary-accent);
-  text-decoration: underline;
-}
-
 .ai-autofill-fields {
   display: flex;
   flex-direction: column;
@@ -1710,32 +1682,6 @@ body.dark-mode .song-mood-badge.mood-peak {
 }
 .ai-autofill-cancel:hover {
   background: var(--border-color);
-}
-
-/* ========================================
-   CHORD LINKS PANEL (ChordLinks.jsx)
-   ======================================== */
-.chord-links-panel {
-  margin-top: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  background: var(--secondary-bg);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-}
-
-.chord-links-title {
-  margin-bottom: var(--spacing-md);
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: var(--font-size-base);
-}
-
-.chord-links-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  align-items: center;
 }
 
 /* ========================================

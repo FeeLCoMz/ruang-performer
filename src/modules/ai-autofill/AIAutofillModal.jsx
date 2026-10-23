@@ -35,28 +35,6 @@ export default function AIAutofillModal({
         <p className="ai-autofill-modal-desc">
           Pilih data yang ingin Anda isi otomatis dari hasil AI. Informasi yang tidak dipilih akan tetap aman.
         </p>
-        {/* Chord Links */}
-        {Array.isArray(aiResult.chordLinks) && aiResult.chordLinks.length > 0 && (
-          <div className="ai-autofill-chordlinks">
-            <div className="ai-autofill-chordlinks-label">
-              🔎 Referensi chord:
-            </div>
-            <ul className="ai-autofill-chordlinks-list">
-              {aiResult.chordLinks.map((cl, idx) => (
-                <li key={idx} className="ai-autofill-chordlinks-item">
-                  <a
-                    href={cl.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ai-autofill-chordlinks-link"
-                  >
-                    {cl.title || cl.site}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
         <form onSubmit={handleSubmit}>
           <div className="ai-autofill-section">
             <div className="ai-autofill-section-title">📋 Data yang bisa diisi</div>

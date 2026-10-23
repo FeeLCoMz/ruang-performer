@@ -11,7 +11,7 @@ import * as apiClient from '../../apiClient.js';
 import { isAIAutofillEnabled } from './aiAutofillSettings.js';
 
 /**
- * Cari metadata lagu (artist, key, tempo, genre, chord links) via AI.
+ * Cari metadata lagu (artist, key, tempo, genre, keyboard patch) via AI.
  *
  * Catatan: YouTube ID TIDAK diisi di sini. User memilih video sendiri lewat
  * tombol "Cari video" (YoutubeVideoPickerModal) agar hasilnya tidak menebak.

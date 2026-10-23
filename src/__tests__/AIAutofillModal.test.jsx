@@ -18,7 +18,7 @@ describe('AIAutofillModal', () => {
     expect(markup).not.toContain('Lirik');
   });
 
-  it('renders chordify links alongside google search links', () => {
+  it('does not render chord reference links', () => {
     const markup = renderToStaticMarkup(
       <AIAutofillModal
         aiResult={{
@@ -35,8 +35,9 @@ describe('AIAutofillModal', () => {
       />,
     );
 
-    expect(markup).toContain('Chordify');
-    expect(markup).toContain('Google Search');
+    expect(markup).not.toContain('Referensi chord');
+    expect(markup).not.toContain('Chordify');
+    expect(markup).not.toContain('Google Search');
   });
 
   it('shows a cleaned up section title for selectable fields', () => {

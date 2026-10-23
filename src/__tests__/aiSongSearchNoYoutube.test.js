@@ -60,11 +60,10 @@ describe('api/ai.js song-search tanpa YouTube', () => {
     expect(result.debug?.youtubeResults).toBeUndefined();
   });
 
-  test('respons tetap 200 dengan chord links utuh', async () => {
+  test('respons 200 tanpa referensi chord di hasil AI autofill', async () => {
     const result = await callSongSearch({ title: uniqueTitle('Lagu C'), artist: 'Artis C' });
     expect(result.artist).toBe('Artis C');
-    expect(Array.isArray(result.chordLinks)).toBe(true);
-    expect(result.chordLinks.length).toBeGreaterThan(0);
+    expect(result.chordLinks).toBeUndefined();
   });
 
   test('tanpa GEMINI_API_KEY tidak ada metadata dari Gemini', async () => {
