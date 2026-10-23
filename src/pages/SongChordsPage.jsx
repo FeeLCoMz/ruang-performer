@@ -800,9 +800,10 @@ export default function SongChordsPage({ song: songProp, activeSetlist = null, s
         </div>
       </div>
 
-      {/* Footer navigasi lagu: sticky di mobile; di desktop tampil sebagai bar
-          inline. Di luar setlist navigasi memakai urutan repertoir dan tombol
-          setlist (📋) tidak dirender. */}
+      {/* Footer navigasi lagu: sticky di semua lebar — fixed di atas bottom nav
+          pada mobile, `position: sticky` di tepi bawah area gulir pada desktop.
+          Di luar setlist navigasi memakai urutan repertoir dan tombol setlist
+          (📋) tidak dirender. */}
       <SetlistNavFooter
         setlistNav={setlistNav}
         allSongs={Array.isArray(songsProp) ? songsProp : []}

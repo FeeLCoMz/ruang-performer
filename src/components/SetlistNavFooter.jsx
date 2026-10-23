@@ -3,8 +3,9 @@ import React, { useEffect, useState } from 'react';
 /**
  * SetlistNavFooter
  * Navigasi lagu setlist yang responsif di semua lebar layar:
- * - Mobile (≤768px): footer sticky di atas bottom nav.
- * - Desktop (>768px): bar inline di bawah panel lagu.
+ * - Mobile (≤768px): footer fixed tepat di atas bottom nav.
+ * - Desktop (>768px): bar sticky di tepi bawah area gulir (`position: sticky`),
+ *   jadi prev/next tetap terjangkau saat lirik digulir.
  *
  * Isi: info posisi lagu (klik = sheet daftar lagu + pencarian),
  * prev/next dengan judul lagu (label disembunyikan otomatis di layar sempit),

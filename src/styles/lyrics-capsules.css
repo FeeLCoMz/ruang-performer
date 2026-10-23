@@ -266,8 +266,9 @@
 /* ========================================
    SETLIST NAV FOOTER (responsif)
    Navigasi lagu setlist di halaman lagu:
-   - Mobile (≤768px): footer sticky tepat di atas bottom nav.
-   - Desktop (>768px): bar inline di bawah panel lagu.
+   - semua lebar layar: footer sticky di bawah viewport.
+     Mobile (≤768px): fixed tepat di atas bottom nav.
+     Desktop (>768px): position: sticky di tepi bawah area gulir.
    Zona: info posisi (klik = sheet daftar lagu) | prev/next | setlist.
    Di layar sempit label judul prev/next disembunyikan (ikon saja);
    di layar lebar label tampil dan footer memakai seluruh lebar kolom.
@@ -337,6 +338,16 @@
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     border-top: 1px solid var(--border-color);
+
+    /* Sticky di desktop juga, bukan hanya mobile: pada layar lebar isi lagu
+       (lirik + panel tab) jauh lebih tinggi dari viewport, sehingga tanpa ini
+       navigasi prev/next hilang begitu user menggulir. `bottom` menjaga bar
+       menempel di tepi bawah area gulir; latar dibuat tidak transparan agar
+       lirik tidak tembus di belakangnya saat menempel. */
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    box-shadow: 0 -6px 16px rgba(2, 6, 23, 0.18);
   }
 
   /* Seragamkan semua tombol footer di desktop: kapsul pill setinggi 38px —
