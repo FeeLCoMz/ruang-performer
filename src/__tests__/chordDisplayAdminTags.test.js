@@ -9,8 +9,12 @@ vi.mock('../apiClient.js', () => ({
     settings: { [key]: serverSettings.value },
   })),
   saveAppSetting: vi.fn(async (key, value) => {
+    // Grup keyword = array; grup alias = objek alias→kanonik. Keduanya sah
+    // dan harus dipertahankan (server melakukan hal yang sama).
     serverSettings.value = Object.fromEntries(
-      Object.entries(value).filter(([, list]) => Array.isArray(list) && list.length),
+      Object.entries(value).filter(([, list]) => (
+        Array.isArray(list) ? list.length : Boolean(list && Object.keys(list).length)
+      )),
     );
     return { saved: true, setting: { key, value: serverSettings.value } };
   }),
@@ -34,8 +38,10 @@ vi.mock('../apiClient.js', () => ({
 import {
   CHORD_DISPLAY_TAG_GROUPS,
   formatKeywordList,
+  formatSectionAliases,
   getTagGroup,
   parseKeywordList,
+  parseSectionAliases,
   validateKeyword,
 } from '../config/chordDisplayTagGroups.js';
 import {
@@ -74,11 +80,18 @@ describe('pengaturan tag ChordDisplay oleh admin', () => {
     await resetAllTagGroups();
   });
 
-  test('setiap grup punya key pengaturan unik dan fallback tidak kosong', () => {
-    const keys = CHORD_DISPLAY_TAG_GROUPS.map((group) => group.storageKey);
-    expect(new Set(keys).size).toBe(keys.length);
+  test('setiap grup punya id unik dan fallback tidak kosong', () => {
+    const ids = CHORD_DISPLAY_TAG_GROUPS.map((group) => group.id);
+    expect(new Set(ids).size).toBe(ids.length);
     for (const group of CHORD_DISPLAY_TAG_GROUPS) {
-      expect(group.fallback.length, group.id).toBeGreaterThan(0);
+      // Grup alias menyimpan objek alias→kanonik, grup lain daftar keyword.
+      const size = group.kind === 'aliasMap'
+        ? Object.keys(group.fallback || {}).length
+        : group.fallback.length;
+      expect(size, group.id).toBeGreaterThan(0);
+      // Penyimpanan global memakai id grup (app_settings), bukan key
+      // localStorage per grup seperti versi lama.
+      expect(group.storageKey).toBeUndefined();
     }
   });
 
@@ -238,9 +251,74 @@ describe('pengaturan tag ChordDisplay oleh admin', () => {
     expect(formatKeywordList(group.fallback)).toBe(group.fallback.join('\n'));
   });
 
+  test('format & parse alias seksi memakai bentuk alias=kanonik', () => {
+    const text = formatSectionAliases({ 'ulangan besar': 'chorus', bait: 'verse' });
+    expect(text).toBe('ulangan besar=chorus\nbait=verse');
+
+    const parsed = parseSectionAliases(text);
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.aliases).toEqual({ 'ulangan besar': 'chorus', bait: 'verse' });
+  });
+
+  test('parse alias menolak baris tanpa =, kosong, dan alias yang sama dengan kanonik', () => {
+    const parsed = parseSectionAliases('tanpa-separator\n=intro\nbait=\nchorus=chorus\n# komentar');
+
+    expect(parsed.aliases).toEqual({});
+    expect(parsed.errors).toHaveLength(4);
+    expect(parsed.errors.map((row) => row.reason)).toContain('Alias dan kanonik tidak boleh sama');
+  });
+
   test('baris chord tetap terdeteksi walau daftar tag diubah', async () => {
     await setTagGroupKeywords('instruments', ['gitar']);
     expect(isChordLine('| C | G | Am | F |')).toBe(true);
+  });
+
+  test('alias seksi diatur admin dan langsung dipakai parser', async () => {
+    // "ulangan besar" belum ada di daftar seksi bawaan dan tidak memuat kata
+    // kunci seksi/instrumen mana pun ("jembatan" ditolak karena nama instrumen).
+    expect(canonicalSection('Ulangan Besar')).not.toBe('chorus');
+
+    await setTagGroupKeywords('sections', [
+      ...getChordDisplayTags().STRUCTURE_SECTION_KEYWORDS,
+      'ulangan besar',
+    ]);
+    const saved = await setTagGroupKeywords('sectionAliases', { 'ulangan besar': 'chorus' });
+
+    expect(saved.ok).toBe(true);
+    expect(getChordDisplayTags().SECTION_NAME_ALIASES['ulangan besar']).toBe('chorus');
+    // Label lengkap memakai alias kata pertama; nomor seksi dipertahankan
+    // pemanggil karena canonicalSection mengembalikan bentuk kanonik.
+    expect(canonicalSection('Ulangan Besar')).toBe('chorus');
+    expect(getOverriddenGroupIds()).toContain('sectionAliases');
+  });
+
+  test('alias yang bentuk kanoniknya tidak ada di seksi diabaikan', async () => {
+    await setTagGroupKeywords('sections', [
+      ...getChordDisplayTags().STRUCTURE_SECTION_KEYWORDS,
+      'ulangan besar',
+    ]);
+    await setTagGroupKeywords('sectionAliases', { 'ulangan besar': 'chorus', aneh: 'tidak ada' });
+
+    // Hanya alias yang kedua katanya terdaftar sebagai seksi yang aktif.
+    expect(getChordDisplayTags().SECTION_NAME_ALIASES['ulangan besar']).toBe('chorus');
+    expect(getChordDisplayTags().SECTION_NAME_ALIASES.aneh).toBeUndefined();
+  });
+
+  test('reset grup alias mengembalikan alias bawaan', async () => {
+    // Alias hanya aktif bila kedua katanya ada di daftar seksi, jadi daftar
+    // seksi ditambah lebih dulu seperti langkah admin di panel.
+    await setTagGroupKeywords('sections', [
+      ...getChordDisplayTags().STRUCTURE_SECTION_KEYWORDS,
+      'ulangan besar',
+    ]);
+    await setTagGroupKeywords('sectionAliases', { 'ulangan besar': 'chorus' });
+    expect(getChordDisplayTags().SECTION_NAME_ALIASES['ulangan besar']).toBe('chorus');
+
+    const result = await resetTagGroup('sectionAliases');
+
+    expect(result.ok).toBe(true);
+    expect(getChordDisplayTags().SECTION_NAME_ALIASES['ulangan besar']).toBeUndefined();
+    expect(getChordDisplayTags().SECTION_NAME_ALIASES.bait).toBe('verse');
   });
 });
 

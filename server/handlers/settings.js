@@ -33,7 +33,10 @@ const ADMIN_ROLES = ['owner', 'admin'];
  * untuk server lama" dari "grup ini baru untuk admin yang masih pakai bundle
  * lama" — keduanya tidak boleh menolak penyimpanan.
  */
-export const KNOWN_TAG_GROUP_IDS = ['sections', 'metadata', 'instruments', 'noChord', 'midiKeys'];
+export const KNOWN_TAG_GROUP_IDS = ['sections', 'metadata', 'instruments', 'noChord', 'midiKeys', 'sectionAliases'];
+
+/** Grup yang nilainya objek alias→kanonik, bukan daftar keyword. */
+export const ALIAS_MAP_GROUP_IDS = ['sectionAliases'];
 
 /** Aksi audit khusus perubahan tag (lihat server/_audit.js & auditLogger.js). */
 export const TAG_AUDIT_ACTIONS = {
@@ -66,13 +69,16 @@ const isAdmin = (user) => Boolean(user && ADMIN_ROLES.includes(user.role));
 export function getKeywordConflicts(groups) {
   const owners = new Map();
   for (const [groupId, list] of Object.entries(groups || {})) {
-    if (!Array.isArray(list)) continue;
-    for (const keyword of list) {
-      const key = String(keyword || '').trim().toLowerCase();
-      if (!key) continue;
-      if (!owners.has(key)) owners.set(key, []);
-      const list_ = owners.get(key);
-      if (!list_.includes(groupId)) list_.push(groupId);
+    // Grup aliasMap bukan daftar keyword: melewatinya mencegah konflik palsu
+    // seperti "opening" dianggap bentrok karena nilai kanoniknya.
+    if (Array.isArray(list)) {
+      for (const keyword of list) {
+        const key = String(keyword || '').trim().toLowerCase();
+        if (!key) continue;
+        if (!owners.has(key)) owners.set(key, []);
+        const ids = owners.get(key);
+        if (!ids.includes(groupId)) ids.push(groupId);
+      }
     }
   }
   return [...owners.entries()]
@@ -135,6 +141,25 @@ function validateChordDisplayTags(value) {
 
   const cleaned = {};
   for (const [groupId, list] of Object.entries(value)) {
+    if (ALIAS_MAP_GROUP_IDS.includes(groupId)) {
+      if (!list || typeof list !== 'object' || Array.isArray(list)) {
+        return { ok: false, error: `Grup "${groupId}" harus berupa objek alias=seksi` };
+      }
+      const aliases = {};
+      for (const [rawAlias, rawCanonical] of Object.entries(list)) {
+        const alias = String(rawAlias).trim().toLowerCase().split(' ').filter(Boolean).join(' ');
+        const canonical = String(rawCanonical || '').trim().toLowerCase().split(' ').filter(Boolean).join(' ');
+        if (!alias || !canonical) continue;
+        if (!/^[a-z0-9][a-z0-9 ._'-/]*$/.test(alias) || !/^[a-z0-9][a-z0-9 ._'-/]*$/.test(canonical)) {
+          return { ok: false, error: `Alias "${alias}" mengandung karakter yang tidak diizinkan` };
+        }
+        if (alias === canonical) continue;
+        aliases[alias] = canonical;
+      }
+      if (Object.keys(aliases).length) cleaned[groupId] = aliases;
+      continue;
+    }
+
     if (!Array.isArray(list)) {
       return { ok: false, error: `Grup "${groupId}" harus berupa daftar keyword` };
     }

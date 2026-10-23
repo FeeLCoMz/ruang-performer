@@ -163,7 +163,12 @@ export default function TagDetectionPanel() {
       />
 
       {tags.groups().map((group) => {
-        const activeKeywords = tags.active[GROUP_TAG_KEYS[group.id] || group.id] || [];
+        const activeValue = tags.active[GROUP_TAG_KEYS[group.id] || group.id];
+        const activeKeywords = group.kind === 'aliasMap'
+          // Alias bukan daftar: tampilkan satu baris per pasangan agar hint dan
+          // penghitung "aktif" tetap masuk akal.
+          ? Object.entries(activeValue || {}).map(([alias, canonical]) => `${alias}=${canonical}`)
+          : (activeValue || []);
         return (
           <TagGroupEditor
             key={group.id}

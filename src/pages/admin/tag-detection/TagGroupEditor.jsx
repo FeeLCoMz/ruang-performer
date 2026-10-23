@@ -61,6 +61,10 @@ export default function TagGroupEditor({
   const [newKeyword, setNewKeyword] = useState('');
   const [addError, setAddError] = useState('');
 
+  // Grup alias menyimpan pasangan alias=kanonik: chip & input tambah keyword
+  // tidak berlaku di sana, jadi hanya textarea yang ditampilkan.
+  const isAliasMap = group.kind === 'aliasMap';
+
   const submitKeyword = (event) => {
     event.preventDefault();
     const result = onAddKeyword ? onAddKeyword(newKeyword) : { ok: false, reason: 'Tidak tersedia' };
@@ -112,8 +116,17 @@ export default function TagGroupEditor({
       </label>
 
       <p className="admin-muted" id={`tag-group-${group.id}-hint`}>
-        Contoh baris: {activeKeywords.slice(0, 3).map((keyword) => `[${capitalize(keyword)}]`).join(' ')}
-        {activeKeywords.length > 3 ? ' …' : ''}
+        {isAliasMap ? (
+          <>
+            Format: <code>alias=seksi</code>, satu per baris — mis.{' '}
+            <code>jembatan=bridge</code>. Kedua kata harus ada di daftar Struktur Lagu.
+          </>
+        ) : (
+          <>
+            Contoh baris: {activeKeywords.slice(0, 3).map((keyword) => `[${capitalize(keyword)}]`).join(' ')}
+            {activeKeywords.length > 3 ? ' …' : ''}
+          </>
+        )}
       </p>
 
       {changed && diff && (
@@ -175,46 +188,50 @@ export default function TagGroupEditor({
         </div>
       )}
 
-      <div className="admin-tag-chips" aria-label={`Kata kunci ${group.label}`}>
-        {draftKeywords.slice(0, MAX_VISIBLE_CHIPS).map((keyword) => (
-          <span key={keyword} className="admin-tag-chip">
-            {keyword}
-            <button
-              type="button"
-              className="admin-tag-chip-remove"
-              aria-label={`Hapus kata kunci ${keyword}`}
-              title={`Hapus "${keyword}"`}
-              onClick={() => onRemoveKeyword && onRemoveKeyword(keyword)}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        {hiddenCount > 0 && <span className="admin-tag-chip is-more">+{hiddenCount} lainnya</span>}
-      </div>
+      {!isAliasMap && (
+        <>
+          <div className="admin-tag-chips" aria-label={`Kata kunci ${group.label}`}>
+            {draftKeywords.slice(0, MAX_VISIBLE_CHIPS).map((keyword) => (
+              <span key={keyword} className="admin-tag-chip">
+                {keyword}
+                <button
+                  type="button"
+                  className="admin-tag-chip-remove"
+                  aria-label={`Hapus kata kunci ${keyword}`}
+                  title={`Hapus "${keyword}"`}
+                  onClick={() => onRemoveKeyword && onRemoveKeyword(keyword)}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            {hiddenCount > 0 && <span className="admin-tag-chip is-more">+{hiddenCount} lainnya</span>}
+          </div>
 
-      <form className="admin-tag-add" onSubmit={submitKeyword}>
-        <input
-          type="text"
-          value={newKeyword}
-          onChange={(event) => {
-            setNewKeyword(event.target.value);
-            if (addError) setAddError('');
-          }}
-          placeholder={`Tambah kata kunci ${group.label.toLowerCase()}…`}
-          aria-label={`Tambah kata kunci ${group.label}`}
-          aria-invalid={Boolean(addError)}
-          aria-describedby={addError ? `tag-group-${group.id}-add-error` : undefined}
-          spellCheck={false}
-        />
-        <button type="submit" className="btn btn-secondary" disabled={!newKeyword.trim()}>
-          + Tambah
-        </button>
-      </form>
-      {addError && (
-        <p className="admin-tag-add-error" id={`tag-group-${group.id}-add-error`} role="alert">
-          {addError}
-        </p>
+          <form className="admin-tag-add" onSubmit={submitKeyword}>
+            <input
+              type="text"
+              value={newKeyword}
+              onChange={(event) => {
+                setNewKeyword(event.target.value);
+                if (addError) setAddError('');
+              }}
+              placeholder={`Tambah kata kunci ${group.label.toLowerCase()}…`}
+              aria-label={`Tambah kata kunci ${group.label}`}
+              aria-invalid={Boolean(addError)}
+              aria-describedby={addError ? `tag-group-${group.id}-add-error` : undefined}
+              spellCheck={false}
+            />
+            <button type="submit" className="btn btn-secondary" disabled={!newKeyword.trim()}>
+              + Tambah
+            </button>
+          </form>
+          {addError && (
+            <p className="admin-tag-add-error" id={`tag-group-${group.id}-add-error`} role="alert">
+              {addError}
+            </p>
+          )}
+        </>
       )}
 
       <div className="admin-tag-actions">

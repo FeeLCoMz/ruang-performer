@@ -16,8 +16,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   formatKeywordList,
+  formatSectionAliases,
   getTagGroups,
   parseKeywordList,
+  parseSectionAliases,
 } from '../../../config/chordDisplayTagGroups.js';
 import {
   buildTagPreviewSample,
@@ -25,7 +27,7 @@ import {
   getOverriddenGroupIds,
   loadChordDisplayTags,
   getTagGroupFallback,
-  readTagGroupKeywords,
+  readTagGroupValue,
   resetAllTagGroups,
   resetTagGroup,
   setTagGroupKeywords,
@@ -35,6 +37,7 @@ import {
 import { summarizeDetection } from './detectionStats.js';
 import {
   addKeywordToDraft,
+  diffAliases,
   diffGroupDraft,
   describeDiff,
   findKeywordConflicts,
@@ -48,7 +51,12 @@ import {
  * bawaan bisa belum siap akibat siklus impor config.
  */
 const buildDrafts = () => Object.fromEntries(
-  getTagGroups().map((group) => [group.id, formatKeywordList(readTagGroupKeywords(group.id))]),
+  getTagGroups().map((group) => {
+    const value = readTagGroupValue(group.id);
+    return [group.id, group.kind === 'aliasMap'
+      ? formatSectionAliases(value)
+      : formatKeywordList(value)];
+  }),
 );
 
 /**
@@ -61,6 +69,7 @@ export const GROUP_TAG_KEYS = {
   instruments: 'INSTRUMENT_KEYWORDS',
   noChord: 'NO_CHORD_TOKENS',
   midiKeys: 'MIDI_ROUTING_KEYS',
+  sectionAliases: 'SECTION_NAME_ALIASES',
 };
 
 const listFromDraft = (draft = '') => String(draft)
@@ -68,9 +77,22 @@ const listFromDraft = (draft = '') => String(draft)
   .map((line) => line.trim())
   .filter(Boolean);
 
+const groupKind = (groupId) => getTagGroups().find((group) => group.id === groupId)?.kind || 'list';
+
+/** Nilai draf siap disimpan: objek untuk aliasMap, array untuk grup keyword. */
+const valueFromDraft = (groupId, draft = '') => (groupKind(groupId) === 'aliasMap'
+  ? parseSectionAliases(draft).aliases
+  : listFromDraft(draft));
+
 const validateDrafts = (drafts) => {
   const errors = {};
   Object.entries(drafts).forEach(([groupId, text]) => {
+    if (groupKind(groupId) === 'aliasMap') {
+      const { errors: aliasErrors } = parseSectionAliases(text);
+      if (aliasErrors.length) errors[groupId] = aliasErrors;
+      return;
+    }
+
     const parsed = parseKeywordList(text);
     const invalid = parsed.filter((item) => item.reason);
     if (invalid.length) {
@@ -151,6 +173,8 @@ export function useChordDisplayTags() {
    */
   const draftConflicts = useMemo(() => Object.fromEntries(
     getTagGroups().map((group) => {
+      // Alias bukan daftar keyword: tidak bisa bentrok dengan grup mana pun.
+      if (group.kind === 'aliasMap') return [group.id, []];
       const tagKey = GROUP_TAG_KEYS[group.id] || group.id;
       const others = { ...active };
       others[tagKey] = keywordsFromDraft(drafts[group.id], parseKeywordList);
@@ -169,6 +193,9 @@ export function useChordDisplayTags() {
   const pendingDiffs = useMemo(() => Object.fromEntries(
     Object.entries(drafts).map(([groupId, text]) => {
       const activeKeywords = active[GROUP_TAG_KEYS[groupId]] || [];
+      if (groupKind(groupId) === 'aliasMap') {
+        return [groupId, diffAliases(activeKeywords, parseSectionAliases(text).aliases)];
+      }
       return [groupId, diffGroupDraft(text, activeKeywords, parseKeywordList)];
     }),
   ), [drafts, active]);
@@ -203,8 +230,11 @@ export function useChordDisplayTags() {
   /** Simpan satu grup ke server (berlaku untuk semua pengguna). */
   const saveGroup = useCallback(async (groupId) => {
     if (errors[groupId]) return;
-    const keywords = listFromDraft(drafts[groupId]);
-    if (!keywords.length) {
+    const keywords = valueFromDraft(groupId, drafts[groupId]);
+    const isEmpty = Array.isArray(keywords)
+      ? !keywords.length
+      : !Object.keys(keywords || {}).length;
+    if (isEmpty) {
       setSaveError('Daftar tidak boleh kosong. Gunakan "Reset ke bawaan" untuk mengembalikan kata kunci bawaan.');
       return;
     }

@@ -5,10 +5,14 @@
  * (tab "Tag & Deteksi"). Berbeda dengan chordDisplayConfig.js yang memegang
  * nilai default kode, setiap grup di sini menyebut:
  *
- *   - storageKey : key localStorage tempat versi yang diedit admin disimpan
  *   - fallback   : bawaan (nilai dari chordDisplayConfig.js)
  *   - normalize  : cara menyimpan satu keyword (huruf kecil, buang duplikat)
  *   - maxLength  : panjang maksimum satu keyword (mencegah regex tak wajar)
+ *
+ * CATATAN: grup dulu punya field `storageKey` (key localStorage per grup) dari
+ * masa sebelum pengaturan dipindah ke tabel app_settings. Field itu sudah
+ * dihapus: sumber kebenaran hanya id grup + API, dan menyimpannya membuat
+ * pembaca berikutnya mengira masih ada jalur penyimpanan per browser.
  *
  * Urutan grup = urutan tampil di panel admin. Menambah grup baru cukup dengan
  * menambah satu entri di sini; panel admin, preview, dan fungsi reset tidak
@@ -44,10 +48,60 @@ export const getMidiRoutingKeywords = () => [
 ];
 
 /**
- * Alias seksi bawaan ("opening" → "intro"). Tidak diatur lewat panel admin;
- * dibaca lazily oleh chordDisplayTags.js agar bebas siklus impor ESM.
+ * Alias seksi bawaan ("opening" → "intro"). Nilai bawaan; versi yang diatur
+ * admin ada di grup `sectionAliases` dan dibaca lazily oleh chordDisplayTags.js
+ * supaya bebas siklus impor ESM.
  */
 export const getDefaultSectionAliases = () => configValue('SECTION_NAME_ALIASES', {});
+
+/**
+ * Alias seksi dalam bentuk baris editor: satu entri per baris, "alias=kanonik".
+ * Bentuk ini lebih mudah diperiksa admin daripada JSON objek.
+ */
+export const formatSectionAliases = (aliases = {}) => Object.entries(aliases || {})
+  .map(([alias, canonical]) => `${alias}=${canonical}`)
+  .join('\n');
+
+/**
+ * Kebalikan formatSectionAliases(). Baris tanpa '=', dengan sisi kosong, atau
+ * berisi keyword tidak valid dilaporkan sebagai error agar tidak tersimpan
+ * diam-diam (alias rusak akan membuat hitungan struktur lagu salah).
+ *
+ * @returns {{aliases: Record<string, string>, errors: {value: string, reason: string}[]}}
+ */
+export const parseSectionAliases = (text = '') => {
+  const aliases = {};
+  const errors = [];
+
+  String(text || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'))
+    .forEach((line) => {
+      const separator = line.indexOf('=');
+      if (separator < 1) {
+        errors.push({ value: line, reason: 'Format harus "alias=seksi"' });
+        return;
+      }
+      const alias = validateKeyword(line.slice(0, separator));
+      const canonical = validateKeyword(line.slice(separator + 1));
+      if (!alias.ok) {
+        errors.push({ value: line, reason: `Alias: ${alias.reason}` });
+        return;
+      }
+      if (!canonical.ok) {
+        errors.push({ value: line, reason: `Kanonik: ${canonical.reason}` });
+        return;
+      }
+      if (alias.value === canonical.value) {
+        errors.push({ value: line, reason: 'Alias dan kanonik tidak boleh sama' });
+        return;
+      }
+      aliases[alias.value] = canonical.value;
+    });
+
+  return { aliases, errors };
+};
 
 /** Huruf kecil dan rapikan spasi ("Pre  Chorus" -> "pre chorus"). */
 export const normalizeKeyword = (value = '') => String(value)
@@ -107,12 +161,11 @@ export const formatKeywordList = (keywords = []) => keywords.join('\n');
  * Satu grup tag. `fallback` DIBACA SAAT INI — bangun daftar grup pada saat
  * pertama kali dipakai, bukan saat modul dimuat (lihat tagGroups().apply).
  */
-const identityGroup = (id, label, icon, description, storageKey, fallback, extra = {}) => ({
+const identityGroup = (id, label, icon, description, fallback, extra = {}) => ({
   id,
   label,
   icon,
   description,
-  storageKey,
   fallback,
   normalize: (keyword) => keyword,
   ...extra,
@@ -135,7 +188,6 @@ export const getTagGroups = () => {
       'Struktur Lagu (Section)',
       '🎬',
       'Label seksi lagu yang dikenali ChordDisplay dan editor lirik. Satu label per seksi; label yang ditambahkan di sini ikut dikenali parser dan autocomplete.',
-      'ruang-performer:chorddisplay:sections',
       configValue('STRUCTURE_SECTION_KEYWORDS', []),
     ),
   },
@@ -144,7 +196,6 @@ export const getTagGroups = () => {
     'Metadata Informasi',
     '🏷️',
     'Key metadata yang ditampilkan sebagai chip informasi (tidak mempengaruhi transpose), mis. "Original Key:", "Time Signature:", "Modulation:", "Feel:", "Intensitas:". Cue mark dalam braket ([Stop], [Hit], [Tutti]) juga dibaca sebagai metadata.',
-    'ruang-performer:chorddisplay:metadata',
     configValue('METADATA_KEYS', []),
   ),
   identityGroup(
@@ -152,7 +203,6 @@ export const getTagGroups = () => {
     'Instrumen',
     '🎸',
     'Nama instrumen yang dikenali sebagai label: [Gitar], [Suling], [Gitar: Dist].',
-    'ruang-performer:chorddisplay:instruments',
     configValue('INSTRUMENT_KEYWORDS', []),
   ),
   identityGroup(
@@ -160,7 +210,6 @@ export const getTagGroups = () => {
     'Tanda "Tanpa Chord"',
     '🚫',
     'Token yang dibaca sebagai No Chord, mis. N.C., NC, No Chord.',
-    'ruang-performer:chorddisplay:no-chord',
     configValue('NO_CHORD_TOKENS', []),
   ),
   identityGroup(
@@ -168,13 +217,29 @@ export const getTagGroups = () => {
     'Kunci MIDI (milik modul MIDI)',
     '🎹',
     'Baris "[Keys: ... | PC: 1]" dibaca modul MIDI, bukan ChordDisplay. Kunci di sini membuat baris ber-key tersebut tidak dianggap instrumen/metadata ChordDisplay.',
-    'ruang-performer:chorddisplay:midi-keys',
     getMidiRoutingKeywords(),
   ),
+
+  // Alias seksi disimpan sebagai pasangan "alias=kanonik", bukan daftar keyword.
+  // Grup ini punya `fallback` berupa objek & editor sendiri di panel admin.
+  {
+    id: 'sectionAliases',
+    kind: 'aliasMap',
+    label: 'Alias Seksi',
+    icon: '🔁',
+    description: 'Sinonim label seksi yang dihitung sebagai seksi yang sama, mis. "opening=intro" atau "reff=chorus". Satu alias per baris dengan format alias=seksi. Alias hanya berlaku bila kedua kata juga ada di daftar Struktur Lagu.',
+    fallback: getDefaultSectionAliases(),
+    normalize: (value) => value,
+  },
   ];
 
   // Fallback kosong berarti config belum siap (siklus impor) — jangan simpan.
-  if (groupsCache.some((group) => !group.fallback.length)) {
+  // Grup aliasMap boleh kosong saat bawaan belum siap, tetapi tidak boleh
+  // dianggap 'siap' sebelum config terinisialisasi.
+  if (groupsCache.some((group) => (
+    !group.fallback
+    || (Array.isArray(group.fallback) && !group.fallback.length)
+  ))) {
     const partial = groupsCache;
     groupsCache = null;
     return partial;

@@ -87,7 +87,9 @@ let fallbacksByGroup = null;
 const fallbacks = () => {
   if (!fallbacksByGroup) {
     fallbacksByGroup = Object.freeze(Object.fromEntries(
-      tagGroups().map((group) => [group.id, Object.freeze([...group.fallback])]),
+      tagGroups().map((group) => [group.id, group.kind === 'aliasMap'
+        ? Object.freeze({ ...group.fallback })
+        : Object.freeze([...group.fallback])]),
     ));
   }
   return fallbacksByGroup;
@@ -115,12 +117,26 @@ const invalidateDerived = () => {
   derivedCache.structureAlternation = null;
 };
 
-/** Ambil hanya grup yang dikenal, array teks, tanpa duplikat. */
+/** Ambil hanya grup yang dikenal, array teks, tanpa duplikat, lalu normalisasi. */
 const sanitizeGroups = (value) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const groups = {};
   tagGroups().forEach((group) => {
     const list = value[group.id];
+
+    if (group.kind === 'aliasMap') {
+      // Alias: objek alias→kanonik, keduanya keyword ternormalisasi.
+      if (!list || typeof list !== 'object' || Array.isArray(list)) return;
+      const aliases = {};
+      Object.entries(list).forEach(([alias, canonical]) => {
+        const key = normalizeKeyword(alias);
+        const target = normalizeKeyword(canonical);
+        if (key && target && key !== target) aliases[key] = target;
+      });
+      if (Object.keys(aliases).length) groups[group.id] = aliases;
+      return;
+    }
+
     if (!Array.isArray(list)) return;
     const cleaned = [...new Set(list.map(normalizeKeyword).filter(Boolean))];
     if (cleaned.length) groups[group.id] = cleaned;
@@ -155,23 +171,48 @@ export const readTagGroupKeywords = (groupId) => {
   return currentGroups()[groupId] || [];
 };
 
+/**
+ * Baca satu grup dalam bentuk siap-editor: array untuk grup kata kunci, objek
+ * alias→kanonik untuk grup `aliasMap`.
+ */
+export const readTagGroupValue = (groupId) => {
+  const group = getTagGroup(groupId);
+  if (!group) return [];
+  return currentGroups()[groupId] || (group.kind === 'aliasMap' ? {} : []);
+};
+
 const buildMemo = (storedGroups) => {
   const groups = {};
   const groupsList = tagGroups();
   groupsList.forEach((group) => {
     const list = storedGroups?.[group.id];
+    if (group.kind === 'aliasMap') {
+      // Daftar kata kunci: alias bawaan (objek) disimpan apa adanya.
+      groups[group.id] = list && typeof list === 'object' && !Array.isArray(list)
+        && Object.keys(list).length
+        ? list
+        : fallbacks()[group.id];
+      return;
+    }
     groups[group.id] = list && list.length ? list : fallbacks()[group.id];
   });
 
   // Alias seksi aktif. Admin yang menghapus kata kunci alias berarti
   // menghapus alias itu juga; alias yang bentuk bakunya dihapus tidak berguna
   // lagi sehingga ikut dibuang.
+  //
+  // Alias kini berasal dari grup admin `sectionAliases` (pasangan alias→kanonik)
+  // dan HANYA memakai bentuk admin bila grup itu diatur; selain itu memakai
+  // bawaan config. Alias tidak ditambahkan ke daftar kata kunci seksi — alias
+  // hanya menentukan kanonik, sehingga pengecekan urutan parser tidak berubah.
+  const storedAliases = storedGroups?.sectionAliases;
+  const hasStoredAliases = storedAliases
+    && typeof storedAliases === 'object'
+    && !Array.isArray(storedAliases)
+    && Object.keys(storedAliases).length > 0;
   const aliases = {};
-  // Alias bawaan diambil langsung dari config (bukan dari grup admin) supaya
-  // panel admin hanya mengatur daftar kata kunci dan modul ini bebas siklus
-  // impor terhadap config.
-  const defaultAliases = defaultSectionAliases();
-  Object.entries(defaultAliases).forEach(([alias, canonical]) => {
+  const sourceAliases = hasStoredAliases ? storedAliases : defaultSectionAliases();
+  Object.entries(sourceAliases).forEach(([alias, canonical]) => {
     if (groups.sections.includes(alias) && groups.sections.includes(canonical)) {
       aliases[alias] = canonical;
     }
@@ -180,7 +221,10 @@ const buildMemo = (storedGroups) => {
   memo = { groups, aliases };
   // Jangan simpan cache yang dibangun sebelum config siap (siklus impor):
   // grup akan kosong dan parser diam-diam tidak mengenali apa pun.
-  if (groupsList.some((group) => !(groups[group.id] || []).length)) memo = null;
+  if (groupsList.some((group) => {
+    if (group.kind === 'aliasMap') return !group.fallback;
+    return !(groups[group.id] || []).length;
+  })) memo = null;
   invalidateDerived();
   return memo || { groups, aliases };
 };
@@ -390,10 +434,22 @@ const notify = () => {
 /** Grup yang isinya berbeda dari bawaan. */
 const overriddenIdsFrom = (groups) => tagGroups()
   .filter((group) => {
-    const current = groups[group.id] || [];
-    const fallback = fallbacks()[group.id] || [];
-    return current.length !== fallback.length
-      || current.some((keyword, index) => keyword !== fallback[index]);
+    const current = groups[group.id];
+    const fallback = fallbacks()[group.id];
+
+    // Grup aliasMap berupa objek alias→kanonik: dibandingkan per pasangan.
+    if (group.kind === 'aliasMap') {
+      if (!current || typeof current !== 'object' || Array.isArray(current)) return false;
+      const currentKeys = Object.keys(current);
+      const fallbackKeys = Object.keys(fallback || {});
+      return currentKeys.length !== fallbackKeys.length
+        || currentKeys.some((key) => current[key] !== fallback[key]);
+    }
+
+    const list = current || [];
+    const base = fallback || [];
+    return list.length !== base.length
+      || list.some((keyword, index) => keyword !== base[index]);
   })
   .map((group) => group.id);
 
@@ -403,7 +459,10 @@ const overriddenIdsFrom = (groups) => tagGroups()
  */
 const saveGroups = async (groups) => {
   const payload = Object.fromEntries(
-    tagGroups().map((group) => [group.id, groups[group.id] || []]),
+    tagGroups().map((group) => [
+      group.id,
+      groups[group.id] || (group.kind === 'aliasMap' ? {} : []),
+    ]),
   );
 
   try {
@@ -431,7 +490,25 @@ const saveGroups = async (groups) => {
  * gunakan resetTagGroup() untuk kembali ke bawaan.
  */
 export const setTagGroupKeywords = async (groupId, keywords = []) => {
-  if (!getTagGroup(groupId)) return { ok: false, reason: 'Grup tidak dikenal' };
+  const group = getTagGroup(groupId);
+  if (!group) return { ok: false, reason: 'Grup tidak dikenal' };
+
+  // Alias disimpan sebagai objek alias→kanonik, bukan daftar keyword.
+  if (group.kind === 'aliasMap') {
+    if (!keywords || typeof keywords !== 'object' || Array.isArray(keywords)) {
+      return { ok: false, reason: 'Alias harus berupa pasangan alias=seksi' };
+    }
+    const cleaned = {};
+    Object.entries(keywords).forEach(([alias, canonical]) => {
+      const key = normalizeKeyword(alias);
+      const target = normalizeKeyword(canonical);
+      if (key && target && key !== target) cleaned[key] = target;
+    });
+    if (!Object.keys(cleaned).length) {
+      return { ok: false, reason: 'Daftar alias tidak boleh kosong' };
+    }
+    return saveGroups({ ...currentGroups(), [groupId]: cleaned });
+  }
 
   const cleaned = [...new Set((keywords || []).map(normalizeKeyword).filter(Boolean))];
   if (!cleaned.length) return { ok: false, reason: 'Daftar keyword tidak boleh kosong' };

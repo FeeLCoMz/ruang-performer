@@ -63,6 +63,34 @@ export function diffGroupDraft(draft, activeKeywords, parse) {
 /** true bila ada tambahan atau penghapusan. */
 export const hasDiff = (diff) => Boolean(diff && (diff.addedCount || diff.removedCount));
 
+/**
+ * Diff untuk grup alias (objek alias→kanonik).
+ * `added` berisi "alias=kanonik" yang muncul/berubah nilainya, `removed` 
+ * berisi "alias=kanonik" lama yang hilang — bentuk yang bisa dibaca langsung.
+ *
+ * @param {Record<string, string>} previous
+ * @param {Record<string, string>} next
+ */
+export function diffAliases(previous = {}, next = {}) {
+  const before = previous || {};
+  const after = next || {};
+  const format = (alias, canonical) => `${alias}=${canonical}`;
+
+  const added = Object.keys(after)
+    .filter((alias) => before[alias] !== after[alias])
+    .map((alias) => format(alias, after[alias]));
+  const removed = Object.keys(before)
+    .filter((alias) => before[alias] !== after[alias])
+    .map((alias) => format(alias, before[alias]));
+
+  return {
+    added,
+    removed,
+    addedCount: added.length,
+    removedCount: removed.length,
+  };
+}
+
 /** "+2 −1" (kosong bila tidak ada perubahan) — dipakai di tombol & banner. */
 export function describeDiff(diff) {
   if (!hasDiff(diff)) return '';
@@ -226,4 +254,5 @@ export default {
   findNewConflicts,
   addKeywordToDraft,
   removeKeywordFromDraft,
+  diffAliases,
 };
