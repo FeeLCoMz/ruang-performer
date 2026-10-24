@@ -112,57 +112,76 @@ export default function DashboardPage() {
     }
   };
 
+  const statItems = [
+    { key: 'songs', icon: '🎵', label: 'Lagu', hint: 'Buka daftar lagu', to: '/songs' },
+    { key: 'setlists', icon: '📋', label: 'Setlist', hint: 'Buka daftar setlist', to: '/setlists' },
+    { key: 'bands', icon: '🎸', label: 'Band', hint: 'Buka daftar band', to: '/bands' },
+    { key: 'gigs', icon: '🎤', label: 'Gigs', hint: 'Buka jadwal gigs', to: '/gigs' },
+  ];
+
   return (
-    <div className="page-container">
-      {/* Welcome Section */}
-      <div className="dashboard-welcome">
-        <div>
-          <h1>👋 Selamat datang, {user?.username || 'Musician'}!</h1>
-            <p>Kelola lagu, setlist, dan gigs dalam satu platform</p>
+    <div className="page-container dashboard-page">
+      <section className="dash-hero">
+        <div className="dash-hero-top">
+          <div className="dash-eyebrow">
+            <span className="dash-eyebrow-dot" aria-hidden="true" />
+            Ringkasan
+          </div>
         </div>
-        <div>
-          <button className="btn" onClick={() => navigate('/songs/add')}>
-            ➕ Tambah Lagu
-          </button>
-          <button className="btn" onClick={() => navigate('/setlists')}>
-            📋 Buat Setlist
-          </button>
-          <button className="btn" onClick={() => navigate('/gigs')}>
-            🎤 Jadwal Gigs
-          </button>
-        </div>
-      </div>
 
-      {/* Stats Grid */}
-      <div className="dashboard-grid">
-        <div className="stat-card" onClick={() => navigate('/songs')}>
-          <h3>🎵 Lagu</h3>
-          <div className="stat-value">{statsLoading ? <span className="loading-skeleton loading-skeleton-stat" /> : stats.songs}</div>
-          <p>Total lagu</p>
+        <div className="dash-hero-heading">
+          <div className="dash-hero-title-block">
+            <h1 className="dash-hero-title">Halo, {user?.username || 'Musician'}</h1>
+            <p className="dash-hero-subtitle">
+              Kelola lagu, setlist, dan jadwal panggung dalam satu tempat
+            </p>
+          </div>
+          <div className="dash-hero-actions">
+            <button className="btn dash-btn-primary" onClick={() => navigate('/songs/add')}>
+              <span aria-hidden="true">＋</span> Tambah Lagu
+            </button>
+            <button className="btn dash-btn-ghost" onClick={() => navigate('/setlists')}>
+              <span aria-hidden="true">📋</span> Setlist
+            </button>
+            <button className="btn dash-btn-ghost" onClick={() => navigate('/gigs')}>
+              <span aria-hidden="true">🎤</span> Gigs
+            </button>
+          </div>
         </div>
-        <div className="stat-card" onClick={() => navigate('/setlists')}>
-          <h3>📋 Setlist</h3>
-          <div className="stat-value">{statsLoading ? <span className="loading-skeleton loading-skeleton-stat" /> : stats.setlists}</div>
-          <p>Setlist tersedia</p>
-        </div>
-        <div className="stat-card" onClick={() => navigate('/bands')}>
-          <h3>🎸 Band</h3>
-          <div className="stat-value">{statsLoading ? <span className="loading-skeleton loading-skeleton-stat" /> : stats.bands}</div>
-          <p>Band aktif</p>
-        </div>
-        <div className="stat-card" onClick={() => navigate('/gigs')}>
-          <h3>🎤 Gigs</h3>
-          <div className="stat-value">{statsLoading ? <span className="loading-skeleton loading-skeleton-stat" /> : stats.gigs}</div>
-          <p>Jadwal gigs</p>
-        </div>
-      </div>
 
+        {/* Ringkasan angka dalam satu blok padat: satu angka besar + label
+            per kartu, jauh lebih ringkas daripada empat kartu tinggi. */}
+        <div className="dash-stats">
+          {statItems.map((item) => {
+            const value = stats[item.key] ?? 0;
+            const isZero = !statsLoading && !value;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={`dash-stat${isZero ? ' dash-stat--muted' : ''}`}
+                onClick={() => navigate(item.to)}
+                title={item.hint}
+                aria-label={`${item.label}: ${statsLoading ? 'memuat' : value}`}
+              >
+                <span className="dash-stat-icon" aria-hidden="true">{item.icon}</span>
+                <span className="dash-stat-body">
+                  <span className="dash-stat-value">
+                    {statsLoading ? <span className="dash-stat-skeleton" /> : value}
+                  </span>
+                  <span className="dash-stat-label">{item.label}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Main Content Grid */}
-      <div className="dashboard-content-grid">
+      <div className="dashboard-content-grid dash-panels">
         {/* Recent Activity */}
-        <div className="dashboard-card">
-          <h2>📊 Aktivitas Terbaru</h2>
+        <div className="dashboard-card dash-panel">
+          <h2 className="dash-panel-title">Aktivitas Terbaru</h2>
           {activitiesError && (
             <div className="dashboard-inline-error">
               <span>{activitiesError}</span>
@@ -197,8 +216,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Upcoming Events */}
-        <div className="dashboard-card">
-          <h2>📅 Upcoming Events</h2>
+        <div className="dashboard-card dash-panel">
+          <h2 className="dash-panel-title">Jadwal Terdekat</h2>
           {eventsError && (
             <div className="dashboard-inline-error">
               <span>{eventsError}</span>
@@ -219,7 +238,7 @@ export default function DashboardPage() {
             <div className="dashboard-empty">Tidak ada event dalam 7 hari ke depan</div>
           ) : (
             <div className="dashboard-event-list">
-              {upcomingEvents.map((event, idx) => (
+              {upcomingEvents.map((event) => (
                 <div key={event.id} className="activity-item activity-item--clickable" onClick={() => {
                   if (event.type === 'gig') navigate('/gigs');
                 }}>
@@ -238,8 +257,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Band Highlights */}
-      <div className="card">
-        <h2 className="dashboard-section-title">🎸 Band Saya</h2>
+      <div className="dashboard-card dash-panel dash-bands">
+        <h2 className="dash-panel-title">Band Saya</h2>
         {bandsLoading ? (
           <div className="dashboard-band-grid">
             {[...Array(3)].map((_, idx) => (
@@ -270,7 +289,12 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="dashboard-empty">Belum ada band</div>
+          <div className="dash-empty">
+            <p>Belum ada band</p>
+            <button className="btn btn-secondary" onClick={() => navigate('/bands')}>
+              Kelola Band
+            </button>
+          </div>
         )}
       </div>
     </div>
