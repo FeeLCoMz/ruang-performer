@@ -138,3 +138,220 @@
   color: var(--text-secondary, #6b7280);
   min-width: 60px;
 }
+/* ========================================
+   MODULES PAGE — hero & grid kartu seragam
+   ======================================== */
+
+.modules-page {
+  --mod-surface: var(--card-bg);
+  --mod-surface-soft: rgba(255, 255, 255, 0.03);
+  --mod-line: var(--border-color);
+}
+
+.mod-hero {
+  position: relative;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--mod-line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(56, 189, 248, 0.14) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(22, 29, 51, 0.96) 0%, rgba(15, 21, 38, 0.96) 100%);
+}
+
+.mod-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.mod-eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+.mod-hero-heading {
+  margin-top: var(--spacing-md);
+}
+
+.mod-hero-title {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.mod-hero-subtitle {
+  margin: 6px 0 0;
+  max-width: 64ch;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.mod-summary-grid {
+  margin-top: var(--spacing-xl);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-md);
+}
+
+.mod-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--mod-line);
+  border-radius: var(--radius-md);
+  background: var(--mod-surface-soft);
+}
+
+.mod-summary-card--muted {
+  border-style: dashed;
+  background: transparent;
+}
+
+.mod-summary-label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.mod-summary-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.mod-summary-card--muted .mod-summary-value {
+  color: var(--text-muted);
+}
+
+.mod-summary-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Grid kartu: tinggi seragam, aksi selalu di dasar ----
+   Masalah lama: kartu bertinggi isi, sehingga tombol "Buka modul"
+   menggantung di tengah kartu pendek dan tidak sejajar antar-kartu. */
+.modules-page .modules-grid {
+  display: grid;
+  /* `auto-fit` (bukan auto-fill): saat jumlah kartu bukan kelipatan kolom,
+     baris terakhir merentang memenuhi lebar, tidak menyisakan slot kosong. */
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: var(--spacing-md);
+  align-items: stretch;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.modules-page .modules-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  height: 100%;
+  padding: var(--spacing-lg);
+  border: 1px solid var(--mod-line);
+  border-radius: var(--radius-md);
+  background: var(--mod-surface);
+  transition: border-color var(--transition-fast), background var(--transition-fast), opacity var(--transition-fast);
+}
+
+.modules-page .modules-card:hover {
+  border-color: #46507a;
+  background: #18203a;
+}
+
+.modules-page .modules-card-active {
+  border-color: rgba(139, 92, 246, 0.55);
+}
+
+/* Deskripsi mengisi ruang yang tersisa sehingga tombol terdorong ke bawah.
+   `min-height: 0` wajib: tanpa itu, item flex dengan teks panjang menolak
+   menyusut dan tombol pada kartu lain tidak sejajar. */
+.modules-page .modules-card-desc {
+  margin: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+/* Tombol Buka didorong ke DASAR kartu sehingga sejajar antar-kartu.
+   `margin-top: auto` bekerja pada anak flex; `align-self` dipertahankan
+   `flex-start` agar lebar tombol mengikuti isinya (tidak selebar kartu). */
+.modules-page .modules-card > .modules-open {
+  margin-top: auto;
+  align-self: flex-start;
+  justify-content: center;
+}
+
+.modules-page .modules-card-header h2 {
+  font-size: var(--font-size-base);
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.modules-page .modules-empty {
+  grid-column: 1 / -1;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  border: 1px dashed var(--mod-line);
+  border-radius: var(--radius-md);
+  background: var(--mod-surface-soft);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+@media (max-width: 900px) {
+  .mod-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-sm);
+  }
+
+  .mod-summary-card {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .mod-summary-value {
+    font-size: var(--font-size-xl);
+  }
+}
+
+@media (max-width: 768px) {
+  .mod-hero {
+    padding: var(--spacing-lg);
+  }
+
+  .mod-hero-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .modules-page {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 480px) {
+  .modules-page .modules-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

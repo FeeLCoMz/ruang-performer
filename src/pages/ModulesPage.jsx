@@ -24,16 +24,44 @@ export default function ModulesPage() {
   // sebelum kena 429, tanpa harus membuka editor lagu.
   const { usage: aiUsage, loading: aiUsageLoading, refresh: refreshAiUsage } = useAIUsage(!!statuses['ai-autofill']);
 
-  return (
-    <div className="page-container">
-      <div className="page-header">
-        <div>
-          <h1>🧩 Modul</h1>
-          <p>Aktifkan atau nonaktifkan modul tambahan sesuai kebutuhan.</p>
-        </div>
-      </div>
+  const activeCount = modules.filter((mod) => statuses[mod.id]).length;
+  const inactiveCount = modules.length - activeCount;
 
-      <div className="card modules-grid">
+  return (
+    <div className="page-container modules-page">
+      <section className="mod-hero">
+        <div className="mod-eyebrow">
+          <span className="mod-eyebrow-dot" aria-hidden="true" />
+          Modul
+        </div>
+
+        <div className="mod-hero-heading">
+          <h1 className="mod-hero-title">Modul</h1>
+          <p className="mod-hero-subtitle">
+            Aktifkan atau nonaktifkan modul tambahan sesuai kebutuhan.
+          </p>
+        </div>
+
+        <div className="mod-summary-grid">
+          <div className="mod-summary-card">
+            <span className="mod-summary-label">Tersedia</span>
+            <span className="mod-summary-value">{modules.length}</span>
+            <span className="mod-summary-hint">Modul terdaftar</span>
+          </div>
+          <div className="mod-summary-card">
+            <span className="mod-summary-label">Aktif</span>
+            <span className="mod-summary-value">{activeCount}</span>
+            <span className="mod-summary-hint">Sedang dipakai</span>
+          </div>
+          <div className={`mod-summary-card${inactiveCount === 0 ? ' mod-summary-card--muted' : ''}`}>
+            <span className="mod-summary-label">Nonaktif</span>
+            <span className="mod-summary-value">{inactiveCount}</span>
+            <span className="mod-summary-hint">Bisa dinyalakan kapan saja</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="modules-grid">
         {modules.length === 0 && (
           <div className="modules-empty">Belum ada modul terdaftar.</div>
         )}
@@ -59,7 +87,7 @@ export default function ModulesPage() {
                   <span className="modules-toggle-state">{enabled ? 'Aktif' : 'Nonaktif'}</span>
                 </label>
               </div>
-              <p>{mod.description}</p>
+              <p className="modules-card-desc">{mod.description}</p>
               {mod.id === 'ai-autofill' && enabled && (
                 <div
                   className={`modules-quota${aiUsage && aiUsage.remaining === 0 ? ' modules-quota-empty' : ''}`}
