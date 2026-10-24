@@ -4691,7 +4691,11 @@ button.song-mastery-chip:not(:disabled):hover {
   .slp-toolbar-meta {
     margin-left: 0;
     width: 100%;
-    justify-content: space-between;
+    /* Jumlah hasil menempel ke kiri; tombol Reset (bila ada) otomatis ke
+       kanan. `space-between` membuat teks menggantung di tengah-bawah saat
+       Reset tidak tampil. */
+    justify-content: flex-start;
+    padding-bottom: 0;
   }
 
   .slp-search-field .search-input-main {
@@ -4819,13 +4823,16 @@ button.song-mastery-chip:not(:disabled):hover {
   opacity: 0.9;
 }
 
-/* Baris metadata: rapat, boleh wrap, tanpa jarak berlebih. */
+/* Baris metadata: rapat, boleh wrap, tanpa jarak berlebih.
+   Tinggi kartu dijaga tetap ringkas dengan membatasi baris ini ke dua baris
+   maksimum (judul+artis satu baris, chip di baris berikutnya). */
 .song-list-page .slp-list .song-meta {
-  margin-top: 6px;
+  margin-top: 4px;
   gap: 4px 6px;
   row-gap: 4px;
   font-size: var(--font-size-xs);
   align-items: center;
+  line-height: 1.45;
 }
 
 /* ---- Aksi: kolom kanan yang tenang ---- */
@@ -4909,5 +4916,45 @@ button.song-mastery-chip:not(:disabled):hover {
   .song-list-page .slp-list .song-actions .song-action-btn {
     height: 40px;
     min-height: 40px;
+  }
+}
+/* Artis sebagai subjudul di baris judul kartu lagu.
+   Kartu halaman Lagu menampilkan "Judul · Artis" (pemisah titik tenang),
+   sementara kunci & tempo menjadi blok fakta di baris metadata. */
+.song-list-page .slp-list .song-heading {
+  flex-wrap: wrap;
+  column-gap: var(--spacing-sm);
+  row-gap: 2px;
+  /* `justify-content: space-between` bawaan melempar artis ke ujung kanan
+     kartu; artis adalah subjudul judul, jadi harus menempel di sampingnya. */
+  justify-content: flex-start;
+}
+
+.song-list-page .slp-list .song-list-artist {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}
+
+/* Pemisah tipis sebelum nama artis. */
+.song-list-page .slp-list .song-list-artist::before {
+  content: '·';
+  margin-right: 8px;
+  color: var(--border-color);
+}
+
+@media (max-width: 768px) {
+  .song-list-page .slp-list .song-list-artist {
+    max-width: 100%;
+    font-size: var(--font-size-xs);
+  }
+
+  .song-list-page .slp-list .song-list-artist::before {
+    content: none;
+    margin-right: 0;
   }
 }

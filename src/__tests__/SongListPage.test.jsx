@@ -95,7 +95,7 @@ describe('SongListPage', () => {
     expect(container.querySelectorAll('.song-mood-badge').length).toBeGreaterThan(0);
   });
 
-  test('title, artist, key, and tempo are always rendered as core facts', async () => {
+  test('title & artist live on the heading line; key & tempo on the primary meta line', async () => {
     await act(async () => {
       root.render(
         <SongListPage
@@ -118,17 +118,25 @@ describe('SongListPage', () => {
       await flushPromises();
     });
 
+    // Empat fakta inti tetap harus tampil tanpa hover/scroll.
     expect(container.querySelector('.song-fact-title')?.textContent).toContain('Anthem Malam');
     expect(container.querySelector('.song-fact-artist')?.textContent).toContain('Band A');
     expect(container.querySelector('.song-fact-key')?.textContent).toContain('Am');
     expect(container.querySelector('.song-fact-tempo')?.textContent).toContain('132');
 
-    // Fakta inti (artis/key/tempo) harus berada di baris utama, bukan baris detail.
+    // Desain kartu: artis adalah subjudul di baris judul, sedangkan kunci &
+    // tempo menjadi blok fakta di baris metadata utama.
+    const headingLine = container.querySelector('.song-heading');
     const primaryLine = container.querySelector('.song-meta-line-primary');
     const detailLine = container.querySelector('.song-meta-line-detail');
+    expect(headingLine).toBeTruthy();
     expect(primaryLine).toBeTruthy();
     expect(detailLine).toBeTruthy();
-    ['.song-fact-artist', '.song-fact-key', '.song-fact-tempo'].forEach((selector) => {
+
+    expect(headingLine.querySelector('.song-fact-artist')).toBeTruthy();
+    expect(primaryLine.querySelector('.song-fact-artist')).toBeFalsy();
+
+    ['.song-fact-key', '.song-fact-tempo'].forEach((selector) => {
       expect(primaryLine.querySelector(selector)).toBeTruthy();
       expect(detailLine.querySelector(selector)).toBeFalsy();
     });

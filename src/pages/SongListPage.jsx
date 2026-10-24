@@ -326,15 +326,16 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
       <React.Fragment key={song.id}>
         <SongCard
           title={song.title}
+          headingStatus={song.artist ? (
+            <span className="song-list-artist song-fact-artist">{song.artist}</span>
+          ) : null}
           isPlaying={isSongPlaying(song.id)}
           onClick={() => navigate(`/songs/view/${song.id}`)}
           metaPrimary={(
             <div className="song-meta-line song-meta-line-primary">
-              {/* Kontrak kartu: judul, ARTIS, kunci, tempo selalu berada di
-                  baris utama (lihat SongListPage.test.jsx). Artis tampil
-                  sebagai teks tenang, bukan chip bergaris, agar tidak
-                  bersaing dengan judul. */}
-              {song.artist && <span className="song-meta-text song-fact-artist">👤 {song.artist}</span>}
+              {/* Desain kartu: artis menjadi subjudul di baris judul
+                  (lihat headingStatus), sehingga baris ini memuat fakta
+                  inti kunci & tempo lebih dulu, baru pendukung. */}
               {song.key && <span className="song-chip song-fact-key">🎹 {song.key}</span>}
               {song.tempo && <span className="song-chip song-fact-tempo">⏱️ {song.tempo} BPM</span>}
               {song.bandId && <span className="song-meta-text">🎤 {song.bandName || '-'}</span>}
