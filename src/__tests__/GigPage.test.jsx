@@ -173,7 +173,8 @@ const getRangeSelects = () =>
   );
 
 async function showShareDialog(container) {
-  await click(byText(container, 'button', 'Bagikan Jadwal'));
+  // Label tombol di hero: "Bagikan".
+  await click(byText(container, 'button', 'Bagikan'));
 }
 
 function setupDom({ gigs = fixtureGigs(), setlists = [], bands = BANDS } = {}) {

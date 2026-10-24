@@ -429,34 +429,180 @@ export default function GigPage({ onEditBlocked }) {
     setFormError('');
   };
 
-  return (
-    <div className="page-container">
-      {/* Page Header */}
-      <div className="page-header">
-        <div>
-          <h1>🎤 Jadwal Gigs</h1>
-          <p>Kelola pertunjukan band mu</p>
-        </div>
-        {/* Permission: Only show if user can create gig for selected band */}
-        {(() => {
-          const canManageGigs = !selectedBandId
-            ? Boolean(user)
-            : Boolean(userBandInfo && permissionForSelectedBand.can(PERMISSIONS.GIG_EDIT));
-          if (!canManageGigs) return null;
+  // Ringkasan singkat untuk hero: jadwal berikutnya, jumlah gigs bulan ini,
+  // dan total honor (fee) bulan ini.
+  const nowTime = Date.now();
+  const upcomingGigs = sortedGigs
+    .filter((gig) => {
+      const time = gig.date ? new Date(gig.date).getTime() : NaN;
+      return !Number.isNaN(time) && time >= nowTime && resolveGigStatus(gig) !== 'cancelled';
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const nextGig = upcomingGigs[0] || null;
+  const monthlyFees = sortedGigs.reduce((total, gig) => {
+    if (resolveGigStatus(gig) === 'cancelled') return total;
+    const fee = Number(gig.fee);
+    return Number.isFinite(fee) && fee > 0 ? total + fee : total;
+  }, 0);
+  const finishedCount = sortedGigs.filter((gig) => resolveGigStatus(gig) === 'done').length;
+  const upcomingCount = sortedGigs.filter((gig) => {
+    const status = resolveGigStatus(gig);
+    return status === 'upcoming' || status === 'confirmed';
+  }).length;
+  const formatRupiah = (value) => new Intl.NumberFormat('id-ID', {
+    style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0,
+  }).format(value || 0);
+  const dayNumber = (value) => {
+    const parsed = value ? new Date(value) : null;
+    return parsed && !Number.isNaN(parsed.getTime()) ? parsed.getDate() : '–';
+  };
+  const dayMonth = (value) => {
+    const parsed = value ? new Date(value) : null;
+    return parsed && !Number.isNaN(parsed.getTime())
+      ? parsed.toLocaleDateString('id-ID', { month: 'short' }).replace('.', '')
+      : '';
+  };
+  const timeOf = (value) => {
+    const parsed = value ? new Date(value) : null;
+    return parsed && !Number.isNaN(parsed.getTime())
+      ? parsed.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+      : '';
+  };
 
-          return (
-            <div className="page-header-actions">
-              <button className="btn" onClick={openCreateForm}>
-                <span aria-hidden="true">＋</span> Buat Gigs
-              </button>
-              {gigs.length > 0 && exportShareEnabled && (
-                <button className="btn btn-secondary gig-share-trigger-btn" onClick={() => setShowShareModal(true)}>
-                  📤 Bagikan Jadwal
-                </button>
-              )}
+  return (
+    <div className="page-container gig-page">
+      {/* Hero: judul + ringkasan jadwal */}
+      <section className="gig-hero">
+        <div className="gig-hero-main">
+          <div className="gig-hero-heading">
+            <div>
+              <h1 className="gig-hero-title">Jadwal Gigs</h1>
+              <p className="gig-hero-subtitle">
+                {selectedBand ? `${selectedBand.name} · ${monthName}` : monthName}
+              </p>
             </div>
-          );
-        })()}
+            {(() => {
+              const canManageGigs = !selectedBandId
+                ? Boolean(user)
+                : Boolean(userBandInfo && permissionForSelectedBand.can(PERMISSIONS.GIG_EDIT));
+              if (!canManageGigs) return null;
+              return (
+                <div className="gig-hero-actions">
+                  <button className="btn gig-btn-primary" onClick={openCreateForm}>
+                    <span aria-hidden="true">＋</span> Buat Gigs
+                  </button>
+                  {gigs.length > 0 && exportShareEnabled && (
+                    <button className="btn gig-btn-ghost" onClick={() => setShowShareModal(true)}>
+                      <span aria-hidden="true">📤</span> Bagikan
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="gig-summary-grid">
+            <div className="gig-summary-card">
+              <span className="gig-summary-label">Gigs berikutnya</span>
+              <span className="gig-summary-value">
+                {nextGig ? `${dayNumber(nextGig.date)} ${dayMonth(nextGig.date)}` : '—'}
+              </span>
+              <span className="gig-summary-hint">
+                {nextGig
+                  ? [nextGig.venue || nextGig.city, timeOf(nextGig.date)].filter(Boolean).join(' · ')
+                  : 'Belum ada jadwal mendatang'}
+              </span>
+            </div>
+            <div className="gig-summary-card">
+              <span className="gig-summary-label">Bulan ini</span>
+              <span className="gig-summary-value">{sortedGigs.length}</span>
+              <span className="gig-summary-hint">{upcomingCount} mendatang · {finishedCount} selesai</span>
+            </div>
+            <div className={`gig-summary-card${monthlyFees > 0 ? '' : ' gig-summary-card--muted'}`}>
+              <span className="gig-summary-label">Estimasi honor</span>
+              <span className={`gig-summary-value${monthlyFees > 0 ? ' gig-summary-value--money' : ''}`}>{formatRupiah(monthlyFees)}</span>
+              <span className="gig-summary-hint">
+                {monthlyFees > 0 ? 'Total fee bulan ini' : 'Belum ada fee tercatat'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Toolbar: filter berlabel + mode tampilan */}
+      <div className="gig-toolbar">
+        <div className="gig-field">
+          <label className="gig-field-label" htmlFor="gig-band-filter">Band</label>
+          <select
+            id="gig-band-filter"
+            value={selectedBandId}
+            onChange={(e) => setSelectedBandId(e.target.value)}
+            className="modal-input gig-band-filter"
+          >
+            <option value="">Semua Band</option>
+            {bands.map(band => (
+              <option key={band.id} value={band.id}>{band.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="gig-field">
+          <label className="gig-field-label" htmlFor="gig-month-filter">Periode</label>
+          <div className="gig-toolbar-date-group">
+            <select
+              id="gig-month-filter"
+              value={filterMonth}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFilterMonth(value === '' ? '' : parseInt(value, 10));
+              }}
+              className="modal-input gig-month-filter"
+            >
+              <option value="">Semua bulan</option>
+              {Array.from({ length: 12 }, (_, i) => (
+                <option key={i} value={i}>
+                  {new Date(2024, i).toLocaleDateString('id-ID', { month: 'long' })}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(parseInt(e.target.value))}
+              className="modal-input gig-year-filter"
+              aria-label="Tahun"
+            >
+              {buildYearOptions(filterYear).map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="gig-toolbar-actions">
+          <button
+            className="btn btn-secondary gig-sort-btn"
+            onClick={() => setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
+            title="Ubah urutan tanggal"
+          >
+            {sortOrder === 'desc' ? 'Terbaru dulu' : 'Terlama dulu'}
+          </button>
+          <div className="gig-segmented" role="group" aria-label="Mode tampilan">
+            <button
+              className={`gig-segmented-btn ${viewMode === 'list' ? 'is-active' : ''}`}
+              onClick={() => setViewMode('list')}
+              aria-pressed={viewMode === 'list'}
+            >
+              List
+            </button>
+            <button
+              className={`gig-segmented-btn ${viewMode === 'calendar' ? 'is-active' : ''}`}
+              onClick={() => setViewMode('calendar')}
+              aria-pressed={viewMode === 'calendar'}
+            >
+              Kalender
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Form Modal */}
@@ -749,77 +895,24 @@ export default function GigPage({ onEditBlocked }) {
         </div>
       )}
 
-      {/* Filter & View Mode Toggle */}
-      <div className="gig-toolbar">
-        <select
-          value={selectedBandId}
-          onChange={(e) => setSelectedBandId(e.target.value)}
-          className="modal-input gig-band-filter"
-        >
-          <option value="">-- Semua Band --</option>
-          {bands.map(band => (
-            <option key={band.id} value={band.id}>{band.name}</option>
-          ))}
-        </select>
-        <div className="gig-toolbar-date-group">
-          <select
-            value={filterMonth}
-            onChange={(e) => {
-              const value = e.target.value;
-              setFilterMonth(value === '' ? '' : parseInt(value, 10));
-            }}
-            className="modal-input gig-month-filter"
-          >
-            <option value="">Semua bulan</option>
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i} value={i}>
-                {new Date(2024, i).toLocaleDateString('id-ID', { month: 'long' })}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filterYear}
-            onChange={(e) => setFilterYear(parseInt(e.target.value))}
-            className="modal-input gig-year-filter"
-          >
-            {buildYearOptions(filterYear).map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="gig-toolbar-actions">
-          <button
-            className="btn btn-secondary"
-            onClick={() => setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
-            title="Ubah urutan tanggal"
-          >
-            {sortOrder === 'desc' ? '⬇️ Terbaru' : '⬆️ Terlama'}
-          </button>
-          <button
-            className={`btn gig-view-toggle-btn ${viewMode === 'list' ? 'is-active' : ''}`}
-            onClick={() => setViewMode('list')}
-          >
-            📋 List
-          </button>
-          <button
-            className={`btn gig-view-toggle-btn ${viewMode === 'calendar' ? 'is-active' : ''}`}
-            onClick={() => setViewMode('calendar')}
-          >
-            📅 Kalender
-          </button>
-        </div>
-      </div>
-
       {/* Content */}
       {loading && <ListSkeleton count={5} />}
-      {error && <div className="error-text">{error}</div>}
+      {error && (
+        <div className="gig-error" role="alert">
+          <span>{error}</span>
+          <button className="btn btn-secondary" onClick={reloadGigs}>Coba lagi</button>
+        </div>
+      )}
 
       {!loading && sortedGigs.length === 0 ? (
         <div className="gig-empty-state">
-          <p>{gigs.length === 0 ? `Belum ada jadwal gigs pada ${filterYear}.` : `Belum ada jadwal gigs untuk ${monthName}.`}</p>
-          <button className="btn" onClick={openCreateForm}>
+          <div className="gig-empty-icon" aria-hidden="true">🎤</div>
+          <p>
+            {gigs.length === 0
+              ? `Belum ada jadwal gigs pada ${filterYear}.`
+              : `Belum ada jadwal gigs untuk ${monthName}.`}
+          </p>
+          <button className="btn gig-btn-primary" onClick={openCreateForm}>
             <span aria-hidden="true">＋</span> Buat Gigs
           </button>
         </div>
@@ -827,7 +920,7 @@ export default function GigPage({ onEditBlocked }) {
         <CalendarView gigs={sortedGigs} selectedMonth={calendarSelectedMonth} selectedYear={filterYear} onGigSelect={handleEdit} />
       ) : (
         <div className="song-list-container">
-          {sortedGigs.map((gig, idx) => {
+          {sortedGigs.map((gig) => {
             const gigTime = gig.date ? new Date(gig.date).getTime() : 0;
             const hasDate = gigTime > 0 && !Number.isNaN(gigTime);
             const status = resolveGigStatus(gig);
@@ -837,26 +930,45 @@ export default function GigPage({ onEditBlocked }) {
             return (
               <div
                 key={gig.id}
-                className={`song-item hover-lift ${isCompleted ? 'gig-item-completed' : ''} ${isUpcoming ? 'gig-item-upcoming' : ''} ${isCancelled ? 'gig-item-cancelled' : ''}`}
+                className={`song-item gig-card ${isCompleted ? 'gig-item-completed' : ''} ${isUpcoming ? 'gig-item-upcoming' : ''} ${isCancelled ? 'gig-item-cancelled' : ''}`}
               >
-                <div className="song-info">
-                  <div className="song-number">{idx + 1}.</div>
-                  <h3 className="song-title">{gig.bandName || 'Band Tamu'}</h3>
-                  <div className="song-meta">
-                    <span>📅 {hasDate ? new Date(gig.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Tanggal belum diisi'}</span>
-                    {hasDate && (
-                      <span>⏰ {new Date(gig.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
-                    )}
-                    {(gig.venue || gig.city) && <span>📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}</span>}
-                    {gig.setlistName && <span>🎵 {gig.setlistName}</span>}
+                <div className={`gig-date-block gig-date-block--${status}`} aria-hidden="true">
+                  <span className="gig-date-day">{hasDate ? dayNumber(gig.date) : '–'}</span>
+                  <span className="gig-date-month">{dayMonth(gig.date)}</span>
+                </div>
+
+                <div className="song-info gig-card-body">
+                  <div className="gig-card-title-row">
+                    <div className="gig-card-heading">
+                      <h3 className="song-title gig-card-title">{gig.bandName || 'Band Tamu'}</h3>
+                      {(gig.venue || gig.city) && (
+                        <p className="gig-card-venue">
+                          {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}
+                        </p>
+                      )}
+                    </div>
                     {isUpcoming && <span className={`gig-status-badge ${status}`}>{gigStatusLabel(status)}</span>}
                     {isCompleted && <span className="gig-status-badge completed">Selesai</span>}
                     {isCancelled && <span className="gig-status-badge cancelled">{gigStatusLabel('cancelled')}</span>}
                   </div>
+                  <div className="song-meta gig-card-meta">
+                    <span className="gig-card-meta-item gig-card-meta-when">
+                      {hasDate
+                        ? new Date(gig.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+                        : 'Tanggal belum diisi'}
+                      {hasDate && timeOf(gig.date) ? ` · ${timeOf(gig.date)}` : ''}
+                    </span>
+                    {gig.setlistName && (
+                      <span className="gig-card-meta-item">🎵 {gig.setlistName}</span>
+                    )}
+                    {gig.fee > 0 && (
+                      <span className="gig-card-meta-item gig-card-fee">{formatRupiah(gig.fee)}</span>
+                    )}
+                  </div>
                 </div>
 
                 <div
-                  className="song-actions"
+                  className="song-actions gig-card-actions"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {(() => {
