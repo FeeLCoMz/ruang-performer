@@ -4345,3 +4345,569 @@ button.song-mastery-chip:not(:disabled):hover {
     max-height: 50vh;
   }
 }
+/* ========================================
+   SONG LIST PAGE — redesign (hero, toolbar)
+   Disamakan dengan bahasa visual Gigs & Setlist.
+   Semua aturan di-scope ke .song-list-page agar
+   halaman lagu dalam setlist tidak terpengaruh.
+   ======================================== */
+
+.song-list-page {
+  --slp-surface: var(--card-bg);
+  --slp-surface-soft: rgba(255, 255, 255, 0.03);
+  --slp-line: var(--border-color);
+}
+
+/* ---- Hero ringkasan ---- */
+.slp-hero {
+  position: relative;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--slp-line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(56, 189, 248, 0.16) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(22, 29, 51, 0.96) 0%, rgba(15, 21, 38, 0.96) 100%);
+}
+
+.slp-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.slp-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.slp-eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+.slp-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.slp-btn-primary,
+.slp-btn-primary:hover,
+.slp-btn-primary:focus-visible {
+  background: var(--primary-accent);
+  border: 1px solid var(--primary-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.slp-btn-primary:hover {
+  background: var(--primary-accent-hover);
+  border-color: var(--primary-accent-hover);
+}
+
+.slp-hero-heading {
+  margin-top: var(--spacing-md);
+}
+
+.slp-hero-title {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.slp-hero-subtitle {
+  margin: 6px 0 0;
+  max-width: 70ch;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.slp-summary-grid {
+  margin-top: var(--spacing-xl);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-md);
+}
+
+.slp-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--slp-line);
+  border-radius: var(--radius-md);
+  background: var(--slp-surface-soft);
+}
+
+.slp-summary-card--muted {
+  border-style: dashed;
+  background: transparent;
+}
+
+.slp-summary-label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.slp-summary-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.slp-summary-value--muted {
+  color: var(--text-muted);
+}
+
+.slp-summary-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slp-latest {
+  margin: var(--spacing-md) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Toolbar filter berlabel ---- */
+.song-list-page .filter-container.slp-toolbar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--slp-line);
+  border-radius: var(--radius-md);
+  background: var(--slp-surface);
+  box-shadow: none;
+}
+
+.slp-search-field,
+.slp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Satu baris di layar lebar: pencarian mengambil sisa ruang, kontrol
+   urutkan dan jumlah hasil menempel di kanan. Tanpa ini, "Cari" memakan
+   satu baris penuh dan menyisakan ruang kosong besar di baris sortir. */
+.song-list-page .slp-toolbar .slp-search-field {
+  flex: 1 1 auto;
+}
+
+.song-list-page .slp-toolbar-row {
+  flex: 0 0 auto;
+  align-items: flex-end;
+}
+
+.slp-field-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.song-list-page .slp-toolbar .search-input-main {
+  margin: 0;
+}
+
+.slp-toolbar-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-md);
+}
+
+.slp-sort-group {
+  display: flex;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.song-list-page .slp-toolbar .filter-select,
+.song-list-page .slp-toolbar .slp-order-btn {
+  height: 40px;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.song-list-page .slp-toolbar .slp-order-btn {
+  width: 40px;
+  padding: 0;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.slp-toolbar-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-left: auto;
+  padding-bottom: 2px;
+}
+
+.slp-result-count {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ---- Daftar lagu ---- */
+.song-list-page .slp-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Nomor urut tipis di kiri kartu lagu.
+   Jarak kiri kartu = padding kartu + lebar kolom nomor + jarak aman,
+   supaya angka tidak menabrak judul. */
+.song-list-page .slp-list {
+  counter-reset: slp-song;
+}
+
+.song-list-page .slp-list .song-item {
+  position: relative;
+  padding-left: calc(var(--spacing-lg) + 34px);
+}
+
+/* Angka disejajarkan dengan BARIS JUDUL, bukan tengah kartu: kartu berisi
+   judul di atas dan chip metadata di bawah, sehingga `top: 50%` membuat
+   nomor turun sejajar chip. `align-self` tak berlaku pada pseudo absolut,
+   jadi posisinya memakai padding atas kartu. */
+.song-list-page .slp-list .song-item::after {
+  counter-increment: slp-song;
+  content: counter(slp-song);
+  position: absolute;
+  left: var(--spacing-lg);
+  top: 14px;
+  width: 22px;
+  text-align: right;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.song-list-page .slp-list {
+  counter-reset: slp-song;
+}
+
+/* ---- Empty state ---- */
+.song-list-page .slp-empty-state {
+  border: 1px dashed var(--slp-line);
+  border-radius: var(--radius-lg);
+  background: var(--slp-surface-soft);
+  padding: var(--spacing-2xl) var(--spacing-xl);
+}
+
+.song-list-page .slp-empty-state p {
+  margin: 0 0 var(--spacing-lg);
+  color: var(--text-secondary);
+}
+
+.slp-empty-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.75;
+}
+
+/* ---- Responsif ---- */
+@media (max-width: 768px) {
+  .slp-hero {
+    padding: var(--spacing-lg);
+  }
+
+  .slp-hero-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .slp-hero-top {
+    flex-direction: column;
+  }
+
+  .slp-hero-actions {
+    width: 100%;
+  }
+
+  .slp-hero-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .slp-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .slp-summary-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .song-list-page .filter-container.slp-toolbar {
+    padding: var(--spacing-md);
+  }
+
+  .slp-toolbar-row {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .slp-toolbar-row .slp-field {
+    flex: 1 1 100%;
+  }
+
+  .slp-toolbar-meta {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .slp-search-field .search-input-main {
+    min-height: 44px;
+  }
+
+  /* Nomor urut disembunyikan di layar sempit: ruang horizontal lebih berharga. */
+  .song-list-page .slp-list .song-item {
+    padding-left: 0;
+  }
+
+  .song-list-page .slp-list .song-item::after {
+    display: none;
+  }
+}
+/* ========================================
+   SONG LIST PAGE — redesign kartu lagu
+   Diukur dari render sebelum perubahan:
+     - 8 chip metadata dalam satu baris (artis, kunci, tempo, genre,
+       kontributor, mood, jumlah setlist) → mata tidak tahu mana inti
+     - tombol aksi 36px dengan label teks "Video" dan chip mastery
+       bercaret, sehingga separuh kanan kartu terasa ramai
+     - nomor urut melayang sendiri di kiri tanpa "rumah" visual
+   Semua aturan di-scope ke .slp-list: halaman lagu-dalam-setlist
+   (SetlistSongsPage) memakai SongCard yang sama tapi tampil beda.
+   ======================================== */
+
+/* Empat fakta inti diberi "rumah": judul + artis di kiri, kunci dan tempo
+   sebagai blok besar yang mudah dipindai mata saat latihan. */
+.song-list-page .slp-list .song-item {
+  display: flex;
+  align-items: stretch;
+  gap: var(--spacing-lg);
+  min-height: 84px;
+  padding: var(--spacing-md) var(--spacing-lg) var(--spacing-md) calc(var(--spacing-lg) + 34px);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+
+.song-list-page .slp-list .song-item:hover,
+.song-list-page .slp-list .song-item:focus-visible {
+  border-color: #46507a;
+  background: #18203a;
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+/* Isi kartu: judul, artis, lalu metadata pendukung dalam satu baris tipis. */
+.song-list-page .slp-list .song-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.song-list-page .slp-list .song-heading {
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.song-list-page .slp-list .song-title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+/* Artis: baris kedua yang tenang, bukan chip bergaris. */
+.song-list-page .slp-list .song-fact-artist {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Kunci & tempo: fakta inti, jadi tampil sebagai chip kontras tinggi. */
+.song-list-page .slp-list .song-chip.song-fact-key,
+.song-list-page .slp-list .song-chip.song-fact-tempo {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.12);
+  color: #ddd6fe;
+  white-space: nowrap;
+}
+
+/* Metadata pendukung (genre, kontributor, mood, jumlah setlist) diredam:
+   tetap ada, tapi tidak bersaing dengan judul/artis/kunci/tempo. */
+.song-list-page .slp-list .song-chip:not(.song-fact-key):not(.song-fact-tempo) {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.song-list-page .slp-list .song-meta-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.song-list-page .slp-list .song-meta-text.song-setlist-count-meta {
+  color: var(--text-muted);
+}
+
+.song-list-page .slp-list .song-mood-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+/* Baris metadata: rapat, boleh wrap, tanpa jarak berlebih. */
+.song-list-page .slp-list .song-meta {
+  margin-top: 6px;
+  gap: 4px 6px;
+  row-gap: 4px;
+  font-size: var(--font-size-xs);
+  align-items: center;
+}
+
+/* ---- Aksi: kolom kanan yang tenang ---- */
+.song-list-page .slp-list .song-actions {
+  flex: 0 0 auto;
+  align-self: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.song-list-page .slp-list .song-actions .song-action-btn {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  box-shadow: none;
+  font-size: 0.95rem;
+}
+
+.song-list-page .slp-list .song-actions .song-action-btn:hover {
+  border-color: var(--primary-accent);
+  background: rgba(139, 92, 246, 0.14);
+  color: var(--text-primary);
+}
+
+/* Label "Video"/"Edit" disembunyikan: ikon + tooltip cukup dan kartu lebih
+   tenang. `aria-label` pada tombol tetap ada untuk pembaca layar. */
+.song-list-page .slp-list .song-actions .song-action-btn .song-action-btn-label {
+  display: none;
+}
+
+/* Chip mastery disamakan bentuknya dengan tombol aksi. */
+.song-list-page .slp-list .song-actions .song-mastery-chip {
+  height: 34px;
+  padding: 0 9px;
+  gap: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.72rem;
+}
+
+.song-list-page .slp-list .song-actions .mastery-chip-caret {
+  margin-left: 2px;
+  opacity: 0.75;
+}
+
+/* ---- Mobile: aksi turun ke baris sendiri, nomor kembali muncul ---- */
+@media (max-width: 768px) {
+  .song-list-page .slp-list .song-item {
+    flex-wrap: wrap;
+    min-height: 0;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+  }
+
+  /* Nomor urut tetap terlihat di kiri-atas, bukan dibuang: urutan lagu
+     penting saat menyusun daftar. */
+  .song-list-page .slp-list .song-item {
+    padding-left: calc(var(--spacing-md) + 26px);
+  }
+
+  .song-list-page .slp-list .song-item::after {
+    left: var(--spacing-md);
+    top: 16px;
+  }
+
+  .song-list-page .slp-list .song-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent);
+  }
+
+  .song-list-page .slp-list .song-actions .song-action-btn {
+    height: 40px;
+    min-height: 40px;
+  }
+}

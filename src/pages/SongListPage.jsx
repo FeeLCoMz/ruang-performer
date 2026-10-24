@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { canPerformAction, PERMISSIONS } from '../utils/permissionUtils.js';
@@ -196,12 +197,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     return 'none';
   }
 
-  const MASTERY_STATUS_META = {
-    mastered: { icon: '🟢', label: 'Dikuasai', title: 'Status: Dikuasai' },
-    learning: { icon: '🟡', label: 'Perlu Latihan', title: 'Status: Perlu Latihan' },
-    none: { icon: '🔴', label: 'Belum Diulik', title: 'Status: Belum diulik' },
-  };
-
   // Ubah status mastery dari chip dropdown di kartu: panggil API lalu
   // perbarui entri masteredBy lagu tersebut secara lokal.
   const handleMasteryChange = async (song, nextStatus) => {
@@ -264,14 +259,6 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
 
   function isSongPlaying(songId) {
     return activeVideoSong?.id === songId;
-  }
-
-  function handleCloseVideoPlayer() {
-    if (videoRef.current && typeof videoRef.current.handlePause === 'function') {
-      videoRef.current.handlePause();
-    }
-    setInlineVideoPlaying(false);
-    setActiveVideoSong(null);
   }
 
   // Lacak posisi & status video untuk komponen media shared
@@ -343,8 +330,10 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
           onClick={() => navigate(`/songs/view/${song.id}`)}
           metaPrimary={(
             <div className="song-meta-line song-meta-line-primary">
-              {/* Artis, key, tempo = fakta inti kartu: satu baris, selalu tampil
-                  dan berkontras tinggi, tidak boleh didahului metadata pendukung. */}
+              {/* Kontrak kartu: judul, ARTIS, kunci, tempo selalu berada di
+                  baris utama (lihat SongListPage.test.jsx). Artis tampil
+                  sebagai teks tenang, bukan chip bergaris, agar tidak
+                  bersaing dengan judul. */}
               {song.artist && <span className="song-meta-text song-fact-artist">👤 {song.artist}</span>}
               {song.key && <span className="song-chip song-fact-key">🎹 {song.key}</span>}
               {song.tempo && <span className="song-chip song-fact-tempo">⏱️ {song.tempo} BPM</span>}
@@ -441,37 +430,118 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     );
   }
 
+  // Ringkasan untuk hero — dihitung dari SELURUH lagu (bukan hasil filter),
+  // karena menggambarkan koleksi, bukan pencarian yang sedang aktif.
+  const songsSummary = useMemo(() => {
+    const keys = new Set();
+    const maybeKeys = new Set();
+    const genres = new Set();
+    let latestStamp = 0;
+    let latestSong = null;
+
+    songs.forEach((song) => {
+      if (song.key) keys.add(String(song.key));
+      // "Kunci mungkin": lagu yang tidak punya key sama sekali tetap bisa
+      // dimainkan, jadi nilainya belum pasti — jangan dihitung sebagai 1.
+      if (!song.key) maybeKeys.add(String(song.id));
+      if (song.genre) genres.add(String(song.genre).toLowerCase());
+      const stamp = new Date(song.updatedAt || song.createdAt || 0).getTime();
+      if (Number.isFinite(stamp) && stamp > latestStamp) {
+        latestStamp = stamp;
+        latestSong = song;
+      }
+    });
+
+    return {
+      total: songs.length,
+      artists: new Set(songs.map((song) => song.artist).filter(Boolean)).size,
+      genres: genres.size,
+      keys: keys.size,
+      maybeKeys: maybeKeys.size,
+      latestSong,
+      latestStamp,
+    };
+  }, [songs]);
+
+  const formatShortDate = (value) => {
+    const parsed = value ? new Date(value) : null;
+    return parsed && !Number.isNaN(parsed.getTime())
+      ? parsed.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '';
+  };
+
   return (
-    <div className="page-container">
-      {/* Page Header */}
-      <div className="page-header">
-        <div>
-          <h1>🎵 Lagu</h1>
-          <p aria-live="polite">{filteredSongs.length} lagu</p>
-        </div>
-        <div className="page-header-actions" style={{ '--btn-group': '40px' }}>
-          {bulkEnabled && (
+    <div className="page-container song-list-page">
+      <section className="slp-hero">
+        <div className="slp-hero-top">
+          <div className="slp-eyebrow">
+            <span className="slp-eyebrow-dot" aria-hidden="true" />
+            Library
+          </div>
+          <div className="page-header-actions slp-hero-actions" style={{ '--btn-group': '40px' }}>
+            {bulkEnabled && (
+              <button
+                className="btn btn-secondary song-bulk-btn"
+                onClick={() => onSongClick('bulk')}
+                title="Tambah banyak lagu sekaligus (lirik & chord)"
+                aria-label="Tambah banyak lagu sekaligus"
+              >
+                <span aria-hidden="true">📚</span>
+                <span className="song-bulk-btn-label">Bulk</span>
+              </button>
+            )}
             <button
-              className="btn btn-secondary song-bulk-btn"
-              onClick={() => onSongClick('bulk')}
-              title="Tambah banyak lagu sekaligus (lirik & chord)"
-              aria-label="Tambah banyak lagu sekaligus"
+              className="btn slp-btn-primary song-add-btn"
+              onClick={() => onSongClick('add')}
+              title="Tambah lagu baru"
+              aria-label="Tambah lagu baru"
             >
-              <span aria-hidden="true">📚</span>
-              <span className="song-bulk-btn-label">Bulk</span>
+              <span aria-hidden="true">＋</span>
+              <span className="song-add-btn-label">Tambah Lagu</span>
             </button>
-          )}
-          <button
-            className="btn song-add-btn"
-            onClick={() => onSongClick('add')}
-            title="Tambah lagu baru"
-            aria-label="Tambah lagu baru"
-          >
-            <span aria-hidden="true">＋</span>
-            <span className="song-add-btn-label">Tambah</span>
-          </button>
+          </div>
         </div>
-      </div>
+
+        <div className="slp-hero-heading">
+          <h1 className="slp-hero-title">Lagu</h1>
+          <p className="slp-hero-subtitle">
+            Kumpulan lagu, chord, dan referensi untuk latihan dan panggung
+          </p>
+        </div>
+
+        <div className="slp-summary-grid">
+          <div className="slp-summary-card">
+            <span className="slp-summary-label">Total lagu</span>
+            <span className="slp-summary-value">{songsSummary.total}</span>
+            <span className="slp-summary-hint" aria-live="polite">
+              {hasActiveFilters ? `${filteredSongs.length} tampil` : 'Seluruh library'}
+            </span>
+          </div>
+          <div className="slp-summary-card">
+            <span className="slp-summary-label">Artis &amp; genre</span>
+            <span className="slp-summary-value">{songsSummary.artists}</span>
+            <span className="slp-summary-hint">
+              artis · {songsSummary.genres} genre
+            </span>
+          </div>
+          <div className={`slp-summary-card${songsSummary.keys > 0 ? '' : ' slp-summary-card--muted'}`}>
+            <span className="slp-summary-label">Kunci berbeda</span>
+            <span className={`slp-summary-value${songsSummary.keys > 0 ? '' : ' slp-summary-value--muted'}`}>
+              {songsSummary.keys > 0 ? songsSummary.keys : '—'}
+            </span>
+            <span className="slp-summary-hint">
+              {songsSummary.maybeKeys > 0 ? `${songsSummary.maybeKeys} lagu tanpa kunci` : 'Semua lagu punya kunci'}
+            </span>
+          </div>
+        </div>
+
+        {songsSummary.latestSong && (
+          <p className="slp-latest">
+            Terakhir diubah <strong>{formatShortDate(songsSummary.latestStamp ? new Date(songsSummary.latestStamp).toISOString() : '')}</strong>
+            {' · '}{songsSummary.latestSong.title}
+          </p>
+        )}
+      </section>
 
       {masteryError && (
         <div className="error-text" role="alert">
@@ -486,69 +556,82 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
 
       {/* Filters & Search */}
       {/* Search Bar + Voice Search: Selalu tampil */}
-      <div className="filter-container song-filter-container">
-        <div className="song-search-row">
-          <input
-            type="text"
-            placeholder="🔍 Cari judul, artis, atau genre..."
-            aria-label="Cari judul, artis, atau genre"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="search-input-main"
-          />
-          <div className="song-search-voice-wrap">
-            <VoiceSearchButton
-              onResult={text => setSearch(text)}
-              onError={setMasteryError}
-              disabled={loading}
+      <div className="filter-container song-filter-container slp-toolbar">
+        <div className="slp-search-field">
+          <label className="slp-field-label" htmlFor="song-search">Cari</label>
+          <div className="song-search-row">
+            <input
+              id="song-search"
+              type="text"
+              placeholder="Judul, artis, atau genre..."
+              aria-label="Cari judul, artis, atau genre"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="search-input-main"
             />
+            <div className="song-search-voice-wrap">
+              <VoiceSearchButton
+                onResult={text => setSearch(text)}
+                onError={setMasteryError}
+                disabled={loading}
+              />
+            </div>
           </div>
         </div>
         {/* Filter dan sort — satu baris ringkas */}
-        <div className="song-filter-toolbar" style={{ '--btn-group': '38px' }}>
-          <label className="song-sort-control">
-            <span className="song-sort-icon" aria-hidden="true">⇅</span>
-            <span className="sr-only">Urutkan berdasarkan</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="filter-select song-sort-select"
-              title="Urutkan berdasarkan"
-            >
-              <option value="title">Judul</option>
-              <option value="artist">Artis</option>
-              <option value="key">Kunci</option>
-              <option value="tempo">Tempo</option>
-              <option value="created">Tanggal dibuat</option>
-              <option value="updated">Tanggal diupdate</option>
-            </select>
-          </label>
+        <div className="song-filter-toolbar slp-toolbar-row" style={{ '--btn-group': '38px' }}>
+          <div className="slp-field">
+            <label className="slp-field-label" htmlFor="song-sort">Urutkan</label>
+            <div className="slp-sort-group">
+              <select
+                id="song-sort"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-select song-sort-select"
+                title="Urutkan berdasarkan"
+              >
+                <option value="title">Judul</option>
+                <option value="artist">Artis</option>
+                <option value="key">Kunci</option>
+                <option value="tempo">Tempo</option>
+                <option value="created">Tanggal dibuat</option>
+                <option value="updated">Tanggal diupdate</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="btn btn-secondary song-sort-order-btn slp-order-btn"
+                title={sortOrder === 'asc' ? 'Urutan naik (A-Z)' : 'Urutan turun (Z-A)'}
+                aria-label={sortOrder === 'asc' ? 'Urutan naik' : 'Urutan turun'}
+              >
+                <span aria-hidden="true">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+              </button>
+            </div>
+          </div>
 
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="btn btn-secondary song-sort-order-btn"
-            title={sortOrder === 'asc' ? 'Urutan naik (A-Z)' : 'Urutan turun (Z-A)'}
-            aria-label={sortOrder === 'asc' ? 'Urutan naik' : 'Urutan turun'}
-          >
-            <span aria-hidden="true">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-          </button>
-
-          {hasActiveFilters && (
-            <button
-              onClick={handleClearFilters}
-              className="btn btn-secondary song-filter-reset-btn"
-              title="Hapus semua filter"
-              aria-label="Reset pencarian"
-            >
-              ✕ Reset
-            </button>
-          )}
+          <div className="slp-toolbar-meta">
+            <span className="slp-result-count" aria-live="polite">
+              {hasActiveFilters
+                ? `${filteredSongs.length} / ${songs.length} lagu`
+                : `${filteredSongs.length} lagu`}
+            </span>
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearFilters}
+                className="btn btn-secondary song-filter-reset-btn"
+                title="Hapus semua filter"
+                aria-label="Reset pencarian"
+              >
+                ✕ Reset
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Song List */}
       {filteredSongs.length === 0 ? (
-        <div className="empty-state">
+        <div className="empty-state slp-empty-state">
+          <div className="slp-empty-icon" aria-hidden="true">🎵</div>
           <p>
             {hasActiveFilters ? 'Tidak ada lagu yang cocok dengan filter' : 'Belum ada lagu'}
           </p>
@@ -562,7 +645,7 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                   rel="noopener noreferrer"
                   className="btn btn-secondary"
                 >
-                  🔍 Chord "{search}"
+                  🔍 Chord &quot;{search}&quot;
                 </a>
                 <a
                   href={`https://www.google.com/search?q=lirik+${encodeURIComponent(search)}`}
@@ -570,20 +653,20 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
                   rel="noopener noreferrer"
                   className="btn btn-secondary"
                 >
-                  🎤 Lirik "{search}"
+                  🎤 Lirik &quot;{search}&quot;
                 </a>
               </div>
             </div>
           )}
           {!hasActiveFilters && (
-            <button className="btn" onClick={() => onSongClick('add')}>
+            <button className="btn slp-btn-primary" onClick={() => onSongClick('add')}>
               <span aria-hidden="true">＋</span> Tambah Lagu Pertama
             </button>
           )}
         </div>
       ) : (
         <>
-          <div className="song-list-container">
+          <div className="song-list-container slp-list">
             {visibleSongs.map(renderSongItem)}
           </div>
           {hiddenSongsCount > 0 && (
@@ -601,3 +684,24 @@ export default function SongListPage({ songs, loading, error, onSongClick }) {
     </div>
   );
 }
+
+SongListPage.propTypes = {
+  songs: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    title: PropTypes.string,
+    artist: PropTypes.string,
+    genre: PropTypes.string,
+    key: PropTypes.string,
+    tempo: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    bandId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    bandName: PropTypes.string,
+    contributor: PropTypes.string,
+    contributorName: PropTypes.string,
+    createdAt: PropTypes.string,
+    updatedAt: PropTypes.string,
+    masteredBy: PropTypes.array,
+  })),
+  loading: PropTypes.bool,
+  error: PropTypes.string,
+  onSongClick: PropTypes.func,
+};
