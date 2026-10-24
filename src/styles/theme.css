@@ -74,7 +74,12 @@
 html,
 body {
   width: 100%;
-  height: 100%;
+  /* JANGAN `height: 100%` pada body. Digabung dengan `overflow-x: hidden`
+     (mobile-polish.css), browser menormalkan overflow-y menjadi `auto`, dan
+     body menjadi kotak setinggi viewport yang TIDAK bisa digulir: konten
+     panjang tertutup bottom-nav dan halaman tidak bisa di-scroll.
+     Tinggi body dibiarkan mengikuti isi. */
+  min-height: 100%;
 }
 
 body {
