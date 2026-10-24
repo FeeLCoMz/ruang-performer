@@ -3630,3 +3630,718 @@ button.song-mastery-chip:not(:disabled):hover {
     justify-content: center;
   }
 }
+/* ========================================
+   SETLIST SONGS PAGE — hero & progres
+   Melengkapi desain halaman Setlist/Gigs.
+   ======================================== */
+
+.setlist-songs-page {
+  --ssp-surface: var(--card-bg);
+  --ssp-surface-soft: rgba(255, 255, 255, 0.03);
+  --ssp-line: var(--border-color);
+}
+
+.ssp-hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--ssp-line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(139, 92, 246, 0.2) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(22, 29, 51, 0.96) 0%, rgba(15, 21, 38, 0.96) 100%);
+}
+
+.ssp-hero-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.ssp-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.ssp-eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary-accent);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+
+.ssp-hero-actions {
+  position: relative;
+  z-index: 2;
+}
+
+.ssp-hero-heading {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--spacing-md);
+}
+
+.ssp-hero-title-block {
+  min-width: 0;
+}
+
+.ssp-hero-title {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.ssp-hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--spacing-sm);
+}
+
+.ssp-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ssp-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ssp-tag-band {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.1);
+  color: #bae6fd;
+}
+
+.ssp-tag-smart {
+  border-color: rgba(139, 92, 246, 0.45);
+  background: rgba(139, 92, 246, 0.14);
+  color: #ddd6fe;
+}
+
+.ssp-hero-desc {
+  margin: var(--spacing-sm) 0 0;
+  max-width: 70ch;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+/* Progres pementasan */
+.ssp-progress {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--spacing-xl);
+}
+
+.ssp-progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: 6px;
+}
+
+.ssp-progress-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.ssp-progress-value {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.ssp-progress-track {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ssp-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary-accent) 0%, #34d399 100%);
+  transition: width var(--transition-base);
+}
+
+/* Kartu ringkasan */
+.ssp-summary-grid {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--spacing-xl);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-md);
+}
+
+.ssp-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--ssp-line);
+  border-radius: var(--radius-md);
+  background: var(--ssp-surface-soft);
+}
+
+.ssp-summary-card--muted {
+  border-style: dashed;
+  background: transparent;
+}
+
+.ssp-summary-label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.ssp-summary-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.ssp-summary-value--muted {
+  color: var(--text-muted);
+}
+
+.ssp-summary-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .ssp-hero {
+    padding: var(--spacing-lg);
+  }
+
+  .ssp-hero-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .ssp-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ssp-summary-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .setlist-songs-page {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+}
+/* ---- Keadaan data lagu (memuat / gagal) ---- */
+.ssp-data-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.ssp-data-banner--error {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--error);
+}
+
+.ssp-data-banner--loading {
+  justify-content: flex-start;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+}
+
+.ssp-data-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-top-color: var(--primary-accent);
+  animation: ssp-spin 0.8s linear infinite;
+}
+
+@keyframes ssp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Skeleton baris lagu selama data belum siap. */
+.ssp-loading-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.ssp-loading-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+
+.ssp-loading-block {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.11) 37%, rgba(255, 255, 255, 0.05) 63%);
+  background-size: 400% 100%;
+  animation: ssp-shimmer 1.4s ease infinite;
+}
+
+.ssp-loading-block--rail {
+  width: 44px;
+  height: 28px;
+  flex: 0 0 auto;
+}
+
+.ssp-loading-block--title {
+  flex: 1 1 auto;
+  height: 16px;
+}
+
+.ssp-loading-block--meta {
+  width: 140px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+
+@keyframes ssp-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ssp-data-spinner,
+  .ssp-loading-block {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .ssp-loading-row {
+    flex-wrap: wrap;
+  }
+
+  .ssp-loading-block--meta {
+    width: 100%;
+  }
+}
+/* ========================================
+   SETLIST SONGS PAGE — kartu lagu ringkas
+   Menyelaraskan baris lagu dengan bahasa visual
+   Gigs/Setlist: rail kiri tipis, aksi ikon tenang.
+   Semua aturan di-scope ke .setlist-songs-page agar
+   halaman "Lagu" (SongListPage) tidak berubah.
+   ======================================== */
+
+.setlist-songs-page .song-list-container {
+  gap: var(--spacing-sm);
+}
+
+/* Kartu: satu baris rata atas, rail kiri + isi + aksi kanan. */
+.setlist-songs-page .song-item.song-item-with-lead-above {
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  border-left-width: 3px;
+  border-left-color: transparent;
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+
+.setlist-songs-page .song-item.song-item-with-lead-above:hover {
+  border-color: #46507a;
+  border-left-color: var(--primary-accent);
+  background: #18203a;
+  transform: translateY(-1px);
+}
+
+/* Nomor urut + centang selesai: rail kiri vertikal yang ringkas. */
+.setlist-songs-page .song-item-with-lead-above .song-head-row {
+  width: auto;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0;
+  border-bottom: none;
+}
+
+.setlist-songs-page .song-item-with-lead-above .song-lead-above,
+.setlist-songs-page .song-item-with-lead-above .song-head-row .song-rail {
+  width: auto;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0;
+  border: none;
+}
+
+.setlist-songs-page .song-item-with-lead-above .song-number-button,
+.setlist-songs-page .song-item-with-lead-above .song-number {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.setlist-songs-page .song-item-with-lead-above .song-number-button:hover {
+  border-color: var(--primary-accent);
+  background: rgba(139, 92, 246, 0.16);
+}
+
+.setlist-songs-page .song-item-with-lead-above .song-played-toggle {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.setlist-songs-page .song-item-with-lead-above .song-played-toggle:hover {
+  border-color: #34d399;
+  color: #34d399;
+}
+
+.setlist-songs-page .song-item-with-lead-above .song-played-toggle.is-completed {
+  border-color: rgba(52, 211, 153, 0.55);
+  background: rgba(52, 211, 153, 0.14);
+  color: #6ee7b7;
+}
+
+/* Label "✓ Selesai" di rail jadi penanda kecil, bukan teks penuh. */
+.setlist-songs-page .song-item-with-lead-above .song-rail-status {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #6ee7b7;
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+}
+
+/* Isi kartu: judul + metadata. */
+.setlist-songs-page .song-item-with-lead-above .song-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.setlist-songs-page .song-item-with-lead-above .song-heading {
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.setlist-songs-page .song-item-with-lead-above .song-title {
+  margin-bottom: 2px;
+  font-size: var(--font-size-lg);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+/* Metadata: chip tipis, sejajar rapi. */
+.setlist-songs-page .song-item-with-lead-above .song-meta {
+  row-gap: 6px;
+  column-gap: 6px;
+  margin-top: 6px;
+  font-size: var(--font-size-xs);
+}
+
+.setlist-songs-page .song-item-with-lead-above .song-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+}
+
+.setlist-songs-page .song-item-with-lead-above .song-chip.song-fact-key,
+.setlist-songs-page .song-item-with-lead-above .song-chip.song-fact-tempo {
+  color: var(--text-primary);
+  border-color: rgba(139, 92, 246, 0.35);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+/* Aksi: satukan di kolom kanan, ikon netral, warna hanya saat hover. */
+.setlist-songs-page .song-item-with-lead-above > .song-actions {
+  flex: 0 0 auto;
+  align-self: center;
+  width: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0;
+  border-top: none;
+}
+
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn.btn-red {
+  background: transparent;
+  border-color: transparent;
+  color: rgba(248, 113, 113, 0.75);
+}
+
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn.btn-red:hover {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: var(--error);
+}
+
+/* Label teks aksi disembunyikan — ikon + tooltip cukup, kartu lebih tenang. */
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn .song-action-btn-label {
+  display: none;
+}
+
+.setlist-songs-page .song-item-with-lead-above > .song-actions .mastery-chip-root {
+  flex: 0 0 auto;
+}
+
+/* Mobile: rail tetap di kiri, aksi turun ke bawah kartu. */
+@media (max-width: 768px) {
+  .setlist-songs-page .song-item.song-item-with-lead-above {
+    flex-wrap: wrap;
+    padding: var(--spacing-md);
+    gap: var(--spacing-sm);
+  }
+
+  .setlist-songs-page .song-item-with-lead-above > .song-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent);
+  }
+
+  .setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn {
+    height: 40px;
+    min-height: 40px;
+  }
+
+  .setlist-songs-page .song-item-with-lead-above .song-title {
+    font-size: 1.02rem;
+  }
+}
+/* ---- Koreksi akhir baris aksi kartu lagu setlist ----
+   Dua masalah yang terlihat di render:
+   1) Tombol Hapus (btn-red) kehilangan bentuk karena aturan umum
+      `.btn-red` memasang latar/border penuh sementara lebar dipaksa oleh
+      aturan ikon — hasilnya hanya emoji yang tampil menempel di tepi.
+      Semua tombol aksi di sini disamakan: kotak 34px, ikon saja.
+   2) Chip mastery memakai `padding: 2px 4px`, sehingga caret "▾" rapat
+      menabrak label ("Belum Diulik"). Beri jarak & garis tepi tipis agar
+      terbaca sebagai kontrol. */
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn,
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn.btn-red {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  box-shadow: none;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn:hover,
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn.btn-red:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary-accent);
+  color: var(--text-primary);
+}
+
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn.btn-red:hover {
+  border-color: rgba(248, 113, 113, 0.55);
+  background: rgba(248, 113, 113, 0.14);
+  color: var(--error);
+}
+
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-action-btn > span[aria-hidden='true'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.setlist-songs-page .song-item-with-lead-above > .song-actions .song-mastery-chip {
+  height: 34px;
+  padding: 0 9px;
+  gap: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.74rem;
+}
+
+.setlist-songs-page .song-item-with-lead-above > .song-actions .mastery-chip-caret {
+  margin-left: 2px;
+  opacity: 0.75;
+}
+/* ========================================
+   SETLIST SONGS PAGE — perbaikan layering menu
+   Dua bug yang terukur lewat hit-testing:
+   1) `.setlist-header-more-menu` (z-index 5) tertutup oleh kartu ringkasan
+      hero dan blok filter di bawahnya. Hero dibuat dengan
+      `overflow: hidden` + stacking context sendiri, jadi angka 5 kalah.
+   2) `.mastery-chip-menu` terpotong batas kartu: elemen berikutnya
+      (kartu lagu selanjutnya) dicat DI ATAS dropdown, sehingga hanya item
+      pertama yang bisa diklik. Kartu lagu perlu naik saat menunya terbuka.
+   Solusi: naikkan menu header di atas konten lain, dan beri kartu yang
+   menunya terbuka stacking context lebih tinggi.
+   ======================================== */
+
+/* Header hero harus di atas kartu ringkasan & toolbar filter di bawahnya.
+   z-index pada menu saja tidak cukup: `.ssp-hero` punya `overflow: hidden`
+   (membuat stacking context sendiri) dan elemen sesudahnya — `.filter-container`
+   — dicat belakangan tanpa z-index. Karena itu hero dinaikkan sebagai satu
+   lapisan, bukan hanya isi di dalamnya. */
+.setlist-songs-page .ssp-hero {
+  position: relative;
+  z-index: 20;
+  /* `overflow: hidden` di hero memotong dropdown milik header, sehingga item
+     menu di bawah tepi hero tidak bisa diklik. Pemotongan glow dekoratif
+     dipindah ke `.ssp-hero::after` (lihat di bawah); hero sendiri tetap
+     `clip` untuk sudut melengkung, jadi menu diberi jalan keluar lewat
+     `overflow: visible` di sini dan pemotongan dilakukan anak dekoratif. */
+  overflow: visible;
+}
+
+/* Sudut melengkung tetap rapi: latar & glow dipotong oleh pseudo-element
+   yang menempati hero, bukan oleh hero itu sendiri. */
+.setlist-songs-page .ssp-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  background: inherit;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Glow kanan-bawah (sebelumnya `::after` milik hero) dipindah ke lapisan
+   ini agar tetap terpotong rapi tanpa menutup menu. */
+.setlist-songs-page .ssp-hero::after {
+  z-index: 0;
+  pointer-events: none;
+}
+
+.setlist-songs-page .ssp-hero-top {
+  position: relative;
+  z-index: 40;
+}
+
+.ssp-hero .setlist-header-more-menu {
+  z-index: 50;
+}
+
+/* Kartu dengan dropdown mastery terbuka menumpuk di atas kartu lain.
+   `:has()` didukung semua browser modern; tanpa dukungan, menunya tetap
+   tampil (hanya bisa terpotong seperti sebelumnya). */
+.setlist-songs-page .song-item-with-lead-above:has(.mastery-chip-root [aria-expanded='true']) {
+  position: relative;
+  z-index: 30;
+}
+
+.setlist-songs-page .song-item-with-lead-above .mastery-chip-menu {
+  z-index: 1;
+}
+
+/* Menu header: jangan bergantung pada z-index bertingkat.
+   Satu-satunya alasan item menu pernah tidak bisa diklik adalah
+   `.ssp-hero { overflow: hidden }` yang MEMOTONG dropdown-nya sendiri.
+   Sudah diperbaiki di blok hero di atas; aturan di sini hanya menjaga menu
+   tetap di atas isi hero (glow, kartu ringkasan). */
+.ssp-hero .setlist-header-more-menu {
+  z-index: 50;
+  /* Isi menu panjang (10 aksi): batasi tinggi dan beri scroll sendiri agar
+     seluruh item mencapai area yang bisa diklik tanpa melewati viewport. */
+  max-height: min(60vh, calc(100dvh - 140px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 768px) {
+  .ssp-hero .setlist-header-more-menu {
+    right: 0;
+    left: auto;
+    max-height: 50vh;
+  }
+}

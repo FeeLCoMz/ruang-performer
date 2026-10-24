@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import SetlistPoster from '../components/SetlistPoster.jsx';
 import SongCard from '../components/SongCard.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -24,7 +25,16 @@ import SongMediaPanel from '../components/SongMediaPanel.jsx';
 const SESSION_DIVIDER_META_FIELD = 'sessionDividerName';
 
 // userBandInfo: bisa array (multi-band) atau object (single band)
-export default function SetlistSongsPage({ setlists, songs, setSetlists, setActiveSetlist, loadingSetlists, userBandInfo }) {
+export default function SetlistSongsPage({
+  setlists,
+  songs,
+  songsLoading = false,
+  songsError = '',
+  setSetlists,
+  setActiveSetlist,
+  loadingSetlists,
+  userBandInfo,
+}) {
   const { id: setlistId } = useParams();
   const navigate = useNavigate();
   const isLoading = typeof loadingSetlists === 'boolean' ? loadingSetlists : !Array.isArray(setlists);
@@ -251,8 +261,14 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
   // sorts made the list disagree with the stage.
   // Saat refresh, array `songs` global belum tentu terload — tanpa guard ini
   // semua lagu setlist sempat ditandai "[Lagu dihapus]" padahal hanya belum
-  // ter-fetch. "Dihapus" hanya benar bila daftar lagu global sudah terload.
-  const songsLoaded = Array.isArray(songs) && songs.length > 0;
+  // ter-fetch. Ada TIGA keadaan berbeda yang harus dibedakan:
+  //   1. masih dimuat      → placeholder "Memuat…" + skeleton, bukan baris palsu
+  //   2. gagal dimuat      → beri tahu user (sebelumnya diam-diam "Memuat…" selamanya)
+  //   3. sudah termuat     → judul asli, atau "[Lagu dihapus]" bila memang hilang
+  // `songs.length === 0` padahal tidak sedang memuat dan tanpa error berarti
+  // library lagunya memang kosong, jadi "dihapus" adalah jawaban yang benar.
+  const songsFailed = Boolean(songsError);
+  const songsPending = songsLoading || (!Array.isArray(songs) && !songsFailed);
   const setlistSongs = (localOrder || []).map((id) => {
     const song = availableSongsPool.find((item) => item.id === id);
     const meta = setlistSongMeta[id];
@@ -267,16 +283,17 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       }
       return song;
     }
-    if (!songsLoaded) {
-      // Belum terload — placeholder tanpa klaim "dihapus"
+    if (songsPending || songsFailed) {
+      // Belum selesai dimuat / gagal: jangan klaim "dihapus".
       return {
         id,
-        title: 'Memuat…',
+        title: songsFailed ? 'Lagu gagal dimuat' : 'Memuat…',
         artist: '',
         key: '',
         tempo: '',
         genre: '',
-        loadingPlaceholder: true,
+        loadingPlaceholder: !songsFailed,
+        loadFailed: songsFailed,
       };
     }
     // The song was deleted from the database.
@@ -290,6 +307,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       deleted: true,
     };
   });
+  const songsUnresolvedCount = setlistSongs.filter((song) => song.loadingPlaceholder || song.loadFailed).length;
 
   const sequentialVideoQueue = useMemo(
     () => (setlistSongs || []).filter((song) => hasYouTubeVideo(song)),
@@ -533,11 +551,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     };
   }, [setIsMetronomeActive]);
 
-  const currentMetronomeSong = useMemo(() => {
-    if (!metronomeSongId) return null;
-    return (setlistSongs || []).find((song) => song.id === metronomeSongId) || null;
-  }, [metronomeSongId, setlistSongs]);
-
   const createOverlayDismissHandler = (onClose) => (e) => {
     if (e.target.classList.contains('modal-overlay')) onClose();
   };
@@ -650,7 +663,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setPosterError('');
 
     const safeName = (setlist.name || 'setlist')
-      .replace(/[\/:*?"<>|]+/g, '')
+      .replace(/[/:*?"<>|]+/g, '')
       .trim();
 
     try {
@@ -679,7 +692,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     setPosterError('');
 
     const safeName = (setlist.name || 'setlist')
-      .replace(/[\/:*?"<>|]+/g, '')
+      .replace(/[/:*?"<>|]+/g, '')
       .trim();
 
     try {
@@ -1273,18 +1286,6 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     }
   }
 
-  // Buka detail lagu (halaman chord/player).
-  function openSongDetail(song) {
-    if (!song) return;
-    navigate(`/setlists/${setlist.id}/songs/${song.id}`, {
-      state: {
-        setlistId: setlist.id,
-        setlist: { ...setlist, songs: setlistSongs },
-        setlistSong: song,
-      },
-    });
-  }
-
   async function handleApplySmartSetlist() {
     if (!canEdit || !smartPlan || !Array.isArray(smartPlan.orderedSongIds)) return;
     setSmartApplying(true);
@@ -1324,7 +1325,8 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
       for (const songId of localOrder || []) {
         const prevSongMeta = updatedMeta[songId] || {};
         if (Object.prototype.hasOwnProperty.call(prevSongMeta, 'smartFeatured')) {
-          const { smartFeatured, ...restMeta } = prevSongMeta;
+          const restMeta = { ...prevSongMeta };
+          delete restMeta.smartFeatured;
           if (Object.keys(restMeta).length > 0) {
             updatedMeta[songId] = restMeta;
           } else {
@@ -1449,125 +1451,129 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     return false;
   }
 
+  const songsPageCompletion = setlistSongs.length > 0
+    ? Math.round((completedCount / setlistSongs.length) * 100)
+    : 0;
+  const totalDurationMinutes = setlistSongs.reduce(
+    (total, song) => total + (Number(song.duration) > 0 ? Number(song.duration) : 0), 0
+  );
+  const remainingCount = Math.max(setlistSongs.length - completedCount, 0);
+
+  // Menu "Aksi Lainnya": satu tempat untuk aksi sekunder setlist.
+  const renderHeroMoreMenu = () => (
+    <details className="setlist-header-more ssp-hero-more" aria-label="Aksi tambahan setlist">
+      <summary className="btn btn-secondary">
+        <span className="setlist-header-more-icon" aria-hidden="true">⚙</span>
+        <span className="setlist-header-more-label">Aksi Lainnya</span>
+      </summary>
+      <div className="setlist-header-more-menu">
+        <button className="btn btn-secondary setlist-btn-ghost" onClick={() => { setShareSessionFilter('all'); setShowShareModal(true); }} title="Bagikan Setlist">📤 Bagikan</button>
+        {canEdit && <button className="btn btn-secondary setlist-btn-ghost" onClick={openMergeSetlistModal} title="Merge lagu dari setlist lain">🔀 Merge Setlist</button>}
+        {canEdit && <button className="btn setlist-btn-ghost" onClick={() => setShowSmartModal(true)} title="Urutkan otomatis berdasarkan key, tempo, energi, dan durasi">✨ Smart Assistant</button>}
+        {canEdit && <button className="btn btn-secondary setlist-btn-ghost" onClick={openAddSessionDivider} title="Tambah divider sesi">🧩 Divider Sesi</button>}
+        {hasSequentialVideoSet && (
+          <button
+            className={`btn ${isSequentialVideoMode ? 'setlist-btn-primary' : 'btn-secondary'} setlist-btn-ghost`}
+            onClick={() => {
+              if (isSequentialVideoMode) {
+                handleCloseVideoPlayer();
+                return;
+              }
+              handleSequentialVideoPlayback();
+            }}
+            title={isSequentialVideoMode ? 'Hentikan pemutaran video berurutan' : 'Putar video setlist berurutan'}
+          >
+            🎬 {isSequentialVideoMode ? 'Berhenti' : 'Putar Berurutan'}
+          </button>
+        )}
+        {canEdit && featuredSongIdsFromMeta.length > 0 && (
+          <button className="btn btn-secondary setlist-btn-ghost" onClick={handleClearSmartPicks} title="Hapus semua badge Smart Pick dari setlist" disabled={smartApplying}>
+            {smartApplying ? 'Memproses...' : 'Clear Smart Picks'}
+          </button>
+        )}
+        {canEdit && completedCount > 0 && (
+          <button className="btn btn-secondary setlist-btn-ghost" onClick={handleResetCompletedSongs} title="Reset semua status lagu selesai">↺ Reset Selesai</button>
+        )}
+        {canEdit && uncompletedCount > 0 && (
+          <button className="btn btn-secondary setlist-btn-ghost" onClick={handleMarkAllSongsCompleted} title="Tandai semua lagu selesai">✅ Tandai Semua Selesai</button>
+        )}
+        <button className="btn setlist-btn-ghost" onClick={() => setShowCopyModal(true)} title="Copy Setlist">📋 Copy Setlist</button>
+      </div>
+    </details>
+  );
+
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <div className="setlist-header-info">
-          <h1>📋 {setlist.name}</h1>
-          {setlist.bandName && (
-            <div className="setlist-band-name">🎸 {setlist.bandName}</div>
-          )}
-          {setlist.description && (
-            <div className="setlist-description">{setlist.description}</div>
-          )}
-          <div className="setlist-header-stats">
-            <span className="setlist-meta-badge">🎵 {setlistSongs.length} lagu</span>
-            <span className={`setlist-meta-badge${completedCount > 0 ? ' setlist-meta-band' : ''}`}>
-              ✅ {completedCount} selesai
-            </span>
-            {featuredSongIdsFromMeta.length > 0 && (
-              <span
-                className="setlist-meta-badge"
-                title="Ditandai sebagai blok show utama Smart Assistant"
-              >
-                ✨ {featuredSongIdsFromMeta.length} smart pick
-              </span>
+    <div className="page-container setlist-songs-page">
+      <section className="ssp-hero">
+        <div className="ssp-hero-top">
+          <div className="ssp-eyebrow">
+            <span className="ssp-eyebrow-dot" aria-hidden="true" />
+            Setlist
+          </div>
+          <div className="setlist-header-actions setlist-header-actions-compact ssp-hero-actions">
+            {canEdit && (
+              <button className="btn setlist-btn-primary" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
+                <span className="setlist-btn-icon" aria-hidden="true">＋</span>
+                <span className="setlist-btn-label">Tambah Lagu</span>
+              </button>
+            )}
+            {renderHeroMoreMenu()}
+          </div>
+        </div>
+
+        <div className="ssp-hero-heading">
+          <div className="ssp-hero-title-block">
+            <h1 className="ssp-hero-title">{setlist.name}</h1>
+            <div className="ssp-hero-tags">
+              {setlist.bandName && (
+                <span className="ssp-tag ssp-tag-band">🎸 {setlist.bandName}</span>
+              )}
+              {featuredSongIdsFromMeta.length > 0 && (
+                <span className="ssp-tag ssp-tag-smart" title="Ditandai sebagai blok show utama Smart Assistant">
+                  ✨ {featuredSongIdsFromMeta.length} smart pick
+                </span>
+              )}
+            </div>
+            {setlist.description && (
+              <p className="ssp-hero-desc">{setlist.description}</p>
             )}
           </div>
         </div>
-        <div className="setlist-header-actions setlist-header-actions-compact">
-          {/* Only the primary action sits outside. Everything else lives in the
-              menu, so the header states one job instead of offering seven
-              equally-weighted buttons. */}
-          {canEdit && (
-            <button className="btn setlist-btn-primary" onClick={() => setShowAddSong(true)} title="Tambah Lagu ke Setlist">
-              <span className="setlist-btn-icon" aria-hidden="true">＋</span>
-              <span className="setlist-btn-label">Tambah Lagu</span>
-            </button>
-          )}
 
-          <details className="setlist-header-more" aria-label="Aksi tambahan setlist">
-            <summary className="btn btn-secondary">
-              <span className="setlist-header-more-icon" aria-hidden="true">⚙</span>
-              <span className="setlist-header-more-label">Aksi Lainnya</span>
-            </summary>
-            <div className="setlist-header-more-menu">
-              <button
-                className="btn btn-secondary setlist-btn-ghost"
-                onClick={() => {
-                  setShareSessionFilter('all');
-                  setShowShareModal(true);
-                }}
-                title="Bagikan Setlist"
-              >
-                📤 Bagikan
-              </button>
-              {canEdit && (
-                <button className="btn btn-secondary setlist-btn-ghost" onClick={openMergeSetlistModal} title="Merge lagu dari setlist lain">
-                  🔀 Merge Setlist
-                </button>
-              )}
-              {canEdit && (
-                <button className="btn setlist-btn-ghost" onClick={() => setShowSmartModal(true)} title="Urutkan otomatis berdasarkan key, tempo, energi, dan durasi">
-                  ✨ Smart Assistant
-                </button>
-              )}
-              {canEdit && (
-                <button className="btn btn-secondary setlist-btn-ghost" onClick={openAddSessionDivider} title="Tambah divider sesi">
-                  🧩 Divider Sesi
-                </button>
-              )}
-              {hasSequentialVideoSet && (
-                <button
-                  className={`btn ${isSequentialVideoMode ? 'setlist-btn-primary' : 'btn-secondary'} setlist-btn-ghost`}
-                  onClick={() => {
-                    if (isSequentialVideoMode) {
-                      handleCloseVideoPlayer();
-                      return;
-                    }
-                    handleSequentialVideoPlayback();
-                  }}
-                  title={isSequentialVideoMode ? 'Hentikan pemutaran video berurutan' : 'Putar video setlist berurutan'}
-                  aria-label={isSequentialVideoMode ? 'Hentikan pemutaran video setlist berurutan' : 'Putar video setlist berurutan'}
-                >
-                  🎬 {isSequentialVideoMode ? 'Berhenti' : 'Putar Berurutan'}
-                </button>
-              )}
-              {canEdit && featuredSongIdsFromMeta.length > 0 && (
-                <button
-                  className="btn btn-secondary setlist-btn-ghost"
-                  onClick={handleClearSmartPicks}
-                  title="Hapus semua badge Smart Pick dari setlist"
-                  disabled={smartApplying}
-                >
-                  {smartApplying ? 'Memproses...' : 'Clear Smart Picks'}
-                </button>
-              )}
-              {canEdit && completedCount > 0 && (
-                <button
-                  className="btn btn-secondary setlist-btn-ghost"
-                  onClick={handleResetCompletedSongs}
-                  title="Reset semua status lagu selesai"
-                >
-                  ↺ Reset Selesai
-                </button>
-              )}
-              {canEdit && uncompletedCount > 0 && (
-                <button
-                  className="btn btn-secondary setlist-btn-ghost"
-                  onClick={handleMarkAllSongsCompleted}
-                  title="Tandai semua lagu selesai"
-                >
-                  ✅ Tandai Semua Selesai
-                </button>
-              )}
-              <button className="btn setlist-btn-ghost" onClick={() => setShowCopyModal(true)} title="Copy Setlist">
-                📋 Copy Setlist
-              </button>
-            </div>
-          </details>
+        <div className="ssp-progress" aria-label={`Progres setlist ${songsPageCompletion}%`}>
+          <div className="ssp-progress-head">
+            <span className="ssp-progress-label">
+              {completedCount} dari {setlistSongs.length} lagu selesai
+            </span>
+            <span className="ssp-progress-value">{songsPageCompletion}%</span>
+          </div>
+          <div className="ssp-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={songsPageCompletion}>
+            <div className="ssp-progress-fill" style={{ width: `${songsPageCompletion}%` }} />
+          </div>
         </div>
-      </div>
+
+        <div className="ssp-summary-grid">
+          <div className="ssp-summary-card">
+            <span className="ssp-summary-label">Total lagu</span>
+            <span className="ssp-summary-value">{setlistSongs.length}</span>
+            <span className="ssp-summary-hint">{remainingCount} belum selesai</span>
+          </div>
+          <div className="ssp-summary-card">
+            <span className="ssp-summary-label">Selesai</span>
+            <span className="ssp-summary-value">{completedCount}</span>
+            <span className="ssp-summary-hint">Sudah ditandai</span>
+          </div>
+          <div className={`ssp-summary-card${totalDurationMinutes > 0 ? '' : ' ssp-summary-card--muted'}`}>
+            <span className="ssp-summary-label">Estimasi durasi</span>
+            <span className={`ssp-summary-value${totalDurationMinutes > 0 ? '' : ' ssp-summary-value--muted'}`}>
+              {totalDurationMinutes > 0 ? `${Math.round(totalDurationMinutes)} mnt` : '—'}
+            </span>
+            <span className="ssp-summary-hint">
+              {totalDurationMinutes > 0 ? 'Berdasarkan durasi lagu' : 'Durasi lagu belum diisi'}
+            </span>
+          </div>
+        </div>
+      </section>
 
       {/* Filter dan Search Bar */}
       {(
@@ -1649,6 +1655,37 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
         </div>
       )}
 
+      {/* Kegagalan ubah status penguasaan: sebelumnya disimpan tapi tidak pernah tampil. */}
+      {masteryError && (
+        <div className="error-text" role="alert">
+          {masteryError}
+          <button
+            type="button"
+            className="user-management-banner-close"
+            onClick={() => setMasteryError('')}
+            aria-label="Tutup pesan"
+          >×</button>
+        </div>
+      )}
+
+      {/* Keadaan data lagu: jangan biarkan "Memuat…" jadi status permanen tanpa penjelasan. */}
+      {songsFailed && (
+        <div className="ssp-data-banner ssp-data-banner--error" role="alert">
+          <span>
+            Daftar lagu gagal dimuat{songsError ? `: ${songsError}` : '.'} Judul lagu di setlist belum bisa ditampilkan.
+          </span>
+          <button type="button" className="btn btn-secondary" onClick={() => window.location.reload()}>
+            Muat ulang
+          </button>
+        </div>
+      )}
+      {songsLoading && (
+        <div className="ssp-data-banner ssp-data-banner--loading" role="status" aria-live="polite">
+          <span className="ssp-data-spinner" aria-hidden="true" />
+          <span>Memuat data lagu…</span>
+        </div>
+      )}
+
       {filteredSongs.length === 0 ? (
         <div className="empty-state">
           <p>
@@ -1656,6 +1693,18 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           </p>
           {/* Tombol "Tambah Lagu Pertama" dihapus — tambah lagu cukup lewat
               tombol tambah di header. */}
+        </div>
+      ) : songsPending && songsUnresolvedCount > 0 ? (
+        /* Selama data lagu belum siap, tampilkan skeleton: baris "Memuat…" yang
+           bisa diklik hanya akan membuka lagu yang datanya belum ada. */
+        <div className="ssp-loading-list" role="status" aria-live="polite" aria-label="Memuat lagu setlist">
+          {setlistSongs.map((song) => (
+            <div key={song.id} className="ssp-loading-row">
+              <span className="ssp-loading-block ssp-loading-block--rail" />
+              <span className="ssp-loading-block ssp-loading-block--title" />
+              <span className="ssp-loading-block ssp-loading-block--meta" />
+            </div>
+          ))}
         </div>
       ) : (
         <div className="song-list-container">
@@ -2188,7 +2237,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
           >
             <div className="modal-title">Copy Setlist</div>
             <div className="modal-message">
-              Buat salinan dari setlist "{setlist.name}" dengan nama baru.
+              Buat salinan dari setlist &quot;{setlist.name}&quot; dengan nama baru.
             </div>
             <input
               type="text"
@@ -2328,7 +2377,7 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
             </ul>
             {filteredAvailableSongs.length === 0 && canShowQuickAddSong && (
               <div className="smart-plan-note modal-note-bottom">
-                Lagu "{quickAddTitleCandidate}" belum ada di daftar.
+                Lagu &quot;{quickAddTitleCandidate}&quot; belum ada di daftar.
                 <div className="modal-note-action-wrap">
                   <button
                     className="btn btn-secondary"
@@ -2472,3 +2521,24 @@ export default function SetlistSongsPage({ setlists, songs, setSetlists, setActi
     </div>
   );
 }
+
+SetlistSongsPage.propTypes = {
+  setlists: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    name: PropTypes.string,
+    description: PropTypes.string,
+    bandId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    bandName: PropTypes.string,
+    songs: PropTypes.array,
+    songMeta: PropTypes.object,
+    createdAt: PropTypes.string,
+    updatedAt: PropTypes.string,
+  })),
+  songs: PropTypes.array,
+  songsLoading: PropTypes.bool,
+  songsError: PropTypes.string,
+  setSetlists: PropTypes.func,
+  setActiveSetlist: PropTypes.func,
+  loadingSetlists: PropTypes.bool,
+  userBandInfo: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
+};
