@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import SetlistForm from '../components/SetlistForm.jsx';
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
@@ -186,6 +187,26 @@ export default function SetlistPage({
 
   const hasActiveFilters = Boolean(search) || bandFilter !== 'all';
 
+  // Ringkasan untuk hero (di luar filter, karena menggambarkan koleksi).
+  const totalSongs = setlists.reduce(
+    (total, setlist) => total + (setlist.songCount ?? setlist.songs?.length ?? 0), 0,
+  );
+  const bandCount = new Set(
+    setlists.map((setlist) => setlist.bandId || setlist.bandName).filter(Boolean),
+  ).size;
+  const latestSetlist = setlists.reduce((latest, setlist) => {
+    const stamp = new Date(setlist.updatedAt || setlist.createdAt || 0).getTime();
+    if (Number.isNaN(stamp)) return latest;
+    return !latest || stamp > latest.stamp ? { setlist, stamp } : latest;
+  }, null);
+  const songCountOf = (setlist) => setlist.songCount ?? setlist.songs?.length ?? 0;
+  const formatFullDate = (value) => {
+    const parsed = value ? new Date(value) : null;
+    return parsed && !Number.isNaN(parsed.getTime())
+      ? parsed.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '';
+  };
+
   const openDeleteSetlist = (setlist) => {
     setDeleteError('');
     setDeleteTarget(setlist);
@@ -238,144 +259,196 @@ export default function SetlistPage({
   }
 
   return (
-    <div className="page-container">
-      {/* Page Header */}
-      <div className="page-header">
-        <div>
-          <h1>🎵 Setlist</h1>
-        </div>
-        {(Array.isArray(userBandInfo)
-          ? userBandInfo.some(b => b.role && b.role !== 'guest')
-          : can(PERMISSIONS.SETLIST_CREATE)
-        ) && (
-          <div className="page-header-actions">
-            <button className="btn" onClick={() => setShowCreateSetlist(true)}>
-              <span aria-hidden="true">＋</span> Buat Setlist
-            </button>
+    <div className="page-container setlist-page">
+      {/* Hero: judul + ringkasan koleksi */}
+      <section className="setlist-hero">
+        <div className="setlist-hero-heading">
+          <div>
+            <h1 className="setlist-hero-title">Setlist</h1>
+            <p className="setlist-hero-subtitle">Susun urutan lagu untuk latihan dan panggung</p>
           </div>
-        )}
-      </div>
+          {(Array.isArray(userBandInfo)
+            ? userBandInfo.some(b => b.role && b.role !== 'guest')
+            : can(PERMISSIONS.SETLIST_CREATE)
+          ) && (
+            <div className="setlist-hero-actions">
+              <button className="btn setlist-btn-primary" onClick={() => setShowCreateSetlist(true)}>
+                <span aria-hidden="true">＋</span> Buat Setlist
+              </button>
+            </div>
+          )}
+        </div>
 
-      {/* Filters & Search */}
-      <div className="filter-container setlist-filter-container">
+        <div className="setlist-summary-grid">
+          <div className="setlist-summary-card">
+            <span className="setlist-summary-label">Total setlist</span>
+            <span className="setlist-summary-value">{setlists.length}</span>
+            <span className="setlist-summary-hint">
+              {hasActiveFilters ? `${filteredSetlists.length} tampil` : 'Semua koleksi kamu'}
+            </span>
+          </div>
+          <div className="setlist-summary-card">
+            <span className="setlist-summary-label">Lagu tersusun</span>
+            <span className="setlist-summary-value">{totalSongs}</span>
+            <span className="setlist-summary-hint">Di seluruh setlist</span>
+          </div>
+          <div className={`setlist-summary-card${latestSetlist ? '' : ' setlist-summary-card--muted'}`}>
+            <span className="setlist-summary-label">Terakhir diubah</span>
+            <span className="setlist-summary-value setlist-summary-value--text">
+              {latestSetlist ? formatFullDate(latestSetlist.setlist.updatedAt || latestSetlist.setlist.createdAt) : '—'}
+            </span>
+            <span className="setlist-summary-hint">
+              {latestSetlist
+                ? `${latestSetlist.setlist.name}${bandCount ? ` · ${bandCount} band` : ''}`
+                : 'Belum ada setlist'}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Filter & pencarian */}
+      <div className="setlist-toolbar">
+        <div className="setlist-search-field">
+          <label className="setlist-field-label" htmlFor="setlist-search">Cari</label>
           <input
+            id="setlist-search"
             type="text"
-            placeholder="🔍 Cari nama setlist, deskripsi, atau band..."
+            placeholder="Nama setlist, deskripsi, atau band..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="search-input-main"
+            className="filter-select setlist-search-input"
           />
+        </div>
 
-          {/* Filters Row */}
-          <div className="setlist-filter-grid">
-            <div className="setlist-filter-field">
-              <label className="setlist-filter-label" htmlFor="setlist-band-filter">Band</label>
-              <select
-                id="setlist-band-filter"
-                value={bandFilter}
-                onChange={(e) => setBandFilter(e.target.value)}
-                className="filter-select"
-                aria-label="Filter berdasarkan band"
-              >
-                <option value="all">Semua Band</option>
-                {bands.map(band => (
-                  <option key={band.id || band.bandId} value={String(band.id || band.bandId)}>
-                    {band.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="setlist-field">
+          <label className="setlist-field-label" htmlFor="setlist-band-filter">Band</label>
+          <select
+            id="setlist-band-filter"
+            value={bandFilter}
+            onChange={(e) => setBandFilter(e.target.value)}
+            className="filter-select"
+            aria-label="Filter berdasarkan band"
+          >
+            <option value="all">Semua Band</option>
+            {bands.map(band => (
+              <option key={band.id || band.bandId} value={String(band.id || band.bandId)}>
+                {band.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <div className="setlist-filter-field">
-              <label className="setlist-filter-label" htmlFor="setlist-sort-by">Urutkan</label>
-              <select
-                id="setlist-sort-by"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="filter-select"
-              >
-                <option value="name">Nama</option>
-                <option value="band">Band</option>
-                <option value="songs">Jumlah Lagu</option>
-                <option value="created">Tanggal Dibuat</option>
-                <option value="updated">Terakhir Diupdate</option>
-              </select>
-            </div>
-
+        <div className="setlist-field">
+          <label className="setlist-field-label" htmlFor="setlist-sort-by">Urutkan</label>
+          <div className="setlist-sort-group">
+            <select
+              id="setlist-sort-by"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select"
+            >
+              <option value="name">Nama</option>
+              <option value="band">Band</option>
+              <option value="songs">Jumlah Lagu</option>
+              <option value="created">Tanggal Dibuat</option>
+              <option value="updated">Terakhir Diupdate</option>
+            </select>
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
               className="btn btn-secondary setlist-sort-order-btn"
               title={sortOrder === 'asc' ? 'Urutan naik' : 'Urutan turun'}
               aria-label={sortOrder === 'asc' ? 'Ubah ke urutan turun' : 'Ubah ke urutan naik'}
             >
-              {sortOrder === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+              {sortOrder === 'asc' ? '↑' : '↓'}
             </button>
-
-            <span className="setlist-filter-count">
-              {hasActiveFilters
-                ? `${filteredSetlists.length} / ${setlists.length}`
-                : `${setlists.length} setlist`}
-            </span>
-
-            {hasActiveFilters && (
-              <button
-                onClick={handleClearFilters}
-                className="btn btn-secondary setlist-reset-btn"
-              >
-                ✕ Reset
-              </button>
-            )}
           </div>
         </div>
 
+        <div className="setlist-toolbar-meta">
+          <span className="setlist-filter-count">
+            {hasActiveFilters
+              ? `${filteredSetlists.length} / ${setlists.length}`
+              : `${setlists.length} setlist`}
+          </span>
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearFilters}
+              className="btn btn-secondary setlist-reset-btn"
+            >
+              ✕ Reset
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Setlist List */}
       {filteredSetlists.length === 0 ? (
-        <div className="empty-state">
+        <div className="empty-state setlist-empty-state">
+          <div className="setlist-empty-icon" aria-hidden="true">📋</div>
           <p>
             {hasActiveFilters ? 'Tidak ada setlist yang cocok dengan filter' : 'Belum ada setlist'}
           </p>
-          {!hasActiveFilters && (
-            <button className="btn setlist-empty-add-btn" onClick={() => setShowCreateSetlist(true)}>
+          {hasActiveFilters ? (
+            <button className="btn btn-secondary" onClick={handleClearFilters}>
+              Hapus filter
+            </button>
+          ) : (
+            <button className="btn setlist-btn-primary setlist-empty-add-btn" onClick={() => setShowCreateSetlist(true)}>
               <span aria-hidden="true">＋</span> Buat Setlist Pertama
             </button>
           )}
         </div>
       ) : (
-        <div className="song-list-container">
+        <div className="song-list-container setlist-list">
           {filteredSetlists.map(setlist => {
             const canEdit = canEditSetlist(setlist, userBandInfo, user);
             const canDelete = canDeleteSetlist(setlist, userBandInfo, user);
+            const songs = songCountOf(setlist);
             return (
               <div
                 key={setlist.id}
-                className="setlist-item"
+                className="setlist-item setlist-card"
                 onClick={() => navigate(`/setlists/${setlist.id}`)}
               >
+                {/* Indikator jumlah lagu */}
+                <div className={`setlist-count-block${songs === 0 ? ' setlist-count-block--empty' : ''}`} aria-hidden="true">
+                  <span className="setlist-count-value">{songs}</span>
+                  <span className="setlist-count-label">lagu</span>
+                </div>
+
                 {/* Setlist Info */}
-                <div className="setlist-info">
-                  <h3 className="setlist-title">
-                    {setlist.name}
-                  </h3>
-                    <div className="setlist-meta">
-                      {setlist.bandName && (
-                        <span className="setlist-meta-badge setlist-meta-band">🎸 {setlist.bandName}</span>
-                      )}
-                      <span className="setlist-meta-badge">🎵 {(setlist.songCount ?? setlist.songs?.length) || 0} lagu</span>
-                      {setlist.description && (
-                        <span className="setlist-meta-desc">{setlist.description}</span>
-                      )}
-                    </div>
+                <div className="setlist-info setlist-card-body">
+                  <div className="setlist-card-title-row">
+                    <h3 className="setlist-title">{setlist.name}</h3>
+                    {setlist.bandName && (
+                      <span className="setlist-meta-badge setlist-meta-band">{setlist.bandName}</span>
+                    )}
+                  </div>
+                  {setlist.description && (
+                    <p className="setlist-card-desc">{setlist.description}</p>
+                  )}
+                  <p className="setlist-card-meta">
+                    {formatFullDate(setlist.updatedAt || setlist.createdAt)}
+                    {songs === 0 ? ' · Belum ada lagu' : ''}
+                  </p>
                 </div>
 
                 {/* Actions */}
                 <div
-                  className="setlist-actions"
+                  className="setlist-actions setlist-card-actions"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <button
+                    onClick={() => navigate(`/setlists/${setlist.id}`)}
+                    className="btn setlist-open-btn"
+                    aria-label={`Buka setlist ${setlist.name}`}
+                  >
+                    Buka
+                  </button>
                   {canEdit && (
                     <button
                       onClick={() => setEditSetlist(setlist)}
-                      className="btn btn-secondary setlist-action-icon-btn"
+                      className="btn setlist-action-icon-btn"
                       title="Edit setlist"
                       aria-label={`Edit setlist ${setlist.name}`}
                     >
@@ -385,7 +458,7 @@ export default function SetlistPage({
                   {canDelete && (
                     <button
                       onClick={() => openDeleteSetlist(setlist)}
-                      className="btn btn-secondary setlist-action-icon-btn setlist-action-icon-btn-danger"
+                      className="btn setlist-action-icon-btn setlist-action-icon-btn-danger"
                       title="Hapus setlist"
                       aria-label={`Hapus setlist ${setlist.name}`}
                     >
@@ -516,7 +589,7 @@ export default function SetlistPage({
           <div className="modal delete-confirm-modal" role="dialog" aria-modal="true" tabIndex={0}>
             <div className="modal-title">Konfirmasi Hapus Setlist</div>
             <div className="modal-message">
-              Apakah Anda yakin ingin menghapus setlist "{deleteTarget.name}"?
+              Apakah Anda yakin ingin menghapus setlist &quot;{deleteTarget.name}&quot;?
               Tindakan ini tidak bisa dibatalkan.
             </div>
             {deleteError && <div className="error-text modal-error-bottom">{deleteError}</div>}
@@ -535,3 +608,27 @@ export default function SetlistPage({
     </div>
   );
 }
+
+SetlistPage.propTypes = {
+  setlists: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    name: PropTypes.string,
+    description: PropTypes.string,
+    bandId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    bandName: PropTypes.string,
+    songs: PropTypes.array,
+    songCount: PropTypes.number,
+    createdAt: PropTypes.string,
+    updatedAt: PropTypes.string,
+  })),
+  loadingSetlists: PropTypes.bool,
+  errorSetlists: PropTypes.string,
+  songs: PropTypes.array,
+  userBandInfo: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
+  showCreateSetlist: PropTypes.bool,
+  setShowCreateSetlist: PropTypes.func,
+  setCreateSetlistName: PropTypes.func,
+  createSetlistError: PropTypes.string,
+  setCreateSetlistError: PropTypes.func,
+  setSetlists: PropTypes.func,
+};

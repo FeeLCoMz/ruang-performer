@@ -3156,3 +3156,477 @@ button.song-mastery-chip:not(:disabled):hover {
     gap: 4px 10px;
   }
 }
+
+/* ========================================
+   SETLIST PAGE — redesign (hero, toolbar, kartu)
+   Disamakan dengan bahasa visual halaman Gigs.
+   ======================================== */
+
+.setlist-page {
+  --sl-surface: var(--card-bg);
+  --sl-surface-soft: rgba(255, 255, 255, 0.03);
+  --sl-line: var(--border-color);
+  --sl-hero-glow: rgba(56, 189, 248, 0.16);
+}
+
+.setlist-hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--sl-line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 140% at 0% 0%, var(--sl-hero-glow) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(22, 29, 51, 0.96) 0%, rgba(15, 21, 38, 0.96) 100%);
+}
+
+.setlist-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -70px -100px auto;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.setlist-hero-heading {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.setlist-hero-title {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.setlist-hero-subtitle {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.setlist-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.setlist-btn-primary,
+.setlist-btn-primary:hover,
+.setlist-btn-primary:focus-visible {
+  background: var(--primary-accent);
+  border: 1px solid var(--primary-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.setlist-btn-primary:hover {
+  background: var(--primary-accent-hover);
+  border-color: var(--primary-accent-hover);
+}
+
+/* Kartu ringkasan */
+.setlist-summary-grid {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--spacing-xl);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-md);
+}
+
+.setlist-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--sl-line);
+  border-radius: var(--radius-md);
+  background: var(--sl-surface-soft);
+}
+
+.setlist-summary-card--muted {
+  background: transparent;
+  border-style: dashed;
+}
+
+.setlist-summary-label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.setlist-summary-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.setlist-summary-value--text {
+  font-size: var(--font-size-lg);
+}
+
+.setlist-summary-card--muted .setlist-summary-value {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.setlist-summary-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Toolbar filter */
+.setlist-page .setlist-toolbar {
+  display: grid;
+  /* Kolom urutkan berbagi lebar sama dengan kolom band supaya label panjang
+     seperti "Terakhir Diupdate" tidak terpotong. */
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--sl-line);
+  border-radius: var(--radius-md);
+  background: var(--sl-surface);
+}
+
+/* Kolom urutkan butuh ruang lebih untuk label panjang ("Terakhir Diupdate"). */
+.setlist-page .setlist-toolbar > .setlist-field:nth-of-type(2) {
+  min-width: 0;
+}
+
+.setlist-page .setlist-field,
+.setlist-page .setlist-search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.setlist-page .setlist-field-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.setlist-page .setlist-toolbar .filter-select {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  margin: 0;
+  box-sizing: border-box;
+  font-size: var(--font-size-sm);
+}
+
+.setlist-sort-group {
+  display: flex;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.setlist-page .setlist-sort-order-btn {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+  font-size: var(--font-size-base);
+}
+
+.setlist-toolbar-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  min-height: 40px;
+}
+
+.setlist-page .setlist-filter-count {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Kartu setlist */
+.setlist-page .setlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.setlist-page .setlist-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--sl-line);
+  border-left-width: 3px;
+  border-left-color: transparent;
+  border-radius: var(--radius-md);
+  background: var(--sl-surface);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+}
+
+.setlist-page .setlist-card:hover {
+  border-color: #46507a;
+  border-left-color: var(--primary-accent);
+  background: #18203a;
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+/* Indikator jumlah lagu */
+.setlist-count-block {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  padding: 6px 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--text-primary);
+}
+
+.setlist-count-block--empty {
+  border-style: dashed;
+  border-color: var(--sl-line);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.setlist-count-value {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.setlist-count-label {
+  margin-top: 2px;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.setlist-page .setlist-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.setlist-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.setlist-page .setlist-card-title-row .setlist-title {
+  margin: 0;
+  min-width: 0;
+}
+
+.setlist-page .setlist-meta-badge {
+  flex: 0 0 auto;
+}
+
+.setlist-card-desc {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setlist-card-meta {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* Aksi kartu: tombol "Buka" + ikon netral */
+.setlist-page .setlist-card-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.setlist-page .setlist-open-btn {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--sl-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.setlist-page .setlist-open-btn:hover {
+  border-color: var(--primary-accent);
+  background: rgba(139, 92, 246, 0.14);
+}
+
+.setlist-page .setlist-action-icon-btn {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.setlist-page .setlist-action-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--sl-line);
+  color: var(--text-primary);
+}
+
+.setlist-page .setlist-action-icon-btn-danger {
+  color: rgba(248, 113, 113, 0.75);
+}
+
+.setlist-page .setlist-action-icon-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: var(--error);
+}
+
+/* Empty state */
+.setlist-page .setlist-empty-state {
+  border: 1px dashed var(--sl-line);
+  border-radius: var(--radius-lg);
+  background: var(--sl-surface-soft);
+  padding: var(--spacing-2xl) var(--spacing-xl);
+}
+
+/* Ruang bawah di mobile: bottom-nav menutup bagian akhir daftar. */
+@media (max-width: 768px) {
+  .setlist-page {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.setlist-page .setlist-empty-state p {
+  margin: 0 0 var(--spacing-lg);
+  color: var(--text-secondary);
+}
+
+.setlist-empty-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.75;
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  .setlist-page .setlist-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .setlist-page .setlist-search-field {
+    grid-column: 1 / -1;
+  }
+
+  .setlist-toolbar-meta {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 768px) {
+  .setlist-hero {
+    padding: var(--spacing-lg);
+  }
+
+  .setlist-hero-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .setlist-hero-heading {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .setlist-hero-actions {
+    width: 100%;
+  }
+
+  .setlist-hero-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .setlist-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .setlist-summary-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .setlist-page .setlist-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--spacing-md);
+  }
+
+  /* Kontrol lebih pendek di mobile: empat baris bertumpuk jadi terlalu tinggi. */
+  .setlist-page .setlist-toolbar .filter-select,
+  .setlist-page .setlist-sort-order-btn {
+    height: 38px;
+  }
+
+  .setlist-page .setlist-card {
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+  }
+
+  .setlist-page .setlist-card-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .setlist-page .setlist-open-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
