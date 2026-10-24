@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
-import { PERMISSIONS } from '../utils/permissionUtils.js';
+import { PERMISSIONS, hasPermission } from '../utils/permissionUtils.js';
 import { useStageModeEnabled } from '../modules/stage-mode/useStageModeEnabled.js';
 import { fetchBands, fetchGigs, fetchSetLists, createGig, updateGig, deleteGig } from '../apiClient.js';
 import {
@@ -91,6 +92,31 @@ export function gigStatusLabel(status) {
   return GIG_STATUS_LABELS[status] || GIG_STATUS_LABELS.planned;
 }
 
+/**
+ * Apakah user boleh menyunting/menghapus gig ini.
+ *
+ * - Pembuat gig selalu boleh (gig tanpa band maupun milik band).
+ * - Gig milik band: anggota band dengan role berizin. Saat list masih "Semua Band",
+ *   role dicari dari band gig tersebut, bukan dari band yang terpilih di toolbar.
+ * - Gig tanpa band milik orang lain: tidak boleh.
+ * - Saat data band belum termuat, jangan menyembunyikan tombol — server tetap
+ *   memutuskan akhirnya.
+ */
+export function resolveGigAccess({ gig, user, bands = [], permission }) {
+  const userId = user?.userId || user?.id;
+  const creatorId = gig?.userId ?? gig?.createdBy;
+  if (userId && creatorId && String(creatorId) === String(userId)) return true;
+  if (!gig?.bandId) return false;
+
+  const band = bands.find((item) => String(item.bandId || item.id) === String(gig.bandId));
+  if (band) {
+    const role = band.role || band.userRole || (band.isOwner ? 'owner' : null);
+    if (!role) return false;
+    return hasPermission(role, permission);
+  }
+  return bands.length === 0;
+}
+
 // Opsi tahun untuk pemilih share: selalu memuat tahun berjalan ±2 dan tahun
 // yang sedang dipilih (mis. tahun gigs lama di luar rentang default).
 export function buildYearOptions(selectedYear, referenceYear = new Date().getFullYear()) {
@@ -100,7 +126,11 @@ export function buildYearOptions(selectedYear, referenceYear = new Date().getFul
   return Array.from(years).sort((a, b) => a - b);
 }
 
-export default function GigPage() {
+GigPage.propTypes = {
+  onEditBlocked: PropTypes.func
+};
+
+export default function GigPage({ onEditBlocked }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [stageModeEnabled] = useStageModeEnabled();
@@ -353,6 +383,11 @@ export default function GigPage() {
   };
 
   const handleEdit = (gig) => {
+    // Server tetap memutuskan, tapi jangan buka form yang pasti ditolak.
+    if (!resolveGigAccess({ gig, user, bands, permission: PERMISSIONS.GIG_EDIT })) {
+      onEditBlocked?.('Hanya pemilik jadwal atau owner/admin band yang bisa mengedit gig ini.');
+      return;
+    }
     setEditGig(gig);
     // Pisahkan tanggal dan waktu dari ISO string
     const { date: dateStr, time: timeStr } = splitIsoDateTime(gig.date);
@@ -825,13 +860,13 @@ export default function GigPage() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   {(() => {
-                    const isCreator = gig.userId && user && gig.userId === (user.userId || user.id);
-                    // Gigs yang dilihat tanpa filter band memakai izin gigs pribadi:
-                    // hanya pembuatnya yang boleh mengubah.
-                    const canEdit = isCreator
-                      || (selectedBandId && userBandInfo && permissionForSelectedBand.can(PERMISSIONS.GIG_EDIT));
-                    const canDelete = isCreator
-                      || (selectedBandId && userBandInfo && permissionForSelectedBand.can(PERMISSIONS.GIG_DELETE));
+                    // Role dicari per band milik gig, bukan hanya band yang dipilih di toolbar.
+                    const canEdit = resolveGigAccess({ gig, user, bands, permission: PERMISSIONS.GIG_EDIT });
+                    const canDelete = resolveGigAccess({ gig, user, bands, permission: PERMISSIONS.GIG_DELETE });
+                    // Anggota band (tanpa izin tulis) tetap melihat tombol terkunci
+                    // agar jelas kenapa edit tidak tersedia.
+                    const memberBand = bands.find((item) => String(item.bandId || item.id) === String(gig.bandId));
+                    const isMemberOfBand = Boolean(memberBand) && !canEdit;
                     return (
                       <>
                         {gig.setlistId && (
@@ -845,7 +880,15 @@ export default function GigPage() {
                         )}
                         {gig.setlistId && stageModeEnabled && (
                           <button
-                            onClick={() => navigate(`/stage?setlistId=${encodeURIComponent(gig.setlistId)}`)}
+                            onClick={() => {
+                              // Stage Mode di App adalah overlay yang dibuka lewat
+                              // event global, bukan route /stage (tidak ada route itu).
+                              if (typeof window !== 'undefined') {
+                                window.dispatchEvent(new CustomEvent('ruang-performer:open-stage', {
+                                  detail: { setlistId: gig.setlistId },
+                                }));
+                              }
+                            }}
                             className="btn gig-stage-btn"
                             title="Mode panggung dengan setlist gig ini"
                           >
@@ -860,6 +903,16 @@ export default function GigPage() {
                             aria-label={`Edit gig ${gig.bandName || ''} ${gig.venue || ''}`.trim()}
                           >
                             <span aria-hidden="true">✎</span>
+                          </button>
+                        )}
+                        {!canEdit && isMemberOfBand && (
+                          <button
+                            onClick={() => handleEdit(gig)}
+                            className="btn"
+                            title="Hanya pemilik atau owner/admin band yang bisa menyunting gig ini"
+                            aria-label={`Edit gig ${gig.bandName || ''} ${gig.venue || ''}`.trim()}
+                          >
+                            <span aria-hidden="true">🔒</span>
                           </button>
                         )}
                         {canDelete && (

@@ -176,10 +176,10 @@ async function showShareDialog(container) {
   await click(byText(container, 'button', 'Bagikan Jadwal'));
 }
 
-function setupDom({ gigs = fixtureGigs(), setlists = [] } = {}) {
+function setupDom({ gigs = fixtureGigs(), setlists = [], bands = BANDS } = {}) {
   const container = document.createElement('div');
   document.body.appendChild(container);
-  apiMocks.fetchBands.mockResolvedValue(BANDS);
+  apiMocks.fetchBands.mockResolvedValue(bands);
   apiMocks.fetchSetLists.mockResolvedValue(setlists);
   // Server memfilter per tahun, jadi mock meniru perilaku itu.
   apiMocks.fetchGigs.mockImplementation(async (_bandId, options = {}) => {
@@ -349,6 +349,35 @@ describe('GigPage create form', () => {
     });
     container.remove();
     vi.clearAllMocks();
+  });
+
+  test('a band member without write permission sees a locked edit button and no form opens', async () => {
+    // Datang dengan "Semua Band" (tidak memilih band di toolbar) sebagai member.
+    const gig = { ...currentMonthGig(), id: 'gig-teammate', userId: 'user-2' };
+    container = setupDom({ gigs: [gig], bands: [{ id: 'band-1', name: 'Aurora', role: 'member' }] });
+    root = await renderPage(container);
+
+    const lockButton = Array.from(container.querySelectorAll('.song-actions button')).find(
+      (button) => button.textContent.includes('🔒'),
+    );
+    expect(lockButton).toBeTruthy();
+
+    await click(lockButton);
+    expect(container.querySelector('.gig-submit-btn')).toBeFalsy();
+  });
+
+  test('an owner can edit a band gig even while viewing every band', async () => {
+    const gig = { ...currentMonthGig(), id: 'gig-band', userId: 'user-2' };
+    container = setupDom({ gigs: [gig], bands: [{ id: 'band-1', name: 'Aurora', role: 'owner' }] });
+    root = await renderPage(container);
+
+    const editButton = Array.from(container.querySelectorAll('.song-actions button')).find(
+      (button) => button.textContent.includes('✎'),
+    );
+    expect(editButton).toBeTruthy();
+
+    await click(editButton);
+    expect(container.querySelector('.gig-submit-btn')).toBeTruthy();
   });
 
   test('the create form pre-fills date and time, and empty optional fields become null', async () => {
@@ -548,8 +577,27 @@ describe('GigPage row actions', () => {
     await click(setlistButton);
     expect(mockNavigate).toHaveBeenCalledWith('/setlists/setlist-9');
 
+    // Stage Mode adalah overlay global, bukan route /stage.
+    mockNavigate.mockClear();
     await click(stageButton);
-    expect(mockNavigate).toHaveBeenCalledWith('/stage?setlistId=setlist-9');
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  test('the Stage button dispatches the global open-stage event with the setlist id', async () => {
+    root = await renderPage(container);
+    await changeValue(container.querySelector('.gig-toolbar .gig-year-filter'), '2024');
+    await changeValue(container.querySelector('.gig-toolbar .gig-month-filter'), '');
+
+    const events = [];
+    const listener = (event) => events.push(event.detail);
+    window.addEventListener('ruang-performer:open-stage', listener);
+    try {
+      await click(byText(container, 'button', 'Stage'));
+    } finally {
+      window.removeEventListener('ruang-performer:open-stage', listener);
+    }
+
+    expect(events).toEqual([{ setlistId: 'setlist-9' }]);
   });
 
   test('gigs without a setlist do not show the shortcuts', async () => {

@@ -420,7 +420,7 @@ export default async function handler(req, res) {
         const nextDate = normalizeDateTime(body.date);
         if (nextDate === undefined) return res.status(400).json({ error: 'Invalid date' });
         const values = [id, normalizeId(body.bandId), userId, nextDate, body.venue || '', body.city || '', normalizeFee(body.fee), normalizeId(body.setlistId), body.notes || '', normalizeGigStatus(body.status), now, now];
-        await client.execute(`INSERT INTO gigs (id, bandId, userId, date, venue, city, fee, setlistId, notes, status, createdAt, updatedAt) VALUES (?, ?, ?)`,
+        await client.execute(`INSERT INTO gigs (id, bandId, userId, date, venue, city, fee, setlistId, notes, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           values);
         res.status(201).json({ id });
         return;

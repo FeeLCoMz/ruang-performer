@@ -21,6 +21,9 @@ import StageModeButton from './modules/stage-mode/StageModeButton.jsx';
 // di-mount saat dipakai — pengguna HP/latihan tidak menanggung bundelnya.
 const StageModePage = lazy(() => import('./modules/stage-mode/StageModePage.jsx'));
 
+// Event global untuk membuka Stage Mode dari halaman lain (mis. Gigs).
+const STAGE_OPEN_EVENT = 'ruang-performer:open-stage';
+
 // Lazy load non-critical pages for code splitting
 const SongListPage = lazy(() => import('./pages/SongListPage.jsx'));
 const SongChordsPage = lazy(() => import('./pages/SongChordsPage.jsx'));
@@ -148,6 +151,40 @@ function AppContent() {
   const [errorSongs, setErrorSongs] = useState(null);
   const [errorSetlists, setErrorSetlists] = useState(null);
   const [activeSetlist, setActiveSetlist] = useState(null);
+  // Setlist yang diminta dibuka panggung lewat event global (mis. tombol Stage
+  // di halaman Gigs). Dipakai saat Stage Mode belum punya setlist aktif.
+  const [stageSetlistId, setStageSetlistId] = useState(null);
+  // Setlist panggung yang dimuat khusus untuk permintaan di atas (bila setlists
+  // global belum memuatnya — setlists hanya di-fetch di halaman /setlists).
+  const [stageSetlistDetail, setStageSetlistDetail] = useState(null);
+
+  useEffect(() => {
+    const handleOpenStage = (event) => {
+      const requestedId = event?.detail?.setlistId;
+      if (!requestedId) return;
+      setStageSetlistId(String(requestedId));
+      setStageMode(true);
+    };
+    window.addEventListener(STAGE_OPEN_EVENT, handleOpenStage);
+    return () => window.removeEventListener(STAGE_OPEN_EVENT, handleOpenStage);
+  }, []);
+
+  useEffect(() => {
+    if (!stageMode || !stageSetlistId) return undefined;
+    if (stageSetlistDetail && String(stageSetlistDetail.id) === stageSetlistId) return undefined;
+    let cancelled = false;
+    apiClient
+      .fetchSetListById(stageSetlistId)
+      .then((detail) => {
+        if (!cancelled && detail) setStageSetlistDetail(detail);
+      })
+      .catch(() => {
+        // Gagal dimuat: Stage Mode tetap terbuka dan menawarkan pemilih setlist.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [stageMode, stageSetlistId]);
 
   // ALL HOOKS MUST BE HERE - BEFORE ANY CONDITIONAL LOGIC
   useEffect(() => {
@@ -290,11 +327,14 @@ function AppContent() {
           <Suspense fallback={<StageModeLoading />}>
             <StageModePage
               stageMode={stageMode}
-              onExit={() => setStageMode(false)}
+              onExit={() => {
+                setStageMode(false);
+                setStageSetlistId(null);
+              }}
               songs={songs}
               bands={userBandInfo}
               setlists={setlists}
-              activeSetlist={activeSetlist}
+              activeSetlist={activeSetlist || stageSetlistDetail}
             />
           </Suspense>
         )}
@@ -483,7 +523,7 @@ function AppContent() {
                   />
                 }
               />
-              <Route path="/gigs" element={<GigPage />} />
+              <Route path="/gigs" element={<GigPage onEditBlocked={(message) => setToastMessage(message)} />} />
               <Route path="/youtube-trending" element={<YouTubeTrendingPage />} />
               <Route path="/bands/manage" element={<BandManagementPage />} />
               <Route path="/bands" element={<Navigate to="/bands/manage" replace />} />
