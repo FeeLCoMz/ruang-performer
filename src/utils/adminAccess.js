@@ -84,7 +84,7 @@ export const ADMIN_MODULES = [
     icon: '🔍',
     description:
       'Riwayat aktivitas pengguna (login, perubahan data, aksi kritis) dengan filter kategori & severity.',
-    path: '/audit-logs',
+    path: '/admin#audit',
   },
 ];
 

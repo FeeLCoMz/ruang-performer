@@ -38,7 +38,7 @@ const YouTubeTrendingPage = lazy(() => import('./pages/YouTubeTrendingPage.jsx')
 const AdminPage = lazy(() => import('./pages/admin/AdminPage.jsx'));
 const ChordTranscriberPage = lazy(() => import('./modules/chord-transcriber/ChordTranscriberPage.jsx'));
 const BulkLyricsPage = lazy(() => import('./modules/bulk-lyrics/BulkLyricsPage.jsx'));
-const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage.jsx'));
+// /audit-logs kini dialihkan ke tab Audit di /admin (satu sumber).
 
 // Loading fallback component
 import { SongListSkeleton } from './components/LoadingSkeleton.jsx';
@@ -540,7 +540,7 @@ function AppContent() {
               <Route path="/chord-transcriber" element={<ChordTranscriberPage />} />
               <Route path="/bulk-lyrics" element={<BulkLyricsPage />} />
               <Route path="/backup-restore" element={<Navigate to="/admin#backup" replace />} />
-              <Route path="/audit-logs" element={<AuditLogPage />} />
+              <Route path="/audit-logs" element={<Navigate to="/admin#audit" replace />} />
               <Route path="/user-management" element={<Navigate to="/admin" replace />} />
               {/* Halaman khusus Administrator: hanya role akun owner/admin. */}
               <Route path="/admin" element={<AdminRoute />} />
