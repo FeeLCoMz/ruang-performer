@@ -488,11 +488,15 @@ export async function fetchYoutubeTrending() {
 }
 
 // Gigs API
-export async function fetchGigs(bandId = null) {
-  const path = bandId
-    ? `/events/gig?bandId=${encodeURIComponent(bandId)}`
-    : '/events/gig';
-  return request(path, { fallbackError: 'Gagal mengambil daftar gigs' });
+export async function fetchGigs(bandId = null, { year = null, month = null, limit = null } = {}) {
+  const params = new URLSearchParams();
+  if (bandId) params.set('bandId', bandId);
+  // Filter di server agar gigs di luar halaman/limit tetap bisa diambil.
+  if (Number.isInteger(year)) params.set('year', String(year));
+  if (Number.isInteger(month)) params.set('month', String(month + 1));
+  if (Number.isInteger(limit) && limit > 0) params.set('limit', String(limit));
+  const query = params.toString();
+  return request(`/events/gig${query ? `?${query}` : ''}`, { fallbackError: 'Gagal mengambil daftar gigs' });
 }
 
 export async function createGig(gig) {

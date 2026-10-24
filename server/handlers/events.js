@@ -167,6 +167,27 @@ async function requireBandPermission(client, res, { bandId, userId, permission }
   return true;
 }
 
+export { requireBandPermission };
+
+/**
+ * Cek akses tulis pada gig.
+ *
+ * - Gig pribadi (tanpa bandId): hanya pembuatnya.
+ * - Gig band: pembuat selalu boleh; anggota band lain hanya jika rolenya punya
+ *   permission yang diminta (owner/admin → gig:edit / gig:delete, member tidak).
+ *
+ * Mengembalikan `{ ok, role }`; `role` dipakai untuk audit/keperluan lain.
+ */
+async function checkGigWriteAccess(client, { gig, userId, permission }) {
+  const creatorId = gig.userId ?? gig.createdBy;
+  if (creatorId && creatorId === userId) return { ok: true, role: 'creator' };
+  if (!gig.bandId) return { ok: false, role: null };
+
+  const role = await getBandRole(client, gig.bandId, userId);
+  if (!role) return { ok: false, role: null };
+  return { ok: hasPermission(role, permission), role };
+}
+
 async function rebuildBandSongPracticeStats(client, bandId) {
   const sessionsResult = await client.execute(
     `SELECT songs, songMeta, date
@@ -264,6 +285,24 @@ export default async function handler(req, res) {
   const userId = req.user?.userId || req.user?.id;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
+  // Normalisasi nilai kosong: '' → null agar kolom opsional benar-benar dikosongkan
+  // (bukan tersimpan sebagai string kosong).
+  const normalizeId = (value) => {
+    if (value === undefined || value === '') return null;
+    return value;
+  };
+  const normalizeFee = (value) => {
+    if (value === undefined || value === null || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const normalizeDateTime = (value) => {
+    if (value === undefined || value === null || value === '') return null;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return undefined; // penanda: tidak valid
+    return value;
+  };
+
   try {
     if (id) {
       // GET single
@@ -284,18 +323,15 @@ export default async function handler(req, res) {
         const body = await readJson(req);
         const now = new Date().toISOString();
         if (type === 'gig') {
-          // Permission check for gig
+          // Permission check for gig (berbasis role, bukan sekadar keanggotaan band)
           const gigCheck = await client.execute(`SELECT userId, bandId FROM gigs WHERE id = ?`, [id]);
           const gig = gigCheck.rows?.[0];
           if (!gig) return res.status(404).json({ error: 'Gig not found' });
-          let canEdit = false;
-          if (gig.userId === userId) canEdit = true;
-          else if (gig.bandId) {
-            const bandMember = await client.execute(`SELECT 1 FROM band_members WHERE bandId = ? AND userId = ? AND status = 'active' LIMIT 1`, [gig.bandId, userId]);
-            if (bandMember.rows?.length > 0) canEdit = true;
-          }
-          if (!canEdit) return res.status(403).json({ error: 'Forbidden - insufficient permission to edit gig' });
-          await client.execute(`UPDATE gigs SET bandId = COALESCE(?, bandId), date = COALESCE(?, date), venue = COALESCE(?, venue), city = COALESCE(?, city), fee = COALESCE(?, fee), setlistId = COALESCE(?, setlistId), notes = COALESCE(?, notes), updatedAt = ? WHERE id = ?`, [body.bandId ?? null, body.date ?? null, body.venue ?? null, body.city ?? null, body.fee ?? null, body.setlistId ?? null, body.notes ?? null, now, id]);
+          const canAccess = await checkGigWriteAccess(client, { gig, userId, permission: PERMISSIONS.GIG_EDIT });
+          if (!canAccess.ok) return res.status(403).json({ error: 'Forbidden - insufficient permission to edit gig' });
+          const nextDate = normalizeDateTime(body.date);
+          if (nextDate === undefined) return res.status(400).json({ error: 'Invalid date' });
+          await client.execute(`UPDATE gigs SET bandId = ?, date = COALESCE(?, date), venue = ?, city = ?, fee = ?, setlistId = ?, notes = ?, updatedAt = ? WHERE id = ?`, [normalizeId(body.bandId), nextDate, body.venue || '', body.city || '', normalizeFee(body.fee), normalizeId(body.setlistId), body.notes || '', now, id]);
           res.status(200).json({ id });
           return;
         }
@@ -306,13 +342,8 @@ export default async function handler(req, res) {
           const gigCheck = await client.execute(`SELECT userId, bandId FROM gigs WHERE id = ?`, [id]);
           const gig = gigCheck.rows?.[0];
           if (!gig) return res.status(404).json({ error: 'Gig not found' });
-          let canDelete = false;
-          if (gig.userId === userId) canDelete = true;
-          else if (gig.bandId) {
-            const bandMember = await client.execute(`SELECT 1 FROM band_members WHERE bandId = ? AND userId = ? AND status = 'active' LIMIT 1`, [gig.bandId, userId]);
-            if (bandMember.rows?.length > 0) canDelete = true;
-          }
-          if (!canDelete) return res.status(403).json({ error: 'Forbidden - insufficient permission to delete gig' });
+          const canAccess = await checkGigWriteAccess(client, { gig, userId, permission: PERMISSIONS.GIG_DELETE });
+          if (!canAccess.ok) return res.status(403).json({ error: 'Forbidden - insufficient permission to delete gig' });
           await client.execute(`DELETE FROM gigs WHERE id = ?`, [id]);
           res.status(204).end();
           return;
@@ -324,13 +355,37 @@ export default async function handler(req, res) {
     }
     // GET all
     if (req.method === 'GET') {
-      const { bandId } = req.query;
+      const { bandId, year, month, limit } = req.query;
       if (type === 'gig') {
         // Allow all band members to see all gigs for their band
         let query = `SELECT g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt, b.name as bandName, s.name as setlistName FROM gigs g LEFT JOIN bands b ON g.bandId = b.id LEFT JOIN setlists s ON g.setlistId = s.id WHERE (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?))`;
         const params = [userId, userId];
         if (bandId) { query += ' AND g.bandId = ?'; params.push(bandId); }
-        query += ' ORDER BY g.date DESC LIMIT 100';
+
+        // Filter bulan/tahun dikerjakan di server supaya gigs lama tidak terpotong.
+        // `date` disimpan sebagai ISO lokal (YYYY-MM-DDTHH:mm:ss) atau tanggal saja.
+        const yearNum = Number.parseInt(year, 10);
+        const hasYear = Number.isInteger(yearNum) && yearNum > 1900 && yearNum < 3000;
+        if (hasYear) {
+          query += ' AND substr(g.date, 1, 4) = ?';
+          params.push(String(yearNum).padStart(4, '0'));
+        }
+        const monthNum = Number.parseInt(month, 10);
+        const hasMonth = Number.isInteger(monthNum) && monthNum >= 1 && monthNum <= 12;
+        if (hasMonth) {
+          query += ' AND substr(g.date, 6, 2) = ?';
+          params.push(String(monthNum).padStart(2, '0'));
+        }
+
+        query += ' ORDER BY date(g.date) DESC, g.date DESC';
+
+        // Pagination opsional (`limit`/`offset`); tanpa limit, semua gigs dikembalikan.
+        const limitNum = Number.parseInt(limit, 10);
+        if (Number.isInteger(limitNum) && limitNum > 0) {
+          query += ' LIMIT ?';
+          params.push(Math.min(limitNum, 500));
+        }
+
         const result = await client.execute(query, params);
         res.status(200).json(result.rows || []);
         return;
@@ -342,7 +397,10 @@ export default async function handler(req, res) {
       const now = new Date().toISOString();
       if (type === 'gig') {
         const id = randomUUID();
-        await client.execute(`INSERT INTO gigs (id, bandId, userId, date, venue, city, fee, setlistId, notes, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [id, body.bandId ?? null, userId, body.date ?? null, body.venue ?? '', body.city ?? '', body.fee ?? null, body.setlistId ?? null, body.notes ?? '', now, now]);
+        const nextDate = normalizeDateTime(body.date);
+        if (nextDate === undefined) return res.status(400).json({ error: 'Invalid date' });
+        await client.execute(`INSERT INTO gigs (id, bandId, userId, date, venue, city, fee, setlistId, notes, createdAt, updatedAt) VALUES (?, ?, ?)`,
+          [id, normalizeId(body.bandId), userId, nextDate, body.venue || '', body.city || '', normalizeFee(body.fee), normalizeId(body.setlistId), body.notes || '', now, now]);
         res.status(201).json({ id });
         return;
       }

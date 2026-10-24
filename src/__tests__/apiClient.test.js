@@ -126,7 +126,23 @@ describe('request pipeline: URL building and headers', () => {
 
     await fetchGigs('band 1');
 
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/events/gig?bandId=band%201');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/events/gig?bandId=band+1');
+  });
+
+  test('sends the year and month filters so the server returns the right window', async () => {
+    fetchMock.mockResolvedValue(makeResponse({ json: [] }));
+
+    await fetchGigs(null, { year: 2024, month: 0 });
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/events/gig?year=2024&month=1');
+  });
+
+  test('omits filters when none are given', async () => {
+    fetchMock.mockResolvedValue(makeResponse({ json: [] }));
+
+    await fetchGigs();
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/events/gig');
   });
 });
 

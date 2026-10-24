@@ -103,6 +103,7 @@ export const PERMISSIONS = {
 
   // Gig permissions
   GIG_EDIT: 'gig:edit',
+  GIG_DELETE: 'gig:delete',
 
   // Admin permissions
   ADMIN_MANAGE_ROLES: 'admin:manage_roles'
@@ -137,6 +138,7 @@ export const ROLE_PERMISSIONS = {
 
     // Gig management
     PERMISSIONS.GIG_EDIT,
+    PERMISSIONS.GIG_DELETE,
 
     // Admin
     PERMISSIONS.ADMIN_MANAGE_ROLES

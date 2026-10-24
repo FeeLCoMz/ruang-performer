@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { usePermission } from '../hooks/usePermission.js';
+import { PERMISSIONS } from '../utils/permissionUtils.js';
+import { useStageModeEnabled } from '../modules/stage-mode/useStageModeEnabled.js';
 import { fetchBands, fetchGigs, fetchSetLists, createGig, updateGig, deleteGig } from '../apiClient.js';
 import {
   createGigScheduleText,
@@ -14,8 +17,58 @@ import { downloadCalendarAsJPG, downloadCalendarAsPDF } from '../modules/export-
 import { ListSkeleton } from '../components/LoadingSkeleton.jsx';
 import CalendarView from '../components/CalendarView.jsx';
 
+const pad2 = (value) => String(value).padStart(2, '0');
+
+// Format ISO lokal (tanpa konversi UTC) agar jam yang dipilih user tidak bergeser.
+export function toLocalIsoDateTime(date, time) {
+  if (!date) return null;
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date));
+  if (!dateMatch) return null;
+  const [, year, month, day] = dateMatch;
+  const timeMatch = /^(\d{2}):(\d{2})/.exec(String(time || ''));
+  const hh = timeMatch ? timeMatch[1] : '00';
+  const mm = timeMatch ? timeMatch[2] : '00';
+  const parsed = new Date(Number(year), Number(month) - 1, Number(day), Number(hh), Number(mm));
+  if (Number.isNaN(parsed.getTime())) return null;
+  return `${year}-${month}-${day}T${hh}:${mm}:00`;
+}
+
+// Pisahkan kembali ISO string menjadi input date & time untuk form.
+export function splitIsoDateTime(value) {
+  if (!value) return { date: '', time: '' };
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return { date: '', time: '' };
+  return {
+    date: `${parsed.getFullYear()}-${pad2(parsed.getMonth() + 1)}-${pad2(parsed.getDate())}`,
+    time: `${pad2(parsed.getHours())}:${pad2(parsed.getMinutes())}`,
+  };
+}
+
+const emptyGigForm = (overrides = {}) => ({
+  bandId: '',
+  date: '',
+  time: '',
+  venue: '',
+  city: '',
+  fee: '',
+  setlistId: '',
+  notes: '',
+  ...overrides,
+});
+
+// Opsi tahun untuk pemilih share: selalu memuat tahun berjalan ±2 dan tahun
+// yang sedang dipilih (mis. tahun gigs lama di luar rentang default).
+export function buildYearOptions(selectedYear, referenceYear = new Date().getFullYear()) {
+  const years = new Set();
+  for (let i = -2; i < 3; i += 1) years.add(referenceYear + i);
+  if (Number.isInteger(selectedYear)) years.add(selectedYear);
+  return Array.from(years).sort((a, b) => a - b);
+}
+
 export default function GigPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [stageModeEnabled] = useStageModeEnabled();
   const [exportShareEnabled] = useExportShareEnabled();
   const [gigs, setGigs] = useState([]);
   const [bands, setBands] = useState([]);
@@ -34,28 +87,26 @@ export default function GigPage() {
   const [viewMode, setViewMode] = useState('list'); // 'list' atau 'calendar'
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = terbaru, 'asc' = terlama
   const today = new Date();
-  const [shareMonth, setShareMonth] = useState(today.getMonth());
+  // Filter tampilan (toolbar). Sengaja dipisah dari state share agar membagikan
+  // jadwal tidak bergantung pada bulan yang sedang difilter di list.
+  const [filterMonth, setFilterMonth] = useState(today.getMonth());
+  const [filterYear, setFilterYear] = useState(today.getFullYear());
+  // State share: default "semua bulan" pada tahun berjalan.
+  const [shareMonth, setShareMonth] = useState('');
   const [shareYear, setShareYear] = useState(today.getFullYear());
+  const [shareAllTime, setShareAllTime] = useState(true);
   // Pisahkan tanggal dan waktu untuk input
-  const defaultDate = today.toISOString().split('T')[0];
-  const defaultTime = today.toTimeString().slice(0,5);
-  const [formData, setFormData] = useState({
-    bandId: '',
-    date: defaultDate,
-    time: defaultTime,
-    venue: '',
-    city: '',
-    fee: '',
-    setlistId: '',
-    notes: ''
-  });
+  const defaultDate = `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
+  const defaultTime = `${pad2(today.getHours())}:${pad2(today.getMinutes())}`;
+  const [formData, setFormData] = useState(() => emptyGigForm({ date: defaultDate, time: defaultTime }));
   const [formError, setFormError] = useState('');
 
-  // Filter gigs by month/year for sharing
+  // Filter gigs by month/year ('semua bulan' bila month kosong)
   const getGigsByMonthYear = (month, year) => {
     return gigs.filter(gig => {
       if (!gig.date) return false;
       const gigDate = new Date(gig.date);
+      if (Number.isNaN(gigDate.getTime())) return false;
       if (month === '' || month === null || Number.isNaN(month)) {
         return gigDate.getFullYear() === year;
       }
@@ -65,20 +116,45 @@ export default function GigPage() {
 
   const selectedBand = bands.find(band => band.id === selectedBandId);
   const scheduleBandName = selectedBand?.name || 'Jadwal Gigs';
-  const monthName = (shareMonth === '' || shareMonth === null || Number.isNaN(shareMonth))
-    ? `Semua bulan ${shareYear}`
-    : new Date(shareYear, shareMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-  const scheduleTitle = `${scheduleBandName} - ${monthName}`;
-  const filteredGigs = getGigsByMonthYear(shareMonth, shareYear);
-  const calendarSelectedMonth = (shareMonth === '' || shareMonth === null || Number.isNaN(shareMonth)) ? 0 : shareMonth;
-  const sortedGigs = [...filteredGigs].sort((a, b) => {
+  const monthName = (filterMonth === '' || filterMonth === null || Number.isNaN(filterMonth))
+    ? `Semua bulan ${filterYear}`
+    : new Date(filterYear, filterMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  const filteredGigs = Array.isArray(gigs) ? gigs : [];
+  // Tahun sudah difilter server; bulan disaring di client supaya kontrol toolbar
+  // tetap bekerja tanpa memicu request ulang.
+  const gigsInMonth = filteredGigs.filter((gig) => {
+    if (filterMonth === '' || filterMonth === null || Number.isNaN(filterMonth)) return true;
+    const parsed = gig.date ? new Date(gig.date) : null;
+    return parsed && !Number.isNaN(parsed.getTime()) && parsed.getMonth() === filterMonth;
+  });
+  const shareGigs = shareAllTime
+    ? gigs.filter(gig => {
+      if (!gig.date) return false;
+      const gigDate = new Date(gig.date);
+      return !Number.isNaN(gigDate.getTime());
+    })
+    : getGigsByMonthYear(shareMonth, shareYear);
+  const shareMonthName = shareAllTime
+    ? 'Semua jadwal'
+    : ((shareMonth === '' || shareMonth === null || Number.isNaN(shareMonth))
+      ? `Semua bulan ${shareYear}`
+      : new Date(shareYear, shareMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }));
+  // Data yang dimuat hanya setahun (filter server), jadi sebutkan tahunnya kalau berbeda.
+  const shareScopeLabel = shareAllTime
+    ? `${shareMonthName} ${shareYear}`
+    : shareMonthName;
+  const shareTitle = `${scheduleBandName} - ${shareScopeLabel}`;
+  const calendarSelectedMonth = (filterMonth === '' || filterMonth === null || Number.isNaN(filterMonth)) ? 0 : filterMonth;
+  const sortByDate = (list) => [...list].sort((a, b) => {
     const aDate = a.date ? new Date(a.date).getTime() : 0;
     const bDate = b.date ? new Date(b.date).getTime() : 0;
     return sortOrder === 'desc' ? bDate - aDate : aDate - bDate;
   });
+  const sortedGigs = sortByDate(gigsInMonth);
+  const sortedShareGigs = sortByDate(shareGigs);
   const scheduleText = createGigScheduleText(
-    scheduleTitle,
-    sortedGigs,
+    shareTitle,
+    sortedShareGigs,
     typeof window !== 'undefined' ? window.location.href : ''
   );
 
@@ -94,12 +170,12 @@ export default function GigPage() {
   };
 
   const handleDownloadScheduleText = () => {
-    downloadTextFile(`${scheduleTitle || 'jadwal-gigs'}.txt`, scheduleText);
+    downloadTextFile(`${shareTitle || 'jadwal-gigs'}.txt`, scheduleText);
   };
 
   const handleDownloadScheduleCalendar = () => {
-    const calendarContent = createGigCalendar(scheduleTitle, filteredGigs);
-    downloadCalendarFile(`${scheduleTitle || 'jadwal-gigs'}.ics`, calendarContent);
+    const calendarContent = createGigCalendar(shareTitle, shareGigs);
+    downloadCalendarFile(`${shareTitle || 'jadwal-gigs'}.ics`, calendarContent);
   };
 
   const handleDownloadPoster = async () => {
@@ -107,7 +183,7 @@ export default function GigPage() {
     setIsGeneratingPoster(true);
     setPosterError('');
     try {
-      const safeName = (scheduleTitle || 'jadwal-gigs').replace(/[\\/:*?"<>|]+/g, '').trim();
+      const safeName = (shareTitle || 'jadwal-gigs').replace(/[\\/:*?"<>|]+/g, '').trim();
       await downloadCalendarAsJPG(posterRef.current, `${safeName}-poster.jpg`);
     } catch (err) {
       console.error('Gagal membuat poster:', err);
@@ -122,7 +198,7 @@ export default function GigPage() {
     setIsGeneratingPoster(true);
     setPosterError('');
     try {
-      const safeName = (scheduleTitle || 'jadwal-gigs').replace(/[\\/:*?"<>|]+/g, '').trim();
+      const safeName = (shareTitle || 'jadwal-gigs').replace(/[\\/:*?"<>|]+/g, '').trim();
       await downloadCalendarAsPDF(posterRef.current, `Jadwal Gigs - ${safeName}`);
     } catch (err) {
       console.error('Gagal membuat poster PDF:', err);
@@ -168,21 +244,35 @@ export default function GigPage() {
     loadInitialData();
   }, []);
 
-  // Fetch gigs
+  // Fetch gigs — dimuat per tahun yang dipilih (server-side filter), bukan
+  // sekadar 100 baris terakhir, supaya gigs lama tidak hilang dari list.
   useEffect(() => {
+    let cancelled = false;
     const loadGigs = async () => {
       setLoading(true);
+      setError('');
       try {
-        const data = await fetchGigs(selectedBandId || null);
+        // `` berarti "semua bulan" pada tahun aktif; year selalu dikirim.
+        const data = await fetchGigs(selectedBandId || null, { year: filterYear });
+        if (cancelled) return;
         setGigs(Array.isArray(data) ? data : []);
       } catch (err) {
+        if (cancelled) return;
         setError(err.message || 'Gagal memuat daftar gigs');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     loadGigs();
-  }, [selectedBandId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBandId, filterYear]);
+
+  const reloadGigs = async () => {
+    const data = await fetchGigs(selectedBandId || null, { year: filterYear });
+    setGigs(Array.isArray(data) ? data : []);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -192,15 +282,21 @@ export default function GigPage() {
       setFormError('Tanggal diperlukan');
       return;
     }
-    // Gabungkan tanggal dan waktu ke ISO string
-    let dateTimeStr = formData.date;
-    if (formData.time) {
-      dateTimeStr += 'T' + formData.time;
+    // Gabungkan tanggal dan waktu sebagai ISO lokal (tanpa konversi UTC)
+    const isoDate = toLocalIsoDateTime(formData.date, formData.time);
+    if (!isoDate) {
+      setFormError('Tanggal atau waktu tidak valid');
+      return;
     }
-    // Pastikan format ISO lengkap
-    const isoDate = new Date(dateTimeStr).toISOString();
-    const submitData = { ...formData, date: isoDate };
-    delete submitData.time;
+    const submitData = {
+      bandId: formData.bandId || null,
+      date: isoDate,
+      venue: formData.venue || '',
+      city: formData.city || '',
+      fee: formData.fee === '' || formData.fee === null ? null : formData.fee,
+      setlistId: formData.setlistId || null,
+      notes: formData.notes || ''
+    };
 
     try {
       if (editGig) {
@@ -208,21 +304,13 @@ export default function GigPage() {
       } else {
         await createGig(submitData);
       }
-      // Refresh gigs
-      const data = await fetchGigs(selectedBandId || null);
-      setGigs(Array.isArray(data) ? data : []);
+      // Tahun gig yang baru disimpan ikut menentukan data yang perlu dimuat.
+      const savedYear = isoDate.slice(0, 4);
+      if (savedYear !== String(filterYear)) setFilterYear(Number(savedYear));
+      else await reloadGigs();
       setShowForm(false);
       setEditGig(null);
-      setFormData({
-        bandId: '',
-        date: defaultDate,
-        time: defaultTime,
-        venue: '',
-        city: '',
-        fee: '',
-        setlistId: '',
-        notes: ''
-      });
+      setFormData(emptyGigForm({ date: defaultDate, time: defaultTime }));
     } catch (err) {
       setFormError(err.message || 'Gagal menyimpan gig');
     }
@@ -231,9 +319,7 @@ export default function GigPage() {
   const handleEdit = (gig) => {
     setEditGig(gig);
     // Pisahkan tanggal dan waktu dari ISO string
-    let date = gig.date ? new Date(gig.date) : today;
-    const dateStr = date.toISOString().split('T')[0];
-    const timeStr = date.toTimeString().slice(0,5);
+    const { date: dateStr, time: timeStr } = splitIsoDateTime(gig.date);
     setFormData({
       bandId: gig.bandId || '',
       date: dateStr,
@@ -253,12 +339,22 @@ export default function GigPage() {
 
     try {
       await deleteGig(deleteConfirm.id);
-      const data = await fetchGigs(selectedBandId || null);
-      setGigs(Array.isArray(data) ? data : []);
+      await reloadGigs();
       setDeleteConfirm(null);
     } catch (err) {
       console.error('Gagal menghapus:', err);
     }
+  };
+
+  const openCreateForm = () => {
+    setShowForm(true);
+    setEditGig(null);
+    setFormData(emptyGigForm({
+      bandId: selectedBandId || '',
+      date: defaultDate,
+      time: defaultTime
+    }));
+    setFormError('');
   };
 
   return (
@@ -271,28 +367,14 @@ export default function GigPage() {
         </div>
         {/* Permission: Only show if user can create gig for selected band */}
         {(() => {
-          const canManageGigs = (!selectedBandId && user)
-            || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
+          const canManageGigs = !selectedBandId
+            ? Boolean(user)
+            : Boolean(userBandInfo && permissionForSelectedBand.can(PERMISSIONS.GIG_EDIT));
           if (!canManageGigs) return null;
-
-          const handleCreateGig = () => {
-            setShowForm(true);
-            setEditGig(null);
-            setFormData({
-              bandId: selectedBandId || '',
-              date: new Date().toISOString().split('T')[0],
-              venue: '',
-              city: '',
-              fee: '',
-              setlistId: '',
-              notes: ''
-            });
-            setFormError('');
-          };
 
           return (
             <div className="page-header-actions">
-              <button className="btn" onClick={handleCreateGig}>
+              <button className="btn" onClick={openCreateForm}>
                 <span aria-hidden="true">＋</span> Buat Gigs
               </button>
               {gigs.length > 0 && exportShareEnabled && (
@@ -456,10 +538,50 @@ export default function GigPage() {
           <div className="modal add-song-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Bagikan Jadwal Gigs</div>
             <p className="gig-share-note">
-              Gunakan bulan dan tahun yang dipilih untuk daftar dan kalender.
+              Pilih cakupan jadwal yang ingin dibagikan. Pilihan ini tidak memengaruhi filter daftar gigs.
             </p>
+            <div className="gig-toolbar-date-group gig-share-range-group">
+              <select
+                value={shareAllTime ? 'all' : 'month'}
+                onChange={(e) => setShareAllTime(e.target.value === 'all')}
+                className="modal-input gig-month-filter"
+              >
+                <option value="all">Semua jadwal</option>
+                <option value="month">Per bulan</option>
+              </select>
+              {!shareAllTime && (
+                <>
+                  <select
+                    value={shareMonth}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setShareMonth(value === '' ? '' : parseInt(value, 10));
+                    }}
+                    className="modal-input gig-month-filter"
+                  >
+                    <option value="">Semua bulan</option>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {new Date(2024, i).toLocaleDateString('id-ID', { month: 'long' })}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={shareYear}
+                    onChange={(e) => setShareYear(parseInt(e.target.value))}
+                    className="modal-input gig-year-filter"
+                  >
+                    {buildYearOptions(shareYear).map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+            </div>
             <p className="gig-share-month-summary">
-              📅 <strong>{monthName}</strong> - {filteredGigs.length} gigs
+              📅 <strong>{shareScopeLabel}</strong> - {shareGigs.length} gigs
             </p>
 
             {/* Poster preview for sharing */}
@@ -469,18 +591,18 @@ export default function GigPage() {
                   <div>
                     <div className="schedule-poster-kicker">Jadwal Gigs</div>
                     <div className="schedule-poster-title">{scheduleBandName}</div>
-                    <div className="schedule-poster-subtitle">{monthName}</div>
+                    <div className="schedule-poster-subtitle">{shareMonthName}</div>
                   </div>
                   <div className="share-badge">#RuangPerformer</div>
                 </div>
                 <div className="schedule-poster-list">
-                  {sortedGigs && sortedGigs.length > 0 ? (
-                    sortedGigs.map((g, idx) => (
+                  {sortedShareGigs && sortedShareGigs.length > 0 ? (
+                    sortedShareGigs.map((g, idx) => (
                       <div key={g.id} className="schedule-poster-item">
                         <div className="schedule-poster-item-main">
                           <div className="gig-poster-headline-row">
                             <div className="gig-poster-band-name">{idx + 1}. {g.bandName || 'Band Tamu'}</div>
-                            {g.date && (
+                            {g.date && !Number.isNaN(new Date(g.date).getTime()) && (
                               <div className="schedule-poster-meta">
                                 {new Date(g.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
                                 {' • '}
@@ -554,10 +676,10 @@ export default function GigPage() {
         </select>
         <div className="gig-toolbar-date-group">
           <select
-            value={shareMonth}
+            value={filterMonth}
             onChange={(e) => {
               const value = e.target.value;
-              setShareMonth(value === '' ? '' : parseInt(value, 10));
+              setFilterMonth(value === '' ? '' : parseInt(value, 10));
             }}
             className="modal-input gig-month-filter"
           >
@@ -569,18 +691,15 @@ export default function GigPage() {
             ))}
           </select>
           <select
-            value={shareYear}
-            onChange={(e) => setShareYear(parseInt(e.target.value))}
+            value={filterYear}
+            onChange={(e) => setFilterYear(parseInt(e.target.value))}
             className="modal-input gig-year-filter"
           >
-            {Array.from({ length: 5 }, (_, i) => {
-              const year = new Date().getFullYear() - 2 + i;
-              return (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              );
-            })}
+            {buildYearOptions(filterYear).map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
           </select>
         </div>
         <div className="gig-toolbar-actions">
@@ -612,28 +731,31 @@ export default function GigPage() {
 
       {!loading && sortedGigs.length === 0 ? (
         <div className="gig-empty-state">
-          Belum ada jadwal gigs untuk {monthName}
+          <p>{gigs.length === 0 ? `Belum ada jadwal gigs pada ${filterYear}.` : `Belum ada jadwal gigs untuk ${monthName}.`}</p>
+          <button className="btn" onClick={openCreateForm}>
+            <span aria-hidden="true">＋</span> Buat Gigs
+          </button>
         </div>
       ) : !loading && viewMode === 'calendar' ? (
-        <CalendarView gigs={sortedGigs} selectedMonth={calendarSelectedMonth} selectedYear={shareYear} onGigSelect={handleEdit} />
+        <CalendarView gigs={sortedGigs} selectedMonth={calendarSelectedMonth} selectedYear={filterYear} onGigSelect={handleEdit} />
       ) : (
         <div className="song-list-container">
           {sortedGigs.map((gig, idx) => {
             const gigTime = gig.date ? new Date(gig.date).getTime() : 0;
-            const isCompleted = gigTime > 0 && gigTime < Date.now();
-            const isUpcoming = gigTime > Date.now();
+            const hasDate = gigTime > 0 && !Number.isNaN(gigTime);
+            const isCompleted = hasDate && gigTime < Date.now();
+            const isUpcoming = hasDate && gigTime > Date.now();
             return (
               <div
                 key={gig.id}
                 className={`song-item hover-lift ${isCompleted ? 'gig-item-completed' : ''} ${isUpcoming ? 'gig-item-upcoming' : ''}`}
-                onClick={() => handleEdit(gig)}
               >
                 <div className="song-info">
                   <div className="song-number">{idx + 1}.</div>
                   <h3 className="song-title">{gig.bandName || 'Band Tamu'}</h3>
                   <div className="song-meta">
-                    <span>📅 {new Date(gig.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                    {gig.date && (
+                    <span>📅 {hasDate ? new Date(gig.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Tanggal belum diisi'}</span>
+                    {hasDate && (
                       <span>⏰ {new Date(gig.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
                     )}
                     {(gig.venue || gig.city) && <span>📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}</span>}
@@ -649,27 +771,48 @@ export default function GigPage() {
                 >
                   {(() => {
                     const isCreator = gig.userId && user && gig.userId === (user.userId || user.id);
-                    const canEdit = isCreator || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
-                    const canDelete = isCreator || (userBandInfo && permissionForSelectedBand.can('gig:edit'));
-                    if (!canEdit && !canDelete) return null;
+                    // Gigs yang dilihat tanpa filter band memakai izin gigs pribadi:
+                    // hanya pembuatnya yang boleh mengubah.
+                    const canEdit = isCreator
+                      || (selectedBandId && userBandInfo && permissionForSelectedBand.can(PERMISSIONS.GIG_EDIT));
+                    const canDelete = isCreator
+                      || (selectedBandId && userBandInfo && permissionForSelectedBand.can(PERMISSIONS.GIG_DELETE));
                     return (
                       <>
+                        {gig.setlistId && (
+                          <button
+                            onClick={() => navigate(`/setlists/${gig.setlistId}`)}
+                            className="btn gig-setlist-btn"
+                            title="Buka setlist gig"
+                          >
+                            <span aria-hidden="true">🎵</span> Setlist
+                          </button>
+                        )}
+                        {gig.setlistId && stageModeEnabled && (
+                          <button
+                            onClick={() => navigate(`/stage?setlistId=${encodeURIComponent(gig.setlistId)}`)}
+                            className="btn gig-stage-btn"
+                            title="Mode panggung dengan setlist gig ini"
+                          >
+                            <span aria-hidden="true">🎤</span> Stage
+                          </button>
+                        )}
                         {canEdit && (
-                          <>
-                            <button
-                              onClick={() => handleEdit(gig)}
-                              className="btn"
-                              title="Edit"
-                            >
-                              <span aria-hidden="true">✎</span>
-                            </button>
-                          </>
+                          <button
+                            onClick={() => handleEdit(gig)}
+                            className="btn"
+                            title="Edit"
+                            aria-label={`Edit gig ${gig.bandName || ''} ${gig.venue || ''}`.trim()}
+                          >
+                            <span aria-hidden="true">✎</span>
+                          </button>
                         )}
                         {canDelete && (
                           <button
                             onClick={() => setDeleteConfirm(gig)}
                             className="btn btn-red"
                             title="Hapus"
+                            aria-label={`Hapus gig ${gig.bandName || ''} ${gig.venue || ''}`.trim()}
                           >
                             <span aria-hidden="true">🗑</span>
                           </button>

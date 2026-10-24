@@ -23,6 +23,16 @@ describe('permissionUtils', () => {
     expect(hasPermission('member', PERMISSIONS.BAND_EDIT)).toBe(false);
   });
 
+  it('gives only the owner the gig delete permission', () => {
+    expect(hasPermission('owner', PERMISSIONS.GIG_EDIT)).toBe(true);
+    expect(hasPermission('owner', PERMISSIONS.GIG_DELETE)).toBe(true);
+    expect(hasPermission('admin', PERMISSIONS.GIG_EDIT)).toBe(true);
+    // Admin boleh menyunting, menghapus tetap hak owner.
+    expect(hasPermission('admin', PERMISSIONS.GIG_DELETE)).toBe(false);
+    expect(hasPermission('member', PERMISSIONS.GIG_EDIT)).toBe(false);
+    expect(hasPermission('member', PERMISSIONS.GIG_DELETE)).toBe(false);
+  });
+
   it('should validate all permissions', () => {
     expect(hasAllPermissions('owner', [PERMISSIONS.BAND_CREATE, PERMISSIONS.BAND_EDIT])).toBe(true);
     expect(hasAllPermissions('admin', [PERMISSIONS.BAND_EDIT, PERMISSIONS.BAND_DELETE])).toBe(false);
