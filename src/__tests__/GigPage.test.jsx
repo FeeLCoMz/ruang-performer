@@ -6,6 +6,7 @@ import GigPage, {
   toLocalIsoDateTime,
   splitIsoDateTime,
   buildYearOptions,
+  resolveGigStatus,
 } from '../pages/GigPage.jsx';
 import { flushPromises } from './helpers/domTestUtils.js';
 
@@ -220,6 +221,23 @@ describe('GigPage date helpers', () => {
     expect(options).toEqual([...options].sort((a, b) => a - b));
     expect(buildYearOptions(Number.NaN, 2026)).toEqual([2024, 2025, 2026, 2027, 2028]);
   });
+
+  test('resolveGigStatus respects an explicit cancelled/done status over the date', () => {
+    const NOW = new Date(2026, 9, 24, 12, 0).getTime();
+    const past = '2026-10-20T20:00:00';
+    const future = '2026-11-20T20:00:00';
+
+    // Gig batal tetap batal walau tanggalnya sudah lewat.
+    expect(resolveGigStatus({ date: past, status: 'cancelled' }, NOW)).toBe('cancelled');
+    // Gig yang ditandai selesai lebih awal tidak berubah jadi 'upcoming'.
+    expect(resolveGigStatus({ date: future, status: 'done' }, NOW)).toBe('done');
+    expect(resolveGigStatus({ date: past, status: 'confirmed' }, NOW)).toBe('done');
+    expect(resolveGigStatus({ date: future, status: 'confirmed' }, NOW)).toBe('confirmed');
+    expect(resolveGigStatus({ date: future, status: 'planned' }, NOW)).toBe('upcoming');
+    expect(resolveGigStatus({ date: future }, NOW)).toBe('upcoming');
+    // Tanggal tidak valid tidak boleh menghasilkan badge palsu.
+    expect(resolveGigStatus({ date: '', status: 'planned' }, NOW)).toBe('planned');
+  });
 });
 
 describe('GigPage sharing scope', () => {
@@ -432,6 +450,33 @@ describe('GigPage create form', () => {
     expect(payload.fee).toBeNull();
   });
 
+  test('the form sends the selected status when creating a gig', async () => {
+    container = setupDom({ gigs: [] });
+    root = await renderPage(container);
+
+    await click(byText(container, 'button', 'Buat Gigs'));
+    const modal = backdropOf(container.querySelector('.gig-submit-btn'));
+    await changeValue(labelledInput(modal, 'Tanggal'), '2025-05-17');
+    await changeValue(labelledInput(modal, 'Status'), 'confirmed');
+    await click(container.querySelector('.gig-submit-btn'));
+
+    expect(apiMocks.createGig.mock.calls[0][0].status).toBe('confirmed');
+  });
+
+  test('editing pre-selects the stored status', async () => {
+    const gig = { ...currentMonthGig(), status: 'confirmed' };
+    container = setupDom({ gigs: [gig] });
+    root = await renderPage(container);
+
+    const editButton = Array.from(container.querySelectorAll('.song-actions button')).find(
+      (button) => button.textContent.includes('✎'),
+    );
+    await click(editButton);
+
+    const modal = backdropOf(container.querySelector('.gig-submit-btn'));
+    expect(labelledInput(modal, 'Status').value).toBe('confirmed');
+  });
+
   test('the empty state names the month currently being viewed and offers a create action', async () => {
     // Tahun berjalan tapi bulan ini kosong: data lain ada di tahun yang sama.
     const now = new Date();
@@ -515,5 +560,41 @@ describe('GigPage row actions', () => {
 
     expect(byText(container.querySelector('.song-actions'), 'button', 'Setlist')).toBeFalsy();
     expect(byText(container.querySelector('.song-actions'), 'button', 'Stage')).toBeFalsy();
+  });
+
+  test('a cancelled gig is badged as cancelled even when the date has passed', async () => {
+    const gig = { ...currentMonthGig(), id: 'gig-cancelled', status: 'cancelled', date: ISO(2024, 2, 1, 20, 0) };
+    container = setupDom({ gigs: [gig] });
+    root = await renderPage(container);
+    const yearSelect = container.querySelector('.gig-toolbar .gig-year-filter');
+    const monthSelect = container.querySelector('.gig-toolbar .gig-month-filter');
+    await changeValue(yearSelect, '2024');
+    await changeValue(monthSelect, '');
+
+    const item = container.querySelector('.song-item');
+    expect(item.className).toContain('gig-item-cancelled');
+    expect(item.textContent).toContain('Dibatalkan');
+    expect(item.textContent).not.toContain('Selesai');
+  });
+
+  test('the form sends the chosen status', async () => {
+    const gig = { ...currentMonthGig(), id: 'gig-owned', status: 'confirmed' };
+    container = setupDom({ gigs: [gig] });
+    root = await renderPage(container);
+
+    const editButton = Array.from(container.querySelectorAll('.song-actions button')).find(
+      (button) => button.textContent.includes('✎'),
+    );
+    await click(editButton);
+
+    const modal = backdropOf(container.querySelector('.gig-submit-btn'));
+    const statusSelect = labelledInput(modal, 'Status');
+    expect(statusSelect.value).toBe('confirmed');
+
+    await changeValue(statusSelect, 'cancelled');
+    await click(container.querySelector('.gig-submit-btn'));
+
+    expect(apiMocks.updateGig).toHaveBeenCalledTimes(1);
+    expect(apiMocks.updateGig.mock.calls[0][1].status).toBe('cancelled');
   });
 });

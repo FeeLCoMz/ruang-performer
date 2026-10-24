@@ -17,6 +17,20 @@ function formatIcsDateTime(isoDate) {
   );
 }
 
+const GIG_STATUS_TEXT_LABELS = {
+  planned: 'Direncanakan',
+  confirmed: 'Terkonfirmasi',
+  cancelled: 'DIBATALKAN',
+  done: 'Selesai',
+};
+
+function gigStatusSuffix(gig) {
+  const status = String(gig.status || '').toLowerCase();
+  if (status === 'cancelled') return ' [DIBATALKAN]';
+  if (status === 'confirmed') return ' (terkonfirmasi)';
+  return '';
+}
+
 function formatGigTextEntry(gig) {
   const date = gig.date ? new Date(gig.date) : null;
   const dateLabel = date
@@ -29,12 +43,14 @@ function formatGigTextEntry(gig) {
   const feeLabel = gig.fee ? `💰 ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(gig.fee)}` : '';
   const setlistLabel = gig.setlistName ? `🎵 Setlist: ${gig.setlistName}` : '';
   const notesLabel = gig.notes ? `📝 ${gig.notes}` : '';
+  const statusLabel = GIG_STATUS_TEXT_LABELS[String(gig.status || '').toLowerCase()] || '';
 
   return [
-    `• ${gig.bandName || 'Band'} - ${dateLabel}${timeLabel ? ` ${timeLabel}` : ''}`,
+    `• ${gig.bandName || 'Band'} - ${dateLabel}${timeLabel ? ` ${timeLabel}` : ''}${gigStatusSuffix(gig)}`,
     venueLabel,
     feeLabel,
     setlistLabel,
+    statusLabel && String(gig.status || '').toLowerCase() !== 'done' ? `ℹ️ Status: ${statusLabel}` : '',
     notesLabel
   ]
     .filter(Boolean)
@@ -72,8 +88,9 @@ export function createGigCalendar(title, gigs) {
     const date = new Date(gig.date);
     const endDate = new Date(date.getTime() + 2 * 60 * 60 * 1000);
     const end = formatIcsDateTime(endDate.toISOString());
-    const titleLine = `SUMMARY:${gig.bandName || 'Gig'}${gig.venue ? ` @ ${gig.venue}` : ''}`;
+    const titleLine = `SUMMARY:${gig.bandName || 'Gig'}${gig.venue ? ` @ ${gig.venue}` : ''}${gigStatusSuffix(gig)}`;
     const descriptionParts = [];
+    if (String(gig.status || '').toLowerCase() === 'cancelled') descriptionParts.push('Status: DIBATALKAN');
     if (gig.setlistName) descriptionParts.push(`Setlist: ${gig.setlistName}`);
     if (gig.notes) descriptionParts.push(`Catatan: ${gig.notes}`);
     if (gig.city) descriptionParts.push(`Kota: ${gig.city}`);

@@ -44,4 +44,23 @@ describe('scheduleShareUtils', () => {
     expect(ics).toContain('LOCATION:Teater Kecil, Jakarta');
     expect(ics).toContain('UID:gig-1');
   });
+
+  test('marks cancelled gigs in the shared text and calendar', () => {
+    const cancelled = [{ ...gigs[0], status: 'cancelled' }];
+
+    const text = createGigScheduleText('Band A', cancelled, '');
+    expect(text).toContain('[DIBATALKAN]');
+    expect(text).toContain('Status: DIBATALKAN');
+
+    const ics = createGigCalendar('Band A', cancelled);
+    expect(ics).toContain('SUMMARY:Band A @ Teater Kecil [DIBATALKAN]');
+    expect(ics).toContain('Status: DIBATALKAN');
+  });
+
+  test('confirmed gigs are labelled but not treated as cancelled', () => {
+    const confirmed = [{ ...gigs[1], status: 'confirmed' }];
+    const text = createGigScheduleText('Band A', confirmed, '');
+    expect(text).toContain('(terkonfirmasi)');
+    expect(text).not.toContain('DIBATALKAN');
+  });
 });

@@ -53,8 +53,43 @@ const emptyGigForm = (overrides = {}) => ({
   fee: '',
   setlistId: '',
   notes: '',
+  status: 'planned',
   ...overrides,
 });
+
+// Status gig disimpan eksplisit (bisa 'cancelled'), sedangkan status turunan
+// ('done'/'upcoming') hanya dipakai untuk badge saat status masih default.
+export const GIG_STATUS_OPTIONS = [
+  { value: 'planned', label: 'Direncanakan' },
+  { value: 'confirmed', label: 'Terkonfirmasi' },
+  { value: 'cancelled', label: 'Dibatalkan' },
+  { value: 'done', label: 'Selesai' },
+];
+
+const GIG_STATUS_LABELS = GIG_STATUS_OPTIONS.reduce((acc, option) => {
+  acc[option.value] = option.label;
+  return acc;
+}, {});
+
+/**
+ * Status yang ditampilkan di list.
+ *
+ * - 'cancelled' dan 'done' selalu dihormati (gig batal tidak boleh terlihat 'Selesai').
+ * - 'planned'/'confirmed' dengan tanggal lampau dianggap selesai secara otomatis.
+ */
+export function resolveGigStatus(gig, now = Date.now()) {
+  const stored = String(gig?.status || '').toLowerCase();
+  if (stored === 'cancelled' || stored === 'done') return stored;
+  const time = gig?.date ? new Date(gig.date).getTime() : NaN;
+  if (Number.isNaN(time)) return stored || 'planned';
+  if (time < now) return 'done';
+  return stored === 'confirmed' ? 'confirmed' : 'upcoming';
+}
+
+export function gigStatusLabel(status) {
+  if (status === 'upcoming') return 'Akan Datang';
+  return GIG_STATUS_LABELS[status] || GIG_STATUS_LABELS.planned;
+}
 
 // Opsi tahun untuk pemilih share: selalu memuat tahun berjalan ±2 dan tahun
 // yang sedang dipilih (mis. tahun gigs lama di luar rentang default).
@@ -295,7 +330,8 @@ export default function GigPage() {
       city: formData.city || '',
       fee: formData.fee === '' || formData.fee === null ? null : formData.fee,
       setlistId: formData.setlistId || null,
-      notes: formData.notes || ''
+      notes: formData.notes || '',
+      status: formData.status || 'planned'
     };
 
     try {
@@ -328,7 +364,8 @@ export default function GigPage() {
       city: gig.city || '',
       fee: gig.fee || '',
       setlistId: gig.setlistId || '',
-      notes: gig.notes || ''
+      notes: gig.notes || '',
+      status: gig.status || 'planned'
     });
     setShowForm(true);
     setFormError('');
@@ -480,6 +517,21 @@ export default function GigPage() {
               </div>
 
               <div>
+                <label className="form-label">Status Gigs</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="modal-input gig-status-select"
+                >
+                  {GIG_STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="form-label">Catatan</label>
                 <textarea
                   value={formData.notes}
@@ -601,7 +653,7 @@ export default function GigPage() {
                       <div key={g.id} className="schedule-poster-item">
                         <div className="schedule-poster-item-main">
                           <div className="gig-poster-headline-row">
-                            <div className="gig-poster-band-name">{idx + 1}. {g.bandName || 'Band Tamu'}</div>
+                            <div className="gig-poster-band-name">{idx + 1}. {g.bandName || 'Band Tamu'}{String(g.status || '').toLowerCase() === 'cancelled' ? ' [DIBATALKAN]' : ''}</div>
                             {g.date && !Number.isNaN(new Date(g.date).getTime()) && (
                               <div className="schedule-poster-meta">
                                 {new Date(g.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
@@ -743,12 +795,14 @@ export default function GigPage() {
           {sortedGigs.map((gig, idx) => {
             const gigTime = gig.date ? new Date(gig.date).getTime() : 0;
             const hasDate = gigTime > 0 && !Number.isNaN(gigTime);
-            const isCompleted = hasDate && gigTime < Date.now();
-            const isUpcoming = hasDate && gigTime > Date.now();
+            const status = resolveGigStatus(gig);
+            const isCompleted = status === 'done' && hasDate && gigTime < Date.now();
+            const isUpcoming = status === 'upcoming' || status === 'confirmed';
+            const isCancelled = status === 'cancelled';
             return (
               <div
                 key={gig.id}
-                className={`song-item hover-lift ${isCompleted ? 'gig-item-completed' : ''} ${isUpcoming ? 'gig-item-upcoming' : ''}`}
+                className={`song-item hover-lift ${isCompleted ? 'gig-item-completed' : ''} ${isUpcoming ? 'gig-item-upcoming' : ''} ${isCancelled ? 'gig-item-cancelled' : ''}`}
               >
                 <div className="song-info">
                   <div className="song-number">{idx + 1}.</div>
@@ -760,8 +814,9 @@ export default function GigPage() {
                     )}
                     {(gig.venue || gig.city) && <span>📍 {gig.venue}{gig.venue && gig.city ? ', ' : ''}{gig.city}</span>}
                     {gig.setlistName && <span>🎵 {gig.setlistName}</span>}
-                    {isUpcoming && <span className="gig-status-badge upcoming">Akan Datang</span>}
+                    {isUpcoming && <span className={`gig-status-badge ${status}`}>{gigStatusLabel(status)}</span>}
                     {isCompleted && <span className="gig-status-badge completed">Selesai</span>}
+                    {isCancelled && <span className="gig-status-badge cancelled">{gigStatusLabel('cancelled')}</span>}
                   </div>
                 </div>
 

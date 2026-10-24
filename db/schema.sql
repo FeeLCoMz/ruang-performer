@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS gigs (
   fee REAL,
   setlistId TEXT,
   notes TEXT,
-  status TEXT DEFAULT 'scheduled',
+  status TEXT DEFAULT 'planned',
   userId TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   updatedAt TEXT,

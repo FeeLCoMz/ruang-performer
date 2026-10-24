@@ -260,6 +260,24 @@ async function rebuildBandSongPracticeStats(client, bandId) {
   }
 }
 
+export const GIG_STATUSES = ['planned', 'confirmed', 'cancelled', 'done'];
+const GIG_SELECT_COLUMNS = 'g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.status, g.userId, g.createdAt, g.updatedAt, b.name as bandName, s.name as setlistName';
+
+function normalizeGigStatus(value, fallback = 'planned') {
+  const normalized = String(value || '').trim().toLowerCase();
+  return GIG_STATUSES.includes(normalized) ? normalized : fallback;
+}
+
+// Kolom status ditambahkan pada skema lama yang belum memilikinya (data lama
+// otomatis dianggap 'planned'; status diturunkan dari tanggal di sisi klien).
+async function ensureGigSchema(client) {
+  const columnsResult = await client.execute(`PRAGMA table_info(gigs)`);
+  const columns = new Set((columnsResult.rows || []).map((row) => String(row.name)));
+  if (columns.size > 0 && !columns.has('status')) {
+    await client.execute(`ALTER TABLE gigs ADD COLUMN status TEXT DEFAULT 'planned'`);
+  }
+}
+
 export default async function handler(req, res) {
   if (!verifyToken(req, res)) return;
 
@@ -285,6 +303,8 @@ export default async function handler(req, res) {
   const userId = req.user?.userId || req.user?.id;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
+  await ensureGigSchema(client);
+
   // Normalisasi nilai kosong: '' → null agar kolom opsional benar-benar dikosongkan
   // (bukan tersimpan sebagai string kosong).
   const normalizeId = (value) => {
@@ -309,7 +329,7 @@ export default async function handler(req, res) {
       if (req.method === 'GET') {
         if (type === 'gig') {
           const result = await client.execute(
-            `SELECT g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt, b.name as bandName, s.name as setlistName FROM gigs g LEFT JOIN bands b ON g.bandId = b.id LEFT JOIN setlists s ON g.setlistId = s.id WHERE g.id = ? AND (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?)) LIMIT 1`,
+            `SELECT ${GIG_SELECT_COLUMNS} FROM gigs g LEFT JOIN bands b ON g.bandId = b.id LEFT JOIN setlists s ON g.setlistId = s.id WHERE g.id = ? AND (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?)) LIMIT 1`,
             [id, userId, userId]
           );
           const row = result.rows?.[0] || null;
@@ -331,7 +351,7 @@ export default async function handler(req, res) {
           if (!canAccess.ok) return res.status(403).json({ error: 'Forbidden - insufficient permission to edit gig' });
           const nextDate = normalizeDateTime(body.date);
           if (nextDate === undefined) return res.status(400).json({ error: 'Invalid date' });
-          await client.execute(`UPDATE gigs SET bandId = ?, date = COALESCE(?, date), venue = ?, city = ?, fee = ?, setlistId = ?, notes = ?, updatedAt = ? WHERE id = ?`, [normalizeId(body.bandId), nextDate, body.venue || '', body.city || '', normalizeFee(body.fee), normalizeId(body.setlistId), body.notes || '', now, id]);
+          await client.execute(`UPDATE gigs SET bandId = ?, date = COALESCE(?, date), venue = ?, city = ?, fee = ?, setlistId = ?, notes = ?, status = COALESCE(?, status), updatedAt = ? WHERE id = ?`, [normalizeId(body.bandId), nextDate, body.venue || '', body.city || '', normalizeFee(body.fee), normalizeId(body.setlistId), body.notes || '', body.status === undefined || body.status === null || body.status === '' ? null : normalizeGigStatus(body.status), now, id]);
           res.status(200).json({ id });
           return;
         }
@@ -358,7 +378,7 @@ export default async function handler(req, res) {
       const { bandId, year, month, limit } = req.query;
       if (type === 'gig') {
         // Allow all band members to see all gigs for their band
-        let query = `SELECT g.id, g.bandId, g.date, g.venue, g.city, g.fee, g.setlistId, g.notes, g.createdAt, g.updatedAt, b.name as bandName, s.name as setlistName FROM gigs g LEFT JOIN bands b ON g.bandId = b.id LEFT JOIN setlists s ON g.setlistId = s.id WHERE (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?))`;
+        let query = `SELECT ${GIG_SELECT_COLUMNS} FROM gigs g LEFT JOIN bands b ON g.bandId = b.id LEFT JOIN setlists s ON g.setlistId = s.id WHERE (g.userId = ? OR g.bandId IN (SELECT bandId FROM band_members WHERE userId = ?))`;
         const params = [userId, userId];
         if (bandId) { query += ' AND g.bandId = ?'; params.push(bandId); }
 
@@ -399,8 +419,9 @@ export default async function handler(req, res) {
         const id = randomUUID();
         const nextDate = normalizeDateTime(body.date);
         if (nextDate === undefined) return res.status(400).json({ error: 'Invalid date' });
-        await client.execute(`INSERT INTO gigs (id, bandId, userId, date, venue, city, fee, setlistId, notes, createdAt, updatedAt) VALUES (?, ?, ?)`,
-          [id, normalizeId(body.bandId), userId, nextDate, body.venue || '', body.city || '', normalizeFee(body.fee), normalizeId(body.setlistId), body.notes || '', now, now]);
+        const values = [id, normalizeId(body.bandId), userId, nextDate, body.venue || '', body.city || '', normalizeFee(body.fee), normalizeId(body.setlistId), body.notes || '', normalizeGigStatus(body.status), now, now];
+        await client.execute(`INSERT INTO gigs (id, bandId, userId, date, venue, city, fee, setlistId, notes, status, createdAt, updatedAt) VALUES (?, ?, ?)`,
+          values);
         res.status(201).json({ id });
         return;
       }

@@ -622,6 +622,34 @@
   border: 1px solid #93c5fd;
 }
 
+.gig-status-badge.confirmed {
+  color: #14532d;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+}
+
+.gig-status-badge.planned {
+  color: #3730a3;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+}
+
+.gig-status-badge.cancelled {
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+}
+
+/* Gig yang dibatalkan dicoret agar tidak tertukar dengan jadwal aktif. */
+.gig-item-cancelled {
+  border-left: 4px solid #dc2626;
+}
+
+.gig-item-cancelled .song-title {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
 .gig-share-trigger-btn {
   margin-left: 0;
 }
