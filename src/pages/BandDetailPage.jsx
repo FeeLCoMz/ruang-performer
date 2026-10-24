@@ -183,41 +183,59 @@ export default function BandDetailPage() {
           >×</button>
         </div>
       )}
-      <div className="band-hero dashboard-card band-reveal band-reveal-1">
-        <div className="band-hero-top">
-          <button className="btn btn-secondary band-back-btn" onClick={() => navigate('/bands')}>
-            ← Kembali
+      <div className="band-hero dashboard-card band-reveal band-reveal-1 bd-hero">
+        <div className="bd-hero-top">
+          <button className="btn btn-secondary band-back-btn bd-back-btn" onClick={() => navigate('/bands')}>
+            <span aria-hidden="true">←</span> Kembali
           </button>
-          <div className="band-actions">
+          <div className="band-actions bd-hero-actions">
             {can(PERMISSIONS.BAND_EDIT) && (
-              <button className="btn btn-primary" onClick={() => setShowEditModal(true)} title="Edit Band">
+              <button className="btn btn-primary bd-btn-primary" onClick={() => setShowEditModal(true)} title="Edit Band">
                 <span aria-hidden="true">✎</span> Edit Band
               </button>
             )}
             {gigs.length > 0 && (
-              <button className="btn btn-secondary" onClick={() => setShowShareModal(true)}>
-                📤 Bagikan Jadwal
+              <button className="btn btn-secondary bd-btn-ghost" onClick={() => setShowShareModal(true)}>
+                <span aria-hidden="true">📤</span> Bagikan
               </button>
             )}
             {can(PERMISSIONS.BAND_DELETE) && (
-              <button className="btn btn-red" onClick={handleDelete} title="Hapus Band">
+              <button className="btn bd-btn-danger" onClick={handleDelete} title="Hapus Band">
                 <span aria-hidden="true">🗑</span> Hapus
               </button>
             )}
           </div>
         </div>
 
-        <h1 className="band-title">🎸 {band.name}</h1>
-        {band.description && <p className="band-description">{band.description}</p>}
+        <div className="bd-hero-heading">
+          <span className="bd-hero-avatar" aria-hidden="true">{(band.name || '?').trim().charAt(0).toUpperCase()}</span>
+          <div className="bd-hero-title-block">
+            <h1 className="band-title bd-hero-title">{band.name}</h1>
+            {band.description && <p className="band-description bd-hero-desc">{band.description}</p>}
+          </div>
+        </div>
 
-        <div className="band-info-bar">
-          {band.genre && <div className="band-badge">🎵 {band.genre}</div>}
-          <div className="band-badge">
+        <div className="band-info-bar bd-hero-tags">
+          {band.genre && <div className="band-badge bd-tag">🎵 {band.genre}</div>}
+          <div className="band-badge bd-tag bd-tag-role">
             {band.isOwner ? '👑 Owner' : `🎸 ${band.userRole || 'Member'}`}
           </div>
-          <div className="band-badge">👥 {allMembers.length} anggota</div>
-          <div className="band-badge">📋 {setlists.length} setlist</div>
-          <div className="band-badge">🎤 {gigs.length} jadwal</div>
+        </div>
+
+        {/* Angka ringkas menggantikan deretan chip yang semuanya setara bobot. */}
+        <div className="bd-stats">
+          <div className="bd-stat">
+            <span className="bd-stat-label">Anggota</span>
+            <span className="bd-stat-value">{allMembers.length}</span>
+          </div>
+          <div className={`bd-stat${setlists.length ? '' : ' bd-stat--muted'}`}>
+            <span className="bd-stat-label">Setlist</span>
+            <span className="bd-stat-value">{setlists.length}</span>
+          </div>
+          <div className={`bd-stat${gigs.length ? '' : ' bd-stat--muted'}`}>
+            <span className="bd-stat-label">Jadwal</span>
+            <span className="bd-stat-value">{gigs.length}</span>
+          </div>
         </div>
       </div>
 
@@ -300,7 +318,7 @@ export default function BandDetailPage() {
       <div className="dashboard-card band-section-card band-reveal band-reveal-3">
         <h2 className="card-title">📋 Setlist Band ({setlists.length})</h2>
         {setlists.length === 0 ? (
-          <div className="empty-state">Belum ada setlist untuk band ini</div>
+          <div className="empty-state bd-empty-inline">Belum ada setlist untuk band ini</div>
         ) : (
           <div className="grid-gap">
             {visibleSetlists.map((setlist, index) => (
@@ -344,7 +362,7 @@ export default function BandDetailPage() {
       <div className="dashboard-card band-section-card band-reveal band-reveal-4">
         <h2 className="card-title">🎤 Jadwal Gigs ({gigs.length})</h2>
         {gigs.length === 0 ? (
-          <div className="empty-state">Belum ada jadwal gigs</div>
+          <div className="empty-state bd-empty-inline">Belum ada jadwal gigs</div>
         ) : (
           <div className="grid-gap">
             {visibleGigs.map((gig, index) => (

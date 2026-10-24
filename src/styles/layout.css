@@ -176,6 +176,19 @@
   width: 100%;
   justify-content: center;
   gap: var(--spacing-sm);
+  /* Keluar bukan aksi utama aplikasi: tombol tenang, warna hanya saat hover. */
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.sidebar-footer .btn:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: var(--error);
+  box-shadow: none;
+  transform: none;
 }
 
 /* ========================================

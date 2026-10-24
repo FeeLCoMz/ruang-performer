@@ -5648,3 +5648,248 @@ button.song-mastery-chip:not(:disabled):hover {
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 }
+/* ========================================
+   BAND DETAIL PAGE — hero ringkas
+   Mengikuti bahasa visual halaman Band/Gigs.
+   ======================================== */
+
+.bd-hero {
+  position: relative;
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(251, 191, 36, 0.13) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(22, 29, 51, 0.96) 0%, rgba(15, 21, 38, 0.96) 100%);
+}
+
+.bd-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.bd-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bd-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.bd-btn-primary,
+.bd-btn-primary:hover,
+.bd-btn-primary:focus-visible {
+  background: var(--primary-accent);
+  border: 1px solid var(--primary-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.bd-btn-primary:hover {
+  background: var(--primary-accent-hover);
+  border-color: var(--primary-accent-hover);
+}
+
+.bd-btn-ghost,
+.bd-btn-ghost:hover,
+.bd-btn-ghost:focus-visible {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.bd-btn-ghost:hover {
+  border-color: #46507a;
+  color: var(--text-primary);
+}
+
+/* Hapus bukan aksi utama: tenang, merah hanya saat disentuh. */
+.bd-btn-danger,
+.bd-btn-danger:hover,
+.bd-btn-danger:focus-visible {
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(248, 113, 113, 0.8);
+}
+
+.bd-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: var(--error);
+}
+
+/* Monogram + judul sebaris */
+.bd-hero-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+  min-width: 0;
+}
+
+.bd-hero-avatar {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid rgba(251, 191, 36, 0.42);
+  background: rgba(251, 191, 36, 0.13);
+  color: #fde68a;
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+}
+
+.bd-hero-title-block {
+  min-width: 0;
+}
+
+.bd-hero .bd-hero-title {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.bd-hero-desc {
+  margin: 6px 0 0;
+  max-width: 70ch;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+/* Tag genre & role */
+.bd-hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--spacing-md);
+}
+
+.bd-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bd-tag-role {
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.12);
+  color: #fde68a;
+}
+
+/* Angka ringkas */
+.bd-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+}
+
+.bd-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.bd-stat--muted {
+  border-style: dashed;
+  background: transparent;
+}
+
+.bd-stat-label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.bd-stat-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.bd-stat--muted .bd-stat-value {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .bd-hero {
+    padding: var(--spacing-lg);
+  }
+
+  .bd-hero .bd-hero-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .bd-hero-heading {
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+
+  .bd-hero-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: var(--font-size-lg);
+  }
+
+  .bd-hero-actions {
+    width: 100%;
+  }
+
+  .bd-hero-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .bd-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-sm);
+  }
+
+  .bd-stat {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .bd-stat-value {
+    font-size: var(--font-size-xl);
+  }
+}
+/* Empty state ringkas di dalam panel detail band: tiga panel kosong
+   berjajar tidak boleh memakan tinggi seperti empty state satu halaman. */
+.band-detail-page .bd-empty-inline {
+  padding: var(--spacing-lg) var(--spacing-md);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
