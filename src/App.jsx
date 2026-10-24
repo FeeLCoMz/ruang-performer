@@ -94,9 +94,8 @@ function AppContent() {
   const location = useLocation();
   // State for userBandInfo (array of user's bands with role)
   const [userBandInfo, setUserBandInfo] = useState([]);
-  const [addSongSearch, setAddSongSearch] = useState('');
   // Only call useAuth ONCE and destructure all needed values
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   // Fetch user bands on mount (or when authenticated)
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -279,15 +278,6 @@ function AppContent() {
       </ErrorBoundary>
     );
   }
-
-  const availableSongsForSetlist = activeSetlist
-    ? songs.filter((song) => !(activeSetlist.songs || []).includes(song.id))
-    : [];
-  const filteredAvailableSongs = availableSongsForSetlist.filter(
-    (song) =>
-      (song.title || '').toLowerCase().includes(addSongSearch.toLowerCase()) ||
-      (song.artist || '').toLowerCase().includes(addSongSearch.toLowerCase()),
-  );
 
   return (
     <ErrorBoundary>
