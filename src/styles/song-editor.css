@@ -1098,6 +1098,22 @@ body.dark-mode .song-editor-status-blocker {
   margin-top: 12px;
 }
 
+/* Pesan error form di dalam modal: selebar form, di atas tombol. */
+.band-modal-error {
+  flex: 1 1 100%;
+  margin: 0 0 4px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--error) 45%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+  color: var(--error);
+  font-size: var(--font-size-sm);
+}
+
+.band-modal-actions:has(.band-modal-error) {
+  flex-wrap: wrap;
+}
+
 .band-modal-actions-wrap {
   flex-wrap: wrap;
 }

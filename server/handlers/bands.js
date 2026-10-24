@@ -1,7 +1,6 @@
 import { getTursoClient } from '../_turso.js';
 import { verifyToken } from '../_auth.js';
 import { writeAuditLog, getRequestMeta } from '../_audit.js';
-import { PERMISSIONS, hasPermission } from '../../src/utils/permissionUtils.js';
 import bandIdHandler from './band-id.js';
 import nodemailer from 'nodemailer';
 import { createRateLimiter, RATE_LIMITS } from '../middleware-rateLimiter.js';
@@ -119,11 +118,18 @@ export default async function handler(req, res) {
 
     // POST - Create new band
     if (req.method === 'POST') {
-      // Permission constants
-      const { BAND_CREATE } = PERMISSIONS;
-      const userRole = req.user?.role;
-      if (!hasPermission(userRole, BAND_CREATE)) {
-        return res.status(403).json({ error: 'You do not have permission to create bands' });
+      // Siapa pun yang terautentikasi boleh band: pembuatnya otomatis
+      // menjadi owner band tersebut (lihat INSERT band_members di bawah).
+      //
+      // Sebelumnya handler ini memeriksa `req.user.role` terhadap
+      // PERMISSIONS.BAND_CREATE — padahal itu mencampur dua konsep role:
+      // `req.user.role` adalah role AKUN global (default 'member'), sedangkan
+      // BAND_CREATE hanya dimiliki role BAND 'owner'. Akibatnya user biasa
+      // SELALU mendapat 403 walau tombol "Buat Band" tampil di UI.
+      // Band belum ada saat request ini, jadi izin berbasis per-owner belum
+      // bisa diterapkan; kepemilikan itulah yang diberikan setelah insert.
+      if (!userId) {
+        return res.status(401).json({ error: 'Anda harus masuk untuk membuat band' });
       }
       const body = await readJson(req);
       function sanitize(str, maxLen = 100) {
@@ -131,9 +137,10 @@ export default async function handler(req, res) {
         return str.replace(/[<>"'`]/g, '').slice(0, maxLen);
       }
       const name = sanitize(body.name, 100);
-      if (!name || name.length < 1) {
-        return res.status(400).json({ error: 'Band name is required' });
-      }      const description = sanitize(body.description || '', 300);
+      if (!name || name.trim().length < 1) {
+        return res.status(400).json({ error: 'Nama band wajib diisi' });
+      }
+      const description = sanitize(body.description || '', 300);
       const genre = sanitize(body.genre || '', 50);
       const bandId = `band_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date().toISOString();
