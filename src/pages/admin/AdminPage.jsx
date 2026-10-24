@@ -38,7 +38,7 @@ const TAB_OVERVIEW = 'ringkasan';
 const ADMIN_TABS = [
   { id: TAB_OVERVIEW, label: 'Ringkasan', icon: '📊' },
   { id: 'users', label: 'User', icon: '👥' },
-  { id: 'tags', label: 'Tag & Deteksi', icon: '🏷️' },
+  { id: 'tags', label: 'Tag & Deteksi', icon: '🏷' },
   { id: 'backup', label: 'Backup', icon: '💾' },
   { id: 'audit', label: 'Audit Log', icon: '🔍' },
 ];
@@ -78,25 +78,29 @@ function AdminOverview({ userSummary, cards, loading, error, onNavigate, period,
   const shortcuts = [
     {
       id: 'users',
-      title: '👥 Manajemen User',
+      title: 'Manajemen User',
+      icon: '👥',
       description: 'Ubah role, aktif/nonaktifkan, reset password, atau hapus akun user.',
       action: 'Kelola User',
     },
     {
       id: 'tags',
-      title: '🏷️ Tag & Deteksi',
+      title: 'Tag & Deteksi',
+      icon: '🏷',
       description: 'Atur kelompok tag yang dideteksi ChordDisplay: section, metadata, cue mark, instrumen, dan lainnya.',
       action: 'Atur Tag',
     },
     {
       id: 'backup',
-      title: '💾 Backup & Restore',
+      title: 'Backup & Restore',
+      icon: '💾',
       description: 'Backup seluruh database ke file SQL atau pulihkan dari backup sebelumnya.',
       action: 'Buka Backup',
     },
     {
       id: 'audit',
-      title: '🔍 Audit Log',
+      title: 'Audit Log',
+      icon: '🔍',
       description: 'Riwayat login, perubahan data, dan aksi kritis dengan filter kategori.',
       action: 'Lihat Audit Log',
     },
@@ -131,16 +135,19 @@ function AdminOverview({ userSummary, cards, loading, error, onNavigate, period,
       <h2 className="admin-section-title">Kelola Sistem</h2>
       <div className="tools-grid admin-actions-grid">
         {shortcuts.map((item) => (
-          <div key={item.id} className="tool-card admin-card">
-            <h2>{item.title}</h2>
-            <p>{item.description}</p>
+          <div key={item.id} className="tool-card admin-card admin-shortcut">
+            <div className="admin-shortcut-head">
+              <span className="admin-shortcut-icon" aria-hidden="true">{item.icon}</span>
+              <h2>{item.title}</h2>
+            </div>
+            <p className="admin-shortcut-desc">{item.description}</p>
             <button
               type="button"
-              className="btn btn-primary admin-card-action"
-              style={{ '--btn-group': '44px' }}
+              className="btn admin-shortcut-action"
               onClick={() => onNavigate(item.id)}
             >
               {item.action}
+              <span aria-hidden="true">→</span>
             </button>
           </div>
         ))}
@@ -153,7 +160,7 @@ function AdminOverview({ userSummary, cards, loading, error, onNavigate, period,
  * Ringkasan akun. Kartu yang punya `tab` bisa diklik untuk membuka tab
  * terkait, sehingga angka menjadi pintasan, bukan sekadar informasi.
  */
-function AdminUserSummary({ summary, cards, loading, error, onNavigate }) {
+function AdminUserSummary({ cards, loading, error, onNavigate }) {
   return (
     <div className="card admin-summary-card">
       <div className="admin-stat-grid">
@@ -242,22 +249,31 @@ export default function AdminPage() {
     return (
       <div className="page-container">
         <div className="page-header"><h1>Administrator</h1></div>
-        <div className="card">{ACCESS_DENIED_TEXT}</div>
+        <div className="empty-state">{ACCESS_DENIED_TEXT}</div>
       </div>
     );
   }
 
   return (
     <div className="page-container admin-page">
-      <div className="page-header">
-        <div>
-          <h1>🛡️ Administrator</h1>
-          <p>Semua fitur administrasi: kelola user, atur tag deteksi, backup, dan audit log.</p>
+      <section className="adm-hero">
+        <div className="adm-hero-top">
+          <div className="adm-eyebrow">
+            <span className="adm-eyebrow-dot" aria-hidden="true" />
+            Administrator
+          </div>
+          <span className={`admin-role-badge admin-role-${user.role}`}>
+            {getAppRoleLabel(user.role)}
+          </span>
         </div>
-        <span className={`admin-role-badge admin-role-${user.role}`}>
-          {getAppRoleLabel(user.role)}
-        </span>
-      </div>
+
+        <div className="adm-hero-heading">
+          <h1 className="adm-hero-title">Administrator</h1>
+          <p className="adm-hero-subtitle">
+            Kelola user, atur tag deteksi, backup database, dan telusuri audit log.
+          </p>
+        </div>
+      </section>
 
       <AdminTabs activeTab={activeTab} onSelect={navigateToTab} />
 
