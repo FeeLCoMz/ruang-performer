@@ -1,5 +1,5 @@
 import ModulesPage from './pages/ModulesPage.jsx';
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 
 // Eager load critical pages
@@ -119,8 +119,10 @@ function AppContent() {
     }
   }, [isLoading, isAuthenticated]);
   const [toastMessage, setToastMessage] = useState('');
-
+  // Drawer sidebar di layar kecil (tablet/mobile).
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Gigs ringkas untuk badge navigasi (hanya id/date/status).
+  const [gigsForBadge, setGigsForBadge] = useState([]);
   const [showCreateSetlist, setShowCreateSetlist] = useState(false);
   // Stage Mode: tema kontras tinggi untuk layar saat tampil di panggung.
   // Preferensi dipersist di localStorage lintas sesi.
@@ -208,6 +210,35 @@ function AppContent() {
       });
   }, [isLoading, isAuthenticated]);
 
+  // Gigs ringkas untuk badge menu: jumlah gigs mendatang 7 hari ke depan.
+  // Kegagalan diabaikan — badge hanya penanda, bukan data kritis.
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return undefined;
+    let cancelled = false;
+    apiClient
+      .fetchGigs()
+      .then((data) => {
+        if (!cancelled) setGigsForBadge(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setGigsForBadge([]);
+      });
+    return () => { cancelled = true; };
+  }, [isLoading, isAuthenticated, location.pathname]);
+
+  const navBadges = useMemo(() => {
+    const now = Date.now();
+    const horizon = now + 7 * 24 * 60 * 60 * 1000;
+    const upcoming = gigsForBadge.filter((gig) => {
+      const time = gig?.date ? new Date(gig.date).getTime() : NaN;
+      if (Number.isNaN(time)) return false;
+      const status = String(gig.status || '').toLowerCase();
+      if (status === 'cancelled' || status === 'done') return false;
+      return time >= now && time <= horizon;
+    }).length;
+    return { '/gigs': upcoming };
+  }, [gigsForBadge]);
+
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
     if (location.pathname.startsWith('/setlists')) {
@@ -287,6 +318,7 @@ function AppContent() {
           onClose={() => setSidebarOpen(false)}
           stageMode={stageMode}
           onToggleStageMode={setStageMode}
+          badges={navBadges}
         />
         <MobileBottomNav />
         <Toast message={toastMessage} onClose={() => setToastMessage('')} />

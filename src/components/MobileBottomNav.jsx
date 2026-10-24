@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { useNavItems } from '../hooks/useNavItems.js';
+import { useNavItems, LOGOUT_ITEM } from '../hooks/useNavItems.js';
 
 /**
  * MobileBottomNav
@@ -15,8 +15,13 @@ export default function MobileBottomNav() {
   const { items, isActive } = useNavItems();
   const [otherOpen, setOtherOpen] = useState(false);
 
+  // useNavItems tidak lagi menyertakan logout; sheet "Lainnya" menambahkannya
+  // di bagian akhir agar aksi keluar tetap tersedia di mobile.
   const primaryItems = items.filter((item) => item.bottomNav);
-  const otherItems = items.filter((item) => !item.bottomNav);
+  const otherItems = [
+    ...items.filter((item) => !item.bottomNav),
+    LOGOUT_ITEM,
+  ];
 
   const isOtherActive = otherItems.some((item) => item.path === 'logout' ? false : isActive(item.path));
 
@@ -110,7 +115,7 @@ export default function MobileBottomNav() {
           aria-haspopup="menu"
         >
           <span className="mobile-bottom-nav-icon" aria-hidden="true">⋯</span>
-          <span className="mobile-bottom-nav-label">Other</span>
+          <span className="mobile-bottom-nav-label">Lainnya</span>
         </button>
       </nav>
     </>
