@@ -535,7 +535,6 @@ function AppContent() {
               <Route path="/bands" element={<Navigate to="/bands/manage" replace />} />
               <Route path="/bands/:id" element={<BandDetailPage />} />
               {/* InvitationPage and PendingInvitationsPage removed */}
-              <Route path="/tools" element={<Navigate to="/admin" replace />} />
               <Route path="/modules" element={<ModulesPage />} />
               <Route path="/chord-transcriber" element={<ChordTranscriberPage />} />
               <Route path="/bulk-lyrics" element={<BulkLyricsPage />} />
