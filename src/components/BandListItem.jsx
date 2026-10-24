@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * BandListItem
@@ -40,6 +41,8 @@ export default function BandListItem({ band, navigate, userBandInfo }) {
     metadataItems.push({ icon: '➕', label: `Bergabung ${joinedAtLabel}` });
   }
 
+  const initial = (band?.name || '?').trim().charAt(0).toUpperCase();
+
   return (
     <div
       className="setlist-item band-list-item"
@@ -54,8 +57,13 @@ export default function BandListItem({ band, navigate, userBandInfo }) {
       role="button"
       aria-label={`Lihat detail band ${band.name}`}
     >
+      {/* Monogram band: pengganti ikon yang tidak ada, memberi jangkar visual. */}
+      <span className="band-list-item-avatar" aria-hidden="true">{initial}</span>
       <div className="setlist-info band-list-item-info">
-        <h3 className="setlist-title band-list-item-title">{band.name}</h3>
+        <div className="band-list-item-title-row">
+          <h3 className="setlist-title band-list-item-title">{band.name}</h3>
+          <span className={`band-list-role-badge ${role}`}>{roleLabel}</span>
+        </div>
           {metadataItems.length > 0 && (
             <div className="band-list-item-meta">
               {metadataItems.map((item) => (
@@ -69,9 +77,29 @@ export default function BandListItem({ band, navigate, userBandInfo }) {
           {band.description && <p className="band-list-item-description">{band.description}</p>}
       </div>
       <div className="band-list-item-side">
-        <span className={`band-list-role-badge ${role}`}>{roleLabel}</span>
-        <span className="band-list-item-cta">Lihat Detail →</span>
+        <span className="band-list-item-cta" aria-hidden="true">→</span>
       </div>
     </div>
   );
 }
+
+BandListItem.propTypes = {
+  band: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    name: PropTypes.string,
+    description: PropTypes.string,
+    genre: PropTypes.string,
+    role: PropTypes.string,
+    userRole: PropTypes.string,
+    isOwner: PropTypes.bool,
+    memberCount: PropTypes.number,
+    createdAt: PropTypes.string,
+    joinedAt: PropTypes.string,
+  }).isRequired,
+  navigate: PropTypes.func.isRequired,
+  userBandInfo: PropTypes.shape({
+    role: PropTypes.string,
+    bandId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    joinedAt: PropTypes.string,
+  }),
+};

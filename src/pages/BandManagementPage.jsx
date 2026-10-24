@@ -28,6 +28,10 @@ export default function BandManagementPage() {
   const [bands, setBands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Error khusus form buat band: ditampilkan DI DALAM modal. Sebelumnya error
+  // masuk ke state halaman sehingga tertutup overlay dan user tidak tahu
+  // mengapa pembuatan band gagal.
+  const [formError, setFormError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '', genre: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -131,6 +135,7 @@ export default function BandManagementPage() {
   const handleCreate = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setFormError(null);
     try {
       const newBand = await apiClient.createBand(formData);
       setBands([...bands, newBand]);
@@ -138,13 +143,25 @@ export default function BandManagementPage() {
       setShowCreateForm(false);
       setError(null);
     } catch (err) {
-      setError(err.message);
+      setFormError(err.message || 'Gagal membuat band. Coba lagi.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const hasActiveFilters = search || filterGenre !== 'all';
+
+  // Hook harus dipanggil SEBELUM early-return `if (loading)`. Menaruhnya
+  // setelah return membuat jumlah hook berbeda antar-render dan React
+  // melempar error (halaman crash ke ErrorBoundary).
+  const genreCount = useMemo(() => {
+    const set = new Set(bands.map((band) => band.genre).filter(Boolean));
+    return set.size;
+  }, [bands]);
+  const ownerCount = useMemo(
+    () => bands.filter((band) => band.isOwner || band.role === 'owner' || band.userRole === 'owner').length,
+    [bands],
+  );
 
   if (loading) {
     return (
@@ -158,20 +175,50 @@ export default function BandManagementPage() {
   }
 
   return (
-    <div className="page-container">
-      {/* Page Header */}
-      <div className="page-header">
-        <div>
-          <h1>🎸 Manajemen Band</h1>
-          <p>{filteredBands.length} dari {bands.length} band</p>
+    <div className="page-container band-page">
+      <section className="bp-hero">
+        <div className="bp-hero-top">
+          <div className="bp-eyebrow">
+            <span className="bp-eyebrow-dot" aria-hidden="true" />
+            Band
+          </div>
+          {user && (
+            <button
+              className="btn bp-btn-primary"
+              onClick={() => { setShowCreateForm(true); setFormError(null); }}
+            >
+              <span aria-hidden="true">＋</span> Buat Band
+            </button>
+          )}
         </div>
-        {/* Permission: Only show if user can create a band */}
-        {user && (
-          <button className="btn" onClick={() => setShowCreateForm(true)}>
-            <span aria-hidden="true">＋</span> Buat Band
-          </button>
-        )}
-      </div>
+
+        <div className="bp-hero-heading">
+          <h1 className="bp-hero-title">Manajemen Band</h1>
+          <p className="bp-hero-subtitle">Kelola band, anggota, dan jadwal dalam satu tempat</p>
+        </div>
+
+        <div className="bp-summary-grid">
+          <div className="bp-summary-card">
+            <span className="bp-summary-label">Total band</span>
+            <span className="bp-summary-value">{bands.length}</span>
+            <span className="bp-summary-hint" aria-live="polite">
+              {hasActiveFilters ? `${filteredBands.length} tampil` : 'Seluruh band kamu'}
+            </span>
+          </div>
+          <div className={`bp-summary-card${ownerCount ? '' : ' bp-summary-card--muted'}`}>
+            <span className="bp-summary-label">Sebagai pemilik</span>
+            <span className={`bp-summary-value${ownerCount ? '' : ' bp-summary-value--muted'}`}>{ownerCount}</span>
+            <span className="bp-summary-hint">Band yang kamu kelola</span>
+          </div>
+          <div className={`bp-summary-card${genreCount ? '' : ' bp-summary-card--muted'}`}>
+            <span className="bp-summary-label">Genre berbeda</span>
+            <span className={`bp-summary-value${genreCount ? '' : ' bp-summary-value--muted'}`}>
+              {genreCount || '—'}
+            </span>
+            <span className="bp-summary-hint">{genreCount ? 'Variasi genre band' : 'Genre belum diisi'}</span>
+          </div>
+        </div>
+      </section>
 
       {error && <div className="error-message form-error">{error}</div>}
 
@@ -181,7 +228,8 @@ export default function BandManagementPage() {
         <div className="band-filter-main-row">
           <input
             type="text"
-            placeholder="🔍 Cari nama band, deskripsi, atau genre..."
+            placeholder="Cari nama band, deskripsi, atau genre..."
+            aria-label="Cari band"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="search-input-main"
@@ -190,6 +238,7 @@ export default function BandManagementPage() {
             className="btn btn-secondary"
             type="button"
             onClick={() => setShowAdvancedFilters((prev) => !prev)}
+            aria-expanded={showAdvancedFilters}
           >
             {showAdvancedFilters ? 'Sembunyikan Filter' : 'Filter Lanjutan'}
           </button>
@@ -248,13 +297,18 @@ export default function BandManagementPage() {
 
       {/* Band List */}
       {filteredBands.length === 0 ? (
-        <div className="empty-state">
+        <div className="empty-state band-empty-state">
+          <div className="bp-empty-icon" aria-hidden="true">🎸</div>
           <p>
             {hasActiveFilters ? 'Tidak ada band yang cocok dengan filter' : 'Belum ada band'}
           </p>
-          {!hasActiveFilters && (
-            <button className="btn band-empty-cta" onClick={() => setShowCreateForm(true)}>
+          {!hasActiveFilters ? (
+            <button className="btn bp-btn-primary band-empty-cta" onClick={() => setShowCreateForm(true)}>
               <span aria-hidden="true">＋</span> Buat Band Pertama
+            </button>
+          ) : (
+            <button className="btn btn-secondary" onClick={handleClearFilters}>
+              Hapus filter
             </button>
           )}
         </div>
@@ -276,7 +330,7 @@ export default function BandManagementPage() {
 
       {/* Create Band Modal */}
       {showCreateForm && (
-        <div className="modal-overlay" onClick={() => setShowCreateForm(false)}>
+        <div className="modal-overlay" onClick={() => { setShowCreateForm(false); setFormError(null); }}>
           <div className="modal-card" onClick={e => e.stopPropagation()}>
             <h2>Buat Band Baru</h2>
             <form onSubmit={handleCreate}>
@@ -303,6 +357,9 @@ export default function BandManagementPage() {
                 className="modal-input"
               />
               <div className="band-modal-actions">
+                {formError && (
+                  <p className="band-modal-error" role="alert">{formError}</p>
+                )}
                 <button type="submit" disabled={submitting} className="btn">
                   {submitting ? 'Membuat...' : 'Buat Band'}
                 </button>

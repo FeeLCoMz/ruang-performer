@@ -5306,3 +5306,345 @@ button.song-mastery-chip:not(:disabled):hover {
   color: var(--text-muted);
   font-size: var(--font-size-sm);
 }
+/* ========================================
+   BAND PAGE — hero ringkasan & kartu band
+   Disamakan dengan bahasa visual halaman lain.
+   ======================================== */
+
+.band-page {
+  --bp-surface: var(--card-bg);
+  --bp-surface-soft: rgba(255, 255, 255, 0.03);
+  --bp-line: var(--border-color);
+}
+
+.bp-hero {
+  position: relative;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--bp-line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(251, 191, 36, 0.14) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(22, 29, 51, 0.96) 0%, rgba(15, 21, 38, 0.96) 100%);
+}
+
+.bp-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.bp-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.bp-eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.18);
+}
+
+.bp-btn-primary,
+.bp-btn-primary:hover,
+.bp-btn-primary:focus-visible {
+  background: var(--primary-accent);
+  border: 1px solid var(--primary-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.bp-btn-primary:hover {
+  background: var(--primary-accent-hover);
+  border-color: var(--primary-accent-hover);
+}
+
+.bp-hero-heading {
+  margin-top: var(--spacing-md);
+}
+
+.bp-hero-title {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.bp-hero-subtitle {
+  margin: 6px 0 0;
+  max-width: 60ch;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.bp-summary-grid {
+  margin-top: var(--spacing-xl);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-md);
+}
+
+.bp-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--bp-line);
+  border-radius: var(--radius-md);
+  background: var(--bp-surface-soft);
+}
+
+.bp-summary-card--muted {
+  border-style: dashed;
+  background: transparent;
+}
+
+.bp-summary-label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.bp-summary-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.bp-summary-value--muted {
+  color: var(--text-muted);
+}
+
+.bp-summary-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Kartu band ---- */
+.band-page .band-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-left-width: 3px;
+  border-left-color: transparent;
+}
+
+.band-page .band-list-item:hover,
+.band-page .band-list-item:focus-visible {
+  border-left-color: #fbbf24;
+}
+
+/* Monogram: jangkar visual karena band tidak punya gambar. */
+.band-list-item-avatar {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.12);
+  color: #fde68a;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.band-list-item-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.band-page .band-list-item-title {
+  margin: 0;
+  min-width: 0;
+}
+
+/* Role badge pindah ke samping judul; ukurannya kecil dan tenang. */
+.band-list-item-title-row .band-list-role-badge {
+  font-size: 0.68rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+}
+
+.band-page .band-list-item-meta {
+  margin-top: 4px;
+}
+
+.band-page .band-list-item-meta-chip {
+  font-size: var(--font-size-xs);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+}
+
+.band-page .band-list-item-description {
+  margin: 6px 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.band-page .band-list-item-side {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.band-page .band-list-item-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--bp-line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.band-page .band-list-item:hover .band-list-item-cta {
+  border-color: var(--primary-accent);
+  background: rgba(139, 92, 246, 0.14);
+  color: var(--text-primary);
+}
+
+/* ---- Empty state ---- */
+.band-page .band-empty-state {
+  border: 1px dashed var(--bp-line);
+  border-radius: var(--radius-lg);
+  background: var(--bp-surface-soft);
+  padding: var(--spacing-2xl) var(--spacing-xl);
+}
+
+.band-page .band-empty-state p {
+  margin: 0 0 var(--spacing-lg);
+  color: var(--text-secondary);
+}
+
+.bp-empty-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.75;
+}
+
+@media (max-width: 900px) {
+  /* Tiga kartu tetap sejajar: ketiganya berisi angka pendek, jadi tidak
+     perlu melebar penuh. Sebelumnya kartu terakhir memakai 1 / -1 sehingga
+     menyisakan setengah baris kosong. */
+  .bp-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-sm);
+  }
+
+  .bp-summary-card {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .bp-summary-value {
+    font-size: var(--font-size-xl);
+  }
+
+  .bp-summary-hint {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Di ponsel sempit, tiga kartu tetap sejajar dengan padding lebih rapat —
+     bukan 2+1 — supaya tidak ada kartu selebar penuh yang separuh kosong. */
+  .bp-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .bp-summary-card {
+    padding: var(--spacing-sm);
+  }
+
+  .bp-summary-card:last-child {
+    grid-column: auto;
+  }
+
+  .bp-summary-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+  }
+
+  .bp-summary-value {
+    font-size: var(--font-size-lg);
+  }
+
+  .bp-summary-hint {
+    font-size: 0.62rem;
+    line-height: 1.3;
+  }
+}
+
+@media (max-width: 768px) {
+  .bp-hero {
+    padding: var(--spacing-lg);
+  }
+
+  .bp-hero-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .band-page .band-list-item {
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    /* Kartu memakai flex-wrap di sini: kolom aksi turun ke baris baru, jadi
+       harus diberi lebar penuh dan rata kanan agar panah tidak menumpuk di
+       kiri bawah. */
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .band-page .band-list-item-side {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .band-list-item-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: var(--font-size-base);
+  }
+
+  /* Ruang bawah untuk bottom-nav (fixed, tinggi ~68px + safe area).
+     Selector harus menyertakan .page-container: elemen memakai kedua kelas,
+     dan `padding-bottom` dari .page-container (spesifisitas sama) menimpa
+     aturan .band-page sendirian. */
+  .page-container.band-page {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+}
